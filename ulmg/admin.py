@@ -37,6 +37,7 @@ class TeamAdmin(nested_admin.NestedModelAdmin):
     inlines = [
         RosterInline
     ]
+    list_display = ["city", "mascot", "abbreviation"]
 
 @admin.register(Player)
 class PlayerAdmin(nested_admin.NestedModelAdmin):
@@ -46,6 +47,7 @@ class PlayerAdmin(nested_admin.NestedModelAdmin):
         PlayerPositionYearRatingInline
     ]
     readonly_fields = ["name", "roster_conflict", "owned"]
-    list_display = ["name", "owned", "team", "owner", "level", "position", "latest_note"]
+    list_display = ["name", "owned", "team", "owner", "level", "position", "latest_note", 'fangraphs_id']
     list_filter = ["owned", "team", "level", "position"]
+    list_editable = ['fangraphs_id']
     search_fields = ["name"]

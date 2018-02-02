@@ -2,7 +2,7 @@ from django.contrib.auth.models import User
 from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-
+from nameparser import HumanName
 
 class BaseModel(models.Model):
     active = models.BooleanField(default=True)
@@ -49,8 +49,11 @@ class Team(BaseModel):
     field = models.CharField(max_length=255, blank=True, null=True)
     abbreviation = models.CharField(max_length=3)
 
+    class Meta:
+        ordering = ["abbreviation"]
+
     def __unicode__(self):
-        return "%s %s" % (self.city, self.mascot)
+        return self.abbreviation
  
     def players(self):
         """
@@ -122,6 +125,8 @@ class Player(BaseModel):
     name = models.CharField(max_length=255)
     last_name = models.CharField(max_length=255, null=True)
     first_name = models.CharField(max_length=255, null=True)
+    middle_name = models.CharField(max_length=255, null=True, blank=True)
+    suffix = models.CharField(max_length=255, null=True, blank=True)
     team = models.ForeignKey(Team, on_delete=models.SET_NULL, blank=True, null=True)
     roster = models.ForeignKey(Roster, on_delete=models.SET_NULL, blank=True, null=True)
     fangraphs_id = models.CharField(max_length=255, blank=True, null=True)
@@ -165,7 +170,26 @@ class Player(BaseModel):
         return None
 
     def set_name(self):
-        self.name = "%s %s" % (self.first_name, self.last_name)
+        """
+        Turn first / last into a name or 
+        """
+        if self.first_name and self.last_name:
+            if not self.name:
+                name_string = "%s" % self.first_name
+                if self.middle_name:
+                    name_string += " %s" % self.middle_name
+                name_string = " %s" % self.last_name
+                if self.suffix:
+                    name_string += ", %s" % self.suffix
+                self.name = name_string
+
+        if self.name:
+            if not self.first_name and not self.last_name:
+                n = HumanName(self.name)
+                self.first_name = n.first
+                self.last_name = n.last
+                self.middle_name = n.middle
+                self.suffix = n.suffix
 
     def set_roster_conflict(self):
         """
