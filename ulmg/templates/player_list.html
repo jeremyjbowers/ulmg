@@ -3,12 +3,14 @@
 {% block content %}
 
 <div class="row">
-    <h1>Rosters</h1>
+    <h1>The ULMG: Data</h1>
     {% regroup players by team as player_list %}
-    
+
+    <h2>Rosters</h2>
+
     {% for player in player_list %}
     <div class="col s4">
-        <h2>{{ player.grouper.city }}</h2>
+        <h3>{{ player.grouper.city }}</h3>
         <table>
             <tr>
                 <th>Name</th>
