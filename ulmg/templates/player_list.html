@@ -23,7 +23,14 @@
                     <td>{{ p.level }}</td>
                 </tr>
                 {% endfor %}
-                {% if player.list|length == 75 %}
+                {% if player.list|length == 74 %}
+                <tr>
+                    <td>&nbsp;</td>
+                    <td>&nbsp;</td>
+                    <td>&nbsp;</td>
+                </tr>
+                {% endif %}
+                {% if player.list|length <= 75 %}
                 <tr>
                     <td>&nbsp;</td>
                     <td>&nbsp;</td>
