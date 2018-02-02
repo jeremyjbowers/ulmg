@@ -46,6 +46,6 @@ class PlayerAdmin(nested_admin.NestedModelAdmin):
         PlayerPositionYearRatingInline
     ]
     readonly_fields = ["name", "roster_conflict", "owned"]
-    list_display = ["name", "owned", "team", "owner", "level", "latest_note"]
-    list_filter = ["owned", "team", "level"]
+    list_display = ["name", "owned", "team", "owner", "level", "position", "latest_note"]
+    list_filter = ["owned", "team", "level", "position"]
     search_fields = ["name"]

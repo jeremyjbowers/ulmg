@@ -104,6 +104,20 @@ class Player(BaseModel):
         (A_LEVEL,"A-Level"),
         (B_LEVEL,"B-Level"),
     )
+    PITCHER = "P"
+    CATCHER = "C"
+    INFIELD = "IF"
+    OUTFIELD = "OF"
+    UTILITY = "UT"
+    HITTER = "DH"
+    PLAYER_POSITION_CHOICES = (
+        (PITCHER,"Pitcher"),
+        (CATCHER,"Catcher"),
+        (INFIELD,"Infield"),
+        (OUTFIELD,"Outfield"),
+        (UTILITY,"Utility"),
+        (HITTER,"Hitter")
+    )
     level = models.CharField(max_length=255, null=True, choices=PLAYER_LEVEL_CHOICES)
     name = models.CharField(max_length=255)
     last_name = models.CharField(max_length=255, null=True)
@@ -118,6 +132,7 @@ class Player(BaseModel):
     mlb_url = models.CharField(max_length=255, blank=True, null=True)
     owned = models.BooleanField(default=False)
     roster_conflict = models.BooleanField(default=False)
+    position = models.CharField(max_length=255, null=True, choices=PLAYER_POSITION_CHOICES)
 
     def __unicode__(self):
         if self.get_team():
