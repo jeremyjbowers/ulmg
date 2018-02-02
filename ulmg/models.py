@@ -139,6 +139,9 @@ class Player(BaseModel):
     roster_conflict = models.BooleanField(default=False)
     position = models.CharField(max_length=255, null=True, choices=PLAYER_POSITION_CHOICES)
 
+    class Meta:
+        ordering = ["last_name", "first_name", "position"]
+
     def __unicode__(self):
         if self.get_team():
             return "%s (%s)" % (self.name, self.get_team().abbreviation)
