@@ -10,7 +10,7 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
         'NAME': os.environ.get('ULMG_DB_NAME', 'ulmg'),
-        'USER': os.environ.get('ULMG_DB_USER', ''),
+        'USER': os.environ.get('ULMG_DB_USER', 'ubuntu'),
         'PASSWORD': os.environ.get('ULMG_DB_PASS', ''),
         'HOST': os.environ.get('ULMG_DB_HOST', ''),
     }
