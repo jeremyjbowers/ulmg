@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="row">
+    <h1>Rosters</h1>
+    {% regroup players by team as player_list %}
+    
+    {% for player in player_list %}
+    <div class="col s4">
+        <h2>{{ player.grouper }}</h2>
+        <table>
+            <tr>
+                <th>Name</th>
+                <th>Position</th>
+                <th>Level</th>
+            </tr>
+            {% for p in player.list %}
+            <tr>
+                <td>{{ p.name }}</td>
+                <td>{{ p.position }}</td>
+                <td>{{ p.level }}</td>
+            </tr>
+            {% endfor %}
+            {% if player.list|length == 75 %}
+            <tr>
+                <td>&nbsp;</td>
+                <td>&nbsp;</td>
+                <td>&nbsp;</td>
+            </tr>
+            {% endif %}
+        </table>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
