@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row">
+    <h1 style="font-weight:strong;">{{ team.city }}</h1>
+    <div class="col s6">
+        <h3>{{ players|length }} owned players</h3>
+        <table>
+            <thead>
+                <th>Name</th>
+                <th></th>
+                <th></th>
+                <th>Position</th>
+                <th>Level</th>
+            </thead>
+            <tbody>
+                {% for p in players %}
+                <tr>
+                    <td>{{ p.name }}</td>
+                    <td><a href="{{ p.bbref_url }}">BBref</a></td>
+                    <td><a href="{{ p.fangraphs_url }}">FG</a></td>
+                    <td>{{ p.position }}</td>
+                    <td>{{ p.level }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

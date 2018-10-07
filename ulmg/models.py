@@ -1,5 +1,6 @@
 from django.contrib.auth.models import User
 from django.db import models
+from django.contrib.postgres.fields import JSONField
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from nameparser import HumanName
@@ -145,9 +146,10 @@ class Player(BaseModel):
     owned = models.BooleanField(default=False)
     position = models.CharField(max_length=255, null=True, choices=PLAYER_POSITION_CHOICES)
     birthdate = models.DateField(blank=True, null=True)
+    stats = JSONField(blank=True, null=True)
 
     class Meta:
-        ordering = ["last_name", "first_name", "position"]
+        ordering = ["level", "last_name", "first_name", "position"]
 
     def __unicode__(self):
         if self.get_team():

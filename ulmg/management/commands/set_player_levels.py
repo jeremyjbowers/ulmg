@@ -11,7 +11,7 @@ from ulmg import models
 class Command(BaseCommand):
 
     def handle(self, *args, **options):
-        for p in models.Player.objects.filter(level__isnull=True):
+        for p in models.Player.objects.filter(level__in=["A"]):
             if p.fangraphs_url and 'playerid=' in p.fangraphs_url:
                 print(p.fangraphs_url, p.name)
                 r = requests.get(p.fangraphs_url)
@@ -28,9 +28,9 @@ class Command(BaseCommand):
                         elif gm > 200:
                             p.level = "V"
                         elif st < 21 and gm < 31:
-                            p.level = "A"
-                        elif st > 20 or gm > 31:
                             p.level = "B"
+                        elif st > 20 or gm > 31:
+                            p.level = "A"
                         else:
                             p.level = None 
 
