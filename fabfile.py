@@ -10,7 +10,7 @@ env.user = "ubuntu"
 env.forward_agent = True
 env.branch = "master"
 
-env.hosts = ["jeremybowers.com"]
+env.hosts = ["192.241.251.155"]
 
 @api.task
 def development():
@@ -53,6 +53,10 @@ def collectstatic():
 def bounce(racedate=None):
     api.run("sudo service %(project_name)s stop" % env)
     api.run("sudo service %(project_name)s start" % env)
+
+@api.task
+def load_players():
+    api.run("cd /home/ubuntu/apps/%(project_name)s; workon %(project_name)s && django-admin loaddata data/players.json" % env)
 
 @api.task
 def deploy():
