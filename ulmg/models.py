@@ -128,6 +128,7 @@ class Player(BaseModel):
     middle_name = models.CharField(max_length=255, null=True, blank=True)
     suffix = models.CharField(max_length=255, null=True, blank=True)
     team = models.ForeignKey(Team, on_delete=models.SET_NULL, blank=True, null=True)
+    mlb_team = models.CharField(max_length=255, null=True, blank=True)
     roster = models.ForeignKey(Roster, on_delete=models.SET_NULL, blank=True, null=True)
     fangraphs_id = models.CharField(max_length=255, blank=True, null=True)
     fangraphs_url = models.CharField(max_length=255, blank=True, null=True)
@@ -136,8 +137,8 @@ class Player(BaseModel):
     mlb_id = models.CharField(max_length=255, blank=True, null=True)
     mlb_url = models.CharField(max_length=255, blank=True, null=True)
     owned = models.BooleanField(default=False)
-    roster_conflict = models.BooleanField(default=False)
     position = models.CharField(max_length=255, null=True, choices=PLAYER_POSITION_CHOICES)
+    birthdate = models.DateField(blank=True, null=True)
 
     class Meta:
         ordering = ["last_name", "first_name", "position"]
@@ -169,7 +170,7 @@ class Player(BaseModel):
         Determine who owns this player.
         """
         if self.get_team():
-            return self.get_team().owner
+            return self.get_team()
         return None
 
     def set_name(self):
@@ -181,7 +182,7 @@ class Player(BaseModel):
                 name_string = "%s" % self.first_name
                 if self.middle_name:
                     name_string += " %s" % self.middle_name
-                name_string = " %s" % self.last_name
+                name_string += " %s" % self.last_name
                 if self.suffix:
                     name_string += ", %s" % self.suffix
                 self.name = name_string
@@ -194,22 +195,18 @@ class Player(BaseModel):
                 self.middle_name = n.middle
                 self.suffix = n.suffix
 
-    def set_roster_conflict(self):
-        """
-        If the team and roster.team attributes are different, set a flag.
-        """
-        if self.roster and self.team:
-            if self.team != self.roster.team:
-                self.roster_conflict = True
-        self.roster_conflict = False
-
     def set_owned(self):
         """
         If we can see an owner, set this player to owned.
         """
         self.owned = False
         if self.owner():
-            self.owned = True    
+            self.owned = True
+
+    def set_ids(self):
+        if self.fangraphs_url and not self.fangraphs_id:
+            if "fangraphs" in self.fangraphs_url:
+                self.fangraphs_id = self.fangraphs_url.split('?playerid=')[1].split('&')[0]
 
     def save(self, *args, **kwargs):
         """
@@ -217,7 +214,7 @@ class Player(BaseModel):
         """
         self.set_owned()
         self.set_name()
-        self.set_roster_conflict()
+        self.set_ids()
 
         super().save(*args, **kwargs)
 
