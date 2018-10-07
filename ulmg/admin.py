@@ -49,5 +49,5 @@ class PlayerAdmin(nested_admin.NestedModelAdmin):
     readonly_fields = ["name", "owned"]
     list_display = ["name", "owned", "team", "owner", "level", "position", "latest_note"]
     list_filter = ["owned", "team", "level", "position"]
-    list_editable = ['position']
+    list_editable = []
     search_fields = ["name"]

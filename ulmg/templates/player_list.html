@@ -8,7 +8,7 @@
 
     {% for player in player_list %}
     <div class="col s4">
-        <h3>{{ player.grouper.city }}</h3>
+        <h3>{{ player.grouper.city }} ({{ player.list|length }})</h3>
         <table>
             <thead>
                 <th>Name</th>
@@ -23,6 +23,33 @@
                     <td>{{ p.level }}</td>
                 </tr>
                 {% endfor %}
+                {% if player.list|length == 73 %}
+                <tr>
+                    <td>&nbsp;</td>
+                    <td>&nbsp;</td>
+                    <td>&nbsp;</td>
+                </tr>
+                <tr>
+                    <td>&nbsp;</td>
+                    <td>&nbsp;</td>
+                    <td>&nbsp;</td>
+                </tr>
+                <tr>
+                    <td>&nbsp;</td>
+                    <td>&nbsp;</td>
+                    <td>&nbsp;</td>
+                </tr>
+                <tr>
+                    <td>&nbsp;</td>
+                    <td>&nbsp;</td>
+                    <td>&nbsp;</td>
+                </tr>
+                <tr>
+                    <td>&nbsp;</td>
+                    <td>&nbsp;</td>
+                    <td>&nbsp;</td>
+                </tr>
+                {% endif %}
                 {% if player.list|length == 74 %}
                 <tr>
                     <td>&nbsp;</td>
@@ -68,6 +95,13 @@
                     <td>&nbsp;</td>
                     <td>&nbsp;</td>
                 </tr>
+                <tr>
+                    <td>&nbsp;</td>
+                    <td>&nbsp;</td>
+                    <td>&nbsp;</td>
+                </tr>
+                {% endif %}
+                {% if player.list|length == 77 %}
                 <tr>
                     <td>&nbsp;</td>
                     <td>&nbsp;</td>

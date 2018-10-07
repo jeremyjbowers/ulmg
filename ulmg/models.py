@@ -6,8 +6,8 @@ from nameparser import HumanName
 
 class BaseModel(models.Model):
     active = models.BooleanField(default=True)
-    created = models.DateTimeField(auto_now_add=True)
-    last_modified = models.DateTimeField(auto_now=True)
+    created = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+    last_modified = models.DateTimeField(auto_now=True, blank=True, null=True)
 
     class Meta:
         abstract = True
@@ -111,6 +111,9 @@ class Player(BaseModel):
     CATCHER = "C"
     INFIELD = "IF"
     OUTFIELD = "OF"
+    INFIELD_OUTFIELD = "IF/OF"
+    PITCHER_OF = "OF/P"
+    PITCHER_IF = "IF/P"
     UTILITY = "UT"
     HITTER = "DH"
     PLAYER_POSITION_CHOICES = (
@@ -118,6 +121,9 @@ class Player(BaseModel):
         (CATCHER,"Catcher"),
         (INFIELD,"Infield"),
         (OUTFIELD,"Outfield"),
+        (INFIELD_OUTFIELD,"Infield/Outfield"),
+        (PITCHER_OF,"Pitcher/Outfield"),
+        (PITCHER_IF,"Pitcher/Infield"),
         (UTILITY,"Utility"),
         (HITTER,"Hitter")
     )
