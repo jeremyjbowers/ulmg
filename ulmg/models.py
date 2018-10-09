@@ -143,12 +143,15 @@ class Player(BaseModel):
     bbref_url = models.CharField(max_length=255, blank=True, null=True)
     mlb_id = models.CharField(max_length=255, blank=True, null=True)
     mlb_url = models.CharField(max_length=255, blank=True, null=True)
+    ba_url = models.CharField(max_length=255, blank=True, null=True)
+    ba_id = models.CharField(max_length=255, blank=True, null=True)
     owned = models.BooleanField(default=False)
     position = models.CharField(max_length=255, null=True, choices=PLAYER_POSITION_CHOICES)
     birthdate = models.DateField(blank=True, null=True)
     stats = JSONField(blank=True, null=True)
     fg_prospect_fv = models.CharField(max_length=4, blank=True, null=True)
     fg_prospect_rank = models.IntegerField(blank=True, null=True)
+    ba_prospect_rank = models.IntegerField(blank=True, null=True)
 
     class Meta:
         ordering = ["level", "last_name", "first_name", "position"]
