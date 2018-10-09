@@ -11,7 +11,7 @@ from ulmg import models
 class Command(BaseCommand):
 
     def handle(self, *args, **options):
-        for p in models.Player.objects.filter(level__in=["A"]):
+        for p in models.Player.objects.filter(level__isnull=True):
             if p.fangraphs_url and 'playerid=' in p.fangraphs_url:
                 print(p.fangraphs_url, p.name)
                 r = requests.get(p.fangraphs_url)

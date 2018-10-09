@@ -147,6 +147,8 @@ class Player(BaseModel):
     position = models.CharField(max_length=255, null=True, choices=PLAYER_POSITION_CHOICES)
     birthdate = models.DateField(blank=True, null=True)
     stats = JSONField(blank=True, null=True)
+    fg_prospect_fv = models.CharField(max_length=4, blank=True, null=True)
+    fg_prospect_rank = models.IntegerField(blank=True, null=True)
 
     class Meta:
         ordering = ["level", "last_name", "first_name", "position"]
