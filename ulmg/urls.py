@@ -8,7 +8,7 @@ urlpatterns = [
     path('nested_admin/', include('nested_admin.urls')),
     path('admin/', admin.site.urls),
 
-    path('teams/all/', views.all_teams),
+    path('', views.index),
     path('teams/<str:abbreviation>/', views.team_detail),
     # path('', views.index)
 ]

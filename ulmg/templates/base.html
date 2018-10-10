@@ -1,46 +1,18 @@
 <html>
     <head>
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
-        <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-        <style>
-            div.nav-wrapper {
-                padding: 0px 15px;
-            }
-            span.smol {
-                font-size: 11px;
-                font-color: #555;
-            }
-        </style>
     </head>
     <body>
-    <ul id="teams" class="dropdown-content">
-        {% for team in teams %}
-            <li><a href="/teams/{{ team.abbreviation|lower }}">{{ team.abbreviation }}</a></li>
-        {% endfor %}
-    </ul>
-    <nav>
-    <div class="nav-wrapper blue darken-4">
-        <a href="/" class="brand-logo">ULMG</a>
-        <ul class="right hide-on-med-and-down">
-            <li>
-                <a class="dropdown-trigger" href="#!" data-target="teams">Teams
-                    <i class="material-icons right">arrow_drop_down</i>
-                </a>
-            </li>
+        <ul>
+            {% for team in teamnav %}
+                <li><a href="/teams/{{ team.abbreviation|lower }}">{{ team.abbreviation }}</a></li>
+            {% endfor %}
         </ul>
-    </div>
-    </nav>
         <div class="container">
-            {% block content %}{% endblock %}</div>
-        <script
+            {% block content %}{% endblock %}
+        </div>
+        <!-- <script
             src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
             integrity="sha256-3edrmyuQ0w65f8gfBsqowzjJe2iM6n0nKciPUp8y+7E="
-            crossorigin="anonymous"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
-        <script>
-            $(function(){
-                $(".dropdown-trigger").dropdown();
-            });
-        </script>
+            crossorigin="anonymous"></script> -->
     </body>
 </html>

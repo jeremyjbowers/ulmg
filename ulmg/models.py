@@ -1,3 +1,6 @@
+import datetime
+
+from dateutil.relativedelta import *
 from django.contrib.auth.models import User
 from django.db import models
 from django.contrib.postgres.fields import JSONField
@@ -104,9 +107,9 @@ class Player(BaseModel):
     A_LEVEL = "A"
     B_LEVEL = "B"
     PLAYER_LEVEL_CHOICES = (
-        (VETERAN,"Veteran"),
-        (A_LEVEL,"A-Level"),
-        (B_LEVEL,"B-Level"),
+        (VETERAN,"V"),
+        (A_LEVEL,"A"),
+        (B_LEVEL,"B"),
     )
     PITCHER = "P"
     CATCHER = "C"
@@ -128,31 +131,41 @@ class Player(BaseModel):
         (UTILITY,"Utility"),
         (HITTER,"Hitter")
     )
+    # STUFF ABOUT THE PLAYER
     level = models.CharField(max_length=255, null=True, choices=PLAYER_LEVEL_CHOICES)
     name = models.CharField(max_length=255)
     last_name = models.CharField(max_length=255, null=True)
     first_name = models.CharField(max_length=255, null=True)
-    middle_name = models.CharField(max_length=255, null=True, blank=True)
-    suffix = models.CharField(max_length=255, null=True, blank=True)
-    team = models.ForeignKey(Team, on_delete=models.SET_NULL, blank=True, null=True)
-    mlb_team = models.CharField(max_length=255, null=True, blank=True)
-    roster = models.ForeignKey(Roster, on_delete=models.SET_NULL, blank=True, null=True)
-    fangraphs_id = models.CharField(max_length=255, blank=True, null=True)
-    fangraphs_url = models.CharField(max_length=255, blank=True, null=True)
-    bbref_id = models.CharField(max_length=255, blank=True, null=True)
-    bbref_url = models.CharField(max_length=255, blank=True, null=True)
-    mlb_id = models.CharField(max_length=255, blank=True, null=True)
-    mlb_url = models.CharField(max_length=255, blank=True, null=True)
-    ba_url = models.CharField(max_length=255, blank=True, null=True)
-    ba_id = models.CharField(max_length=255, blank=True, null=True)
-    owned = models.BooleanField(default=False)
     position = models.CharField(max_length=255, null=True, choices=PLAYER_POSITION_CHOICES)
     birthdate = models.DateField(blank=True, null=True)
     stats = JSONField(blank=True, null=True)
+
+    # IDENTIFIERS
+    ba_id = models.CharField(max_length=255, blank=True, null=True)
+    bbref_id = models.CharField(max_length=255, blank=True, null=True)
+    fangraphs_id = models.CharField(max_length=255, blank=True, null=True)
+    mlb_id = models.CharField(max_length=255, blank=True, null=True)
+
+    # LINKS TO THE WEB
+    ba_url = models.CharField(max_length=255, blank=True, null=True)
+    bbref_url = models.CharField(max_length=255, blank=True, null=True)
+    fangraphs_url = models.CharField(max_length=255, blank=True, null=True)
+    mlb_url = models.CharField(max_length=255, blank=True, null=True)
+
+    # ULMG-SPECIFIC
+    team = models.ForeignKey(Team, on_delete=models.SET_NULL, blank=True, null=True)
+    roster = models.ForeignKey(Roster, on_delete=models.SET_NULL, blank=True, null=True)
+
+    # PROSPECT STUFF
     fg_prospect_fv = models.CharField(max_length=4, blank=True, null=True)
     fg_prospect_rank = models.IntegerField(blank=True, null=True)
     ba_prospect_rank = models.IntegerField(blank=True, null=True)
     mlb_prospect_rank = models.IntegerField(blank=True, null=True)
+
+    # STATUS AND SUCH
+    is_owned = models.BooleanField(default=False)
+    is_prospect = models.BooleanField(default=False)
+    is_carded = models.BooleanField(default=False)
 
     class Meta:
         ordering = ["level", "last_name", "first_name", "position"]
@@ -161,6 +174,13 @@ class Player(BaseModel):
         if self.get_team():
             return "%s (%s)" % (self.name, self.get_team().abbreviation)
         return self.name
+
+    @property
+    def age(self):
+        if self.birthdate:
+            now = datetime.datetime.utcnow().date()
+            return relativedelta(now, self.birthdate).years
+        return None
 
     def latest_note(self):
         notes = PlayerNote.objects.filter(player=self)
