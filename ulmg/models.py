@@ -152,6 +152,7 @@ class Player(BaseModel):
     fg_prospect_fv = models.CharField(max_length=4, blank=True, null=True)
     fg_prospect_rank = models.IntegerField(blank=True, null=True)
     ba_prospect_rank = models.IntegerField(blank=True, null=True)
+    mlb_prospect_rank = models.IntegerField(blank=True, null=True)
 
     class Meta:
         ordering = ["level", "last_name", "first_name", "position"]
