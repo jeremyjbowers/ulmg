@@ -36,8 +36,8 @@ class Command(BaseCommand):
             except models.Player.MultipleObjectsReturned:
                 multiple.append(player)
 
-        with open('data/does_not_exist.json','w') as writefile:
+        with open('data/errors/import_stats.does_not_exist.json','w') as writefile:
             writefile.write(json.dumps(does_not_exist))
 
-        with open('data/multiple.json', 'w') as writefile:
+        with open('data/errors/import_stats.multiple.json', 'w') as writefile:
             writefile.write(json.dumps(multiple))

@@ -57,5 +57,5 @@ class Command(BaseCommand):
                     except:
                         errors.append(player)
 
-        with open('data/prospect_errors.json', 'w') as writefile:
+        with open('data/errors/import_prospects.errors.json', 'w') as writefile:
             writefile.write(json.dumps(errors))
