@@ -53,7 +53,7 @@
             <div class="content">
                 <ul>
                 {% for p in prospects %}
-                    <li>{{ p }}</li>
+                    <li><a href="{{ p.fangraphs_url }}">{{ p }}</a>, {{ p.position }}</li>
                 {% endfor %}
                 </ul>
             </div>
