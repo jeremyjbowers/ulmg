@@ -4,9 +4,9 @@ from ulmg import models, utils
 
 def index(request):
     context = utils.build_context(request)
-    context['available'] = models.Player.objects.filter(is_owned=False)
-    context['unprotected'] = []
-
+    context['prospects'] = models.Player.objects.filter(is_owned=False, is_prospect=True)
+    context['hitters'] = models.Player.objects.filter(position__in=["IF", "OF", "IF/OF", "C"], is_owned=False, stats__isnull=False).order_by('?')[0:3]
+    context['pitchers'] = models.Player.objects.filter(is_owned=False, position="P", stats__isnull=False).order_by('?')[0:3]
     return render_to_response('index.html', context=context)
 
 def team_detail(request, abbreviation):

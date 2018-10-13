@@ -1,13 +1,65 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="columns">
-    <div class="column">
-        <h1 class="title level-1">Search: All Available</h1>
-        <input type="text"><button>search</button>
-        <h3 class="title level-3"><a href="/players/available/carded/">Browse: Carded</a></h3>
-        <h3 class="title level-3"><a href="/players/available/prospect/">Browse: Non-Carded</a></h3>
+<div class="tile is-ancestor">
+    <div class="tile is-vertical is-8">
+        <div class="tile is-parent">
+        <article class="tile is-child notification is-danger">
+            <p class="title">Search</p>
+            <p class="subtitle">All players</p>
+            <div class="content">
+                <div class="field">
+                    <div class="control">
+                        <input style="width:80%" class="input is-large" type="text"> <a class="button is-large">Search</a>
+                    </div>
+                </div>
+                <p class="subtitle">Random available players</p>
+                <ul>{% for h in hitters %}
+                    <li><a target="_blank" href="{{ h.fangraphs_url }}">{{ h }}</a>, {{ h.position }}: {{ h.stats.avg }} AVG</li>
+                {% endfor %}{% for p in pitchers %}
+                    <li><a target="_blank" href="{{ p.fangraphs_url }}">{{ p }}</a>, P{% if p.stats.ip %}: {{ p.stats.ip }} IP{% endif %}</li>
+                {% endfor %}
+                </ul>
+            </div>
+        </article>
+        </div>
+        <div class="tile">
+        <div class="tile is-parent is-vertical">
+            <article class="tile is-child notification is-primary">
+                <p class="title">Browse</p>
+                <p class="subtitle">Carded players</p>
+            </article>
+            <article class="tile is-child notification is-warning">
+            <p class="title">Browse</p>
+            <p class="subtitle">Non-carded players</p>
+            </article>
+        </div>
+        <div class="tile is-parent">
+            <article class="tile is-child notification is-light">
+            <p class="title">2018 Champion</p>
+            <p class="subtitle">Hopefully not Long Island</p>
+            <figure class="image is-4by3">
+                <img src="http://t3.gstatic.com/images?q=tbn:ANd9GcTilsuEVyO-UCIZDZzcw60w-d1sKS2B7fOKdbp4GN5J-syvzjfa">
+            </figure>
+            </article>
+        </div>
+        </div>
     </div>
-</div>
+    <div class="tile is-parent">
+        <article class="tile is-child notification is-success">
+        <div class="content">
+            <p class="title">Prospects</p>
+            <p class="subtitle">Top available</p>
+            <div class="content">
+                <ul>
+                {% for p in prospects %}
+                    <li>{{ p }}</li>
+                {% endfor %}
+                </ul>
+            </div>
+        </div>
+        </article>
+    </div>
+    </div>
 
 {% endblock %}
