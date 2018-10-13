@@ -176,6 +176,31 @@ class Player(BaseModel):
         return self.name
 
     @property
+    def usage(self):
+        if self.stats:
+            if self.position == "P":
+                if self.stats['gs'] == "0":
+                    if float(self.stats['ip']) > 70:
+                        return "%s innings" % float(self.stats['ip']) * 1.5
+                    else:
+                        return "%s innings" % float(self.stats['ip'])
+                else:
+                    if int(self.stats['g']) > (int(self.stats['gs']) * 1.5):
+                        if float(self.stats['ip']) > 70:
+                            return "%s innings" % (float(self.stats['ip']) * 1.5)
+                        else:
+                            return "%s innings" % self.stats['ip']
+                    else:
+                        return "%s starts" % self.stats['gs']
+            else:
+                if int(self.stats['pa']) > 550:
+                    return "Unlimited"
+                else:
+                    return "%s at-bats" % self.stats['pa']
+        return None
+
+
+    @property
     def age(self):
         if self.birthdate:
             now = datetime.datetime.utcnow().date()

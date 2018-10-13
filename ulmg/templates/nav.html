@@ -1,0 +1,24 @@
+<nav class="navbar" role="navigation" aria-label="main navigation">
+    <div class="navbar-brand">
+        <a class="navbar-item" href="http://theulmg.com/" style="font: 28px Impact,Helvetica,arial,sans-serif;">
+            The ULMG
+        </a>
+        <a class="navbar-item" href="https://ulmg.wordpress.com/constitution/">Constitution</a>
+        <div class="navbar-item has-dropdown is-hoverable">
+            <a class="navbar-link">Teams</a>
+            <div class="navbar-dropdown">
+                {% for team in teamnav %}
+                <a class="navbar-item" href="/teams/{{ team.abbreviation|lower }}">{{ team.abbreviation }}</a>
+                {% endfor %}
+            </div>
+            </div>
+        </div>
+        <div class="navbar-end">
+        <div class="navbar-item">
+            <div class="buttons">
+            <a class="button is-primary" href="http://theulmg.com/admin/">Log in</a>
+            </div>
+        </div>
+        </div>
+    </div>
+</nav>

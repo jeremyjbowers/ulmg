@@ -2,25 +2,59 @@
 
 {% block content %}
 <div>
-    <h1>{{ team.city }}</h1>
+    <h1 class="title is-1">{{ team.city }}</h1>
     <div>
-        <h3>{{ players|length }} owned players</h3>
-        <table>
+        <h2 class="subtitle">{{ unprotected|length }} unprotected players</h2>
+        <table class="table">
             <thead>
                 <th>Name</th>
-                <th></th>
-                <th></th>
+                <th>Age</th>
                 <th>Position</th>
+                <th>Usage</th>
                 <th>Level</th>
             </thead>
             <tbody>
-                {% for p in players %}
+                {% for p in unprotected %}
                 <tr>
-                    <td>{{ p.name }}</td>
-                    <td><a href="{{ p.bbref_url }}">BBref</a></td>
-                    <td><a href="{{ p.fangraphs_url }}">FG</a></td>
+                    <td>{{ p.name }} <br/>
+                        <span class="outlinks">
+                            <a href="{{ p.bbref_url }}">BaseballRef &Gt;</a>
+                            <a href="{{ p.fangraphs_url }}">FanGraphs &Gt;</a>
+                        </span>
+                    </td>
+                    <td>{{ p.age }}</td>
                     <td>{{ p.position }}</td>
+                    <td>{{ p.usage|default_if_none:"-"|safe }}</td>
                     <td>{{ p.level }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div>
+        <h2 class="subtitle">{{ protected|length }} protected players</h2>
+        <table class="table">
+            <thead>
+                <th>Name</th>
+                <th>Position</th>
+                <th>Age</th>
+                <th>MLB rank</th>
+                <th>BA rank</th>
+            </thead>
+            <tbody>
+                {% for p in protected %}
+                <tr>
+                    <td>{{ p.name }} <br/>
+                        <span class="outlinks">
+                            <a href="{{ p.bbref_url }}">BaseballRef &Gt;</a>
+                            <a href="{{ p.fangraphs_url }}">FanGraphs &Gt;</a>
+                        </span>
+                    </td>
+                    <td>{{ p.age }}</td>
+                    <td>{{ p.position }}</td>
+                    <td>{{ p.mlb_prospect_rank|default_if_none:"-" }}</td>
+                    <td>{{ p.ba_prospect_rank|default_if_none:"-" }}</td>
                 </tr>
                 {% endfor %}
             </tbody>

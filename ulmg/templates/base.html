@@ -1,12 +1,15 @@
 <html>
     <head>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.2/css/bulma.min.css">
+        <style type="text/css">
+            span.outlinks a {
+                font-size:12px;
+            }
+        </style>
     </head>
     <body>
-        <ul>
-            {% for team in teamnav %}
-                <li><a href="/teams/{{ team.abbreviation|lower }}">{{ team.abbreviation }}</a></li>
-            {% endfor %}
-        </ul>
+        {% include "nav.html" %}
+
         <div class="container">
             {% block content %}{% endblock %}
         </div>
