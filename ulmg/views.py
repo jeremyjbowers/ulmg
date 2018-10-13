@@ -12,5 +12,6 @@ def team_detail(request, abbreviation):
     context['team'] = get_object_or_404(models.Team, abbreviation__icontains=abbreviation)
     context['protected'] = models.Player.objects.filter(team=context['team'], level="B").order_by("position", "last_name")
     context['unprotected'] = models.Player.objects.filter(team=context['team'], level__in=["A", "V"]).order_by("position","-level", "last_name")
+    context['num_rostered'] = models.Player.objects.filter(team=context['team'], is_rostered=True).count()
 
     return render_to_response('team_detail.html', context=context)

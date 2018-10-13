@@ -1,10 +1,10 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div>
     <h1 class="title is-1">{{ team.city }}</h1>
-    <div>
-        <h2 class="subtitle">{{ unprotected|length }} unprotected players</h2>
+    <div class="columns">
+    <div class="column">
+        <h2 class="subtitle">{{ unprotected|length }} eligible players (V or A), {{ num_rostered }} rostered</h2>
         <table class="table">
             <thead>
                 <th>Name</th>
@@ -12,6 +12,7 @@
                 <th>Position</th>
                 <th>Usage</th>
                 <th>Level</th>
+                <th>Roster?</th>
             </thead>
             <tbody>
                 {% for p in unprotected %}
@@ -26,14 +27,20 @@
                     <td>{{ p.position }}</td>
                     <td>{{ p.usage|default_if_none:"-"|safe }}</td>
                     <td>{{ p.level }}</td>
+                    <td>{% if p.is_rostered %}
+                        <a class="button">Remove</a>
+                        {% else %}
+                        <a class="button">Add</a>
+                        {% endif %}
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
 
-    <div>
-        <h2 class="subtitle">{{ protected|length }} protected players</h2>
+    <div class="column">
+        <h2 class="subtitle">{{ protected|length }} protected players (B)</h2>
         <table class="table">
             <thead>
                 <th>Name</th>

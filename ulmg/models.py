@@ -166,6 +166,7 @@ class Player(BaseModel):
     is_owned = models.BooleanField(default=False)
     is_prospect = models.BooleanField(default=False)
     is_carded = models.BooleanField(default=False)
+    is_rostered = models.BooleanField(default=False)
 
     class Meta:
         ordering = ["level", "last_name", "first_name", "position"]
