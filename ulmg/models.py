@@ -181,13 +181,13 @@ class Player(BaseModel):
             if self.position == "P":
                 if self.stats['gs'] == "0":
                     if float(self.stats['ip']) > 70:
-                        return "%s innings" % (float(self.stats['ip']) * 1.5)
+                        return "%s innings" % round((float(self.stats['ip']) * 1.5), 1)
                     else:
-                        return "%s innings" % float(self.stats['ip'])
+                        return "%s innings" % round(float(self.stats['ip']), 1)
                 else:
                     if int(self.stats['g']) > (int(self.stats['gs']) * 1.5):
                         if float(self.stats['ip']) > 70:
-                            return "%s innings" % (float(self.stats['ip']) * 1.5)
+                            return "%s innings" % round((float(self.stats['ip']) * 1.5), 1)
                         else:
                             return "%s innings" % self.stats['ip']
                     else:
