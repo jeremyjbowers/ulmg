@@ -4,6 +4,8 @@ from ulmg import models, utils
 
 def index(request):
     context = utils.build_context(request)
+    context['available'] = models.Player.objects.filter(is_owned=False)
+    context['unprotected'] = []
 
     return render_to_response('index.html', context=context)
 

@@ -1,10 +1,13 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1>search players</h1>
-<input type="text"><button>search</button>
-
-<h1>top available prospects</h1>
-
+<div class="columns">
+    <div class="column">
+        <h1 class="title level-1">Search: All Available</h1>
+        <input type="text"><button>search</button>
+        <h3 class="title level-3"><a href="/players/available/carded/">Browse: Carded</a></h3>
+        <h3 class="title level-3"><a href="/players/available/prospect/">Browse: Non-Carded</a></h3>
+    </div>
+</div>
 
 {% endblock %}

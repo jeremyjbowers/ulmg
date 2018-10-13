@@ -180,24 +180,26 @@ class Player(BaseModel):
     def usage(self):
         if self.stats:
             if self.position == "P":
-                if self.stats['gs'] == "0":
+                if self.stats.get('gs', None) == "0":
                     if float(self.stats['ip']) > 70:
-                        return "%s innings" % round((float(self.stats['ip']) * 1.5), 1)
+                        return "%s IP" % round((float(self.stats['ip']) * 1.5), 1)
                     else:
-                        return "%s innings" % round(float(self.stats['ip']), 1)
-                else:
+                        return "%s IP" % round(float(self.stats['ip']), 1)
+                elif self.stats.get('gs', None):
                     if int(self.stats['g']) > (int(self.stats['gs']) * 1.5):
                         if float(self.stats['ip']) > 70:
-                            return "%s innings" % round((float(self.stats['ip']) * 1.5), 1)
+                            return "%s IP" % round((float(self.stats['ip']) * 1.5), 1)
                         else:
-                            return "%s innings" % self.stats['ip']
+                            return "%s IP" % self.stats['ip']
                     else:
-                        return "%s starts" % self.stats['gs']
+                        return "%s ST" % self.stats['gs']
+                else:
+                    return "%s IP" % self.stats['ip']
             else:
                 if int(self.stats['pa']) > 550:
                     return "Unlimited"
                 else:
-                    return "%s at-bats" % self.stats['pa']
+                    return "%s PA" % self.stats['pa']
         return None
 
 
