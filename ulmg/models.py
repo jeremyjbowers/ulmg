@@ -115,11 +115,9 @@ class Player(BaseModel):
     CATCHER = "C"
     INFIELD = "IF"
     OUTFIELD = "OF"
-    INFIELD_OUTFIELD = "IF/OF"
-    PITCHER_OF = "OF/P"
-    PITCHER_IF = "IF/P"
-    UTILITY = "UT"
-    HITTER = "DH"
+    INFIELD_OUTFIELD = "IF-OF"
+    PITCHER_OF = "OF-P"
+    PITCHER_IF = "IF-P"
     PLAYER_POSITION_CHOICES = (
         (PITCHER,"Pitcher"),
         (CATCHER,"Catcher"),
@@ -128,8 +126,6 @@ class Player(BaseModel):
         (INFIELD_OUTFIELD,"Infield/Outfield"),
         (PITCHER_OF,"Pitcher/Outfield"),
         (PITCHER_IF,"Pitcher/Infield"),
-        (UTILITY,"Utility"),
-        (HITTER,"Hitter")
     )
     # STUFF ABOUT THE PLAYER
     level = models.CharField(max_length=255, null=True, choices=PLAYER_LEVEL_CHOICES)

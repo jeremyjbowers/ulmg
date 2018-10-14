@@ -1,6 +1,36 @@
 {% extends "base.html" %}
 
 {% block content %}
+<style type="text/css" media="screen">
+    ul.charts {
+      margin: 0;
+      padding: 0;
+    }
+    ul.charts li {
+      font-size: 18px;
+      line-height: 28px;
+      margin: 0;
+      padding: 0;
+      list-style-type: none;
+      border-bottom: 1px solid #fff;
+    }
+   ul.charts li span {
+      background-color: #a9d2f2;
+      display: block;
+      color: #125a95;
+      font-weight: bold;
+      padding: 0 0 0 5px;
+      white-space: nowrap;
+    }
+    ul.charts li span:hover {
+      background-color: #ccc;
+      display: block;
+      color: #333;
+      font-weight: bold;
+      padding: 0 0 0 5px;
+      white-space: nowrap;
+    }
+</style>
 <div class="tile is-ancestor">
     <div class="tile is-vertical is-8">
         <div class="tile is-parent">
@@ -35,7 +65,7 @@
                     </div>
                     <div class="column">
                             <p class="subtitle level-3">5 random available pitchers</p>
-                            <table class="table is-dark">
+                            <table class="table">
                                 <tr>
                                     <th>name</th>
                                     <th>ip</th>
@@ -58,13 +88,17 @@
         </div>
         <div class="tile">
         <div class="tile is-parent is-vertical">
-            <article class="tile is-child notification is-light">
-                <p class="title">Browse</p>
-                <p class="subtitle">Carded players</p>
+            <article class="tile is-child notification is-white">
+                <p class="title">Browse carded players</p>
+                <ul class="charts">{% for pos in carded_positions|slice:"5" %}
+                    <li><a href="/players/carded/?position={{ pos.position }}"><span style="width: {% widthratio pos.position__count carded 700 %}px">{{ pos.position }} ({{ pos.position__count }})</span></a></li>
+                {% endfor %}</ul>
             </article>
-            <article class="tile is-child notification is-light">
-            <p class="title">Browse</p>
-            <p class="subtitle">Non-carded players</p>
+            <article class="tile is-child notification is-white">
+                <p class="title">Uncarded players</p>
+                <ul class="charts">{% for pos in uncarded_positions %}
+                <li><a href="/players/uncarded/?position={{ pos.position }}"><span style="width: {% widthratio pos.position__count uncarded 700 %}px">{{ pos.position }} ({{ pos.position__count }})</span></a></li>
+            {% endfor %}</ul>
             </article>
         </div>
         <div class="tile is-parent">
@@ -79,16 +113,30 @@
         </div>
     </div>
     <div class="tile is-parent">
-        <article class="tile is-child notification is-light">
+        <article class="tile is-child notification is-white">
         <div class="content">
             <p class="title">Prospects</p>
             <p class="subtitle">Top available</p>
             <div class="content">
-                <ul>
-                {% for p in prospects %}
-                    <li><a href="{{ p.fangraphs_url }}">{{ p }}</a>, {{ p.position }}</li>
+                <table class="table">
+                    <tr>
+                        <th>name</th>
+                        <th>pos</th>
+                        <th>ba</th>
+                        <th>fg</th>
+                        <th>mlb</th>
+                    </tr>
+                    {% for p in prospects %}
+                    <tr>
+                        <td><a href="{{ p.fangraphs_url }}">{{ p }}</a></td>
+                        <td>{{ p.position }}</td>
+                        <td>{{ p.ba_prospect_rank|default_if_none:"-"}}</td>
+                        <td>{{ p.fg_prospect_rank|default_if_none:"-" }}</td>
+                        <td>{{ p.mlb_prospect_rank|default_if_none:"-" }}</td>
+                    </tr>
                 {% endfor %}
-                </ul>
+                </table>
+
             </div>
         </div>
         </article>
