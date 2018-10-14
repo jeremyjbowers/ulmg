@@ -4,7 +4,7 @@
 <div class="tile is-ancestor">
     <div class="tile is-vertical is-8">
         <div class="tile is-parent">
-        <article class="tile is-child notification is-danger">
+        <article class="tile is-child notification is-white">
             <p class="title">Search</p>
             <p class="subtitle">All players</p>
             <div class="content">
@@ -13,23 +13,56 @@
                         <input style="width:80%" class="input is-large" type="text"> <a class="button is-large">Search</a>
                     </div>
                 </div>
-                <p class="subtitle">Random available players</p>
-                <ul>{% for h in hitters %}
-                    <li><a target="_blank" href="{{ h.fangraphs_url }}">{{ h }}</a>, {{ h.position }}: {{ h.stats.avg }} AVG</li>
-                {% endfor %}{% for p in pitchers %}
-                    <li><a target="_blank" href="{{ p.fangraphs_url }}">{{ p }}</a>, P{% if p.stats.ip %}: {{ p.stats.ip }} IP{% endif %}</li>
-                {% endfor %}
-                </ul>
+                <div class="columns">
+                    <div class="column">
+                        <p class="subtitle level-3">5 random available hitters</p>
+                        <table class="table is-dark">
+                            <tr>
+                                <th>name</th>
+                                <th>pos</th>
+                                <th>pa</th>
+                                <th>avg/obp/slg</th>
+                            </tr>
+                            {% for h in hitters %}
+                            <tr>
+                                <td><a target="_blank" href="{{ h.fangraphs_url }}">{{ h }}</a></td>
+                                <td>{{ h.position }}</td>
+                                <td>{{ h.stats.pa }}</td>
+                                <td>{{ h.stats.avg }}/{{ h.stats.obp }}/{{ h.stats.slg }}</td>
+                            </tr>
+                            {% endfor %}
+                        </table>
+                    </div>
+                    <div class="column">
+                            <p class="subtitle level-3">5 random available pitchers</p>
+                            <table class="table is-dark">
+                                <tr>
+                                    <th>name</th>
+                                    <th>ip</th>
+                                    <th>gs</th>
+                                    <th>era</th>
+                                </tr>
+                                {% for p in pitchers %}
+                                <tr>
+                                    <td><a target="_blank" href="{{ p.fangraphs_url }}">{{ p }}</a></td>
+                                    <td>{{ p.stats.ip }}</td>
+                                    <td>{{ p.stats.gs }}</td>
+                                    <td>{{ p.stats.era }}</td>
+                                </tr>
+                                {% endfor %}
+                            </table>
+                        </div>
+                </div>
             </div>
         </article>
         </div>
         <div class="tile">
         <div class="tile is-parent is-vertical">
-            <article class="tile is-child notification is-primary">
+            <article class="tile is-child notification is-light">
                 <p class="title">Browse</p>
                 <p class="subtitle">Carded players</p>
             </article>
-            <article class="tile is-child notification is-warning">
+            <article class="tile is-child notification is-light">
             <p class="title">Browse</p>
             <p class="subtitle">Non-carded players</p>
             </article>
@@ -46,7 +79,7 @@
         </div>
     </div>
     <div class="tile is-parent">
-        <article class="tile is-child notification is-success">
+        <article class="tile is-child notification is-light">
         <div class="content">
             <p class="title">Prospects</p>
             <p class="subtitle">Top available</p>
