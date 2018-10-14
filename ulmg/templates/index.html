@@ -49,7 +49,7 @@
                                 <th>pa</th>
                                 <th>avg/obp/slg</th>
                             </tr>
-                            {% for h in hitters %}
+                            {% for h in rand_hit %}
                             <tr>
                                 <td><a target="_blank" href="{{ h.fangraphs_url }}">{{ h }}</a></td>
                                 <td>{{ h.position }}</td>
@@ -68,7 +68,7 @@
                                     <th>gs</th>
                                     <th>era</th>
                                 </tr>
-                                {% for p in pitchers %}
+                                {% for p in rand_pitch %}
                                 <tr>
                                     <td><a target="_blank" href="{{ p.fangraphs_url }}">{{ p }}</a></td>
                                     <td>{{ p.stats.ip }}</td>
