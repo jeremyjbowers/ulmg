@@ -1,0 +1,56 @@
+<form action="/players/search/">
+    <div class="field">
+        <div class="control">
+            <input style="width: 60%;" name="name" class="input is-large" type="text" placeholder="Search by name; blank returns all players" {% if name %}value="{{ name }}"{% endif %}>
+            <input type="submit" class="button is-large is-dark"></button>
+        </div>
+    </div>
+    <div class="field">
+        <div class="control">
+            <div style=""class="columns">
+                <div class="column">
+                    <label class="checkbox">
+                    <input name="owned" type="checkbox"{% if owned %} checked{% endif %}>
+                    Owned?
+                    </label>
+                </div>
+                <div class="column">
+                    <label class="checkbox">
+                    <input name="prospect" type="checkbox"{% if prospect %} checked{% endif %}>
+                    Prospect?
+                    </label>
+                </div>
+                <div class="column">
+                    <label class="checkbox">
+                    <input name="carded" type="checkbox"{% if carded %} checked{% endif %}>
+                    Carded?
+                    </label>
+                </div>
+                <div class="column">
+                    <div class="select">
+                        <select name="position">
+                            <option>Position</option>
+                            <option value="P"{% if position == "P" %} selected{% endif %}>P</option>
+                            <option value="IF"{% if position == "C" %} selected{% endif %}>C</option>
+                            <option value="IF"{% if position == "IF" %} selected{% endif %}>IF</option>
+                            <option value="IF-OF"{% if position == "IF-OF" %} selected{% endif %}>IF-OF</option>
+                            <option value="OF"{% if position == "OF" %} selected{% endif %}>OF</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="column">
+                    <div class="select">
+                        <select name="level">
+                            <option>Level</option>
+                            <option value="V"{% if level == "V" %} selected{% endif %}>V</option>
+                            <option value="A"{% if level == "A" %} selected{% endif %}>A</option>
+                            <option value="B"{% if level == "B" %} selected{% endif %}>B</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="column"></div>
+                <div class="column"></div>
+            </div>
+        </div>
+    </div>
+</form>

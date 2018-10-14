@@ -1,0 +1,15 @@
+<nav class="pagination is-rounded" role="navigation" aria-label="pagination">
+    <ul class="pagination-list">
+        {% if players.has_previous %}
+        <li><a class="pagination-link" aria-label="Goto page 1" href="?page=1">&laquo; first</a></li>
+        <li><span class="pagination-ellipsis">&hellip;</span></li>
+        <li><a class="pagination-previous" href="?page={{ players.previous_page_number }}">previous</a></li>
+        {% endif %}
+        <li><a class="pagination-link is-current" aria-label="Page {{ players.number }}" aria-current="page">page {{ players.number }} of {{ players.paginator.num_pages }}</a></li>
+        {% if players.has_next %}
+        <li><a class="pagination-next" href="?page={{ players.next_page_number }}">next</a></li>
+        <li><span class="pagination-ellipsis">&hellip;</span></li>
+        <li><a class="pagination-link" href="?page={{ players.paginator.num_pages }}">last &raquo;</a></li>
+        {% endif %}
+    </ul>
+</nav>

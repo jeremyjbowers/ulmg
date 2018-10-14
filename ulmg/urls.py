@@ -7,8 +7,7 @@ from ulmg import views
 urlpatterns = [
     path('nested_admin/', include('nested_admin.urls')),
     path('admin/', admin.site.urls),
-
-    path('', views.index),
     path('teams/<str:abbreviation>/', views.team_detail),
-    # path('', views.index)
+    path('players/search/', views.search),
+    path('', views.index),
 ]

@@ -38,11 +38,7 @@
             <p class="title">Search</p>
             <p class="subtitle">All players</p>
             <div class="content">
-                <div class="field">
-                    <div class="control">
-                        <input style="width:80%" class="input is-large" type="text"> <a class="button is-large">Search</a>
-                    </div>
-                </div>
+                {% include "includes/search_bar.html" %}
                 <div class="columns">
                     <div class="column">
                         <p class="subtitle level-3">5 random available hitters</p>
@@ -91,13 +87,13 @@
             <article class="tile is-child notification is-white">
                 <p class="title">Browse carded players</p>
                 <ul class="charts">{% for pos in carded_positions|slice:"5" %}
-                    <li><a href="/players/carded/?position={{ pos.position }}"><span style="width: {% widthratio pos.position__count carded 700 %}px">{{ pos.position }} ({{ pos.position__count }})</span></a></li>
+                    <li><a href="/players/search/?carded=true&position={{ pos.position }}"><span style="width: {% widthratio pos.position__count carded 700 %}px">{{ pos.position }} ({{ pos.position__count }})</span></a></li>
                 {% endfor %}</ul>
             </article>
             <article class="tile is-child notification is-white">
                 <p class="title">Browse uncarded players</p>
                 <ul class="charts">{% for pos in uncarded_positions %}
-                <li><a href="/players/uncarded/?position={{ pos.position }}"><span style="width: {% widthratio pos.position__count uncarded 700 %}px">{{ pos.position }} ({{ pos.position__count }})</span></a></li>
+                <li><a href="/players/search/?carded=false&position={{ pos.position }}"><span style="width: {% widthratio pos.position__count uncarded 700 %}px">{{ pos.position }} ({{ pos.position__count }})</span></a></li>
             {% endfor %}</ul>
             </article>
         </div>
