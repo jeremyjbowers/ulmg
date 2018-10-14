@@ -95,7 +95,7 @@
                 {% endfor %}</ul>
             </article>
             <article class="tile is-child notification is-white">
-                <p class="title">Uncarded players</p>
+                <p class="title">Browse uncarded players</p>
                 <ul class="charts">{% for pos in uncarded_positions %}
                 <li><a href="/players/uncarded/?position={{ pos.position }}"><span style="width: {% widthratio pos.position__count uncarded 700 %}px">{{ pos.position }} ({{ pos.position__count }})</span></a></li>
             {% endfor %}</ul>
