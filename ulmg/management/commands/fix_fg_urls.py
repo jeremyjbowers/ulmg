@@ -1,7 +1,3 @@
-import csv
-
-from dateutil.parser import *
-
 from django.core.management.base import BaseCommand, CommandError
 from ulmg import models
 
