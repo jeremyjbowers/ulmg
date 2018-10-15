@@ -51,7 +51,7 @@
                             </tr>
                             {% for h in rand_hit %}
                             <tr>
-                                <td><a target="_blank" href="{{ h.fangraphs_url }}">{{ h }}</a></td>
+                                <td><a target="_blank" href="{{ h.bbref_url }}">{{ h }}</a></td>
                                 <td>{{ h.position }}</td>
                                 <td>{{ h.stats.pa }}</td>
                                 <td>{{ h.stats.avg }}/{{ h.stats.obp }}/{{ h.stats.slg }}</td>
@@ -70,7 +70,7 @@
                                 </tr>
                                 {% for p in rand_pitch %}
                                 <tr>
-                                    <td><a target="_blank" href="{{ p.fangraphs_url }}">{{ p }}</a></td>
+                                    <td><a target="_blank" href="{{ p.bbref_url }}">{{ p }}</a></td>
                                     <td>{{ p.stats.ip }}</td>
                                     <td>{{ p.stats.gs }}</td>
                                     <td>{{ p.stats.era }}</td>
@@ -123,7 +123,7 @@
                     </tr>
                     {% for p in prospects %}
                     <tr>
-                        <td><a href="{{ p.fangraphs_url }}">{{ p }}</a></td>
+                        <td><a href="{{ p.bbref_url }}">{{ p }}</a></td>
                         <td>{{ p.position }}</td>
                         <td>{{ p.ba_prospect_rank|default_if_none:"-"}}</td>
                         <td>{{ p.mlb_prospect_rank|default_if_none:"-" }}</td>
