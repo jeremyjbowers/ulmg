@@ -5,16 +5,16 @@
     <div class="columns">
     <div class="column">
         <h2 class="subtitle">{{ unprotected|length }} eligible players (V or A), {{ num_rostered }} rostered</h2>
-        <table class="table">
+        <table class="table" data-sortable>
             <thead>
-                <th style="text-align:center">Name</th>
-                <th style="text-align:center">Age</th>
-                <th style="text-align:center">Position</th>
-                <th style="text-align:center">Carded?</th>
-                <th style="text-align:center">Usage</th>
-                <th style="text-align:center">Level</th>
-                <th style="text-align:center">Roster?</th>
-                <th style="text-align:center">Drop?</th>
+                <th>Name</th>
+                <th>Age</th>
+                <th>Position</th>
+                <th>Carded?</th>
+                <th>Usage</th>
+                <th>Level</th>
+                <th>Roster?</th>
+                <th>Drop?</th>
             </thead>
             <tbody>
                 {% for p in unprotected %}
@@ -46,17 +46,17 @@
         </table>
 
         <h2 class="subtitle">{{ protected|length }} protected players (B)</h2>
-        <table class="table">
+        <table class="table" data-sortable>
             <thead>
-                <th style="text-align:center">Name</th>
-                <th style="text-align:center">Age</th>
-                <th style="text-align:center">Position</th>
-                <th style="text-align:center">Carded?</th>
-                <th style="text-align:center">Usage</th>
-                <th style="text-align:center">MLB rank</th>
-                <th style="text-align:center">BA rank</th>
-                <th style="text-align:center">Roster?</th>
-                <th style="text-align:center">Drop?</th>
+                <th>Name</th>
+                <th>Age</th>
+                <th>Position</th>
+                <th>Carded?</th>
+                <th>Usage</th>
+                <th>MLB rank</th>
+                <th>BA rank</th>
+                <th>Roster?</th>
+                <th>Drop?</th>
             </thead>
             <tbody>
                 {% for p in protected %}
