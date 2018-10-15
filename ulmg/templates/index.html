@@ -49,12 +49,12 @@
                                 <th>pa</th>
                                 <th>avg/obp/slg</th>
                             </tr>
-                            {% for h in rand_hit %}
+                            {% for p in rand_hit %}
                             <tr>
-                                <td><a target="_blank" href="{{ h.bbref_url }}">{{ h }}</a></td>
-                                <td>{{ h.position }}</td>
-                                <td>{{ h.stats.pa }}</td>
-                                <td>{{ h.stats.avg }}/{{ h.stats.obp }}/{{ h.stats.slg }}</td>
+                                <td>{% if p.bbref_url %}<a target="_blank" href="{{ p.bbref_url }}">{{ p }}</a>{% else %}{{ p }}{% endif %}</td>
+                                <td>{{ p.position }}</td>
+                                <td>{{ p.stats.pa }}</td>
+                                <td>{{ p.stats.avg }}/{{ p.stats.obp }}/{{ p.stats.slg }}</td>
                             </tr>
                             {% endfor %}
                         </table>
@@ -70,7 +70,7 @@
                                 </tr>
                                 {% for p in rand_pitch %}
                                 <tr>
-                                    <td><a target="_blank" href="{{ p.bbref_url }}">{{ p }}</a></td>
+                                    <td>{% if p.bbref_url %}<a target="_blank" href="{{ p.bbref_url }}">{{ p }}</a>{% else %}{{ p }}{% endif %}</td>
                                     <td>{{ p.stats.ip }}</td>
                                     <td>{{ p.stats.gs }}</td>
                                     <td>{{ p.stats.era }}</td>
@@ -123,7 +123,7 @@
                     </tr>
                     {% for p in prospects %}
                     <tr>
-                        <td><a href="{{ p.bbref_url }}">{{ p }}</a></td>
+                        <td>{% if p.bbref_url %}<a href="{{ p.bbref_url }}">{{ p }}</a>{% else %}{{ p }}{% endif %}</td>
                         <td>{{ p.position }}</td>
                         <td>{{ p.ba_prospect_rank|default_if_none:"-"}}</td>
                         <td>{{ p.mlb_prospect_rank|default_if_none:"-" }}</td>
