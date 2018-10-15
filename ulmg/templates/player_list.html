@@ -16,7 +16,7 @@
 
 {% if players.paginator.count > 99 %}{% include "includes/pagination.html" %}{% endif %}
 
-<table class="table">
+<table class="table" data-sortable>
     <tr>
         <th>name</th>
         <th>age</th>
