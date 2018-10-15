@@ -114,12 +114,11 @@
             <p class="title">Prospects</p>
             <p class="subtitle">Top available</p>
             <div class="content">
-                <table class="table" data-sortable>
+                <table class="table">
                     <tr>
                         <th>name</th>
                         <th>pos</th>
                         <th>ba</th>
-                        <th>fg</th>
                         <th>mlb</th>
                     </tr>
                     {% for p in prospects %}
@@ -127,7 +126,6 @@
                         <td><a href="{{ p.fangraphs_url }}">{{ p }}</a></td>
                         <td>{{ p.position }}</td>
                         <td>{{ p.ba_prospect_rank|default_if_none:"-"}}</td>
-                        <td>{{ p.fg_prospect_rank|default_if_none:"-" }}</td>
                         <td>{{ p.mlb_prospect_rank|default_if_none:"-" }}</td>
                     </tr>
                 {% endfor %}
