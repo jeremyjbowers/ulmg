@@ -165,7 +165,7 @@ class Player(BaseModel):
     is_rostered = models.BooleanField(default=False)
 
     class Meta:
-        ordering = ["level", "last_name", "first_name", "position"]
+        ordering = ["last_name", "first_name", "level", "position"]
 
     def __unicode__(self):
         if self.get_team():
