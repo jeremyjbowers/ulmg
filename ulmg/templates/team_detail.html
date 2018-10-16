@@ -1,9 +1,8 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<h1 class="title is-1 has-text-weight-bold">{{ team.city }} <span class="has-text-info">{{ team.nickname }}</span></h1>
+<h1 class="title is-1 has-text-weight-bold">{{ team.city }} <span class="has-text-info">{{ team.nickname }}</span> <span class="has-text-grey-light title is-5 has-text-weight-demibold">{{ team.division }} division</span></h1>
 <h1 class="title is-3 has-text-weight-demibold">{% if team.owner %}<a href="mailto:{{ team.email }}" >{{ team.owner }}</a>{% else %}&mdash;{% endif %}</h1>
-<h1 class="title is-5 has-text-weight-demibold">{{ team.division }} division</h1>
 <hr />
 
 <div class="columns">
