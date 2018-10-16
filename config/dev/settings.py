@@ -18,6 +18,7 @@ INSTALLED_APPS = [
     'django.contrib.humanize',
     'django.contrib.staticfiles',
     'nested_admin',
+    'reversion',
     'ulmg',
 ]
 

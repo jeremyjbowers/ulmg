@@ -1,50 +1,28 @@
 from django.contrib import admin
 import nested_admin
+from reversion.admin import VersionAdmin
 
-from .models import Owner, Team, Roster, Player, PlayerNote, PlayerPositionYearRating
+from ulmg.models import Owner, Team, Player, PlayerNote
 
-class PlayerPositionYearRatingInline(nested_admin.NestedTabularInline):
-    model = PlayerPositionYearRating
-    fields = ["year", "rating", "position"]
-    extra = 0
-
-class PlayerInline(nested_admin.NestedTabularInline):
-    model = Player
-    fields = ["name"]
-    readonly_fields = fields
-    extra = 0
-
-class PlayerNoteInline(nested_admin.NestedTabularInline):
+class PlayerNoteInline(admin.TabularInline):
     model = PlayerNote
     fields = ["note"]
     extra = 0
 
-class RosterInline(nested_admin.NestedTabularInline):
-    model = Roster
-    inlines = [
-        PlayerInline
-    ]
-    fields = ["level"]
-    extra = 0
-
 @admin.register(Owner)
-class OwnerAdmin(nested_admin.NestedModelAdmin):
+class OwnerAdmin(VersionAdmin):
     model = Owner
 
 @admin.register(Team)
-class TeamAdmin(nested_admin.NestedModelAdmin):
+class TeamAdmin(VersionAdmin):
     model = Team
-    inlines = [
-        RosterInline
-    ]
     list_display = ["city", "mascot", "abbreviation"]
 
 @admin.register(Player)
-class PlayerAdmin(nested_admin.NestedModelAdmin):
+class PlayerAdmin(VersionAdmin):
     model = Player
     inlines = [
         PlayerNoteInline,
-        PlayerPositionYearRatingInline
     ]
     readonly_fields = ["name", "is_owned", "is_prospect", "age"]
     list_display = ["name", "age", "is_owned", "is_prospect", "is_carded", "team", "level", "position", 'fg_prospect_rank', 'ba_prospect_rank', 'mlb_prospect_rank']
