@@ -49,7 +49,7 @@ class Team(BaseModel):
     """
     owner = models.ForeignKey(Owner, on_delete=models.SET_NULL, blank=True, null=True)
     city = models.CharField(max_length=255)
-    mascot = models.CharField(max_length=255)
+    nickname = models.CharField(max_length=255)
     field = models.CharField(max_length=255, blank=True, null=True)
     abbreviation = models.CharField(max_length=3)
 

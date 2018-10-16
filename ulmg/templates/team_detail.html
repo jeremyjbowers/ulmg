@@ -1,11 +1,46 @@
 {% extends 'base.html' %}
 
 {% block content %}
-    <h1 class="title is-1">{{ team.city }}</h1>
-    <div class="columns">
+<h1 class="title is-1 has-text-weight-bold">{{ team.city }} <span class="has-text-info">{{ team.nickname }}</span></h1>
+
+<hr />
+
+<div class="columns">
     <div class="column">
-        <h2 class="subtitle">{{ unprotected|length }} eligible players (V or A), {{ num_rostered }} rostered</h2>
-        <table class="table" data-sortable>
+        <nav class="level">
+            <div class="level-item has-text-centered">
+                <div>
+                  <p class="heading">Total players</p>
+                  <p class="title">{{ num_owned }}</p>
+                </div>
+              </div>
+            <div class="level-item has-text-centered">
+              <div>
+                <p class="heading">Unprotected</p>
+                <p class="title">{{ unprotected|length }}</p>
+              </div>
+            </div>
+            <div class="level-item has-text-centered">
+              <div>
+                <p class="heading">On active roster</p>
+                <p class="title">{{ num_rostered }}</p>
+              </div>
+            </div>
+            {% for p in by_level %}
+            <div class="level-item has-text-centered">
+              <div>
+                <p class="heading">{{ p.level }}-level</p>
+                <p class="title">{{ p.level__count }}</p>
+              </div>
+            </div>
+            {% endfor %}
+          </nav>
+
+<hr />
+
+        <h1 class="title is-5">Draft-eligible players <span class="has-text-grey has-text-weight-light">(levels V or A)</span></h1>
+        <a href="#usage">A note on usage</a>
+        <table class="table is-fullwidth is-hoverable" data-sortable>
             <thead>
                 <th>Name</th>
                 <th>Age</th>
@@ -13,31 +48,29 @@
                 <th>Carded?</th>
                 <th>Usage</th>
                 <th>Level</th>
-                <th>Roster?</th>
-                <th>Drop?</th>
+                <th>Active?</th>
+                <th>Release?</th>
             </thead>
             <tbody>
                 {% for p in unprotected %}
                 <tr>
-                    <td>{{ p.name }} <br/>
-                        <span class="outlinks">
-                            <a target="_blank" href="{{ p.bbref_url }}">BaseballRef &Gt;</a>
-                            <a target="_blank" href="{{ p.fangraphs_url }}">FanGraphs &Gt;</a>
-                        </span>
+                    <td><span class="has-text-weight-semibold">{{ p.name }}</span> <a href="/admin/ulmg/player/{{ p.id }}/change/"><span class="has-text-weight-light is-size-6">edit &ggg;</span></a><br/>
+                        <a class="has-text-weight-light is-size-6" target="_blank" href="{{ p.bbref_url }}">BaseballRef &Gt;</a>
+                        <a class="has-text-weight-light is-size-6" target="_blank" href="{{ p.fangraphs_url }}">FanGraphs &Gt;</a>
                     </td>
-                    <td style="text-align:center">{{ p.age }}</td>
-                    <td style="text-align:center">{{ p.position }}</td>
-                    <td style="text-align:center">{% if p.is_carded %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td>
+                    <td>{{ p.age }}</td>
+                    <td>{{ p.position }}</td>
+                    <td>{% if p.is_carded %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td>
                     <td>{{ p.usage|default_if_none:""|safe }}</td>
-                    <td style="text-align:center">{{ p.level }}</td>
-                    <td style="text-align:center">{% if p.is_rostered %}
+                    <td>{{ p.level }}</td>
+                    <td>{% if p.is_rostered %}
                         <a class="button is-dark">Remove</a>
                         {% endif %}
                         {% if p.usage %}
                         <a class="button is-light">Add</a>
                         {% endif %}
                     </td>
-                    <td style="text-align:center">
+                    <td>
                         <a class="button is-warning">Drop</a>
                     </td>
                 </tr>
@@ -45,18 +78,21 @@
             </tbody>
         </table>
 
-        <h2 class="subtitle">{{ protected|length }} protected players (B)</h2>
-        <table class="table" data-sortable>
+        <h1 class="title is-5">Protected players <span class="has-text-grey has-text-weight-light">(level B)</span></h1>
+        <a href="#usage">A note on usage</a>
+        <table class="table is-fullwidth is-hoverable" data-sortable>
             <thead>
                 <th>Name</th>
                 <th>Age</th>
                 <th>Position</th>
                 <th>Carded?</th>
+                <th>Prospect?</th>
                 <th>Usage</th>
                 <th>MLB rank</th>
                 <th>BA rank</th>
-                <th>Roster?</th>
-                <th>Drop?</th>
+                <th>FG rank</th>
+                <th>Active?</th>
+                <th>Release?</th>
             </thead>
             <tbody>
                 {% for p in protected %}
@@ -67,24 +103,34 @@
                             <a target="_blank" href="{{ p.fangraphs_url }}">FanGraphs &Gt;</a>
                         </span>
                     </td>
-                    <td style="text-align:center">{{ p.age }}</td>
-                    <td style="text-align:center">{{ p.position }}</td>
-                    <td style="text-align:center">{% if p.is_carded %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td>
+                    <td>{{ p.age }}</td>
+                    <td>{{ p.position }}</td>
+                    <td>{% if p.is_carded %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td>
+                    <td>{% if p.is_prospect %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td>
                     <td>{{ p.usage|default_if_none:"" }}</td>
-                    <td style="text-align:center">{{ p.mlb_prospect_rank|default_if_none:"-" }}</td>
-                    <td style="text-align:center">{{ p.ba_prospect_rank|default_if_none:"-" }}</td>
-                    <td style="text-align:center">{% if p.is_rostered %}
+                    <td>{{ p.mlb_prospect_rank|default_if_none:"-" }}</td>
+                    <td>{{ p.ba_prospect_rank|default_if_none:"-" }}</td>
+                    <td>{{ p.fg_prospect_rank|default_if_none:"-" }}</td>
+                    <td>{% if p.is_rostered %}
                         <a class="button is-dark">Remove</a>{% endif %}
                         {% if p.usage and not p.is_rostered %}<a class="button is-light">Add</a>
                         {% endif %}
                     </td>
-                    <td style="text-align:center">
+                    <td>
                         <a class="button is-warning">Drop</a>
                     </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
+        <h1 id="usage" class="is-5 title">A note on usage</h1>
+        <p>
+            <ul>
+                <li>Usage has been calculated for pitchers and hitters.</li>
+                <li>If a pitcher has 1.5 times more relief appearances than starts, innings are multiplied by 1.5 if more than 70. </li>
+                <li>For hitters, seasons with more than 550 plate appearances show as "unlimited."</li>
+            </ul>
+        </p>
     </div>
 </div>
 {% endblock %}

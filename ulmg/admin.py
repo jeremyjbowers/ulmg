@@ -16,7 +16,7 @@ class OwnerAdmin(VersionAdmin):
 @admin.register(Team)
 class TeamAdmin(VersionAdmin):
     model = Team
-    list_display = ["city", "mascot", "abbreviation"]
+    list_display = ["city", "nickname", "abbreviation"]
 
 @admin.register(Player)
 class PlayerAdmin(VersionAdmin):
