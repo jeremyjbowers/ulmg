@@ -9,6 +9,7 @@ class TeamAdmin(VersionAdmin):
     model = Team
     list_display = ["city", "division", "owner", 'owner_email']
     list_editable = ['division']
+    list_filter = ['division']
 
 @admin.register(Player)
 class PlayerAdmin(VersionAdmin):
