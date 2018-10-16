@@ -25,9 +25,9 @@ class Team(BaseModel):
     Canonical representation of a ULMG team.
     """
     city = models.CharField(max_length=255)
-    nickname = models.CharField(max_length=255)
-    field = models.CharField(max_length=255, blank=True, null=True)
     abbreviation = models.CharField(max_length=3)
+    nickname = models.CharField(max_length=255)
+    division = models.CharField(max_length=255, null=True, blank=True)
     owner = models.CharField(max_length=255, null=True, blank=True)
     owner_email = models.CharField(max_length=255, null=True, blank=True)
 

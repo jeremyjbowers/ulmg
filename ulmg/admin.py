@@ -7,8 +7,8 @@ from ulmg.models import Team, Player
 @admin.register(Team)
 class TeamAdmin(VersionAdmin):
     model = Team
-    list_display = ["city", "nickname", "owner", 'owner_email']
-    list_editable = ['owner', 'owner_email', 'nickname']
+    list_display = ["city", "division", "owner", 'owner_email']
+    list_editable = ['division']
 
 @admin.register(Player)
 class PlayerAdmin(VersionAdmin):
