@@ -20,38 +20,16 @@ class BaseModel(models.Model):
         return self.__unicode__()
 
 
-class Owner(BaseModel):
-    """
-    Tied to a Django User model. Can decorate with additional fields.
-    """
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-    coach_file_url = models.CharField(max_length=255, blank=True, null=True)
-
-    def __unicode__(self):
-        if self.team():
-            return "%s %s (%s)" % (self.user.first_name, self.user.last_name, self.team().abbreviation)
-        return "%s %s" % (self.user.first_name, self.user.last_name)
-
-    def team(self):
-        """
-        Can't have more than one team but this is not enforced in the DB.
-        """
-        try:
-            return Team.objects.get(owner=self)
-        except Team.DoesNotExist:
-            pass
-        return None
-
-
 class Team(BaseModel):
     """
     Canonical representation of a ULMG team.
     """
-    owner = models.ForeignKey(Owner, on_delete=models.SET_NULL, blank=True, null=True)
     city = models.CharField(max_length=255)
     nickname = models.CharField(max_length=255)
     field = models.CharField(max_length=255, blank=True, null=True)
     abbreviation = models.CharField(max_length=3)
+    owner = models.CharField(max_length=255, null=True, blank=True)
+    owner_email = models.CharField(max_length=255, null=True, blank=True)
 
     class Meta:
         ordering = ["abbreviation"]
@@ -238,14 +216,3 @@ class Player(BaseModel):
         self.set_ids()
 
         super().save(*args, **kwargs)
-
-
-class PlayerNote(BaseModel):
-    player = models.ForeignKey(Player, on_delete=models.CASCADE)
-    note = models.TextField(blank=True, null=True)
-
-    class Meta:
-        ordering = ["last_modified"]
-
-    def __unicode__(self):
-        return "%s note from %s." % (self.player, self.created)
