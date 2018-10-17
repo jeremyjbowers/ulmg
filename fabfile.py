@@ -12,6 +12,9 @@ env.branch = "master"
 
 env.hosts = ["192.241.251.155"]
 
+cd_string = "cd /home/ubuntu/apps/%(project_name)s; " % env
+work_string = cd_string + "workon %(project_name)s && " % env
+
 @api.task
 def development():
     """
@@ -35,28 +38,35 @@ def branch(branch_name):
 
 @api.task
 def pull():
-    api.run("cd /home/ubuntu/apps/%(project_name)s; git fetch; git pull origin %(branch)s" % env)
+    api.run(cd_string + "git fetch; git pull origin %(branch)s" % env)
 
 @api.task
 def pip_install():
-    api.run("cd /home/ubuntu/apps/%(project_name)s; workon %(project_name)s && pip install -r requirements.txt" % env)
+    api.run(work_string + "pip install -r requirements.txt")
 
 @api.task
 def migrate():
-    api.run("cd /home/ubuntu/apps/%(project_name)s; workon %(project_name)s && django-admin migrate" % env)
+    api.run(work_string + "django-admin migrate")
 
 @api.task
 def collectstatic():
-    api.run("cd /home/ubuntu/apps/%(project_name)s; workon %(project_name)s && django-admin collectstatic --noinput" % env)
+    api.run(work_string + "django-admin collectstatic --noinput")
 
 @api.task
-def bounce(racedate=None):
+def bounce():
     api.run("sudo service %(project_name)s stop" % env)
     api.run("sudo service %(project_name)s start" % env)
 
 @api.task
-def load_players():
-    api.run("cd /home/ubuntu/apps/%(project_name)s; workon %(project_name)s && django-admin loaddata data/players.json" % env)
+def mgmt(command):
+    cmd_string = "django-admin " + command
+    api.run(work_string + cmd_string)
+
+@api.task
+def get_data():
+    api.run(work_string + "django-admin dumpdata ulmg > /tmp/ulmg.json")
+    os.system('rm -rf data/fixtures/ulmg.json')
+    api.get(remote_path='/tmp/ulmg.json', local_path="data/fixtures/ulmg.json")
 
 @api.task
 def deploy():
