@@ -31,110 +31,103 @@
       white-space: nowrap;
     }
 </style>
-<div class="tile is-ancestor">
-    <div class="tile is-vertical is-8">
-        <div class="tile is-parent">
-        <article class="tile is-child notification is-white">
-            <p class="title">Search</p>
-            <p class="subtitle">All players</p>
-            <div class="content">
-                {% include "includes/search_bar.html" %}
-                <div class="columns">
-                    <div class="column">
-                        <p class="subtitle level-3">5 random available hitters</p>
-                        <table class="table is-dark">
-                            <tr>
-                                <th>name</th>
-                                <th>pos</th>
-                                <th>pa</th>
-                                <th>avg/obp/slg</th>
-                            </tr>
-                            {% for p in rand_hit %}
-                            <tr>
-                                <td>{% if p.bbref_url %}<a target="_blank" href="{{ p.bbref_url }}">{{ p }}</a>{% else %}{{ p }}{% endif %}</td>
-                                <td>{{ p.position }}</td>
-                                <td>{{ p.stats.pa }}</td>
-                                <td>{{ p.stats.avg }}/{{ p.stats.obp }}/{{ p.stats.slg }}</td>
-                            </tr>
-                            {% endfor %}
-                        </table>
-                    </div>
-                    <div class="column">
-                            <p class="subtitle level-3">5 random available pitchers</p>
-                            <table class="table">
-                                <tr>
-                                    <th>name</th>
-                                    <th>ip</th>
-                                    <th>gs</th>
-                                    <th>era</th>
-                                </tr>
-                                {% for p in rand_pitch %}
-                                <tr>
-                                    <td>{% if p.bbref_url %}<a target="_blank" href="{{ p.bbref_url }}">{{ p }}</a>{% else %}{{ p }}{% endif %}</td>
-                                    <td>{{ p.stats.ip }}</td>
-                                    <td>{{ p.stats.gs }}</td>
-                                    <td>{{ p.stats.era }}</td>
-                                </tr>
-                                {% endfor %}
-                            </table>
-                        </div>
-                </div>
-            </div>
-        </article>
-        </div>
-        <div class="tile">
-        <div class="tile is-parent is-vertical">
-            <article class="tile is-child notification is-white">
-                <p class="title">Browse carded players</p>
-                <ul class="charts">{% for pos in carded_positions|slice:"5" %}
-                    <li><a href="/players/search/?carded=true&position={{ pos.position }}"><span style="width: {% widthratio pos.position__count 1400 700 %}px">{{ pos.position }} ({{ pos.position__count }})</span></a></li>
-                {% endfor %}</ul>
-            </article>
-            <article class="tile is-child notification is-white">
-                <p class="title">Browse uncarded players</p>
-                <ul class="charts">{% for pos in uncarded_positions %}
-                <li><a href="/players/search/?carded=false&position={{ pos.position }}"><span style="width: {% widthratio pos.position__count 1100 700 %}px">{{ pos.position }} ({{ pos.position__count }})</span></a></li>
-            {% endfor %}</ul>
-            </article>
-        </div>
-        <div class="tile is-parent">
-            <article class="tile is-child notification is-light">
-            <p class="title">2018 Champion</p>
-            <p class="subtitle">Hopefully not Long Island</p>
-            <figure class="image is-4by3">
-                <img src="http://t3.gstatic.com/images?q=tbn:ANd9GcTilsuEVyO-UCIZDZzcw60w-d1sKS2B7fOKdbp4GN5J-syvzjfa">
-            </figure>
-            </article>
-        </div>
-        </div>
+<div class="columns">
+    <div class="column">
+        <p class="title">Search</p>
+        <p class="subtitle">All players</p>
+        {% include "includes/search_bar.html" %}
     </div>
-    <div class="tile is-parent">
-        <article class="tile is-child notification is-white">
-        <div class="content">
-            <p class="title">Prospects</p>
-            <p class="subtitle">Top available</p>
-            <div class="content">
-                <table class="table">
-                    <tr>
-                        <th>name</th>
-                        <th>pos</th>
-                        <th>ba</th>
-                        <th>mlb</th>
-                    </tr>
-                    {% for p in prospects %}
-                    <tr>
-                        <td>{% if p.bbref_url %}<a href="{{ p.bbref_url }}">{{ p }}</a>{% else %}{{ p }}{% endif %}</td>
-                        <td>{{ p.position }}</td>
-                        <td>{{ p.ba_prospect_rank|default_if_none:"-"}}</td>
-                        <td>{{ p.mlb_prospect_rank|default_if_none:"-" }}</td>
-                    </tr>
-                {% endfor %}
-                </table>
+</div>
 
-            </div>
-        </div>
-        </article>
+<div class="columns">
+    <div class="column">
+        <p class="subtitle level-3">5 random available hitters</p>
+        <table class="table is-fullwidth is-hoverable">
+            <tr>
+                <th>name</th>
+                <th>age</th>
+                <th>pos</th>
+                <th>pa</th>
+                <th>avg/obp/slg</th>
+            </tr>
+            {% for p in rand_hit %}
+            <tr>
+                <td style="text-align: left!important;"><span class="has-text-weight-semibold">{{ p.name }}</span><br/>
+                    {% if p.bbref_url %}<a class="has-text-weight-light is-size-6" target="_blank" href="{{ p.bbref_url }}">BBR &Gt;</a>{% endif %}
+                    {% if p.fangraphs_url %}<a class="has-text-weight-light is-size-6" target="_blank" href="{{ p.fangraphs_url }}">FG &Gt;</a>{% endif %}
+                    {% if p.ba_url %}<a class="has-text-weight-light is-size-6"  target="_blank" href="{{ p.ba_url }}">BA &Gt;</a>{% endif %}
+                </td>
+                <td>{{ p.age }}</td>
+                <td>{{ p.position }}</td>
+                <td>{{ p.stats.pa }}</td>
+                <td>{{ p.stats.avg }}/{{ p.stats.obp }}/{{ p.stats.slg }}</td>
+            </tr>
+            {% endfor %}
+        </table>
     </div>
+    <div class="column">
+        <p class="subtitle level-3">5 random available pitchers</p>
+        <table class="table is-fullwidth is-hoverable">
+            <tr>
+                <th>name</th>
+                <th>age</th>
+                <th>ip</th>
+                <th>gs</th>
+                <th>era</th>
+            </tr>
+            {% for p in rand_pitch %}
+            <tr>
+                <td style="text-align: left!important;"><span class="has-text-weight-semibold">{{ p.name }}</span><br/>
+                    {% if p.bbref_url %}<a class="has-text-weight-light is-size-6" target="_blank" href="{{ p.bbref_url }}">BBR &Gt;</a>{% endif %}
+                    {% if p.fangraphs_url %}<a class="has-text-weight-light is-size-6" target="_blank" href="{{ p.fangraphs_url }}">FG &Gt;</a>{% endif %}
+                    {% if p.ba_url %}<a class="has-text-weight-light is-size-6"  target="_blank" href="{{ p.ba_url }}">BA &Gt;</a>{% endif %}
+                </td>
+                <td>{{ p.age }}</td>
+                <td>{{ p.stats.ip }}</td>
+                <td>{{ p.stats.gs }}</td>
+                <td>{{ p.stats.era }}</td>
+            </tr>
+            {% endfor %}
+        </table>
     </div>
+    <div class="column">
+        <p class="subtitle level-3">5 random available prospects</p>
+        <table class="table is-fullwidth is-hoverable">
+            <tr>
+                <th>name</th>
+                <th>pro?</th>
+                <th>mlb</th>
+                <th>ba</th>
+                <th>ba draft</th>
+                <th>fg</th>
+            </tr>
+            {% for p in rand_prospect %}
+            <tr>
+                <td style="text-align: left!important;"><span class="has-text-weight-semibold">{{ p.name }}</span><br/>
+                    {% if p.bbref_url %}<a class="has-text-weight-light is-size-6" target="_blank" href="{{ p.bbref_url }}">BBR &Gt;</a>{% endif %}
+                    {% if p.fangraphs_url %}<a class="has-text-weight-light is-size-6" target="_blank" href="{{ p.fangraphs_url }}">FG &Gt;</a>{% endif %}
+                    {% if p.ba_url %}<a class="has-text-weight-light is-size-6"  target="_blank" href="{{ p.ba_url }}">BA &Gt;</a>{% endif %}
+                </td>
+                <td>{% if p.is_amateur %}<span class="red">&cross;</span>{% else %}<span class="green">&checkmark;</span>{% endif %}</td>
+                <td>{{ p.mlb_prospect_rank|default_if_none:"-" }}</td>
+                <td>{{ p.ba_prospect_rank|default_if_none:"-" }}</td>
+                <td>{{ p.ba_draft_rank|default_if_none:"-" }}</td>
+                <td>{{ p.fg_prospect_rank|default_if_none:"-" }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+</div>
+
+<!-- <p class="title">Browse carded players</p>
+<ul class="charts">{% for pos in carded_positions|slice:"5" %}
+    <li><a href="/players/search/?carded=true&position={{ pos.position }}"><span style="width: {% widthratio pos.position__count 1400 700 %}px">{{ pos.position }} ({{ pos.position__count }})</span></a></li>
+{% endfor %}</ul>
+
+<p class="title">Browse uncarded players</p>
+<ul class="charts">{% for pos in uncarded_positions %}
+<li><a href="/players/search/?carded=false&position={{ pos.position }}"><span style="width: {% widthratio pos.position__count 1100 700 %}px">{{ pos.position }} ({{ pos.position__count }})</span></a></li>
+{% endfor %}</ul> -->
+
 
 {% endblock %}

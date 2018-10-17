@@ -6,7 +6,7 @@ from ulmg import models, utils
 
 def index(request):
     context = utils.build_context(request)
-    context['prospects'] = models.Player.objects.filter(is_owned=False, is_prospect=True).order_by('position', 'last_name')
+    context['rand_prospect'] = models.Player.objects.filter(is_owned=False, is_prospect=True).order_by('?')[0:6]
     context['rand_hit'] = models.Player.objects.filter(position__in=["IF", "OF", "IF/OF", "C"], is_owned=False, stats__isnull=False).order_by('?')[0:6]
     context['rand_pitch'] = models.Player.objects.filter(is_owned=False, position="P", stats__isnull=False).order_by('?')[0:6]
     context['carded_positions'] = models.Player.objects.filter(is_carded=True).order_by('position').values('position').annotate(Count('position'))
