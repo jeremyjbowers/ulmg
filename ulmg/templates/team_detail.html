@@ -53,8 +53,10 @@
             </thead>
             <tbody>
                 {% for p in unprotected %}
-                <tr>
-                    <td style="text-align: left!important;"><span class="has-text-weight-semibold">{{ p.name }}</span> <a href="/admin/ulmg/player/{{ p.id }}/change/"><span class="has-text-weight-light is-size-6">edit &ggg;</span></a><br/>
+                <tr id="player-{{ p.id }}">
+                    <td style="text-align: left!important;"><span class="has-text-weight-semibold">
+                        <a href="/teams/{{ p.team.abbreviation }}/#player-{{ p.id }}">{{ p.name }}</a>
+                        </span> <a href="/admin/ulmg/player/{{ p.id }}/change/"><span class="has-text-weight-light is-size-6">edit &ggg;</span></a><br/>
                         {% if p.bbref_url %}<a class="has-text-weight-light is-size-6" target="_blank" href="{{ p.bbref_url }}">BBR &Gt;</a>{% endif %}
                         {% if p.fangraphs_url %}<a class="has-text-weight-light is-size-6" target="_blank" href="{{ p.fangraphs_url }}">FG &Gt;</a>{% endif %}
                         {% if p.ba_url %}<a class="has-text-weight-light is-size-6"  target="_blank" href="{{ p.ba_url }}">BA &Gt;</a>{% endif %}
@@ -87,7 +89,7 @@
                 <th>Age</th>
                 <th>Position</th>
                 <th>Carded?</th>
-                <th>Amateur?</th>
+                <th>Pro?</th>
                 <th>Prospect?</th>
                 <th>Usage</th>
                 <th>MLB</th>
@@ -99,8 +101,10 @@
             </thead>
             <tbody>
                 {% for p in protected %}
-                <tr>
-                    <td style="text-align: left!important;"><span class="has-text-weight-semibold">{{ p.name }}</span> <a href="/admin/ulmg/player/{{ p.id }}/change/"><span class="has-text-weight-light is-size-6">edit &ggg;</span></a><br/>
+                <tr id="player-{{ p.id }}">
+                    <td style="text-align: left!important;"><span class="has-text-weight-semibold">
+                        <a href="/teams/{{ p.team.abbreviation }}/#player-{{ p.id }}">{{ p.name }}</a>
+                        </span> <a href="/admin/ulmg/player/{{ p.id }}/change/"><span class="has-text-weight-light is-size-6">edit &ggg;</span></a><br/>
                         {% if p.bbref_url %}<a class="has-text-weight-light is-size-6" target="_blank" href="{{ p.bbref_url }}">BBR &Gt;</a>{% endif %}
                         {% if p.fangraphs_url %}<a class="has-text-weight-light is-size-6" target="_blank" href="{{ p.fangraphs_url }}">FG &Gt;</a>{% endif %}
                         {% if p.ba_url %}<a class="has-text-weight-light is-size-6"  target="_blank" href="{{ p.ba_url }}">BA &Gt;</a>{% endif %}
@@ -108,7 +112,7 @@
                     <td>{{ p.age }}</td>
                     <td>{{ p.position }}</td>
                     <td>{% if p.is_carded %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td>
-                    <td>{% if p.is_amateur %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td>
+                    <td>{% if p.is_amateur %}<span class="red">&cross;</span>{% else %}<span class="green">&checkmark;</span>{% endif %}</td>
                     <td>{% if p.is_prospect %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td>
                     <td>{{ p.usage|default_if_none:"" }}</td>
                     <td>{{ p.mlb_prospect_rank|default_if_none:"-" }}</td>

@@ -18,28 +18,31 @@
 
 <table class="table" data-sortable>
     <tr>
-        <th>name</th>
-        <th>age</th>
-        <th>position</th>
-        <th>team</th>
-        <th>owned?</th>
-        <th>carded?</th>
-        <th>prospect?</th>
+        <th>Name</th>
+        <th>Age</th>
+        <th>Position</th>
+        <th>Team</th>
+        <th>Owned?</th>
+        <th>Carded?</th>
+        <th>Pro?</th>
+        <th>Prospect?</th>
     </tr>
     {% for p in players %}
         <tr>
-            <td>{{ p.name }} <br/>
-                {% if p.bbref_url or p.fangraphs_url %}<span class="outlinks">
-                    {% if p.bbref_url %}<a target="_blank" href="{{ p.bbref_url }}">BaseballRef &Gt;</a>{% endif %}
-                    {% if p.fangraphs_url %}<a target="_blank" href="{{ p.fangraphs_url }}">FanGraphs &Gt;</a>{% endif %}
-                </span>{% endif %}
+            <td style="text-align: left!important;"><span class="has-text-weight-semibold">
+                <a href="{% if p.team %}/teams/{{ p.team.abbreviation }}/#player-{{ p.id }}{% else %}/players/search/?name={{ p.name }}{% endif %}">{{ p.name }}</a>
+                </span> <a href="/admin/ulmg/player/{{ p.id }}/change/"><span class="has-text-weight-light is-size-6">edit &ggg;</span></a><br/>
+                {% if p.bbref_url %}<a class="has-text-weight-light is-size-6" target="_blank" href="{{ p.bbref_url }}">BBR &Gt;</a>{% endif %}
+                {% if p.fangraphs_url %}<a class="has-text-weight-light is-size-6" target="_blank" href="{{ p.fangraphs_url }}">FG &Gt;</a>{% endif %}
+                {% if p.ba_url %}<a class="has-text-weight-light is-size-6"  target="_blank" href="{{ p.ba_url }}">BA &Gt;</a>{% endif %}
             </td>
-            <td>{{ p.age }}</td>
+            <td>{{ p.age|default_if_none:"-" }}</td>
             <td>{{ p.position }}</td>
             <td>{% if p.team %}<a href="/teams/{{ p.team.abbreviation }}/">{{ p.team }}</a>{% else %}-{% endif %}</td>
-            <td style="text-align:center">{% if p.is_owned %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td>
-            <td style="text-align:center">{% if p.is_carded %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td>
-            <td style="text-align:center">{% if p.is_prospect %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td>
+            <td>{% if p.is_owned %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td>
+            <td>{% if p.is_carded %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td>
+            <td>{% if p.is_amateur %}<span class="red">&cross;</span>{% else %}<span class="green">&checkmark;</span>{% endif %}</td>
+            <td>{% if p.is_prospect %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td>
         </tr>
     {% endfor %}
 </table>
