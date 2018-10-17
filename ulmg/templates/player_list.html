@@ -21,11 +21,13 @@
         <th>Name</th>
         <th>Age</th>
         <th>Position</th>
+        <th>Level</th>
         <th>Team</th>
         <th>Owned?</th>
         <th>Carded?</th>
         <th>Pro?</th>
         <th>Prospect?</th>
+        <th>Usage</th>
     </tr>
     {% for p in players %}
         <tr>
@@ -38,11 +40,13 @@
             </td>
             <td>{{ p.age|default_if_none:"-" }}</td>
             <td>{{ p.position }}</td>
+            <td>{{ p.level|default_if_none:"-" }}</td>
             <td>{% if p.team %}<a href="/teams/{{ p.team.abbreviation }}/">{{ p.team }}</a>{% else %}-{% endif %}</td>
             <td>{% if p.is_owned %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td>
             <td>{% if p.is_carded %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td>
             <td>{% if p.is_amateur %}<span class="red">&cross;</span>{% else %}<span class="green">&checkmark;</span>{% endif %}</td>
             <td>{% if p.is_prospect %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td>
+            <td>{{ p.usage|default_if_none:"-" }}</td>
         </tr>
     {% endfor %}
 </table>

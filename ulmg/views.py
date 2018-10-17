@@ -73,22 +73,13 @@ def search(request):
             query = query.filter(is_carded=to_bool(carded))
             context['carded'] = carded
 
-    # if request.GET.get('prospect', None):
-    #     prospect = to_bool(request.GET['prospect'])
-    #     query = query.filter(is_prospect=prospect)
-    #     context['prospect'] = prospect
+    if request.GET.get('amateur', None):
+        amateur = request.GET['amateur']
+        if amateur.lower() != "":
+            query = query.filter(is_amateur=to_bool(amateur))
+            context['amateur'] = amateur
 
-    # if request.GET.get('owned', None):
-    #     owned = to_bool(request.GET['owned'])
-    #     query = query.filter(is_owned=owned)
-    #     context['owned'] = owned
-
-    # if request.GET.get('carded', None):
-    #     carded = to_bool(request.GET['carded'])
-    #     query = query.filter(is_carded=carded)
-    #     context['carded'] = carded
-
-    query = query.order_by('last_name')
+    query = query.order_by('position', "level", "last_name")
     paginator = Paginator(query, 100)
     page = request.GET.get('page')
 

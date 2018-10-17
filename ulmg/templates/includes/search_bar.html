@@ -39,6 +39,16 @@
                     </div>
                 </div>
                 <div class="column">
+                    <p class="has-text-weight-bold">Amateur</p>
+                    <div class="select">
+                        <select name="amateur">
+                            <option></option>
+                            <option value="yes"{% if amateur == "yes" %} selected{% endif %}>yes</option>
+                            <option value="no"{% if amateur == "no" %} selected{% endif %}>no</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="column">
                     <p class="has-text-weight-bold">Position</p>
                     <div class="select">
                         <select name="position">
@@ -62,7 +72,6 @@
                         </select>
                     </div>
                 </div>
-                <div class="column"></div>
                 <div class="column"></div>
                 <div class="column"></div>
                 <div class="column"></div>
