@@ -80,6 +80,7 @@ class Player(BaseModel):
     position = models.CharField(max_length=255, null=True, choices=PLAYER_POSITION_CHOICES)
     birthdate = models.DateField(blank=True, null=True)
     stats = JSONField(blank=True, null=True)
+    draft_eligibility_year = models.CharField(max_length=4, blank=True, null=True)
 
     # IDENTIFIERS
     ba_id = models.CharField(max_length=255, blank=True, null=True)
@@ -95,18 +96,21 @@ class Player(BaseModel):
 
     # ULMG-SPECIFIC
     team = models.ForeignKey(Team, on_delete=models.SET_NULL, blank=True, null=True)
+    notes = models.TextField(blank=True, null=True)
 
     # PROSPECT STUFF
     fg_prospect_fv = models.CharField(max_length=4, blank=True, null=True)
     fg_prospect_rank = models.IntegerField(blank=True, null=True)
     ba_prospect_rank = models.IntegerField(blank=True, null=True)
     mlb_prospect_rank = models.IntegerField(blank=True, null=True)
+    ba_draft_rank = models.IntegerField(blank=True, null=True)
 
     # STATUS AND SUCH
     is_owned = models.BooleanField(default=False)
     is_prospect = models.BooleanField(default=False)
     is_carded = models.BooleanField(default=False)
     is_rostered = models.BooleanField(default=False)
+    is_amateur = models.BooleanField(default=False)
 
     class Meta:
         ordering = ["last_name", "first_name", "level", "position"]

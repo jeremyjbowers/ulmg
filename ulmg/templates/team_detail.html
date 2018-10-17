@@ -54,9 +54,10 @@
             <tbody>
                 {% for p in unprotected %}
                 <tr>
-                    <td><span class="has-text-weight-semibold">{{ p.name }}</span> <a href="/admin/ulmg/player/{{ p.id }}/change/"><span class="has-text-weight-light is-size-6">edit &ggg;</span></a><br/>
-                        <a class="has-text-weight-light is-size-6" target="_blank" href="{{ p.bbref_url }}">BaseballRef &Gt;</a>
-                        <a class="has-text-weight-light is-size-6" target="_blank" href="{{ p.fangraphs_url }}">FanGraphs &Gt;</a>
+                    <td style="text-align: left!important;"><span class="has-text-weight-semibold">{{ p.name }}</span> <a href="/admin/ulmg/player/{{ p.id }}/change/"><span class="has-text-weight-light is-size-6">edit &ggg;</span></a><br/>
+                        {% if p.bbref_url %}<a class="has-text-weight-light is-size-6" target="_blank" href="{{ p.bbref_url }}">BBR &Gt;</a>{% endif %}
+                        {% if p.fangraphs_url %}<a class="has-text-weight-light is-size-6" target="_blank" href="{{ p.fangraphs_url }}">FG &Gt;</a>{% endif %}
+                        {% if p.ba_url %}<a class="has-text-weight-light is-size-6"  target="_blank" href="{{ p.ba_url }}">BA &Gt;</a>{% endif %}
                     </td>
                     <td>{{ p.age }}</td>
                     <td>{{ p.position }}</td>
@@ -86,30 +87,33 @@
                 <th>Age</th>
                 <th>Position</th>
                 <th>Carded?</th>
+                <th>Amateur?</th>
                 <th>Prospect?</th>
                 <th>Usage</th>
-                <th>MLB rank</th>
-                <th>BA rank</th>
-                <th>FG rank</th>
+                <th>MLB</th>
+                <th>BA</th>
+                <th>BA draft</th>
+                <th>FG</th>
                 <th>Active?</th>
                 <th>Release?</th>
             </thead>
             <tbody>
                 {% for p in protected %}
                 <tr>
-                    <td>{{ p.name }} <br/>
-                        <span class="outlinks">
-                            <a target="_blank" href="{{ p.bbref_url }}">BaseballRef &Gt;</a>
-                            <a target="_blank" href="{{ p.fangraphs_url }}">FanGraphs &Gt;</a>
-                        </span>
+                    <td style="text-align: left!important;"><span class="has-text-weight-semibold">{{ p.name }}</span> <a href="/admin/ulmg/player/{{ p.id }}/change/"><span class="has-text-weight-light is-size-6">edit &ggg;</span></a><br/>
+                        {% if p.bbref_url %}<a class="has-text-weight-light is-size-6" target="_blank" href="{{ p.bbref_url }}">BBR &Gt;</a>{% endif %}
+                        {% if p.fangraphs_url %}<a class="has-text-weight-light is-size-6" target="_blank" href="{{ p.fangraphs_url }}">FG &Gt;</a>{% endif %}
+                        {% if p.ba_url %}<a class="has-text-weight-light is-size-6"  target="_blank" href="{{ p.ba_url }}">BA &Gt;</a>{% endif %}
                     </td>
                     <td>{{ p.age }}</td>
                     <td>{{ p.position }}</td>
                     <td>{% if p.is_carded %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td>
+                    <td>{% if p.is_amateur %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td>
                     <td>{% if p.is_prospect %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td>
                     <td>{{ p.usage|default_if_none:"" }}</td>
                     <td>{{ p.mlb_prospect_rank|default_if_none:"-" }}</td>
                     <td>{{ p.ba_prospect_rank|default_if_none:"-" }}</td>
+                    <td>{{ p.ba_draft_rank|default_if_none:"-" }}</td>
                     <td>{{ p.fg_prospect_rank|default_if_none:"-" }}</td>
                     <td>{% if p.is_rostered %}
                         <a class="button is-dark">Remove</a>{% endif %}
