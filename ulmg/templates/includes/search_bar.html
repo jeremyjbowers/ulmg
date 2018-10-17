@@ -9,27 +9,40 @@
         <div class="control">
             <div style=""class="columns">
                 <div class="column">
-                    <label class="checkbox">
-                    <input name="owned" type="checkbox"{% if owned %} checked{% endif %}>
-                    Owned?
-                    </label>
+                    <p class="has-text-weight-bold">Prospect</p>
+                    <div class="select">
+                        <select name="prospect">
+                            <option></option>
+                            <option value="yes"{% if prospect == "yes" %} selected{% endif %}>yes</option>
+                            <option value="no"{% if prospect == "no" %} selected{% endif %}>no</option>
+                        </select>
+                    </div>
                 </div>
                 <div class="column">
-                    <label class="checkbox">
-                    <input name="prospect" type="checkbox"{% if prospect %} checked{% endif %}>
-                    Prospect?
-                    </label>
+                    <p class="has-text-weight-bold">Owned</p>
+                    <div class="select">
+                        <select name="owned">
+                            <option></option>
+                            <option value="yes"{% if owned == "yes" %} selected{% endif %}>yes</option>
+                            <option value="no"{% if owned == "no" %} selected{% endif %}>no</option>
+                        </select>
+                    </div>
                 </div>
                 <div class="column">
-                    <label class="checkbox">
-                    <input name="carded" type="checkbox"{% if carded %} checked{% endif %}>
-                    Carded?
-                    </label>
+                    <p class="has-text-weight-bold">Carded</p>
+                    <div class="select">
+                        <select name="carded">
+                            <option></option>
+                            <option value="yes"{% if carded == "yes" %} selected{% endif %}>yes</option>
+                            <option value="no"{% if carded == "no" %} selected{% endif %}>no</option>
+                        </select>
+                    </div>
                 </div>
                 <div class="column">
+                    <p class="has-text-weight-bold">Position</p>
                     <div class="select">
                         <select name="position">
-                            <option>Position</option>
+                            <option></option>
                             <option value="P"{% if position == "P" %} selected{% endif %}>P</option>
                             <option value="IF"{% if position == "C" %} selected{% endif %}>C</option>
                             <option value="IF"{% if position == "IF" %} selected{% endif %}>IF</option>
@@ -39,15 +52,20 @@
                     </div>
                 </div>
                 <div class="column">
+                    <p class="has-text-weight-bold">Level</p>
                     <div class="select">
                         <select name="level">
-                            <option>Level</option>
+                            <option></option>
                             <option value="V"{% if level == "V" %} selected{% endif %}>V</option>
                             <option value="A"{% if level == "A" %} selected{% endif %}>A</option>
                             <option value="B"{% if level == "B" %} selected{% endif %}>B</option>
                         </select>
                     </div>
                 </div>
+                <div class="column"></div>
+                <div class="column"></div>
+                <div class="column"></div>
+                <div class="column"></div>
                 <div class="column"></div>
                 <div class="column"></div>
             </div>

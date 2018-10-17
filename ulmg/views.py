@@ -45,30 +45,48 @@ def search(request):
 
     if request.GET.get('position', None):
         position = request.GET['position']
-        if position.lower() != "position":
+        if position.lower() != "":
             query = query.filter(position=position)
             context['position'] = position
 
     if request.GET.get('level', None):
         level = request.GET['level']
-        if level.lower() != "level":
+        if level.lower() != "":
             query = query.filter(level=level)
             context['level'] = level
 
     if request.GET.get('prospect', None):
-        prospect = to_bool(request.GET['prospect'])
-        query = query.filter(is_prospect=prospect)
-        context['prospect'] = prospect
+        prospect = request.GET['prospect']
+        if prospect.lower() != "":
+            query = query.filter(is_prospect=to_bool(prospect))
+            context['prospect'] = prospect
 
     if request.GET.get('owned', None):
-        owned = to_bool(request.GET['owned'])
-        query = query.filter(is_owned=owned)
-        context['owned'] = owned
+        owned = request.GET['owned']
+        if owned.lower() != "":
+            query = query.filter(is_owned=to_bool(owned))
+            context['owned'] = owned
 
     if request.GET.get('carded', None):
-        carded = to_bool(request.GET['carded'])
-        query = query.filter(is_carded=carded)
-        context['carded'] = carded
+        carded = request.GET['carded']
+        if carded.lower() != "":
+            query = query.filter(is_carded=to_bool(carded))
+            context['carded'] = carded
+
+    # if request.GET.get('prospect', None):
+    #     prospect = to_bool(request.GET['prospect'])
+    #     query = query.filter(is_prospect=prospect)
+    #     context['prospect'] = prospect
+
+    # if request.GET.get('owned', None):
+    #     owned = to_bool(request.GET['owned'])
+    #     query = query.filter(is_owned=owned)
+    #     context['owned'] = owned
+
+    # if request.GET.get('carded', None):
+    #     carded = to_bool(request.GET['carded'])
+    #     query = query.filter(is_carded=carded)
+    #     context['carded'] = carded
 
     query = query.order_by('last_name')
     paginator = Paginator(query, 100)
