@@ -8,40 +8,107 @@ from ulmg import models, utils
 
 @csrf_exempt
 def player_action(request, playerid, action):
-    message = "I don't understand this action!"
+    """
+    # PROTECTION
+    is_reserve = models.BooleanField(default=False)
+    is_1h_p = models.BooleanField(default=False)
+    is_1h_c = models.BooleanField(default=False)
+    is_1h_pos = models.BooleanField(default=False)
+    is_2h_p = models.BooleanField(default=False)
+    is_2h_c = models.BooleanField(default=False)
+    is_2h_pos = models.BooleanField(default=False)
+    """
+
+    if action == "unprotect":
+        p = get_object_or_404(models.Player, id=playerid)
+        p.is_reserve = False
+        p.is_1h_c = False
+        p.is_1h_p = False
+        p.is_1h_pos = False
+        p.save()
+
+    if action == "is_reserve":
+        p = get_object_or_404(models.Player, id=playerid)
+        old = models.Player.objects.filter(is_owned=True, team=p.team, is_reserve=True)
+        if old.count() > 0:
+            for o in old:
+                o.is_reserve = False
+                o.save()
+        p.is_reserve = True
+        p.save()
+
+
+    if action == "is_1h_p":
+        p = get_object_or_404(models.Player, id=playerid)
+        old = models.Player.objects.filter(is_owned=True, team=p.team, is_1h_p=True)
+        if old.count() > 0:
+            for o in old:
+                o.is_1h_p = False
+                o.save()
+        p.is_1h_p = True
+        p.save()
+
+    if action == "is_1h_c":
+        p = get_object_or_404(models.Player, id=playerid)
+        old = models.Player.objects.filter(is_owned=True, team=p.team, is_1h_c=True)
+        if old.count() > 0:
+            for o in old:
+                o.is_1h_c = False
+                o.save()
+        p.is_1h_c = True
+        p.save()
+
+    if action == "is_1h_pos":
+        p = get_object_or_404(models.Player, id=playerid)
+        old = models.Player.objects.filter(is_owned=True, team=p.team, is_1h_pos=True)
+        if old.count() > 0:
+            for o in old:
+                o.is_1h_pos = False
+                o.save()
+        p.is_1h_pos = True
+        p.save()
 
     if action == "to_mlb":
-        message = "adding %s to mlb roster" % playerid
         p = get_object_or_404(models.Player, id=playerid)
         p.is_mlb_roster = True
         p.is_aaa_roster = False
+        if p.level == "V":
+            p.is_reserve = False
+            p.is_1h_c = False
+            p.is_1h_p = False
+            p.is_1h_pos = False
         p.save()
 
     if action == "to_aaa":
-        message = "adding %s to aaa roster" % playerid
         p = get_object_or_404(models.Player, id=playerid)
         p.is_mlb_roster = False
         p.is_aaa_roster = True
+        if p.level == "V":
+            p.is_reserve = False
+            p.is_1h_c = False
+            p.is_1h_p = False
+            p.is_1h_pos = False
         p.save()
 
     if action == "off_roster":
-        message = "removing %s from rosters" % playerid
         p = get_object_or_404(models.Player, id=playerid)
         p.is_mlb_roster = False
         p.is_aaa_roster = False
         p.save()
 
     if action == "drop":
-        message = "dropping %s" % playerid
         p = get_object_or_404(models.Player, id=playerid)
         p.is_mlb_roster = False
         p.is_aaa_roster = False
         p.team = None
         p.is_owned = False
+        p.is_reserve = False
+        p.is_1h_c = False
+        p.is_1h_p = False
+        p.is_1h_pos = False
         p.save()
 
-    print(message)
-    return HttpResponse(message)
+    return HttpResponse("ok")
 
 def index(request):
     context = utils.build_context(request)
@@ -62,19 +129,19 @@ def team_detail(request, abbreviation):
 
     context['mlb_roster'] = team_players.filter(is_mlb_roster=True).order_by("position","-level", "last_name")
     context['aaa_roster'] = team_players.filter(is_aaa_roster=True).order_by("position","-level", "last_name")
+    context['aa_roster'] = team_players.filter(level="B", is_mlb_roster=False, is_aaa_roster=False).order_by("position", "last_name")
 
-    context['eligible'] = team_players.filter(level__in=["A", "V"], is_mlb_roster=False, is_aaa_roster=False).order_by("position","-level", "last_name")
-    context['ineligible'] = team_players.filter(level="B").exclude(Q(is_aaa_roster=True)|Q(is_mlb_roster=True)).order_by("position", "last_name")
-    context['num_rostered'] = team_players.filter(Q(is_aaa_roster=True)|Q(is_mlb_roster=True)).count()
+    context['unrostered'] = team_players.filter(Q(level="V", is_mlb_roster=False, is_aaa_roster=False, is_1h_c=False, is_1h_p=False, is_1h_pos=False, is_reserve=False)|Q(level="A", is_aaa_roster=False, is_mlb_roster=False)).order_by("position","-level", "last_name")
+    context['protected'] = team_players.filter(Q(is_1h_p=True)|Q(is_1h_c=True)|Q(is_1h_pos=True)|Q(is_reserve=True))
 
     context['mlb_count'] = team_players.filter(is_mlb_roster=True).count()
     context['aaa_count'] = team_players.filter(is_aaa_roster=True).count()
-    context['aa_count'] = team_players.filter(level__in=["B"], is_mlb_roster=False, is_aaa_roster=False).count()
+    context['aa_count'] = team_players.filter(level="B", is_mlb_roster=False, is_aaa_roster=False).count()
 
+    context['by_level'] = team_players.order_by('level').values('level').annotate(Count('level'))
     context['by_position'] = team_players.order_by('position').values('position').annotate(Count('position'))
     context['mlb_by_position'] = team_players.filter(is_mlb_roster=True).order_by('position').values('position').annotate(Count('position'))
     context['aaa_by_position'] = team_players.filter(is_aaa_roster=True).order_by('position').values('position').annotate(Count('position'))
-    context['by_level'] = team_players.order_by('level').values('level').annotate(Count('level'))
 
     return render_to_response('team_detail.html', context=context)
 

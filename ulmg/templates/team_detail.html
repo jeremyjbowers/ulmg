@@ -33,8 +33,8 @@
               </div>
             <div class="level-item has-text-centered">
               <div>
-                <p class="title is-4 has-text-weight-light">Unprotected</p>
-                <p class="title">{{ eligible|length }}</p>
+                <p class="title is-4 has-text-weight-light">unrostered</p>
+                <p class="title">{{ unrostered|length }}</p>
               </div>
             </div>
             <div class="level-item has-text-centered">
@@ -52,7 +52,7 @@
                 <div class="level-item has-text-centered">
                     <div>
                         <p class="title is-4 has-text-weight-light"><a href="#aa">AA roster</a></p>
-                        <p class="title">{% if ineligible|length < 20 %}<span class="has-text-danger">{{ ineligible|length }}</span>{% else %}{{ ineligible|length }}{% endif %} <span class="has-text-weight-light title is-5">of at least</span> 20</p>
+                        <p class="title">{% if aa_roster|length < 20 %}<span class="has-text-danger">{{ aa_roster|length }}</span>{% else %}{{ aa_roster|length }}{% endif %} <span class="has-text-weight-light title is-5">of at least</span> 20</p>
                     </div>
             </div>
         </nav>
@@ -61,7 +61,7 @@
 
 <hr />
 
-        {% if eligible %}<h1 class="title is-5">{{ eligible|length }} unprotected player{% if eligible|length > 1%}s{% endif %} <span class="has-text-grey has-text-weight-light">(level V or A)</span></h1>
+        {% if unrostered %}<h1 class="title is-5">{{ unrostered|length }} unrostered player{% if unrostered|length > 1%}s{% endif %} <span class="has-text-grey has-text-weight-light">(level V or A)</span></h1>
         <a href="#usage">A note on usage</a>
         <table class="table is-fullwidth is-hoverable" data-sortable>
             <thead>
@@ -74,9 +74,10 @@
                 <th>Actions</th>
                 <th></th>
                 <th></th>
+                <th></th>
             </thead>
             <tbody>
-                {% for p in eligible %}
+                {% for p in unrostered %}
                 <tr id="player-{{ p.id }}">
                     <td style="text-align: left!important;"><span class="has-text-weight-semibold">
                         <a href="/teams/{{ p.team.abbreviation }}/#player-{{ p.id }}">{{ p.name }}</a>
@@ -90,6 +91,11 @@
                     <td>{% if p.is_carded %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td>
                     <td>{{ p.usage|default_if_none:""|safe }}</td>
                     <td>{{ p.level }}</td>
+                    <td>
+                        {% if p.position == "P" and p.level == "V" %}<a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="is_1h_p">&#128737; P</a>{% endif %}
+                        {% if p.position == "C" and p.level == "V" %}<a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="is_1h_c">&#128737; C</a>{% endif %}
+                        {% if p.position != "P" and p.position != "C" and p.level == "V" %}<a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="is_1h_pos">&#128737; Pos</a>{% endif %}
+                    </td>
                     <td><a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="to_mlb">MLB</a></td>
                     <td><a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="to_aaa">AAA</a></td>
                     <td><a class="button is-warning player-drop" data-playerid="{{ p.id }}" data-playername="{{ p.name }}">Drop</a></td>
@@ -98,9 +104,47 @@
             </tbody>
         </table>{% endif %}
 
+        {% if protected %}<h1 class="title is-5">{{ protected|length }} protected player{% if protected|length > 1%}s{% endif %} <span class="has-text-grey has-text-weight-light">(level V or A)</span></h1>
+        <a href="#usage">A note on usage</a>
+        <table class="table is-fullwidth is-hoverable" data-sortable>
+            <thead>
+                <th>Name</th>
+                <th>Age</th>
+                <th>Position</th>
+                <th>Carded?</th>
+                <th>Usage</th>
+                <th>Level</th>
+                <th>Actions</th>
+                <th></th>
+                <th></th>
+                <th></th>
+            </thead>
+            <tbody>
+                {% for p in protected %}
+                <tr id="player-{{ p.id }}">
+                    <td style="text-align: left!important;"><span class="has-text-weight-semibold">
+                        <a href="/teams/{{ p.team.abbreviation }}/#player-{{ p.id }}">{{ p.name }}</a>
+                        </span> <a href="/admin/ulmg/player/{{ p.id }}/change/"><span class="has-text-weight-light is-size-6">edit &ggg;</span></a><br/>
+                        {% if p.bbref_url %}<a class="has-text-weight-light is-size-6" target="_blank" href="{{ p.bbref_url }}">BBR &Gt;</a>{% endif %}
+                        {% if p.fangraphs_url %}<a class="has-text-weight-light is-size-6" target="_blank" href="{{ p.fangraphs_url }}">FG &Gt;</a>{% endif %}
+                        {% if p.ba_url %}<a class="has-text-weight-light is-size-6"  target="_blank" href="{{ p.ba_url }}">BA &Gt;</a>{% endif %}
+                    </td>
+                    <td>{{ p.age }}</td>
+                    <td>{{ p.position }}</td>
+                    <td>{% if p.is_carded %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td>
+                    <td>{{ p.usage|default_if_none:""|safe }}</td>
+                    <td>{{ p.level }}</td>
+                    <td><a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="unprotect">Unprotect</a></td>
+                    <td><a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="to_mlb">MLB</a></td>
+                    <td>{% if not p.is_aaa_roster %}<a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="to_aaa">AAA</a>{% endif %}</td>
+                    <td><a class="button is-warning player-drop" data-playerid="{{ p.id }}" data-playername="{{ p.name }}">Drop</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>{% endif %}
+
         {% if mlb_roster %}
         <h1 id="mlb" class="title is-5">{{ mlb_roster|length }} player{% if mlb_roster|length > 1%}s{% endif %} on the MLB roster <span class="has-text-grey has-text-weight-light">(level V, A or B)</span></h1>
-
         <div class="columns">
             <div class="column">
                 <nav class="level">
@@ -143,7 +187,7 @@
                     <td>{{ p.usage|default_if_none:""|safe }}</td>
                     <td>{{ p.level }}</td>
                     <td><a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="to_aaa">AAA</a></td>
-                    <td><a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="off_roster">{% if p.level == "B" %}AA{% else %}Unprotect{% endif %}</a></td>
+                    <td><a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="off_roster">{% if p.level == "B" %}AA{% else %}Remove{% endif %}</a></td>
                     <td><a class="button is-warning player-drop" data-playerid="{{ p.id }}" data-playername="{{ p.name }}">Drop</a></td>
                 </tr>
                 {% endfor %}
@@ -180,6 +224,8 @@
                 <th>Actions</th>
                 <th></th>
                 <th></th>
+                <th></th>
+                <th></th>
             </thead>
             <tbody>
                 {% for p in aaa_roster %}
@@ -195,8 +241,14 @@
                     <td>{{ p.position }}</td>
                     <td>{{ p.usage|default_if_none:""|safe }}</td>
                     <td>{{ p.level }}</td>
+                    <td>
+                        {% if p.position == "P" and p.level == "V" %}<a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="is_1h_p">&#128737; P</a>{% endif %}
+                        {% if p.position == "C" and p.level == "V" %}<a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="is_1h_c">&#128737; C</a>{% endif %}
+                        {% if p.position != "P" and p.position != "C" and p.level == "V" %}<a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="is_1h_pos">&#128737; Pos</a>{% endif %}
+                    </td>
+                    <td>{% if p.level == "V" %}<a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="unprotect">Unprotect</a>{% endif %}</td>
                     <td><a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="to_mlb">MLB</a></td>
-                    <td><a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="off_roster">{% if p.level == "B" %}AA{% else %}Unprotect{% endif %}</a></td>
+                    <td><a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="off_roster">{% if p.level == "B" %}AA{% else %}Remove{% endif %}</a></td>
                     <td><a class="button is-warning player-drop" data-playerid="{{ p.id }}" data-playername="{{ p.name }}">Drop</a></td>
                 </tr>
                 {% endfor %}
@@ -204,7 +256,7 @@
         </table>
         {% endif %}
 
-        <h1 id="aa" class="title is-5">{{ ineligible|length }} player{% if ineligible|length > 1%}s{% endif %} on the AA roster <span class="has-text-grey has-text-weight-light">(level B)</span></h1>
+        <h1 id="aa" class="title is-5">{{ aa_roster|length }} player{% if aa_roster|length > 1%}s{% endif %} on the AA roster <span class="has-text-grey has-text-weight-light">(level B)</span></h1>
         <a href="#usage">A note on usage</a>
         <table class="table is-fullwidth is-hoverable" data-sortable>
             <thead>
@@ -224,7 +276,7 @@
                 <th></th>
             </thead>
             <tbody>
-                {% for p in ineligible %}
+                {% for p in aa_roster %}
                 <tr id="player-{{ p.id }}">
                     <td style="text-align: left!important;"><span class="has-text-weight-semibold">
                         <a href="/teams/{{ p.team.abbreviation }}/#player-{{ p.id }}">{{ p.name }}</a>
