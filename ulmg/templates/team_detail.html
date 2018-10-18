@@ -94,9 +94,9 @@
                 <th>Carded?</th>
                 <th>Usage</th>
                 <th>Level</th>
-                <th></th>
-                <th></th>
-                <th></th>
+                <th>MLB?</th>
+                <th>AAA?</th>
+                <th>AA?</th>
             </thead>
             <tbody>
                 {% for p in eligible %}
@@ -132,9 +132,8 @@
                 <th>Carded?</th>
                 <th>Usage</th>
                 <th>Level</th>
-                <th></th>
-                <th></th>
-                <th></th>
+                <th>AAA?</th>
+                <th>AA?</th>
             </thead>
             <tbody>
                 {% for p in mlb_roster %}
@@ -151,8 +150,7 @@
                     <td>{% if p.is_carded %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td>
                     <td>{{ p.usage|default_if_none:""|safe }}</td>
                     <td>{{ p.level }}</td>
-                    <td></td>
-                    <td>{% if level == A %}<a class="button is-light">Move to AAA</a>{% endif %}</td>
+                    <td>{% if p.level == "A" %}<a class="button is-light">Move to AAA</a>{% endif %}</td>
                     <td><a class="button is-warning">Drop</a></td>
                 </tr>
                 {% endfor %}
@@ -171,9 +169,9 @@
                 <th>Carded?</th>
                 <th>Usage</th>
                 <th>Level</th>
-                <th></th>
-                <th></th>
-                <th></th>
+                <th>MLB?</th>
+                <th>AA?</th>
+                <th>Drop?</th>
             </thead>
             <tbody>
                 {% for p in aaa_roster %}
@@ -190,8 +188,8 @@
                     <td>{% if p.is_carded %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td>
                     <td>{{ p.usage|default_if_none:""|safe }}</td>
                     <td>{{ p.level }}</td>
-                    <td></td>
                     <td><a class="button is-light">Move to MLB</a></td>
+                    <td>{% if p.level == "B" %}<a class="button is-light">Move to AA</a>{% endif %}</td>
                     <td><a class="button is-warning">Drop</a></td>
                 </tr>
                 {% endfor %}
@@ -214,9 +212,9 @@
                 <th>BA</th>
                 <th>BA draft</th>
                 <th>FG</th>
-                <th></th>
-                <th></th>
-                <th></th>
+                <th>MLB?</th>
+                <th>AAA?</th>
+                <th>Drop?</th>
             </thead>
             <tbody>
                 {% for p in ineligible %}
@@ -238,8 +236,8 @@
                     <td>{{ p.ba_prospect_rank|default_if_none:"-" }}</td>
                     <td>{{ p.ba_draft_rank|default_if_none:"-" }}</td>
                     <td>{{ p.fg_prospect_rank|default_if_none:"-" }}</td>
-                    <td><a class="button is-light">Move to MLB</a></td>
-                    <td>{% if level == A %}<a class="button is-light">Move to AAA</a>{% endif %}</td>
+                    <td>{% if p.is_carded %}<a class="button is-light">Move to MLB</a>{% endif %}</td>
+                    <td>{% if p.is_carded %}<a class="button is-light">Move to AAA</a>{% endif %}</td>
                     <td><a class="button is-warning">Drop</a></td>
                 </tr>
                 {% endfor %}
