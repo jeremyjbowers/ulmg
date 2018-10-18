@@ -19,6 +19,15 @@ def player_action(request, playerid, action):
     is_2h_pos = models.BooleanField(default=False)
     """
 
+    if action == "to_35":
+        p = get_object_or_404(models.Player, id=playerid)
+        p.is_reserve = False
+        p.is_1h_c = False
+        p.is_1h_p = False
+        p.is_1h_pos = False
+        p.is_35man_roster = True
+        p.save()
+
     if action == "unprotect":
         p = get_object_or_404(models.Player, id=playerid)
         p.is_reserve = False
@@ -29,42 +38,26 @@ def player_action(request, playerid, action):
 
     if action == "is_reserve":
         p = get_object_or_404(models.Player, id=playerid)
-        old = models.Player.objects.filter(is_owned=True, team=p.team, is_reserve=True)
-        if old.count() > 0:
-            for o in old:
-                o.is_reserve = False
-                o.save()
+        old = models.Player.objects.filter(team=p.team, is_reserve=True).update(is_reserve=False)
         p.is_reserve = True
         p.save()
 
 
     if action == "is_1h_p":
         p = get_object_or_404(models.Player, id=playerid)
-        old = models.Player.objects.filter(is_owned=True, team=p.team, is_1h_p=True)
-        if old.count() > 0:
-            for o in old:
-                o.is_1h_p = False
-                o.save()
+        old = models.Player.objects.filter(team=p.team, is_1h_p=True).update(is_1h_p=False)
         p.is_1h_p = True
         p.save()
 
     if action == "is_1h_c":
         p = get_object_or_404(models.Player, id=playerid)
-        old = models.Player.objects.filter(is_owned=True, team=p.team, is_1h_c=True)
-        if old.count() > 0:
-            for o in old:
-                o.is_1h_c = False
-                o.save()
+        old = models.Player.objects.filter(team=p.team, is_1h_c=True).update(is_1h_c=False)
         p.is_1h_c = True
         p.save()
 
     if action == "is_1h_pos":
         p = get_object_or_404(models.Player, id=playerid)
-        old = models.Player.objects.filter(is_owned=True, team=p.team, is_1h_pos=True)
-        if old.count() > 0:
-            for o in old:
-                o.is_1h_pos = False
-                o.save()
+        old = models.Player.objects.filter(team=p.team, is_1h_pos=True).update(is_1h_pos=False)
         p.is_1h_pos = True
         p.save()
 
@@ -72,6 +65,7 @@ def player_action(request, playerid, action):
         p = get_object_or_404(models.Player, id=playerid)
         p.is_mlb_roster = True
         p.is_aaa_roster = False
+        p.is_35man_roster = True
         if p.level == "V":
             p.is_reserve = False
             p.is_1h_c = False

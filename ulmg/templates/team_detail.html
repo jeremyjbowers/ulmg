@@ -75,6 +75,7 @@
                 <th></th>
                 <th></th>
                 <th></th>
+                <th></th>
             </thead>
             <tbody>
                 {% for p in unrostered %}
@@ -96,6 +97,7 @@
                         {% if p.position == "C" and p.level == "V" %}<a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="is_1h_c">&#128737; C</a>{% endif %}
                         {% if p.position != "P" and p.position != "C" and p.level == "V" %}<a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="is_1h_pos">&#128737; Pos</a>{% endif %}
                     </td>
+                    <td>{% if not p.is_35man_roster %}<a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="to_35">35 man</a>{% endif %}</td>
                     <td><a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="to_mlb">MLB</a></td>
                     <td><a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="to_aaa">AAA</a></td>
                     <td><a class="button is-warning player-drop" data-playerid="{{ p.id }}" data-playername="{{ p.name }}">Drop</a></td>
@@ -113,7 +115,6 @@
                 <th>Position</th>
                 <th>Carded?</th>
                 <th>Usage</th>
-                <th>Level</th>
                 <th>Actions</th>
                 <th></th>
                 <th></th>
@@ -226,6 +227,7 @@
                 <th></th>
                 <th></th>
                 <th></th>
+                <th></th>
             </thead>
             <tbody>
                 {% for p in aaa_roster %}
@@ -247,6 +249,7 @@
                         {% if p.position != "P" and p.position != "C" and p.level == "V" %}<a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="is_1h_pos">&#128737; Pos</a>{% endif %}
                     </td>
                     <td>{% if p.level == "V" %}<a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="unprotect">Unprotect</a>{% endif %}</td>
+                    <td>{% if not p.is_35man_roster %}<a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="to_35">35 man</a>{% endif %}</td>
                     <td><a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="to_mlb">MLB</a></td>
                     <td><a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="off_roster">{% if p.level == "B" %}AA{% else %}Remove{% endif %}</a></td>
                     <td><a class="button is-warning player-drop" data-playerid="{{ p.id }}" data-playername="{{ p.name }}">Drop</a></td>
