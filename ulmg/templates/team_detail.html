@@ -128,7 +128,6 @@
                 <th>Name</th>
                 <th>Age</th>
                 <th>Position</th>
-                <th>Carded?</th>
                 <th>Usage</th>
                 <th>Level</th>
                 <th>Actions</th>
@@ -147,7 +146,6 @@
                     </td>
                     <td>{{ p.age }}</td>
                     <td>{{ p.position }}</td>
-                    <td>{% if p.is_carded %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td>
                     <td>{{ p.usage|default_if_none:""|safe }}</td>
                     <td>{{ p.level }}</td>
                     <td><a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="to_aaa">Move to AAA</a></td>
@@ -183,7 +181,6 @@
                 <th>Name</th>
                 <th>Age</th>
                 <th>Position</th>
-                <th>Carded?</th>
                 <th>Usage</th>
                 <th>Level</th>
                 <th>Actions</th>
@@ -202,7 +199,6 @@
                     </td>
                     <td>{{ p.age }}</td>
                     <td>{{ p.position }}</td>
-                    <td>{% if p.is_carded %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td>
                     <td>{{ p.usage|default_if_none:""|safe }}</td>
                     <td>{{ p.level }}</td>
                     <td><a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="to_mlb">Move to MLB</a></td>
