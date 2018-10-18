@@ -109,8 +109,9 @@ class Player(BaseModel):
     is_owned = models.BooleanField(default=False)
     is_prospect = models.BooleanField(default=False)
     is_carded = models.BooleanField(default=False)
-    is_rostered = models.BooleanField(default=False)
     is_amateur = models.BooleanField(default=False)
+    is_mlb_roster = models.BooleanField(default=False)
+    is_aaa_roster = models.BooleanField(default=False)
 
     class Meta:
         ordering = ["last_name", "first_name", "level", "position"]

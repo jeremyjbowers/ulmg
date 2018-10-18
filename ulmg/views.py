@@ -1,5 +1,5 @@
 from django.shortcuts import render_to_response, get_object_or_404
-from django.db.models import Count, Avg, Sum, Max, Min
+from django.db.models import Count, Avg, Sum, Max, Min, Q
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 
 from ulmg import models, utils
@@ -20,9 +20,18 @@ def team_detail(request, abbreviation):
 
     team_players = models.Player.objects.filter(team=context['team'])
     context['num_owned'] = team_players.count()
-    context['protected'] = team_players.filter(level="B").order_by("position", "last_name")
-    context['unprotected'] = team_players.filter(level__in=["A", "V"]).order_by("position","-level", "last_name")
-    context['num_rostered'] = team_players.filter(is_rostered=True).count()
+
+    context['mlb_roster'] = team_players.filter(is_mlb_roster=True).order_by("position","-level", "last_name")
+    context['aaa_roster'] = team_players.filter(is_aaa_roster=True).order_by("position","-level", "last_name")
+
+    context['eligible'] = team_players.filter(level__in=["A", "V"], is_mlb_roster=False, is_aaa_roster=False).order_by("position","-level", "last_name")
+    context['ineligible'] = team_players.filter(level="B").exclude(Q(is_aaa_roster=True)|Q(is_mlb_roster=True)).order_by("position", "last_name")
+    context['num_rostered'] = team_players.filter(Q(is_aaa_roster=True)|Q(is_mlb_roster=True)).count()
+
+    context['mlb_count'] = team_players.filter(is_mlb_roster=True).count()
+    context['aaa_count'] = team_players.filter(is_aaa_roster=True).count()
+    context['aa_count'] = team_players.filter(level__in=["B"], is_mlb_roster=False, is_aaa_roster=False).count()
+
     context['by_position'] = team_players.order_by('position').values('position').annotate(Count('position'))
     context['by_level'] = team_players.order_by('level').values('level').annotate(Count('level'))
 

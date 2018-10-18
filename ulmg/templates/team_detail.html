@@ -1,8 +1,25 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<h1 class="title is-1 has-text-weight-bold">{{ team.city }} <span class="has-text-info">{{ team.nickname }}</span> <span class="has-text-grey-light title is-5 has-text-weight-demibold">{{ team.division }} division</span></h1>
+<h1 class="title is-1 has-text-weight-bold">{{ team.city }} <span class="has-text-success">{{ team.nickname }}</span> <span class="has-text-grey-light title is-5 has-text-weight-demibold">{{ team.division }} division</span></h1>
 <h1 class="title is-3 has-text-weight-demibold">{% if team.owner %}Manager: <a href="mailto:{{ team.email }}" >{{ team.owner }}</a>{% else %}&mdash;{% endif %}</h1>
+<hr />
+
+<div class="columns">
+    <div class="column">
+        <nav class="level">
+            {% for p in by_level %}
+            <div class="level-item has-text-centered">
+              <div>
+                <p class="title is-3 has-text-weight-light">{{ p.level }}-level</p>
+                <p class="title">{{ p.level__count }}</p>
+              </div>
+            </div>
+            {% endfor %}
+        </nav>
+    </div>
+</div>
+
 <hr />
 
 <div class="columns">
@@ -10,35 +27,64 @@
         <nav class="level">
             <div class="level-item has-text-centered">
                 <div>
-                  <p class="heading">Total players</p>
-                  <p class="title">{{ num_owned }}</p>
+                  <p class="title is-4 has-text-weight-light">Total players</p>
+                  <p class="title">{{ num_owned }} <span class="has-text-weight-light title is-5">of no more than</span> 75</p>
                 </div>
               </div>
             <div class="level-item has-text-centered">
               <div>
-                <p class="heading">Unprotected</p>
-                <p class="title">{{ unprotected|length }}</p>
+                <p class="title is-4 has-text-weight-light">Draft-eligible</p>
+                <p class="title">{{ eligible|length }}</p>
               </div>
             </div>
             <div class="level-item has-text-centered">
               <div>
-                <p class="heading">On active roster</p>
+                <p class="title is-4 has-text-weight-light">Protected on a roster</p>
                 <p class="title">{{ num_rostered }}</p>
               </div>
             </div>
-            {% for p in by_level %}
             <div class="level-item has-text-centered">
-              <div>
-                <p class="heading">{{ p.level }}-level</p>
-                <p class="title">{{ p.level__count }}</p>
-              </div>
+                <div>
+                    <p class="title is-4 has-text-weight-light"><a href="#mlb">MLB roster</a></p>
+                    <p class="title">{{ mlb_count }} <span class="has-text-weight-light title is-5">of no more than</span> 25</p>
+                </div>
+                </div>
+                <div class="level-item has-text-centered">
+                    <div>
+                        <p class="title is-4 has-text-weight-light"><a href="#aaa">AAA roster</a></p>
+                        <p class="title">{{ aaa_count }} <span class="has-text-weight-light title is-5">of no more than</span> 10</p>
+                    </div>
+                </div>
+                <div class="level-item has-text-centered">
+                    <div>
+                        <p class="title is-4 has-text-weight-light"><a href="#aa">AA roster</a></p>
+                        <p class="title">{{ aa_count }} <span class="has-text-weight-light title is-5">of at least</span> 20></p>
+                    </div>
             </div>
-            {% endfor %}
-          </nav>
+        </nav>
+    </div>
+</div>
 
 <hr />
 
-        <h1 class="title is-5">{{ unprotected|length }} draft-eligible players <span class="has-text-grey has-text-weight-light">(levels V or A)</span></h1>
+<div class="columns">
+    <div class="column">
+        <nav class="level">
+        {% for p in by_position %}
+            <div class="level-item has-text-centered">
+            <div>
+                <p class="title is-5 has-text-weight-light">{{ p.position }}</p>
+                <p class="title">{{ p.position__count }}</p>
+            </div>
+            </div>
+        {% endfor %}
+        </nav>
+    </div>
+</div>
+
+<hr />
+
+        <h1 class="title is-5">{{ eligible|length }} unprotected players <span class="has-text-grey has-text-weight-light">(level V or A)</span></h1>
         <a href="#usage">A note on usage</a>
         <table class="table is-fullwidth is-hoverable" data-sortable>
             <thead>
@@ -48,11 +94,12 @@
                 <th>Carded?</th>
                 <th>Usage</th>
                 <th>Level</th>
-                <th>Active?</th>
-                <th>Release?</th>
+                <th></th>
+                <th></th>
+                <th></th>
             </thead>
             <tbody>
-                {% for p in unprotected %}
+                {% for p in eligible %}
                 <tr id="player-{{ p.id }}">
                     <td style="text-align: left!important;"><span class="has-text-weight-semibold">
                         <a href="/teams/{{ p.team.abbreviation }}/#player-{{ p.id }}">{{ p.name }}</a>
@@ -66,22 +113,93 @@
                     <td>{% if p.is_carded %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td>
                     <td>{{ p.usage|default_if_none:""|safe }}</td>
                     <td>{{ p.level }}</td>
-                    <td>{% if p.is_rostered %}
-                        <a class="button is-dark">Remove</a>
-                        {% endif %}
-                        {% if p.usage %}
-                        <a class="button is-light">Add</a>
-                        {% endif %}
-                    </td>
-                    <td>
-                        <a class="button is-warning">Drop</a>
-                    </td>
+                    <td><a class="button is-light">Add to MLB</a></td>
+                    <td>{% if p.level == "A" %}<a class="button is-light">Add to AAA</a>{% endif %}</td>
+                    <td><a class="button is-warning">Drop</a></td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
 
-        <h1 class="title is-5">{{ protected|length }} protected players <span class="has-text-grey has-text-weight-light">(level B)</span></h1>
+        {% if mlb_roster %}
+        <h1 id="mlb" class="title is-5">{{ mlb_roster|length }} on MLB roster <span class="has-text-grey has-text-weight-light">(level V, A or B)</span></h1>
+        <a href="#usage">A note on usage</a>
+        <table class="table is-fullwidth is-hoverable" data-sortable>
+            <thead>
+                <th>Name</th>
+                <th>Age</th>
+                <th>Position</th>
+                <th>Carded?</th>
+                <th>Usage</th>
+                <th>Level</th>
+                <th></th>
+                <th></th>
+                <th></th>
+            </thead>
+            <tbody>
+                {% for p in mlb_roster %}
+                <tr id="player-{{ p.id }}">
+                    <td style="text-align: left!important;"><span class="has-text-weight-semibold">
+                        <a href="/teams/{{ p.team.abbreviation }}/#player-{{ p.id }}">{{ p.name }}</a>
+                        </span> <a href="/admin/ulmg/player/{{ p.id }}/change/"><span class="has-text-weight-light is-size-6">edit &ggg;</span></a><br/>
+                        {% if p.bbref_url %}<a class="has-text-weight-light is-size-6" target="_blank" href="{{ p.bbref_url }}">BBR &Gt;</a>{% endif %}
+                        {% if p.fangraphs_url %}<a class="has-text-weight-light is-size-6" target="_blank" href="{{ p.fangraphs_url }}">FG &Gt;</a>{% endif %}
+                        {% if p.ba_url %}<a class="has-text-weight-light is-size-6"  target="_blank" href="{{ p.ba_url }}">BA &Gt;</a>{% endif %}
+                    </td>
+                    <td>{{ p.age }}</td>
+                    <td>{{ p.position }}</td>
+                    <td>{% if p.is_carded %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td>
+                    <td>{{ p.usage|default_if_none:""|safe }}</td>
+                    <td>{{ p.level }}</td>
+                    <td></td>
+                    <td>{% if level == A %}<a class="button is-light">Move to AAA</a>{% endif %}</td>
+                    <td><a class="button is-warning">Drop</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+
+        {% if aaa_roster %}
+        <h1 id="aaa" class="title is-5">{{ aaa_roster|length }} on AAA roster <span class="has-text-grey has-text-weight-light">(level V, A or B)</span></h1>
+        <a href="#usage">A note on usage</a>
+        <table class="table is-fullwidth is-hoverable" data-sortable>
+            <thead>
+                <th>Name</th>
+                <th>Age</th>
+                <th>Position</th>
+                <th>Carded?</th>
+                <th>Usage</th>
+                <th>Level</th>
+                <th></th>
+                <th></th>
+                <th></th>
+            </thead>
+            <tbody>
+                {% for p in aaa_roster %}
+                <tr id="player-{{ p.id }}">
+                    <td style="text-align: left!important;"><span class="has-text-weight-semibold">
+                        <a href="/teams/{{ p.team.abbreviation }}/#player-{{ p.id }}">{{ p.name }}</a>
+                        </span> <a href="/admin/ulmg/player/{{ p.id }}/change/"><span class="has-text-weight-light is-size-6">edit &ggg;</span></a><br/>
+                        {% if p.bbref_url %}<a class="has-text-weight-light is-size-6" target="_blank" href="{{ p.bbref_url }}">BBR &Gt;</a>{% endif %}
+                        {% if p.fangraphs_url %}<a class="has-text-weight-light is-size-6" target="_blank" href="{{ p.fangraphs_url }}">FG &Gt;</a>{% endif %}
+                        {% if p.ba_url %}<a class="has-text-weight-light is-size-6"  target="_blank" href="{{ p.ba_url }}">BA &Gt;</a>{% endif %}
+                    </td>
+                    <td>{{ p.age }}</td>
+                    <td>{{ p.position }}</td>
+                    <td>{% if p.is_carded %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td>
+                    <td>{{ p.usage|default_if_none:""|safe }}</td>
+                    <td>{{ p.level }}</td>
+                    <td></td>
+                    <td><a class="button is-light">Move to MLB</a></td>
+                    <td><a class="button is-warning">Drop</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+
+        <h1 id="aa" class="title is-5">{{ ineligible|length }} players on the AA roster <span class="has-text-grey has-text-weight-light">(level B)</span></h1>
         <a href="#usage">A note on usage</a>
         <table class="table is-fullwidth is-hoverable" data-sortable>
             <thead>
@@ -96,11 +214,12 @@
                 <th>BA</th>
                 <th>BA draft</th>
                 <th>FG</th>
-                <th>Active?</th>
-                <th>Release?</th>
+                <th></th>
+                <th></th>
+                <th></th>
             </thead>
             <tbody>
-                {% for p in protected %}
+                {% for p in ineligible %}
                 <tr id="player-{{ p.id }}">
                     <td style="text-align: left!important;"><span class="has-text-weight-semibold">
                         <a href="/teams/{{ p.team.abbreviation }}/#player-{{ p.id }}">{{ p.name }}</a>
@@ -119,14 +238,9 @@
                     <td>{{ p.ba_prospect_rank|default_if_none:"-" }}</td>
                     <td>{{ p.ba_draft_rank|default_if_none:"-" }}</td>
                     <td>{{ p.fg_prospect_rank|default_if_none:"-" }}</td>
-                    <td>{% if p.is_rostered %}
-                        <a class="button is-dark">Remove</a>{% endif %}
-                        {% if p.usage and not p.is_rostered %}<a class="button is-light">Add</a>
-                        {% endif %}
-                    </td>
-                    <td>
-                        <a class="button is-warning">Drop</a>
-                    </td>
+                    <td><a class="button is-light">Move to MLB</a></td>
+                    <td>{% if level == A %}<a class="button is-light">Move to AAA</a>{% endif %}</td>
+                    <td><a class="button is-warning">Drop</a></td>
                 </tr>
                 {% endfor %}
             </tbody>
