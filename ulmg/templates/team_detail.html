@@ -33,14 +33,8 @@
               </div>
             <div class="level-item has-text-centered">
               <div>
-                <p class="title is-4 has-text-weight-light">Draft-eligible</p>
+                <p class="title is-4 has-text-weight-light">Unprotected</p>
                 <p class="title">{{ eligible|length }}</p>
-              </div>
-            </div>
-            <div class="level-item has-text-centered">
-              <div>
-                <p class="title is-4 has-text-weight-light">Protected on a roster</p>
-                <p class="title">{{ num_rostered }}</p>
               </div>
             </div>
             <div class="level-item has-text-centered">
@@ -52,7 +46,7 @@
                 <div class="level-item has-text-centered">
                     <div>
                         <p class="title is-4 has-text-weight-light"><a href="#aaa">AAA roster</a></p>
-                        <p class="title">{% if aaa_count > 10 %}<span class="has-text-danger">{{ aaa_count }}</span>{% else %}{{ aaa_count}}{% endif %} <span class="has-text-weight-light title is-5">of no more than</span> 10</p>
+                        <p class="title">{{ aaa_count}}</p>
                     </div>
                 </div>
                 <div class="level-item has-text-centered">
@@ -96,8 +90,8 @@
                     <td>{% if p.is_carded %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td>
                     <td>{{ p.usage|default_if_none:""|safe }}</td>
                     <td>{{ p.level }}</td>
-                    <td><a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="to_mlb">Add to MLB</a></td>
-                    <td><a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="to_aaa">Add to AAA</a></td>
+                    <td><a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="to_mlb">MLB</a></td>
+                    <td><a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="to_aaa">AAA</a></td>
                     <td><a class="button is-warning player-drop" data-playerid="{{ p.id }}" data-playername="{{ p.name }}">Drop</a></td>
                 </tr>
                 {% endfor %}
@@ -148,8 +142,8 @@
                     <td>{{ p.position }}</td>
                     <td>{{ p.usage|default_if_none:""|safe }}</td>
                     <td>{{ p.level }}</td>
-                    <td><a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="to_aaa">Move to AAA</a></td>
-                    <td><a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="off_roster">{% if p.level == "B" %}Move to AA{% else %}Unprotect{% endif %}</a></td>
+                    <td><a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="to_aaa">AAA</a></td>
+                    <td><a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="off_roster">{% if p.level == "B" %}AA{% else %}Unprotect{% endif %}</a></td>
                     <td><a class="button is-warning player-drop" data-playerid="{{ p.id }}" data-playername="{{ p.name }}">Drop</a></td>
                 </tr>
                 {% endfor %}
@@ -201,8 +195,8 @@
                     <td>{{ p.position }}</td>
                     <td>{{ p.usage|default_if_none:""|safe }}</td>
                     <td>{{ p.level }}</td>
-                    <td><a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="to_mlb">Move to MLB</a></td>
-                    <td><a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="off_roster">{% if p.level == "B" %}Move to AA{% else %}Unprotect{% endif %}</a></td>
+                    <td><a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="to_mlb">MLB</a></td>
+                    <td><a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="off_roster">{% if p.level == "B" %}AA{% else %}Unprotect{% endif %}</a></td>
                     <td><a class="button is-warning player-drop" data-playerid="{{ p.id }}" data-playername="{{ p.name }}">Drop</a></td>
                 </tr>
                 {% endfor %}
@@ -249,8 +243,8 @@
                     <td>{{ p.ba_prospect_rank|default_if_none:"-" }}</td>
                     <td>{{ p.ba_draft_rank|default_if_none:"-" }}</td>
                     <td>{{ p.fg_prospect_rank|default_if_none:"-" }}</td>
-                    <td>{% if p.is_carded %}<a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="to_mlb">Move to MLB</a>{% endif %}</td>
-                    <td>{% if p.is_carded %}<a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="to_aaa">Move to AAA</a>{% endif %}</td>
+                    <td>{% if p.is_carded %}<a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="to_mlb">MLB</a>{% endif %}</td>
+                    <td>{% if p.is_carded %}<a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="to_aaa">AAA</a>{% endif %}</td>
                     <td><a class="button is-warning player-drop" data-playerid="{{ p.id }}" data-playername="{{ p.name }}">Drop</a></td>
                 </tr>
                 {% endfor %}
