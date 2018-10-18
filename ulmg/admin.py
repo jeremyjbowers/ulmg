@@ -14,7 +14,7 @@ class TeamAdmin(VersionAdmin):
 @admin.register(Player)
 class PlayerAdmin(VersionAdmin):
     model = Player
-    readonly_fields = ["name", "is_owned", "is_prospect", "age"]
+    readonly_fields = ["name", "age"]
     list_display = ["name", "age", "is_owned", "is_prospect", "is_carded", "team", "level", "position", 'fg_prospect_rank', 'ba_prospect_rank', 'mlb_prospect_rank']
     list_filter = ["is_owned", "is_prospect", "is_carded", "team", "level", "position"]
     list_editable = []

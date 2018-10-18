@@ -199,24 +199,16 @@ class Player(BaseModel):
                 self.middle_name = n.middle
                 self.suffix = n.suffix
 
-    def set_owned(self):
-        """
-        If we can see an owner, set this player to owned.
-        """
-        self.owned = False
-        if self.owner():
-            self.owned = True
-
     def set_ids(self):
         if self.fangraphs_url and not self.fangraphs_id:
-            if "fangraphs" in self.fangraphs_url:
-                self.fangraphs_id = self.fangraphs_url.split('?playerid=')[1].split('&')[0]
+            if self.fangraphs_url:
+                if "?playerid=" in self.fangraphs_url:
+                    self.fangraphs_id = self.fangraphs_url.split('?playerid=')[1].split('&')[0]
 
     def save(self, *args, **kwargs):
         """
         Some light housekeeping.
         """
-        self.set_owned()
         self.set_name()
         self.set_ids()
 

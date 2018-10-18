@@ -207,10 +207,8 @@
         <div class="section">
             {% block content %}{% endblock %}
         </div>
-        <!-- <script
-            src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
-            integrity="sha256-3edrmyuQ0w65f8gfBsqowzjJe2iM6n0nKciPUp8y+7E="
-            crossorigin="anonymous"></script> -->
+        <script src="//code.jquery.com/jquery-2.1.4.min.js"></script>
         <script src="//cdnjs.cloudflare.com/ajax/libs/sortable/0.8.0/js/sortable.min.js"></script>
+        {% block extrascript %}{% endblock %}
     </body>
 </html>

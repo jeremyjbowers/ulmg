@@ -1,8 +1,47 @@
+from django.http import HttpResponse
+from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import render_to_response, get_object_or_404
 from django.db.models import Count, Avg, Sum, Max, Min, Q
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 
 from ulmg import models, utils
+
+@csrf_exempt
+def player_action(request, playerid, action):
+    message = "I don't understand this action!"
+
+    if action == "to_mlb":
+        message = "adding %s to mlb roster" % playerid
+        p = get_object_or_404(models.Player, id=playerid)
+        p.is_mlb_roster = True
+        p.is_aaa_roster = False
+        p.save()
+
+    if action == "to_aaa":
+        message = "adding %s to aaa roster" % playerid
+        p = get_object_or_404(models.Player, id=playerid)
+        p.is_mlb_roster = False
+        p.is_aaa_roster = True
+        p.save()
+
+    if action == "off_roster":
+        message = "removing %s from rosters" % playerid
+        p = get_object_or_404(models.Player, id=playerid)
+        p.is_mlb_roster = False
+        p.is_aaa_roster = False
+        p.save()
+
+    if action == "drop":
+        message = "dropping %s" % playerid
+        p = get_object_or_404(models.Player, id=playerid)
+        p.is_mlb_roster = False
+        p.is_aaa_roster = False
+        p.team = None
+        p.is_owned = False
+        p.save()
+
+    print(message)
+    return HttpResponse(message)
 
 def index(request):
     context = utils.build_context(request)
