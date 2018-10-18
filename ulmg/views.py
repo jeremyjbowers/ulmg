@@ -72,6 +72,8 @@ def team_detail(request, abbreviation):
     context['aa_count'] = team_players.filter(level__in=["B"], is_mlb_roster=False, is_aaa_roster=False).count()
 
     context['by_position'] = team_players.order_by('position').values('position').annotate(Count('position'))
+    context['mlb_by_position'] = team_players.filter(is_mlb_roster=True).order_by('position').values('position').annotate(Count('position'))
+    context['aaa_by_position'] = team_players.filter(is_aaa_roster=True).order_by('position').values('position').annotate(Count('position'))
     context['by_level'] = team_players.order_by('level').values('level').annotate(Count('level'))
 
     return render_to_response('team_detail.html', context=context)

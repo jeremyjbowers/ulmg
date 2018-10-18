@@ -67,23 +67,6 @@
 
 <hr />
 
-<div class="columns">
-    <div class="column">
-        <nav class="level">
-        {% for p in by_position %}
-            <div class="level-item has-text-centered">
-            <div>
-                <p class="title is-5 has-text-weight-light">{{ p.position }}</p>
-                <p class="title">{{ p.position__count }}</p>
-            </div>
-            </div>
-        {% endfor %}
-        </nav>
-    </div>
-</div>
-
-<hr />
-
         {% if eligible %}<h1 class="title is-5">{{ eligible|length }} unprotected player{% if eligible|length > 1%}s{% endif %} <span class="has-text-grey has-text-weight-light">(level V or A)</span></h1>
         <a href="#usage">A note on usage</a>
         <table class="table is-fullwidth is-hoverable" data-sortable>
@@ -123,6 +106,22 @@
 
         {% if mlb_roster %}
         <h1 id="mlb" class="title is-5">{{ mlb_roster|length }} player{% if mlb_roster|length > 1%}s{% endif %} on the MLB roster <span class="has-text-grey has-text-weight-light">(level V, A or B)</span></h1>
+
+        <div class="columns">
+            <div class="column">
+                <nav class="level">
+                {% for p in mlb_by_position %}
+                    <div class="level-item has-text-centered">
+                    <div>
+                        <p class="title is-5 has-text-weight-light">{{ p.position }}</p>
+                        <p class="title">{{ p.position__count }}</p>
+                    </div>
+                    </div>
+                {% endfor %}
+                </nav>
+            </div>
+        </div>
+
         <a href="#usage">A note on usage</a>
         <table class="table is-fullwidth is-hoverable" data-sortable>
             <thead>
@@ -162,6 +161,22 @@
 
         {% if aaa_roster %}
         <h1 id="aaa" class="title is-5">{{ aaa_roster|length }} player{% if aaa_roster|length > 1%}s{% endif %} on the AAA roster <span class="has-text-grey has-text-weight-light">(level V, A or B)</span></h1>
+
+        <div class="columns">
+            <div class="column">
+                <nav class="level">
+                {% for p in aaa_by_position %}
+                    <div class="level-item has-text-centered">
+                    <div>
+                        <p class="title is-5 has-text-weight-light">{{ p.position }}</p>
+                        <p class="title">{{ p.position__count }}</p>
+                    </div>
+                    </div>
+                {% endfor %}
+                </nav>
+            </div>
+        </div>
+
         <a href="#usage">A note on usage</a>
         <table class="table is-fullwidth is-hoverable" data-sortable>
             <thead>
