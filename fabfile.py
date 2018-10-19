@@ -69,6 +69,11 @@ def get_data():
     api.get(remote_path='/tmp/ulmg.json', local_path="data/fixtures/ulmg.json")
 
 @api.task
+def reload():
+    get_data()
+    api.local('django-admin reload')
+
+@api.task
 def deploy():
     pull()
     pip_install()
