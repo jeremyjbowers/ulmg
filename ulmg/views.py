@@ -130,7 +130,7 @@ def protect_team_detail(request, abbreviation):
     context['unprotected'] = team_players.filter(level__in=['V', 'A'], is_carded=True, is_1h_c=False, is_1h_p=False, is_1h_pos=False, is_35man_roster=False).order_by('position', '-level_order', 'last_name')
     context['carded_b'] = team_players.filter(level="B", is_carded=True).order_by('position', '-level_order', 'last_name')
     context['protected_veterans'] = team_players.filter(Q(is_1h_c=True)|Q(is_1h_p=True)|Q(is_1h_pos=True)).order_by('position', '-level_order', 'last_name')
-    context['num_carded'] = team_players.filter(is_carded=True).count()
+    context['num_owned'] = team_players.count()
     context['num_uncarded'] = team_players.filter(is_carded=False).count()
     context['num_35_man'] = context['on_35_man'].count()
     return render_to_response('team_protect.html', context=context)
