@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+
+{% block content %}
+{% include 'includes/team_topper.html' %}
+
+<div class="tabs is-centered is-boxed is-large">
+    <ul>
+        <li><a href="/teams/{{ team.abbreviation|lower }}/">Carded ({{ num_carded }})</a></li>
+        <li class="is-active"><a>Protect players</a></li>
+        <!-- <li><a href="/teams/{{ team.abbreviation|lower }}/roster/">Set rosters</a></li> -->
+    </ul>
+</div>
+
+<div class="columns">
+    <div class="column">
+        <nav class="level">
+            {% for p in by_level %}
+            <div class="level-item has-text-centered">
+              <div>
+                <p class="title is-3 has-text-weight-light">{{ p.level }}-level</p>
+                <p class="title">{{ p.level__count }}</p>
+              </div>
+            </div>
+            {% endfor %}
+        </nav>
+    </div>
+</div>
+
+<div class="columns">
+    <div class="column">
+        <h1 class="title is-2">Protected veterans ({{ protected_veterans|length }})</h1>
+        {% if protected_veterans %}<table class="table is-fullwidth is-hoverable" data-sortable>
+            <thead>
+                <th>Name</th>
+                <th>Age</th>
+                <th>Position</th>
+                <th>Usage <a href="#usage">... what?</a></th>
+                <th>Action</th>
+            </thead>
+            <tbody>
+                {% for p in protected_veterans %}
+                <tr id="player-{{ p.id }}">
+                    <td style="text-align: left!important;"><span class="has-text-weight-semibold">
+                        {{ p.name }}
+                        </span> <a href="/admin/ulmg/player/{{ p.id }}/change/">&#x270E;</a><br/>
+                        {% if p.bbref_url %}<a class="has-text-weight-light is-size-6" target="_blank" href="{{ p.bbref_url }}">BBR &Gt;</a>{% endif %}
+                        {% if p.fangraphs_url %}<a class="has-text-weight-light is-size-6" target="_blank" href="{{ p.fangraphs_url }}">FG &Gt;</a>{% endif %}
+                        {% if p.ba_url %}<a class="has-text-weight-light is-size-6"  target="_blank" href="{{ p.ba_url }}">BA &Gt;</a>{% endif %}
+                        {% if p.mlb_url %}<a class="has-text-weight-light is-size-6"  target="_blank" href="{{ p.mlb_url }}">MLB &Gt;</a>{% endif %}
+                    </td>
+                    <td>{{ p.age }}</td>
+                    <td>{{ p.position }}</td>
+                    <td>{{ p.usage|default_if_none:""|safe }}</td>
+                    <td><a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="unprotect">remove</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>{% endif %}
+
+        <h1 class="title is-2">35-man roster ({{ num_35_man }})</h1>
+        {% regroup on_35_man by position as position_players %}
+        {% for position in position_players %}
+        <h1 class="title is-3">{{ position.grouper }} ({{ position.list|length }})</h1>
+        <table class="table is-fullwidth is-hoverable" data-sortable>
+            <thead>
+                <th>Name</th>
+                <th>Age</th>
+                <th>Position</th>
+                <th>Usage <a href="#usage">... what?</a></th>
+                <th>Level</th>
+                <th>Action</th>
+            </thead>
+            <tbody>
+                {% for p in position.list %}
+                <tr id="player-{{ p.id }}">
+                    <td style="text-align: left!important;"><span class="has-text-weight-semibold">
+                        {{ p.name }}
+                        </span> <a href="/admin/ulmg/player/{{ p.id }}/change/">&#x270E;</a><br/>
+                        {% if p.bbref_url %}<a class="has-text-weight-light is-size-6" target="_blank" href="{{ p.bbref_url }}">BBR &Gt;</a>{% endif %}
+                        {% if p.fangraphs_url %}<a class="has-text-weight-light is-size-6" target="_blank" href="{{ p.fangraphs_url }}">FG &Gt;</a>{% endif %}
+                        {% if p.ba_url %}<a class="has-text-weight-light is-size-6"  target="_blank" href="{{ p.ba_url }}">BA &Gt;</a>{% endif %}
+                        {% if p.mlb_url %}<a class="has-text-weight-light is-size-6"  target="_blank" href="{{ p.mlb_url }}">MLB &Gt;</a>{% endif %}
+                    </td>
+                    <td>{{ p.age }}</td>
+                    <td>{{ p.position }}</td>
+                    <td>{{ p.usage|default_if_none:""|safe }}</td>
+                    <td>{{ p.level }}</td>
+                    <td><a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="unprotect">remove</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>{% endfor %}
+    </div>
+    <div class="column">
+        <h1 class="title is-2">Unprotected players ({{ unprotected|length }})</h1>
+        {% regroup unprotected by position as position_players %}
+        {% for position in position_players %}
+        <h1 class="title is-3">{{ position.grouper }} ({{ position.list|length }})</h1>
+        <table class="table is-fullwidth is-hoverable" data-sortable>
+            <thead>
+                <th>Name</th>
+                <th>Age</th>
+                <th>Position</th>
+                <th>Usage <a href="#usage">... what?</a></th>
+                <th>Level</th>
+                <th>Action</th>
+                <th></th>
+            </thead>
+            <tbody>
+                {% for p in position.list %}
+                <tr id="player-{{ p.id }}">
+                    <td style="text-align: left!important;"><span class="has-text-weight-semibold">
+                        {{ p.name }}
+                        </span> <a href="/admin/ulmg/player/{{ p.id }}/change/">&#x270E;</a><br/>
+                        {% if p.bbref_url %}<a class="has-text-weight-light is-size-6" target="_blank" href="{{ p.bbref_url }}">BBR &Gt;</a>{% endif %}
+                        {% if p.fangraphs_url %}<a class="has-text-weight-light is-size-6" target="_blank" href="{{ p.fangraphs_url }}">FG &Gt;</a>{% endif %}
+                        {% if p.ba_url %}<a class="has-text-weight-light is-size-6"  target="_blank" href="{{ p.ba_url }}">BA &Gt;</a>{% endif %}
+                        {% if p.mlb_url %}<a class="has-text-weight-light is-size-6"  target="_blank" href="{{ p.mlb_url }}">MLB &Gt;</a>{% endif %}
+                    </td>
+                    <td>{{ p.age }}</td>
+                    <td>{{ p.position }}</td>
+                    <td>{{ p.usage|default_if_none:""|safe }}</td>
+                    <td>{{ p.level }}</td>
+                    <td>{% if num_35_man < 35 %}<a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="to_35">to 35 man</a>{% endif %}</td>
+                    <td>
+                        {% if p.position == "P" and p.level == "V" %}<a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="is_1h_p">&#128737; P</a>{% endif %}
+                        {% if p.position == "C" and p.level == "V" %}<a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="is_1h_c">&#128737; C</a>{% endif %}
+                        {% if p.position != "P" and p.position != "C" and p.level == "V" %}<a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="is_1h_pos">&#128737; Pos</a>{% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>{% endfor %}
+        <h1 class="title is-2">Carded B players ({{ carded_b|length }})</h1>
+        {% if carded_b %}<table class="table is-fullwidth is-hoverable" data-sortable>
+            <thead>
+                <th>Name</th>
+                <th>Age</th>
+                <th>Position</th>
+                <th>Usage <a href="#usage">... what?</a></th>
+                <th>Action</th>
+            </thead>
+            <tbody>
+                {% for p in carded_b %}
+                <tr id="player-{{ p.id }}">
+                    <td style="text-align: left!important;"><span class="has-text-weight-semibold">
+                        {{ p.name }}
+                        </span> <a href="/admin/ulmg/player/{{ p.id }}/change/">&#x270E;</a><br/>
+                        {% if p.bbref_url %}<a class="has-text-weight-light is-size-6" target="_blank" href="{{ p.bbref_url }}">BBR &Gt;</a>{% endif %}
+                        {% if p.fangraphs_url %}<a class="has-text-weight-light is-size-6" target="_blank" href="{{ p.fangraphs_url }}">FG &Gt;</a>{% endif %}
+                        {% if p.ba_url %}<a class="has-text-weight-light is-size-6"  target="_blank" href="{{ p.ba_url }}">BA &Gt;</a>{% endif %}
+                        {% if p.mlb_url %}<a class="has-text-weight-light is-size-6"  target="_blank" href="{{ p.mlb_url }}">MLB &Gt;</a>{% endif %}
+                    </td>
+                    <td>{{ p.age }}</td>
+                    <td>{{ p.position }}</td>
+                    <td>{{ p.usage|default_if_none:""|safe }}</td>
+                    <td>{% if num_35_man < 35 %}<a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="to_35">to 35 man</a>{% endif %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>{% endif %}
+    </div>
+</div>
+<div class="columns">
+    <div class="column">
+        <h1 id="usage" class="is-5 title">A note on usage</h1>
+        <p>
+            <ul>
+                <li>Usage has been calculated for pitchers and hitters.</li>
+                <li>If a pitcher has 1.5 times more relief appearances than starts, innings are multiplied by 1.5 if more than 70. </li>
+                <li>For hitters, seasons with more than 550 plate appearances show as "unlimited."</li>
+            </ul>
+        </p>
+    </div>
+</div>
+{% endblock %}
+
+{% block extrascript %}
+<script type="text/javascript">
+$(function(){
+    var player_click_handler = function(el) {
+
+        el.preventDefault();
+        $el = $(this);
+
+        var playerid = $el.attr('data-playerid')
+        var action = $el.attr('data-action')
+
+        console.log(playerid, action);
+
+        $.ajax({
+            type: "POST",
+            url: '/api/v1/player/' + playerid + '/' +  action + '/',
+            success: function(response){
+                window.location.reload();
+            }
+        });
+    }
+    $('body').on('click', 'a.player-action', player_click_handler);
+});
+</script>
+{% endblock %}

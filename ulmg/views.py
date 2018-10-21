@@ -34,6 +34,7 @@ def player_action(request, playerid, action):
         p.is_1h_c = False
         p.is_1h_p = False
         p.is_1h_pos = False
+        p.is_35man_roster = False
         p.save()
 
     if action == "is_reserve":
@@ -114,30 +115,48 @@ def index(request):
 
     return render_to_response('index.html', context=context)
 
-def team_detail(request, abbreviation):
+def roster_team_detail(request, abbreviation):
     context = utils.build_context(request)
     context['team'] = get_object_or_404(models.Team, abbreviation__icontains=abbreviation)
 
     team_players = models.Player.objects.filter(team=context['team'])
+    return render_to_response('team_roster.html', context=context)
+
+def protect_team_detail(request, abbreviation):
+    context = utils.build_context(request)
+    context['team'] = get_object_or_404(models.Team, abbreviation__icontains=abbreviation)
+    team_players = models.Player.objects.filter(team=context['team'])
+    context['on_35_man'] = team_players.filter(is_35man_roster=True).order_by('position', '-level_order', 'last_name')
+    context['unprotected'] = team_players.filter(level__in=['V', 'A'], is_carded=True, is_1h_c=False, is_1h_p=False, is_1h_pos=False, is_35man_roster=False).order_by('position', '-level_order', 'last_name')
+    context['carded_b'] = team_players.filter(level="B", is_carded=True).order_by('position', '-level_order', 'last_name')
+    context['protected_veterans'] = team_players.filter(Q(is_1h_c=True)|Q(is_1h_p=True)|Q(is_1h_pos=True)).order_by('position', '-level_order', 'last_name')
+    context['num_carded'] = team_players.filter(is_carded=True).count()
+    context['num_uncarded'] = team_players.filter(is_carded=False).count()
+    context['num_35_man'] = context['on_35_man'].count()
+    return render_to_response('team_protect.html', context=context)
+
+def uncarded_team_detail(request, abbreviation):
+    context = utils.build_context(request)
+    context['team'] = get_object_or_404(models.Team, abbreviation__icontains=abbreviation)
+    team_players = models.Player.objects.filter(team=context['team'])
     context['num_owned'] = team_players.count()
-
-    context['mlb_roster'] = team_players.filter(is_mlb_roster=True).order_by("position","-level", "last_name")
-    context['aaa_roster'] = team_players.filter(is_aaa_roster=True).order_by("position","-level", "last_name")
-    context['aa_roster'] = team_players.filter(level="B", is_mlb_roster=False, is_aaa_roster=False).order_by("position", "last_name")
-
-    context['unrostered'] = team_players.filter(Q(level="V", is_mlb_roster=False, is_aaa_roster=False, is_1h_c=False, is_1h_p=False, is_1h_pos=False, is_reserve=False)|Q(level="A", is_aaa_roster=False, is_mlb_roster=False)).order_by("position","-level", "last_name")
-    context['protected'] = team_players.filter(Q(is_1h_p=True)|Q(is_1h_c=True)|Q(is_1h_pos=True)|Q(is_reserve=True))
-
-    context['mlb_count'] = team_players.filter(is_mlb_roster=True).count()
-    context['aaa_count'] = team_players.filter(is_aaa_roster=True).count()
-    context['aa_count'] = team_players.filter(level="B", is_mlb_roster=False, is_aaa_roster=False).count()
-
-    context['by_level'] = team_players.order_by('level').values('level').annotate(Count('level'))
+    context['by_level'] = team_players.order_by('-level_order').values('level').annotate(Count('level'))
     context['by_position'] = team_players.order_by('position').values('position').annotate(Count('position'))
-    context['mlb_by_position'] = team_players.filter(is_mlb_roster=True).order_by('position').values('position').annotate(Count('position'))
-    context['aaa_by_position'] = team_players.filter(is_aaa_roster=True).order_by('position').values('position').annotate(Count('position'))
+    uncarded = team_players.filter(is_carded=False)
+    context['uncarded'] = uncarded.order_by('position', '-level_order', 'last_name')
+    context['num_carded'] = team_players.filter(is_carded=True).count()
+    context['num_uncarded'] = uncarded.count()
+    return render_to_response('team_uncarded.html', context=context)
 
-    return render_to_response('team_detail.html', context=context)
+def team_detail(request, abbreviation):
+    context = utils.build_context(request)
+    context['team'] = get_object_or_404(models.Team, abbreviation__icontains=abbreviation)
+    team_players = models.Player.objects.filter(team=context['team'])
+    context['num_owned'] = team_players.count()
+    context['by_level'] = team_players.order_by('-level_order').values('level').annotate(Count('level'))
+    context['by_position'] = team_players.order_by('position').values('position').annotate(Count('position'))
+    context['players'] = team_players.order_by('position', '-level_order', 'last_name')
+    return render_to_response('team_carded.html', context=context)
 
 def search(request):
     def to_bool(b):

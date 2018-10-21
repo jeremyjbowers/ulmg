@@ -1,0 +1,11 @@
+<h1 class="title is-1 has-text-weight-bold">
+    {{ team.city }} "{{ team.nickname }}", {{ team.division }} division<br/>
+    <span class="title is-2 has-text-weight-regular has-text-grey">
+        Owner:
+        {% if team.owner %}
+            {{ team.owner }} <a href="mailto:{{ team.email }}" >&#x2709;</a>
+        {% else %}
+            &mdash;
+        {% endif %}
+    </span>
+</h1>

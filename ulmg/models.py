@@ -74,6 +74,7 @@ class Player(BaseModel):
     )
     # STUFF ABOUT THE PLAYER
     level = models.CharField(max_length=255, null=True, choices=PLAYER_LEVEL_CHOICES)
+    level_order = models.IntegerField(null=True, blank=True)
     name = models.CharField(max_length=255)
     last_name = models.CharField(max_length=255, null=True)
     first_name = models.CharField(max_length=255, null=True)
@@ -217,11 +218,21 @@ class Player(BaseModel):
                 if "?playerid=" in self.fangraphs_url:
                     self.fangraphs_id = self.fangraphs_url.split('?playerid=')[1].split('&')[0]
 
+    def set_level_order(self):
+        if self.level:
+            if self.level == "V":
+                self.level_order = 9
+            if self.level == "A":
+                self.level_order = 5
+            if self.level == "B":
+                self.level_order = 0
+
     def save(self, *args, **kwargs):
         """
         Some light housekeeping.
         """
         self.set_name()
         self.set_ids()
+        self.set_level_order()
 
         super().save(*args, **kwargs)
