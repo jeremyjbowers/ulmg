@@ -29,7 +29,7 @@
 <div class="columns">
     <div class="column">
         <h1 class="title is-2">MLB roster ({{ mlb_roster|length }})</h1>
-        {% if mlb_roster %}{% regroup aaa_roster by position as position_players %}
+        {% if mlb_roster %}{% regroup mlb_roster by position as position_players %}
         {% for position in position_players %}
         <h1 class="title is-3">{{ position.grouper }} ({{ position.list|length }})</h1>
         <table class="table is-fullwidth is-hoverable" data-sortable>
@@ -125,8 +125,10 @@
                     <td>{{ p.position }}</td>
                     <td>{{ p.usage|default_if_none:""|safe }}</td>
                     <td>{{ p.level }}</td>
-                    <td>{% if num_mlb < 25 %}<a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="to_mlb">to MLB</a>{% endif %} <a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="to_aaa">to AAA</a>
-                    <a class="button is-warning player-drop" data-playerid="{{ p.id }}" data-playername="{{ p.name }}">Drop</a>
+                    <td>
+                        {% if num_mlb < 25 %}<a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="to_mlb">to MLB</a>{% endif %}
+                        <a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="to_aaa">to AAA</a>
+                        <a class="button is-warning player-drop" data-playerid="{{ p.id }}" data-playername="{{ p.name }}">Drop</a>
                     </td>
                 </tr>
                 {% endfor %}
