@@ -8,6 +8,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from nameparser import HumanName
 
+
 class BaseModel(models.Model):
     active = models.BooleanField(default=True)
     created = models.DateTimeField(auto_now_add=True, blank=True, null=True)
@@ -238,3 +239,53 @@ class Player(BaseModel):
             self.usage = self.set_usage()
 
         super().save(*args, **kwargs)
+
+
+class DraftPick(BaseModel):
+    AA_TYPE = "aa"
+    OPEN_TYPE = "open"
+    BALANCE_TYPE = "balance"
+    DRAFT_TYPE_CHOICES = (
+        (AA_TYPE,"aa"),
+        (OPEN_TYPE,"open"),
+        (BALANCE_TYPE,"balance"),
+    )
+    draft_type = models.CharField(max_length=255, choices=DRAFT_TYPE_CHOICES, null=True)
+    draft_round = models.IntegerField(null=True)
+    year = models.CharField(max_length=4)
+    pick_number = models.IntegerField()
+    OFFSEASON = "offseason"
+    MIDSEASON = "midseason"
+    SEASON_CHOICES = (
+        (OFFSEASON,"offseason"),
+        (MIDSEASON,"midseason"),
+    )
+    season = models.CharField(max_length=255, choices=SEASON_CHOICES)
+    team = models.ForeignKey(Team, on_delete=models.SET_NULL, blank=True, null=True)
+    team_name = models.CharField(max_length=255, blank=True, null=True)
+    player = models.ForeignKey(Player, on_delete=models.SET_NULL, blank=True, null=True)
+    player_name = models.CharField(max_length=255, blank=True, null=True)
+    pick_notes = models.TextField(blank=True, null=True)
+
+    class Meta:
+        ordering = ["year", "-season", "-pick_number"]
+
+    def __unicode__(self):
+        return "%s %s %s %s %s" % (self.year, self.season, self.draft_type, self.draft_round, self.team)
+
+class Trade(BaseModel):
+    """
+    On the frontend, there will just be two slots for teams
+    and then slots for players and picks that can be selected from.
+    On save, the view will create the Trade object and then two
+    related TradeReceipt objects containing the players and picks.
+    """
+    date = models.DateField()
+
+
+class TradeReceipt(BaseModel):
+    trade = models.ForeignKey(Trade, on_delete=models.SET_NULL, null=True)
+    sending_team = models.ForeignKey(Team, on_delete=models.SET_NULL, null=True, related_name="sending_team")
+    receiving_team = models.ForeignKey(Team, on_delete=models.SET_NULL, null=True, related_name="receiving_team")
+    players_received = JSONField(blank=True, null=True)
+    picks_received = JSONField(blank=True, null=True)
