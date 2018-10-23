@@ -98,6 +98,7 @@ class Player(BaseModel):
     # ULMG-SPECIFIC
     team = models.ForeignKey(Team, on_delete=models.SET_NULL, blank=True, null=True)
     notes = models.TextField(blank=True, null=True)
+    usage = models.CharField(max_length=255, blank=True, null=True)
 
     # PROSPECT STUFF
     fg_prospect_fv = models.CharField(max_length=4, blank=True, null=True)
@@ -134,8 +135,7 @@ class Player(BaseModel):
             return "%s (%s)" % (self.name, self.get_team().abbreviation)
         return self.name
 
-    @property
-    def usage(self):
+    def set_usage(self):
         if self.stats:
             if self.position == "P":
                 if self.stats.get('gs', None) == "0":
@@ -234,5 +234,7 @@ class Player(BaseModel):
         self.set_name()
         self.set_ids()
         self.set_level_order()
+        if not self.usage:
+            self.usage = self.set_usage()
 
         super().save(*args, **kwargs)
