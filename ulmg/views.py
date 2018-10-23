@@ -66,7 +66,6 @@ def player_action(request, playerid, action):
         p = get_object_or_404(models.Player, id=playerid)
         p.is_mlb_roster = True
         p.is_aaa_roster = False
-        p.is_35man_roster = True
         p.save()
 
     if action == "to_aaa":
