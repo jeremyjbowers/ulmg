@@ -18,14 +18,24 @@ DRAFT_MAPS = {
 
 class Command(BaseCommand):
     """
+    AA_TYPE = "aa"
+    OPEN_TYPE = "open"
+    BALANCE_TYPE = "balance"
+    DRAFT_TYPE_CHOICES = (
+        (AA_TYPE,"aa"),
+        (OPEN_TYPE,"open"),
+        (BALANCE_TYPE,"balance"),
+    )
+    draft_type = models.CharField(max_length=255, choices=DRAFT_TYPE_CHOICES, null=True)
+    draft_round = models.IntegerField(null=True)
+    year = models.CharField(max_length=4)
+    pick_number = models.IntegerField()
     OFFSEASON = "offseason"
     MIDSEASON = "midseason"
     SEASON_CHOICES = (
         (OFFSEASON,"offseason"),
         (MIDSEASON,"midseason"),
     )
-    year = models.CharField(max_length=4)
-    pick_number = models.IntegerField()
     season = models.CharField(max_length=255, choices=SEASON_CHOICES)
     team = models.ForeignKey(Team, on_delete=models.SET_NULL, blank=True, null=True)
     team_name = models.CharField(max_length=255, blank=True, null=True)

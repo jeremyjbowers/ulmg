@@ -2,14 +2,20 @@ from django.contrib import admin
 import nested_admin
 from reversion.admin import VersionAdmin
 
-from ulmg.models import Team, Player
+from ulmg.models import Team, Player, DraftPick
+
+@admin.register(DraftPick)
+class DraftPickAdmin(VersionAdmin):
+    model = DraftPick
+    list_display = ['year', 'season', 'draft_type', 'draft_round', 'pick_number', 'team']
+    list_filter = list_display
 
 @admin.register(Team)
 class TeamAdmin(VersionAdmin):
     model = Team
     list_display = ["city", "division", "owner", 'owner_email']
-    list_editable = ['division']
     list_filter = ['division']
+    list_editable = []
 
 @admin.register(Player)
 class PlayerAdmin(VersionAdmin):

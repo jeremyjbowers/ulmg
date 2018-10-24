@@ -268,10 +268,10 @@ class DraftPick(BaseModel):
     pick_notes = models.TextField(blank=True, null=True)
 
     class Meta:
-        ordering = ["year", "-season", "-pick_number"]
+        ordering = ["year", "-season", "draft_type", "draft_round", "pick_number"]
 
     def __unicode__(self):
-        return "%s %s %s %s %s" % (self.year, self.season, self.draft_type, self.draft_round, self.team)
+        return "%s %s %s %s %s %s" % (self.year, self.season, self.draft_type, self.draft_round, self.pick_number, self.team)
 
 class Trade(BaseModel):
     """
