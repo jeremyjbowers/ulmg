@@ -3,7 +3,7 @@
     <span class="title is-2 has-text-weight-regular has-text-grey">
         Owner:
         {% if team.owner %}
-            {{ team.owner }} <a href="mailto:{{ team.email }}" >&#x2709;</a>
+            {{ team.owner }} <a href="mailto:{{ team.owner_email }}" >&#x2709;</a>
         {% else %}
             &mdash;
         {% endif %}
