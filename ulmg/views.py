@@ -156,8 +156,11 @@ def search(request):
 
     if request.GET.get('position', None):
         position = request.GET['position']
-        if position.lower() != "":
+        if position.lower() not in ["", "h"]:
             query = query.filter(position=position)
+            context['position'] = position
+        elif position.lower() == "h":
+            query = query.exclude(position="P")
             context['position'] = position
 
     if request.GET.get('level', None):
@@ -165,6 +168,14 @@ def search(request):
         if level.lower() != "":
             query = query.filter(level=level)
             context['level'] = level
+
+    if request.GET.get('reliever', None):
+        reliever = request.GET['reliever']
+        if reliever.lower() != "":
+            query = query.filter(is_relief_eligible=to_bool(reliever))
+            if to_bool(reliever) == False:
+                query = query.filter(starts__isnull=False).exclude(starts=0)
+            context['reliever'] = reliever
 
     if request.GET.get('prospect', None):
         prospect = request.GET['prospect']
@@ -191,7 +202,7 @@ def search(request):
             context['amateur'] = amateur
 
     query = query.order_by('position', "level", "last_name")
-    paginator = Paginator(query, 100)
+    paginator = Paginator(query, 1000)
     page = request.GET.get('page')
 
     context['players'] = paginator.get_page(page)

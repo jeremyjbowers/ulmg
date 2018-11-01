@@ -83,6 +83,10 @@ class Player(BaseModel):
     birthdate = models.DateField(blank=True, null=True)
     stats = JSONField(blank=True, null=True)
     draft_eligibility_year = models.CharField(max_length=4, blank=True, null=True)
+    starts = models.IntegerField(blank=True, null=True)
+    relief_innings_pitched = models.DecimalField(max_digits=4, decimal_places=1, blank=True, null=True)
+    plate_appearances = models.CharField(max_length=255, blank=True, null=True)
+    is_relief_eligible = models.BooleanField(default=False)
 
     # IDENTIFIERS
     ba_id = models.CharField(max_length=255, blank=True, null=True)
@@ -99,7 +103,6 @@ class Player(BaseModel):
     # ULMG-SPECIFIC
     team = models.ForeignKey(Team, on_delete=models.SET_NULL, blank=True, null=True)
     notes = models.TextField(blank=True, null=True)
-    usage = models.CharField(max_length=255, blank=True, null=True)
 
     # PROSPECT STUFF
     fg_prospect_fv = models.CharField(max_length=4, blank=True, null=True)
@@ -196,22 +199,19 @@ class Player(BaseModel):
         Turn first / last into a name or 
         """
         if self.first_name and self.last_name:
-            if not self.name:
-                name_string = "%s" % self.first_name
-                if self.middle_name:
-                    name_string += " %s" % self.middle_name
-                name_string += " %s" % self.last_name
-                if self.suffix:
-                    name_string += ", %s" % self.suffix
-                self.name = name_string
+            name_string = "%s" % self.first_name
+            name_string += " %s" % self.last_name
+            self.name = name_string
 
         if self.name:
             if not self.first_name and not self.last_name:
                 n = HumanName(self.name)
                 self.first_name = n.first
+                if n.middle:
+                    self.first_name = n.first + ' ' + n.middle
                 self.last_name = n.last
-                self.middle_name = n.middle
-                self.suffix = n.suffix
+                if n.suffix:
+                    self.last_name = n.last + ' ' + n.suffix
 
     def set_ids(self):
         if self.fangraphs_url and not self.fangraphs_id:
@@ -228,6 +228,22 @@ class Player(BaseModel):
             if self.level == "B":
                 self.level_order = 0
 
+    def set_stats(self):
+        if self.stats:
+            if self.position != "P" and  self.stats.get('pa', None):
+                self.plate_appearances = self.stats['pa']
+            if self.position == "P":
+                if self.stats.get('ip', None) and self.stats.get('gs', None) and self.stats.get('g', None):
+                    if int(self.stats['g']) > int(self.stats['gs']):
+                        self.is_relief_eligible = True
+                        if float(self.stats['ip']) > 75.0:
+                            self.relief_innings_pitched = float(self.stats['ip']) * 1.5
+                        else:
+                            self.relief_innings_pitched = float(self.stats['ip'])
+                    if int(self.stats['gs']) > 0:
+                        self.starts = int(self.stats['gs'])
+
+
     def save(self, *args, **kwargs):
         """
         Some light housekeeping.
@@ -235,8 +251,8 @@ class Player(BaseModel):
         self.set_name()
         self.set_ids()
         self.set_level_order()
-        if not self.usage:
-            self.usage = self.set_usage()
+        self.usage = self.set_usage()
+        self.set_stats()
 
         super().save(*args, **kwargs)
 

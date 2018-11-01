@@ -32,31 +32,35 @@
         {% if mlb_roster %}{% regroup mlb_roster by position as position_players %}
         {% for position in position_players %}
         <h1 class="title is-3">{{ position.grouper }} ({{ position.list|length }})</h1>
-        <table class="table is-fullwidth is-hoverable" data-sortable>
+        <table class="table is-fullwidth is-hoverable">
             <thead>
                 <th>Name</th>
                 <th>Age</th>
-                <th>Position</th>
-                <th>Usage <a href="#usage">... what?</a></th>
-                <th>Level</th>
-                <th>Action</th>
+                <th>Pos</th>
+                <th>Lvl</th>
+                <th>RP?</th>
+                <th>PA</th>
+                <th>IP</th>
+                <th>ST</th>
+                <th></th>
             </thead>
             <tbody>
                 {% for p in position.list %}
                 <tr id="player-{{ p.id }}">
-                    <td style="text-align: left!important;"><span class="has-text-weight-semibold">
-                        {{ p.name }}
-                        </span> <a href="/admin/ulmg/player/{{ p.id }}/change/">&#x270E;</a><br/>
+                    <td data-value="{{ p.name }}" style="text-align: left!important;"><span class="has-text-weight-semibold" data-value="{{ p.name }}">
+                        {{ p.name }}</a> <a href="/admin/ulmg/player/{{ p.id }}/change/">&#x270E;<br/>
                         {% if p.bbref_url %}<a class="has-text-weight-light is-size-6" target="_blank" href="{{ p.bbref_url }}">BBR &Gt;</a>{% endif %}
                         {% if p.fangraphs_url %}<a class="has-text-weight-light is-size-6" target="_blank" href="{{ p.fangraphs_url }}">FG &Gt;</a>{% endif %}
                         {% if p.ba_url %}<a class="has-text-weight-light is-size-6"  target="_blank" href="{{ p.ba_url }}">BA &Gt;</a>{% endif %}
-                        {% if p.mlb_url %}<a class="has-text-weight-light is-size-6"  target="_blank" href="{{ p.mlb_url }}">MLB &Gt;</a>{% endif %}
                     </td>
                     <td>{{ p.age }}</td>
                     <td>{{ p.position }}</td>
-                    <td>{{ p.usage|default_if_none:""|safe }}</td>
                     <td>{{ p.level }}</td>
-                    <td><a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="off_roster">remove</a></td>
+                    <td data-value="{% if p.is_relief_eligible %}1{% else %}0{% endif %}">{% if p.is_relief_eligible %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td>
+                    <td data-value="{{ p.plate_appearances|default_if_none:"0" }}">{{ p.plate_appearances|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.relief_innings_pitched|default_if_none:"0" }}">{{ p.relief_innings_pitched|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.starts|default_if_none:"0" }}">{{ p.starts|default_if_none:"-" }}</td>
+                    <td><a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="off_roster">>></a></td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -65,49 +69,16 @@
         {% if aaa_roster %}{% regroup aaa_roster by position as position_players %}
         {% for position in position_players %}
         <h1 class="title is-3">{{ position.grouper }} ({{ position.list|length }})</h1>
-        <table class="table is-fullwidth is-hoverable" data-sortable>
+        <table class="table is-fullwidth is-hoverable">
             <thead>
                 <th>Name</th>
                 <th>Age</th>
-                <th>Position</th>
-                <th>Usage <a href="#usage">... what?</a></th>
-                <th>Level</th>
-                <th>Action</th>
-            </thead>
-            <tbody>
-                {% for p in position.list %}
-                <tr id="player-{{ p.id }}">
-                    <td style="text-align: left!important;"><span class="has-text-weight-semibold">
-                        {{ p.name }}
-                        </span> <a href="/admin/ulmg/player/{{ p.id }}/change/">&#x270E;</a><br/>
-                        {% if p.bbref_url %}<a class="has-text-weight-light is-size-6" target="_blank" href="{{ p.bbref_url }}">BBR &Gt;</a>{% endif %}
-                        {% if p.fangraphs_url %}<a class="has-text-weight-light is-size-6" target="_blank" href="{{ p.fangraphs_url }}">FG &Gt;</a>{% endif %}
-                        {% if p.ba_url %}<a class="has-text-weight-light is-size-6"  target="_blank" href="{{ p.ba_url }}">BA &Gt;</a>{% endif %}
-                        {% if p.mlb_url %}<a class="has-text-weight-light is-size-6"  target="_blank" href="{{ p.mlb_url }}">MLB &Gt;</a>{% endif %}
-                    </td>
-                    <td>{{ p.age }}</td>
-                    <td>{{ p.position }}</td>
-                    <td>{{ p.usage|default_if_none:""|safe }}</td>
-                    <td>{{ p.level }}</td>
-                    <td><a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="off_roster">remove</a></td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>{% endfor %}{% endif %}
-    </div>
-    <div class="column is-three-fifths">
-        <h1 class="title is-2">Unrostered players ({{ unrostered|length }})</h1>
-        {% regroup unrostered by position as position_players %}
-        {% for position in position_players %}
-        <h1 class="title is-3">{{ position.grouper }} ({{ position.list|length }})</h1>
-        <table class="table is-fullwidth is-hoverable" data-sortable>
-            <thead>
-                <th>Name</th>
-                <th>Age</th>
-                <th>Position</th>
-                <th>Usage <a href="#usage">... what?</a></th>
-                <th>Level</th>
-                <th>Action</th>
+                <th>Pos</th>
+                <th>Lvl</th>
+                <th>RP?</th>
+                <th>PA</th>
+                <th>IP</th>
+                <th>ST</th>
                 <th></th>
             </thead>
             <tbody>
@@ -123,29 +94,61 @@
                     </td>
                     <td>{{ p.age }}</td>
                     <td>{{ p.position }}</td>
-                    <td>{{ p.usage|default_if_none:""|safe }}</td>
                     <td>{{ p.level }}</td>
+                    <td data-value="{% if p.is_relief_eligible %}1{% else %}0{% endif %}">{% if p.is_relief_eligible %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td>
+                    <td data-value="{{ p.plate_appearances|default_if_none:"0" }}">{{ p.plate_appearances|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.relief_innings_pitched|default_if_none:"0" }}">{{ p.relief_innings_pitched|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.starts|default_if_none:"0" }}">{{ p.starts|default_if_none:"-" }}</td>
+                    <td><a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="off_roster">>></a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>{% endfor %}{% endif %}
+    </div>
+    <div class="column is-three-fifths">
+        <h1 class="title is-2">Unrostered players ({{ unrostered|length }})</h1>
+        {% regroup unrostered by position as position_players %}
+        {% for position in position_players %}
+        <h1 class="title is-3">{{ position.grouper }} ({{ position.list|length }})</h1>
+        <table class="table is-fullwidth is-hoverable">
+            <thead>
+                <th>Name</th>
+                <th>Age</th>
+                <th>Pos</th>
+                <th>Lvl</th>
+                <th>RP?</th>
+                <th>PA</th>
+                <th>IP</th>
+                <th>ST</th>
+                <th></th>
+            </thead>
+            <tbody>
+                {% for p in position.list %}
+                <tr id="player-{{ p.id }}">
+                    <td style="text-align: left!important;"><span class="has-text-weight-semibold">
+                        {{ p.name }}
+                        </span> <a href="/admin/ulmg/player/{{ p.id }}/change/">&#x270E;</a><br/>
+                        {% if p.bbref_url %}<a class="has-text-weight-light is-size-6" target="_blank" href="{{ p.bbref_url }}">BBR &Gt;</a>{% endif %}
+                        {% if p.fangraphs_url %}<a class="has-text-weight-light is-size-6" target="_blank" href="{{ p.fangraphs_url }}">FG &Gt;</a>{% endif %}
+                        {% if p.ba_url %}<a class="has-text-weight-light is-size-6"  target="_blank" href="{{ p.ba_url }}">BA &Gt;</a>{% endif %}
+                        {% if p.mlb_url %}<a class="has-text-weight-light is-size-6"  target="_blank" href="{{ p.mlb_url }}">MLB &Gt;</a>{% endif %}
+                    </td>
+                    <td>{{ p.age }}</td>
+                    <td>{{ p.position }}</td>
+                    <td>{{ p.level }}</td>
+                    <td data-value="{% if p.is_relief_eligible %}1{% else %}0{% endif %}">{% if p.is_relief_eligible %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td>
+                    <td data-value="{{ p.plate_appearances|default_if_none:"0" }}">{{ p.plate_appearances|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.relief_innings_pitched|default_if_none:"0" }}">{{ p.relief_innings_pitched|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.starts|default_if_none:"0" }}">{{ p.starts|default_if_none:"-" }}</td>
                     <td>
-                        {% if num_mlb < 25 %}<a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="to_mlb">to MLB</a>{% endif %}
-                        <a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="to_aaa">to AAA</a>
-                        <a class="button is-warning player-drop" data-playerid="{{ p.id }}" data-playername="{{ p.name }}">Drop</a>
+                        {% if num_mlb < 25 %}<a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="to_mlb">MLB</a>{% endif %}
+                        <a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="to_aaa">AAA</a>
+                        <a class="button is-warning player-drop" data-playerid="{{ p.id }}" data-playername="{{ p.name }}">X</a>
                     </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>{% endfor %}
-    </div>
-</div>
-<div class="columns">
-    <div class="column">
-        <h1 id="usage" class="is-5 title">A note on usage</h1>
-        <p>
-            <ul>
-                <li>Usage has been calculated for pitchers and hitters.</li>
-                <li>If a pitcher has 1.5 times more relief appearances than starts, innings are multiplied by 1.5 if more than 70. </li>
-                <li>For hitters, seasons with more than 550 plate appearances show as "unlimited."</li>
-            </ul>
-        </p>
     </div>
 </div>
 <div class="modal" id="player-drop-modal">
@@ -191,7 +194,7 @@ $(function(){
         el.preventDefault();
         $el = $(this);
 
-        $('#player-drop-modal').removeClass('is-active');
+        $('#player-drop-modal').addClass('is-active');
         $('#player-drop-modal div.modal-content').html('');
     }
 
