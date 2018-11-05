@@ -82,6 +82,7 @@ class Player(BaseModel):
     position = models.CharField(max_length=255, null=True, choices=PLAYER_POSITION_CHOICES)
     birthdate = models.DateField(blank=True, null=True)
     stats = JSONField(blank=True, null=True)
+    steamer_predix = JSONField(blank=True, null=True)
     draft_eligibility_year = models.CharField(max_length=4, blank=True, null=True)
     starts = models.IntegerField(blank=True, null=True)
     relief_innings_pitched = models.DecimalField(max_digits=4, decimal_places=1, blank=True, null=True)
