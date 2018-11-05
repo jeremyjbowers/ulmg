@@ -10,26 +10,26 @@ class Command(BaseCommand):
     steamer_dirty_pitch_path = 'data/steamer_pitcherss_2019predix.csv'
 
     def handle(self, *args, **options):
-        # with open(self.steamer_dirty_hit_path, 'r', encoding="utf-8-sig") as readfile:
-        #     steamerhit = csv.DictReader(readfile)
-        #     for hit in steamerhit:
-        #         try:
-        #             hit = dict(hit)
-        #             p = models.Player.objects.get(fangraphs_id=hit['playerid'])
-        #             p.steamer_predix = hit
-        #             print("* %s" % hit['Name'])
-        #         except models.Player.DoesNotExist:
-        #             p = models.Player(
-        #                 name=hit['Name'],
-        #                 fangraphs_id=hit['playerid'],
-        #                 fangraphs_url="http://www.fangraphs.com/statss.aspx?playerid=" + hit['playerid'],
-        #                 is_owned=False,
-        #                 is_carded=False,
-        #                 steamer_predix=hit,
-        #                 level="B"
-        #             )
-        #             print("+ %s" % hit['Name'])
-        #         p.save()
+        with open(self.steamer_dirty_hit_path, 'r', encoding="utf-8-sig") as readfile:
+            steamerhit = csv.DictReader(readfile)
+            for hit in steamerhit:
+                try:
+                    hit = dict(hit)
+                    p = models.Player.objects.get(fangraphs_id=hit['playerid'])
+                    p.steamer_predix = hit
+                    print("* %s" % hit['Name'])
+                except models.Player.DoesNotExist:
+                    p = models.Player(
+                        name=hit['Name'],
+                        fangraphs_id=hit['playerid'],
+                        fangraphs_url="http://www.fangraphs.com/statss.aspx?playerid=" + hit['playerid'],
+                        is_owned=False,
+                        is_carded=False,
+                        steamer_predix=hit,
+                        level="B"
+                    )
+                    print("+ %s" % hit['Name'])
+                p.save()
 
         with open(self.steamer_dirty_pitch_path, 'r', encoding="utf-8-sig") as readfile:
             steamerpitch = csv.DictReader(readfile)
