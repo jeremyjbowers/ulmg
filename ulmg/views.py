@@ -1,3 +1,6 @@
+import csv
+import datetime
+
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import render_to_response, get_object_or_404
@@ -136,8 +139,21 @@ def team_detail(request, abbreviation):
     context['num_owned'] = team_players.count()
     context['by_level'] = team_players.order_by('-level_order').values('level').annotate(Count('level'))
     context['by_position'] = team_players.order_by('position').values('position').annotate(Count('position'))
-    context['players'] = team_players.order_by('position', '-level_order', 'last_name')
+    context['players'] = team_players.order_by('position', '-level_order', 'last_name', 'first_name')
     return render_to_response('team_carded.html', context=context)
+
+def team_csv(request, abbreviation):
+    team = get_object_or_404(models.Team, abbreviation__icontains=abbreviation)
+    team_players = models.Player.objects.filter(team=team).order_by('position', '-level_order', 'last_name', 'first_name')
+
+    # Create the HttpResponse object with the appropriate CSV header.
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="%s-%s.csv"' % (abbreviation, datetime.datetime.now().isoformat().split('.')[0])
+    writer = csv.DictWriter(response, fieldnames=list(models.Player.objects.all()[0].to_dict().keys()))
+    writer.writeheader()
+    for p in team_players:
+        writer.writerow(p.to_dict())
+    return response
 
 def search(request):
     def to_bool(b):

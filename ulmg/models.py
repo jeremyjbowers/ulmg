@@ -140,6 +140,18 @@ class Player(BaseModel):
             return "%s (%s)" % (self.name, self.get_team().abbreviation)
         return self.name
 
+    def to_dict(self):
+        return {
+            "name": self.name,
+            "position": self.position,
+            "level": self.level,
+            "age": self.age,
+            "carded": self.is_carded,
+            "amateur": self.is_amateur,
+            "bbref_url": self.bbref_url,
+            # "team": self.team.abbreviation
+        }
+
     def set_usage(self):
         if self.stats:
             if self.position == "P":
@@ -244,6 +256,9 @@ class Player(BaseModel):
                     if int(self.stats['gs']) > 0:
                         self.starts = int(self.stats['gs'])
 
+    def set_owned():
+        if self.team == None:
+            self.is_owned = False
 
     def save(self, *args, **kwargs):
         """
@@ -254,6 +269,7 @@ class Player(BaseModel):
         self.set_level_order()
         self.usage = self.set_usage()
         self.set_stats()
+        self.set_owned()
 
         super().save(*args, **kwargs)
 

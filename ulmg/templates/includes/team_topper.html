@@ -3,9 +3,10 @@
     <span class="title is-2 has-text-weight-regular has-text-grey">
         Owner:
         {% if team.owner %}
-            {{ team.owner }} <a href="mailto:{{ team.owner_email }}" >&#x2709;</a>
+            {{ team.owner }}<br><a href="mailto:{{ team.owner_email }}" >Send owner email &#x2709;</a>
         {% else %}
             &mdash;
         {% endif %}
+        <br/><a href="/teams/{{ team.abbreviation }}/csv/">Download team roster &dtrif;</a>
     </span>
 </h1>
