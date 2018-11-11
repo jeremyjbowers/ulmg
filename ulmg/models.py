@@ -256,7 +256,7 @@ class Player(BaseModel):
                     if int(self.stats['gs']) > 0:
                         self.starts = int(self.stats['gs'])
 
-    def set_owned():
+    def set_owned(self):
         if self.team == None:
             self.is_owned = False
 
@@ -286,7 +286,7 @@ class DraftPick(BaseModel):
     draft_type = models.CharField(max_length=255, choices=DRAFT_TYPE_CHOICES, null=True)
     draft_round = models.IntegerField(null=True)
     year = models.CharField(max_length=4)
-    pick_number = models.IntegerField()
+    pick_number = models.IntegerField(null=True)
     OFFSEASON = "offseason"
     MIDSEASON = "midseason"
     SEASON_CHOICES = (
@@ -315,10 +315,25 @@ class Trade(BaseModel):
     """
     date = models.DateField()
 
+    def __unicode__(self):
+        return self.teams()
+
+    def teams(self):
+        t1 = TradeReceipt.objects.filter(trade=self)[0]
+        t2 = TradeReceipt.objects.filter(trade=self)[1]
+
+        return "%s sends %s to %s for %s" % (
+            t1.team.abbreviation,
+            ", ".join(["%s %s" % (p.position, p.name) for p in t2.players.all()]),
+            t2.team.abbreviation,
+            ", ".join(["%s %s" % (p.position, p.name) for p in t1.players.all()])
+        )
 
 class TradeReceipt(BaseModel):
     trade = models.ForeignKey(Trade, on_delete=models.SET_NULL, null=True)
-    sending_team = models.ForeignKey(Team, on_delete=models.SET_NULL, null=True, related_name="sending_team")
-    receiving_team = models.ForeignKey(Team, on_delete=models.SET_NULL, null=True, related_name="receiving_team")
-    players_received = JSONField(blank=True, null=True)
-    picks_received = JSONField(blank=True, null=True)
+    team = models.ForeignKey(Team, on_delete=models.SET_NULL, null=True)
+    players = models.ManyToManyField(Player, related_name="players")
+    picks = models.ManyToManyField(DraftPick, related_name="picks")
+
+    def __unicode__(self):
+        return "Trade %s: %s" % (self.trade.id, self.team)

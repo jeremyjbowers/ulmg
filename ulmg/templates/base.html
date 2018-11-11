@@ -3,6 +3,24 @@
         <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bulma/0.7.2/css/bulma.min.css">
         <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/sortable/0.8.0/css/sortable-theme-minimal.min.css">
         <style type="text/css">
+            div.roster table tbody tr td, div.picks table tbody tr td {
+                font-size: 13px;
+            }
+            div.roster td.name {
+                text-align: left!important;
+            }
+            div.column.active h1 {
+                color: green;
+            }
+            div.column.active h1:after {
+                content: " ↜"
+            }
+            span.active-arrow {
+                color: green;
+            }
+            .hidden {
+                display: none;
+            }
             span.green {
                 color: green;
             }
@@ -203,6 +221,7 @@
                 }
             }
         </style>
+        {% block extrahead %}{% endblock %}
     </head>
     <body>
         {% include "includes/nav.html" %}

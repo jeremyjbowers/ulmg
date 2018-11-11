@@ -3,11 +3,14 @@ import datetime
 
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
-from django.shortcuts import render_to_response, get_object_or_404
+from django.shortcuts import render, get_object_or_404
 from django.db.models import Count, Avg, Sum, Max, Min, Q
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
+import ujson as json
 
 from ulmg import models, utils
+
+CURRENT_SEASON="2019"
 
 @csrf_exempt
 def player_action(request, playerid, action):
@@ -105,7 +108,7 @@ def index(request):
     context['carded_positions'] = models.Player.objects.filter(is_carded=True).order_by('position').values('position').annotate(Count('position'))
     context['uncarded_positions'] = models.Player.objects.filter(is_carded=False).order_by('position').values('position').annotate(Count('position'))
 
-    return render_to_response('index.html', context=context)
+    return render(request, 'index.html', context)
 
 def roster_team_detail(request, abbreviation):
     context = utils.build_context(request)
@@ -117,7 +120,7 @@ def roster_team_detail(request, abbreviation):
     context['aaa_roster'] = team_players.filter(is_aaa_roster=True, is_carded=True).order_by('position', '-level_order', 'last_name')
     context['num_owned'] = team_players.count()
     team_players = models.Player.objects.filter(team=context['team'])
-    return render_to_response('team_roster.html', context=context)
+    return render(request, 'team_roster.html', context)
 
 def protect_team_detail(request, abbreviation):
     context = utils.build_context(request)
@@ -130,7 +133,7 @@ def protect_team_detail(request, abbreviation):
     context['num_owned'] = team_players.count()
     context['num_uncarded'] = team_players.filter(is_carded=False).count()
     context['num_35_man'] = context['on_35_man'].count()
-    return render_to_response('team_protect.html', context=context)
+    return render(request, 'team_protect.html', context)
 
 def team_detail(request, abbreviation):
     context = utils.build_context(request)
@@ -140,7 +143,7 @@ def team_detail(request, abbreviation):
     context['by_level'] = team_players.order_by('-level_order').values('level').annotate(Count('level'))
     context['by_position'] = team_players.order_by('position').values('position').annotate(Count('position'))
     context['players'] = team_players.order_by('position', '-level_order', 'last_name', 'first_name')
-    return render_to_response('team_carded.html', context=context)
+    return render(request, 'team_carded.html', context)
 
 def team_csv(request, abbreviation):
     team = get_object_or_404(models.Team, abbreviation__icontains=abbreviation)
@@ -154,6 +157,14 @@ def team_csv(request, abbreviation):
     for p in team_players:
         writer.writerow(p.to_dict())
     return response
+
+def trade(request):
+    context = utils.build_context(request)
+    context['teams'] = models.Team.objects.all().values('id', 'city', 'abbreviation')
+    context['players'] = models.Player.objects.filter(is_owned=True).order_by('team__abbreviation', 'last_name', 'first_name').values('team__abbreviation', 'last_name', 'first_name', 'level', 'position', 'id')
+    context['picks'] = models.DraftPick.objects.filter(year=CURRENT_SEASON).order_by('team__abbreviation', 'season', 'draft_type', 'draft_round').values('team__abbreviation', 'season', 'draft_type', 'draft_round', 'id')
+
+    return render(request, "trade_admin.html", context)
 
 def search(request):
     def to_bool(b):
@@ -222,4 +233,4 @@ def search(request):
     page = request.GET.get('page')
 
     context['players'] = paginator.get_page(page)
-    return render_to_response("player_list.html", context=context)
+    return render(request, "player_list.html", context)

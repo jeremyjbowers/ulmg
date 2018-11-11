@@ -2,7 +2,19 @@ from django.contrib import admin
 import nested_admin
 from reversion.admin import VersionAdmin
 
-from ulmg.models import Team, Player, DraftPick
+from ulmg.models import Team, Player, DraftPick, Trade, TradeReceipt
+
+class TradeReceiptInline(admin.TabularInline):
+    model = TradeReceipt
+    readonly_fields = ['players', 'picks', 'team', 'active']
+    extra = 0
+
+@admin.register(Trade)
+class TradeAdmin(VersionAdmin):
+    model = Trade
+    inlines = [
+        TradeReceiptInline
+    ]
 
 @admin.register(DraftPick)
 class DraftPickAdmin(VersionAdmin):

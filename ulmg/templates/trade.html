@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<form method=POST>
+    {% csrf_token %}
+    <div class="columns">
+        <div class="column">
+            {% if team_1 %}
+            <h1 class="title is-2">{{ team_1.city }} >></h1>
+            <div class="columns">
+                <div class="column">
+                    <h1 class="title is-3">Roster</h1>
+                    <select style="display:none;" name="team_1"><option value="{{ team_1.id }}"></option></select>
+                    <select style="height:auto;" size="{{ team_1_roster|length }}" class="input" name="team_1_players" multiple>
+                        {% for p in team_1_roster %}<option value="{{ p.id }}">{{ p.name }} - {{ p.position }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="column">
+                    <h1 class="title is-3">Draft picks</h1>
+                    <select style="height:auto;" size="{{ team_1_picks|length }}" class="input" name="team_1_picks" multiple>
+                        {% for pick in team_1_picks %}
+                        <option value={{ pick.id }}>{{ pick.season }} {{ pick.draft_type }} #{{ pick.draft_round }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            {% else %}
+            <h1 class="title is-2">Team 1</h1>
+            <div class="field">
+                <div class="select">
+                    <select class="team" name="team_1">
+                        {% for t in teams %}
+                        <option value="{{ t.id }}"{% if team_1.id == t.id %} selected{% endif %}>{{ t.city }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        <div class="column">
+            {% if team_2 %}
+            <h1 class="title is-2">{{ team_2.city }} >></h1>
+            <div class="columns">
+                <div class="column">
+                    <h1 class="title is-3">Roster</h1>
+                    <select style="display:none;" name="team_2"><option value="{{ team_2.id }}"></option></select>
+                    <select style="height:auto;" size="{{ team_2_roster|length }}" class="input" name="team_2_players" multiple>
+                        {% for p in team_2_roster %}<option value="{{ p.id }}">{{ p.name }} - {{ p.position }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="column">
+                    <h1 class="title is-3">Draft picks</h1>
+                    <select style="height:auto;" size="{{ team_2_picks|length }}" class="input" name="team_2_picks" multiple>
+                        {% for pick in team_2_picks %}
+                        <option value={{ pick.id }}>{{ pick.season }} {{ pick.draft_type }} #{{ pick.draft_round }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            {% else %}
+            <h1 class="title is-2">Team 2</h1>
+            <div class="field">
+                <div class="select">
+                    <select class="team" name="team_2">
+                        {% for t in teams %}
+                        <option value="{{ t.id }}"{% if team_2.id == t.id %} selected{% endif %}>{{ t.city }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% if team_1 and team_2 %}
+    <div class="columns">
+        <div class="column">
+            <input type="submit" class="button" value="Trade">
+        </div>
+    </div>
+    {% else %}
+    <div class="columns">
+        <div class="column">
+            <input type="submit" class="button" value="Select teams">
+        </div>
+    </div>
+    {% endif %}
+</form>
+{% endblock %}

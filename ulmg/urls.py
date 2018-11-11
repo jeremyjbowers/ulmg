@@ -13,5 +13,6 @@ urlpatterns = [
     path('teams/<str:abbreviation>/protect/', views.protect_team_detail),
     path('teams/<str:abbreviation>/', views.team_detail),
     path('players/search/', views.search),
+    path('trade/admin/', views.trade),
     path('', views.index),
 ]

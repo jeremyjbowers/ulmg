@@ -1,0 +1,140 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="columns">
+    <div class="column">
+        <div class="buttons">
+            {% for t in teams %}
+            <a class="button is-large team-select team-{{ t.abbreviation|lower }}" href="#" data-team="{{ t.abbreviation|lower }}">{{ t.abbreviation }}</a>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<div class="columns">
+    <div class="column" id="team-1" data-team="">
+        <h1 class="title is-2"></h1>
+        <div class="columns">
+            <div class="column"><h1 class="title is-4">Roster</h1><div class="roster"></div></div>
+            <div class="column"><h1 class="title is-4">Picks</h1><div class="picks"></div></div>
+        </div>
+    </div>
+    <div class="column" id="team-2" data-team="">
+        <h1 class="title is-2"></h1>
+        <div class="columns">
+            <div class="column"><h1 class="title is-4">Roster</h1><div class="roster"></div></div>
+            <div class="column"><h1 class="title is-4">Picks</h1><div class="picks"></div></div>
+        </div>
+    </div>
+</div>
+
+<div class="hidden">
+    {% regroup players by team__abbreviation as team_players %}
+    {% for team in team_players %}
+    <div id="roster-{{ team.grouper|lower }}">
+        <table class="table is-hoverable">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Position</th>
+                    <th>Level</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for player in team.list %}
+                <tr data-player="player-{{ player.id }}">
+                    <td class="name">{{ player.last_name }}, {{ player.first_name }}</td>
+                    <td>{{ player.position }}</td>
+                    <td>{{ player.level }}</td>
+                </tr>{% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endfor %}
+
+    {% regroup picks by team__abbreviation as team_picks %}
+    {% for team in team_picks %}
+    <div id="picks-{{ team.grouper|lower }}">
+        <table class="table is-hoverable">
+            <thead>
+                <tr>
+                    <th>Season</th>
+                    <th>Type</th>
+                    <th>Round</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for pick in team.list %}
+                <tr data-pick="player-{{ pick.id }}">
+                    <td class="name">{{ pick.season }}</td>
+                    <td>{{ pick.draft_type }}</td>
+                    <td>{{ pick.draft_round }}</td>
+                </tr>{% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endfor %}
+</div>
+
+{% endblock %}
+
+{% block extrascript %}
+<script type="text/javascript">
+    $(function(){
+        var last_filled = 0
+
+        var clear_team = function(team) {
+            if (team) {
+                console.log(team);
+                $('a.team-' + team).removeAttr('disabled');
+            }
+        }
+
+        var set_team_roster = function(el, team) {
+            $el = $(el);
+            $el.attr('data-team', team);
+            $el.children('h1').text(team.toUpperCase());
+            $el.removeClass('active');
+            if (el == "#team-1") {
+                $('#team-2').addClass('active');
+            } else {
+                $('#team-1').addClass('active');
+            }
+            var roster = $('#roster-' + team).clone();
+            var picks = $('#picks-' + team).clone();
+            $el.children('div.columns').children('div.column').children('div.roster').html(roster);
+            $el.children('div.columns').children('div.column').children('div.picks').html(picks);
+        }
+
+        var team_select_handler = function(el) {
+            el.preventDefault();
+            $el = $(this);
+
+            if (!$el.attr('disabled')) {
+                var team = $el.attr('data-team');
+                $el.attr('disabled', 'disabled');
+
+                if (last_filled == 0) {
+                    clear_team($('#team-1').attr('data-team'));
+                    set_team_roster('#team-1', team);
+                    last_filled = 1;
+                } else {
+                    clear_team($('#team-2').attr('data-team'));
+                    set_team_roster('#team-2', team);
+                    last_filled = 0;
+                }
+            }
+
+            // $.ajax({
+            //     type: "POST",
+            //     url: '/api/v1/player/' + playerid + '/' +  action + '/',
+            //     success: function(response){
+            //         window.location.reload();
+            //     }
+            // });
+        }
+    
+        $('a.team-select').on('click', team_select_handler);
+    });
+    </script>
+{% endblock %}

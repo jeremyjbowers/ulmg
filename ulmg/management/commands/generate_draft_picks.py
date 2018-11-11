@@ -61,17 +61,17 @@ class Command(BaseCommand):
                 for draft_type,rounds in DRAFT_MAPS[season]['rounds'].items():
                     for r in range(0,rounds):
                         draft_round = r+1
-                        pick_number = o+1
                         team = models.Team.objects.get(abbreviation=t)
                         obj, created = models.DraftPick.objects.get_or_create(
                             year=year,
                             season=season,
-                            pick_number=pick_number,
                             draft_type=draft_type,
                             draft_round=draft_round,
                             team=team,
                             team_name=team.city
                         )
+                        # obj.pick_number = o+1
+                        # obj.save()
                         if created:
                             print("+%s" % obj)
                         else:
