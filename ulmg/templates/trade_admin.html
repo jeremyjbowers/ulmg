@@ -32,7 +32,7 @@
     {% regroup players by team__abbreviation as team_players %}
     {% for team in team_players %}
     <div id="roster-{{ team.grouper|lower }}">
-        <table class="table is-hoverable">
+        <table class="table is-hoverable is-fullwidth">
             <thead>
                 <tr>
                     <th>Name</th>
@@ -55,7 +55,7 @@
     {% regroup picks by team__abbreviation as team_picks %}
     {% for team in team_picks %}
     <div id="picks-{{ team.grouper|lower }}">
-        <table class="table is-hoverable">
+        <table class="table is-hoverable is-fullwidth">
             <thead>
                 <tr>
                     <th>Season</th>

@@ -3,10 +3,16 @@
         <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bulma/0.7.2/css/bulma.min.css">
         <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/sortable/0.8.0/css/sortable-theme-minimal.min.css">
         <style type="text/css">
-            div.roster table tbody tr td, div.picks table tbody tr td {
+            div.roster table tbody tr:hover td:first-child::before, 
+            div.picks table tbody tr:hover td:first-child::before {
+                content: "+ "
+            }
+            div.roster table tbody tr td, 
+            div.picks table tbody tr td {
                 font-size: 13px;
             }
-            div.roster td.name {
+            div.roster td.name,
+            div.picks td.name {
                 text-align: left!important;
             }
             div.column.active h1 {
