@@ -15,15 +15,15 @@
     <div class="column" id="team-1" data-team="">
         <h1 class="title is-2">team 1</h1>
         <div class="columns">
-            <div class="column"><h1 class="title is-4">Roster</h1><div class="roster"></div></div>
-            <div class="column"><h1 class="title is-4">Picks</h1><div class="picks"></div></div>
+            <div class="column"><div class="players-sent">No players selected</div><h1 class="title is-4">Roster</h1><div class="roster"></div></div>
+            <div class="column"><div class="picks-sent">No picks selected</div><h1 class="title is-4">Picks</h1><div class="picks"></div></div>
         </div>
     </div>
     <div class="column" id="team-2" data-team="">
         <h1 class="title is-2">team 2</h1>
         <div class="columns">
-            <div class="column"><h1 class="title is-4">Roster</h1><div class="roster"></div></div>
-            <div class="column"><h1 class="title is-4">Picks</h1><div class="picks"></div></div>
+            <div class="column"><div class="players-sent">No players selected</div><h1 class="title is-4">Roster</h1><div class="roster"></div></div>
+            <div class="column"><div class="picks-sent">No picks selected</div><h1 class="title is-4">Picks</h1><div class="picks"></div></div>
         </div>
     </div>
 </div>
@@ -42,7 +42,7 @@
             </thead>
             <tbody>
                 {% for player in team.list %}
-                <tr data-player="player-{{ player.id }}">
+                <tr class="player-row" data-player-slug="{{ player.position }} {{ player.first_name }} {{ player.last_name }}" data-player="player-{{ player.id }}">
                     <td class="name">{{ player.last_name }}, {{ player.first_name }}</td>
                     <td>{{ player.position }}</td>
                     <td>{{ player.level }}</td>
@@ -65,7 +65,7 @@
             </thead>
             <tbody>
                 {% for pick in team.list %}
-                <tr data-pick="player-{{ pick.id }}">
+                <tr class="pick-row" data-pick-slug="{{ pick.season }} {{ pick.draft_type }} {{ pick.draft_round }}" data-pick="pick-{{ pick.id }}">
                     <td class="name">{{ pick.season }}</td>
                     <td>{{ pick.draft_type }}</td>
                     <td>{{ pick.draft_round }}</td>
@@ -75,17 +75,27 @@
     </div>
     {% endfor %}
 </div>
-
+<form action="post">
+    {% csrf_token %}
+    <input type="hidden" name="team-1-players-sent" id="team-1-players-sent">
+    <input type="hidden" name="team-1-picks-sent" id="team-1-picks-sent">
+    <input type="hidden" name="team-2-players-sent" id="team-2-players-sent">
+    <input type="hidden" name="team-2-picks-sent" id="team-2-picks-sent">
+</form>
 {% endblock %}
 
 {% block extrascript %}
 <script type="text/javascript">
     $(function(){
+        var team_1_players = []
+        var team_1_picks = []
+        var team_2_players = []
+        var team_2_picks = []
+
         var last_filled = 0
 
         var clear_team = function(team) {
             if (team) {
-                console.log(team);
                 $('a.team-' + team).removeAttr('disabled');
             }
         }
@@ -97,8 +107,16 @@
             $el.removeClass('active');
             if (el == "#team-1") {
                 $('#team-2').addClass('active');
+                team_1_players = [];
+                team_1_picks = [];
+                $('#team-1 div.players-sent').text('No players selected')
+                $('#team-1 div.picks-sent').text('No picks selected')
             } else {
                 $('#team-1').addClass('active');
+                team_2_players = [];
+                team_2_picks = [];
+                $('#team-2 div.players-sent').text('No players selected')
+                $('#team-2 div.picks-sent').text('No picks selected')
             }
             var roster = $('#roster-' + team).clone();
             var picks = $('#picks-' + team).clone();
@@ -124,16 +142,40 @@
                     last_filled = 0;
                 }
             }
-
-            // $.ajax({
-            //     type: "POST",
-            //     url: '/api/v1/player/' + playerid + '/' +  action + '/',
-            //     success: function(response){
-            //         window.location.reload();
-            //     }
-            // });
         }
-    
+
+        var player_select_handler = function(el) {
+            el.preventDefault();
+            $el = $(this);
+            var t = $el.parent().parent().parent().parent().parent().parent().parent().attr('id');
+            if (t == 'team-1') {
+                team_1_players.push([$el.attr('data-pick'), $el.attr('data-player-slug')]);
+                var team_1_player_slugs = team_1_players.map(x => x[1]);
+                $('div#team-1 div.players-sent').text(Array.from(new Set(team_1_player_slugs)).join(', '));
+            } else {
+                team_2_players.push([$el.attr('data-player'), $el.attr('data-player-slug')]);
+                var team_2_player_slugs = team_2_players.map(x => x[1]);
+                $('div#team-2 div.players-sent').text(Array.from(new Set(team_2_player_slugs)).join(', '));
+            }
+        }
+
+        var pick_select_handler = function(el) {
+            el.preventDefault();
+            $el = $(this);
+            var t = $el.parent().parent().parent().parent().parent().parent().parent().attr('id');
+            if (t == 'team-1') {
+                team_1_picks.push([$el.attr('data-pick'), $el.attr('data-pick-slug')]);
+                var team_1_pick_slugs = team_1_picks.map(x => x[1]);
+                $('div#team-1 div.picks-sent').text(Array.from(new Set(team_1_pick_slugs)).join(', '));
+            } else {
+                team_2_picks.push([$el.attr('data-pick'), $el.attr('data-pick-slug')]);
+                var team_2_pick_slugs = team_2_picks.map(x => x[1]);
+                $('div#team-2 div.picks-sent').text(Array.from(new Set(team_2_pick_slugs)).join(', '));
+            }
+        }
+
+        $('body').on('click', 'tr.player-row', player_select_handler);
+        $('body').on('click', 'tr.pick-row', pick_select_handler);
         $('a.team-select').on('click', team_select_handler);
     });
     </script>

@@ -294,17 +294,27 @@ class DraftPick(BaseModel):
         (MIDSEASON,"midseason"),
     )
     season = models.CharField(max_length=255, choices=SEASON_CHOICES)
-    team = models.ForeignKey(Team, on_delete=models.SET_NULL, blank=True, null=True)
+    team = models.ForeignKey(Team, on_delete=models.SET_NULL, blank=True, null=True, related_name="team")
     team_name = models.CharField(max_length=255, blank=True, null=True)
     player = models.ForeignKey(Player, on_delete=models.SET_NULL, blank=True, null=True)
     player_name = models.CharField(max_length=255, blank=True, null=True)
     pick_notes = models.TextField(blank=True, null=True)
+    original_team = models.ForeignKey(Team, on_delete=models.SET_NULL, blank=True, null=True, related_name="original_team")
 
     class Meta:
         ordering = ["year", "-season", "draft_type", "draft_round", "pick_number"]
 
     def __unicode__(self):
         return "%s %s %s %s %s %s" % (self.year, self.season, self.draft_type, self.draft_round, self.pick_number, self.team)
+
+    def set_original_team(self):
+        if not self.original_team and self.team:
+            self.original_team = self.team
+
+    def save(self, *args, **kwargs):
+        self.set_original_team()
+
+        super().save(*args, **kwargs)
 
 class Trade(BaseModel):
     """

@@ -71,7 +71,7 @@ class Command(BaseCommand):
                             team_name=team.city
                         )
                         # obj.pick_number = o+1
-                        # obj.save()
+                        obj.save()
                         if created:
                             print("+%s" % obj)
                         else:
