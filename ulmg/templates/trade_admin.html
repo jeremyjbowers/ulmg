@@ -87,10 +87,15 @@
 {% block extrascript %}
 <script type="text/javascript">
     $(function(){
-        var team_1_players = []
-        var team_1_picks = []
-        var team_2_players = []
-        var team_2_picks = []
+        var team_1_player_ids = []
+        var team_1_player_slugs = []
+        var team_1_pick_ids = []
+        var team_1_pick_slugs = []
+
+        var team_2_player_ids = []
+        var team_2_player_slugs = []
+        var team_2_pick_ids = []
+        var team_2_pick_slugs = []
 
         var last_filled = 0
 
@@ -149,13 +154,13 @@
             $el = $(this);
             var t = $el.parent().parent().parent().parent().parent().parent().parent().attr('id');
             if (t == 'team-1') {
-                team_1_players.push([$el.attr('data-pick'), $el.attr('data-player-slug')]);
-                var team_1_player_slugs = team_1_players.map(x => x[1]);
-                $('div#team-1 div.players-sent').text(Array.from(new Set(team_1_player_slugs)).join(', '));
+                team_1_player_ids.push($el.attr('data-player'));
+                team_1_player_slugs.push("<span class='remove-player' data-team='team-1' data-player-slug='" + $el.attr('data-player-slug') + "' data-player='" + $el.attr('data-player') + "'>" + $el.attr('data-player-slug') + " <a class='delete is-small'></a></span>");
+                $('div#team-1 div.players-sent').html(Array.from(new Set(team_1_player_slugs)).join('<br/>'));
             } else {
-                team_2_players.push([$el.attr('data-player'), $el.attr('data-player-slug')]);
-                var team_2_player_slugs = team_2_players.map(x => x[1]);
-                $('div#team-2 div.players-sent').text(Array.from(new Set(team_2_player_slugs)).join(', '));
+                team_2_player_ids.push($el.attr('data-player'));
+                team_2_player_slugs.push("<span class='remove-player' data-team='team-2' data-player-slug='" + $el.attr('data-player-slug') + "' data-player='" + $el.attr('data-player')+ "'>" + $el.attr('data-player-slug') + " <a class='delete is-small'></a></span>");
+                $('div#team-2 div.players-sent').html(Array.from(new Set(team_2_player_slugs)).join('<br/>'));
             }
         }
 
@@ -164,18 +169,66 @@
             $el = $(this);
             var t = $el.parent().parent().parent().parent().parent().parent().parent().attr('id');
             if (t == 'team-1') {
-                team_1_picks.push([$el.attr('data-pick'), $el.attr('data-pick-slug')]);
-                var team_1_pick_slugs = team_1_picks.map(x => x[1]);
-                $('div#team-1 div.picks-sent').text(Array.from(new Set(team_1_pick_slugs)).join(', '));
+                team_1_pick_ids.push($el.attr('data-pick'));
+                team_1_pick_slugs.push("<span class='remove-pick' data-team='team-1' data-pick-slug='" + $el.attr('data-pick-slug') + "' data-pick='" + $el.attr('data-pick')+ "'>" + $el.attr('data-pick-slug') + " <a class='delete is-small'></a></span>");
+                $('div#team-1 div.picks-sent').html(Array.from(new Set(team_1_pick_slugs)).join('<br/>'));
             } else {
-                team_2_picks.push([$el.attr('data-pick'), $el.attr('data-pick-slug')]);
-                var team_2_pick_slugs = team_2_picks.map(x => x[1]);
-                $('div#team-2 div.picks-sent').text(Array.from(new Set(team_2_pick_slugs)).join(', '));
+                team_2_pick_ids.push($el.attr('data-pick'));
+                team_2_pick_slugs.push("<span class='remove-pick' data-team='team-2' data-pick-slug='" + $el.attr('data-pick-slug') + "' data-pick='" + $el.attr('data-pick')+ "'>" + $el.attr('data-pick-slug') + " <a class='delete is-small'></a></span>");
+                $('div#team-2 div.picks-sent').html(Array.from(new Set(team_2_pick_slugs)).join('<br/>'));
+            }
+        }
+
+        var pick_remove_handler = function(el) {
+            el.preventDefault();
+            $el = $(this);
+            var t = $el.attr('data-team')
+            if (t == 'team-1') {
+                var t1pdi = _.remove(team_1_pick_ids, function(n) {
+                    return n == $el.attr('data-pick');
+                });
+                var t1pds = _.remove(team_1_pick_slugs, function(n) {
+                    return n == "<span class='remove-pick' data-team='team-1' data-pick-slug='" + $el.attr('data-pick-slug') + "' data-pick='" + $el.attr('data-pick')+ "'>" + $el.attr('data-pick-slug') + " <a class='delete is-small'></a></span>";
+                });
+                $('div#team-1 div.picks-sent').html(Array.from(new Set(team_1_pick_slugs)).join('<br/>'));
+            } else {
+                var t2pdi = _.remove(team_2_pick_ids, function(n) {
+                    return n == $el.attr('data-pick');
+                });
+                var t2pds = _.remove(team_2_pick_slugs, function(n) {
+                    return n == "<span class='remove-pick' data-team='team-2' data-pick-slug='" + $el.attr('data-pick-slug') + "' data-pick='" + $el.attr('data-pick')+ "'>" + $el.attr('data-pick-slug') + " <a class='delete is-small'></a></span>";
+                });
+                $('div#team-2 div.picks-sent').html(Array.from(new Set(team_2_pick_slugs)).join('<br/>'));
+            }
+        }
+
+        var player_remove_handler = function(el) {
+            el.preventDefault();
+            $el = $(this);
+            var t = $el.attr('data-team')
+            if (t == 'team-1') {
+                var t1pdi = _.remove(team_1_player_ids, function(n) {
+                    return n == $el.attr('data-player');
+                });
+                var t1pds = _.remove(team_1_player_slugs, function(n) {
+                    return n == "<span class='remove-player' data-team='team-1' data-player-slug='" + $el.attr('data-player-slug') + "' data-player='" + $el.attr('data-player')+ "'>" + $el.attr('data-player-slug') + " <a class='delete is-small'></a></span>";
+                });
+                $('div#team-1 div.players-sent').html(Array.from(new Set(team_1_player_slugs)).join('<br/>'));
+            } else {
+                var t2pdi = _.remove(team_2_player_ids, function(n) {
+                    return n == $el.attr('data-player');
+                });
+                var t2pds = _.remove(team_2_player_slugs, function(n) {
+                    return n == "<span class='remove-player' data-team='team-2' data-player-slug='" + $el.attr('data-player-slug') + "' data-player='" + $el.attr('data-player')+ "'>" + $el.attr('data-player-slug') + " <a class='delete is-small'></a></span>";
+                });
+                $('div#team-2 div.players-sent').html(Array.from(new Set(team_2_player_slugs)).join('<br/>'));
             }
         }
 
         $('body').on('click', 'tr.player-row', player_select_handler);
         $('body').on('click', 'tr.pick-row', pick_select_handler);
+        $('body').on('click', 'span.remove-player', player_remove_handler);
+        $('body').on('click', 'span.remove-pick', pick_remove_handler);
         $('a.team-select').on('click', team_select_handler);
     });
     </script>
