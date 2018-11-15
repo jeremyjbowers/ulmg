@@ -11,3 +11,5 @@ nameparser==1.0.1
 django-reversion
 ujson
 lxml
+fabric3
+
