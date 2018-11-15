@@ -10,6 +10,4 @@ requests==2.18.4
 nameparser==1.0.1
 django-reversion
 ujson
-lxml
-fabric3
 
