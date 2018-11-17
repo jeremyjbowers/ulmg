@@ -1,7 +1,7 @@
 Django
 beautifulsoup4
 fuzzywuzzy
-psycopg2
+psycopg2-binary
 python-dateutil
 python-Levenshtein
 requests>=2.20.0
