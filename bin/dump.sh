@@ -1,3 +1,2 @@
 #!/bin/bash
-sudo su ubuntu && workon ulmg && django-admin dumpdata ulmg > /tmp/ulmg.json
-
+cd /home/ubuntu/apps/ulmg; sudo su -c workon ulmg && django-admin dumpdata ulmg > /tmp/ulmg.json
