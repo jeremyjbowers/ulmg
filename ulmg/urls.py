@@ -1,11 +1,9 @@
 from django.contrib import admin
 from django.urls import include, path
-import nested_admin
 
 from ulmg import views
 
 urlpatterns = [
-    path('nested_admin/', include('nested_admin.urls')),
     path('admin/', admin.site.urls),
     path('api/v1/player/<int:playerid>/<str:action>/', views.player_action),
     path('teams/<str:abbreviation>/csv/', views.team_csv),
