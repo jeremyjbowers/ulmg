@@ -6,12 +6,11 @@ from fabric import api, operations, contrib
 from fabric.state import env
 
 env.project_name = "ulmg"
-env.user = "ulmg"
+env.user = "ubuntu"
 env.forward_agent = True
 env.branch = "master"
 
 # env.hosts = ["192.241.251.155"]
-
 env.hosts = ["159.89.241.126"]
 
 cd_string = "cd /home/ubuntu/apps/%(project_name)s; " % env
