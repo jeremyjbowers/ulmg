@@ -55,6 +55,7 @@ def collectstatic():
 
 @api.task
 def bounce():
+    env.user = 'root'
     api.run("sudo service %(project_name)s stop" % env)
     api.run("sudo service %(project_name)s start" % env)
 
