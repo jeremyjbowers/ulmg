@@ -1,5 +1,4 @@
 from django.contrib import admin
-import nested_admin
 from reversion.admin import VersionAdmin
 
 from ulmg.models import Team, Player, DraftPick, Trade, TradeReceipt

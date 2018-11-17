@@ -17,7 +17,6 @@ INSTALLED_APPS = [
     'django.contrib.postgres',
     'django.contrib.humanize',
     'django.contrib.staticfiles',
-    'nested_admin',
     'reversion',
     'ulmg',
 ]
