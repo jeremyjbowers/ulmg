@@ -158,6 +158,12 @@ def team_csv(request, abbreviation):
         writer.writerow(p.to_dict())
     return response
 
+def team_simple(request, abbreviation):
+    context = utils.build_context(request)
+    context['team'] = get_object_or_404(models.Team, abbreviation__icontains=abbreviation)
+    context['players'] = models.Player.objects.filter(team=context['team']).order_by('last_name', 'first_name').values('last_name', 'first_name', 'level', 'position', 'id')
+    return render(request, 'team_simple.html', context)
+
 def trade(request):
     context = utils.build_context(request)
     context['teams'] = models.Team.objects.all().values('id', 'city', 'abbreviation')

@@ -32,7 +32,7 @@ class TeamAdmin(VersionAdmin):
 class PlayerAdmin(VersionAdmin):
     model = Player
     readonly_fields = ["name", "age"]
-    list_display = ["name", "age", "is_owned", "is_prospect", "is_carded", "team", "level", "position", 'fg_prospect_rank', 'ba_prospect_rank', 'mlb_prospect_rank']
+    list_display = ["last_name", "first_name", "is_owned", "team", 'verified']
     list_filter = ["is_owned", "is_prospect", "is_carded", "team", "level", "position"]
-    list_editable = []
+    list_editable = ['verified', "is_owned", "team"]
     search_fields = ["name"]

@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block content %}
+<table class="table" data-sortable>
+    <thead>
+        <th data-sortable-type="alpha">Name</th>
+        <th data-sortable-type="alpha">Position</th>
+        <th data-sortable-type="alpha">Level</th>
+    </thead>
+    <tbody>
+        {% for p in players %}
+        <tr>
+            <td style="text-align:left!important;"><a href="/admin/ulmg/player/{{ p.id }}/change/">{{ p.last_name }}, {{ p.first_name }}</a></td>
+            <td>{{ p.position }}</td>
+            <td>{{ p.level }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

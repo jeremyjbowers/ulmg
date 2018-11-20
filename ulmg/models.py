@@ -88,6 +88,7 @@ class Player(BaseModel):
     relief_innings_pitched = models.DecimalField(max_digits=4, decimal_places=1, blank=True, null=True)
     plate_appearances = models.CharField(max_length=255, blank=True, null=True)
     is_relief_eligible = models.BooleanField(default=False)
+    verified = models.BooleanField(default=False)
 
     # IDENTIFIERS
     ba_id = models.CharField(max_length=255, blank=True, null=True)
