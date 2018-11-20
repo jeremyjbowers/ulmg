@@ -7,7 +7,7 @@
 <div class="columns">
     <div class="column">
         {% if players %}
-            <p>Found {{ players.paginator.count }} player{% if players.paginator.count > 1 %}s{% endif %} that match your query.</p>
+            <p>Found <strong>{{ players.paginator.count }} player{% if players.paginator.count > 1 %}s{% endif %}</strong> that match your query.<br/><a href="?page={{ players.number }}&{{ q_string }}&csv=true"><strong>Download this search &dtrif;</strong></a></p>
         {% else %}
             <p>No players found.</p>
         {% endif %}

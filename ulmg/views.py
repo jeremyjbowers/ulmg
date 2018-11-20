@@ -10,7 +10,9 @@ import ujson as json
 
 from ulmg import models, utils
 
-CURRENT_SEASON="2019"
+
+MINIMUM_VALUES = ['last_name', 'first_name', 'level', 'is_owned', 'is_prospect', 'is_carded', 'is_amateur', 'team', 'is_relief_eligible', 'starts', 'relief_innings_pitched', 'plate_appearances', 'birthdate', 'fangraphs_url', 'bbref_url', 'ba_url', 'mlb_url', 'position']
+CURRENT_SEASON = "2019"
 
 @csrf_exempt
 def player_action(request, playerid, action):
@@ -147,15 +149,15 @@ def team_detail(request, abbreviation):
 
 def team_csv(request, abbreviation):
     team = get_object_or_404(models.Team, abbreviation__icontains=abbreviation)
-    team_players = models.Player.objects.filter(team=team).order_by('position', '-level_order', 'last_name', 'first_name')
+    team_players = models.Player.objects.filter(team=team).order_by('position', '-level_order', 'last_name', 'first_name').values(*MINIMUM_VALUES)
 
     # Create the HttpResponse object with the appropriate CSV header.
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = 'attachment; filename="%s-%s.csv"' % (abbreviation, datetime.datetime.now().isoformat().split('.')[0])
-    writer = csv.DictWriter(response, fieldnames=list(models.Player.objects.all()[0].to_dict().keys()))
+    writer = csv.DictWriter(response, fieldnames=MINIMUM_VALUES)
     writer.writeheader()
     for p in team_players:
-        writer.writerow(p.to_dict())
+        writer.writerow(p)
     return response
 
 def team_simple(request, abbreviation):
@@ -235,6 +237,19 @@ def search(request):
             context['amateur'] = amateur
 
     query = query.order_by('position', "level", "last_name")
+
+    if request.GET.get('csv', None):
+        c = request.GET['csv']
+        if c.lower() in ['y', 'yes', 't', 'true']:
+            query = query.values(*MINIMUM_VALUES)
+            response = HttpResponse(content_type='text/csv')
+            response['Content-Disposition'] = 'attachment; filename="search-%s.csv"' % (datetime.datetime.now().isoformat().split('.')[0])
+            writer = csv.DictWriter(response, fieldnames=MINIMUM_VALUES)
+            writer.writeheader()
+            for p in query:
+                writer.writerow(p)
+            return response
+
     paginator = Paginator(query, 1000)
     page = request.GET.get('page')
 
