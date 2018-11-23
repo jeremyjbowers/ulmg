@@ -14,6 +14,9 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         models.Player.objects.all().delete()
         models.Team.objects.all().delete()
+        models.DraftPick.objects.all().delete()
+        models.TradeReceipt.objects.all().delete()
+        models.Trade.objects.all().delete()
 
         commands = StringIO()
         cursor = connection.cursor()

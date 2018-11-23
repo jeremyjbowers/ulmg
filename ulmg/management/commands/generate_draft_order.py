@@ -44,8 +44,6 @@ class Command(BaseCommand):
     pick_notes = models.TextField(blank=True, null=True)
     """
 
-    models.DraftPick.objects.all().delete()
-
     def add_arguments(self, parser):
         parser.add_argument('year', type=str)
         parser.add_argument('season', type=str)
@@ -62,19 +60,19 @@ class Command(BaseCommand):
             for o, t in enumerate(order):
                 for draft_type,rounds in DRAFT_MAPS[season]['rounds'].items():
                     for r in range(0,rounds):
-                        draft_round = r+1
-                        team = models.Team.objects.get(abbreviation=t)
-                        obj, created = models.DraftPick.objects.get_or_create(
-                            year=year,
-                            season=season,
-                            draft_type=draft_type,
-                            draft_round=draft_round,
-                            team=team,
-                            team_name=team.city
-                        )
-                        # obj.pick_number = o+1
-                        obj.save()
-                        if created:
-                            print("+%s" % obj)
-                        else:
-                            print("*%s" % obj)
+                        if t not in ['LOU', 'DET', 'CIN', 'CHI']:
+                            draft_round = r+1
+                            team = models.Team.objects.get(abbreviation=t)
+                            try:
+                                obj = models.DraftPick.objects.get(
+                                    year=year,
+                                    season=season,
+                                    draft_type=draft_type,
+                                    draft_round=draft_round,
+                                    original_team=team,
+                                )
+                                obj.pick_number = o+1
+                                obj.save()
+                                print("*%s" % obj)
+                            except:
+                                print(year, season, draft_type, draft_round, team)

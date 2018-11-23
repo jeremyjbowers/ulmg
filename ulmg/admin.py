@@ -18,8 +18,9 @@ class TradeAdmin(VersionAdmin):
 @admin.register(DraftPick)
 class DraftPickAdmin(VersionAdmin):
     model = DraftPick
-    list_display = ['year', 'season', 'draft_type', 'draft_round', 'pick_number', 'team']
-    list_filter = list_display
+    list_display = ['year', 'season', 'draft_type', 'short_pick', 'overall_pick_number', 'team']
+    list_filter = ['team', 'year', 'season']
+    list_editable = ['team']
 
 @admin.register(Team)
 class TeamAdmin(VersionAdmin):
