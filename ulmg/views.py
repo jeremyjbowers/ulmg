@@ -166,14 +166,6 @@ def team_simple(request, abbreviation):
     context['players'] = models.Player.objects.filter(team=context['team']).order_by('last_name', 'first_name').values('last_name', 'first_name', 'level', 'position', 'id')
     return render(request, 'team_simple.html', context)
 
-def trade(request):
-    context = utils.build_context(request)
-    context['teams'] = models.Team.objects.all().values('id', 'city', 'abbreviation')
-    context['players'] = models.Player.objects.filter(is_owned=True).order_by('team__abbreviation', 'last_name', 'first_name').values('team__abbreviation', 'last_name', 'first_name', 'level', 'position', 'id')
-    context['picks'] = models.DraftPick.objects.filter(year=CURRENT_SEASON).order_by('team__abbreviation', 'season', 'draft_type', 'draft_round').values('team__abbreviation', 'season', 'draft_type', 'draft_round', 'id', 'slug')
-
-    return render(request, "trade_admin.html", context)
-
 def search(request):
     def to_bool(b):
         if b.lower() in ['y','yes', 't', 'true', 'on']:

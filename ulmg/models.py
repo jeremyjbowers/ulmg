@@ -308,7 +308,7 @@ class DraftPick(BaseModel):
         ordering = ["year", "-season", "draft_type", "draft_round", "pick_number"]
 
     def __unicode__(self):
-        return "%s %s %s %s %s %s" % (self.year, self.season, self.draft_type, self.draft_round, self.pick_number, self.team)
+        return "%s %s %s (%s)" % (self.year, self.season, self.slug, self.team)
 
     def slugify(self):
         if self.draft_type == "aa":
