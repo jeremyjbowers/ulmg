@@ -59,16 +59,14 @@
             <thead>
                 <tr>
                     <th>Season</th>
-                    <th>Type</th>
-                    <th>Round</th>
+                    <th>Pick</th>
                 </tr>
             </thead>
             <tbody>
                 {% for pick in team.list %}
-                <tr class="pick-row" data-pick-slug="{{ pick.season }} {{ pick.draft_type }} {{ pick.draft_round }}" data-pick="pick-{{ pick.id }}">
+                <tr class="pick-row" data-pick-slug="{{ pick.season }} {{ pick.slug }}" data-pick="pick-{{ pick.id }}">
                     <td class="name">{{ pick.season }}</td>
-                    <td>{{ pick.draft_type }}</td>
-                    <td>{{ pick.draft_round }}</td>
+                    <td>{{ pick.slug }}</td>
                 </tr>{% endfor %}
             </tbody>
         </table>

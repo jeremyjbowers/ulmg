@@ -296,6 +296,7 @@ class DraftPick(BaseModel):
         (MIDSEASON,"midseason"),
     )
     season = models.CharField(max_length=255, choices=SEASON_CHOICES)
+    slug = models.CharField(max_length=255, null=True, blank=True)
     team = models.ForeignKey(Team, on_delete=models.SET_NULL, blank=True, null=True, related_name="team")
     team_name = models.CharField(max_length=255, blank=True, null=True)
     player = models.ForeignKey(Player, on_delete=models.SET_NULL, blank=True, null=True)
@@ -309,8 +310,7 @@ class DraftPick(BaseModel):
     def __unicode__(self):
         return "%s %s %s %s %s %s" % (self.year, self.season, self.draft_type, self.draft_round, self.pick_number, self.team)
 
-    @property
-    def short_pick(self):
+    def slugify(self):
         if self.draft_type == "aa":
             dt = "AA"
 
@@ -320,7 +320,7 @@ class DraftPick(BaseModel):
         if self.draft_type == "balance":
             dt = "CB"
 
-        return "%s %s%s" % (self.original_team, dt, self.draft_round)
+        self.slug = "%s %s%s" % (self.original_team, dt, self.draft_round)
 
     def set_overalL_pick_number(self):
         if self.pick_number:
@@ -334,6 +334,7 @@ class DraftPick(BaseModel):
     def save(self, *args, **kwargs):
         self.set_original_team()
         self.set_overalL_pick_number()
+        self.slugify()
 
         super().save(*args, **kwargs)
 
