@@ -1,7 +1,13 @@
 from django.contrib import admin
+
 from reversion.admin import VersionAdmin
 
 from ulmg.models import Team, Player, DraftPick, Trade, TradeReceipt
+
+admin.site.site_title = "The ULMG"
+admin.site.site_header = "The ULMG: Admin"
+admin.site.index_title = "Administer The ULMG Website"
+
 
 class TradeReceiptInline(admin.TabularInline):
     model = TradeReceipt
