@@ -17,7 +17,6 @@ INSTALLED_APPS = [
     'django.contrib.postgres',
     'django.contrib.humanize',
     'django.contrib.staticfiles',
-    'reversion',
     'ulmg',
 ]
 
@@ -44,6 +43,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'django.template.context_processors.request',
             ],
         },
     },
@@ -61,8 +61,6 @@ DATABASES = {
     }
 }
 
-ADD_REVERSION_ADMIN = True
-
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
@@ -79,3 +77,5 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 STATIC_URL = '/static/'
+
+BOOTSTRAP_ADMIN_SIDEBAR_MENU = False

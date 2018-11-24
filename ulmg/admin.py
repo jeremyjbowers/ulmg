@@ -1,7 +1,5 @@
 from django.contrib import admin
 
-from reversion.admin import VersionAdmin
-
 from ulmg.models import Team, Player, DraftPick, Trade, TradeReceipt
 
 admin.site.site_title = "The ULMG"
@@ -11,20 +9,22 @@ admin.site.index_title = "Administer The ULMG Website"
 
 class TradeReceiptInline(admin.TabularInline):
     model = TradeReceipt
+    exclude = ('active',)
     autocomplete_fields = ['players', 'team', 'picks']
     min_num = 2
     max_num = 2
     extra = 2
 
 @admin.register(Trade)
-class TradeAdmin(VersionAdmin):
+class TradeAdmin(admin.ModelAdmin):
     model = Trade
     inlines = [
         TradeReceiptInline
     ]
+    exclude = ('active',)
 
 @admin.register(DraftPick)
-class DraftPickAdmin(VersionAdmin):
+class DraftPickAdmin(admin.ModelAdmin):
     model = DraftPick
     list_display = ['year', 'season', 'slug', 'overall_pick_number', 'team']
     list_filter = ['team', 'year', 'season']
@@ -52,7 +52,7 @@ class DraftPickAdmin(VersionAdmin):
 
 
 @admin.register(Team)
-class TeamAdmin(VersionAdmin):
+class TeamAdmin(admin.ModelAdmin):
     model = Team
     list_display = ["city", "division", "owner", 'owner_email']
     list_filter = ['division']
@@ -73,7 +73,7 @@ class TeamAdmin(VersionAdmin):
 
 
 @admin.register(Player)
-class PlayerAdmin(VersionAdmin):
+class PlayerAdmin(admin.ModelAdmin):
     model = Player
     list_display = ["last_name", "first_name", "is_owned", 'is_carded', "team"]
     list_filter = ["is_owned", "is_prospect", "is_carded", "team", "level", "position"]
