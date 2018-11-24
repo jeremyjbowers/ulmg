@@ -8,8 +8,8 @@ from ulmg import models
 class Command(BaseCommand):
 
     def handle(self, *args, **options):
-
-        os.system('curl -o "data/master-ids.csv" "http://crunchtimebaseball.com/master.csv"')
+        if os.environ.get('DJANGO_SETTINGS_MODULE', '') == "config.dev.settings":
+            os.system('curl -o "data/master-ids.csv" "http://crunchtimebaseball.com/master.csv"')
 
         with open('data/master-ids.csv', 'r', encoding="latin-1") as readfile:
             players = [dict(d) for d in csv.DictReader(readfile)]
