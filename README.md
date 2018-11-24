@@ -20,6 +20,24 @@ A Django site for maintaining baseball data for a strat-o-matic league because t
 * Owners can see old trades as well as recent trades on the public site
 * An owner's roster will update immediately when trades are posted
 
+## Quirks about the live site
+### Caching
+* Search is not cached
+* The homepage and team pages are cached for 5 minutes
+* The admin is not cached
+
+### Backups
+* The site's data is backed up to the cloud every six (6) hours
+* Older data will take longer to reload because of field changes in the database
+* Reloading data from a snapshot should be a worst-case scenario
+
+### Team pages
+* Any owner can see any other owner's page
+* This means, technically, an owner could sabotage another team by changing their roster or dropping players
+* Implementing per-owner / per-team auth will be quite difficult
+* We will rely on owners not to be evil
+* We do have http basic auth for the site since we cannot trust the rest of the internet to not be evil
+
 ## Contribute to the site code
 ### 0: prerequisites
 * Running PostgreSQL instance
