@@ -163,9 +163,6 @@ class Player(BaseModel):
     is_1h_p = models.BooleanField(default=False)
     is_1h_c = models.BooleanField(default=False)
     is_1h_pos = models.BooleanField(default=False)
-    is_2h_p = models.BooleanField(default=False)
-    is_2h_c = models.BooleanField(default=False)
-    is_2h_pos = models.BooleanField(default=False)
 
     class Meta:
         ordering = ["last_name", "first_name", "level", "position"]

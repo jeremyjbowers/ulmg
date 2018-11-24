@@ -22,9 +22,6 @@ def player_action(request, playerid, action):
     is_1h_p = models.BooleanField(default=False)
     is_1h_c = models.BooleanField(default=False)
     is_1h_pos = models.BooleanField(default=False)
-    is_2h_p = models.BooleanField(default=False)
-    is_2h_c = models.BooleanField(default=False)
-    is_2h_pos = models.BooleanField(default=False)
     """
 
     if action == "to_35":
@@ -129,9 +126,9 @@ def protect_team_detail(request, abbreviation):
     context['team'] = get_object_or_404(models.Team, abbreviation__icontains=abbreviation)
     team_players = models.Player.objects.filter(team=context['team'])
     context['on_35_man'] = team_players.filter(is_35man_roster=True).order_by('position', '-level_order', 'last_name')
-    context['unprotected'] = team_players.filter(level__in=['V', 'A'], is_carded=True, is_1h_c=False, is_1h_p=False, is_1h_pos=False, is_35man_roster=False).order_by('position', '-level_order', 'last_name')
+    context['unprotected'] = team_players.filter(level__in=['V', 'A'], is_carded=True, is_1h_c=False, is_1h_p=False, is_1h_pos=False, is_35man_roster=False, is_reserve=False).order_by('position', '-level_order', 'last_name')
     context['carded_b'] = team_players.filter(level="B", is_carded=True).order_by('position', '-level_order', 'last_name')
-    context['protected_veterans'] = team_players.filter(Q(is_1h_c=True)|Q(is_1h_p=True)|Q(is_1h_pos=True)).order_by('position', '-level_order', 'last_name')
+    context['protected_veterans'] = team_players.filter(Q(is_1h_c=True)|Q(is_1h_p=True)|Q(is_1h_pos=True)|Q(is_reserve=True)).order_by('position', '-level_order', 'last_name')
     context['num_owned'] = team_players.count()
     context['num_uncarded'] = team_players.filter(is_carded=False).count()
     context['num_35_man'] = context['on_35_man'].count()
