@@ -89,17 +89,51 @@ class Player(BaseModel):
     plate_appearances = models.CharField(max_length=255, blank=True, null=True)
     is_relief_eligible = models.BooleanField(default=False)
     verified = models.BooleanField(default=False)
+    bats = models.CharField(max_length=255, blank=True, null=True)
+    throws = models.CharField(max_length=255, blank=True, null=True)
+    birth_year = models.CharField(max_length=255, blank=True, null=True)
+    debut = models.CharField(max_length=255, blank=True, null=True)
 
     # IDENTIFIERS
     ba_id = models.CharField(max_length=255, blank=True, null=True)
-    bbref_id = models.CharField(max_length=255, blank=True, null=True)
-    fangraphs_id = models.CharField(max_length=255, blank=True, null=True)
     mlb_id = models.CharField(max_length=255, blank=True, null=True)
+    mlb_name = models.CharField(max_length=255, blank=True, null=True)
+    mlb_pos = models.CharField(max_length=255, blank=True, null=True)
+    mlb_team = models.CharField(max_length=255, blank=True, null=True)
+    mlb_team_long = models.CharField(max_length=255, blank=True, null=True)
+    bp_id = models.CharField(max_length=255, blank=True, null=True)
+    bref_id = models.CharField(max_length=255, blank=True, null=True)
+    bref_name = models.CharField(max_length=255, blank=True, null=True)
+    cbs_id = models.CharField(max_length=255, blank=True, null=True)
+    cbs_name = models.CharField(max_length=255, blank=True, null=True)
+    cbs_pos = models.CharField(max_length=255, blank=True, null=True)
+    espn_id = models.CharField(max_length=255, blank=True, null=True)
+    espn_name = models.CharField(max_length=255, blank=True, null=True)
+    espn_pos = models.CharField(max_length=255, blank=True, null=True)
+    fg_id = models.CharField(max_length=255, blank=True, null=True)
+    fg_name = models.CharField(max_length=255, blank=True, null=True)
+    fg_pos = models.CharField(max_length=255, blank=True, null=True)
+    lahman_id = models.CharField(max_length=255, blank=True, null=True)
+    nfbc_id = models.CharField(max_length=255, blank=True, null=True)
+    nfbc_name = models.CharField(max_length=255, blank=True, null=True)
+    nfbc_pos = models.CharField(max_length=255, blank=True, null=True)
+    retro_id = models.CharField(max_length=255, blank=True, null=True)
+    retro_name = models.CharField(max_length=255, blank=True, null=True)
+    yahoo_id = models.CharField(max_length=255, blank=True, null=True)
+    yahoo_name = models.CharField(max_length=255, blank=True, null=True)
+    yahoo_pos = models.CharField(max_length=255, blank=True, null=True)
+    mlb_depth = models.CharField(max_length=255, blank=True, null=True)
+    ottoneu_id = models.CharField(max_length=255, blank=True, null=True)
+    ottoneu_name = models.CharField(max_length=255, blank=True, null=True)
+    ottoneu_pos = models.CharField(max_length=255, blank=True, null=True)
+    rotowire_id = models.CharField(max_length=255, blank=True, null=True)
+    rotowire_name = models.CharField(max_length=255, blank=True, null=True)
+    rotowire_pos = models.CharField(max_length=255, blank=True, null=True)
 
     # LINKS TO THE WEB
     ba_url = models.CharField(max_length=255, blank=True, null=True)
-    bbref_url = models.CharField(max_length=255, blank=True, null=True)
-    fangraphs_url = models.CharField(max_length=255, blank=True, null=True)
+    bref_url = models.CharField(max_length=255, blank=True, null=True)
+    fg_url = models.CharField(max_length=255, blank=True, null=True)
     mlb_url = models.CharField(max_length=255, blank=True, null=True)
 
     # ULMG-SPECIFIC
@@ -149,7 +183,7 @@ class Player(BaseModel):
             "age": self.age,
             "carded": self.is_carded,
             "amateur": self.is_amateur,
-            "bbref_url": self.bbref_url,
+            "bref_url": self.bref_url,
             # "team": self.team.abbreviation
         }
 
@@ -228,10 +262,10 @@ class Player(BaseModel):
                     self.last_name = n.last + ' ' + n.suffix
 
     def set_ids(self):
-        if self.fangraphs_url and not self.fangraphs_id:
-            if self.fangraphs_url:
-                if "?playerid=" in self.fangraphs_url:
-                    self.fangraphs_id = self.fangraphs_url.split('?playerid=')[1].split('&')[0]
+        if self.fg_url and not self.fg_id:
+            if self.fg_url:
+                if "?playerid=" in self.fg_url:
+                    self.fg_id = self.fg_url.split('?playerid=')[1].split('&')[0]
 
     def set_level_order(self):
         if self.level:
