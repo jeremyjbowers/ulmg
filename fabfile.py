@@ -43,7 +43,7 @@ def pull():
 
 @api.task
 def pip_install():
-    api.run(work_string + "pip install -r requirements.txt")
+    api.run(work_string + "pip install --upgrade -r requirements.txt")
 
 @api.task
 def migrate():
