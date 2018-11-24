@@ -166,6 +166,12 @@ def team_simple(request, abbreviation):
     context['players'] = models.Player.objects.filter(team=context['team']).order_by('last_name', 'first_name').values('last_name', 'first_name', 'level', 'position', 'id')
     return render(request, 'team_simple.html', context)
 
+def trades(request):
+    context = utils.build_context(request)
+    context['archived_trades'] = models.TradeSummary.objects.all()
+    context['trades'] = models.Trade.objects.all()
+    return render(request, 'trade_list.html', context)
+
 def search(request):
     def to_bool(b):
         if b.lower() in ['y','yes', 't', 'true', 'on']:

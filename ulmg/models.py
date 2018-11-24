@@ -369,3 +369,20 @@ class TradeReceipt(BaseModel):
 
     def __unicode__(self):
         return "Trade %s: %s" % (self.trade.id, self.team)
+
+class TradeSummary(BaseModel):
+    season = models.CharField(max_length=255, blank=True, null=True)
+    summary = models.TextField(blank=True, null=True)
+    PLAYERS = "players only"
+    PICKS = "players and picks"
+    TRADE_TYPE_CHOICES = (
+        (PLAYERS,"players only"),
+        (PICKS,"players and picks"),
+    )
+    trade_type = models.CharField(max_length=255, choices=TRADE_TYPE_CHOICES)
+    
+    def __unicode__(self):
+        return "%s: %s (%s)" % (self.season, self.trade_type, self.pk)
+
+    class Meta:
+        ordering = ['-season', 'trade_type']

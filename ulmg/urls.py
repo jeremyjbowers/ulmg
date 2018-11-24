@@ -11,6 +11,7 @@ urlpatterns = [
     path('teams/<str:abbreviation>/roster/', views.roster_team_detail),
     path('teams/<str:abbreviation>/protect/', views.protect_team_detail),
     path('teams/<str:abbreviation>/', views.team_detail),
+    path('trades/', views.trades),
     path('players/search/', views.search),
     path('', views.index),
 ]

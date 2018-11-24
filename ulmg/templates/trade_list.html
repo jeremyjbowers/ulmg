@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="columns">
+    <div class="column">
+        {% if trades|length > 0 %}
+            <h1 class="title is-2">Trades</h1>
+            {% regroup trades by season as trade_season %}
+            {% for season in trade_season %}
+            
+            {% regroup season.list by trade_type as type_of_trade %}
+            {% for type in type_of_trade %}
+            
+            <h2 class="title is-4"><span class="has-text-weight-bold has-text-grey">{{ season.grouper }}</span> <span class="has-text-weight-semibold">{{ type.grouper }}</span></h2>
+            
+            <div class="content">
+            <ul>
+            {% for trade in type.list %}
+            <li>{{ trade.summary }}</li>
+            {% endfor %}</ul>
+            </div>
+
+            {% endfor %}
+            {% endfor %}
+        {% endif %}
+
+        <h1 class="title is-2">Archived trades</h1>
+        {% regroup archived_trades by season as archived_trade_season %}
+        {% for season in archived_trade_season %}
+        
+        {% regroup season.list by trade_type as type_of_trade %}
+        {% for type in type_of_trade %}
+        
+        <h2 class="title is-4"><span class="has-text-weight-bold has-text-grey">{{ season.grouper }}</span> <span class="has-text-weight-semibold">{{ type.grouper }}</span></h2>
+        
+        <div class="content">
+        <ul>
+        {% for trade in type.list %}
+        <li>{{ trade.summary }}</li>
+        {% endfor %}</ul>
+        </div>
+
+        {% endfor %}
+        {% endfor %}
+
+    </div>
+</div>
+{% endblock %}
