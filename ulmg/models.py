@@ -4,7 +4,7 @@ from dateutil.relativedelta import *
 from django.contrib.auth.models import User
 from django.db import models
 from django.contrib.postgres.fields import JSONField, ArrayField
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, m2m_changed
 from django.dispatch import receiver
 from nameparser import HumanName
 
@@ -388,9 +388,9 @@ class Trade(BaseModel):
 
         return "%s sends %s to %s for %s" % (
             t1.team.abbreviation,
-            ", ".join(["%s %s" % (p.position, p.name) for p in t2.players.all()]),
+            ", ".join(["%s %s" % (p.position, p.name) for p in t2.players.all()] + ["%s" % (p.slug) for p in t2.picks.all()]),
             t2.team.abbreviation,
-            ", ".join(["%s %s" % (p.position, p.name) for p in t1.players.all()])
+            ", ".join(["%s %s" % (p.position, p.name) for p in t1.players.all()] + ["%s" % (p.slug) for p in t1.picks.all()]),
         )
 
 class TradeReceipt(BaseModel):
@@ -401,6 +401,27 @@ class TradeReceipt(BaseModel):
 
     def __unicode__(self):
         return "Trade %s: %s" % (self.trade.id, self.team)
+
+    @staticmethod
+    def trade_pick(sender, instance, action, reverse, model, pk_set, **kwargs):
+        if action == 'post_add':
+            team = instance.team
+            for p in pk_set:
+                obj = DraftPick.objects.get(id=p)
+                obj.team = instance.team
+                obj.save()
+
+    @staticmethod
+    def trade_player(sender, instance, action, reverse, model, pk_set, **kwargs):
+        if action == 'post_add':
+            team = instance.team
+            for p in pk_set:
+                obj = Player.objects.get(id=p)
+                obj.team = instance.team
+                obj.save()
+
+m2m_changed.connect(receiver=TradeReceipt.trade_player, sender=TradeReceipt.players.through)
+m2m_changed.connect(receiver=TradeReceipt.trade_pick, sender=TradeReceipt.picks.through)
 
 class TradeSummary(BaseModel):
     season = models.CharField(max_length=255, blank=True, null=True)
