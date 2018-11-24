@@ -3,7 +3,7 @@ import datetime
 from dateutil.relativedelta import *
 from django.contrib.auth.models import User
 from django.db import models
-from django.contrib.postgres.fields import JSONField
+from django.contrib.postgres.fields import JSONField, ArrayField
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from nameparser import HumanName
@@ -31,6 +31,7 @@ class Team(BaseModel):
     division = models.CharField(max_length=255, null=True, blank=True)
     owner = models.CharField(max_length=255, null=True, blank=True)
     owner_email = models.CharField(max_length=255, null=True, blank=True)
+    championships = ArrayField(models.CharField(max_length=4), blank=True, null=True)
 
     class Meta:
         ordering = ["abbreviation"]

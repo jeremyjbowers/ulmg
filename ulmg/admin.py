@@ -65,8 +65,8 @@ class TeamAdmin(admin.ModelAdmin):
                 'abbreviation',
                 'nickname',
                 'division',
-                'owner',
-                'owner_email',
+                ('owner','owner_email'),
+                'championships',
             ),
         }),
     )
