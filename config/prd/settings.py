@@ -2,7 +2,7 @@ import os
 
 from config.dev.settings import *
 
-DEBUG = True
+DEBUG = False
 
 WSGI_APPLICATION = 'config.prd.app.application'
 
