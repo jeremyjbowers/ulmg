@@ -42,8 +42,8 @@
         <tr>
             <td data-value="{{ p.name }}" style="text-align: left!important;"><span class="has-text-weight-semibold" data-value="{{ p.name }}">
                 {{ p.name }}</a> <a href="/admin/ulmg/player/{{ p.id }}/change/">&#x270E;<br/>
-                {% if p.bbref_url %}<a class="has-text-weight-light is-size-6" target="_blank" href="{{ p.bbref_url }}">BBR &Gt;</a>{% endif %}
-                {% if p.fangraphs_url %}<a class="has-text-weight-light is-size-6" target="_blank" href="{{ p.fangraphs_url }}">FG &Gt;</a>{% endif %}
+                {% if p.bref_url %}<a class="has-text-weight-light is-size-6" target="_blank" href="{{ p.bref_url }}">BBR &Gt;</a>{% endif %}
+                {% if p.fg_url %}<a class="has-text-weight-light is-size-6" target="_blank" href="{{ p.fg_url }}">FG &Gt;</a>{% endif %}
                 {% if p.ba_url %}<a class="has-text-weight-light is-size-6"  target="_blank" href="{{ p.ba_url }}">BA &Gt;</a>{% endif %}
             </td>
             <td data-value="{{ p.age|default_if_none:"0" }}">{{ p.age|default_if_none:"0" }}</td>

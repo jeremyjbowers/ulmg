@@ -53,8 +53,8 @@
             {% for p in rand_hit %}
             <tr>
                 <td style="text-align: left!important;"><span class="has-text-weight-semibold">{{ p.name }}</span><br/>
-                    {% if p.bbref_url %}<a class="has-text-weight-light is-size-6" target="_blank" href="{{ p.bbref_url }}">BBR &Gt;</a>{% endif %}
-                    {% if p.fangraphs_url %}<a class="has-text-weight-light is-size-6" target="_blank" href="{{ p.fangraphs_url }}">FG &Gt;</a>{% endif %}
+                    {% if p.bref_url %}<a class="has-text-weight-light is-size-6" target="_blank" href="{{ p.bref_url }}">BBR &Gt;</a>{% endif %}
+                    {% if p.fg_url %}<a class="has-text-weight-light is-size-6" target="_blank" href="{{ p.fg_url }}">FG &Gt;</a>{% endif %}
                     {% if p.ba_url %}<a class="has-text-weight-light is-size-6"  target="_blank" href="{{ p.ba_url }}">BA &Gt;</a>{% endif %}
                 </td>
                 <td>{{ p.age }}</td>
@@ -78,8 +78,8 @@
             {% for p in rand_pitch %}
             <tr>
                 <td style="text-align: left!important;"><span class="has-text-weight-semibold">{{ p.name }}</span><br/>
-                    {% if p.bbref_url %}<a class="has-text-weight-light is-size-6" target="_blank" href="{{ p.bbref_url }}">BBR &Gt;</a>{% endif %}
-                    {% if p.fangraphs_url %}<a class="has-text-weight-light is-size-6" target="_blank" href="{{ p.fangraphs_url }}">FG &Gt;</a>{% endif %}
+                    {% if p.bref_url %}<a class="has-text-weight-light is-size-6" target="_blank" href="{{ p.bref_url }}">BBR &Gt;</a>{% endif %}
+                    {% if p.fg_url %}<a class="has-text-weight-light is-size-6" target="_blank" href="{{ p.fg_url }}">FG &Gt;</a>{% endif %}
                     {% if p.ba_url %}<a class="has-text-weight-light is-size-6"  target="_blank" href="{{ p.ba_url }}">BA &Gt;</a>{% endif %}
                 </td>
                 <td>{{ p.age }}</td>
@@ -104,8 +104,8 @@
             {% for p in rand_prospect %}
             <tr>
                 <td style="text-align: left!important;"><span class="has-text-weight-semibold">{{ p.name }}</span><br/>
-                    {% if p.bbref_url %}<a class="has-text-weight-light is-size-6" target="_blank" href="{{ p.bbref_url }}">BBR &Gt;</a>{% endif %}
-                    {% if p.fangraphs_url %}<a class="has-text-weight-light is-size-6" target="_blank" href="{{ p.fangraphs_url }}">FG &Gt;</a>{% endif %}
+                    {% if p.bref_url %}<a class="has-text-weight-light is-size-6" target="_blank" href="{{ p.bref_url }}">BBR &Gt;</a>{% endif %}
+                    {% if p.fg_url %}<a class="has-text-weight-light is-size-6" target="_blank" href="{{ p.fg_url }}">FG &Gt;</a>{% endif %}
                     {% if p.ba_url %}<a class="has-text-weight-light is-size-6"  target="_blank" href="{{ p.ba_url }}">BA &Gt;</a>{% endif %}
                 </td>
                 <td>{% if p.is_amateur %}<span class="red">&cross;</span>{% else %}<span class="green">&checkmark;</span>{% endif %}</td>
