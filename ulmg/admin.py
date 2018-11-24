@@ -144,12 +144,12 @@ class PlayerAdmin(admin.ModelAdmin):
         ('External', {
             'classes': ('collapse',),
             'fields': (
-                'fangraphs_id',
-                'bbref_id',
+                'fg_id',
+                'bref_id',
                 'mlb_id',
                 'ba_id',
-                'fangraphs_url',
-                'bbref_url',
+                'fg_url',
+                'bref_url',
                 'mlb_url',
                 'ba_url'
             )
