@@ -11,7 +11,7 @@ import ujson as json
 from ulmg import models, utils
 
 
-MINIMUM_VALUES = ['last_name', 'first_name', 'level', 'is_owned', 'is_prospect', 'is_carded', 'is_amateur', 'team', 'is_relief_eligible', 'starts', 'relief_innings_pitched', 'plate_appearances', 'birthdate', 'fangraphs_url', 'bbref_url', 'ba_url', 'mlb_url', 'position']
+MINIMUM_VALUES = ['last_name', 'first_name', 'level', 'is_owned', 'is_prospect', 'is_carded', 'is_amateur', 'team', 'is_relief_eligible', 'starts', 'relief_innings_pitched', 'plate_appearances', 'birthdate', 'fg_url', 'bref_url', 'ba_url', 'mlb_url', 'position']
 CURRENT_SEASON = "2019"
 
 @csrf_exempt
