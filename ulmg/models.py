@@ -396,8 +396,8 @@ class Trade(BaseModel):
 class TradeReceipt(BaseModel):
     trade = models.ForeignKey(Trade, on_delete=models.SET_NULL, null=True)
     team = models.ForeignKey(Team, on_delete=models.SET_NULL, null=True)
-    players = models.ManyToManyField(Player, related_name="players")
-    picks = models.ManyToManyField(DraftPick, related_name="picks")
+    players = models.ManyToManyField(Player, related_name="players", blank=True, null=True)
+    picks = models.ManyToManyField(DraftPick, related_name="picks", blank=True, null=True)
 
     def __unicode__(self):
         return "Trade %s: %s" % (self.trade.id, self.team)
