@@ -166,7 +166,7 @@ def team_simple(request, abbreviation):
 def trades(request):
     context = utils.build_context(request)
     context['archived_trades'] = models.TradeSummary.objects.all()
-    context['trades'] = models.Trade.objects.all()
+    context['trades'] = models.Trade.objects.all().order_by('-date')
     return render(request, 'trade_list.html', context)
 
 def search(request):

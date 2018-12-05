@@ -378,17 +378,47 @@ class Trade(BaseModel):
     related TradeReceipt objects containing the players and picks.
     """
     date = models.DateField()
+    season = models.IntegerField(blank=True, null=True)
 
     def __unicode__(self):
-        return self.teams()
+        return self.summary()
 
-    def teams(self):
-        t1 = TradeReceipt.objects.filter(trade=self)[0]
-        t2 = TradeReceipt.objects.filter(trade=self)[1]
+    def set_season(self):
+        if self.date.month >= 10:
+            self.season = int(self.date.year) + 1
+        else:
+            self.season = self.date.year
+
+    def save(self, *args, **kwargs):
+        self.set_season()
+
+        super().save(*args, **kwargs)
+
+    def reciepts(self):
+        return TradeReceipt.objects.filter(trade=self)
+
+    def summary(self):
+        r = self.reciepts()
+        t1 = r[0]
+        t2 = r[1]
 
         return "%s sends %s to %s for %s" % (
             t1.team.abbreviation,
             ", ".join(["%s %s" % (p.position, p.name) for p in t2.players.all()] + ["%s" % (p.slug) for p in t2.picks.all()]),
+            t2.team.abbreviation,
+            ", ".join(["%s %s" % (p.position, p.name) for p in t1.players.all()] + ["%s" % (p.slug) for p in t1.picks.all()]),
+        )
+
+    def summary_html(self):
+        r = self.reciepts()
+        t1 = r[0]
+        t2 = r[1]
+
+        return "<a href='/teams/%s/'>%s</a> sends %s to <a href='/teams/%s/'>%s</a> for %s" % (
+            t1.team.abbreviation.lower(),
+            t1.team.abbreviation,
+            ", ".join(["%s %s" % (p.position, p.name) for p in t2.players.all()] + ["%s" % (p.slug) for p in t2.picks.all()]),
+            t2.team.abbreviation.lower(),
             t2.team.abbreviation,
             ", ".join(["%s %s" % (p.position, p.name) for p in t1.players.all()] + ["%s" % (p.slug) for p in t1.picks.all()]),
         )

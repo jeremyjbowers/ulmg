@@ -7,20 +7,14 @@
             <h1 class="title is-2">Trades</h1>
             {% regroup trades by season as trade_season %}
             {% for season in trade_season %}
-            
-            {% regroup season.list by trade_type as type_of_trade %}
-            {% for type in type_of_trade %}
-            
-            <h2 class="title is-4"><span class="has-text-weight-bold has-text-grey">{{ season.grouper }}</span> <span class="has-text-weight-semibold">{{ type.grouper }}</span></h2>
-            
+            <h2 class="title is-4"><span class="has-text-weight-bold has-text-grey">{{ season.grouper }}</span> <span class="has-text-weight-semibold">all trades</span></h2>
             <div class="content">
             <ul>
-            {% for trade in type.list %}
-            <li>{{ trade.summary }}</li>
+            {% for trade in season.list %}
+            <li>{{ trade.summary_html|safe }}</li>
             {% endfor %}</ul>
             </div>
 
-            {% endfor %}
             {% endfor %}
         {% endif %}
 

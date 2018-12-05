@@ -11,7 +11,7 @@
             <a class="navbar-link">Teams</a>
                 <div class="navbar-dropdown">
                     {% for team in teamnav %}
-                    <a class="navbar-item" href="/teams/{{ team.abbreviation|lower }}">{{ team.abbreviation }}</a>
+                    <a class="navbar-item" href="/teams/{{ team.abbreviation|lower }}/">{{ team.abbreviation }}</a>
                     {% endfor %}
                 </div>
             </div>
