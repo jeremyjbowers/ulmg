@@ -143,6 +143,8 @@ class Player(BaseModel):
 
     # PROSPECT STUFF
     fg_prospect_fv = models.CharField(max_length=4, blank=True, null=True)
+    fg_prospect_risk = models.CharField(max_length=4, blank=True, null=True)
+    fg_prospect_j2_rank = models.IntegerField(blank=True, null=True)
     fg_prospect_rank = models.IntegerField(blank=True, null=True)
     ba_prospect_rank = models.IntegerField(blank=True, null=True)
     mlb_prospect_rank = models.IntegerField(blank=True, null=True)
@@ -369,6 +371,37 @@ class DraftPick(BaseModel):
         self.slugify()
 
         super().save(*args, **kwargs)
+
+
+class ScoutingReport(BaseModel):
+    PUBLICATION_CHOICES = (
+        ("fg", "Fangraphs"),
+        ("ba", "Baseball America"),
+        ("sickels", "John Sickels"),
+        ("law", "Keith Law"),
+        ("mlb", "MLB prospect pipeline"),
+        ("2080", "2080 Baseball"),
+    )
+    RISK_CHOICES = (
+        ("Low", "Low"),
+        ("Med", "Moderate"),
+        ("High", "High"),
+        ("Ext", "Extreme")
+    )
+    player = models.ForeignKey(Player, on_delete=models.SET_NULL, blank=True, null=True)
+    year = models.IntegerField()
+    month = models.IntegerField()
+    publication = models.CharField(max_length=255, choices=PUBLICATION_CHOICES)
+    pv = models.CharField(max_length=3, blank=True, null=True)
+    fv = models.CharField(max_length=3, blank=True, null=True)
+    risk = models.CharField(max_length=1, choices=RISK_CHOICES, blank=True, null=True)
+    rank = models.IntegerField(blank=True, null=True)
+    rank_type = models.CharField(max_length=255, blank=True, null=True)
+    notes = models.TextField(blank=True, null=True)
+    eta = models.IntegerField(blank=True, null=True)
+
+    def __unicode__(self):
+        return "%s scouted by %s on %s" % (player, publication, pub_date)
 
 class Trade(BaseModel):
     """

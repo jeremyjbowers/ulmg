@@ -17,12 +17,14 @@ class Command(BaseCommand):
         models.DraftPick.objects.all().delete()
         models.TradeReceipt.objects.all().delete()
         models.Trade.objects.all().delete()
+        models.ScoutingReport.objects.all().delete()
 
         commands = StringIO()
         cursor = connection.cursor()
 
         for app in apps.get_app_configs():
             label = app.label
+            print(label)
             call_command('sqlsequencereset', label, stdout=commands)
 
         cursor.execute(commands.getvalue())
