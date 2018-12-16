@@ -292,6 +292,8 @@ class Player(BaseModel):
     def set_owned(self):
         if self.team == None:
             self.is_owned = False
+        else:
+            self.is_owned = True
 
     def save(self, *args, **kwargs):
         """
@@ -447,6 +449,12 @@ class TradeReceipt(BaseModel):
             team = instance.team
             for p in pk_set:
                 obj = Player.objects.get(id=p)
+                obj.is_reserve = False
+                obj.is_1h_c = False
+                obj.is_1h_p = False
+                obj.is_1h_pos = False
+                obj.is_35man_roster = False
+                obj.is_owned = True
                 obj.team = instance.team
                 obj.save()
 
