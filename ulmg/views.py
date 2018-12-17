@@ -157,6 +157,16 @@ def team_csv(request, abbreviation):
         writer.writerow(p)
     return response
 
+def team_other(request, abbreviation):
+    context = utils.build_context(request)
+    team = get_object_or_404(models.Team, abbreviation__icontains=abbreviation)
+    context['team'] = team
+    team_players = models.Player.objects.filter(team=context['team'])
+    context['num_owned'] = team_players.count()
+    context['trades'] = models.TradeReceipt.objects.filter(team=context['team']).order_by('-trade__date')
+    context['picks'] = models.DraftPick.objects.filter(team=context['team'])
+    return render(request, 'team_other.html', context)
+
 def team_simple(request, abbreviation):
     context = utils.build_context(request)
     context['team'] = get_object_or_404(models.Team, abbreviation__icontains=abbreviation)

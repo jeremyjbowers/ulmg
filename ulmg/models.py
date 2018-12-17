@@ -409,7 +409,8 @@ class Trade(BaseModel):
         t1 = r[0]
         t2 = r[1]
 
-        return "%s sends %s to %s for %s" % (
+        return "%s: %s sends %s to %s for %s" % (
+            self.date,
             t1.team.abbreviation,
             ", ".join(["%s %s" % (p.position, p.name) for p in t2.players.all()] + ["%s" % (p.slug) for p in t2.picks.all()]),
             t2.team.abbreviation,
@@ -421,7 +422,8 @@ class Trade(BaseModel):
         t1 = r[0]
         t2 = r[1]
 
-        return "<a href='/teams/%s/'>%s</a> sends %s to <a href='/teams/%s/'>%s</a> for %s" % (
+        return "%s: <a href='/teams/%s/other/'>%s</a> sends %s to <a href='/teams/%s/other/'>%s</a> for %s" % (
+            self.date,
             t1.team.abbreviation.lower(),
             t1.team.abbreviation,
             ", ".join(["%s %s" % (p.position, p.name) for p in t2.players.all()] + ["%s" % (p.slug) for p in t2.picks.all()]),
