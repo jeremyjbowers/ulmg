@@ -142,7 +142,7 @@ def team_detail(request, abbreviation):
     context['by_level'] = team_players.order_by('-level_order').values('level').annotate(Count('level'))
     context['by_position'] = team_players.order_by('position').values('position').annotate(Count('position'))
     context['players'] = team_players.order_by('position', '-level_order', 'last_name', 'first_name')
-    return render(request, 'team_carded.html', context)
+    return render(request, 'team.html', context)
 
 def team_csv(request, abbreviation):
     team = get_object_or_404(models.Team, abbreviation__icontains=abbreviation)

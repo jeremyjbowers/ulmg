@@ -4,6 +4,9 @@ from ulmg import models
 def build_context(request):
     context = {}
     context['teamnav'] = models.Team.objects.all().values('abbreviation')
+    context['value'] = False
+    if request.GET.get('value', None):
+        context['value'] = True
     queries_without_page = dict(request.GET)
     if queries_without_page.get('page', None):
         del queries_without_page['page']

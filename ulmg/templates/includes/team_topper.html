@@ -8,6 +8,6 @@
         {% else %}
             &mdash;
         {% endif %}
-        <br/><a href="/teams/{{ team.abbreviation }}/csv/">Download team roster &dtrif;</a>
+        <br/><a href="/teams/{{ team.abbreviation }}/csv/{% if value %}?value=true{% endif %}">Download team roster &dtrif;</a>
     </span>
 </h1>

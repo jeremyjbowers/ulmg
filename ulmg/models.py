@@ -131,6 +131,11 @@ class Player(BaseModel):
     rotowire_name = models.CharField(max_length=255, blank=True, null=True)
     rotowire_pos = models.CharField(max_length=255, blank=True, null=True)
 
+    # Value
+    raar = models.DecimalField(max_digits=4, decimal_places=1, blank=True, null=True)
+    raal = models.DecimalField(max_digits=4, decimal_places=1, blank=True, null=True)
+    raat = models.DecimalField(max_digits=4, decimal_places=1, blank=True, null=True)
+
     # LINKS TO THE WEB
     ba_url = models.CharField(max_length=255, blank=True, null=True)
     bref_url = models.CharField(max_length=255, blank=True, null=True)
@@ -458,8 +463,10 @@ class TradeReceipt(BaseModel):
                 obj.team = instance.team
                 obj.save()
 
+
 m2m_changed.connect(receiver=TradeReceipt.trade_player, sender=TradeReceipt.players.through)
 m2m_changed.connect(receiver=TradeReceipt.trade_pick, sender=TradeReceipt.picks.through)
+
 
 class TradeSummary(BaseModel):
     season = models.CharField(max_length=255, blank=True, null=True)
@@ -477,3 +484,24 @@ class TradeSummary(BaseModel):
 
     class Meta:
         ordering = ['-season', 'trade_type']
+
+
+class SomRunsYear(BaseModel):
+    season = models.IntegerField()
+    player = models.ForeignKey(Player, on_delete=models.SET_NULL, null=True)
+    player_name = models.CharField(max_length=255, blank=True)
+    raar = models.DecimalField(max_digits=4, decimal_places=1)
+    raal = models.DecimalField(max_digits=4, decimal_places=1)
+    raat = models.DecimalField(max_digits=4, decimal_places=1)
+
+    def __unicode__(self):
+        return "%(player_name)s: %(raal)s (L) (R) %(raat)s [%(raat)s]" % self
+
+    def set_player_name(self):
+        if self.player:
+            self.player_name = self.player.name
+
+    def save(self, *args, **kwargs):
+        self.set_player_name()
+
+        super().save(*args, **kwargs)

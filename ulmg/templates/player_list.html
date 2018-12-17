@@ -32,9 +32,11 @@
             <th data-sortable-type="numeric">PA</th>
             <th data-sortable-type="numeric">IP</th>
             <th data-sortable-type="numeric">ST</th>
-            <th data-sortable-type="numeric">BA rank</th>
-            <th data-sortable-type="numeric">MLB rank</th>
-            <th data-sortable-type="numeric">FG rank</th>
+            {% if value %}
+            <th data-sortable-type="numeric">RAAR</th>
+            <th data-sortable-type="numeric">RAAL</th>
+            <th data-sortable-type="numeric">RAAT</th>
+            {% endif %}
         </tr>
     </thead>
     <tbody>
@@ -58,9 +60,11 @@
             <td data-value="{{ p.plate_appearances|default_if_none:"0" }}">{{ p.plate_appearances|default_if_none:"-" }}</td>
             <td data-value="{{ p.relief_innings_pitched|default_if_none:"0" }}">{{ p.relief_innings_pitched|default_if_none:"-" }}</td>
             <td data-value="{{ p.starts|default_if_none:"0" }}">{{ p.starts|default_if_none:"-" }}</td>
-            <td data-value="{{ p.ba_prospect_rank|default_if_none:"1000" }}">{{ p.ba_prospect_rank|default_if_none:"-" }}</td>
-            <td data-value="{{ p.mlb_prospect_rank|default_if_none:"1000" }}">{{ p.mlb_prospect_rank|default_if_none:"-" }}</td>
-            <td data-value="{{ p.fg_prospect_rank|default_if_none:"1000" }}">{{ p.fg_prospect_rank|default_if_none:"-" }}</td>
+            {% if value %}
+            <td data-value="{{ p.raar|default_if_none:"-99999" }}">{{ p.raar|default_if_none:"-" }}</td>
+            <td data-value="{{ p.raal|default_if_none:"-99999" }}">{{ p.raal|default_if_none:"-" }}</td>
+            <td data-value="{{ p.raat|default_if_none:"-99999" }}">{{ p.raat|default_if_none:"-" }}</td>
+            {% endif %}
         </tr>
     {% endfor %}
     </tbody>
