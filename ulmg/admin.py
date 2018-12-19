@@ -15,6 +15,7 @@ class TradeReceiptInline(admin.TabularInline):
     max_num = 2
     extra = 2
 
+
 @admin.register(Trade)
 class TradeAdmin(admin.ModelAdmin):
     model = Trade
@@ -22,6 +23,7 @@ class TradeAdmin(admin.ModelAdmin):
         TradeReceiptInline
     ]
     exclude = ('active',)
+
 
 @admin.register(DraftPick)
 class DraftPickAdmin(admin.ModelAdmin):
