@@ -507,3 +507,34 @@ class SomRunsYear(BaseModel):
         self.set_player_name()
 
         super().save(*args, **kwargs)
+
+class ScoutingReport(BaseModel):
+    player = models.ForeignKey(Player, on_delete=models.SET_NULL, null=True)
+    player_name = models.CharField(max_length=255, blank=True)
+    season = models.IntegerField()
+    date = models.DateField()
+    pv = models.CharField(max_length=5, blank=True, null=True)
+    fv = models.CharField(max_length=5, blank=True, null=True)
+    risk = models.IntegerField(blank=True, null=True)
+    risk_name = models.CharField(max_length=255, blank=True, null=True)
+    url = models.CharField(max_length=255, blank=True, null=True)
+    organization = models.CharField(max_length=255, blank=True, null=True)
+    rank = models.IntegerField(blank=True, null=True)
+    evaluator = models.CharField(max_length=255, blank=True, null=True)
+    report_type = models.CharField(max_length=255, blank=True, null=True)
+    level = models.CharField(max_length=255, blank=True, null=True)
+
+    def __unicode__(self):
+        base = "%(organization)s %(date)s: %(player_name)s" % self.__dict__
+        if self.fv:
+            base += " (%s)" % self.fv
+        return base
+
+    def set_player_name(self):
+        if self.player:
+            self.player_name = self.player.name
+
+    def save(self, *args, **kwargs):
+        self.set_player_name()
+
+        super().save(*args, **kwargs)
