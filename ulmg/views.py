@@ -179,6 +179,54 @@ def trades(request):
     context['trades'] = models.Trade.objects.all().order_by('-date')
     return render(request, 'trade_list.html', context)
 
+def live_draft(request, year, season, draft_type):
+    context = utils.build_context(request)
+    context['picks'] = models.DraftPick.objects.filter(year=year, season=season, draft_type=draft_type)
+    context['year'] = year
+    context['season'] = season
+    context['draft_type'] = draft_type
+
+    return render(request, "live_draft.html", context)
+
+def draft_action(request, pickid):
+    playerid = None
+    name = None
+
+    if request.GET.get('name', None):
+        name = request.GET['name']
+
+    if request.GET.get('playerid', None):
+        playerid = request.GET('playerid')
+
+    draftpick = get_object_or_404(models.DraftPick, pk=pickid)
+
+    if playerid:
+        draftpick.player = get_object_or_404(models.Player, pk=playerid)
+        draftpick.player.team = draftpick.team
+        draftpick.player.save()
+        draftpick.save()
+
+    if name:
+        ps = models.Player.objects.filter(name=name)
+        if len(ps) == 1:
+            draftpick.player = ps[0]
+            draftpick.player.team = draftpick.team
+            draftpick.player.save()
+            draftpick.save()
+        else:
+            draftpick.player_name = name
+
+    if not name and not playerid:
+        if draftpick.player:
+            draftpick.player.team = None
+            draftpick.player.save()
+            draftpick.player = None
+    
+        if draftpick.player_name:
+            draftpick.player_name = None
+
+        draftpick.save()
+
 def search(request):
     def to_bool(b):
         if b.lower() in ['y','yes', 't', 'true', 'on']:

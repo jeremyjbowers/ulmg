@@ -370,10 +370,15 @@ class DraftPick(BaseModel):
         if not self.original_team and self.team:
             self.original_team = self.team
 
+    def set_player_name(self):
+        if self.player and not self.player_name:
+            self.player_name = self.player.name
+
     def save(self, *args, **kwargs):
         self.set_original_team()
         self.set_overalL_pick_number()
         self.slugify()
+        self.set_player_name()
 
         super().save(*args, **kwargs)
 

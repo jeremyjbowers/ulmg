@@ -14,5 +14,7 @@ urlpatterns = [
     path('teams/<str:abbreviation>/', views.team_detail),
     path('trades/', views.trades),
     path('players/search/', views.search),
+    path('draft/live/<str:year>/<str:season>/<str:draft_type>/', views.live_draft),
+    path('draft/action/', views.draft_action),
     path('', views.index),
 ]

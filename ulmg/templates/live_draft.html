@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="columns">
+    <div class="column is-one-quarter"></div>
+    <div class="column is-one-half">
+            <h1 class="is-title is-size-1 has-text-weight-bold">{{ year }} {{ season }} {{ draft_type }} draft</h1>
+            <br/>
+            <br/>
+            {% for pick in picks %}
+            <div class="box" id="pick-{{ pick.id }}">
+                <article class="media">
+                    <div class="media-content">
+                    <div class="content">
+                        <p>
+                        <span class="is-size-6">
+                            <a href="#pick-{{ pick.id }}">Round <strong>{{ pick.draft_round }}</strong>, pick <strong>{{ pick.pick_number }}</strong></a>
+                        </span>
+                        <h1 class="is-title is-size-2">
+                            {{ pick.team }} 
+                            <span class="is-size-4" ><a href="/admin/ulmg/draftpick/{{ pick.id }}/change/">&#x270E;</a></span>
+                        </h1>
+                        {% if pick.player or pick.player_name %}
+                            <h1>
+                                {% if pick.player %}{{ pick.player.position }}{% endif %} {{ pick.player_name }}
+                                {% if not pick.player and pick.player_name %}
+                                    <span class="is-size-6" ><a href="/admin/ulmg/draftpick/{{ pick.id }}/change/">link player</a></span>
+                                {% endif %}
+                            </h1>
+                        {% else %}
+                        <div class="field has-addons">
+                            <div class="control" style="width:80%;">
+                                <input class="input is-large" type="text" placeholder="Large input">
+                            </div>
+                            <div class="control">
+                                <a class="button is-info is-large">Draft</a>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </p>
+                    </div>
+                    </div>
+                </article>
+            </div>
+        {% endfor %}
+    </div>
+    <div class="column is-one-quarter"></div>
+</div>
+{% endblock %}
+
+{% block extrascript %}
+<script type="text/javascript">
+$(function(){
+    var draft_click_handler = function(el) {
+
+        el.preventDefault();
+        $el = $(this);
+
+        var playername = $el.val();
+
+        console.log(playername, action);
+
+        $.ajax({
+            type: "POST",
+            url: '/api/v1/player/?name=' + playername,
+            success: function(response){
+                window.location.reload();
+            }
+        });
+    }
+
+    $('body').on('click', 'a.draft-action', draft_click_handler);
+});
+</script>
+{% endblock %}
