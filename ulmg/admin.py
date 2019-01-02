@@ -102,6 +102,7 @@ class PlayerAdmin(admin.ModelAdmin):
                 'relief_innings_pitched',
                 'starts',
                 'plate_appearances',
+                ('raar','raal','raat'),
             )
         }),
         ('Player flags', {
