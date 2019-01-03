@@ -188,6 +188,7 @@ def live_draft(request, year, season, draft_type):
 
     return render(request, "live_draft.html", context)
 
+@csrf_exempt
 def draft_action(request, pickid):
     playerid = None
     name = None
@@ -212,9 +213,9 @@ def draft_action(request, pickid):
             draftpick.player = ps[0]
             draftpick.player.team = draftpick.team
             draftpick.player.save()
-            draftpick.save()
         else:
             draftpick.player_name = name
+        draftpick.save()
 
     if not name and not playerid:
         if draftpick.player:
@@ -226,6 +227,7 @@ def draft_action(request, pickid):
             draftpick.player_name = None
 
         draftpick.save()
+    return HttpResponse('ok')
 
 def search(request):
     def to_bool(b):

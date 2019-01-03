@@ -2,13 +2,12 @@
 
 {% block content %}
 <div class="columns">
-    <div class="column is-one-quarter"></div>
-    <div class="column is-one-half">
+    <div class="column">
             <h1 class="is-title is-size-1 has-text-weight-bold">{{ year }} {{ season }} {{ draft_type }} draft</h1>
             <br/>
             <br/>
             {% for pick in picks %}
-            <div class="box" id="pick-{{ pick.id }}">
+            <div class="box" id="pick-{{ pick.id }}" style="width:640px;">
                 <article class="media">
                     <div class="media-content">
                     <div class="content">
@@ -25,15 +24,17 @@
                                 {% if pick.player %}{{ pick.player.position }}{% endif %} {{ pick.player_name }}
                                 {% if not pick.player and pick.player_name %}
                                     <span class="is-size-6" ><a href="/admin/ulmg/draftpick/{{ pick.id }}/change/">link player</a></span>
+                                {% else %}
+                                    <a class="button is-danger undraft-action" data-pickid="{{ pick.id }}" data-playerid="{{ pick.player.id }}">x</a>
                                 {% endif %}
                             </h1>
                         {% else %}
                         <div class="field has-addons">
                             <div class="control" style="width:80%;">
-                                <input class="input is-large" type="text" placeholder="Large input">
+                                <input id="pick-input-{{ pick.id }}" class="input is-large" type="text" placeholder="Large input">
                             </div>
                             <div class="control">
-                                <a class="button is-info is-large">Draft</a>
+                                <a class="button is-info is-large draft-action" data-pickid="{{ pick.id }}" data-pick-input="pick-input-{{ pick.id }}">Draft</a>
                             </div>
                         </div>
                         {% endif %}
@@ -44,32 +45,49 @@
             </div>
         {% endfor %}
     </div>
-    <div class="column is-one-quarter"></div>
 </div>
 {% endblock %}
 
 {% block extrascript %}
 <script type="text/javascript">
 $(function(){
+    var undraft_click_handler = function(el) {
+
+        el.preventDefault();
+        $el = $(this);
+
+        var playerid = $el.attr('data-playerid')
+        var pickid = $el.attr('data-pickid')
+
+        $.ajax({
+            type: "GET",
+            url: '/api/v1/draft/' + pickid + '/',
+            success: function(response){
+                window.location.replace('#pick-' + pickid);
+                window.location.reload();
+            }
+        });
+    }
     var draft_click_handler = function(el) {
 
         el.preventDefault();
         $el = $(this);
 
-        var playername = $el.val();
-
-        console.log(playername, action);
+        var playername = $('#' + $el.attr('data-pick-input')).val();
+        var pickid = $el.attr('data-pickid')
 
         $.ajax({
-            type: "POST",
-            url: '/api/v1/player/?name=' + playername,
+            type: "GET",
+            url: '/api/v1/draft/' + pickid + '/?name=' + playername,
             success: function(response){
+                window.location.replace('#pick-' + pickid);
                 window.location.reload();
             }
         });
     }
 
     $('body').on('click', 'a.draft-action', draft_click_handler);
+    $('body').on('click', 'a.undraft-action', undraft_click_handler);
 });
 </script>
 {% endblock %}
