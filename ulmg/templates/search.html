@@ -48,7 +48,7 @@
                 {% if p.fg_url %}<a class="has-text-weight-light is-size-6" target="_blank" href="{{ p.fg_url }}">FG &Gt;</a>{% endif %}
                 {% if p.ba_url %}<a class="has-text-weight-light is-size-6"  target="_blank" href="{{ p.ba_url }}">BA &Gt;</a>{% endif %}
             </td>
-            <td data-value="{{ p.age|default_if_none:"0" }}">{{ p.age|default_if_none:"0" }}</td>
+            <td data-value="{{ p.age|default_if_none:"0" }}">{{ p.age|default_if_none:"-" }}</td>
             <td data-value="{{ p.position }}">{{ p.position }}</td>
             <td data-value="{{ p.level|default_if_none:"Z" }}<">{{ p.level|default_if_none:"" }}</td>
             <td data-value="{{ p.team|default_if_none:"AAAAAAAAA" }}">{% if p.team %}<a href="/teams/{{ p.team.abbreviation }}/">{{ p.team }}</a>{% else %}-{% endif %}</td>
