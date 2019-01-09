@@ -1,13 +1,11 @@
 from ulmg import models
-
-TEAM_PROTECT_TAB=False
-TEAM_ROSTER_TAB=True
+from django.conf import settings
 
 
 def build_context(request):
     context = {}
-    context['roster_tab'] = TEAM_ROSTER_TAB
-    context['protect_tab'] = TEAM_PROTECT_TAB
+    context['roster_tab'] = settings.TEAM_ROSTER_TAB
+    context['protect_tab'] = settings.TEAM_PROTECT_TAB
     context['teamnav'] = models.Team.objects.all().values('abbreviation')
     context['value'] = False
     if request.GET.get('value', None):

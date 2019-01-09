@@ -77,3 +77,12 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 STATIC_URL = '/static/'
+
+"""
+Section for site-specific settings, e.g., controlling tabs, current draft year, etc.
+"""
+CURRENT_SEASON = 2019
+CURRENT_SEASON_TYPE = "offseason"
+
+TEAM_PROTECT_TAB = True
+TEAM_ROSTER_TAB = False
