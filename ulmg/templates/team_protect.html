@@ -52,7 +52,7 @@
                         {% if p.ba_url %}<a class="has-text-weight-light is-size-6"  target="_blank" href="{{ p.ba_url }}">BA &Gt;</a>{% endif %}
                         {% if p.mlb_url %}<a class="has-text-weight-light is-size-6"  target="_blank" href="{{ p.mlb_url }}">MLB &Gt;</a>{% endif %}
                     </td>
-                    <td>{{ p.age }}</td>
+                    <td>{{ p.age|default_if_none:"-" }}</td>
                     <td>{{ p.position }}</td>
                     <td data-value="{% if p.is_relief_eligible %}1{% else %}0{% endif %}">{% if p.is_relief_eligible %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td>
                     <td data-value="{{ p.plate_appearances|default_if_none:"0" }}">{{ p.plate_appearances|default_if_none:"-" }}</td>
@@ -95,7 +95,7 @@
                         {% if p.fg_url %}<a class="has-text-weight-light is-size-6" target="_blank" href="{{ p.fg_url }}">FG &Gt;</a>{% endif %}
                         {% if p.ba_url %}<a class="has-text-weight-light is-size-6"  target="_blank" href="{{ p.ba_url }}">BA &Gt;</a>{% endif %}
                     </td>
-                    <td>{{ p.age }}</td>
+                    <td>{{ p.age|default_if_none:"-" }}</td>
                     <td>{{ p.position }}</td>
                     <td>{{ p.level }}</td>
                     <td data-value="{% if p.is_relief_eligible %}1{% else %}0{% endif %}">{% if p.is_relief_eligible %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td>
@@ -136,7 +136,7 @@
                         {% if p.ba_url %}<a class="has-text-weight-light is-size-6"  target="_blank" href="{{ p.ba_url }}">BA &Gt;</a>{% endif %}
                         {% if p.mlb_url %}<a class="has-text-weight-light is-size-6"  target="_blank" href="{{ p.mlb_url }}">MLB &Gt;</a>{% endif %}
                     </td>
-                    <td>{{ p.age }}</td>
+                    <td>{{ p.age|default_if_none:"-" }}</td>
                     <td>{{ p.position }}</td>
                     <td>{{ p.level }}</td>
                     <td data-value="{% if p.is_relief_eligible %}1{% else %}0{% endif %}">{% if p.is_relief_eligible %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td>
@@ -177,7 +177,7 @@
                         {% if p.ba_url %}<a class="has-text-weight-light is-size-6"  target="_blank" href="{{ p.ba_url }}">BA &Gt;</a>{% endif %}
                         {% if p.mlb_url %}<a class="has-text-weight-light is-size-6"  target="_blank" href="{{ p.mlb_url }}">MLB &Gt;</a>{% endif %}
                     </td>
-                    <td>{{ p.age }}</td>
+                    <td>{{ p.age|default_if_none:"-" }}</td>
                     <td>{{ p.position }}</td>
                     <td data-value="{% if p.is_relief_eligible %}1{% else %}0{% endif %}">{% if p.is_relief_eligible %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td>
                     <td data-value="{{ p.plate_appearances|default_if_none:"0" }}">{{ p.plate_appearances|default_if_none:"-" }}</td>
