@@ -309,4 +309,4 @@ def search(request):
     page = request.GET.get('page')
 
     context['players'] = paginator.get_page(page)
-    return render(request, "player_list.html", context)
+    return render(request, "search.html", context)
