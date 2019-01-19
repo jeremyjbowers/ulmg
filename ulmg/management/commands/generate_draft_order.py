@@ -60,19 +60,18 @@ class Command(BaseCommand):
             for o, t in enumerate(order):
                 for draft_type,rounds in DRAFT_MAPS[season]['rounds'].items():
                     for r in range(0,rounds):
-                        if t not in ['LOU', 'DET', 'CIN', 'CHI']:
-                            draft_round = r+1
-                            team = models.Team.objects.get(abbreviation=t)
-                            try:
-                                obj = models.DraftPick.objects.get(
-                                    year=year,
-                                    season=season,
-                                    draft_type=draft_type,
-                                    draft_round=draft_round,
-                                    original_team=team,
-                                )
-                                obj.pick_number = o+1
-                                obj.save()
-                                print("*%s" % obj)
-                            except:
-                                print(year, season, draft_type, draft_round, team)
+                        draft_round = r+1
+                        team = models.Team.objects.get(abbreviation=t)
+                        try:
+                            obj = models.DraftPick.objects.get(
+                                year=year,
+                                season=season,
+                                draft_type=draft_type,
+                                draft_round=draft_round,
+                                original_team=team,
+                            )
+                            obj.pick_number = o+1
+                            obj.save()
+                            print("*%s" % obj)
+                        except:
+                            print(year, season, draft_type, draft_round, team)
