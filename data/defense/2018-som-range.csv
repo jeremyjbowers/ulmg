@@ -22,7 +22,7 @@ STL,Garcia,Adolis,Adolis Garcia,,,,,,,4,3
 TEX,Beltre,Adrian,Adrian Beltre,,,,2,,,,
 NYM,Gonzalez,Adrian,Adrian Gonzalez,,3,,,,,,
 WAS,Sanchez,Adrian,Adrian Sanchez,,,3,3,,,,
-CHC,Almora Jr,Albert,Albert Almora Jr,,,,,,1,1,
+CHC,Almora Jr,Albert,Albert Almora,,,,,,1,1,
 LAA,Pujols,Albert,Albert Pujols,,4,,,,,,
 KCR,Escobar,Alcides,Alcides Escobar,,,3,2,3,,4,
 TOR,Diaz,Aledmys,Aledmys Diaz,,,,3,4(B3),,,
@@ -201,7 +201,7 @@ OAK,Fowler,Dustin,Dustin Fowler,,,,,,3,3,4
 CHA,Garneau,Dustin,Dustin Garneau,3,,,,,,,
 BOS,Pedroia,Dustin,Dustin Pedroia,,,3,,,,,
 ATL,Peterson,Dustin,Dustin Peterson,,,,,,,,
-TOR,Smith Jr,Dwight,Dwight Smith Jr,,,,,,4,,4
+TOR,Smith,Dwight,Dwight Smith,,,,,,4,,4
 PHI,Cozens,Dylan,Dylan Cozens,,,,,,4,,4
 MIN,Rosario,Eddie,Eddie Rosario,,,,5,,3,4,3
 STL,Sosa,Edmundo,Edmundo Sosa,,,4,,,,,
@@ -273,7 +273,7 @@ SEA,Suzuki,Ichiro,Ichiro Suzuki,,,,,,4,,4
 ARI,Vargas,Ildemaro,Ildemaro Vargas,,,4,4,4,,,
 MIA,Galloway,Isaac,Isaac Galloway,,,,,,2,3,2
 TEX,Kiner-Falefa,Isiah,Isiah Kiner-Falefa,4,,3,3,4,,,
-DET,Saltalamacchia,J.,J. Saltalamacchia,4,5,,,,,,
+DET,Saltalamacchia,Jarrod,Jarrod Saltalamacchia,4,5,,,,,,
 MIA,Shuck,J.B.,J.B. Shuck,,,,,,4,4,4
 HOU,Davis,J.D.,J.D. Davis,,4,,4,,5,,
 BOS,Martinez,J.D.,J.D. Martinez,,,,,,4(B3),,4(B3)
@@ -298,7 +298,7 @@ MIN,Castro,Jason,Jason Castro,2,,,,,,,
 CHC,Heyward,Jason,Jason Heyward,,,,,,,3,1
 CLE,Kipnis,Jason,Jason Kipnis,,,4,,,,5,
 CHC,Baez,Javier,Javier Baez,,,1,3,2,,,
-SDP,Guerra,Javy,Javy Guerra,,,,4,3,,,
+SDP,Guerra,Javy,Javier Guerra,,,,4,3,,,
 NYM,Bruce,Jay,Jay Bruce,,4,,,,,,4
 SEA,Segura,Jean,Jean Segura,,,,,3,,,
 OAK,Lowrie,Jed,Jed Lowrie,,,4(B3),4,,,,
@@ -485,7 +485,7 @@ HOU,Straw,Myles,Myles Straw,,,,,,3,3,3
 MIL,Orf,Nate,Nate Orf,,,4,4,4,,,5
 NYY,Walker,Neil,Neil Walker,,4(B3),3,4,,5,,4
 SEA,Cruz,Nelson,Nelson Cruz,,,,,,,,5
-DET,Castellanos,Nicholas,Nicholas Castellanos,,,,,,,,5(B4)
+DET,Castellanos,Nicholas,Nick Castellanos,,,,,,,,5(B4)
 ARI,Ahmed,Nick,Nick Ahmed,,,,,1,,,
 TBY,Ciuffo,Nick,Nick Ciuffo,3,,,,,,,
 MIL,Franklin,Nick,Nick Franklin,,,4,,,,,
@@ -493,7 +493,7 @@ SFG,Hundley,Nick,Nick Hundley,3,,,,,,,
 ATL,Markakis,Nick,Nick Markakis,,,,,,3(B2),,2
 OAK,Martini,Nick,Nick Martini,,,,,,3,4,4
 PHI,Williams,Nick,Nick Williams,,,,,,4,,4
-CHA,Delmonico,Nicky,Nicky Delmonico,,4,,,,4,,
+CHA,Delmonico,Nick,Nick Delmonico,,4,,,,4,,
 DET,Goodrum,Niko,Niko Goodrum,,3(B4),3(B4),4,4,3,,4
 COL,Cuevas,Noel,Noel Cuevas,,,,,,4,4,4
 COL,Arenado,Nolan,Nolan Arenado,,,,1,,,,
@@ -586,7 +586,7 @@ BOS,Pearce,Steve,Steve Pearce,,3,,,,4,,4
 BAL,Wilkerson,Steve,Steve Wilkerson,,,3,3,4,,,
 STL,Baron,Steven,Steven Baron,4,,,,,,,
 SFG,Duggar,Steven,Steven Duggar,,,,,,,2,
-ARI,Souza Jr,Steven,Steven Souza Jr,,,,,,,,2(B3)
+ARI,Souza Jr,Steven,Steven Souza,,,,,,,,2(B3)
 CHC,Davis,Taylor,Taylor Davis,4,4,,,,,,
 MIN,Motter,Taylor,Taylor Motter,,4,3,3,3,4,,4
 LAA,Ward,Taylor,Taylor Ward,,,,4,,,,

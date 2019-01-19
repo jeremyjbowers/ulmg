@@ -192,7 +192,7 @@ class Player(BaseModel):
 
     def set_usage(self):
         if self.stats:
-            if self.position == "P":
+            if "P" in self.position:
                 if self.stats.get('gs', None) == "0":
                     if float(self.stats['ip']) > 70:
                         return "%s IP" % round((float(self.stats['ip']) * 1.5), 1)
@@ -209,10 +209,11 @@ class Player(BaseModel):
                 else:
                     return "%s IP" % self.stats['ip']
             else:
-                if int(self.stats['pa']) > 550:
-                    return "Unlimited"
-                else:
-                    return "%s PA" % self.stats['pa']
+                if self.stats['pa']:
+                    if int(self.stats['pa']) > 550:
+                        return "Unlimited"
+                    else:
+                        return "%s PA" % self.stats['pa']
         return None
 
 
