@@ -246,7 +246,7 @@ def search(request):
     if request.GET.get('position', None):
         position = request.GET['position']
         if position.lower() not in ["", "h"]:
-            query = query.filter(position=position)
+            query = query.filter(position__icontains=position)
             context['position'] = position
         elif position.lower() == "h":
             query = query.exclude(position="P")
@@ -290,7 +290,7 @@ def search(request):
             query = query.filter(is_amateur=to_bool(amateur))
             context['amateur'] = amateur
 
-    query = query.order_by('position', "level", "last_name")
+    query = query.order_by("level", "last_name")
 
     if request.GET.get('csv', None):
         c = request.GET['csv']
