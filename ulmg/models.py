@@ -135,7 +135,7 @@ class Player(BaseModel):
     raar = models.DecimalField(max_digits=4, decimal_places=1, blank=True, null=True)
     raal = models.DecimalField(max_digits=4, decimal_places=1, blank=True, null=True)
     raat = models.DecimalField(max_digits=4, decimal_places=1, blank=True, null=True)
-    defense = ArrayField(models.CharField(max_length=3), blank=True, null=True)
+    defense = ArrayField(models.CharField(max_length=10), blank=True, null=True)
 
     # LINKS TO THE WEB
     ba_url = models.CharField(max_length=255, blank=True, null=True)
@@ -190,6 +190,11 @@ class Player(BaseModel):
             "bref_url": self.bref_url,
             # "team": self.team.abbreviation
         }
+    def defense_display(self):
+        if self.defense:
+            sortdef = [{"display": f"{d.split('-')[0]}{d.split('-')[2]}", "sort": f"{d.split('-')[1]}{d.split('-')[2]}"} for d in self.defense]
+            return ", ".join([x['display'] for x in sorted(sortdef, key=lambda x: x['sort'])])
+        return None
 
     def set_usage(self):
         if self.stats:

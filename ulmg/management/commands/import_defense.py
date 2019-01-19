@@ -27,12 +27,14 @@ class Command(BaseCommand):
                         obj = obj[0]
                         if not obj.defense:
                             obj.defense = []
-                        for pos in ["C", "1B", "2B", "3B", "SS", "RF", "CF", "LF"]:
-                            if p[pos] != "":
-                                rating = p[pos]
+                        defense = set()
+                        for pos in ["C-2", "1B-3", "2B-4", "3B-5", "SS-6", "RF-9", "CF-8", "LF-7"]:
+                            if p[pos.split('-')[0]] != "":
+                                rating = p[pos.split('-')[0]]
                                 if "(" in rating:
                                     rating = rating.split("(")[0]
-                                d = f"{pos}{rating}"
-                                obj.defense.append(d)
+                                d = f"{pos}-{rating}"
+                                defense.add(d)
+                    obj.defense = list(defense)
                     obj.save()
                     print(obj.name, obj.defense)

@@ -37,7 +37,10 @@
                 <tr>
                     <th data-sortable-type="alpha">Name</th>
                     <th data-sortable-type="numeric">Age</th>
+                    {% if position.grouper != "P" %}
                     <th data-sortable-type="alpha">Pos</th>
+                    {% endif %}
+                    <th>Def</th>
                     <th data-sortable-type="alpha">Lvl</th>
                     <th data-sortable-type="numeric">Card?</th>
                     {% if position.grouper == "P" %}
@@ -67,6 +70,9 @@
                     </td>
                     <td data-value="{{ p.age|default_if_none:"0" }}">{{ p.age|default_if_none:"-" }}</td>
                     <td data-value="{{ p.position }}">{{ p.position }}</td>
+                    {% if position.grouper != "P" %}
+                    <td>{{ p.defense_display|default_if_none:"-" }}</td>
+                    {% endif %}
                     <td data-value="{{ p.level|default_if_none:"Z" }}<">{{ p.level|default_if_none:"" }}</td>
                     <td data-value="{% if p.is_carded %}1{% else %}0{% endif %}">{% if p.is_carded %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td>
                     {% if position.grouper == "P" %}
