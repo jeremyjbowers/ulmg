@@ -23,7 +23,16 @@ class Command(BaseCommand):
 
                 for p in players:
                     obj = models.Player.objects.filter(name__search=p['name']).exclude(position="P")
-                    if len(obj) > 1:
-                        print(f"MORE THAN ONE: {obj}")
-                    if len(obj) == 0:
-                        print(f"ACK: {p['name']}")
+                    if len(obj) == 1:
+                        obj = obj[0]
+                        if not obj.defense:
+                            obj.defense = []
+                        for pos in ["C", "1B", "2B", "3B", "SS", "RF", "CF", "LF"]:
+                            if p[pos] != "":
+                                rating = p[pos]
+                                if "(" in rating:
+                                    rating = rating.split("(")[0]
+                                d = f"{pos}{rating}"
+                                obj.defense.append(d)
+                    obj.save()
+                    print(obj.name, obj.defense)

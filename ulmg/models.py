@@ -135,6 +135,7 @@ class Player(BaseModel):
     raar = models.DecimalField(max_digits=4, decimal_places=1, blank=True, null=True)
     raal = models.DecimalField(max_digits=4, decimal_places=1, blank=True, null=True)
     raat = models.DecimalField(max_digits=4, decimal_places=1, blank=True, null=True)
+    defense = ArrayField(models.CharField(max_length=3), blank=True, null=True)
 
     # LINKS TO THE WEB
     ba_url = models.CharField(max_length=255, blank=True, null=True)
