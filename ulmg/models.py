@@ -356,6 +356,30 @@ class DraftPick(BaseModel):
     def __unicode__(self):
         return "%s %s %s (%s)" % (self.year, self.season, self.slug, self.team)
 
+    def to_dict(self):
+        payload = dict(self.__dict__)
+        del payload['_state']
+        del payload['created']
+        del payload['last_modified']
+        if self.player:
+            payload['player'] = {}
+            payload['player']['birthdate'] = self.player.birthdate
+            payload['player']['name'] = self.player.name
+            payload['player']['age'] = self.player.age
+            payload['player']['position'] = self.player.position
+            if self.draft_type == "open":
+                payload['player']['raar'] = self.player.raar
+                payload['player']['raal'] = self.player.raal
+                payload['player']['raat'] = self.player.raat
+                payload['player']['defense'] = self.player.defense_display()
+            else:
+                payload['player']['amateur'] = self.player.is_amateur
+        if self.team:
+            payload['team'] = self.team.abbreviation
+        if self.original_team:
+            payload['original_team'] = self.original_team.abbreviation
+        return payload
+
     def slugify(self):
         if self.draft_type == "aa":
             dt = "AA"

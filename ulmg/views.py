@@ -6,6 +6,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import render, get_object_or_404
 from django.db.models import Count, Avg, Sum, Max, Min, Q
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
+from django.http import JsonResponse
 import ujson as json
 
 from ulmg import models, utils
@@ -178,14 +179,38 @@ def trades(request):
     context['trades'] = models.Trade.objects.all().order_by('-date')
     return render(request, 'trade_list.html', context)
 
-def live_draft(request, year, season, draft_type):
+def live_draft_admin(request, year, season, draft_type):
     context = utils.build_context(request)
     context['picks'] = models.DraftPick.objects.filter(year=year, season=season, draft_type=draft_type)
     context['year'] = year
     context['season'] = season
     context['draft_type'] = draft_type
 
-    return render(request, "live_draft.html", context)
+    return render(request, "live_draft_admin.html", context)
+
+def live_draft_watch(request, year, season, draft_type):
+    context = utils.build_context(request)
+    context['made_picks'] = models.DraftPick.objects\
+                                .filter(Q(player_name__isnull=False)|Q(player__isnull=False))\
+                                .filter(year=year, season=season, draft_type=draft_type)\
+                                .order_by("year", "-season", "draft_type", "draft_round", "-pick_number")
+    context['upcoming_picks'] = models.DraftPick.objects\
+                                .filter(year=year, season=season, draft_type=draft_type)\
+                                .exclude(Q(player_name__isnull=False)|Q(player__isnull=False))
+    context['year'] = year
+    context['season'] = season
+    context['draft_type'] = draft_type
+
+    return render(request, "live_draft_watch.html", context)
+
+def live_draft_api(request, year, season, draft_type):
+    context = {}
+    context['picks'] = [p.to_dict() for p in models.DraftPick.objects.filter(year=year, season=season, draft_type=draft_type)]
+    context['year'] = year
+    context['season'] = season
+    context['draft_type'] = draft_type
+
+    return JsonResponse(context)
 
 @csrf_exempt
 def draft_action(request, pickid):

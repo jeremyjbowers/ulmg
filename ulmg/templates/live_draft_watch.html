@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block extrahead %}
+<meta http-equiv="refresh" content="15" />
+{% endblock %}
+
+{% block content %}
+<h1 class="is-title is-size-1 has-text-weight-bold">{{ year }} {{ season }} {{ draft_type }} draft</h1>
+<br/>
+<br/>
+<div class="columns">
+    <div class="column">
+            <h1 class="is-title is-size-2 has-text-weight-bold">Upcoming</h1>
+            <br/>
+            <br/>
+            {% for pick in upcoming_picks %}
+            <div class="box" id="pick-{{ pick.id }}" style="width:640px;">
+                <article class="media">
+                    <div class="media-content">
+                    <div class="content">
+                        <p>
+                            <span class="is-size-6">
+                                {% if pick.original_team != pick.team %}(via <strong>{{ pick.original_team }}</strong>){% endif %}
+                                <a href="#pick-{{ pick.id }}">
+                                    Round <strong>{{ pick.draft_round }}</strong>, pick <strong>{{ pick.pick_number }}</strong>
+                                </a>
+                            </span>
+                            <h1 class="is-title is-size-2">
+                                {{ pick.team }} 
+                                <span class="is-size-4" ><a href="/admin/ulmg/draftpick/{{ pick.id }}/change/">&#x270E;</a></span>
+                            </h1>
+                        </p>
+                    </div>
+                    </div>
+                </article>
+            </div>
+        {% endfor %}
+    </div>
+    <div class="column">
+            <h1 class="is-title is-size-2 has-text-weight-bold">Pick history</h1>
+            <br/>
+            <br/>
+            {% for pick in made_picks %}
+            <div class="box" id="pick-{{ pick.id }}" style="width:640px;">
+                <article class="media">
+                    <div class="media-content">
+                    <div class="content">
+                        <p>
+                            <span class="is-size-6">
+                                {% if pick.original_team != pick.team %}(via <strong>{{ pick.original_team }}</strong>){% endif %}
+                                <a href="#pick-{{ pick.id }}">
+                                    Round <strong>{{ pick.draft_round }}</strong>, pick <strong>{{ pick.pick_number }}</strong>
+                                </a>
+                            </span>
+                            <h1 class="is-title is-size-2">
+                                {{ pick.team }} 
+                                <span class="is-size-4" ><a href="/admin/ulmg/draftpick/{{ pick.id }}/change/">&#x270E;</a></span>
+                            </h1>
+                            <h1>{% if pick.player %}{{ pick.player.position }}{% endif %} {{ pick.player_name }}</h1>
+                        </p>
+                    </div>
+                    </div>
+                </article>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extrascript %}
+<script type="text/javascript">
+$(function(){
+    var undraft_click_handler = function(el) {
+
+        el.preventDefault();
+        $el = $(this);
+
+        var playerid = $el.attr('data-playerid')
+        var pickid = $el.attr('data-pickid')
+
+        $.ajax({
+            type: "GET",
+            url: '/api/v1/draft/' + pickid + '/',
+            success: function(response){
+                window.location.replace('#pick-' + pickid);
+                window.location.reload();
+            }
+        });
+    }
+    var draft_click_handler = function(el) {
+
+        el.preventDefault();
+        $el = $(this);
+
+        var playername = $('#' + $el.attr('data-pick-input')).val();
+        var pickid = $el.attr('data-pickid')
+
+        $.ajax({
+            type: "GET",
+            url: '/api/v1/draft/' + pickid + '/?name=' + playername,
+            success: function(response){
+                window.location.replace('#pick-' + pickid);
+                window.location.reload();
+            }
+        });
+    }
+
+    $('body').on('click', 'a.draft-action', draft_click_handler);
+    $('body').on('click', 'a.undraft-action', undraft_click_handler);
+});
+</script>
+{% endblock %}

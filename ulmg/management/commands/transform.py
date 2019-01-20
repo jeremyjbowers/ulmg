@@ -24,5 +24,12 @@ class Command(BaseCommand):
                 pos = "P"
             return pos
 
-        pass
-            
+        with open('data/j2/2018-ba-j2.json', 'r') as readfile:
+            players = json.loads(readfile.read())
+
+        with open('data/j2/2018-ba-j2.csv', 'w') as writefile:
+            fieldnames = list(players[0].keys())
+            writer = csv.DictWriter(writefile, fieldnames=fieldnames)
+            writer.writeheader()
+            for p in players:
+                writer.writerow(p)            
