@@ -143,7 +143,7 @@
                     <td data-value="{{ p.plate_appearances|default_if_none:"0" }}">{{ p.plate_appearances|default_if_none:"-" }}</td>
                     <td data-value="{{ p.relief_innings_pitched|default_if_none:"0" }}">{{ p.relief_innings_pitched|default_if_none:"-" }}</td>
                     <td data-value="{{ p.starts|default_if_none:"0" }}">{{ p.starts|default_if_none:"-" }}</td>
-                    <td>{% if num_35_man < 35 %}<a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="to_35">35</a>{% endif %}
+                    <td>{% if num_35_man < 35 %}<a class="button is-success player-action" data-playerid="{{ p.id }}" data-action="to_35">35</a>{% endif %}
                         {% if p.position == "P" and p.level == "V" %}<a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="is_1h_p">PIT1</a>{% endif %}
                         {% if p.position == "C" and p.level == "V" %}<a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="is_1h_c">CAT1</a>{% endif %}
                         {% if p.position != "P" and p.position != "C" and p.level == "V" %}<a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="is_1h_pos">POS1</a>{% endif %}
