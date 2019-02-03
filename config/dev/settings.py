@@ -81,8 +81,24 @@ STATIC_URL = '/static/'
 """
 Section for site-specific settings, e.g., controlling tabs, current draft year, etc.
 """
-CURRENT_SEASON = 2019
-CURRENT_SEASON_TYPE = "offseason"
-
 TEAM_PROTECT_TAB = True
 TEAM_ROSTER_TAB = False
+CURRENT_SEASON = 2019
+CURRENT_SEASON_TYPE = "offseason"
+CSV_COLUMNS = [
+    'last_name', 
+    'first_name', 
+    'birthdate',
+    'level', 
+    'is_carded', 
+    'is_relief_eligible', 
+    'starts', 
+    'relief_innings_pitched', 
+    'plate_appearances', 
+    'defense',
+    'is_35man_roster',
+    'is_reserve',
+    'is_1h_p',
+    'is_1h_c',
+    'is_1h_pos'
+]
