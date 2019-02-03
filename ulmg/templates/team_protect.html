@@ -191,7 +191,7 @@ $(function(){
 
         var playerid = $el.attr('data-playerid');
         var playername = $el.attr('data-playername');
-        $('#player-drop-modal div.modal-content').html('<div class="box"><div class="content"><p class="subtitle">Are you sure?</p><p><a class="button is-danger is-large player-action" data-action="drop" data-playerid=' + playerid + '>Drop ' + playername + '</a>&nbsp;&nbsp;&nbsp;<a class="cancel button is-info is-large">Cancel</a></p></div></div>');
+        $('#player-drop-modal div.modal-content').html('<div class="box"><div class="content"><p class="subtitle">Are you sure you want to <strong>permanently drop ' + playername + '?</strong></p><p><a class="button is-danger is-large player-action" data-action="drop" data-playerid=' + playerid + '>Drop ' + playername + '</a>&nbsp;&nbsp;&nbsp;<a class="cancel button is-info is-large">Cancel</a></p></div></div>');
         $('#player-drop-modal').addClass('is-active');
     }
 
