@@ -7,12 +7,10 @@ from django.shortcuts import render, get_object_or_404
 from django.db.models import Count, Avg, Sum, Max, Min, Q
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.http import JsonResponse
+from django.conf import settings
 import ujson as json
 
 from ulmg import models, utils
-
-MINIMUM_VALUES = ['last_name', 'first_name', 'level', 'is_owned', 'is_prospect', 'is_carded', 'is_amateur', 'team', 'is_relief_eligible', 'starts', 'relief_innings_pitched', 'plate_appearances', 'birthdate', 'fg_url', 'bref_url', 'ba_url', 'mlb_url', 'position']
-CURRENT_SEASON = "2019"
 
 @csrf_exempt
 def player_action(request, playerid, action):
@@ -146,14 +144,23 @@ def team_detail(request, abbreviation):
 
 def team_csv(request, abbreviation):
     team = get_object_or_404(models.Team, abbreviation__icontains=abbreviation)
-    team_players = models.Player.objects.filter(team=team).order_by('position', '-level_order', 'last_name', 'first_name').values(*MINIMUM_VALUES)
+    team_players = models.Player.objects.filter(team=team).order_by('-is_35man_roster', 'position', '-level_order', 'last_name', 'first_name').values(*settings.CSV_COLUMNS)
 
     # Create the HttpResponse object with the appropriate CSV header.
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = 'attachment; filename="%s-%s.csv"' % (abbreviation, datetime.datetime.now().isoformat().split('.')[0])
-    writer = csv.DictWriter(response, fieldnames=MINIMUM_VALUES)
+    writer = csv.DictWriter(response, fieldnames=settings.CSV_COLUMNS)
     writer.writeheader()
     for p in team_players:
+        for k,v in p.items():
+            if v == True:
+                p[k] = "x"
+            if v == False:
+                p[k] = ""
+        if p['defense']:
+            p['defense'] = ",".join([f"{d.split('-')[0]}{d.split('-')[2]}" for d in p['defense']])
+        else:
+            p['defense'] = ""
         writer.writerow(p)
     return response
 
