@@ -1,5 +1,42 @@
 {% extends "base.html" %}
 
+{% block hero %}
+<section class="hero is-info">
+    <div class="hero-body">
+        <div class="container">
+            <h1 class="title">Sunday, March 17th</h1>
+            <h2 class="subtitle">LIVE DRAFT EXTRAVAGANZA</h2>
+            <p><ul>
+                <li>Make your picks on the <strong><a href="https://ulmg.slack.com/messages/C4HA6AXSP/">#draftroom channel</a></strong> on our Slack</li>
+                <li>See the <strong><a href="/draft/live/2019/offseason/aa/">draft order for the AA draft</a></strong></li>
+                <li>See the <strong><a href="/draft/live/2019/offseason/open/">draft order for the Open draft</a></strong></li>
+            </ul>
+        </p>
+        <h2 style="margin-top:25px;">DRAFT PREP</h2>
+        <p>
+            <ul>
+                <li>All <strong><a href="/players/search/?name=&prospect=&owned=no&carded=yes&amateur=&position=H&reliever=&level=">181 available hitters</a></strong></li>
+                <li> All <strong><a href="/players/search/?name=&prospect=&owned=no&carded=yes&amateur=&position=P&reliever=&level=">372 available pitchers</a></strong></li>
+                <li> All <strong><a href="/players/search/?name=&prospect=&owned=no&carded=yes&amateur=&position=P&reliever=yes&level=">329 qualified relievers</a></strong></li>
+            </ul></p>
+        </div>
+    </div>
+    <div class="hero-foot">
+        <nav class="navbar">
+            <div class="container">
+                <div id="navbarMenuHeroA" class="navbar-menu">
+                    <div class="navbar-end">
+                        <a class="navbar-item has-text-weight-bold" href="https://ulmg.slack.com/messages/C4HA6AXSP/">#draftroom in Slack</a>
+                        <a class="navbar-item has-text-weight-bold" href="/draft/live/2019/offseason/aa/">AA draft order</a>
+                        <a class="navbar-item has-text-weight-bold" href="/draft/live/2019/offseason/open/">Open draft order</a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </div>
+</section>
+{% endblock %}
+
 {% block content %}
 <style type="text/css" media="screen">
     ul.charts {
@@ -31,6 +68,7 @@
       white-space: nowrap;
     }
 </style>
+
 <div class="columns">
     <div class="column">
         <p class="title">Search</p>
