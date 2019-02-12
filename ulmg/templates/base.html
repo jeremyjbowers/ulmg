@@ -13,6 +13,19 @@
         <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/sortable/0.8.0/css/sortable-theme-minimal.min.css">
         <link href="https://fonts.googleapis.com/css?family=Bungee" rel="stylesheet">
         <style type="text/css">
+            table[data-sortable] th[data-sorted-direction="descending"]:after {
+                border-top-color: red;
+            }
+            table[data-sortable] th[data-sorted-direction="ascending"]:after {
+                border-bottom-color: red;
+            }
+            table[data-sortable] th:after {
+                margin-left: 5px!important;
+            }
+            table.small-table td, table.small-table th {
+                font-size:14px;
+                letter-spacing: -1px;
+            }
             div.roster table tbody tr:hover td:first-child::before, 
             div.picks table tbody tr:hover td:first-child::before {
                 content: "+ "

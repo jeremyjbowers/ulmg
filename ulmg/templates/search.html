@@ -44,7 +44,7 @@
     {% for p in players %}
         <tr>
             <td data-value="{{ p.name }}" style="text-align: left!important;"><span class="has-text-weight-semibold" data-value="{{ p.name }}">
-                {{ p.name }}</a> <a href="/admin/ulmg/player/{{ p.id }}/change/">&#x270E;<br/>
+                {{ p.name }}</a> <a href="/admin/ulmg/player/{{ p.id }}/change/">&#x270E;</a><br/>
                 {% if p.bref_url %}<a class="has-text-weight-light is-size-6" target="_blank" href="{{ p.bref_url }}">BBR &Gt;</a>{% endif %}
                 {% if p.fg_url %}<a class="has-text-weight-light is-size-6" target="_blank" href="{{ p.fg_url }}">FG &Gt;</a>{% endif %}
                 {% if p.ba_url %}<a class="has-text-weight-light is-size-6"  target="_blank" href="{{ p.ba_url }}">BA &Gt;</a>{% endif %}

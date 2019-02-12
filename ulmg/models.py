@@ -6,6 +6,7 @@ from django.db import models
 from django.contrib.postgres.fields import JSONField, ArrayField
 from django.db.models.signals import post_save, m2m_changed
 from django.dispatch import receiver
+from django.conf import settings
 from nameparser import HumanName
 
 
@@ -153,10 +154,16 @@ class Player(BaseModel):
     ba_prospect_rank = models.IntegerField(blank=True, null=True)
     mlb_prospect_rank = models.IntegerField(blank=True, null=True)
     ba_draft_rank = models.IntegerField(blank=True, null=True)
+    klaw_prospect_rank = models.IntegerField(blank=True, null=True)
+    pl_prospect_rank = models.IntegerField(blank=True, null=True)
+    eta = models.IntegerField(blank=True, null=True)
+    is_interesting = models.BooleanField(default=False)
+    interest_order = models.IntegerField(blank=True, null=True)
+    bp_prospect_rank = models.IntegerField(blank=True, null=True)
+    js_prospect_rank = models.IntegerField(blank=True, null=True)
 
     # STATUS AND SUCH
     is_owned = models.BooleanField(default=False)
-    is_prospect = models.BooleanField(default=False)
     is_carded = models.BooleanField(default=False)
     is_amateur = models.BooleanField(default=False)
 
@@ -306,6 +313,14 @@ class Player(BaseModel):
             self.is_owned = False
         else:
             self.is_owned = True
+
+    @property
+    def scouting_report_count(self):
+        return ScoutingReport.objects.filter(player=self).count()
+
+    @property
+    def scouting_reports(self):
+        return ScoutingReport.objects.filter(player=self).values('report', 'url', 'date', 'organization', 'fv', 'risk_name', 'pv')
 
     def save(self, *args, **kwargs):
         """
@@ -559,6 +574,7 @@ class ScoutingReport(BaseModel):
     evaluator = models.CharField(max_length=255, blank=True, null=True)
     report_type = models.CharField(max_length=255, blank=True, null=True)
     level = models.CharField(max_length=255, blank=True, null=True)
+    report = models.TextField(blank=True)
 
     def __unicode__(self):
         base = "%(organization)s %(date)s: %(player_name)s" % self.__dict__
@@ -566,11 +582,16 @@ class ScoutingReport(BaseModel):
             base += " (%s)" % self.fv
         return base
 
+    def set_season(self):
+        if not self.season:
+            self.season = settings.CURRENT_SEASON
+
     def set_player_name(self):
         if self.player:
             self.player_name = self.player.name
 
     def save(self, *args, **kwargs):
         self.set_player_name()
+        self.set_season()
 
         super().save(*args, **kwargs)

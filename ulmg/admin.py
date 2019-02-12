@@ -1,11 +1,25 @@
 from django.contrib import admin
 
-from ulmg.models import Team, Player, DraftPick, Trade, TradeReceipt
+from ulmg.models import Team, Player, DraftPick, Trade, TradeReceipt, ScoutingReport
 
 admin.site.site_title = "The ULMG"
 admin.site.site_header = "The ULMG: Admin"
 admin.site.index_title = "Administer The ULMG Website"
 
+
+class ScoutingReportInline(admin.StackedInline):
+    model = ScoutingReport
+    exclude = ('active', 'player_name', 'pv', 'risk', 'risk_name', 'season', 'evaluator', 'level', 'report_type')
+    extra = 1
+    fieldsets = (
+        (None, {
+            'fields': (
+                ('date','fv','rank'),
+                ('url', 'organization'),
+                'report',
+            ),
+        }),
+    )
 
 class TradeReceiptInline(admin.TabularInline):
     model = TradeReceipt
@@ -73,25 +87,27 @@ class TeamAdmin(admin.ModelAdmin):
 class PlayerAdmin(admin.ModelAdmin):
     model = Player
     list_display = ["last_name", "first_name", "is_owned", 'is_carded', "team", 'birthdate']
-    list_filter = ["is_owned", "is_prospect", "is_carded", "team", "level", "position"]
+    list_filter = ["is_owned", "is_carded", "team", "level", "position"]
     list_editable = []
     readonly_fields = ["name", "age", 'is_relief_eligible', 'relief_innings_pitched', 'starts', 'plate_appearances','fg_prospect_fv','fg_prospect_rank','ba_prospect_rank','mlb_prospect_rank','ba_draft_rank', 'stats', 'steamer_predix']
     search_fields = ["name"]
     autocomplete_fields = ['team']
+    inlines = [
+        ScoutingReportInline
+    ]
     fieldsets = (
         ('Biographical', {
             'fields': (
                 'name',
                 ('first_name', 'last_name'),
-                'age',
-                'birthdate',
+                ('birthdate', 'age'),
                 'position',
                 'level',
                 'team',
-                'notes',
             ),
         }),
         ('Stats', {
+            'classes': ('collapse',),
             'fields': (
                 'is_relief_eligible',
                 'relief_innings_pitched',
@@ -105,7 +121,7 @@ class PlayerAdmin(admin.ModelAdmin):
             'fields': (
                 'is_carded',
                 'is_owned',
-                'is_prospect',
+                'is_interesting',
                 'is_amateur'
             )
         }),
@@ -133,8 +149,7 @@ class PlayerAdmin(admin.ModelAdmin):
                 'fg_prospect_rank',
                 'ba_prospect_rank',
                 'mlb_prospect_rank',
-                'ba_draft_rank',
-            )
+                'ba_draft_rank',            )
         }),
         ('External', {
             'classes': ('collapse',),
@@ -154,6 +169,7 @@ class PlayerAdmin(admin.ModelAdmin):
             'fields': (
                 'stats',
                 'steamer_predix',
+                'notes'
             )
         }),
     )

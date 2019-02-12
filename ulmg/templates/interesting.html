@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="columns">
+    <div class="column">
+        <nav class="level">
+            <div class="level-item has-text-centered">
+                <div>
+                <p class="title"><a href="#aa_avail">AA Avail</a></p>
+                </div>
+            </div>
+        </nav>
+    </div>
+    <div class="column">
+        <nav class="level">
+            <div class="level-item has-text-centered">
+                <div>
+                <p class="title"><a href="#op_avail">OP Avail</a></p>
+                </div>
+            </div>
+        </nav>
+    </div>
+    {% if aa_taken %}<div class="column">
+        <nav class="level">
+            <div class="level-item has-text-centered">
+                <div>
+                <p class="title"><a href="#aa_taken">AA Taken</a></p>
+                </div>
+            </div>
+        </nav>
+    </div>{% endif %}
+    {% if op_taken %}<div class="column">
+        <nav class="level">
+            <div class="level-item has-text-centered">
+                <div>
+                <p class="title"><a href="#op_taken">OP Taken</a></p>
+                </div>
+            </div>
+        </nav>
+    </div>{% endif %}
+</div>
+
+<hr>
+
+<div class="columns">
+    <div class="column is-three-fifths">
+        <h1 id="aa_avail" class="title level-3">Available AA</h1>
+        <table class="table small-table is-fullwidth" data-sortable>
+            <thead>
+                <tr>
+                    <th data-sortable-type="alpha">Name</th>
+                    <th>Scout</th>
+                    <th data-sortable-type="numeric">Age</th>
+                    <th data-sortable-type="alpha">Pos</th>
+                    <th data-sortable-type="numeric">FG</th>
+                    <th data-sortable-type="numeric">BA</th>
+                    <th data-sortable-type="numeric">MLB</th>
+                    <th data-sortable-type="numeric">BP</th>
+                    <th data-sortable-type="numeric">KL</th>
+                    <th data-sortable-type="numeric">JS</th>
+                    <th data-sortable-type="numeric">PL</th>
+                </tr>
+            </thead>
+            <tbody id="drag-and-drop">
+                {% for p in aa_avail %}
+                <tr>
+                    <td data-value="{{ p.name }}" style="text-align: left!important;"><a href="/admin/ulmg/player/{{ p.id }}/change/#scoutingreport_set-group">{{ p.name }}</a></td>
+                    <td>{% if p.scouting_report_count > 0 %}<a href="/players/{{ p.id }}/">scouting</a>{% else %}-{% endif %}</td>
+                    <td data-value="{{ p.age|default_if_none:"0" }}">{{ p.age|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.position }}">{{ p.position }}</td>
+                    <td data-value="{{ p.fg_prospect_rank|default_if_none:"999" }}">{{ p.fg_prospect_rank|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.ba_prospect_rank|default_if_none:"999" }}">{{ p.ba_prospect_rank|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.mlb_prospect_rank|default_if_none:"999" }}">{{ p.mlb_prospect_rank|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.bp_prospect_rank|default_if_none:"999" }}">{{ p.bp_prospect_rank|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.klaw_prospect_rank|default_if_none:"999" }}">{{ p.klaw_prospect_rank|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.js_prospect_rank|default_if_none:"999" }}">{{ p.js_prospect_rank|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.pl_prospect_rank|default_if_none:"999" }}">{{ p.pl_prospect_rank|default_if_none:"-" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% if aa_taken %}<div class="columns">
+    <div class="column is-three-fifths">
+        <h1 id="aa_taken" class="title level-3">Taken AA</h1>
+        <table class="table small-table is-fullwidth" data-sortable>
+            <thead>
+                <tr>
+                    <th data-sortable-type="alpha">Name</th>
+                    <th data-sortable-type="alpha">Team</th>
+                    <th data-sortable-type="numeric">Age</th>
+                    <th data-sortable-type="alpha">Pos</th>
+                    <th data-sortable-type="numeric">FG</th>
+                    <th data-sortable-type="numeric">BA</th>
+                    <th data-sortable-type="numeric">MLB</th>
+                    <th data-sortable-type="numeric">BP</th>
+                    <th data-sortable-type="numeric">KL</th>
+                    <th data-sortable-type="numeric">JS</th>
+                    <th data-sortable-type="numeric">PL</th>
+                </tr>
+            </thead>
+            <tbody id="drag-and-drop">
+                {% for p in aa_taken %}
+                <tr>
+                    <td data-value="{{ p.name }}" style="text-align: left!important;"><a href="/admin/ulmg/player/{{ p.id }}/change/#scoutingreport_set-group">{{ p.name }}</a></td>
+                    <td data-value="{{ p.team }}">{{ p.team }}</td>
+                    <td data-value="{{ p.age|default_if_none:"0" }}">{{ p.age|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.position }}">{{ p.position }}</td>
+                    <td data-value="{{ p.fg_prospect_rank|default_if_none:"999" }}">{{ p.fg_prospect_rank|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.ba_prospect_rank|default_if_none:"999" }}">{{ p.ba_prospect_rank|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.mlb_prospect_rank|default_if_none:"999" }}">{{ p.mlb_prospect_rank|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.bp_prospect_rank|default_if_none:"999" }}">{{ p.bp_prospect_rank|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.klaw_prospect_rank|default_if_none:"999" }}">{{ p.klaw_prospect_rank|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.js_prospect_rank|default_if_none:"999" }}">{{ p.js_prospect_rank|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.pl_prospect_rank|default_if_none:"999" }}">{{ p.pl_prospect_rank|default_if_none:"-" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>{% endif %}
+<div class="columns">
+        <div class="column is-three-fifths">
+            <h1 id="op_avail" class="title level-3">Available open</h1>
+            <table class="table small-table is-fullwidth" data-sortable>
+                <thead>
+                    <tr>
+                        <th data-sortable-type="alpha">Name</th>
+                        <th>Scout</th>
+                        <th data-sortable-type="numeric">Age</th>
+                        <th data-sortable-type="alpha">Pos</th>
+                        <th data-sortable-type="numeric">FG</th>
+                        <th data-sortable-type="numeric">BA</th>
+                        <th data-sortable-type="numeric">MLB</th>
+                        <th data-sortable-type="numeric">BP</th>
+                        <th data-sortable-type="numeric">KL</th>
+                        <th data-sortable-type="numeric">JS</th>
+                        <th data-sortable-type="numeric">PL</th>
+                        </tr>
+                </thead>
+                <tbody id="drag-and-drop">
+                    {% for p in open_avail %}
+                    <tr>
+                        <td data-value="{{ p.name }}" style="text-align: left!important;"><a href="/admin/ulmg/player/{{ p.id }}/change/#scoutingreport_set-group">{{ p.name }}</a></td>
+                        <td>{% if p.scouting_report_count > 0 %}<a href="/players/{{ p.id }}/">scouting</a>{% else %}-{% endif %}</td>
+                        <td data-value="{{ p.age|default_if_none:"0" }}">{{ p.age|default_if_none:"-" }}</td>
+                        <td data-value="{{ p.position }}">{{ p.position }}</td>
+                        <td data-value="{{ p.fg_prospect_rank|default_if_none:"999" }}">{{ p.fg_prospect_rank|default_if_none:"-" }}</td>
+                        <td data-value="{{ p.ba_prospect_rank|default_if_none:"999" }}">{{ p.ba_prospect_rank|default_if_none:"-" }}</td>
+                        <td data-value="{{ p.mlb_prospect_rank|default_if_none:"999" }}">{{ p.mlb_prospect_rank|default_if_none:"-" }}</td>
+                        <td data-value="{{ p.bp_prospect_rank|default_if_none:"999" }}">{{ p.bp_prospect_rank|default_if_none:"-" }}</td>
+                        <td data-value="{{ p.klaw_prospect_rank|default_if_none:"999" }}">{{ p.klaw_prospect_rank|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.js_prospect_rank|default_if_none:"999" }}">{{ p.js_prospect_rank|default_if_none:"-" }}</td>
+                        <td data-value="{{ p.pl_prospect_rank|default_if_none:"999" }}">{{ p.pl_prospect_rank|default_if_none:"-" }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% if open_taken %}<div class="columns">
+        <div class="column is-three-fifths">
+            <h1 id="op_taken" class="title level-3">Taken open</h1>
+            <table class="table small-table is-fullwidth" data-sortable>
+                <thead>
+                    <tr>
+                        <th data-sortable-type="alpha">Name</th>
+                        <th data-sortable-type="alpha">Team</th>
+                        <th data-sortable-type="numeric">Age</th>
+                        <th data-sortable-type="alpha">Pos</th>
+                        <th data-sortable-type="numeric">FG</th>
+                        <th data-sortable-type="numeric">BA</th>
+                        <th data-sortable-type="numeric">MLB</th>
+                        <th data-sortable-type="numeric">BP</th>
+                        <th data-sortable-type="numeric">KL</th>
+                        <th data-sortable-type="numeric">JS</th>
+                        <th data-sortable-type="numeric">PL</th>
+                    </tr>
+                </thead>
+                <tbody id="drag-and-drop">
+                    {% for p in open_taken %}
+                    <tr>
+                        <td data-value="{{ p.name }}" style="text-align: left!important;"><a href="/admin/ulmg/player/{{ p.id }}/change/#scoutingreport_set-group">{{ p.name }}</a></td>
+                        <td data-value="{{ p.team }}">{{ p.team }}</td>
+                        <td data-value="{{ p.age|default_if_none:"0" }}">{{ p.age|default_if_none:"-" }}</td>
+                        <td data-value="{{ p.position }}">{{ p.position }}</td>
+                        <td data-value="{{ p.fg_prospect_rank|default_if_none:"999" }}">{{ p.fg_prospect_rank|default_if_none:"-" }}</td>
+                        <td data-value="{{ p.ba_prospect_rank|default_if_none:"999" }}">{{ p.ba_prospect_rank|default_if_none:"-" }}</td>
+                        <td data-value="{{ p.mlb_prospect_rank|default_if_none:"999" }}">{{ p.mlb_prospect_rank|default_if_none:"-" }}</td>
+                        <td data-value="{{ p.bp_prospect_rank|default_if_none:"999" }}">{{ p.bp_prospect_rank|default_if_none:"-" }}</td>
+                        <td data-value="{{ p.klaw_prospect_rank|default_if_none:"999" }}">{{ p.klaw_prospect_rank|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.js_prospect_rank|default_if_none:"999" }}">{{ p.js_prospect_rank|default_if_none:"-" }}</td>
+                        <td data-value="{{ p.pl_prospect_rank|default_if_none:"999" }}">{{ p.pl_prospect_rank|default_if_none:"-" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>{% endif %}
+{% endblock %}

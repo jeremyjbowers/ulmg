@@ -107,6 +107,12 @@ def index(request):
 
     return render(request, 'index.html', context)
 
+def player(request, playerid):
+    context = utils.build_context(request)
+    context['player'] = models.Player.objects.get(id=playerid)
+
+    return render(request, 'player_detail.html', context)    
+
 def roster_team_detail(request, abbreviation):
     context = utils.build_context(request)
     context['team'] = get_object_or_404(models.Team, abbreviation__icontains=abbreviation)
@@ -218,6 +224,14 @@ def live_draft_api(request, year, season, draft_type):
     context['draft_type'] = draft_type
 
     return JsonResponse(context)
+
+def interesting(request):
+    context = utils.build_context(request)
+    context['aa_avail'] = models.Player.objects.filter(is_interesting=True, is_owned=False, is_carded=False)
+    context['aa_taken'] = models.Player.objects.filter(is_interesting=True, is_owned=True, is_carded=False)
+    context['open_avail'] = models.Player.objects.filter(is_interesting=True, is_owned=False, is_carded=True)
+    context['open_taken'] = models.Player.objects.filter(is_interesting=True, is_owned=True, is_carded=True)
+    return render(request, 'interesting.html', context)
 
 @csrf_exempt
 def draft_action(request, pickid):
