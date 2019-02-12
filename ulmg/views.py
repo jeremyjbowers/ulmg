@@ -99,7 +99,6 @@ def player_action(request, playerid, action):
 
 def index(request):
     context = utils.build_context(request)
-    context['rand_prospect'] = models.Player.objects.filter(is_owned=False, is_prospect=True).order_by('?')[0:10]
     context['rand_hit'] = models.Player.objects.filter(position__in=["IF", "OF", "IF/OF", "C"], is_owned=False, stats__isnull=False).order_by('?')[0:10]
     context['rand_pitch'] = models.Player.objects.filter(is_owned=False, position="P", stats__isnull=False).order_by('?')[0:10]
     context['carded_positions'] = models.Player.objects.filter(is_carded=True).order_by('position').values('position').annotate(Count('position'))

@@ -128,32 +128,5 @@
             {% endfor %}
         </table>
     </div>
-    <div class="column">
-        <p class="subtitle level-3">10 random available prospects</p>
-        <table class="table is-fullwidth is-hoverable">
-            <tr>
-                <th>name</th>
-                <th>pro?</th>
-                <th>mlb</th>
-                <th>ba</th>
-                <th>ba draft</th>
-                <th>fg</th>
-            </tr>
-            {% for p in rand_prospect %}
-            <tr>
-                <td style="text-align: left!important;"><span class="has-text-weight-semibold">{{ p.name }}</span><br/>
-                    {% if p.bref_url %}<a class="has-text-weight-light is-size-6" target="_blank" href="{{ p.bref_url }}">BBR &Gt;</a>{% endif %}
-                    {% if p.fg_url %}<a class="has-text-weight-light is-size-6" target="_blank" href="{{ p.fg_url }}">FG &Gt;</a>{% endif %}
-                    {% if p.ba_url %}<a class="has-text-weight-light is-size-6"  target="_blank" href="{{ p.ba_url }}">BA &Gt;</a>{% endif %}
-                </td>
-                <td>{% if p.is_amateur %}<span class="red">&cross;</span>{% else %}<span class="green">&checkmark;</span>{% endif %}</td>
-                <td>{{ p.mlb_prospect_rank|default_if_none:"-" }}</td>
-                <td>{{ p.ba_prospect_rank|default_if_none:"-" }}</td>
-                <td>{{ p.ba_draft_rank|default_if_none:"-" }}</td>
-                <td>{{ p.fg_prospect_rank|default_if_none:"-" }}</td>
-            </tr>
-            {% endfor %}
-        </table>
-    </div>
 </div>
 {% endblock %}
