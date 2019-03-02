@@ -276,8 +276,12 @@ def draft_action(request, pickid):
 def player_list(request):
     is_carded = request.GET.get('is_carded', None)
     is_owned = request.GET.get('is_owned', None)
+    ids = request.GET.get('ids', None)
 
     query = models.Player.objects
+
+    if ids:
+        query = query.filter(Q(fg_id__in=ids.split(','))|Q(fg_id__isnull=True))
 
     if is_carded:
         query = query.filter(is_carded=utils.str_to_bool(is_carded))
