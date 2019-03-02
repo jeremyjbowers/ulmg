@@ -273,6 +273,23 @@ def draft_action(request, pickid):
         draftpick.save()
     return HttpResponse('ok')
 
+def player_list(request):
+    is_carded = request.GET.get('is_carded', None)
+    is_owned = request.GET.get('is_owned', None)
+
+    query = models.Player.objects
+
+    if is_carded:
+        query = query.filter(is_carded=utils.str_to_bool(is_carded))
+
+    if is_owned:
+        query = query.filter(is_owned=utils.str_to_bool(is_owned))
+
+    payload = [{"name": p.name, "fg_id": p.fg_id, "is_carded": p.is_carded, "is_owned": p.is_owned, "level": p.level, "age": p.age, "position": p.position, "def": p.defense_display(), "team": p.team_display(), "amateur": p.is_amateur} for p in query]
+
+
+    return JsonResponse(payload, safe=False)
+
 def search(request):
     def to_bool(b):
         if b.lower() in ['y','yes', 't', 'true', 'on']:

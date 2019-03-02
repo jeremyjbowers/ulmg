@@ -15,3 +15,11 @@ def build_context(request):
         del queries_without_page['page']
     context['q_string'] = "&".join(['%s=%s' % (k,v[-1]) for k,v in queries_without_page.items()])
     return context
+
+def str_to_bool(possible_bool):
+    if possible_bool:
+        if possible_bool.lower() in ['y', 'yes', 't', 'true']:
+            return True
+        if possible_bool.lower() in ['n', 'no', 'f', 'false']:
+            return False
+    return None

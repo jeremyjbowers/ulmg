@@ -5,6 +5,7 @@ from ulmg import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('api/v1/player/', views.player_list),
     path('api/v1/draft/live/<int:year>/<str:season>/<str:draft_type>/', views.live_draft_api),
     path('api/v1/player/<int:playerid>/<str:action>/', views.player_action),
     path('api/v1/draft/<str:pickid>/', views.draft_action),

@@ -322,6 +322,11 @@ class Player(BaseModel):
     def scouting_reports(self):
         return ScoutingReport.objects.filter(player=self).values('report', 'url', 'date', 'organization', 'fv', 'risk_name', 'pv')
 
+    def team_display(self):
+        if self.team:
+            return self.team.abbreviation
+        return None
+
     def save(self, *args, **kwargs):
         """
         Some light housekeeping.
