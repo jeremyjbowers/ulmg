@@ -422,7 +422,7 @@ class DraftPick(BaseModel):
             self.original_team = self.team
 
     def set_player_name(self):
-        if self.player and not self.player_name:
+        if self.player:
             self.player_name = self.player.name
 
     def save(self, *args, **kwargs):
