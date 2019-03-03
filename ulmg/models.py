@@ -428,6 +428,7 @@ class DraftPick(BaseModel):
     def save(self, *args, **kwargs):
         if self.player:
             self.player.team = self.team
+            self.player.save()
         self.set_original_team()
         self.set_overalL_pick_number()
         self.slugify()
