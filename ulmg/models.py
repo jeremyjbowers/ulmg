@@ -427,7 +427,7 @@ class DraftPick(BaseModel):
 
     def save(self, *args, **kwargs):
         if self.player and self.team:
-            if not self.player.team
+            if not self.player.team:
                 self.player.team = self.team
                 self.player.save()
 
