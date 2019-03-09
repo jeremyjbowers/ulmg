@@ -194,6 +194,13 @@ def trades(request):
 def live_draft_admin(request, year, season, draft_type):
     context = utils.build_context(request)
     context['picks'] = models.DraftPick.objects.filter(year=year, season=season, draft_type=draft_type)
+
+    if draft_type == "aa":
+        context['players'] = json.dumps(["%(name)s (%(position)s)" % p for p in models.Player.objects.filter(is_owned=False, is_carded=False, level="B").values('name', 'position')])
+
+    if draft_type == "open":
+        context['players'] = json.dumps(["%(name)s (%(position)s)" % p for p in models.Player.objects.filter(is_owned=False, is_carded=True).values('name', 'position')])
+
     context['year'] = year
     context['season'] = season
     context['draft_type'] = draft_type
@@ -252,6 +259,8 @@ def draft_action(request, pickid):
         draftpick.save()
 
     if name:
+        if "(" in name:
+            name = name.split('(')[0].strip()
         ps = models.Player.objects.filter(name=name)
         if len(ps) == 1:
             draftpick.player = ps[0]

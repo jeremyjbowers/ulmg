@@ -34,7 +34,7 @@
                         {% else %}
                         <div class="field has-addons">
                             <div class="control" style="width:80%;">
-                                <input id="pick-input-{{ pick.id }}" class="input is-large" type="text" placeholder="Type a player's name, e.g., Miles Mikolas">
+                                <input id="pick-input-{{ pick.id }}" class="input is-large autocomplete" type="text" placeholder="Type a player's name, e.g., Miles Mikolas">
                             </div>
                             <div class="control">
                                 <a class="button is-info is-large draft-action" data-pickid="{{ pick.id }}" data-pick-input="pick-input-{{ pick.id }}">Draft</a>
@@ -52,8 +52,16 @@
 {% endblock %}
 
 {% block extrascript %}
+<script src="//cdnjs.cloudflare.com/ajax/libs/awesomplete/1.1.4/awesomplete.min.js"></script>
 <script type="text/javascript">
 $(function(){
+
+    Awesomplete.$$("input.autocomplete").forEach(function (input) {
+        new Awesomplete(input, { 
+            list: {{ players|safe }},
+        });
+    });
+
     var undraft_click_handler = function(el) {
 
         el.preventDefault();
