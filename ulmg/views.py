@@ -313,12 +313,21 @@ def search(request):
 
     query = models.Player.objects.all()
 
-    # if request.GET.get('protected', None):
-    #     protected = request.GET['protected']
-    #     if protected.lower() != "":
-    #         query = query.filter(level__in=['V', 'A'], is_1h_c=False, is_1h_p=False, is_1h_pos=False, is_35man_roster=False, is_reserve=False)
+    if request.GET.get('protected', None):
+        protected = request.GET['protected']
+        if protected.lower() != "":
+            if to_bool(protected) == False:
+                query = query.filter(Q(is_1h_c=False), Q(is_1h_p=False), Q(is_1h_pos=False), Q(is_35man_roster=False), Q(is_reserve=False))
+            else:
+                query = query.filter(
+                    Q(is_1h_c=True)|\
+                    Q(is_1h_p=True)|\
+                    Q(is_1h_pos=True)|\
+                    Q(is_35man_roster=True)|\
+                    Q(is_reserve=True)
+                ) 
 
-    #         context['protected'] = protected
+            context['protected'] = protected
 
     if request.GET.get('name', None):
         name = request.GET['name']

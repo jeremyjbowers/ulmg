@@ -29,6 +29,16 @@
                     </div>
                 </div>
                 <div class="column">
+                    <p class="has-text-weight-bold">Protected</p>
+                    <div class="select">
+                        <select name="protected">
+                            <option></option>
+                            <option value="yes"{% if owned == "yes" %} selected{% endif %}>yes</option>
+                            <option value="no"{% if owned == "no" %} selected{% endif %}>no</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="column">
                     <p class="has-text-weight-bold">Carded</p>
                     <div class="select">
                         <select name="carded">
