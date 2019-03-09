@@ -304,6 +304,13 @@ def search(request):
 
     query = models.Player.objects.all()
 
+    # if request.GET.get('protected', None):
+    #     protected = request.GET['protected']
+    #     if protected.lower() != "":
+    #         query = query.filter(level__in=['V', 'A'], is_1h_c=False, is_1h_p=False, is_1h_pos=False, is_35man_roster=False, is_reserve=False)
+
+    #         context['protected'] = protected
+
     if request.GET.get('name', None):
         name = request.GET['name']
         query = query.filter(name__search=name)
@@ -361,10 +368,10 @@ def search(request):
     if request.GET.get('csv', None):
         c = request.GET['csv']
         if c.lower() in ['y', 'yes', 't', 'true']:
-            query = query.values(*MINIMUM_VALUES)
+            query = query.values(*settings.CSV_COLUMNS)
             response = HttpResponse(content_type='text/csv')
             response['Content-Disposition'] = 'attachment; filename="search-%s.csv"' % (datetime.datetime.now().isoformat().split('.')[0])
-            writer = csv.DictWriter(response, fieldnames=MINIMUM_VALUES)
+            writer = csv.DictWriter(response, fieldnames=settings.CSV_COLUMNS)
             writer.writeheader()
             for p in query:
                 writer.writerow(p)
