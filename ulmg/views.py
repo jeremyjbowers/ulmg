@@ -152,7 +152,7 @@ def all_csv(request):
 
     # Create the HttpResponse object with the appropriate CSV header.
     response = HttpResponse(content_type='text/csv')
-    response['Content-Disposition'] = 'attachment; filename="%s-%s.csv"' % (abbreviation, datetime.datetime.now().isoformat().split('.')[0])
+    response['Content-Disposition'] = 'attachment; filename="all-teams-%s.csv"' % (datetime.datetime.now().isoformat().split('.')[0])
     writer = csv.DictWriter(response, fieldnames=settings.CSV_COLUMNS)
     writer.writeheader()
     for p in team_players:
