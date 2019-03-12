@@ -9,6 +9,7 @@ urlpatterns = [
     path('api/v1/draft/live/<int:year>/<str:season>/<str:draft_type>/', views.live_draft_api),
     path('api/v1/player/<int:playerid>/<str:action>/', views.player_action),
     path('api/v1/draft/<str:pickid>/', views.draft_action),
+    path('teams/csv/', views.all_csv),
     path('teams/<str:abbreviation>/other/', views.team_other),
     path('teams/<str:abbreviation>/simple/', views.team_simple),
     path('teams/<str:abbreviation>/csv/', views.team_csv),

@@ -147,6 +147,27 @@ def team_detail(request, abbreviation):
     context['players'] = team_players.order_by('position', '-level_order', 'last_name', 'first_name')
     return render(request, 'team.html', context)
 
+def all_csv(request):
+    team_players = models.Player.objects.filter(is_owned=True).order_by('team', '-is_35man_roster', 'position', '-level_order', 'last_name', 'first_name').values(*settings.CSV_COLUMNS)
+
+    # Create the HttpResponse object with the appropriate CSV header.
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="%s-%s.csv"' % (abbreviation, datetime.datetime.now().isoformat().split('.')[0])
+    writer = csv.DictWriter(response, fieldnames=settings.CSV_COLUMNS)
+    writer.writeheader()
+    for p in team_players:
+        for k,v in p.items():
+            if v == True:
+                p[k] = "x"
+            if v == False:
+                p[k] = ""
+        if p['defense']:
+            p['defense'] = ",".join([f"{d.split('-')[0]}{d.split('-')[2]}" for d in p['defense']])
+        else:
+            p['defense'] = ""
+        writer.writerow(p)
+    return response
+
 def team_csv(request, abbreviation):
     team = get_object_or_404(models.Team, abbreviation__icontains=abbreviation)
     team_players = models.Player.objects.filter(team=team).order_by('-is_35man_roster', 'position', '-level_order', 'last_name', 'first_name').values(*settings.CSV_COLUMNS)
