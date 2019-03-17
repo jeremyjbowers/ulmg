@@ -217,10 +217,10 @@ def live_draft_admin(request, year, season, draft_type):
     context['picks'] = models.DraftPick.objects.filter(year=year, season=season, draft_type=draft_type)
 
     if draft_type == "aa":
-        context['players'] = json.dumps(["%(name)s (%(position)s)" % p for p in models.Player.objects.filter(is_owned=False, is_carded=False, level="B").values('name', 'position')])
+        context['players'] = json.dumps(["%(name)s (%(position)s)" % p for p in models.Player.objects.filter(is_owned=False, level="B").values('name', 'position')])
 
     if draft_type == "open":
-        context['players'] = json.dumps(["%(name)s (%(position)s)" % p for p in models.Player.objects.filter(is_owned=False, is_carded=True).values('name', 'position')])
+        context['players'] = json.dumps(["%(name)s (%(position)s)" % p for p in models.Player.objects.filter(is_owned=False).values('name', 'position')])
 
     context['year'] = year
     context['season'] = season
@@ -233,7 +233,7 @@ def live_draft_watch(request, year, season, draft_type):
     context['made_picks'] = models.DraftPick.objects\
                                 .filter(Q(player_name__isnull=False)|Q(player__isnull=False))\
                                 .filter(year=year, season=season, draft_type=draft_type)\
-                                .order_by("year", "-season", "draft_type", "draft_round", "-pick_number")
+                                .order_by("year", "-season", "draft_type", "-draft_round", "-pick_number")
     context['upcoming_picks'] = models.DraftPick.objects\
                                 .filter(year=year, season=season, draft_type=draft_type)\
                                 .exclude(Q(player_name__isnull=False)|Q(player__isnull=False))
