@@ -109,7 +109,7 @@
         </table>{% endfor %} -->
     </div>
     <div class="column is-three-fifths">
-        <h1 class="title is-2">Unprotected players ({{ unprotected|length }})</h1>
+        <h1 class="title is-2">Eligible for protection ({{ unprotected|length }})</h1>
         {% regroup unprotected by position as position_players %}
         {% for position in position_players %}
         <h1 class="title is-3">{{ position.grouper }} ({{ position.list|length }})</h1>
