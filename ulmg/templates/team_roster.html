@@ -144,7 +144,7 @@
                     <td>
                         {% if num_mlb < 25 %}<a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="to_mlb">MLB</a>{% endif %}
                         <a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="to_aaa">AAA</a>
-                        <a class="button is-warning player-drop" data-playerid="{{ p.id }}" data-playername="{{ p.name }}">X</a>
+                        <a class="button is-danger player-drop" data-playerid="{{ p.id }}" data-playername="{{ p.name }}">X</a>
                     </td>
                 </tr>
                 {% endfor %}
