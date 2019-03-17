@@ -129,7 +129,7 @@ def protect_team_detail(request, abbreviation):
     context['team'] = get_object_or_404(models.Team, abbreviation__icontains=abbreviation)
     team_players = models.Player.objects.filter(team=context['team'])
     context['on_35_man'] = team_players.filter(is_35man_roster=True).order_by('position', '-level_order', 'last_name')
-    context['unprotected'] = team_players.filter(level__in=['V', 'A'], is_1h_c=False, is_1h_p=False, is_1h_pos=False, is_35man_roster=False, is_reserve=False).order_by('position', '-level_order', 'last_name')
+    context['unprotected'] = team_players.filter(level__in=['V'], is_1h_c=False, is_1h_p=False, is_1h_pos=False, is_35man_roster=False, is_reserve=False).order_by('position', '-level_order', 'last_name')
     context['carded_b'] = team_players.filter(level="B", is_carded=True).order_by('position', '-level_order', 'last_name')
     context['protected_veterans'] = team_players.filter(Q(is_1h_c=True)|Q(is_1h_p=True)|Q(is_1h_pos=True)|Q(is_reserve=True)).order_by('position', '-level_order', 'last_name')
     context['num_owned'] = team_players.count()
