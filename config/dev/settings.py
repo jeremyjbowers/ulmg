@@ -81,8 +81,8 @@ STATIC_URL = '/static/'
 """
 Section for site-specific settings, e.g., controlling tabs, current draft year, etc.
 """
-TEAM_PROTECT_TAB = True
-TEAM_ROSTER_TAB = False
+TEAM_PROTECT_TAB = False
+TEAM_ROSTER_TAB = True
 CURRENT_SEASON = 2019
 CURRENT_SEASON_TYPE = "offseason"
 CSV_COLUMNS = [
