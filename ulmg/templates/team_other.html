@@ -31,9 +31,24 @@
             {% else %}
             <h1 class="title is-4">{{ pick.grouper|title }} draft</h1>
             {% endif %}
-            <ul>{% for p in pick.list %}
-                <li>Round {{ p.draft_round }}, pick {{ p.pick_number }} (#{{ p.overall_pick_number }} overall){% if p.original_team != team %}, via <a href="/teams/{{ p.original_team|lower }}/other/">{{ p.original_team }}</a>{% endif %}{% if p.player %} &mdash; {{ p.player.position }} {{ p.player.name }}{% endif %}</li>
-            {% endfor %}</ul>
+            <table class="table is-fullwidth">
+                <tr>
+                    <th>Round</th>
+                    <th>Pick</th>
+                    <th>Overall</th>
+                    <th>Via?</th>
+                    <th>Player</th>
+                </tr>
+            {% for p in pick.list %}
+                <tr>
+                    <td>{{ p.draft_round }}</td>
+                    <td>{{ p.pick_number }}</td>
+                    <td>{{ p.overall_pick_number }}</td>
+                    <td>{{ p.original_team|default_if_none:"-" }}</td>
+                    <td>{% if p.player %}{{ p.player.position }} {{ p.player }}{% else %}-{% endif %}</td>
+                </tr>
+            {% endfor %}
+            </table>
             {% endfor %}
         </div>
     </div>
