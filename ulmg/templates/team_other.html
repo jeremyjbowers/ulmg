@@ -13,7 +13,7 @@
 </div>
 
 <div class="columns">
-    <div class="column is-two-thirds">
+    <div class="column">
         <h1 class="title is-2">2019 trades ({{ trades|length }})</h1>
         <div class="content">
             <ul>{% for t in trades %}
@@ -32,7 +32,7 @@
             <h1 class="title is-4">{{ pick.grouper|title }} draft</h1>
             {% endif %}
             <ul>{% for p in pick.list %}
-                <li>Round {{ p.draft_round }}, pick {{ p.pick_number }} (#{{ p.overall_pick_number }} overall){% if p.original_team != team %}, via <a href="/teams/{{ p.original_team|lower }}/other/">{{ p.original_team }}</a>{% endif %}</li>
+                <li>Round {{ p.draft_round }}, pick {{ p.pick_number }} (#{{ p.overall_pick_number }} overall){% if p.original_team != team %}, via <a href="/teams/{{ p.original_team|lower }}/other/">{{ p.original_team }}</a>{% endif %} {% if p.player %}{{ p.player.name }} {{ p.player.position }}{% endif %}</li>
             {% endfor %}</ul>
             {% endfor %}
         </div>
