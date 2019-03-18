@@ -45,8 +45,8 @@
                     <td>{{ p.pick_number }}</td>
                     <td>{{ p.overall_pick_number }}</td>
                     <td>{% if p.original_team != p.team %}{{ p.original_team }}{% else %}-{% endif %}</td>
-                    <td>{% if p.player %}{{ p.player.position }} {{ p.player }} ({{ p.player.level }}){% else %}-{% endif %}</td>
-                </tr>g
+                    <td>{% if p.player %}{{ p.player.position }} {{ p.player.name }} ({{ p.player.level }}){% else %}-{% endif %}</td>
+                </tr>
             {% endfor %}
             </table>
             {% endfor %}
