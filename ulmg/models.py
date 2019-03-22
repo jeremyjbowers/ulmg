@@ -506,6 +506,9 @@ class TradeReceipt(BaseModel):
     def __unicode__(self):
         return "Trade %s: %s" % (self.trade.id, self.team)
 
+    def summary(self):
+        return ", ".join(["%s %s" % (p.position, p.name) for p in self.players.all()] + ["%s" % (p.slug) for p in self.picks.all()])
+
     @staticmethod
     def trade_pick(sender, instance, action, reverse, model, pk_set, **kwargs):
         if action == 'post_add':

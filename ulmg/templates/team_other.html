@@ -14,47 +14,76 @@
 
 <div class="columns">
     <div class="column">
-        <h1 class="title is-2">2019 trades ({{ trades|length }})</h1>
+        {% regroup trades by trade.season as year_trades %}
+        {% for year in year_trades %}
+        <h1 class="title is-2">{{ year.grouper }} trades ({{ year.list|length }})</h1>
         <div class="content">
-            <ul>{% for t in trades %}
-                <li>{{ t.trade.summary_html|safe }}</li>
-            {% endfor %}</ul>
-        </div>
-    </div>
-    <div class="column">
-        <h1 class="title is-2">2019 picks ({{ picks|length }})</h1>
-        <div class="content">
-            {% regroup picks by draft_type as type_picks %}
-            {% for pick in type_picks %}
-            {% if pick.grouper == "aa"%}
-            <h1 class="title is-4">{{ pick.grouper|upper }} draft</h1>
-            {% else %}
-            <h1 class="title is-4">{{ pick.grouper|title }} draft</h1>
-            {% endif %}
-            <table class="table is-fullwidth">
+            <table class="table">
                 <tr>
-                    <th>Round</th>
-                    <th>Pick</th>
-                    <th>Overall</th>
-                    <th>Via?</th>
-                    <th></th>
-                    <th>Player</th>
-                    <th></th>
+                    <th>Date</th>
+                    <th>Team</th>
+                    <th>Received</th>
+                    <th>Sent</th>
                 </tr>
-            {% for p in pick.list %}
+                {% for t in year.list %}
                 <tr>
-                    <td>{{ p.draft_round }}</td>
-                    <td>{{ p.pick_number }}</td>
-                    <td>{{ p.overall_pick_number }}</td>
-                    <td>{% if p.original_team != p.team %}{{ p.original_team }}{% else %}-{% endif %}</td>
-                    <td>{% if p.player %}{{ p.player.position }}{% else %}{% endif %}</td>
-                    <td>{% if p.player %}{{ p.player.name }}{% else %}{% endif %}</td>
-                    <td>{% if p.player %}{{ p.player.level }}{% else %}{% endif %}</td>
+                    <td style="text-align:left!important;">{{ t.trade.date }}</td>
+                    <td>{% for r in t.trade.reciepts %}{% if r.team != t.team %}{{ r.team }}{% endif %}{% endfor %}</td>
+                    <td style="text-align:left!important;">{{ t.summary }}</td>
+                    <td style="text-align:left!important;">{% for r in t.trade.reciepts %}{% if r.team != t.team %}{{ r.summary }}{% endif %}{% endfor %}</td>
                 </tr>
-            {% endfor %}
+                {% endfor %}
             </table>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+<div class="columns">
+    <div class="column">
+        {% regroup picks by year as year_picks %}
+        {% for year in year_picks %}
+        <div class="content">
+            <h1 class="title is-2">{{ year.grouper }}</h1>
+            <div class="columns">
+            {% regroup year.list by season as season_picks %}
+            {% for season in season_picks %}
+                <div class="column">
+                    <h1 class="title is-3">{{ season.grouper|capfirst }} draft picks ({{ season.list|length }})</h1>
+                    {% regroup season.list by draft_type as type_picks %}
+                    {% for pick in type_picks %}
+                    {% if pick.grouper == "aa"%}
+                    <h1 class="title is-4">{{ pick.grouper|upper }} draft</h1>
+                    {% else %}
+                    <h1 class="title is-4">{{ pick.grouper|title }} draft</h1>
+                    {% endif %}
+                    <table class="table is-fullwidth">
+                        <tr>
+                            <th>Round</th>
+                            <th>Pick</th>
+                            <th>Overall</th>
+                            <th>Via?</th>
+                            <th></th>
+                            <th>Player</th>
+                            <th></th>
+                        </tr>
+                    {% for p in pick.list %}
+                        <tr>
+                            <td>{{ p.draft_round }}</td>
+                            <td>{{ p.pick_number|default_if_none:"-" }}</td>
+                            <td>{{ p.overall_pick_number|default_if_none:"-" }}</td>
+                            <td>{% if p.original_team != p.team %}{{ p.original_team }}{% else %}-{% endif %}</td>
+                            <td>{% if p.player %}{{ p.player.position }}{% else %}{% endif %}</td>
+                            <td>{% if p.player %}{{ p.player.name }}{% else %}-{% endif %}</td>
+                            <td>{% if p.player %}{{ p.player.level }}{% else %}{% endif %}</td>
+                        </tr>
+                    {% endfor %}
+                    </table>
+                    {% endfor %}
+                </div>
             {% endfor %}
         </div>
+        </div>
+        {% endfor %}
     </div>
 </div>
 

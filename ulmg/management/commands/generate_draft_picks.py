@@ -44,8 +44,6 @@ class Command(BaseCommand):
     pick_notes = models.TextField(blank=True, null=True)
     """
 
-    models.DraftPick.objects.all().delete()
-
     def add_arguments(self, parser):
         parser.add_argument('year', type=str)
         parser.add_argument('season', type=str)

@@ -194,10 +194,9 @@ def team_other(request, abbreviation):
     context = utils.build_context(request)
     team = get_object_or_404(models.Team, abbreviation__icontains=abbreviation)
     context['team'] = team
-    team_players = models.Player.objects.filter(team=context['team'])
-    context['num_owned'] = team_players.count()
-    context['trades'] = models.TradeReceipt.objects.filter(team=context['team'], trade__isnull=False).order_by('-trade__date')
-    context['picks'] = models.DraftPick.objects.filter(team=context['team'])
+    context['num_owned'] = models.Player.objects.filter(team=team).count()
+    context['trades'] = models.TradeReceipt.objects.filter(team=team, trade__isnull=False).order_by('-trade__date')
+    context['picks'] = models.DraftPick.objects.filter(team=team).order_by('-year', 'season', 'draft_type', 'draft_round', 'pick_number')
     return render(request, 'team_other.html', context)
 
 def team_simple(request, abbreviation):
