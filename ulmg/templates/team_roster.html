@@ -29,6 +29,46 @@
 
 <div class="columns">
     <div class="column">
+        <h1 class="title is-2">Protected veterans ({{ protected_veterans|length }})</h1>
+        {% if protected_veterans %}<table class="table is-fullwidth is-hoverable">
+            <thead>
+                <th>Name</th>
+                <th>Age</th>
+                <th>Pos</th>
+                <th>RP?</th>
+                <th>PA</th>
+                <th>IP</th>
+                <th>ST</th>
+                <th></th>
+            </thead>
+            <tbody>
+                {% for p in protected_veterans %}
+                <tr id="player-{{ p.id }}">
+                    <td style="text-align: left!important;"><span class="has-text-weight-semibold">
+                        {{ p.name }}
+                        </span> <a href="/admin/ulmg/player/{{ p.id }}/change/">&#x270E;</a><br/>
+                        {% if p.bref_url %}<a class="has-text-weight-light is-size-6" target="_blank" href="{{ p.bref_url }}">BBR &Gt;</a>{% endif %}
+                        {% if p.fg_url %}<a class="has-text-weight-light is-size-6" target="_blank" href="{{ p.fg_url }}">FG &Gt;</a>{% endif %}
+                        {% if p.ba_url %}<a class="has-text-weight-light is-size-6"  target="_blank" href="{{ p.ba_url }}">BA &Gt;</a>{% endif %}
+                        {% if p.mlb_url %}<a class="has-text-weight-light is-size-6"  target="_blank" href="{{ p.mlb_url }}">MLB &Gt;</a>{% endif %}
+                    </td>
+                    <td>{{ p.age|default_if_none:"-" }}</td>
+                    <td>{{ p.position }}</td>
+                    <td data-value="{% if p.is_relief_eligible %}1{% else %}0{% endif %}">{% if p.is_relief_eligible %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td>
+                    <td data-value="{{ p.plate_appearances|default_if_none:"0" }}">{{ p.plate_appearances|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.relief_innings_pitched|default_if_none:"0" }}">{{ p.relief_innings_pitched|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.starts|default_if_none:"0" }}">{{ p.starts|default_if_none:"-" }}</td>
+                    <td><a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="unprotect">
+                        {% if p.is_1h_c %}CAT1{% endif %}
+                        {% if p.is_1h_p %}PIT1{% endif %}
+                        {% if p.is_1h_pos %}POS1{% endif %}
+                        {% if p.is_reserve %}ASR{% endif %}
+                        >>
+                    </a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>{% endif %}
         <h1 class="title is-2">MLB roster ({{ mlb_roster|length }})</h1>
         {% if mlb_roster %}{% regroup mlb_roster by position as position_players %}
         {% for position in position_players %}
@@ -144,6 +184,10 @@
                     <td>
                         {% if num_mlb < 25 %}<a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="to_mlb">MLB</a>{% endif %}
                         <a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="to_aaa">AAA</a>
+                        {% if p.position == "P" and p.level == "V" %}<a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="is_1h_p">PIT1</a>{% endif %}
+                        {% if p.position == "C" and p.level == "V" %}<a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="is_1h_c">CAT1</a>{% endif %}
+                        {% if p.position != "P" and p.position != "C" and p.level == "V" %}<a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="is_1h_pos">POS1</a>{% endif %}
+                        {% if p.level == "V" %}<a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="is_reserve">ASR</a>{% endif %}
                         <a class="button is-danger player-drop" data-playerid="{{ p.id }}" data-playername="{{ p.name }}">X</a>
                     </td>
                 </tr>
