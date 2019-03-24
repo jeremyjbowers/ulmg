@@ -73,7 +73,7 @@
                             <td>{{ p.overall_pick_number|default_if_none:"-" }}</td>
                             <td>{% if p.original_team != p.team %}{{ p.original_team }}{% else %}-{% endif %}</td>
                             <td>{% if p.player %}{{ p.player.position }}{% else %}{% endif %}</td>
-                            <td>{% if p.player %}{{ p.player.name }}{% else %}-{% endif %}</td>
+                            <td>{% if p.player %}{{ p.player.name }}{% elif p.player_name %}{{ p.player_name }}{% else %}-{% endif %}</td>
                             <td>{% if p.player %}{{ p.player.level }}{% else %}{% endif %}</td>
                         </tr>
                     {% endfor %}

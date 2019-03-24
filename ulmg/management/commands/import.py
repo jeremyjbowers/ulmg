@@ -14,31 +14,24 @@ from ulmg import models
 class Command(BaseCommand):
 
     def handle(self, *args, **options):
-        models.Player.objects.update(bp_prospect_rank=None, is_interesting=False, fg_prospect_fv=None, fg_prospect_rank=None, ba_prospect_rank=None, mlb_prospect_rank=None, klaw_prospect_rank=None, pl_prospect_rank=None, eta=None)
+        with open('data/ulmg/historical-drafts.csv', 'r') as readfile:
+            picks = [dict(c) for c in csv.DictReader(readfile)]
 
-        with open('data/prospects/bowers.csv', 'r') as readfile:
-            players = csv.DictReader(readfile)
-            for p in players:
-                obj = models.Player.objects.filter(name__search=p['name'])[0]
-                obj.is_interesting = True
-                obj.save()
-                print(obj.name)
+        models.DraftPick.objects.filter(year=2018).delete()
 
-        with open('data/prospects/top100s.csv', 'r') as readfile:
-            players = csv.DictReader(readfile)
-            for p in players:
-                if "Luis Garcia" in p['name']:
-                    obj = models.Player.objects.get(id=3742)
-                else:
-                    obj = models.Player.objects.get(name=p['name'])
-                obj.fg_prospect_fv = p['fv'] or None
-                obj.ba_prospect_rank = p['ba'] or None
-                obj.mlb_prospect_rank = p['mlb'] or None
-                obj.klaw_prospect_rank = p['kl'] or None
-                obj.pl_prospect_rank = p['pl'] or None
-                obj.bp_prospect_rank = p['bp'] or None
-                obj.js_prospect_rank = p['js'] or None
-                obj.eta = p['eta'] or None
-                obj.is_interesting = True
-                obj.save()
-                print(f"{obj.name}, {p['name']}")
+        for p in picks:
+            for k,v in p.items():
+
+                if v == "":
+                    p[k] = None
+
+                if k == "original_team" and v:
+                    p[k] = models.Team.objects.get(abbreviation=v)
+
+                if k in ['draft_round', 'pick_number']:
+                    p[k] = int(v)
+
+            p['team'] = models.Team.objects.get(abbreviation=p['team_name'])
+
+            obj, created = models.DraftPick.objects.get_or_create(**p)
+            print(obj, created)
