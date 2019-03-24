@@ -96,7 +96,6 @@ CSV_COLUMNS = [
     'relief_innings_pitched', 
     'plate_appearances', 
     'defense',
-    'is_35man_roster',
     'is_reserve',
     'is_1h_p',
     'is_1h_c',

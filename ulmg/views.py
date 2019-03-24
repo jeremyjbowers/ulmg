@@ -170,7 +170,7 @@ def all_csv(request):
 
 def team_csv(request, abbreviation):
     team = get_object_or_404(models.Team, abbreviation__icontains=abbreviation)
-    team_players = models.Player.objects.filter(team=team).order_by('-is_35man_roster', 'position', '-level_order', 'last_name', 'first_name').values(*settings.CSV_COLUMNS)
+    team_players = models.Player.objects.filter(team=team).order_by('-is_mlb_roster', '-is_aaa_roster', 'position', '-level_order', 'last_name', 'first_name').values(*settings.CSV_COLUMNS)
 
     # Create the HttpResponse object with the appropriate CSV header.
     response = HttpResponse(content_type='text/csv')
