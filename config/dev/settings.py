@@ -100,5 +100,7 @@ CSV_COLUMNS = [
     'is_reserve',
     'is_1h_p',
     'is_1h_c',
-    'is_1h_pos'
+    'is_1h_pos',
+    'is_mlb_roster',
+    'is_aaa_roster'
 ]
