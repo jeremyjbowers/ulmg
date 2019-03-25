@@ -119,6 +119,7 @@ def roster_team_detail(request, abbreviation):
     context['unrostered'] = team_players.filter(is_mlb_roster=False, is_aaa_roster=False, is_carded=True, is_1h_c=False, is_1h_p=False, is_1h_pos=False, is_reserve=False).order_by('position', '-level_order', 'last_name')
     context['mlb_roster'] = team_players.filter(is_mlb_roster=True, is_carded=True, is_aaa_roster=False, is_1h_c=False, is_1h_p=False, is_1h_pos=False, is_reserve=False).order_by('position', '-level_order', 'last_name')
     context['cuttable_b'] = team_players.filter(level="B").order_by('position', 'last_name')
+    context['uncarded_vets'] = team_players.filter(is_mlb_roster=False, is_aaa_roster=False, is_carded=False, is_1h_c=False, is_1h_p=False, is_1h_pos=False, is_reserve=False, level__in=["A", "V"]).order_by('position', '-level_order', 'last_name')
     context['num_mlb'] = context['mlb_roster'].count()
     context['protected_veterans'] = team_players.filter(Q(is_1h_c=True)|Q(is_1h_p=True)|Q(is_1h_pos=True)|Q(is_reserve=True)).order_by('position', '-level_order', 'last_name')
     context['aaa_roster'] = team_players.filter(is_aaa_roster=True, is_carded=True, is_1h_c=False, is_1h_p=False, is_1h_pos=False, is_reserve=False).order_by('position', '-level_order', 'last_name')
