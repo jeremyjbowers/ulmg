@@ -29,6 +29,8 @@
 
 <div class="columns">
     <div class="column">
+
+        {% if protected_veterans %}
         <h1 class="title is-2">Protected veterans ({{ protected_veterans|length }})</h1>
         {% if protected_veterans %}<table class="table is-fullwidth is-hoverable">
             <thead>
@@ -69,6 +71,8 @@
                 {% endfor %}
             </tbody>
         </table>{% endif %}
+        {% endif %}
+
         <h1 class="title is-2">MLB roster ({{ mlb_roster|length }})</h1>
         {% if mlb_roster %}{% regroup mlb_roster by position as position_players %}
         {% for position in position_players %}
@@ -147,6 +151,8 @@
         </table>{% endfor %}{% endif %}
     </div>
     <div class="column is-three-fifths">
+
+        {% if unrostered %}
         <h1 class="title is-2">Unrostered players ({{ unrostered|length }})</h1>
         {% regroup unrostered by position as position_players %}
         {% for position in position_players %}
@@ -194,7 +200,9 @@
                 {% endfor %}
             </tbody>
         </table>{% endfor %}
+        {% endif %}
 
+        {% if uncarded_vets %}
         <h1 class="title is-2">Uncarded veteran players ({{ uncarded_vets|length }})</h1>
         {% regroup uncarded_vets by position as position_players %}
         {% for position in position_players %}
@@ -242,7 +250,9 @@
                 {% endfor %}
             </tbody>
         </table>{% endfor %}
+        {% endif %}
 
+        {% if cuttable_b %}
         <h1 class="title is-2">Cuttable B players ({{ cuttable_b|length }})</h1>
         {% regroup cuttable_b by position as position_players %}
         {% for position in position_players %}
@@ -284,6 +294,7 @@
                 {% endfor %}
             </tbody>
         </table>{% endfor %}
+        {% endif %}
     </div>
 </div>
 <div class="modal" id="player-drop-modal">
