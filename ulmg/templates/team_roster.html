@@ -105,7 +105,7 @@
                     <td data-value="{{ p.plate_appearances|default_if_none:"0" }}">{{ p.plate_appearances|default_if_none:"-" }}</td>
                     <td data-value="{{ p.relief_innings_pitched|default_if_none:"0" }}">{{ p.relief_innings_pitched|default_if_none:"-" }}</td>
                     <td data-value="{{ p.starts|default_if_none:"0" }}">{{ p.starts|default_if_none:"-" }}</td>
-                    <td><a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="off_roster">>></a></td>
+                    <td style="text-align: right!important;"><a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="off_roster">>></a></td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -187,7 +187,7 @@
                     <td data-value="{{ p.plate_appearances|default_if_none:"0" }}">{{ p.plate_appearances|default_if_none:"-" }}</td>
                     <td data-value="{{ p.relief_innings_pitched|default_if_none:"0" }}">{{ p.relief_innings_pitched|default_if_none:"-" }}</td>
                     <td data-value="{{ p.starts|default_if_none:"0" }}">{{ p.starts|default_if_none:"-" }}</td>
-                    <td>
+                    <td style="text-align: right!important;">
                         {% if num_mlb < 25 %}<a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="to_mlb">MLB</a>{% endif %}
                         <a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="to_aaa">AAA</a>
                         {% if p.position == "P" and p.level == "V" %}<a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="is_1h_p">PIT1</a>{% endif %}
@@ -237,7 +237,7 @@
                     <td data-value="{{ p.plate_appearances|default_if_none:"0" }}">{{ p.plate_appearances|default_if_none:"-" }}</td>
                     <td data-value="{{ p.relief_innings_pitched|default_if_none:"0" }}">{{ p.relief_innings_pitched|default_if_none:"-" }}</td>
                     <td data-value="{{ p.starts|default_if_none:"0" }}">{{ p.starts|default_if_none:"-" }}</td>
-                    <td>
+                    <td style="text-align: right!important;">
                         {% if num_mlb < 25 %}<a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="to_mlb">MLB</a>{% endif %}
                         <a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="to_aaa">AAA</a>
                         {% if p.position == "P" and p.level == "V" %}<a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="is_1h_p">PIT1</a>{% endif %}
@@ -287,7 +287,9 @@
                     <td data-value="{{ p.plate_appearances|default_if_none:"0" }}">{{ p.plate_appearances|default_if_none:"-" }}</td>
                     <td data-value="{{ p.relief_innings_pitched|default_if_none:"0" }}">{{ p.relief_innings_pitched|default_if_none:"-" }}</td>
                     <td data-value="{{ p.starts|default_if_none:"0" }}">{{ p.starts|default_if_none:"-" }}</td>
-                    <td>
+                    <td style="text-align: right!important;">
+                        {% if num_mlb < 25 and p.is_carded == True %}<a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="to_mlb">MLB</a>{% endif %}
+                        {% if p.is_carded == True %}<a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="to_aaa">AAA</a>{% endif %}
                         <a class="button is-danger player-drop" data-playerid="{{ p.id }}" data-playername="{{ p.name }}">X</a>
                     </td>
                 </tr>
