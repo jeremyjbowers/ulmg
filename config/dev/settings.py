@@ -89,6 +89,8 @@ CSV_COLUMNS = [
     'last_name', 
     'first_name', 
     'birthdate',
+    'age',
+    'fg_id',
     'level', 
     'is_carded', 
     'is_relief_eligible', 
