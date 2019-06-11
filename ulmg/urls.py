@@ -10,6 +10,7 @@ urlpatterns = [
     path('api/v1/player/<int:playerid>/<str:action>/', views.player_action),
     path('api/v1/draft/<str:pickid>/', views.draft_action),
     path('teams/csv/', views.all_csv),
+    path('teams/<str:abbreviation>/live/', views.team_livestat_detail),
     path('teams/<str:abbreviation>/other/', views.team_other),
     path('teams/<str:abbreviation>/simple/', views.team_simple),
     path('teams/<str:abbreviation>/csv/', views.team_csv),

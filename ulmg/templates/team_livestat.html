@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+
+{% block content %}
+{% include 'includes/team_topper.html' %}
+
+<div class="tabs is-centered is-boxed is-large">
+    <ul>
+        <li><a>Owned ({{ num_owned }})</a></li>
+        <li><a href="/teams/{{ team.abbreviation|lower }}/other/">Trades & picks</a></li>
+        {% if protect_tab %}<li><a href="/teams/{{ team.abbreviation|lower }}/protect/">Protect players</a></li>{% endif %}
+        {% if roster_tab %}<li><a href="/teams/{{ team.abbreviation|lower }}/roster/">Roster players</a></li>{% endif %}
+        <li class="is-active"><a style="color: red; font-weight: bold;" href="/teams/{{ team.abbreviation|lower }}/live/">Live!</a></li>
+    </ul>
+</div>
+
+<div class="columns">
+    <div class="column">
+        <h1 class="title is-2">Hitters</h1>
+        <table class="table is-fullwidth" data-sortable>
+            <thead>
+                <tr>
+                    <th data-sortable-type="alpha">Name</th>
+                    <th data-sortable-type="numeric">Age</th>
+                    {% if position.grouper != "P" %}
+                    <th data-sortable-type="alpha">Pos</th>
+                    {% endif %}
+                    <th>Def</th>
+                    <th data-sortable-type="alpha">Lvl</th>
+                    <th data-sortable-type="numeric">Card?</th>
+                    <th data-sortable-type="numeric">PA</th>
+                    <th data-sortable-type="numeric">wRC+</th>
+                    <th data-sortable-type="numeric">wOBA</th>
+                    <th data-sortable-type="numeric">ISO</th>
+                    <th data-sortable-type="numeric">BB%</th>
+                    <th data-sortable-type="numeric">K%</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for p in hitters %}
+                <tr>
+                    <td data-value="{{ p.name }}" style="text-align: left!important;"><span class="has-text-weight-semibold" data-value="{{ p.name }}">
+                        {{ p.name }}</a> <a href="/admin/ulmg/player/{{ p.id }}/change/">&#x270E;<br/>
+                        {% if p.bref_url %}<a class="has-text-weight-light is-size-6" target="_blank" href="{{ p.bref_url }}">BBR &Gt;</a>{% endif %}
+                        {% if p.fg_url %}<a class="has-text-weight-light is-size-6" target="_blank" href="{{ p.fg_url }}">FG &Gt;</a>{% endif %}
+                        {% if p.ba_url %}<a class="has-text-weight-light is-size-6"  target="_blank" href="{{ p.ba_url }}">BA &Gt;</a>{% endif %}
+                    </td>
+                    <td data-value="{{ p.age|default_if_none:"0" }}">{{ p.age|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.position }}">{{ p.position }}</td>
+                    <td>{{ p.defense_display|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.level|default_if_none:"Z" }}<">{{ p.level|default_if_none:"" }}</td>
+                    <td data-value="{% if p.is_carded %}1{% else %}0{% endif %}">{% if p.is_carded %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td>
+                    <td data-value="{{ p.ls.plate_appearances|default_if_none:"0" }}">{{ p.ls.plate_appearances|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.ls.wrc_plus|default_if_none:"0" }}">{{ p.ls.wrc_plus|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.ls.woba|default_if_none:"0" }}">{{ p.ls.woba|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.ls.iso|default_if_none:"0" }}">{{ p.ls.iso|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.ls.bb_pct|default_if_none:"0" }}">{{ p.ls.bb_pct|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.ls.k_pct|default_if_none:"0" }}">{{ p.ls.k_pct|default_if_none:"-" }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -9,6 +9,7 @@
         <li class="is-active"><a>Trades & picks</a></li>
         {% if protect_tab %}<li><a href="/teams/{{ team.abbreviation|lower }}/protect/">Protect players</a></li>{% endif %}
         {% if roster_tab %}<li><a href="/teams/{{ team.abbreviation|lower }}/roster/">Roster players</a></li>{% endif %}
+        <li><a style="color: red; font-weight: bold;" href="/teams/{{ team.abbreviation|lower }}/live/">Live!</a></li>
     </ul>
 </div>
 

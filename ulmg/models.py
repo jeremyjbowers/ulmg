@@ -186,6 +186,19 @@ class Player(BaseModel):
             return "%s (%s)" % (self.name, self.get_team().abbreviation)
         return self.name
 
+    def ls(self):
+        try:
+            return LiveStat.objects.get(player=self)
+        except:
+            return LiveStat(**{
+                "wrc_plus": None, 
+                "plate_appearances": None, 
+                "iso": None, 
+                "k_pct": None, 
+                "bb_pct": None, 
+                "woba": None, 
+            })
+
     def to_dict(self):
         return {
             "name": self.name,
@@ -566,6 +579,46 @@ class SomRunsYear(BaseModel):
 
     def __unicode__(self):
         return "%(player_name)s: %(raal)s (L) (R) %(raat)s [%(raat)s]" % self
+
+    def set_player_name(self):
+        if self.player:
+            self.player_name = self.player.name
+
+    def save(self, *args, **kwargs):
+        self.set_player_name()
+
+        super().save(*args, **kwargs)
+
+class LiveStat(BaseModel):
+    player = models.ForeignKey(Player, on_delete=models.SET_NULL, null=True)
+    hitter = models.BooleanField(default=True)
+    player_name = models.CharField(max_length=255, blank=True)
+    season = models.IntegerField()
+    level = models.CharField(max_length=255, blank=True)
+    wrc_plus = models.IntegerField(blank=True, null=True)
+    plate_appearances = models.IntegerField(blank=True, null=True)
+    iso = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
+    k_pct = models.DecimalField(max_digits=3, decimal_places=1, blank=True, null=True)
+    bb_pct = models.DecimalField(max_digits=3, decimal_places=1, blank=True, null=True)
+    woba = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
+    x_woba = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
+    x_woba_diff = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
+    x_avg = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
+    x_avg_diff = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
+    x_slg = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
+    x_slg_diff = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
+    g = models.IntegerField(blank=True, null=True)
+    gs = models.IntegerField(blank=True, null=True)
+    era = models.DecimalField(max_digits=4, decimal_places=2, blank=True, null=True)
+    fip = models.DecimalField(max_digits=4, decimal_places=2, blank=True, null=True)
+    xfip = models.DecimalField(max_digits=4, decimal_places=2, blank=True, null=True)
+    siera = models.DecimalField(max_digits=4, decimal_places=2, blank=True, null=True)
+
+    def __unicode__(self):
+        if self.hitter:
+            return "%s: %s" % (self.player_name, self.wrc_plus)
+        else:
+            return "%s: %s" % (self.player_name, self.xfip)
 
     def set_player_name(self):
         if self.player:
