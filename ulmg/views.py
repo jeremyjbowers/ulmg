@@ -153,10 +153,10 @@ def team_detail(request, abbreviation):
 def team_livestat_detail(request, abbreviation):
     context = utils.build_context(request)
     context['team'] = get_object_or_404(models.Team, abbreviation__icontains=abbreviation)
-    team_players = models.LiveStat.objects.filter(player__team=context['team'])
+    team_players = models.Player.objects.filter(team=context['team'])
     context['num_owned'] = models.Player.objects.filter(team=context['team']).count()
-    context['hitters'] = team_players.exclude(position="P").order_by('player__position', '-player__level_order', 'last_name', 'first_name')
-    context['pitchers'] = team_players.filter(position="P").order_by('-player__level_order', 'player__last_name', 'player__first_name')
+    context['hitters'] = team_players.exclude(position="P").order_by('position', '-level_order', 'last_name', 'first_name')
+    context['pitchers'] = team_players.filter(position="P").order_by('-level_order', 'last_name', 'first_name')
     return render(request, 'team_livestat.html', context)
 
 def all_csv(request):
