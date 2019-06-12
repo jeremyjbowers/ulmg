@@ -178,6 +178,34 @@ class Player(BaseModel):
     is_1h_c = models.BooleanField(default=False)
     is_1h_pos = models.BooleanField(default=False)
 
+    # LIVE STATS
+
+    ls_hr = models.IntegerField(blank=True, null=True)
+    ls_sb = models.IntegerField(blank=True, null=True)
+    ls_avg = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
+    ls_obp = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
+    ls_slg = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
+    ls_babip = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
+    ls_wrc_plus = models.IntegerField(blank=True, null=True)
+    ls_plate_appearances = models.IntegerField(blank=True, null=True)
+    ls_iso = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
+    ls_k_pct = models.DecimalField(max_digits=3, decimal_places=1, blank=True, null=True)
+    ls_bb_pct = models.DecimalField(max_digits=3, decimal_places=1, blank=True, null=True)
+    ls_woba = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
+    ls_g = models.IntegerField(blank=True, null=True)
+    ls_gs = models.IntegerField(blank=True, null=True)
+    ls_ip = models.DecimalField(max_digits=4, decimal_places=1, blank=True, null=True)
+    ls_k_9 = models.DecimalField(max_digits=4, decimal_places=2, blank=True, null=True)
+    ls_bb_9 = models.DecimalField(max_digits=4, decimal_places=2, blank=True, null=True)
+    ls_hr_9 = models.DecimalField(max_digits=4, decimal_places=2, blank=True, null=True)
+    ls_lob_pct = models.DecimalField(max_digits=4, decimal_places=1, blank=True, null=True)
+    ls_gb_pct = models.DecimalField(max_digits=4, decimal_places=1, blank=True, null=True)
+    ls_hr_fb = models.DecimalField(max_digits=4, decimal_places=1, blank=True, null=True)
+    ls_era = models.DecimalField(max_digits=4, decimal_places=2, blank=True, null=True)
+    ls_fip = models.DecimalField(max_digits=4, decimal_places=2, blank=True, null=True)
+    ls_xfip = models.DecimalField(max_digits=4, decimal_places=2, blank=True, null=True)
+    ls_siera = models.DecimalField(max_digits=4, decimal_places=2, blank=True, null=True)
+
     class Meta:
         ordering = ["last_name", "first_name", "level", "position"]
 
@@ -579,68 +607,6 @@ class SomRunsYear(BaseModel):
 
     def __unicode__(self):
         return "%(player_name)s: %(raal)s (L) (R) %(raat)s [%(raat)s]" % self
-
-    def set_player_name(self):
-        if self.player:
-            self.player_name = self.player.name
-
-    def save(self, *args, **kwargs):
-        self.set_player_name()
-
-        super().save(*args, **kwargs)
-
-class LiveStat(BaseModel):
-    player = models.ForeignKey(Player, on_delete=models.SET_NULL, null=True)
-    hitter = models.BooleanField(default=True)
-    player_name = models.CharField(max_length=255, blank=True)
-    season = models.IntegerField()
-    level = models.CharField(max_length=255, blank=True)
-    ##
-    ## hitting
-    ##
-    hr = models.IntegerField(blank=True, null=True)
-    sb = models.IntegerField(blank=True, null=True)
-    avg = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
-    obp = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
-    slg = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
-    babip = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
-    wrc_plus = models.IntegerField(blank=True, null=True)
-    plate_appearances = models.IntegerField(blank=True, null=True)
-    iso = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
-    k_pct = models.DecimalField(max_digits=3, decimal_places=1, blank=True, null=True)
-    bb_pct = models.DecimalField(max_digits=3, decimal_places=1, blank=True, null=True)
-    woba = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
-    ##
-    ## hitting x stats
-    ##
-    # x_woba = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
-    # x_woba_diff = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
-    # x_avg = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
-    # x_avg_diff = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
-    # x_slg = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
-    # x_slg_diff = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
-    ##
-    ## pitching
-    ##
-    g = models.IntegerField(blank=True, null=True)
-    gs = models.IntegerField(blank=True, null=True)
-    ip = models.DecimalField(max_digits=4, decimal_places=1, blank=True, null=True)
-    k_9 = models.DecimalField(max_digits=4, decimal_places=2, blank=True, null=True)
-    bb_9 = models.DecimalField(max_digits=4, decimal_places=2, blank=True, null=True)
-    hr_9 = models.DecimalField(max_digits=4, decimal_places=2, blank=True, null=True)
-    lob_pct = models.DecimalField(max_digits=4, decimal_places=1, blank=True, null=True)
-    gb_pct = models.DecimalField(max_digits=4, decimal_places=1, blank=True, null=True)
-    hr_fb = models.DecimalField(max_digits=4, decimal_places=1, blank=True, null=True)
-    era = models.DecimalField(max_digits=4, decimal_places=2, blank=True, null=True)
-    fip = models.DecimalField(max_digits=4, decimal_places=2, blank=True, null=True)
-    xfip = models.DecimalField(max_digits=4, decimal_places=2, blank=True, null=True)
-    siera = models.DecimalField(max_digits=4, decimal_places=2, blank=True, null=True)
-
-    def __unicode__(self):
-        if self.hitter:
-            return "%s: %s" % (self.player_name, self.wrc_plus)
-        else:
-            return "%s: %s" % (self.player_name, self.xfip)
 
     def set_player_name(self):
         if self.player:

@@ -51,18 +51,18 @@
                     <td data-value="{{ p.position }}">{{ p.position }}</td>
                     <td data-value="{{ p.level|default_if_none:"Z" }}<">{{ p.level|default_if_none:"" }}</td>
                     <td data-value="{% if p.is_carded %}1{% else %}0{% endif %}">{% if p.is_carded %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td>
-                    <td data-value="{{ p.ls.plate_appearances|default_if_none:"0" }}">{{ p.ls.plate_appearances|default_if_none:"-" }}</td>
-                    <!-- <td data-value="{{ p.ls.hr|default_if_none:"0" }}">{{ p.ls.hr|default_if_none:"-" }}</td> -->
-                    <!-- <td data-value="{{ p.ls.sb|default_if_none:"0" }}">{{ p.ls.sb|default_if_none:"-" }}</td> -->
-                    <td data-value="{{ p.ls.avg|default_if_none:"0" }}">{{ p.ls.avg|default_if_none:"-" }}</td>
-                    <td data-value="{{ p.ls.obp|default_if_none:"0" }}">{{ p.ls.obp|default_if_none:"-" }}</td>
-                    <td data-value="{{ p.ls.slg|default_if_none:"0" }}">{{ p.ls.slg|default_if_none:"-" }}</td>
-                    <td data-value="{{ p.ls.babip|default_if_none:"0" }}">{{ p.ls.babip|default_if_none:"-" }}</td>
-                    <td data-value="{{ p.ls.wrc_plus|default_if_none:"0" }}">{{ p.ls.wrc_plus|default_if_none:"-" }}</td>
-                    <td data-value="{{ p.ls.iso|default_if_none:"0" }}">{{ p.ls.iso|default_if_none:"-" }}</td>
-                    <td data-value="{{ p.ls.k_pct|default_if_none:"0" }}">{{ p.ls.k_pct|default_if_none:"-" }}</td>
-                    <td data-value="{{ p.ls.bb_pct|default_if_none:"0" }}">{{ p.ls.bb_pct|default_if_none:"-" }}</td>
-                    <td data-value="{{ p.ls.woba|default_if_none:"0" }}">{{ p.ls.woba|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.ls_plate_appearances|default_if_none:"0" }}">{{ p.ls_plate_appearances|default_if_none:"-" }}</td>
+                    <!-- <td data-value="{{ p.ls_hr|default_if_none:"0" }}">{{ p.ls_hr|default_if_none:"-" }}</td> -->
+                    <!-- <td data-value="{{ p.ls_sb|default_if_none:"0" }}">{{ p.ls_sb|default_if_none:"-" }}</td> -->
+                    <td data-value="{{ p.ls_avg|default_if_none:"0" }}">{{ p.ls_avg|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.ls_obp|default_if_none:"0" }}">{{ p.ls_obp|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.ls_slg|default_if_none:"0" }}">{{ p.ls_slg|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.ls_babip|default_if_none:"0" }}">{{ p.ls_babip|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.ls_wrc_plus|default_if_none:"0" }}">{{ p.ls_wrc_plus|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.ls_iso|default_if_none:"0" }}">{{ p.ls_iso|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.ls_k_pct|default_if_none:"0" }}">{{ p.ls_k_pct|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.ls_bb_pct|default_if_none:"0" }}">{{ p.ls_bb_pct|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.ls_woba|default_if_none:"0" }}">{{ p.ls_woba|default_if_none:"-" }}</td>
                 </tr>
             {% endfor %}
             </tbody>
@@ -107,19 +107,19 @@
                     <td data-value="{{ p.age|default_if_none:"0" }}">{{ p.age|default_if_none:"-" }}</td>
                     <td data-value="{{ p.level|default_if_none:"Z" }}<">{{ p.level|default_if_none:"" }}</td>
                     <td data-value="{% if p.is_carded %}1{% else %}0{% endif %}">{% if p.is_carded %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td>
-                    <td data-value="{{ p.ls.g|default_if_none:"0" }}">{{ p.ls.g|default_if_none:"-" }}</td>
-                    <td data-value="{{ p.ls.gs|default_if_none:"0" }}">{{ p.ls.gs|default_if_none:"-" }}</td>
-                    <td data-value="{{ p.ls.ip|default_if_none:"0" }}">{{ p.ls.ip|default_if_none:"-" }}</td>
-                    <td data-value="{{ p.ls.k_9|default_if_none:"0" }}">{{ p.ls.k_9|default_if_none:"-" }}</td>
-                    <td data-value="{{ p.ls.bb_9|default_if_none:"0" }}">{{ p.ls.bb_9|default_if_none:"-" }}</td>
-                    <td data-value="{{ p.ls.hr_9|default_if_none:"0" }}">{{ p.ls.hr_9|default_if_none:"-" }}</td>
-                    <td data-value="{{ p.ls.lob_pct|default_if_none:"0" }}">{{ p.ls.lob_pct|default_if_none:"-" }}</td>
-                    <td data-value="{{ p.ls.gb_pct|default_if_none:"0" }}">{{ p.ls.gb_pct|default_if_none:"-" }}</td>
-                    <td data-value="{{ p.ls.hr_fb|default_if_none:"0" }}">{{ p.ls.hr_fb|default_if_none:"-" }}</td>
-                    <td data-value="{{ p.ls.era|default_if_none:"0" }}">{{ p.ls.era|default_if_none:"-" }}</td>
-                    <td data-value="{{ p.ls.fip|default_if_none:"0" }}">{{ p.ls.fip|default_if_none:"-" }}</td>
-                    <td data-value="{{ p.ls.xfip|default_if_none:"0" }}">{{ p.ls.xfip|default_if_none:"-" }}</td>
-                    <td data-value="{{ p.ls.siera|default_if_none:"0" }}">{{ p.ls.siera|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.ls_g|default_if_none:"0" }}">{{ p.ls_g|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.ls_gs|default_if_none:"0" }}">{{ p.ls_gs|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.ls_ip|default_if_none:"0" }}">{{ p.ls_ip|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.ls_k_9|default_if_none:"0" }}">{{ p.ls_k_9|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.ls_bb_9|default_if_none:"0" }}">{{ p.ls_bb_9|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.ls_hr_9|default_if_none:"0" }}">{{ p.ls_hr_9|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.ls_lob_pct|default_if_none:"0" }}">{{ p.ls_lob_pct|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.ls_gb_pct|default_if_none:"0" }}">{{ p.ls_gb_pct|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.ls_hr_fb|default_if_none:"0" }}">{{ p.ls_hr_fb|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.ls_era|default_if_none:"0" }}">{{ p.ls_era|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.ls_fip|default_if_none:"0" }}">{{ p.ls_fip|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.ls_xfip|default_if_none:"0" }}">{{ p.ls_xfip|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.ls_siera|default_if_none:"0" }}">{{ p.ls_siera|default_if_none:"-" }}</td>
                 </tr>
             {% endfor %}
             </tbody>
