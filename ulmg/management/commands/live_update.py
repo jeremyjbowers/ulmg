@@ -23,7 +23,7 @@ class Command(BaseCommand):
 
         self.season = settings.CURRENT_SEASON
         self.get_hitters()
-        # self.get_pitchers()
+        self.get_pitchers()
 
     def get_results(self, url):
         r = requests.get(url)
