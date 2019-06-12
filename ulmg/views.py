@@ -156,6 +156,7 @@ def team_livestat_detail(request, abbreviation):
     team_players = models.Player.objects.filter(team=context['team'])
     context['num_owned'] = team_players.count()
     context['hitters'] = team_players.exclude(position="P").order_by('position', '-level_order', 'last_name', 'first_name')
+    context['pitchers'] = team_players.filter(position="P").order_by('-level_order', 'last_name', 'first_name')
     return render(request, 'team_livestat.html', context)
 
 def all_csv(request):

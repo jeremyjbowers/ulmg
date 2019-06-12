@@ -21,18 +21,21 @@
                 <tr>
                     <th data-sortable-type="alpha">Name</th>
                     <th data-sortable-type="numeric">Age</th>
-                    {% if position.grouper != "P" %}
                     <th data-sortable-type="alpha">Pos</th>
-                    {% endif %}
-                    <th>Def</th>
                     <th data-sortable-type="alpha">Lvl</th>
                     <th data-sortable-type="numeric">Card?</th>
                     <th data-sortable-type="numeric">PA</th>
-                    <th data-sortable-type="numeric">wRC+</th>
-                    <th data-sortable-type="numeric">wOBA</th>
+                    <!-- <th data-sortable-type="numeric">HR</th>
+                    <th data-sortable-type="numeric">SB</th> -->
+                    <th data-sortable-type="numeric">AVG</th>
+                    <th data-sortable-type="numeric">OBP</th>
+                    <th data-sortable-type="numeric">SLG</th>
+                    <th data-sortable-type="numeric">BABIP</th>
+                    <th data-sortable-type="numeric">WRC+</th>
                     <th data-sortable-type="numeric">ISO</th>
-                    <th data-sortable-type="numeric">BB%</th>
                     <th data-sortable-type="numeric">K%</th>
+                    <th data-sortable-type="numeric">BB%</th>
+                    <th data-sortable-type="numeric">wOBA</th>
                 </tr>
             </thead>
             <tbody>
@@ -46,15 +49,77 @@
                     </td>
                     <td data-value="{{ p.age|default_if_none:"0" }}">{{ p.age|default_if_none:"-" }}</td>
                     <td data-value="{{ p.position }}">{{ p.position }}</td>
-                    <td>{{ p.defense_display|default_if_none:"-" }}</td>
                     <td data-value="{{ p.level|default_if_none:"Z" }}<">{{ p.level|default_if_none:"" }}</td>
                     <td data-value="{% if p.is_carded %}1{% else %}0{% endif %}">{% if p.is_carded %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td>
                     <td data-value="{{ p.ls.plate_appearances|default_if_none:"0" }}">{{ p.ls.plate_appearances|default_if_none:"-" }}</td>
+                    <!-- <td data-value="{{ p.ls.hr|default_if_none:"0" }}">{{ p.ls.hr|default_if_none:"-" }}</td> -->
+                    <!-- <td data-value="{{ p.ls.sb|default_if_none:"0" }}">{{ p.ls.sb|default_if_none:"-" }}</td> -->
+                    <td data-value="{{ p.ls.avg|default_if_none:"0" }}">{{ p.ls.avg|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.ls.obp|default_if_none:"0" }}">{{ p.ls.obp|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.ls.slg|default_if_none:"0" }}">{{ p.ls.slg|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.ls.babip|default_if_none:"0" }}">{{ p.ls.babip|default_if_none:"-" }}</td>
                     <td data-value="{{ p.ls.wrc_plus|default_if_none:"0" }}">{{ p.ls.wrc_plus|default_if_none:"-" }}</td>
-                    <td data-value="{{ p.ls.woba|default_if_none:"0" }}">{{ p.ls.woba|default_if_none:"-" }}</td>
                     <td data-value="{{ p.ls.iso|default_if_none:"0" }}">{{ p.ls.iso|default_if_none:"-" }}</td>
-                    <td data-value="{{ p.ls.bb_pct|default_if_none:"0" }}">{{ p.ls.bb_pct|default_if_none:"-" }}</td>
                     <td data-value="{{ p.ls.k_pct|default_if_none:"0" }}">{{ p.ls.k_pct|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.ls.bb_pct|default_if_none:"0" }}">{{ p.ls.bb_pct|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.ls.woba|default_if_none:"0" }}">{{ p.ls.woba|default_if_none:"-" }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="columns">
+    <div class="column">
+        <h1 class="title is-2">Hitters</h1>
+        <table class="table is-fullwidth" data-sortable>
+            <thead>
+                <tr>
+                    <th data-sortable-type="alpha">Name</th>
+                    <th data-sortable-type="numeric">Age</th>
+                    <th data-sortable-type="alpha">Lvl</th>
+                    <th data-sortable-type="numeric">Card?</th>
+                    <th data-sortable-type="numeric">G</th>
+                    <th data-sortable-type="numeric">GS</th>
+                    <th data-sortable-type="numeric">IP</th>
+                    <th data-sortable-type="numeric">K/9</th>
+                    <th data-sortable-type="numeric">BB/9</th>
+                    <th data-sortable-type="numeric">HR/9</th>
+                    <th data-sortable-type="numeric">LOB%</th>
+                    <th data-sortable-type="numeric">GB%</th>
+                    <th data-sortable-type="numeric">HR/FB</th>
+                    <th data-sortable-type="numeric">ERA</th>
+                    <th data-sortable-type="numeric">FIP</th>
+                    <th data-sortable-type="numeric">xFIP</th>
+                    <th data-sortable-type="numeric">SIERA</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for p in pitchers %}
+                <tr>
+                    <td data-value="{{ p.name }}" style="text-align: left!important;"><span class="has-text-weight-semibold" data-value="{{ p.name }}">
+                        {{ p.name }}</a> <a href="/admin/ulmg/player/{{ p.id }}/change/">&#x270E;<br/>
+                        {% if p.bref_url %}<a class="has-text-weight-light is-size-6" target="_blank" href="{{ p.bref_url }}">BBR &Gt;</a>{% endif %}
+                        {% if p.fg_url %}<a class="has-text-weight-light is-size-6" target="_blank" href="{{ p.fg_url }}">FG &Gt;</a>{% endif %}
+                        {% if p.ba_url %}<a class="has-text-weight-light is-size-6"  target="_blank" href="{{ p.ba_url }}">BA &Gt;</a>{% endif %}
+                    </td>
+                    <td data-value="{{ p.age|default_if_none:"0" }}">{{ p.age|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.level|default_if_none:"Z" }}<">{{ p.level|default_if_none:"" }}</td>
+                    <td data-value="{% if p.is_carded %}1{% else %}0{% endif %}">{% if p.is_carded %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td>
+                    <td data-value="{{ p.ls.g|default_if_none:"0" }}">{{ p.ls.g|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.ls.gs|default_if_none:"0" }}">{{ p.ls.gs|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.ls.ip|default_if_none:"0" }}">{{ p.ls.ip|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.ls.k_9|default_if_none:"0" }}">{{ p.ls.k_9|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.ls.bb_9|default_if_none:"0" }}">{{ p.ls.bb_9|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.ls.hr_9|default_if_none:"0" }}">{{ p.ls.hr_9|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.ls.lob_pct|default_if_none:"0" }}">{{ p.ls.lob_pct|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.ls.gb_pct|default_if_none:"0" }}">{{ p.ls.gb_pct|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.ls.hr_fb|default_if_none:"0" }}">{{ p.ls.hr_fb|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.ls.era|default_if_none:"0" }}">{{ p.ls.era|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.ls.fip|default_if_none:"0" }}">{{ p.ls.fip|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.ls.xfip|default_if_none:"0" }}">{{ p.ls.xfip|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.ls.siera|default_if_none:"0" }}">{{ p.ls.siera|default_if_none:"-" }}</td>
                 </tr>
             {% endfor %}
             </tbody>
