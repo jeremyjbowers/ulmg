@@ -91,9 +91,6 @@ class PlayerAdmin(admin.ModelAdmin):
     readonly_fields = ["name", "age", 'is_relief_eligible', 'relief_innings_pitched', 'starts', 'plate_appearances','fg_prospect_fv','fg_prospect_rank','ba_prospect_rank','mlb_prospect_rank','ba_draft_rank', 'stats', 'steamer_predix']
     search_fields = ["name"]
     autocomplete_fields = ['team']
-    inlines = [
-        ScoutingReportInline
-    ]
     fieldsets = (
         ('Biographical', {
             'fields': (
@@ -151,7 +148,6 @@ class PlayerAdmin(admin.ModelAdmin):
                 'ba_draft_rank',            )
         }),
         ('External', {
-            'classes': ('collapse',),
             'fields': (
                 'fg_id',
                 'bref_id',
