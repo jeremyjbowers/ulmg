@@ -102,6 +102,18 @@ class PlayerAdmin(admin.ModelAdmin):
                 'team',
             ),
         }),
+        ('External', {
+            'fields': (
+                'fg_id',
+                'bref_id',
+                'mlb_id',
+                'ba_id',
+                'fg_url',
+                'bref_url',
+                'mlb_url',
+                'ba_url'
+            )
+        }),
         ('Stats', {
             'classes': ('collapse',),
             'fields': (
@@ -146,18 +158,6 @@ class PlayerAdmin(admin.ModelAdmin):
                 'ba_prospect_rank',
                 'mlb_prospect_rank',
                 'ba_draft_rank',            )
-        }),
-        ('External', {
-            'fields': (
-                'fg_id',
-                'bref_id',
-                'mlb_id',
-                'ba_id',
-                'fg_url',
-                'bref_url',
-                'mlb_url',
-                'ba_url'
-            )
         }),
         ('Advanced', {
             'classes': ('collapse',),
