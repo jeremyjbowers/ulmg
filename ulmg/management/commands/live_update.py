@@ -19,8 +19,6 @@ class Command(BaseCommand):
     season = None
 
     def handle(self, *args, **options):
-        models.LiveStat.objects.all().delete()
-
         self.season = settings.CURRENT_SEASON
         self.get_hitters()
         self.get_pitchers()
