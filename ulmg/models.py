@@ -595,20 +595,42 @@ class LiveStat(BaseModel):
     player_name = models.CharField(max_length=255, blank=True)
     season = models.IntegerField()
     level = models.CharField(max_length=255, blank=True)
+    ##
+    ## hitting
+    ##
+    hr = models.IntegerField(blank=True, null=True)
+    sb = models.IntegerField(blank=True, null=True)
+    avg = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
+    obp = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
+    slg = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
+    babip = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
     wrc_plus = models.IntegerField(blank=True, null=True)
     plate_appearances = models.IntegerField(blank=True, null=True)
     iso = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
     k_pct = models.DecimalField(max_digits=3, decimal_places=1, blank=True, null=True)
     bb_pct = models.DecimalField(max_digits=3, decimal_places=1, blank=True, null=True)
     woba = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
-    x_woba = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
-    x_woba_diff = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
-    x_avg = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
-    x_avg_diff = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
-    x_slg = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
-    x_slg_diff = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
+    ##
+    ## hitting x stats
+    ##
+    # x_woba = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
+    # x_woba_diff = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
+    # x_avg = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
+    # x_avg_diff = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
+    # x_slg = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
+    # x_slg_diff = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
+    ##
+    ## pitching
+    ##
     g = models.IntegerField(blank=True, null=True)
     gs = models.IntegerField(blank=True, null=True)
+    ip = models.DecimalField(max_digits=4, decimal_places=1, blank=True, null=True)
+    k_9 = models.DecimalField(max_digits=4, decimal_places=2, blank=True, null=True)
+    bb_9 = models.DecimalField(max_digits=4, decimal_places=2, blank=True, null=True)
+    hr_9 = models.DecimalField(max_digits=4, decimal_places=2, blank=True, null=True)
+    lob_pct = models.DecimalField(max_digits=4, decimal_places=1, blank=True, null=True)
+    gb_pct = models.DecimalField(max_digits=4, decimal_places=1, blank=True, null=True)
+    hr_fb = models.DecimalField(max_digits=4, decimal_places=1, blank=True, null=True)
     era = models.DecimalField(max_digits=4, decimal_places=2, blank=True, null=True)
     fip = models.DecimalField(max_digits=4, decimal_places=2, blank=True, null=True)
     xfip = models.DecimalField(max_digits=4, decimal_places=2, blank=True, null=True)
