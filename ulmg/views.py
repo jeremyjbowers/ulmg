@@ -161,7 +161,7 @@ def team_livestat_detail(request, abbreviation):
 
 def available_livestat(request):
     context = utils.build_context(request)
-    context['hitters'] = models.Player.objects.filter(team__isnull=True, ls_plate_appearances__gte=1).exclude(position="PA").order_by('position', '-level_order', 'last_name', 'first_name')
+    context['hitters'] = models.Player.objects.filter(team__isnull=True, ls_plate_appearances__gte=1).exclude(position="P").order_by('position', '-level_order', 'last_name', 'first_name')
     context['pitchers'] = models.Player.objects.filter(team__isnull=True, ls_g__gte=1).order_by('-level_order', 'last_name', 'first_name')
     return render(request, 'available_livestat.html', context)
 
