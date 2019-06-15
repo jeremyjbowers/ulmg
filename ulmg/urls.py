@@ -21,6 +21,7 @@ urlpatterns = [
     path('players/<int:playerid>/', views.player),
     path('players/interesting/', views.interesting),
     path('players/search/', views.search),
+    path('players/available/', views.available_livestat),
     path('draft/live/<int:year>/<str:season>/<str:draft_type>/edit/', views.live_draft_admin),
     path('draft/live/<int:year>/<str:season>/<str:draft_type>/', views.live_draft_watch),
     path('', views.index),

@@ -159,6 +159,12 @@ def team_livestat_detail(request, abbreviation):
     context['pitchers'] = team_players.filter(position="P").order_by('-level_order', 'last_name', 'first_name')
     return render(request, 'team_livestat.html', context)
 
+def available_livestat(request):
+    context = utils.build_context(request)
+    context['hitters'] = models.Player.objects.filter(level__in=["A", "V"], team__isnull=True, ls_plate_appearances__gte=1).exclude(position="P").order_by('position', '-level_order', 'last_name', 'first_name')
+    context['pitchers'] = models.Player.objects.filter(level__in=["A", "V"], team__isnull=True, ls_g__gte=1).order_by('-level_order', 'last_name', 'first_name')
+    return render(request, 'available_livestat.html', context)
+
 def all_csv(request):
     team_players = models.Player.objects.filter(is_owned=True).order_by('team', '-is_35man_roster', 'position', '-level_order', 'last_name', 'first_name').values(*settings.CSV_COLUMNS)
 
