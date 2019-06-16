@@ -12,7 +12,7 @@
     }
 </style>
 
-<h1 id="players-unowned" class="title is-1">Unowned Players <small><a href="#players-owned">&darr; Owned</a></small></h1>
+<h1 id="players-unowned" class="title is-1">Unowned Players <small><a href="#players-owned">&darr; Owned</a></small> <small><a href="#players-aa">&darr; AA</a></small></h1>
 
 <div class="columns">
     <div class="column">
@@ -130,7 +130,7 @@
     </div>
 </div>
 
-<h1 id="players-owned" class="title is-1">Owned Players <small><a href="#players-unowned">&uarr; Unowned</a></small></h1>
+<h1 id="players-owned" class="title is-1">Owned Players <small><a href="#players-unowned">&uarr; Unowned</a></small> <small><a href="#players-aa">&darr; AA</a></small></h1>
 
 <div class="columns">
     <div class="column">
@@ -227,6 +227,121 @@
                     </td>
                     <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
                     <td data-value="{{ p.team }}">{{ p.team }}</td>
+                    <td data-value="{% if p.is_carded %}1{% else %}0{% endif %}">{% if p.is_carded %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td>
+                    <td data-value="{{ p.ls_g|default_if_none:"-999" }}">{{ p.ls_g|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.ls_gs|default_if_none:"-999" }}">{{ p.ls_gs|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.ls_ip|default_if_none:"-999" }}">{{ p.ls_ip|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.ls_k_9|default_if_none:"-999" }}">{{ p.ls_k_9|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.ls_bb_9|default_if_none:"999" }}">{{ p.ls_bb_9|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.ls_hr_9|default_if_none:"999" }}">{{ p.ls_hr_9|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.ls_lob_pct|default_if_none:"999" }}">{{ p.ls_lob_pct|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.ls_gb_pct|default_if_none:"999" }}">{{ p.ls_gb_pct|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.ls_hr_fb|default_if_none:"999" }}">{{ p.ls_hr_fb|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.ls_era|default_if_none:"999" }}">{{ p.ls_era|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.ls_fip|default_if_none:"999" }}">{{ p.ls_fip|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.ls_xfip|default_if_none:"999" }}">{{ p.ls_xfip|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.ls_siera|default_if_none:"999" }}">{{ p.ls_siera|default_if_none:"-" }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+
+    </div>
+</div>
+
+<h1 id="players-aa" class="title is-1">AA-Eligible Players <small><a href="#players-unowned">&uarr; Unowned</a></small> <small><a href="#players-owned">&uarr; Owned</a></small></h1>
+
+<div class="columns">
+    <div class="column">
+        {% regroup aa_hitters by position as position_players %}
+        {% for position in position_players %}
+        <h1 class="title is-3">{{ position.grouper }} ({{ position.list|length }})</h1>
+        <table class="table is-fullwidth" data-sortable>
+            <thead>
+                <tr>
+                    <th data-sortable-type="alpha">Name</th>
+                    <th></th>
+                    <th data-sortable-type="numeric">Age</th>
+                    <th data-sortable-type="alpha">Pos</th>
+                    <th data-sortable-type="numeric">Card?</th>
+                    <th data-sortable-type="numeric">PA</th>
+                    <th data-sortable-type="numeric">AVG</th>
+                    <th data-sortable-type="numeric">OBP</th>
+                    <th data-sortable-type="numeric">SLG</th>
+                    <th data-sortable-type="numeric">BABIP</th>
+                    <th data-sortable-type="numeric">WRC+</th>
+                    <th data-sortable-type="numeric">ISO</th>
+                    <th data-sortable-type="numeric">K%</th>
+                    <th data-sortable-type="numeric">BB%</th>
+                    <th data-sortable-type="numeric">wOBA</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for p in position.list %}
+                <tr>
+                    <td data-value="{{ p.name }}" style="text-align: left!important;"><span class="has-text-weight-semibold" data-value="{{ p.name }}">
+                        {{ p.name }}</a> <a href="/admin/ulmg/player/{{ p.id }}/change/">&#x270E;</span></td>
+                    <td>
+                        {% if p.bref_url %}<a class="has-text-weight-light" target="_blank" href="{{ p.bref_url }}">BBR &Gt;</a>{% endif %}
+                        {% if p.fg_url %}<a class="has-text-weight-light" target="_blank" href="{{ p.fg_url }}">FG &Gt;</a>{% endif %}
+                    </td>
+                    <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.position }}">{{ p.position }}</td>
+                    <td data-value="{% if p.is_carded %}1{% else %}0{% endif %}">{% if p.is_carded %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td>
+                    <td data-value="{{ p.ls_plate_appearances|default_if_none:"-999" }}">{{ p.ls_plate_appearances|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.ls_avg|default_if_none:"-999" }}">{{ p.ls_avg|kill_leading_zero|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.ls_obp|default_if_none:"-999" }}">{{ p.ls_obp|kill_leading_zero|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.ls_slg|default_if_none:"-999" }}">{{ p.ls_slg|kill_leading_zero|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.ls_babip|default_if_none:"-999" }}">{{ p.ls_babip|kill_leading_zero|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.ls_wrc_plus|default_if_none:"-999" }}">{{ p.ls_wrc_plus|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.ls_iso|default_if_none:"-999" }}">{{ p.ls_iso|kill_leading_zero|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.ls_k_pct|default_if_none:"-999" }}">{{ p.ls_k_pct|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.ls_bb_pct|default_if_none:"-999" }}">{{ p.ls_bb_pct|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.ls_woba|default_if_none:"-999" }}">{{ p.ls_woba|kill_leading_zero|default_if_none:"-" }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="columns">
+    <div class="column">
+        <h1 class="title is-3">P ({{ aa_pitchers|length }})</h1>
+        <table class="table is-fullwidth" data-sortable>
+            <thead>
+                <tr>
+                    <th data-sortable-type="alpha">Name</th>
+                    <th></th>
+                    <th data-sortable-type="numeric">Age</th>
+                    <th data-sortable-type="numeric">Card?</th>
+                    <th data-sortable-type="numeric">G</th>
+                    <th data-sortable-type="numeric">GS</th>
+                    <th data-sortable-type="numeric">IP</th>
+                    <th data-sortable-type="numeric">K/9</th>
+                    <th data-sortable-type="numeric">BB/9</th>
+                    <th data-sortable-type="numeric">HR/9</th>
+                    <th data-sortable-type="numeric">LOB%</th>
+                    <th data-sortable-type="numeric">GB%</th>
+                    <th data-sortable-type="numeric">HR/FB</th>
+                    <th data-sortable-type="numeric">ERA</th>
+                    <th data-sortable-type="numeric">FIP</th>
+                    <th data-sortable-type="numeric">xFIP</th>
+                    <th data-sortable-type="numeric">SIERA</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for p in aa_pitchers %}
+                <tr>
+                    <td data-value="{{ p.name }}" style="text-align: left!important;"><span class="has-text-weight-semibold" data-value="{{ p.name }}">
+                        {{ p.name }}</a> <a href="/admin/ulmg/player/{{ p.id }}/change/">&#x270E;
+                    </td>
+                    <td>
+                        {% if p.bref_url %}<a class="has-text-weight-light" target="_blank" href="{{ p.bref_url }}">BBR &Gt;</a>{% endif %}
+                        {% if p.fg_url %}<a class="has-text-weight-light" target="_blank" href="{{ p.fg_url }}">FG &Gt;</a>{% endif %}
+                    </td>
+                    <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
                     <td data-value="{% if p.is_carded %}1{% else %}0{% endif %}">{% if p.is_carded %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td>
                     <td data-value="{{ p.ls_g|default_if_none:"-999" }}">{{ p.ls_g|default_if_none:"-" }}</td>
                     <td data-value="{{ p.ls_gs|default_if_none:"-999" }}">{{ p.ls_gs|default_if_none:"-" }}</td>
