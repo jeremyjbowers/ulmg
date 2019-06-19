@@ -159,6 +159,14 @@ def team_livestat_detail(request, abbreviation):
     context['pitchers'] = team_players.filter(position="P").order_by('-level_order', 'last_name', 'first_name')
     return render(request, 'team_livestat.html', context)
 
+def unprotected(request):
+    context = utils.build_context(request)
+
+    context['owned_hitters'] = models.Player.objects.filter(level="V", team__isnull=False, ls_plate_appearances__gte=1, is_mlb_roster=False, is_1h_c=False, is_1h_p=False, is_1h_pos=False, is_35man_roster=False, is_reserve=False).exclude(position="P").order_by('position', '-level_order', 'last_name', 'first_name')
+    context['owned_pitchers'] = models.Player.objects.filter(level="V", team__isnull=False, ls_g__gte=1, is_mlb_roster=False, is_1h_c=False, is_1h_p=False, is_1h_pos=False, is_35man_roster=False, is_reserve=False).order_by('-level_order', 'last_name', 'first_name')
+
+    return render(request, 'unprotected.html', context)
+
 def available_livestat(request):
     context = utils.build_context(request)
     context['hitters'] = models.Player.objects\
