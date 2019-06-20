@@ -28,6 +28,7 @@ class Command(BaseCommand):
             writefile.write(json.dumps(people_map))
 
     def load_mlbam_ids(self):
+        models.Player.objects.update(mlbam_id=None)
         with open('data/ulmg/people_map.json', 'r') as readfile:
             people_map = json.loads(readfile.read())
 
