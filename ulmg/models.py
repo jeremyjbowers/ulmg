@@ -165,6 +165,14 @@ class Player(BaseModel):
     ls_xfip = models.DecimalField(max_digits=4, decimal_places=2, blank=True, null=True)
     ls_siera = models.DecimalField(max_digits=4, decimal_places=2, blank=True, null=True)
 
+    ls_xavg = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
+    ls_xwoba = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
+    ls_xslg = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
+
+    ls_xavg_diff = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
+    ls_xwoba_diff = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
+    ls_xslg_diff = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
+
     class Meta:
         ordering = ["last_name", "first_name", "level", "position"]
 

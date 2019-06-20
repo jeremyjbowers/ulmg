@@ -22,11 +22,32 @@ class Command(BaseCommand):
         self.season = settings.CURRENT_SEASON
         self.get_hitters()
         self.get_pitchers()
+        self.get_mlbam()
 
     def get_results(self, url):
         r = requests.get(url)
         soup = BeautifulSoup(r.text, 'lxml')
         return soup.select('#LeaderBoard1_dg1_ctl00 tbody tr')
+
+    def get_mlbam(self):
+        curl_cmd = f'curl -o /tmp/mlbam.csv "https://baseballsavant.mlb.com/expected_statistics?type=batter&year={self.season}&position=&team=&min=25&csv=true"'
+        os.system(curl_cmd)
+        with open('/tmp/mlbam.csv', 'r') as readfile:
+            players = [dict(c) for c in csv.DictReader(readfile)]
+            for p in players:
+                try:
+                    obj = models.Player.objects.get(mlbam_id=p['player_id'])
+                    obj.ls_xavg = Decimal(p['est_ba'])
+                    obj.ls_xwoba = Decimal(p['est_woba'])
+                    obj.ls_xslg = Decimal(p['est_slg'])
+                    obj.ls_xwoba_diff = Decimal(p['est_woba_minus_woba_diff'])
+                    obj.ls_xslg_diff = Decimal(p['est_slg_minus_slg_diff'])
+                    obj.ls_xavg_diff = Decimal(p['est_ba_minus_ba_diff'])
+                    obj.save()
+
+                except:
+                    print(p)
+
 
     def get_hitters(self):
         url = f"https://www.fangraphs.com/leaders.aspx?pos=all&stats=bat&lg=all&qual=10&type=8&season={self.season}&month=0&season1={self.season}&ind=0&team=0&rost=0&age=0&filter=&players=0&startdate=&enddate=&page=1_1500"
