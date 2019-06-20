@@ -31,7 +31,7 @@ class Command(BaseCommand):
         with open('data/ulmg/people_map.json', 'r') as readfile:
             people_map = json.loads(readfile.read())
 
-            for p in models.Player.objects.filter(fg_id__isnull=False, mlbam_id__isnull=True):
+            for p in models.Player.objects.filter(fg_id__isnull=False):
                 z = people_map.get(p.fg_id, None)
                 if z:
                     if z['key_mlbam'] != "":
