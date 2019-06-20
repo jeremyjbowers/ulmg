@@ -30,7 +30,7 @@ class Command(BaseCommand):
         return soup.select('#LeaderBoard1_dg1_ctl00 tbody tr')
 
     def get_mlbam(self):
-        curl_cmd = f'curl -o /tmp/mlbam.csv "https://baseballsavant.mlb.com/expected_statistics?type=batter&year={self.season}&position=&team=&min=25&csv=true"'
+        curl_cmd = f'curl -o /tmp/mlbam.csv "https://baseballsavant.mlb.com/expected_statistics?type=batter&year={self.season}&position=&team=&min=10&csv=true"'
         os.system(curl_cmd)
         with open('/tmp/mlbam.csv', 'r') as readfile:
             players = [dict(c) for c in csv.DictReader(readfile)]

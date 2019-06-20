@@ -47,6 +47,12 @@
                     <th data-sortable-type="numeric">K%</th>
                     <th data-sortable-type="numeric">BB%</th>
                     <th data-sortable-type="numeric">wOBA</th>
+                    <th data-sortable-type="numeric">xAVG</th>
+                    <th data-sortable-type="numeric">Diff</th>
+                    <th data-sortable-type="numeric">xSLG</th>
+                    <th data-sortable-type="numeric">Diff</th>
+                    <th data-sortable-type="numeric">xwOBA</th>
+                    <th data-sortable-type="numeric">Diff</th>
                 </tr>
             </thead>
             <tbody>
@@ -72,6 +78,12 @@
                     <td data-value="{{ p.ls_k_pct|default_if_none:"-999" }}">{{ p.ls_k_pct|default_if_none:"-" }}</td>
                     <td data-value="{{ p.ls_bb_pct|default_if_none:"-999" }}">{{ p.ls_bb_pct|default_if_none:"-" }}</td>
                     <td data-value="{{ p.ls_woba|default_if_none:"-999" }}">{{ p.ls_woba|kill_leading_zero|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.ls_xavg|default_if_none:"-999" }}">{{ p.ls_xavg|kill_leading_zero|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.ls_xavg_diff|default_if_none:"-999" }}">{{ p.ls_xavg_diff|kill_leading_zero|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.ls_xslg|default_if_none:"-999" }}">{{ p.ls_xslg|kill_leading_zero|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.ls_xslg_diff|default_if_none:"-999" }}">{{ p.ls_xslg_diff|kill_leading_zero|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.ls_xwoba|default_if_none:"-999" }}">{{ p.ls_xwoba|kill_leading_zero|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.ls_xwoba_diff|default_if_none:"-999" }}">{{ p.ls_xwoba_diff|kill_leading_zero|default_if_none:"-" }}</td>
                 </tr>
             {% endfor %}
             </tbody>
