@@ -11,7 +11,7 @@ DRAFT_MAPS = {
     'midseason': {
         "rounds": {
             "open": 3,
-            "aa": 1
+            # "aa": 1
         }
     }
 }
@@ -61,7 +61,7 @@ class Command(BaseCommand):
                 for draft_type,rounds in DRAFT_MAPS[season]['rounds'].items():
                     for r in range(0,rounds):
                         draft_round = r+1
-                        team = models.Team.objects.get(abbreviation=t)
+                        # team = models.Team.objects.get(abbreviation=t)
                         try:
                             obj = models.DraftPick.objects.get(
                                 year=year,

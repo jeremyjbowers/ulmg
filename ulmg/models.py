@@ -98,39 +98,10 @@ class Player(BaseModel):
 
     # IDENTIFIERS
     ba_id = models.CharField(max_length=255, blank=True, null=True)
-    mlb_id = models.CharField(max_length=255, blank=True, null=True)
-    mlb_name = models.CharField(max_length=255, blank=True, null=True)
-    mlb_pos = models.CharField(max_length=255, blank=True, null=True)
-    mlb_team = models.CharField(max_length=255, blank=True, null=True)
-    mlb_team_long = models.CharField(max_length=255, blank=True, null=True)
+    mlbam_id = models.CharField(max_length=255, blank=True, null=True)
     bp_id = models.CharField(max_length=255, blank=True, null=True)
     bref_id = models.CharField(max_length=255, blank=True, null=True)
-    bref_name = models.CharField(max_length=255, blank=True, null=True)
-    cbs_id = models.CharField(max_length=255, blank=True, null=True)
-    cbs_name = models.CharField(max_length=255, blank=True, null=True)
-    cbs_pos = models.CharField(max_length=255, blank=True, null=True)
-    espn_id = models.CharField(max_length=255, blank=True, null=True)
-    espn_name = models.CharField(max_length=255, blank=True, null=True)
-    espn_pos = models.CharField(max_length=255, blank=True, null=True)
     fg_id = models.CharField(max_length=255, blank=True, null=True)
-    fg_name = models.CharField(max_length=255, blank=True, null=True)
-    fg_pos = models.CharField(max_length=255, blank=True, null=True)
-    lahman_id = models.CharField(max_length=255, blank=True, null=True)
-    nfbc_id = models.CharField(max_length=255, blank=True, null=True)
-    nfbc_name = models.CharField(max_length=255, blank=True, null=True)
-    nfbc_pos = models.CharField(max_length=255, blank=True, null=True)
-    retro_id = models.CharField(max_length=255, blank=True, null=True)
-    retro_name = models.CharField(max_length=255, blank=True, null=True)
-    yahoo_id = models.CharField(max_length=255, blank=True, null=True)
-    yahoo_name = models.CharField(max_length=255, blank=True, null=True)
-    yahoo_pos = models.CharField(max_length=255, blank=True, null=True)
-    mlb_depth = models.CharField(max_length=255, blank=True, null=True)
-    ottoneu_id = models.CharField(max_length=255, blank=True, null=True)
-    ottoneu_name = models.CharField(max_length=255, blank=True, null=True)
-    ottoneu_pos = models.CharField(max_length=255, blank=True, null=True)
-    rotowire_id = models.CharField(max_length=255, blank=True, null=True)
-    rotowire_name = models.CharField(max_length=255, blank=True, null=True)
-    rotowire_pos = models.CharField(max_length=255, blank=True, null=True)
 
     # Value
     raar = models.DecimalField(max_digits=4, decimal_places=1, blank=True, null=True)
@@ -142,25 +113,11 @@ class Player(BaseModel):
     ba_url = models.CharField(max_length=255, blank=True, null=True)
     bref_url = models.CharField(max_length=255, blank=True, null=True)
     fg_url = models.CharField(max_length=255, blank=True, null=True)
-    mlb_url = models.CharField(max_length=255, blank=True, null=True)
+    mlbam_url = models.CharField(max_length=255, blank=True, null=True)
 
     # ULMG-SPECIFIC
     team = models.ForeignKey(Team, on_delete=models.SET_NULL, blank=True, null=True)
     notes = models.TextField(blank=True, null=True)
-
-    # PROSPECT STUFF
-    fg_prospect_fv = models.CharField(max_length=4, blank=True, null=True)
-    fg_prospect_rank = models.IntegerField(blank=True, null=True)
-    ba_prospect_rank = models.IntegerField(blank=True, null=True)
-    mlb_prospect_rank = models.IntegerField(blank=True, null=True)
-    ba_draft_rank = models.IntegerField(blank=True, null=True)
-    klaw_prospect_rank = models.IntegerField(blank=True, null=True)
-    pl_prospect_rank = models.IntegerField(blank=True, null=True)
-    eta = models.IntegerField(blank=True, null=True)
-    is_interesting = models.BooleanField(default=False)
-    interest_order = models.IntegerField(blank=True, null=True)
-    bp_prospect_rank = models.IntegerField(blank=True, null=True)
-    js_prospect_rank = models.IntegerField(blank=True, null=True)
 
     # STATUS AND SUCH
     is_owned = models.BooleanField(default=False)
@@ -177,9 +134,11 @@ class Player(BaseModel):
     is_1h_p = models.BooleanField(default=False)
     is_1h_c = models.BooleanField(default=False)
     is_1h_pos = models.BooleanField(default=False)
+    is_2h_p = models.BooleanField(default=False)
+    is_2h_c = models.BooleanField(default=False)
+    is_2h_pos = models.BooleanField(default=False)
 
     # LIVE STATS
-
     ls_hr = models.IntegerField(blank=True, null=True)
     ls_sb = models.IntegerField(blank=True, null=True)
     ls_avg = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)

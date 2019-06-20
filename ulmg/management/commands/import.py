@@ -1,5 +1,5 @@
 import csv
-import json
+import ujson as json
 import os
 
 from dateutil.parser import parse
@@ -12,26 +12,33 @@ from ulmg import models
 
 
 class Command(BaseCommand):
+    """
+    key_person,key_uuid,key_mlbam,key_retro,key_bbref,key_bbref_minors,key_fangraphs,key_npb,key_sr_nfl,key_sr_nba,key_sr_nhl,key_findagrave,name_last,name_first,name_given,name_suffix,name_matrilineal,name_nick,birth_year,birth_month,birth_day,death_year,death_month,death_day,pro_played_first,pro_played_last,mlb_played_first,mlb_played_last,col_played_first,col_played_last,pro_managed_first,pro_managed_last,mlb_managed_first,mlb_managed_last,col_managed_first,col_managed_last,pro_umpired_first,pro_umpired_last,mlb_umpired_first,mlb_umpired_last
+    """
+
+    def gen_people_map(self):
+        people_map = {}
+
+        with open('../register/data/people.csv', 'r') as readfile:
+            for c in csv.DictReader(readfile):
+                if c['key_fangraphs'] != "":
+                    people_map[c['key_fangraphs']] = dict(c)
+        
+        with open('data/ulmg/people_map.json', 'w') as writefile:
+            writefile.write(json.dumps(people_map))
+
+    def load_mlbam_ids(self):
+        with open('data/ulmg/people_map.json', 'r') as readfile:
+            people_map = json.loads(readfile.read())
+
+            for p in models.Player.objects.filter(fg_id__isnull=False, mlbam_id__isnull=True):
+                z = people_map.get(p.fg_id, None)
+                if z:
+                    if z['key_mlbam'] != "":
+                        p.mlbam_id = z['key_mlbam']
+                        p.save()
+                        print(p)
 
     def handle(self, *args, **options):
-        with open('data/ulmg/historical-drafts.csv', 'r') as readfile:
-            picks = [dict(c) for c in csv.DictReader(readfile)]
-
-        models.DraftPick.objects.filter(year=2018).delete()
-
-        for p in picks:
-            for k,v in p.items():
-
-                if v == "":
-                    p[k] = None
-
-                if k == "original_team" and v:
-                    p[k] = models.Team.objects.get(abbreviation=v)
-
-                if k in ['draft_round', 'pick_number']:
-                    p[k] = int(v)
-
-            p['team'] = models.Team.objects.get(abbreviation=p['team_name'])
-
-            obj, created = models.DraftPick.objects.get_or_create(**p)
-            print(obj, created)
+        # self.gen_people_map()
+        self.load_mlbam_ids()

@@ -88,7 +88,7 @@ class PlayerAdmin(admin.ModelAdmin):
     list_display = ["last_name", "first_name", "is_owned", 'is_carded', "team", 'birthdate']
     list_filter = ["is_owned", "is_carded", "team", "level", "position"]
     list_editable = []
-    readonly_fields = ["name", "age", 'is_relief_eligible', 'relief_innings_pitched', 'starts', 'plate_appearances','fg_prospect_fv','fg_prospect_rank','ba_prospect_rank','mlb_prospect_rank','ba_draft_rank', 'stats', 'steamer_predix']
+    readonly_fields = ["name", "age", 'is_relief_eligible', 'relief_innings_pitched', 'starts', 'plate_appearances','stats', 'steamer_predix']
     search_fields = ["name"]
     autocomplete_fields = ['team']
     fieldsets = (
@@ -106,11 +106,11 @@ class PlayerAdmin(admin.ModelAdmin):
             'fields': (
                 'fg_id',
                 'bref_id',
-                'mlb_id',
+                'mlbam_id',
                 'ba_id',
                 'fg_url',
                 'bref_url',
-                'mlb_url',
+                'mlbam_url',
                 'ba_url'
             )
         }),
@@ -129,7 +129,6 @@ class PlayerAdmin(admin.ModelAdmin):
             'fields': (
                 'is_carded',
                 'is_owned',
-                'is_interesting',
                 'is_amateur'
             )
         }),
@@ -148,16 +147,10 @@ class PlayerAdmin(admin.ModelAdmin):
                 'is_1h_p',
                 'is_1h_c',
                 'is_1h_pos',
+                'is_2h_p',
+                'is_2h_c',
+                'is_2h_pos',
             )
-        }),
-        ('Prospect', {
-            'classes': ('collapse',),
-            'fields': (
-                'fg_prospect_fv',
-                'fg_prospect_rank',
-                'ba_prospect_rank',
-                'mlb_prospect_rank',
-                'ba_draft_rank',            )
         }),
         ('Advanced', {
             'classes': ('collapse',),
