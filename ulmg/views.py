@@ -262,12 +262,12 @@ def live_draft_admin(request, year, season, draft_type):
         context['players'] = json.dumps(["%(name)s (%(position)s)" % p for p in models.Player.objects.filter(is_owned=False, level="B").values('name', 'position')])
 
     if draft_type == "open":
-        context['players'] = []
+        players = []
         for p in models.Player.objects.filter(is_owned=False).values('name', 'position'):
-            context['players'].append("%(name)s (%(position)s)" % p )
+            players.append("%(name)s (%(position)s)" % p)
     
-        for p in models.Player.objects.filter(level="V", team__isnull=False, is_mlb_roster=False, is_1h_c=False, is_1h_p=False, is_1h_pos=False, is_35man_roster=False, is_reserve=False).values('name', 'position'):
-            context['players'].append("%(name)s (%(position)s)" % p )
+        for p in models.Player.objects.filter(is_owned=True, level="V", team__isnull=False, is_mlb_roster=False, is_1h_c=False, is_1h_p=False, is_1h_pos=False, is_35man_roster=False, is_reserve=False).values('name', 'position'):
+            players.append("%(name)s (%(position)s)" % p)
 
         context['players'] = json.dumps(players)
 
