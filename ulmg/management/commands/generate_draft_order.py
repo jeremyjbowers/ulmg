@@ -58,10 +58,10 @@ class Command(BaseCommand):
             order = [n for n in readfile.read().split('\n') if n != ""]
 
             for o, t in enumerate(order):
+                team = models.Team.objects.get(abbreviation=t)
                 for draft_type,rounds in DRAFT_MAPS[season]['rounds'].items():
                     for r in range(0,rounds):
                         draft_round = r+1
-                        # team = models.Team.objects.get(abbreviation=t)
                         try:
                             obj = models.DraftPick.objects.get(
                                 year=year,
