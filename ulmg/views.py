@@ -345,6 +345,7 @@ def draft_action(request, pickid):
     if not name and not playerid:
         if draftpick.player:
             draftpick.player.team = None
+            draftpick.player.is_mlb_roster = False
             draftpick.player.save()
             draftpick.player = None
     
