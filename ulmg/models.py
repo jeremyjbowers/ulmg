@@ -134,9 +134,7 @@ class Player(BaseModel):
     is_1h_p = models.BooleanField(default=False)
     is_1h_c = models.BooleanField(default=False)
     is_1h_pos = models.BooleanField(default=False)
-    is_2h_p = models.BooleanField(default=False)
-    is_2h_c = models.BooleanField(default=False)
-    is_2h_pos = models.BooleanField(default=False)
+    is_2h_draft = models.BooleanField(default=False)
 
     # LIVE STATS
     ls_hr = models.IntegerField(blank=True, null=True)
