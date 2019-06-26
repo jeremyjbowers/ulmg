@@ -108,7 +108,7 @@
                     {% if not p.is_2h_draft %}
                         <td style="text-align: right!important;"><a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="off_roster">>></a></td>
                     {% else %}
-                        <td>&#128274; <small>Drafted, locked</small></td>
+                        <td>&#128274; Drafted</td>
                     {% endif %}
                 </tr>
                 {% endfor %}
@@ -152,7 +152,7 @@
                         {% if not p.is_2h_draft %}
                         <a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="off_roster">>></a>
                         {% else %}
-                        &#128274; <small>Drafted, locked</small>
+                        &#128274; Drafted
                         {% endif %}
                     </td>
                 </tr>
@@ -202,7 +202,7 @@
                         {% if num_mlb < 30 %}<a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="to_mlb">MLB</a>{% endif %}
                         <a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="to_aaa">AAA</a>
                         {% else %}
-                        &#128274; <small>Drafted, locked</small>
+                        &#128274; Drafted
                         {% endif %}
                         <a class="button is-danger player-drop" data-playerid="{{ p.id }}" data-playername="{{ p.name }}">X</a>
                     </td>
@@ -296,7 +296,7 @@
                         {% if num_mlb < 30 and p.is_carded == True %}<a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="to_mlb">MLB</a>{% endif %}
                         {% if p.is_carded == True %}<a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="to_aaa">AAA</a>{% endif %}
                         {% else %}
-                        &#128274; <small>Drafted, locked</small>
+                        &#128274; Drafted
                         {% endif %}
                         <a class="button is-danger player-drop" data-playerid="{{ p.id }}" data-playername="{{ p.name }}">X</a>
                     </td>
