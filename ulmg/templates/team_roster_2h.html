@@ -73,7 +73,7 @@
         </table>{% endif %}
         {% endif %}
 
-        <h1 class="title is-2">MLB roster ({{ mlb_roster|length }})</h1>
+        <h1 class="title is-2">MLB roster ({{ mlb_roster|length }}) of 30</h1>
         {% if mlb_roster %}{% regroup mlb_roster by position as position_players %}
         {% for position in position_players %}
         <h1 class="title is-3">{{ position.grouper }} ({{ position.list|length }})</h1>
@@ -105,14 +105,10 @@
                     <td data-value="{{ p.plate_appearances|default_if_none:"0" }}">{{ p.plate_appearances|default_if_none:"-" }}</td>
                     <td data-value="{{ p.relief_innings_pitched|default_if_none:"0" }}">{{ p.relief_innings_pitched|default_if_none:"-" }}</td>
                     <td data-value="{{ p.starts|default_if_none:"0" }}">{{ p.starts|default_if_none:"-" }}</td>
-                    {% if not p.is_1h_c and not p.is_1h_pos and not p.is_1h_p %}
-                        {% if not p.is_2h_draft %}
-                            <td style="text-align: right!important;"><a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="off_roster">>></a></td>
-                        {% else %}
-                            <td>DRAFTED</td>
-                        {% endif %}
+                    {% if not p.is_2h_draft %}
+                        <td style="text-align: right!important;"><a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="off_roster">>></a></td>
                     {% else %}
-                        <td>PROTECTED</td>
+                        <td>DRAFTED</td>
                     {% endif %}
                 </tr>
                 {% endfor %}
