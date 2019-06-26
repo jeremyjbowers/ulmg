@@ -73,7 +73,7 @@
         </table>{% endif %}
         {% endif %}
 
-        <h1 class="title is-2">MLB roster ({{ mlb_roster|length }}) of 30</h1>
+        <h1 class="title is-2">MLB roster ({{ mlb_roster|length }} / 30)</h1>
         {% if mlb_roster %}{% regroup mlb_roster by position as position_players %}
         {% for position in position_players %}
         <h1 class="title is-3">{{ position.grouper }} ({{ position.list|length }})</h1>
