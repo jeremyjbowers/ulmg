@@ -203,7 +203,7 @@
                     <td data-value="{{ p.starts|default_if_none:"0" }}">{{ p.starts|default_if_none:"-" }}</td>
                     <td style="text-align: right!important;">
                         {% if not p.is_2h_draft %}
-                        {% if num_mlb < 25 %}<a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="to_mlb">MLB</a>{% endif %}
+                        {% if num_mlb < 30 %}<a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="to_mlb">MLB</a>{% endif %}
                         <a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="to_aaa">AAA</a>
                         {% else %}
                         DRAFTED
@@ -297,7 +297,7 @@
                     <td data-value="{{ p.starts|default_if_none:"0" }}">{{ p.starts|default_if_none:"-" }}</td>
                     <td style="text-align: right!important;">
                         {% if not is_2h_draft %}
-                        {% if num_mlb < 25 and p.is_carded == True %}<a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="to_mlb">MLB</a>{% endif %}
+                        {% if num_mlb < 30 and p.is_carded == True %}<a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="to_mlb">MLB</a>{% endif %}
                         {% if p.is_carded == True %}<a class="button is-light player-action" data-playerid="{{ p.id }}" data-action="to_aaa">AAA</a>{% endif %}
                         {% else %}
                         DRAFTED
