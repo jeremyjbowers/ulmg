@@ -11,6 +11,9 @@
     table[data-sortable] th, table[data-sortable] td {
         padding: 5px;
     }
+    table tbody tr.minors td {
+        background-color: #f2f8eb;
+    }
 </style>
 
 <div class="tabs is-centered is-boxed is-large">
@@ -57,7 +60,7 @@
             </thead>
             <tbody>
             {% for p in position.list %}
-                <tr>
+                <tr{% if p.ls_is_mlb == False and p.ls_plate_appearances > 0 %} class="minors"{% endif %}>
                     <td data-value="{{ p.name }}" style="text-align: left!important;"><span class="has-text-weight-semibold" data-value="{{ p.name }}">
                         {{ p.name }}</a> <a href="/admin/ulmg/player/{{ p.id }}/change/">&#x270E;</span></td>
                     <td>
@@ -120,7 +123,7 @@
             </thead>
             <tbody>
             {% for p in pitchers %}
-                <tr>
+                <tr{% if p.ls_is_mlb == False and p.ls_ip > 0 %} class="minors"{% endif %}>
                     <td data-value="{{ p.name }}" style="text-align: left!important;"><span class="has-text-weight-semibold" data-value="{{ p.name }}">
                         {{ p.name }}</a> <a href="/admin/ulmg/player/{{ p.id }}/change/">&#x270E;
                     </td>
