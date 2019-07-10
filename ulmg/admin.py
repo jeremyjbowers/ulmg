@@ -30,6 +30,20 @@ class TradeReceiptInline(admin.TabularInline):
     extra = 2
 
 
+@admin.register(TradeReceipt)
+class TradeReceiptAdmin(admin.ModelAdmin):
+    """
+    trade = models.ForeignKey(Trade, on_delete=models.SET_NULL, null=True)
+    team = models.ForeignKey(Team, on_delete=models.SET_NULL, null=True)
+    players = models.ManyToManyField(Player, related_name="players", blank=True)
+    picks = models.ManyToManyField(DraftPick, related_name="picks", blank=True)
+    """
+    model = TradeReceipt
+    list_display = ['team', 'trade']
+    list_filter = ['team']
+    autocomplete_fields = ['players', 'picks', 'team']
+
+
 @admin.register(Trade)
 class TradeAdmin(admin.ModelAdmin):
     model = Trade

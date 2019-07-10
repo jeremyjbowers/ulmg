@@ -358,8 +358,8 @@ class DraftPick(BaseModel):
     draft_type = models.CharField(max_length=255, choices=DRAFT_TYPE_CHOICES, null=True)
     draft_round = models.IntegerField(null=True)
     year = models.CharField(max_length=4)
-    pick_number = models.IntegerField(null=True)
-    overall_pick_number = models.IntegerField(null=True)
+    pick_number = models.IntegerField(null=True, blank=True)
+    overall_pick_number = models.IntegerField(null=True, blank=True)
     OFFSEASON = "offseason"
     MIDSEASON = "midseason"
     SEASON_CHOICES = (
@@ -509,7 +509,9 @@ class TradeReceipt(BaseModel):
     picks = models.ManyToManyField(DraftPick, related_name="picks", blank=True)
 
     def __unicode__(self):
-        return "Trade %s: %s" % (self.trade.id, self.team)
+        if self.trade:
+            return "Trade %s: %s" % (self.trade.id, self.team)
+        return self.team.abbreviation
 
     def summary(self):
         return ", ".join(["%s %s" % (p.position, p.name) for p in self.players.all()] + ["%s" % (p.slug) for p in self.picks.all()])
