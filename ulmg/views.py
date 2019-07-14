@@ -99,10 +99,19 @@ def player_action(request, playerid, action):
 
 def index(request):
     context = utils.build_context(request)
-    context['rand_hit'] = models.Player.objects.filter(position__in=["IF", "OF", "IF/OF", "C"], is_owned=False, stats__isnull=False).order_by('?')[0:10]
-    context['rand_pitch'] = models.Player.objects.filter(is_owned=False, position="P", stats__isnull=False).order_by('?')[0:10]
-    context['carded_positions'] = models.Player.objects.filter(is_carded=True).order_by('position').values('position').annotate(Count('position'))
-    context['uncarded_positions'] = models.Player.objects.filter(is_carded=False).order_by('position').values('position').annotate(Count('position'))
+    context = utils.build_context(request)
+    context['hitters'] = models.Player.objects\
+        .filter(
+            Q(level="V", team__isnull=True, ls_plate_appearances__gte=1, ls_is_mlb=True)|\
+            Q(level__in=['A', 'B'], team__isnull=True, ls_plate_appearances__gte=1, ls_is_mlb=True))\
+    .exclude(position="P")\
+    .order_by('position', '-level_order', 'last_name', 'first_name')
+
+    context['pitchers'] = models.Player.objects\
+        .filter(
+            Q(level="V", team__isnull=True, ls_ip__gte=1, position="P", ls_is_mlb=True)|\
+            Q(level__in=['A', 'B'], team__isnull=True, ls_ip__gte=1, position="P", ls_is_mlb=True))\
+    .order_by('-level_order', 'last_name', 'first_name')
 
     return render(request, 'index.html', context)
 
