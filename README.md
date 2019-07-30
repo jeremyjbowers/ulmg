@@ -84,6 +84,19 @@ fab mgmt:reload
 WARNING: Do not run reload on the server if you have not pulled updated data recently. You might overwrite a change made on the server not represented on your local database, e.g., a recent trade, a correction to a player, or some other update.
 
 
+## Production stuff
+### Crons
+As root, of course.
+```
+crontab -l
+crontab -e
+/home/ubuntu/apps/ulmg/bin/*.sh
+/usr/local/bin/cron-backup.sh
+/usr/local/bin/cron-liveup.sh
+/var/log/backup.log
+/var/log/liveup.log
+```
+
 ## Coming Features
 ### Slack integration
 * [slack slash commands](https://api.slack.com/slash-commands)
