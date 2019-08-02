@@ -264,6 +264,15 @@
                     background-color: #fafafa;
                 }
             }
+            table td, table a, table th {
+                font-size: 13px;
+            }
+            table[data-sortable] th, table[data-sortable] td {
+                padding: 5px;
+            }
+            table tbody tr.minors td {
+                background-color: #f2f8eb;
+            }
         </style>
         {% block extrahead %}{% endblock %}
     </head>
