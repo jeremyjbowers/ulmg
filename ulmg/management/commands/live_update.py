@@ -55,7 +55,6 @@ class Command(BaseCommand):
 
                 if count == 1:
                     obj = p[0]
-                    print(obj)
 
                     if k == "bat":
                         obj.ls_hr = int(player['HR'])
