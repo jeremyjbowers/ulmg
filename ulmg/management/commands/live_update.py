@@ -135,7 +135,7 @@ class Command(BaseCommand):
                 obj.save()
 
             except Exception as e:
-                print("%s\n  name: %s\n  fg_id: %s" % (e, h[1].text.strip(), h[1].select('a')[0].attrs['href'].split('playerid=')[1].split('&')[0]))
+                print("h,%s,%s" % (h[1].text.strip(), h[1].select('a')[0].attrs['href'].split('playerid=')[1].split('&')[0]))
 
     def get_pitchers(self):
         url = f"https://www.fangraphs.com/leaders.aspx?pos=all&stats=pit&lg=all&qual=10&type=c,4,5,11,7,8,13,-1,36,37,40,43,44,48,51,-1,6,45,62,122,-1,59&season={self.season}&month=0&season1={self.season}&ind=0&team=0&rost=0&age=0&filter=&players=0&startdate=2019-01-01&enddate=2019-12-31&page=1_1100"
@@ -166,4 +166,4 @@ class Command(BaseCommand):
                 obj.save()
 
             except Exception as e:
-                print("%s\n  name: %s\n  fg_id: %s" % (e, h[1].text.strip(), h[1].select('a')[0].attrs['href'].split('playerid=')[1].split('&')[0]))
+                print("p,%s,%s" % (h[1].text.strip(), h[1].select('a')[0].attrs['href'].split('playerid=')[1].split('&')[0]))
