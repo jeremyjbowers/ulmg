@@ -1,43 +1,16 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1 class="title is-size-1">{{ player.position }} {{ player.name }}, {{ player.age }} <a class="is-size-3" href="/admin/ulmg/player/{{ player.id }}/change/">&#x270E;</a></h1>
-<div class="columns">
-    <div class="column">
-        <table class="table is-fullwidth">
-            <thead>
-                <tr>
-                    <th data-sortable-type="numeric">FG</th>
-                    <th data-sortable-type="numeric">BA</th>
-                    <th data-sortable-type="numeric">MLB</th>
-                    <th data-sortable-type="numeric">BP</th>
-                    <th data-sortable-type="numeric">KLaw</th>
-                    <th data-sortable-type="numeric">PL</th>
-                </tr>
-            </thead>
-            <tbody id="drag-and-drop">
-                <tr>
-                    <td data-value="{{ player.fg_prospect_rank|default_if_none:"999" }}">{{ player.fg_prospect_rank|default_if_none:"-" }}</td>
-                    <td data-value="{{ player.ba_prospect_rank|default_if_none:"999" }}">{{ player.ba_prospect_rank|default_if_none:"-" }}</td>
-                    <td data-value="{{ player.mlb_prospect_rank|default_if_none:"999" }}">{{ player.mlb_prospect_rank|default_if_none:"-" }}</td>
-                    <td data-value="{{ player.bp_prospect_rank|default_if_none:"999" }}">{{ player.bp_prospect_rank|default_if_none:"-" }}</td>
-                    <td data-value="{{ player.klaw_prospect_rank|default_if_none:"999" }}">{{ player.klaw_prospect_rank|default_if_none:"-" }}</td>
-                    <td data-value="{{ player.pl_prospect_rank|default_if_none:"999" }}">{{ player.pl_prospect_rank|default_if_none:"-" }}</td>
-                </tr>
-            </tbody>
-        </table>
+<article class="media">
+    <figure class="media-left"><p class="image"><img src="{{ player.bref_img }}"></p></figure>
+    <div class="media-content">
+        <div class="content">
+            <h1 class="is-title is-level-1">{{ player.name }}</h1>
+            <p>
+                <strong>Position</strong>: {{ player.position }}<br/>
+                <strong>Age</strong>: {{ player.age }}
+            </p>
+        </div>
     </div>
-</div>
-
-<h3 class="title is-size-3 is-uppercase has-text-weight-bold has-text-grey">Reports</h3>
-<div class="columns">
-        <div class="column is-three-fifths">
-                {% for report in player.scouting_reports %}
-            <h5 class="subtitle level-5" style="padding: 5px 0 0 0; margin: 15px 0 10px 0;"><strong>{{ report.organization }}</strong>, <a target="_blank" href="{{ report.url }}">{{ report.date }}</a></h5>
-            <div style="font-family: monospace; font-size: 14px; padding: 10px; background-color: #eee;">
-                {% if report.report %}{{ report.report|linebreaks }}{% else %}Present value: {{ report.pv }}<br/>Future value: {{ report.fv }}<br/>Risk: {{ report.risk_name }}{% endif %}
-            </div>
-        {% endfor %}
-    </div>
-</div>
+</article>
 {% endblock %}

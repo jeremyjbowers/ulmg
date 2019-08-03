@@ -112,6 +112,7 @@ class Player(BaseModel):
     # LINKS TO THE WEB
     ba_url = models.CharField(max_length=255, blank=True, null=True)
     bref_url = models.CharField(max_length=255, blank=True, null=True)
+    bref_img = models.CharField(max_length=255, blank=True, null=True)
     fg_url = models.CharField(max_length=255, blank=True, null=True)
     mlbam_url = models.CharField(max_length=255, blank=True, null=True)
 

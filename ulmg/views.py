@@ -158,24 +158,21 @@ def protect_team_detail(request, abbreviation):
     context['num_35_man'] = context['on_35_man'].count()
     return render(request, 'team_protect.html', context)
 
-def team_detail(request, abbreviation):
+def player_detail(request, playerid):
     context = utils.build_context(request)
-    context['team'] = get_object_or_404(models.Team, abbreviation__icontains=abbreviation)
-    team_players = models.Player.objects.filter(team=context['team'])
-    context['num_owned'] = team_players.count()
-    context['by_level'] = team_players.order_by('-level_order').values('level').annotate(Count('level'))
-    context['by_position'] = team_players.order_by('position').values('position').annotate(Count('position'))
-    context['players'] = team_players.order_by('position', '-level_order', 'last_name', 'first_name')
-    return render(request, 'team.html', context)
 
-def team_livestat_detail(request, abbreviation):
+    context['player'] = models.Player.objects.get(id=playerid)
+
+    return renter(request, "player_detail.html", context)
+
+def team_detail(request, abbreviation):
     context = utils.build_context(request)
     context['team'] = get_object_or_404(models.Team, abbreviation__icontains=abbreviation)
     team_players = models.Player.objects.filter(team=context['team'])
     context['num_owned'] = models.Player.objects.filter(team=context['team']).count()
     context['hitters'] = team_players.exclude(position="P").order_by('position', '-level_order', 'last_name', 'first_name')
     context['pitchers'] = team_players.filter(position="P").order_by('-level_order', 'last_name', 'first_name')
-    return render(request, 'team_livestat.html', context)
+    return render(request, 'team.html', context)
 
 def unprotected(request):
     context = utils.build_context(request)
@@ -259,12 +256,6 @@ def team_other(request, abbreviation):
     context['trades'] = models.TradeReceipt.objects.filter(team=team, trade__isnull=False).order_by('-trade__date')
     context['picks'] = models.DraftPick.objects.filter(team=team).order_by('-year', 'season', 'draft_type', 'draft_round', 'pick_number')
     return render(request, 'team_other.html', context)
-
-def team_simple(request, abbreviation):
-    context = utils.build_context(request)
-    context['team'] = get_object_or_404(models.Team, abbreviation__icontains=abbreviation)
-    context['players'] = models.Player.objects.filter(team=context['team']).order_by('last_name', 'first_name').values('last_name', 'first_name', 'level', 'position', 'id')
-    return render(request, 'team_simple.html', context)
 
 def trades(request):
     context = utils.build_context(request)
