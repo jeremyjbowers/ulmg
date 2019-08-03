@@ -105,7 +105,7 @@
     
     <div class="columns">
         <div class="column">
-            <h1 id="pos-P" class="title is-3">P ({{ pitchers|length }}) <a href="#nav">&uparrow;</a></h1>
+            {% if pitchers %}<h1 id="pos-P" class="title is-3">P ({{ pitchers|length }}) <a href="#nav">&uparrow;</a></h1>
             <table class="table is-fullwidth" data-sortable>
                 <thead>
                     <tr>
@@ -162,9 +162,7 @@
                     </tr>
                 {% endfor %}
                 </tbody>
-            </table>
+            </table>{% endif %}
         </div>
     </div>
-
-{% if players.paginator.count > 99 %}{% include "includes/pagination.html" %}{% endif %}
 {% endblock %}
