@@ -72,7 +72,7 @@
                 {% for p in position.list %}
                     <tr{% if p.ls_is_mlb == False and p.ls_plate_appearances > 0 %} class="minors"{% endif %}>
                         <td data-value="{{ p.name }}" style="text-align: left!important;"><span class="has-text-weight-semibold" data-value="{{ p.name }}">
-                            {{ p.name }}</a> <a href="/admin/ulmg/player/{{ p.id }}/change/">&#x270E;</span></td>
+                            <a href="/players/{{ p.id }}/" target="_blank">{{ p.name }}</a> <a href="/admin/ulmg/player/{{ p.id }}/change/">&#x270E;</span></td>
                         <td>
                             {% if p.bref_url %}<a class="has-text-weight-light" target="_blank" href="{{ p.bref_url }}">BBR &Gt;</a>{% endif %}
                             {% if p.fg_url %}<a class="has-text-weight-light" target="_blank" href="{{ p.fg_url }}">FG &Gt;</a>{% endif %}
@@ -135,7 +135,7 @@
                 {% for p in pitchers %}
                     <tr{% if p.ls_is_mlb == False and p.ls_ip > 0 %} class="minors"{% endif %}>
                         <td data-value="{{ p.name }}" style="text-align: left!important;"><span class="has-text-weight-semibold" data-value="{{ p.name }}">
-                            {{ p.name }}</a> <a href="/admin/ulmg/player/{{ p.id }}/change/">&#x270E;
+                            <a href="/players/{{ p.id }}/" target="_blank">{{ p.name }}</a> <a href="/admin/ulmg/player/{{ p.id }}/change/">&#x270E;
                         </td>
                         <td>
                             {% if p.bref_url %}<a class="has-text-weight-light" target="_blank" href="{{ p.bref_url }}">BBR &Gt;</a>{% endif %}
