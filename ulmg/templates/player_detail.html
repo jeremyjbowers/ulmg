@@ -2,7 +2,7 @@
 
 {% block content %}
 <article class="media">
-    <figure class="media-left"><p class="image"><img src="{{ player.bref_img }}"></p></figure>
+    {% if player.bref_img %}<figure class="media-left"><p class="image"><img src="{{ player.bref_img }}"></p></figure>{% endif %}
     <div class="media-content">
         <div class="content">
             <h1 class="is-title is-level-1">{{ player.name }}</h1>
