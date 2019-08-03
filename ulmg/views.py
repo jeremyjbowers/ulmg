@@ -477,7 +477,7 @@ def search(request):
                 writer.writerow(p)
             return response
 
-    query = query.order_by('position')
+    query = query.order_by('position', '-level_order', 'last_name')
 
     context['hitters'] = query.exclude(position="P")
     context['pitchers'] = query.filter(position="P")
