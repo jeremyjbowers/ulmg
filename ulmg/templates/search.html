@@ -77,7 +77,7 @@
                             {% if p.bref_url %}<a class="has-text-weight-light" target="_blank" href="{{ p.bref_url }}">BBR &Gt;</a>{% endif %}
                             {% if p.fg_url %}<a class="has-text-weight-light" target="_blank" href="{{ p.fg_url }}">FG &Gt;</a>{% endif %}
                         </td>
-                        <td data-value="{{ p.team|default_if_none:"" }}">{% if p.team %}<a href="/teams/{{ p.team.abbreviation }}/">{% endif %}{{ p.team|default_if_none:"-" }}{% if p.team %</a>{% endif %}</td>
+                        <td data-value="{{ p.team|default_if_none:"" }}">{% if p.team %}<a href="/teams/{{ p.team.abbreviation }}/">{% endif %}{{ p.team|default_if_none:"-" }}{% if p.team %}</a>{% endif %}</td>
                         <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
                         <td data-value="{{ p.level|default_if_none:"Z" }}<">{{ p.level|default_if_none:"" }}</td>
                         <td data-value="{% if p.ls_is_mlb %}1{% else %}0{% endif %}">{% if p.ls_is_mlb %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td>
@@ -141,7 +141,7 @@
                             {% if p.bref_url %}<a class="has-text-weight-light" target="_blank" href="{{ p.bref_url }}">BBR &Gt;</a>{% endif %}
                             {% if p.fg_url %}<a class="has-text-weight-light" target="_blank" href="{{ p.fg_url }}">FG &Gt;</a>{% endif %}
                         </td>
-                        <td data-value="{{ p.team|default_if_none:"" }}">{% if p.team %}<a href="/teams/{{ p.team.abbreviation }}/">{% endif %}{{ p.team|default_if_none:"-" }}{% if p.team %</a>{% endif %}</td>
+                        <td data-value="{{ p.team|default_if_none:"" }}">{% if p.team %}<a href="/teams/{{ p.team.abbreviation }}/">{% endif %}{{ p.team|default_if_none:"-" }}{% if p.team %}</a>{% endif %}</td>
                         <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
                         <td data-value="{{ p.level|default_if_none:"Z" }}<">{{ p.level|default_if_none:"" }}</td>
                         <td data-value="{% if p.ls_is_mlb %}1{% else %}0{% endif %}">{% if p.ls_is_mlb %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td>
