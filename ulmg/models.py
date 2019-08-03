@@ -228,7 +228,7 @@ class Player(BaseModel):
                 else:
                     return "%s IP" % self.stats['ip']
             else:
-                if self.stats['pa']:
+                if self.stats.get('pa', None):
                     if int(self.stats['pa']) > 550:
                         return "Unlimited"
                     else:
