@@ -17,7 +17,7 @@ from ulmg import models
 class Command(BaseCommand):
 
     def handle(self, *args, **options):
-        players = models.Player.objects.filter(bref_url__isnull=False)
+        players = models.Player.objects.filter(bref_url__isnull=False, bref_img__isnull=True)
         for p in players:
             r = requests.get(p.bref_url)
             soup = BeautifulSoup(r.content, 'lxml')

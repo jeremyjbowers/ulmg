@@ -477,8 +477,8 @@ def search(request):
                 writer.writerow(p)
             return response
 
-    paginator = Paginator(query, 1000)
-    page = request.GET.get('page')
+    query = query.order_by('position')
 
-    context['players'] = paginator.get_page(page)
+    context['hitters'] = query.exclude(position="P")
+    context['pitchers'] = query.filter(position="P")
     return render(request, "search.html", context)
