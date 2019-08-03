@@ -8,8 +8,7 @@
 
 <div class="columns">
         <div class="column">
-            {% regroup hitters by position as position_players %}
-
+            {% if hitters %}{% regroup hitters by position as position_players %}
 
             <nav id="nav" class="level">
                 {% for position in position_players %}
@@ -29,6 +28,18 @@
                 </div>
                 {% endif %}
             </nav>
+            {% elif pitchers %}
+            <nav id="nav" class="level">
+                <div class="level-item has-text-centered">
+                    <div>
+                        <p class="heading">{{ pitchers|length }}</p>
+                        <p class="title"><a href="#pos-P">P</a></p>
+                    </div>
+                </div>
+            </nav>
+            {% else %}
+            <p>Could not find any players that matched your search.</p>
+            {% endif %}
 
             {% for position in position_players %}
             <h1 id="pos-{{ position.grouper }}" class="title is-3">{{ position.grouper }} ({{ position.list|length }}) <a href="#nav">&uparrow;</a></h1>
