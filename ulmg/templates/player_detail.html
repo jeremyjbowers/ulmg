@@ -1,16 +1,125 @@
 {% extends "base.html" %}
 
+{% load ulmg_tags %}
+
 {% block content %}
-<article class="media">
-    {% if player.bref_img %}<figure class="media-left"><p class="image"><img src="{{ player.bref_img }}"></p></figure>{% endif %}
-    <div class="media-content">
-        <div class="content">
-            <h1 class="is-title is-level-1">{{ player.name }}</h1>
-            <p>
-                <strong>Position</strong>: {{ player.position }}<br/>
-                <strong>Age</strong>: {{ player.age }}
-            </p>
+<div class="columns">
+    <div class="column is-three-quarters">
+        <div class="box">
+            <article class="media">
+                {% if player.bref_img %}<div class="media-left"><figure class="image"><img src="{{ player.bref_img }}" alt="Image"></figure></div>{% endif %}
+                <div class="media-content">
+                    <div class="content">
+                        <h3>{% if player.team %}<a href="/teams/{{ player.team.abbreviation|lower }}/">{{ player.team }}</a>{% else %}Unowned{% endif %}</h3>
+                        <h1 class="is-title is-level-1">{{ player.name }}, {{ player.position }}</h1>
+                        <p>
+                            <strong><a href="/admin/ulmg/player/{{ player.id }}/change/">Edit player &#x270E;</a></strong>
+                            {% if player.bref_url %}<br/><a class="has-text-weight-light" target="_blank" href="{{ player.bref_url }}">Baseball Reference &Gt;</a>{% endif %}
+                            {% if player.fg_url %}<br/><a class="has-text-weight-light" target="_blank" href="{{ player.fg_url }}">Fangraphs &Gt;</a>{% endif %}
+                        </p>
+                    </div>
+                </div>
+            </article>
+            <article class="media">
+                <div class="media-content">
+                    <div class="content">
+                        {% if player.pos != "P" %}
+                        <table class="table is-fullwidth" data-sortable>
+                            <thead>
+                                <tr>
+                                    <th data-sortable-type="numeric">Age</th>
+                                    <th data-sortable-type="alpha">Lvl</th>
+                                    <th data-sortable-type="numeric">MLB?</th>
+                                    <th data-sortable-type="numeric">Card?</th>
+                                    <th data-sortable-type="numeric">PA</th>
+                                    <th data-sortable-type="numeric">WRC+</th>
+                                    <th data-sortable-type="numeric">wOBA</th>
+                                    <th data-sortable-type="numeric">xAVG</th>
+                                    <th data-sortable-type="numeric">xwOBA</th>
+                                    <th data-sortable-type="numeric">xSLG</th>
+                                    <th data-sortable-type="numeric">ISO</th>
+                                    <th data-sortable-type="numeric">K%</th>
+                                    <th data-sortable-type="numeric">BB%</th>
+                                    <th data-sortable-type="numeric">BABIP</th>
+                                    <th data-sortable-type="numeric">AVG</th>
+                                    <th data-sortable-type="numeric">OBP</th>
+                                    <th data-sortable-type="numeric">SLG</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr{% if player.ls_is_mlb == False and player.ls_plate_appearances > 0 %} class="minors"{% endif %}>
+                                    <td data-value="{{ player.age|default_if_none:"-999" }}">{{ player.age|default_if_none:"-" }}</td>
+                                    <td data-value="{{ player.level|default_if_none:"Z" }}<">{{ player.level|default_if_none:"" }}</td>
+                                    <td data-value="{% if player.ls_is_mlb %}1{% else %}0{% endif %}">{% if player.ls_is_mlb %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td>
+                                    <td data-value="{% if player.is_carded %}1{% else %}0{% endif %}">{% if player.is_carded %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td>
+                                    <td data-value="{{ player.ls_plate_appearances|default_if_none:"-999" }}">{{ player.ls_plate_appearances|default_if_none:"-" }}</td>
+                                    <td data-value="{{ player.ls_wrc_plus|default_if_none:"-999" }}">{{ player.ls_wrc_plus|default_if_none:"-" }}</td>
+                                    <td data-value="{{ player.ls_woba|default_if_none:"-999" }}">{{ player.ls_woba|kill_leading_zero|default_if_none:"-" }}</td>
+                                    <td data-value="{{ player.ls_xavg|default_if_none:"-999" }}">{{ player.ls_xavg|kill_leading_zero|default_if_none:"-" }}</td>
+                                    <td data-value="{{ player.ls_xwoba|default_if_none:"-999" }}">{{ player.ls_xwoba|kill_leading_zero|default_if_none:"-" }}</td>
+                                    <td data-value="{{ player.ls_xslg|default_if_none:"-999" }}">{{ player.ls_xslg|kill_leading_zero|default_if_none:"-" }}</td>
+                                    <td data-value="{{ player.ls_iso|default_if_none:"-999" }}">{{ player.ls_iso|kill_leading_zero|default_if_none:"-" }}</td>
+                                    <td data-value="{{ player.ls_k_pct|default_if_none:"-999" }}">{{ player.ls_k_pct|default_if_none:"-" }}</td>
+                                    <td data-value="{{ player.ls_bb_pct|default_if_none:"-999" }}">{{ player.ls_bb_pct|default_if_none:"-" }}</td>
+                                    <td data-value="{{ player.ls_babip|default_if_none:"-999" }}">{{ player.ls_babip|kill_leading_zero|default_if_none:"-" }}</td>
+                                    <td data-value="{{ player.ls_avg|default_if_none:"-999" }}">{{ player.ls_avg|kill_leading_zero|default_if_none:"-" }}</td>
+                                    <td data-value="{{ player.ls_obp|default_if_none:"-999" }}">{{ player.ls_obp|kill_leading_zero|default_if_none:"-" }}</td>
+                                    <td data-value="{{ player.ls_slg|default_if_none:"-999" }}">{{ player.ls_slg|kill_leading_zero|default_if_none:"-" }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        {% else %}
+
+                        <table class="table is-fullwidth" data-sortable>
+                            <thead>
+                                <tr>
+                                    <th data-sortable-type="numeric">Age</th>
+                                    <th data-sortable-type="alpha">Lvl</th>
+                                    <th data-sortable-type="numeric">MLB?</th>
+                                    <th data-sortable-type="numeric">Card?</th>
+                                    <th data-sortable-type="numeric">G</th>
+                                    <th data-sortable-type="numeric">GS</th>
+                                    <th data-sortable-type="numeric">IP</th>
+                                    <th data-sortable-type="numeric">K/9</th>
+                                    <th data-sortable-type="numeric">BB/9</th>
+                                    <th data-sortable-type="numeric">HR/9</th>
+                                    <th data-sortable-type="numeric">LOB%</th>
+                                    <th data-sortable-type="numeric">GB%</th>
+                                    <th data-sortable-type="numeric">HR/FB</th>
+                                    <th data-sortable-type="numeric">ERA</th>
+                                    <th data-sortable-type="numeric">FIP</th>
+                                    <th data-sortable-type="numeric">xFIP</th>
+                                    <th data-sortable-type="numeric">SIERA</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr{% if player.ls_is_mlb == False and player.ls_ip > 0 %} class="minors"{% endif %}>
+                                    <td data-value="{{ player.age|default_if_none:"-999" }}">{{ player.age|default_if_none:"-" }}</td>
+                                    <td data-value="{{ player.level|default_if_none:"Z" }}<">{{ player.level|default_if_none:"" }}</td>
+                                    <td data-value="{% if player.ls_is_mlb %}1{% else %}0{% endif %}">{% if player.ls_is_mlb %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td>
+                                    <td data-value="{% if player.is_carded %}1{% else %}0{% endif %}">{% if player.is_carded %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td>
+                                    <td data-value="{{ player.ls_g|default_if_none:"-999" }}">{{ player.ls_g|default_if_none:"-" }}</td>
+                                    <td data-value="{{ player.ls_gs|default_if_none:"-999" }}">{{ player.ls_gs|default_if_none:"-" }}</td>
+                                    <td data-value="{{ player.ls_ip|default_if_none:"-999" }}">{{ player.ls_ip|default_if_none:"-" }}</td>
+                                    <td data-value="{{ player.ls_k_9|default_if_none:"-999" }}">{{ player.ls_k_9|default_if_none:"-" }}</td>
+                                    <td data-value="{{ player.ls_bb_9|default_if_none:"999" }}">{{ player.ls_bb_9|default_if_none:"-" }}</td>
+                                    <td data-value="{{ player.ls_hr_9|default_if_none:"999" }}">{{ player.ls_hr_9|default_if_none:"-" }}</td>
+                                    <td data-value="{{ player.ls_lob_pct|default_if_none:"999" }}">{{ player.ls_lob_pct|default_if_none:"-" }}</td>
+                                    <td data-value="{{ player.ls_gb_pct|default_if_none:"999" }}">{{ player.ls_gb_pct|default_if_none:"-" }}</td>
+                                    <td data-value="{{ player.ls_hr_fb|default_if_none:"999" }}">{{ player.ls_hr_fb|default_if_none:"-" }}</td>
+                                    <td data-value="{{ player.ls_era|default_if_none:"999" }}">{{ player.ls_era|default_if_none:"-" }}</td>
+                                    <td data-value="{{ player.ls_fip|default_if_none:"999" }}">{{ player.ls_fip|default_if_none:"-" }}</td>
+                                    <td data-value="{{ player.ls_xfip|default_if_none:"999" }}">{{ player.ls_xfip|default_if_none:"-" }}</td>
+                                    <td data-value="{{ player.ls_siera|default_if_none:"999" }}">{{ player.ls_siera|default_if_none:"-" }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        {% endif %}
+                    </div>
+                </div>
+            </article>
         </div>
     </div>
-</article>
+</div>
 {% endblock %}
