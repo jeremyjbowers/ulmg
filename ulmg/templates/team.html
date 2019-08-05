@@ -23,7 +23,6 @@
                     <th data-sortable-type="alpha">Name</th>
                     <th></th>
                     <th data-sortable-type="numeric">Age</th>
-                    <th data-sortable-type="alpha">Pos</th>
                     <th data-sortable-type="alpha">Lvl</th>
                     <th data-sortable-type="numeric">Card?</th>
 
@@ -44,7 +43,6 @@
                         {% if p.fg_url %}<a class="has-text-weight-light" target="_blank" href="{{ p.fg_url }}">FG &Gt;</a>{% endif %}
                     </td>
                     <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
-                    <td data-value="{{ p.position }}">{{ p.position }}</td>
                     <td data-value="{{ p.level|default_if_none:"Z" }}<">{{ p.level|default_if_none:"" }}</td>
                     <td data-value="{% if p.is_carded %}1{% else %}0{% endif %}">{% if p.is_carded %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td>
 
@@ -79,9 +77,10 @@
             {% for p in pitchers %}
                 <tr{% if p.ls_is_mlb == False and p.ls_ip > 0 %} class="minors"{% endif %}>
                     <td data-value="{{ p.name }}" style="text-align: left!important;"><span class="has-text-weight-semibold" data-value="{{ p.name }}">
-                            <a href="/players/{{ p.id }}/" target="_blank">{{ p.name }}</a> <a href="/admin/ulmg/player/{{ p.id }}/change/">&#x270E;
+                            <a href="/players/{{ p.id }}/" target="_blank">{{ p.name }}</a></span>
                     </td>
                     <td>
+                        <a href="/admin/ulmg/player/{{ p.id }}/change/">&#x270E; &Gt;</a>
                         {% if p.bref_url %}<a class="has-text-weight-light" target="_blank" href="{{ p.bref_url }}">BBR &Gt;</a>{% endif %}
                         {% if p.fg_url %}<a class="has-text-weight-light" target="_blank" href="{{ p.fg_url }}">FG &Gt;</a>{% endif %}
                     </td>
