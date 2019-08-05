@@ -7,10 +7,8 @@
 
 <div class="tabs is-centered is-boxed is-large">
     <ul>
-        <li class="is-active"><a style="color: red; font-weight: bold;" href="/teams/{{ team.abbreviation|lower }}/">Live!</a></li>
+        <li class="is-active"><a href="#">Roster</a></li>
         <li><a href="/teams/{{ team.abbreviation|lower }}/other/">Trades & picks</a></li>
-        {% if protect_tab %}<li><a href="/teams/{{ team.abbreviation|lower }}/protect/">Protect players</a></li>{% endif %}
-        {% if roster_tab %}<li><a href="/teams/{{ team.abbreviation|lower }}/roster/">Roster players</a></li>{% endif %}
     </ul>
 </div>
 
@@ -19,7 +17,7 @@
         {% regroup hitters by position as position_players %}
         {% for position in position_players %}
         <h1 class="title is-3">{{ position.grouper }} ({{ position.list|length }})</h1>
-        <table class="table is-fullwidth" data-sortable>
+        <table class="table is-fullwidth is-hoverable" data-sortable>
             <thead>
                 <tr>
                     <th data-sortable-type="alpha">Name</th>
@@ -28,30 +26,20 @@
                     <th data-sortable-type="alpha">Pos</th>
                     <th data-sortable-type="alpha">Lvl</th>
                     <th data-sortable-type="numeric">Card?</th>
-                    <th data-sortable-type="numeric">PA</th>
-                    <th data-sortable-type="numeric">AVG</th>
-                    <th data-sortable-type="numeric">OBP</th>
-                    <th data-sortable-type="numeric">SLG</th>
-                    <th data-sortable-type="numeric">BABIP</th>
-                    <th data-sortable-type="numeric">WRC+</th>
-                    <th data-sortable-type="numeric">ISO</th>
-                    <th data-sortable-type="numeric">K%</th>
-                    <th data-sortable-type="numeric">BB%</th>
-                    <th data-sortable-type="numeric">wOBA</th>
-                    <th data-sortable-type="numeric">xAVG</th>
-                    <th data-sortable-type="numeric">Diff</th>
-                    <th data-sortable-type="numeric">xSLG</th>
-                    <th data-sortable-type="numeric">Diff</th>
-                    <th data-sortable-type="numeric">xwOBA</th>
-                    <th data-sortable-type="numeric">Diff</th>
+
+                    {% include "includes/hitter_stat_headers.html" %}
+
+                    {% include "includes/player_protect_headers.html" %}
                 </tr>
             </thead>
             <tbody>
             {% for p in position.list %}
                 <tr{% if p.ls_is_mlb == False and p.ls_plate_appearances > 0 %} class="minors"{% endif %}>
-                    <td data-value="{{ p.name }}" style="text-align: left!important;"><span class="has-text-weight-semibold" data-value="{{ p.name }}">
-                        <a href="/players/{{ p.id }}/" target="_blank">{{ p.name }}</a> <a href="/admin/ulmg/player/{{ p.id }}/change/">&#x270E;</span></td>
+                    <td data-value="{{ p.name }}" style="text-align: left!important;">
+                        <a class="has-text-weight-semibold" href="/players/{{ p.id }}/" target="_blank">{{ p.name }}</a>
+                    </td>
                     <td>
+                        <a href="/admin/ulmg/player/{{ p.id }}/change/">&#x270E; &Gt;</a>
                         {% if p.bref_url %}<a class="has-text-weight-light" target="_blank" href="{{ p.bref_url }}">BBR &Gt;</a>{% endif %}
                         {% if p.fg_url %}<a class="has-text-weight-light" target="_blank" href="{{ p.fg_url }}">FG &Gt;</a>{% endif %}
                     </td>
@@ -59,22 +47,10 @@
                     <td data-value="{{ p.position }}">{{ p.position }}</td>
                     <td data-value="{{ p.level|default_if_none:"Z" }}<">{{ p.level|default_if_none:"" }}</td>
                     <td data-value="{% if p.is_carded %}1{% else %}0{% endif %}">{% if p.is_carded %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td>
-                    <td data-value="{{ p.ls_plate_appearances|default_if_none:"-999" }}">{{ p.ls_plate_appearances|default_if_none:"-" }}</td>
-                    <td data-value="{{ p.ls_avg|default_if_none:"-999" }}">{{ p.ls_avg|kill_leading_zero|default_if_none:"-" }}</td>
-                    <td data-value="{{ p.ls_obp|default_if_none:"-999" }}">{{ p.ls_obp|kill_leading_zero|default_if_none:"-" }}</td>
-                    <td data-value="{{ p.ls_slg|default_if_none:"-999" }}">{{ p.ls_slg|kill_leading_zero|default_if_none:"-" }}</td>
-                    <td data-value="{{ p.ls_babip|default_if_none:"-999" }}">{{ p.ls_babip|kill_leading_zero|default_if_none:"-" }}</td>
-                    <td data-value="{{ p.ls_wrc_plus|default_if_none:"-999" }}">{{ p.ls_wrc_plus|default_if_none:"-" }}</td>
-                    <td data-value="{{ p.ls_iso|default_if_none:"-999" }}">{{ p.ls_iso|kill_leading_zero|default_if_none:"-" }}</td>
-                    <td data-value="{{ p.ls_k_pct|default_if_none:"-999" }}">{{ p.ls_k_pct|default_if_none:"-" }}</td>
-                    <td data-value="{{ p.ls_bb_pct|default_if_none:"-999" }}">{{ p.ls_bb_pct|default_if_none:"-" }}</td>
-                    <td data-value="{{ p.ls_woba|default_if_none:"-999" }}">{{ p.ls_woba|kill_leading_zero|default_if_none:"-" }}</td>
-                    <td data-value="{{ p.ls_xavg|default_if_none:"-999" }}">{{ p.ls_xavg|kill_leading_zero|default_if_none:"-" }}</td>
-                    <td data-value="{{ p.ls_xavg_diff|default_if_none:"-999" }}">{{ p.ls_xavg_diff|kill_leading_zero|default_if_none:"-" }}</td>
-                    <td data-value="{{ p.ls_xslg|default_if_none:"-999" }}">{{ p.ls_xslg|kill_leading_zero|default_if_none:"-" }}</td>
-                    <td data-value="{{ p.ls_xslg_diff|default_if_none:"-999" }}">{{ p.ls_xslg_diff|kill_leading_zero|default_if_none:"-" }}</td>
-                    <td data-value="{{ p.ls_xwoba|default_if_none:"-999" }}">{{ p.ls_xwoba|kill_leading_zero|default_if_none:"-" }}</td>
-                    <td data-value="{{ p.ls_xwoba_diff|default_if_none:"-999" }}">{{ p.ls_xwoba_diff|kill_leading_zero|default_if_none:"-" }}</td>
+
+                    {% include "includes/hitter_stat_cells.html" %}
+
+                    {% include "includes/player_protect_actions.html" %}
                 </tr>
             {% endfor %}
             </tbody>
@@ -94,19 +70,9 @@
                     <th data-sortable-type="numeric">Age</th>
                     <th data-sortable-type="alpha">Lvl</th>
                     <th data-sortable-type="numeric">Card?</th>
-                    <th data-sortable-type="numeric">G</th>
-                    <th data-sortable-type="numeric">GS</th>
-                    <th data-sortable-type="numeric">IP</th>
-                    <th data-sortable-type="numeric">K/9</th>
-                    <th data-sortable-type="numeric">BB/9</th>
-                    <th data-sortable-type="numeric">HR/9</th>
-                    <th data-sortable-type="numeric">LOB%</th>
-                    <th data-sortable-type="numeric">GB%</th>
-                    <th data-sortable-type="numeric">HR/FB</th>
-                    <th data-sortable-type="numeric">ERA</th>
-                    <th data-sortable-type="numeric">FIP</th>
-                    <th data-sortable-type="numeric">xFIP</th>
-                    <th data-sortable-type="numeric">SIERA</th>
+
+                    {% include "includes/pitcher_stat_headers.html" %}
+                    {% include "includes/player_protect_headers.html" %}
                 </tr>
             </thead>
             <tbody>
@@ -122,23 +88,69 @@
                     <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
                     <td data-value="{{ p.level|default_if_none:"Z" }}<">{{ p.level|default_if_none:"" }}</td>
                     <td data-value="{% if p.is_carded %}1{% else %}0{% endif %}">{% if p.is_carded %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td>
-                    <td data-value="{{ p.ls_g|default_if_none:"-999" }}">{{ p.ls_g|default_if_none:"-" }}</td>
-                    <td data-value="{{ p.ls_gs|default_if_none:"-999" }}">{{ p.ls_gs|default_if_none:"-" }}</td>
-                    <td data-value="{{ p.ls_ip|default_if_none:"-999" }}">{{ p.ls_ip|default_if_none:"-" }}</td>
-                    <td data-value="{{ p.ls_k_9|default_if_none:"-999" }}">{{ p.ls_k_9|default_if_none:"-" }}</td>
-                    <td data-value="{{ p.ls_bb_9|default_if_none:"999" }}">{{ p.ls_bb_9|default_if_none:"-" }}</td>
-                    <td data-value="{{ p.ls_hr_9|default_if_none:"999" }}">{{ p.ls_hr_9|default_if_none:"-" }}</td>
-                    <td data-value="{{ p.ls_lob_pct|default_if_none:"999" }}">{{ p.ls_lob_pct|default_if_none:"-" }}</td>
-                    <td data-value="{{ p.ls_gb_pct|default_if_none:"999" }}">{{ p.ls_gb_pct|default_if_none:"-" }}</td>
-                    <td data-value="{{ p.ls_hr_fb|default_if_none:"999" }}">{{ p.ls_hr_fb|default_if_none:"-" }}</td>
-                    <td data-value="{{ p.ls_era|default_if_none:"999" }}">{{ p.ls_era|default_if_none:"-" }}</td>
-                    <td data-value="{{ p.ls_fip|default_if_none:"999" }}">{{ p.ls_fip|default_if_none:"-" }}</td>
-                    <td data-value="{{ p.ls_xfip|default_if_none:"999" }}">{{ p.ls_xfip|default_if_none:"-" }}</td>
-                    <td data-value="{{ p.ls_siera|default_if_none:"999" }}">{{ p.ls_siera|default_if_none:"-" }}</td>
+
+                    {% include "includes/pitcher_stat_cells.html" %}
+
+                    {% include "includes/player_protect_actions.html" %}
+
                 </tr>
             {% endfor %}
             </tbody>
         </table>
     </div>
 </div>
+{% if protect_tab or roster_tab %}
+<div class="modal" id="player-drop-modal">
+    <div class="modal-background"></div>
+    <div class="modal-content"></div>
+    <button class="modal-close is-large" aria-label="close"></button>
+</div>
+{% endif %}
+{% endblock %}
+        
+{% block extrascript %}
+{% if protect_tab or roster_tab%}<script type="text/javascript">
+$(function(){
+    var player_click_handler = function(el) {
+
+        el.preventDefault();
+        $el = $(this);
+
+        var playerid = $el.attr('data-playerid')
+        var action = $el.attr('data-action')
+
+        console.log(playerid, action);
+
+        $.ajax({
+            type: "POST",
+            url: '/api/v1/player/' + playerid + '/' +  action + '/',
+            success: function(response){
+                window.location.reload();
+            }
+        });
+    }
+
+    var player_drop_handler = function(el) {
+        el.preventDefault();
+        $el = $(this);
+
+        var playerid = $el.attr('data-playerid');
+        var playername = $el.attr('data-playername');
+        $('#player-drop-modal div.modal-content').html('<div class="box"><div class="content"><p class="subtitle">Are you sure you want to <strong>permanently drop ' + playername + '?</strong></p><p><a class="button is-danger is-large player-action" data-action="drop" data-playerid=' + playerid + '>Drop ' + playername + '</a>&nbsp;&nbsp;&nbsp;<a class="cancel button is-info is-large">Cancel</a></p></div></div>');
+        $('#player-drop-modal').addClass('is-active');
+    }
+
+    var modal_close_handler = function(el){
+        el.preventDefault();
+        $el = $(this);
+
+        $('#player-drop-modal').removeClass('is-active');
+        $('#player-drop-modal div.modal-content').html('');
+    }
+
+    $('body').on('click', 'a.player-action', player_click_handler);
+    $('body').on('click', 'a.player-drop', player_drop_handler);
+    $('body').on('click', '.modal-close, .modal-background, a.cancel', modal_close_handler);
+});
+</script>{% endif %}
 {% endblock %}

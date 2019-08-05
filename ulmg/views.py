@@ -121,42 +121,42 @@ def player(request, playerid):
 
     return render(request, 'player_detail.html', context)    
 
-def roster_team_detail(request, abbreviation):
-    context = utils.build_context(request)
-    context['team'] = get_object_or_404(models.Team, abbreviation__icontains=abbreviation)
-    team_players = models.Player.objects.filter(team=context['team'])
-    context['num_owned'] = team_players.count()
-    if settings.TEAM_SEASON_HALF == "1h":
-        context['unrostered'] = team_players.filter(is_mlb_roster=False, is_aaa_roster=False, is_carded=True, is_1h_c=False, is_1h_p=False, is_1h_pos=False, is_reserve=False).order_by('position', '-level_order', 'last_name')
-        context['mlb_roster'] = team_players.filter(is_mlb_roster=True, is_aaa_roster=False, is_1h_c=False, is_1h_p=False, is_1h_pos=False, is_reserve=False).order_by('position', '-level_order', 'last_name')
-        context['cuttable_b'] = team_players.filter(level="B", is_mlb_roster=False, is_aaa_roster=False).order_by('position', 'last_name')
-        context['uncarded_vets'] = team_players.filter(is_mlb_roster=False, is_aaa_roster=False, is_carded=False, is_1h_c=False, is_1h_p=False, is_1h_pos=False, is_reserve=False, level__in=["A", "V"]).order_by('position', '-level_order', 'last_name')
-        context['protected_veterans'] = team_players.filter(Q(is_1h_c=True)|Q(is_1h_p=True)|Q(is_1h_pos=True)|Q(is_reserve=True)).order_by('position', '-level_order', 'last_name')
-        context['aaa_roster'] = team_players.filter(is_aaa_roster=True, is_1h_c=False, is_1h_p=False, is_1h_pos=False, is_reserve=False).order_by('position', '-level_order', 'last_name')
-    else:
-        context['unrostered'] = team_players.filter(is_mlb_roster=False, is_aaa_roster=False, is_carded=True, is_reserve=False).order_by('position', '-level_order', 'last_name')
-        context['mlb_roster'] = team_players.filter(is_mlb_roster=True, is_aaa_roster=False, is_reserve=False).order_by('position', '-level_order', 'last_name')
-        context['cuttable_b'] = team_players.filter(level="B", is_mlb_roster=False, is_aaa_roster=False).order_by('position', 'last_name')
-        context['uncarded_vets'] = team_players.filter(is_carded=False, is_mlb_roster=False, is_aaa_roster=False, is_reserve=False, level__in=["A", "V"]).order_by('position', '-level_order', 'last_name')
-        context['protected_veterans'] = team_players.filter(is_reserve=True).order_by('position', '-level_order', 'last_name')
-        context['aaa_roster'] = team_players.filter(is_aaa_roster=True, is_reserve=False).order_by('position', '-level_order', 'last_name')
+# def roster_team_detail(request, abbreviation):
+#     context = utils.build_context(request)
+#     context['team'] = get_object_or_404(models.Team, abbreviation__icontains=abbreviation)
+#     team_players = models.Player.objects.filter(team=context['team'])
+#     context['num_owned'] = team_players.count()
+#     if settings.TEAM_SEASON_HALF == "1h":
+#         context['unrostered'] = team_players.filter(is_mlb_roster=False, is_aaa_roster=False, is_carded=True, is_1h_c=False, is_1h_p=False, is_1h_pos=False, is_reserve=False).order_by('position', '-level_order', 'last_name')
+#         context['mlb_roster'] = team_players.filter(is_mlb_roster=True, is_aaa_roster=False, is_1h_c=False, is_1h_p=False, is_1h_pos=False, is_reserve=False).order_by('position', '-level_order', 'last_name')
+#         context['cuttable_b'] = team_players.filter(level="B", is_mlb_roster=False, is_aaa_roster=False).order_by('position', 'last_name')
+#         context['uncarded_vets'] = team_players.filter(is_mlb_roster=False, is_aaa_roster=False, is_carded=False, is_1h_c=False, is_1h_p=False, is_1h_pos=False, is_reserve=False, level__in=["A", "V"]).order_by('position', '-level_order', 'last_name')
+#         context['protected_veterans'] = team_players.filter(Q(is_1h_c=True)|Q(is_1h_p=True)|Q(is_1h_pos=True)|Q(is_reserve=True)).order_by('position', '-level_order', 'last_name')
+#         context['aaa_roster'] = team_players.filter(is_aaa_roster=True, is_1h_c=False, is_1h_p=False, is_1h_pos=False, is_reserve=False).order_by('position', '-level_order', 'last_name')
+#     else:
+#         context['unrostered'] = team_players.filter(is_mlb_roster=False, is_aaa_roster=False, is_carded=True, is_reserve=False).order_by('position', '-level_order', 'last_name')
+#         context['mlb_roster'] = team_players.filter(is_mlb_roster=True, is_aaa_roster=False, is_reserve=False).order_by('position', '-level_order', 'last_name')
+#         context['cuttable_b'] = team_players.filter(level="B", is_mlb_roster=False, is_aaa_roster=False).order_by('position', 'last_name')
+#         context['uncarded_vets'] = team_players.filter(is_carded=False, is_mlb_roster=False, is_aaa_roster=False, is_reserve=False, level__in=["A", "V"]).order_by('position', '-level_order', 'last_name')
+#         context['protected_veterans'] = team_players.filter(is_reserve=True).order_by('position', '-level_order', 'last_name')
+#         context['aaa_roster'] = team_players.filter(is_aaa_roster=True, is_reserve=False).order_by('position', '-level_order', 'last_name')
 
-    context['num_mlb'] = context['mlb_roster'].count()
+#     context['num_mlb'] = context['mlb_roster'].count()
 
-    return render(request, 'team_roster_%s.html' % (settings.TEAM_SEASON_HALF), context)
+#     return render(request, 'team_roster_%s.html' % (settings.TEAM_SEASON_HALF), context)
 
-def protect_team_detail(request, abbreviation):
-    context = utils.build_context(request)
-    context['team'] = get_object_or_404(models.Team, abbreviation__icontains=abbreviation)
-    team_players = models.Player.objects.filter(team=context['team'])
-    context['on_35_man'] = team_players.filter(is_35man_roster=True).order_by('position', '-level_order', 'last_name')
-    context['unprotected'] = team_players.filter(level__in=['V'], is_1h_c=False, is_1h_p=False, is_1h_pos=False, is_35man_roster=False, is_reserve=False).order_by('position', '-level_order', 'last_name')
-    context['carded_b'] = team_players.filter(level="B", is_carded=True).order_by('position', '-level_order', 'last_name')
-    context['protected_veterans'] = team_players.filter(Q(is_1h_c=True)|Q(is_1h_p=True)|Q(is_1h_pos=True)|Q(is_reserve=True)).order_by('position', '-level_order', 'last_name')
-    context['num_owned'] = team_players.count()
-    context['num_uncarded'] = team_players.filter(is_carded=False).count()
-    context['num_35_man'] = context['on_35_man'].count()
-    return render(request, 'team_protect.html', context)
+# def protect_team_detail(request, abbreviation):
+#     context = utils.build_context(request)
+#     context['team'] = get_object_or_404(models.Team, abbreviation__icontains=abbreviation)
+#     team_players = models.Player.objects.filter(team=context['team'])
+#     context['on_35_man'] = team_players.filter(is_35man_roster=True).order_by('position', '-level_order', 'last_name')
+#     context['unprotected'] = team_players.filter(level__in=['V'], is_1h_c=False, is_1h_p=False, is_1h_pos=False, is_35man_roster=False, is_reserve=False).order_by('position', '-level_order', 'last_name')
+#     context['carded_b'] = team_players.filter(level="B", is_carded=True).order_by('position', '-level_order', 'last_name')
+#     context['protected_veterans'] = team_players.filter(Q(is_1h_c=True)|Q(is_1h_p=True)|Q(is_1h_pos=True)|Q(is_reserve=True)).order_by('position', '-level_order', 'last_name')
+#     context['num_owned'] = team_players.count()
+#     context['num_uncarded'] = team_players.filter(is_carded=False).count()
+#     context['num_35_man'] = context['on_35_man'].count()
+#     return render(request, 'team_protect.html', context)
 
 def player_detail(request, playerid):
     context = utils.build_context(request)
@@ -172,38 +172,8 @@ def team_detail(request, abbreviation):
     context['num_owned'] = models.Player.objects.filter(team=context['team']).count()
     context['hitters'] = team_players.exclude(position="P").order_by('position', '-level_order', 'last_name', 'first_name')
     context['pitchers'] = team_players.filter(position="P").order_by('-level_order', 'last_name', 'first_name')
+    context['num_mlb'] = team_players.filter(is_mlb_roster=True, is_aaa_roster=False, is_reserve=False).count()
     return render(request, 'team.html', context)
-
-def unprotected(request):
-    context = utils.build_context(request)
-
-    context['owned_hitters'] = models.Player.objects.filter(level="V", team__isnull=False, ls_plate_appearances__gte=1, is_mlb_roster=False, is_1h_c=False, is_1h_p=False, is_1h_pos=False, is_35man_roster=False, is_reserve=False).exclude(position="P").order_by('position', '-level_order', 'last_name', 'first_name')
-    context['owned_pitchers'] = models.Player.objects.filter(level="V", team__isnull=False, ls_g__gte=1, is_mlb_roster=False, is_1h_c=False, is_1h_p=False, is_1h_pos=False, is_35man_roster=False, is_reserve=False).order_by('-level_order', 'last_name', 'first_name')
-
-    return render(request, 'unprotected.html', context)
-
-def available_livestat(request):
-    context = utils.build_context(request)
-    context['hitters'] = models.Player.objects\
-        .filter(
-            Q(level="V", team__isnull=True, ls_plate_appearances__gte=1)|\
-            Q(level__in=['A', 'B'], team__isnull=True, ls_plate_appearances__gte=1, is_carded=True))\
-    .exclude(position="P")\
-    .order_by('position', '-level_order', 'last_name', 'first_name')
-
-    context['pitchers'] = models.Player.objects\
-        .filter(
-            Q(level="V", team__isnull=True, ls_ip__gte=1, position="P")|\
-            Q(level__in=['A', 'B'], team__isnull=True, ls_ip__gte=1, is_carded=True, position="P"))\
-    .order_by('-level_order', 'last_name', 'first_name')
-
-    # context['owned_hitters'] = models.Player.objects.filter(level="V", team__isnull=False, ls_plate_appearances__gte=1, is_mlb_roster=False, is_1h_c=False, is_1h_p=False, is_1h_pos=False, is_35man_roster=False, is_reserve=False).exclude(position="P").order_by('position', '-level_order', 'last_name', 'first_name')
-    # context['owned_pitchers'] = models.Player.objects.filter(level="V", team__isnull=False, ls_g__gte=1, is_mlb_roster=False, is_1h_c=False, is_1h_p=False, is_1h_pos=False, is_35man_roster=False, is_reserve=False).order_by('-level_order', 'last_name', 'first_name')
-
-    # context['aa_hitters'] = models.Player.objects.filter(level="B", team__isnull=True, ls_plate_appearances__gte=1).exclude(position="P").order_by('position', '-level_order', 'last_name', 'first_name')
-    # context['aa_pitchers'] = models.Player.objects.filter(level="B", team__isnull=True, ls_g__gte=1).order_by('-level_order', 'last_name', 'first_name')
-
-    return render(request, 'available_livestat.html', context)
 
 def all_csv(request):
     team_players = models.Player.objects.filter(is_owned=True).order_by('team', '-is_35man_roster', 'position', '-level_order', 'last_name', 'first_name').values(*settings.CSV_COLUMNS)
