@@ -26,9 +26,9 @@
                 {% for t in year.list %}
                 <tr>
                     <td style="text-align:left!important;">{{ t.trade.date }}</td>
-                    <td>{% for r in t.trade.reciepts %}{% if r.team != t.team %}{{ r.team }}{% endif %}{% endfor %}</td>
-                    <td style="text-align:left!important;">{{ t.summary }}</td>
-                    <td style="text-align:left!important;">{% for r in t.trade.reciepts %}{% if r.team != t.team %}{{ r.summary }}{% endif %}{% endfor %}</td>
+                    <td>{% for r in t.trade.reciepts %}{% if r.team != t.team %}<a href="/teams/{{ r.team.abbreviation|lower }}/other/">{{ r.team }}</a>{% endif %}{% endfor %}</td>
+                    <td style="text-align:left!important;">{{ t.summary_html|safe }}</td>
+                    <td style="text-align:left!important;">{% for r in t.trade.reciepts %}{% if r.team != t.team %}{{ r.summary_html|safe }}{% endif %}{% endfor %}</td>
                 </tr>
                 {% endfor %}
             </table>

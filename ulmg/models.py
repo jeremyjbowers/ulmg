@@ -488,21 +488,6 @@ class Trade(BaseModel):
             ", ".join(["%s %s" % (p.position, p.name) for p in t1.players.all()] + ["%s" % (p.slug) for p in t1.picks.all()]),
         )
 
-    def summary_html(self):
-        r = self.reciepts()
-        t1 = r[0]
-        t2 = r[1]
-
-        return "%s: <a href='/teams/%s/other/'>%s</a> sends %s to <a href='/teams/%s/other/'>%s</a> for %s" % (
-            self.date,
-            t1.team.abbreviation.lower(),
-            t1.team.abbreviation,
-            ", ".join(["%s %s" % (p.position, p.name) for p in t2.players.all()] + ["%s" % (p.slug) for p in t2.picks.all()]),
-            t2.team.abbreviation.lower(),
-            t2.team.abbreviation,
-            ", ".join(["%s %s" % (p.position, p.name) for p in t1.players.all()] + ["%s" % (p.slug) for p in t1.picks.all()]),
-        )
-
 class TradeReceipt(BaseModel):
     trade = models.ForeignKey(Trade, on_delete=models.SET_NULL, null=True)
     team = models.ForeignKey(Team, on_delete=models.SET_NULL, null=True)
@@ -516,6 +501,9 @@ class TradeReceipt(BaseModel):
 
     def summary(self):
         return ", ".join(["%s %s" % (p.position, p.name) for p in self.players.all()] + ["%s" % (p.slug) for p in self.picks.all()])
+
+    def summary_html(self):
+        return ", ".join(["<a class='has-text-weight-semibold' href='/players/%s/'>%s %s</a>" % (p.id, p.position, p.name) for p in self.players.all()] + ["%s" % (p.slug) for p in self.picks.all()])
 
     @staticmethod
     def trade_pick(sender, instance, action, reverse, model, pk_set, **kwargs):
