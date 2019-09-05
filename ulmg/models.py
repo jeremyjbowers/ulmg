@@ -141,6 +141,8 @@ class Player(BaseModel):
     ls_is_mlb = models.BooleanField(default=False)
     ls_hr = models.IntegerField(blank=True, null=True)
     ls_sb = models.IntegerField(blank=True, null=True)
+    ls_runs = models.IntegerField(blank=True, null=True)
+    ls_rbi = models.IntegerField(blank=True, null=True)
     ls_avg = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
     ls_obp = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
     ls_slg = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
