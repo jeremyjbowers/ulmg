@@ -59,6 +59,8 @@ class Command(BaseCommand):
                     if k == "bat":
                         obj.ls_hr = int(player['HR'])
                         obj.ls_sb = int(player['SB'])
+                        obj.ls_runs = int(player['R'])
+                        obj.ls_rbi = int(player['RBI'])
                         obj.ls_avg = Decimal(player['AVG'])
                         obj.ls_obp = Decimal(player['OBP'])
                         obj.ls_slg = Decimal(player['SLG'])
@@ -121,6 +123,8 @@ class Command(BaseCommand):
                 obj.ls_is_mlb = True
                 obj.ls_plate_appearances = int(h[4].text.strip())
                 obj.ls_hr = int(h[5].text.strip())
+                obj.ls_runs = int(h[6].text.strip())
+                obj.ls_rbi = int(h[7].text.strip())
                 obj.ls_sb = int(h[8].text.strip())
                 obj.ls_bb_pct = Decimal(h[9].text.replace(' %', '').strip())
                 obj.ls_k_pct = Decimal(h[10].text.replace(' %', '').strip())
