@@ -20,9 +20,9 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         self.season = settings.CURRENT_SEASON
-        self.get_hitters()
-        self.get_pitchers()
-        self.get_mlbam()
+        # self.get_hitters()
+        # self.get_pitchers()
+        # self.get_mlbam()
         self.get_minors()
 
     def get_fg_results(self, url):
@@ -41,7 +41,7 @@ class Command(BaseCommand):
         }
 
         for k,v in players.items():
-            url = f"https://www.fangraphs.com/api/leaders/minor-league/data?pos=all&lg=2,4,5,6,7,8,9,10,11,14,12,13,15,17,18,30,32,33&stats={k}&qual=10&type=0&team=&season={self.season}&seasonEnd={self.season}&org=&ind=0&splitTeam=false"
+            url = f"https://www.fangraphs.com/api/leaders/minor-league/data?pos=all&lg=2,4,5,6,7,8,9,10,11,14,12,13,15,17,18,30,32,33&stats={k}&qual=1&type=0&team=&season={self.season}&seasonEnd={self.season}&org=&ind=0&splitTeam=false"
             print(url)
             r = requests.get(url)
             players[k] += r.json()
@@ -55,41 +55,44 @@ class Command(BaseCommand):
 
                 if count == 1:
                     obj = p[0]
-
-                    if k == "bat":
-                        obj.ls_hr = int(player['HR'])
-                        obj.ls_sb = int(player['SB'])
-                        obj.ls_runs = int(player['R'])
-                        obj.ls_rbi = int(player['RBI'])
-                        obj.ls_avg = Decimal(player['AVG'])
-                        obj.ls_obp = Decimal(player['OBP'])
-                        obj.ls_slg = Decimal(player['SLG'])
-                        obj.ls_babip = Decimal(player['BABIP'])
-                        obj.ls_wrc_plus = int(player['wRC+'])
-                        obj.ls_plate_appearances = int(player['PA'])
-                        obj.ls_iso = Decimal(player['ISO'])
-                        obj.ls_k_pct = Decimal(round(float(player['K%']) * 100.0, 1))
-                        obj.ls_bb_pct = Decimal(round(float(player['BB%']) * 100.0, 1))
-                        obj.ls_woba = Decimal(player['wOBA'])
-                        obj.save()
                     
-                    if k == "pit":
-                        obj.ls_g = int(player['G'])
-                        obj.ls_gs = int(player['GS'])
-                        obj.ls_ip = Decimal(round(float(player['IP']), 1))
-                        obj.ls_k_9 = Decimal(round(float(player['K/9']), 2))
-                        obj.ls_bb_9 = Decimal(round(float(player['BB/9']), 2))
-                        obj.ls_hr_9 = Decimal(round(float(player['HR/9']), 2))
-                        obj.ls_lob_pct = Decimal(round(float(player['LOB%']) * 100.0, 1))
-                        obj.ls_gb_pct = Decimal(round(float(player['GB%']) * 100.0, 1))
-                        obj.ls_hr_fb = Decimal(round(float(player['HR/FB']), 1))
-                        obj.ls_era = Decimal(round(float(player['ERA']), 2))
-                        obj.ls_fip = Decimal(round(float(player['FIP']), 2))
-                        obj.ls_xfip = Decimal(round(float(player['xFIP']), 2))
-                        obj.save()
+                    try:
+                        if k == "bat":
+                            obj.ls_hr = int(player['HR'])
+                            obj.ls_sb = int(player['SB'])
+                            obj.ls_runs = int(player['R'])
+                            obj.ls_rbi = int(player['RBI'])
+                            obj.ls_avg = Decimal(player['AVG'])
+                            obj.ls_obp = Decimal(player['OBP'])
+                            obj.ls_slg = Decimal(player['SLG'])
+                            obj.ls_babip = Decimal(player['BABIP'])
+                            obj.ls_wrc_plus = int(player['wRC+'])
+                            obj.ls_plate_appearances = int(player['PA'])
+                            obj.ls_iso = Decimal(player['ISO'])
+                            obj.ls_k_pct = Decimal(round(float(player['K%']) * 100.0, 1))
+                            obj.ls_bb_pct = Decimal(round(float(player['BB%']) * 100.0, 1))
+                            obj.ls_woba = Decimal(player['wOBA'])
+                            obj.save()
+                        
+                        if k == "pit":
+                            obj.ls_g = int(player['G'])
+                            obj.ls_gs = int(player['GS'])
+                            obj.ls_ip = Decimal(round(float(player['IP']), 1))
+                            obj.ls_k_9 = Decimal(round(float(player['K/9']), 2))
+                            obj.ls_bb_9 = Decimal(round(float(player['BB/9']), 2))
+                            obj.ls_hr_9 = Decimal(round(float(player['HR/9']), 2))
+                            obj.ls_lob_pct = Decimal(round(float(player['LOB%']) * 100.0, 1))
+                            obj.ls_gb_pct = Decimal(round(float(player['GB%']) * 100.0, 1))
+                            obj.ls_hr_fb = Decimal(round(float(player['HR/FB']), 1))
+                            obj.ls_era = Decimal(round(float(player['ERA']), 2))
+                            obj.ls_fip = Decimal(round(float(player['FIP']), 2))
+                            obj.ls_xfip = Decimal(round(float(player['xFIP']), 2))
+                            obj.save()
+                    except:
+                        print(player)
 
     def get_mlbam(self):
-        curl_cmd = f'curl -o /tmp/mlbam.csv "https://baseballsavant.mlb.com/expected_statistics?type=batter&year={self.season}&position=&team=&min=10&csv=true"'
+        curl_cmd = f'curl -o /tmp/mlbam.csv "https://baseballsavant.mlb.com/expected_statistics?type=batter&year={self.season}&position=&team=&min=1&csv=true"'
         os.system(curl_cmd)
         with open('/tmp/mlbam.csv', 'r') as readfile:
             players = [dict(c) for c in csv.DictReader(readfile)]
@@ -110,7 +113,7 @@ class Command(BaseCommand):
 
 
     def get_hitters(self):
-        url = f"https://www.fangraphs.com/leaders.aspx?pos=all&stats=bat&lg=all&qual=10&type=8&season={self.season}&month=0&season1={self.season}&ind=0&team=0&rost=0&age=0&filter=&players=0&startdate=&enddate=&page=1_1500"
+        url = f"https://www.fangraphs.com/leaders.aspx?pos=all&stats=bat&lg=all&qual=1&type=8&season={self.season}&month=0&season1={self.season}&ind=0&team=0&rost=0&age=0&filter=&players=0&startdate=&enddate=&page=1_1500"
 
         rows = self.get_fg_results(url)
 
@@ -141,7 +144,7 @@ class Command(BaseCommand):
                 print("h,%s,%s" % (h[1].text.strip(), h[1].select('a')[0].attrs['href'].split('playerid=')[1].split('&')[0]))
 
     def get_pitchers(self):
-        url = f"https://www.fangraphs.com/leaders.aspx?pos=all&stats=pit&lg=all&qual=10&type=c,4,5,11,7,8,13,-1,36,37,40,43,44,48,51,-1,6,45,62,122,-1,59&season={self.season}&month=0&season1={self.season}&ind=0&team=0&rost=0&age=0&filter=&players=0&startdate=2019-01-01&enddate=2019-12-31&page=1_1100"
+        url = f"https://www.fangraphs.com/leaders.aspx?pos=all&stats=pit&lg=all&qual=1&type=c,4,5,11,7,8,13,-1,36,37,40,43,44,48,51,-1,6,45,62,122,-1,59&season={self.season}&month=0&season1={self.season}&ind=0&team=0&rost=0&age=0&filter=&players=0&startdate=2019-01-01&enddate=2019-12-31&page=1_1100"
 
         rows = self.get_fg_results(url)
 
