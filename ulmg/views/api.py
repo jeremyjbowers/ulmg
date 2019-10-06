@@ -97,7 +97,7 @@ def player_action(request, playerid, action):
 
     return HttpResponse("ok")
 
-def live_draft_api(request, year, season, draft_type):
+def draft_api(request, year, season, draft_type):
     context = {}
     context['picks'] = [p.to_dict() for p in models.DraftPick.objects.filter(year=year, season=season, draft_type=draft_type)]
     context['year'] = year

@@ -68,7 +68,7 @@ def trades(request):
     context['trades'] = models.Trade.objects.all().order_by('-date')
     return render(request, 'trade_list.html', context)
 
-def live_draft_admin(request, year, season, draft_type):
+def draft_admin(request, year, season, draft_type):
     context = utils.build_context(request)
     context['picks'] = models.DraftPick.objects.filter(year=year, season=season, draft_type=draft_type)
 
@@ -89,9 +89,9 @@ def live_draft_admin(request, year, season, draft_type):
     context['season'] = season
     context['draft_type'] = draft_type
 
-    return render(request, "live_draft_admin.html", context)
+    return render(request, "draft_admin.html", context)
 
-def live_draft_watch(request, year, season, draft_type):
+def draft_watch(request, year, season, draft_type):
     context = utils.build_context(request)
     context['made_picks'] = models.DraftPick.objects\
                                 .filter(Q(player_name__isnull=False)|Q(player__isnull=False))\
@@ -104,7 +104,18 @@ def live_draft_watch(request, year, season, draft_type):
     context['season'] = season
     context['draft_type'] = draft_type
 
-    return render(request, "live_draft_watch.html", context)
+    return render(request, "draft_watch.html", context)
+
+def draft_recap(request, year, season, draft_type):
+    context = utils.build_context(request)
+    context['picks'] = models.DraftPick.objects\
+                                .filter(year=year, season=season, draft_type=draft_type)\
+                                .order_by("year", "-season", "draft_type", "draft_round", "pick_number")
+    context['year'] = year
+    context['season'] = season
+    context['draft_type'] = draft_type
+
+    return render(request, "draft_recap.html", context)
 
 def search(request):
     def to_bool(b):

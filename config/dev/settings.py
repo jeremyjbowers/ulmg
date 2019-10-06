@@ -108,3 +108,13 @@ CSV_COLUMNS = [
     'is_mlb_roster',
     'is_aaa_roster'
 ]
+DRAFTS = [
+    {"title": "2018 Offseason Open", "url": "/draft/2018/offseason/open/"},
+    {"title": "2018 Offseason AA", "url": "/draft/2018/offseason/aa/"},
+    {"title": "2018 Midseason Open", "url": "/draft/2018/midseason/open/"},
+    {"title": "2018 Midseason AA", "url": "/draft/2018/midseason/aa/"},
+    {"title": "2019 Offseason Open", "url": "/draft/2019/offseason/open/"},
+    {"title": "2019 Offseason AA", "url": "/draft/2019/offseason/aa/"},
+    {"title": "2019 Midseason Open", "url": "/draft/2019/midseason/open/"},
+    {"title": "2019 Midseason AA", "url": "/draft/2019/midseason/aa/"},
+]

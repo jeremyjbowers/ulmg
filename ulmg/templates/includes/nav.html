@@ -5,7 +5,16 @@
         </a>
         <a class="navbar-item" href="https://ulmg.wordpress.com/constitution/" target="_blank">Constitution</a>
         <a class="navbar-item" href="/trades/" target="_blank">Trades</a>
-        <a class="navbar-item" href="https://ulmg.wordpress.com/category/draft/" target="_blank">Old drafts</a>
+        <div class="navbar-item has-dropdown is-hoverable">
+            <a class="navbar-link">Drafts</a>
+                <div class="navbar-dropdown">
+                    {% for draft in draftnav %}
+                    <a class="navbar-item" href="{{ draft.url }}">{{ draft.title }}</a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        <a class="navbar-item" href="https://ulmg.wordpress.com/category/draft/" target="_blank">Archived drafts</a>
         <a class="navbar-item" href="/{% if value %}?value=true{% endif %}">Search</a>
         <div class="navbar-item has-dropdown is-hoverable">
             <a class="navbar-link">Teams</a>
