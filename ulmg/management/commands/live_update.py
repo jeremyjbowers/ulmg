@@ -20,9 +20,9 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         self.season = settings.CURRENT_SEASON
-        # self.get_hitters()
-        # self.get_pitchers()
-        # self.get_mlbam()
+        self.get_hitters()
+        self.get_pitchers()
+        self.get_mlbam()
         self.get_minors()
 
     def get_fg_results(self, url):
