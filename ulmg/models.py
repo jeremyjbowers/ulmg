@@ -181,6 +181,10 @@ class Player(BaseModel):
             return "%s (%s)" % (self.name, self.get_team().abbreviation)
         return self.name
 
+    def set_fg_url(self):
+        if self.fg_id:
+            self.fg_url = "https://www.fangraphs.com/statss.aspx?playerid=%s" % self.fg_id
+
     def ls(self):
         try:
             return LiveStat.objects.get(player=self)
@@ -205,6 +209,7 @@ class Player(BaseModel):
             "bref_url": self.bref_url,
             # "team": self.team.abbreviation
         }
+
     def defense_display(self):
         if self.defense:
             sortdef = [{"display": f"{d.split('-')[0]}{d.split('-')[2]}", "sort": f"{d.split('-')[1]}{d.split('-')[2]}"} for d in self.defense]
@@ -301,34 +306,11 @@ class Player(BaseModel):
             if self.level == "B":
                 self.level_order = 0
 
-    def set_stats(self):
-        if self.stats:
-            if self.position != "P" and  self.stats.get('pa', None):
-                self.plate_appearances = self.stats['pa']
-            if self.position == "P":
-                if self.stats.get('ip', None) and self.stats.get('gs', None) and self.stats.get('g', None):
-                    if int(self.stats['g']) > int(self.stats['gs']):
-                        self.is_relief_eligible = True
-                        if float(self.stats['ip']) > 75.0:
-                            self.relief_innings_pitched = float(self.stats['ip']) * 1.5
-                        else:
-                            self.relief_innings_pitched = float(self.stats['ip'])
-                    if int(self.stats['gs']) > 0:
-                        self.starts = int(self.stats['gs'])
-
     def set_owned(self):
         if self.team == None:
             self.is_owned = False
         else:
             self.is_owned = True
-
-    @property
-    def scouting_report_count(self):
-        return ScoutingReport.objects.filter(player=self).count()
-
-    @property
-    def scouting_reports(self):
-        return ScoutingReport.objects.filter(player=self).values('report', 'url', 'date', 'organization', 'fv', 'risk_name', 'pv')
 
     def team_display(self):
         if self.team:
@@ -341,9 +323,8 @@ class Player(BaseModel):
         """
         self.set_name()
         self.set_ids()
+        self.set_fg_url()
         self.set_level_order()
-        self.usage = self.set_usage()
-        self.set_stats()
         self.set_owned()
 
         super().save(*args, **kwargs)

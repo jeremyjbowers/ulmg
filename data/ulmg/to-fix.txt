@@ -1,0 +1,149 @@
+h,Seth Brown,18171
+h,Sean Murphy,19352
+h,Tim Lopes,14137
+h,Ryan McBroom,16524
+h,Randy Arozarena,19290
+h,Nico Hoerner,21479
+h,Seth Mejias-Brean,13905
+h,Danny Mendick,18889
+h,Cristhian Adames,6013
+h,Tyrone Taylor,13675
+h,Brian O'Grady,16729
+h,Tyler Heineman,13897
+h,Tim Melville,9149
+h,Ian Miller,15156
+h,Josh Rojas,19734
+h,Luis Torrens,15905
+h,Erick Mejia,15817
+h,Ryan Court,12268
+h,Skye Bolt,17723
+h,Donnie Walton,19314
+h,Rangel Ravelo,10839
+h,Zach Green,14973
+h,Nick Dini,18206
+h,Scott Heineman,14453
+h,Jake Noll,19703
+h,Dario Agrazal,15821
+h,Josh Fuentes,16885
+h,Anthony Bemboom,13854
+h,Jarrett Parker,11624
+h,Jack Mayfield,15402
+h,Raudy Read,15766
+h,Alex Young,18333
+h,Kean Wong,15994
+h,Frank Schwindel,15351
+h,Jaylin Davis,19552
+h,Jake Elmore,7290
+h,Eric Stamets,13795
+p,Tyler Rogers,15541
+p,Jesus Luzardo,19959
+p,Randy Dobnak,23798
+p,Eric Yardley,15538
+p,Emmanuel Clase,21032
+p,Ryan Eades,14808
+p,Rafael Montero,12760
+p,Jose Rodriguez,17860
+p,Grant Dayton,11203
+p,Josh Taylor,17359
+p,A.J. Puk,19343
+p,Cody Stashak,18088
+p,Kyle Keller,18890
+p,Stefan Crichton,16058
+p,Alex Young,18333
+p,Sam Coonrod,17264
+p,Taylor Guilbeau,18306
+p,Wei-Chung Wang,14382
+p,J. D. Hammer,19548
+p,Travis Lakins,18600
+p,Phillips Valdez,15605
+p,Jose Urquidy,18413
+p,Devin Williams,15816
+p,Buddy Boshers,8490
+p,Zac Grotz,18256
+p,Fernando Abad,4994
+p,Jonathan Hernandez,17464
+p,Jose Cisnero,6399
+p,Sam Selman,13397
+p,Jacob Waguespack,18318
+p,Jay Jackson,7432
+p,Brandon Brennan,13527
+p,T.J. Zeuch,19269
+p,Tim Melville,9149
+p,Tyler Alexander,17735
+p,Dario Agrazal,15821
+p,Asher Wojciechowski,10836
+p,Joe Harvey,16459
+p,Conner Menez,19199
+p,Junior Fernandez,18496
+p,David McKay,19814
+p,Cy Sneed,16106
+p,Travis Bergen,18581
+p,Chris Mazza,14151
+p,Pedro Payano,18313
+p,Jose Quijada,19200
+p,Edgar Garcia,19276
+p,Anthony Kay,20387
+p,Josh A. Smith,10946
+p,Eduardo Jimenez,19642
+p,Branden Kline,14101
+p,Ronald Bolanos,20041
+p,Reggie McClain,19311
+p,John Schreiber,20020
+p,Josh D. Smith,13629
+p,Dillon Tate,17796
+p,Tom Eshelman,18361
+p,David Bednar,19569
+p,Chandler Shepherd,16166
+p,Rookie Davis,14962
+p,Peter Fairbanks,17998
+p,Manny Banuelos,5365
+p,Kyle Dowdy,19285
+p,Gerardo Reyes,16306
+p,Jordan Romano,16122
+p,Parker Markel,12106
+p,Kyle Bird,16618
+p,Reed Garrett,16866
+p,James Marvel,19675
+p,Hector Noesi,3292
+p,Joseph Palumbo,17035
+p,Ruben Alaniz,10819
+p,Montana DuRapau,16768
+p,Kyle Zimmer,14169
+p,Tayler Scott,13652
+{'last_name': 'Rojas', ' first_name': ' Josh', 'player_id': '668942', 'year': '2019', 'pa': '157', 'bip': '97', 'ba': '.217', 'est_ba': '.235', 'est_ba_minus_ba_diff': '-.018', 'slg': '.312', 'est_slg': '.390', 'est_slg_minus_slg_diff': '-.078', 'woba': '.281', 'est_woba': '.317', 'est_woba_minus_woba_diff': '-.036'}
+{'last_name': 'Lopes', ' first_name': ' Tim', 'player_id': '621005', 'year': '2019', 'pa': '128', 'bip': '83', 'ba': '.270', 'est_ba': '.224', 'est_ba_minus_ba_diff': '.046', 'slg': '.360', 'est_slg': '.322', 'est_slg_minus_slg_diff': '.038', 'woba': '.320', 'est_woba': '.291', 'est_woba_minus_woba_diff': '.029'}
+{'last_name': 'Heineman', ' first_name': ' Scott', 'player_id': '595981', 'year': '2019', 'pa': '85', 'bip': '55', 'ba': '.213', 'est_ba': '.221', 'est_ba_minus_ba_diff': '-.008', 'slg': '.373', 'est_slg': '.320', 'est_slg_minus_slg_diff': '.053', 'woba': '.298', 'est_woba': '.287', 'est_woba_minus_woba_diff': '.011'}
+{'last_name': 'McBroom', ' first_name': ' Ryan', 'player_id': '643436', 'year': '2019', 'pa': '83', 'bip': '50', 'ba': '.293', 'est_ba': '.244', 'est_ba_minus_ba_diff': '.049', 'slg': '.360', 'est_slg': '.401', 'est_slg_minus_slg_diff': '-.041', 'woba': '.320', 'est_woba': '.314', 'est_woba_minus_woba_diff': '.006'}
+{'last_name': 'Brown', ' first_name': ' Seth', 'player_id': '664913', 'year': '2019', 'pa': '83', 'bip': '52', 'ba': '.293', 'est_ba': '.231', 'est_ba_minus_ba_diff': '.062', 'slg': '.453', 'est_slg': '.374', 'est_slg_minus_slg_diff': '.079', 'woba': '.350', 'est_woba': '.298', 'est_woba_minus_woba_diff': '.052'}
+{'last_name': 'Hoerner', ' first_name': ' Nico', 'player_id': '663538', 'year': '2019', 'pa': '82', 'bip': '68', 'ba': '.282', 'est_ba': '.314', 'est_ba_minus_ba_diff': '-.032', 'slg': '.436', 'est_slg': '.399', 'est_slg_minus_slg_diff': '.037', 'woba': '.309', 'est_woba': '.320', 'est_woba_minus_woba_diff': '-.011'}
+{'last_name': 'Mayfield', ' first_name': ' Jack', 'player_id': '608686', 'year': '2019', 'pa': '65', 'bip': '48', 'ba': '.156', 'est_ba': '.171', 'est_ba_minus_ba_diff': '-.015', 'slg': '.328', 'est_slg': '.285', 'est_slg_minus_slg_diff': '.043', 'woba': '.207', 'est_woba': '.200', 'est_woba_minus_woba_diff': '.007'}
+{'last_name': 'Dini', ' first_name': ' Nick', 'player_id': '664926', 'year': '2019', 'pa': '64', 'bip': '40', 'ba': '.196', 'est_ba': '.204', 'est_ba_minus_ba_diff': '-.008', 'slg': '.357', 'est_slg': '.323', 'est_slg_minus_slg_diff': '.034', 'woba': '.272', 'est_woba': '.278', 'est_woba_minus_woba_diff': '-.006'}
+{'last_name': 'Murphy', ' first_name': ' Sean', 'player_id': '669221', 'year': '2019', 'pa': '60', 'bip': '37', 'ba': '.245', 'est_ba': '.233', 'est_ba_minus_ba_diff': '.012', 'slg': '.566', 'est_slg': '.447', 'est_slg_minus_slg_diff': '.119', 'woba': '.375', 'est_woba': '.334', 'est_woba_minus_woba_diff': '.041'}
+{'last_name': 'Fuentes', ' first_name': ' Josh', 'player_id': '658069', 'year': '2019', 'pa': '56', 'bip': '35', 'ba': '.218', 'est_ba': '.167', 'est_ba_minus_ba_diff': '.051', 'slg': '.400', 'est_slg': '.249', 'est_slg_minus_slg_diff': '.151', 'woba': '.266', 'est_woba': '.188', 'est_woba_minus_woba_diff': '.078'}
+{'last_name': 'Bemboom', ' first_name': ' Anthony', 'player_id': '621532', 'year': '2019', 'pa': '56', 'bip': '34', 'ba': '.130', 'est_ba': '.128', 'est_ba_minus_ba_diff': '.002', 'slg': '.204', 'est_slg': '.201', 'est_slg_minus_slg_diff': '.003', 'woba': '.151', 'est_woba': '.149', 'est_woba_minus_woba_diff': '.002'}
+{'last_name': 'Elmore', ' first_name': ' Jake', 'player_id': '518653', 'year': '2019', 'pa': '49', 'bip': '39', 'ba': '.213', 'est_ba': '.257', 'est_ba_minus_ba_diff': '-.044', 'slg': '.234', 'est_slg': '.335', 'est_slg_minus_slg_diff': '-.101', 'woba': '.214', 'est_woba': '.277', 'est_woba_minus_woba_diff': '-.063'}
+{'last_name': 'Stamets', ' first_name': ' Eric', 'player_id': '608715', 'year': '2019', 'pa': '48', 'bip': '19', 'ba': '.049', 'est_ba': '.098', 'est_ba_minus_ba_diff': '-.049', 'slg': '.073', 'est_slg': '.164', 'est_slg_minus_slg_diff': '-.091', 'woba': '.118', 'est_woba': '.184', 'est_woba_minus_woba_diff': '-.066'}
+{'last_name': "O'Grady", ' first_name': ' Brian', 'player_id': '657434', 'year': '2019', 'pa': '48', 'bip': '25', 'ba': '.190', 'est_ba': '.193', 'est_ba_minus_ba_diff': '-.003', 'slg': '.429', 'est_slg': '.383', 'est_slg_minus_slg_diff': '.046', 'woba': '.309', 'est_woba': '.298', 'est_woba_minus_woba_diff': '.011'}
+{'last_name': 'Davis', ' first_name': ' Jaylin', 'player_id': '664041', 'year': '2019', 'pa': '47', 'bip': '31', 'ba': '.167', 'est_ba': '.238', 'est_ba_minus_ba_diff': '-.071', 'slg': '.238', 'est_slg': '.336', 'est_slg_minus_slg_diff': '-.098', 'woba': '.229', 'est_woba': '.296', 'est_woba_minus_woba_diff': '-.067'}
+{'last_name': 'Ravelo', ' first_name': ' Rangel', 'player_id': '592660', 'year': '2019', 'pa': '43', 'bip': '28', 'ba': '.205', 'est_ba': '.290', 'est_ba_minus_ba_diff': '-.085', 'slg': '.410', 'est_slg': '.514', 'est_slg_minus_slg_diff': '-.104', 'woba': '.280', 'est_woba': '.361', 'est_woba_minus_woba_diff': '-.081'}
+{'last_name': 'Mendick', ' first_name': ' Danny', 'player_id': '664901', 'year': '2019', 'pa': '40', 'bip': '28', 'ba': '.308', 'est_ba': '.286', 'est_ba_minus_ba_diff': '.022', 'slg': '.462', 'est_slg': '.371', 'est_slg_minus_slg_diff': '.091', 'woba': '.336', 'est_woba': '.294', 'est_woba_minus_woba_diff': '.042'}
+{'last_name': 'Mejias-Brean', ' first_name': ' Seth', 'player_id': '623180', 'year': '2019', 'pa': '33', 'bip': '21', 'ba': '.233', 'est_ba': '.212', 'est_ba_minus_ba_diff': '.021', 'slg': '.500', 'est_slg': '.382', 'est_slg_minus_slg_diff': '.118', 'woba': '.338', 'est_woba': '.296', 'est_woba_minus_woba_diff': '.042'}
+{'last_name': 'Mejia', ' first_name': ' Erick', 'player_id': '625510', 'year': '2019', 'pa': '27', 'bip': '16', 'ba': '.227', 'est_ba': '.162', 'est_ba_minus_ba_diff': '.065', 'slg': '.273', 'est_slg': '.185', 'est_slg_minus_slg_diff': '.088', 'woba': '.278', 'est_woba': '.231', 'est_woba_minus_woba_diff': '.047'}
+{'last_name': 'Young', ' first_name': ' Alex', 'player_id': '622065', 'year': '2019', 'pa': '25', 'bip': '7', 'ba': '.040', 'est_ba': '.034', 'est_ba_minus_ba_diff': '.006', 'slg': '.040', 'est_slg': '.037', 'est_slg_minus_slg_diff': '.003', 'woba': '.035', 'est_woba': '.030', 'est_woba_minus_woba_diff': '.005'}
+{'last_name': 'Court', ' first_name': ' Ryan', 'player_id': '606956', 'year': '2019', 'pa': '25', 'bip': '13', 'ba': '.208', 'est_ba': '.245', 'est_ba_minus_ba_diff': '-.037', 'slg': '.375', 'est_slg': '.378', 'est_slg_minus_slg_diff': '-.003', 'woba': '.262', 'est_woba': '.281', 'est_woba_minus_woba_diff': '-.019'}
+{'last_name': 'Agrazal', ' first_name': ' Dario', 'player_id': '642607', 'year': '2019', 'pa': '24', 'bip': '15', 'ba': '.091', 'est_ba': '.122', 'est_ba_minus_ba_diff': '-.031', 'slg': '.091', 'est_slg': '.136', 'est_slg_minus_slg_diff': '-.045', 'woba': '.076', 'est_woba': '.109', 'est_woba_minus_woba_diff': '-.033'}
+{'last_name': 'Adames', ' first_name': ' Cristhian', 'player_id': '542436', 'year': '2019', 'pa': '24', 'bip': '14', 'ba': '.318', 'est_ba': '.252', 'est_ba_minus_ba_diff': '.066', 'slg': '.364', 'est_slg': '.307', 'est_slg_minus_slg_diff': '.057', 'woba': '.328', 'est_woba': '.280', 'est_woba_minus_woba_diff': '.048'}
+{'last_name': 'Arozarena', ' first_name': ' Randy', 'player_id': '668227', 'year': '2019', 'pa': '23', 'bip': '16', 'ba': '.300', 'est_ba': '.258', 'est_ba_minus_ba_diff': '.042', 'slg': '.500', 'est_slg': '.409', 'est_slg_minus_slg_diff': '.091', 'woba': '.384', 'est_woba': '.336', 'est_woba_minus_woba_diff': '.048'}
+{'last_name': 'Walton', ' first_name': ' Donnie', 'player_id': '622268', 'year': '2019', 'pa': '19', 'bip': '11', 'ba': '.188', 'est_ba': '.152', 'est_ba_minus_ba_diff': '.036', 'slg': '.188', 'est_slg': '.208', 'est_slg_minus_slg_diff': '-.020', 'woba': '.247', 'est_woba': '.242', 'est_woba_minus_woba_diff': '.005'}
+{'last_name': 'Wong', ' first_name': ' Kean', 'player_id': '642221', 'year': '2019', 'pa': '18', 'bip': '12', 'ba': '.167', 'est_ba': '.211', 'est_ba_minus_ba_diff': '-.044', 'slg': '.167', 'est_slg': '.234', 'est_slg_minus_slg_diff': '-.067', 'woba': '.146', 'est_woba': '.200', 'est_woba_minus_woba_diff': '-.054'}
+{'last_name': 'Miller', ' first_name': ' Ian', 'player_id': '641878', 'year': '2019', 'pa': '17', 'bip': '14', 'ba': '.176', 'est_ba': '.251', 'est_ba_minus_ba_diff': '-.075', 'slg': '.235', 'est_slg': '.298', 'est_slg_minus_slg_diff': '-.063', 'woba': '.176', 'est_woba': '.240', 'est_woba_minus_woba_diff': '-.064'}
+{'last_name': 'Green', ' first_name': ' Zach', 'player_id': '608339', 'year': '2019', 'pa': '16', 'bip': '8', 'ba': '.143', 'est_ba': '.172', 'est_ba_minus_ba_diff': '-.029', 'slg': '.214', 'est_slg': '.215', 'est_slg_minus_slg_diff': '-.001', 'woba': '.218', 'est_woba': '.233', 'est_woba_minus_woba_diff': '-.015'}
+{'last_name': 'Torrens', ' first_name': ' Luis', 'player_id': '620443', 'year': '2019', 'pa': '16', 'bip': '8', 'ba': '.214', 'est_ba': '.219', 'est_ba_minus_ba_diff': '-.005', 'slg': '.286', 'est_slg': '.328', 'est_slg_minus_slg_diff': '-.042', 'woba': '.273', 'est_woba': '.291', 'est_woba_minus_woba_diff': '-.018'}
+{'last_name': 'Schwindel', ' first_name': ' Frank', 'player_id': '643524', 'year': '2019', 'pa': '15', 'bip': '13', 'ba': '.067', 'est_ba': '.163', 'est_ba_minus_ba_diff': '-.096', 'slg': '.067', 'est_slg': '.229', 'est_slg_minus_slg_diff': '-.162', 'woba': '.058', 'est_woba': '.169', 'est_woba_minus_woba_diff': '-.111'}
+{'last_name': 'Parker', ' first_name': ' Jarrett', 'player_id': '592620', 'year': '2019', 'pa': '15', 'bip': '4', 'ba': '.000', 'est_ba': '.067', 'est_ba_minus_ba_diff': '-.067', 'slg': '.000', 'est_slg': '.101', 'est_slg_minus_slg_diff': '-.101', 'woba': '.138', 'est_woba': '.198', 'est_woba_minus_woba_diff': '-.060'}
+{'last_name': 'Noll', ' first_name': ' Jake', 'player_id': '669738', 'year': '2019', 'pa': '13', 'bip': '8', 'ba': '.167', 'est_ba': '.156', 'est_ba_minus_ba_diff': '.011', 'slg': '.250', 'est_slg': '.182', 'est_slg_minus_slg_diff': '.068', 'woba': '.215', 'est_woba': '.191', 'est_woba_minus_woba_diff': '.024'}
+{'last_name': 'Taylor', ' first_name': ' Tyrone', 'player_id': '621438', 'year': '2019', 'pa': '12', 'bip': '9', 'ba': '.400', 'est_ba': '.243', 'est_ba_minus_ba_diff': '.157', 'slg': '.600', 'est_slg': '.265', 'est_slg_minus_slg_diff': '.335', 'woba': '.469', 'est_woba': '.306', 'est_woba_minus_woba_diff': '.163'}
+{'last_name': 'Heineman', ' first_name': ' Tyler', 'player_id': '623168', 'year': '2019', 'pa': '12', 'bip': '8', 'ba': '.273', 'est_ba': '.223', 'est_ba_minus_ba_diff': '.050', 'slg': '.636', 'est_slg': '.297', 'est_slg_minus_slg_diff': '.339', 'woba': '.373', 'est_woba': '.221', 'est_woba_minus_woba_diff': '.152'}
+{'last_name': 'Bolt', ' first_name': ' Skye', 'player_id': '621450', 'year': '2019', 'pa': '11', 'bip': '7', 'ba': '.100', 'est_ba': '.243', 'est_ba_minus_ba_diff': '-.143', 'slg': '.200', 'est_slg': '.443', 'est_slg_minus_slg_diff': '-.243', 'woba': '.175', 'est_woba': '.326', 'est_woba_minus_woba_diff': '-.151'}
+{'last_name': 'Read', ' first_name': ' Raudy', 'player_id': '600466', 'year': '2019', 'pa': '11', 'bip': '6', 'ba': '.091', 'est_ba': '.147', 'est_ba_minus_ba_diff': '-.056', 'slg': '.091', 'est_slg': '.161', 'est_slg_minus_slg_diff': '-.070', 'woba': '.080', 'est_woba': '.135', 'est_woba_minus_woba_diff': '-.055'}
+{'last_name': 'Melville', ' first_name': ' Tim', 'player_id': '543532', 'year': '2019', 'pa': '10', 'bip': '7', 'ba': '.250', 'est_ba': '.170', 'est_ba_minus_ba_diff': '.080', 'slg': '.250', 'est_slg': '.189', 'est_slg_minus_slg_diff': '.061', 'woba': '.219', 'est_woba': '.155', 'est_woba_minus_woba_diff': '.064'}
