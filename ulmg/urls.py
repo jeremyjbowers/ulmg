@@ -8,7 +8,7 @@ from ulmg.views import csv as csv_v
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/v1/player/', api_v.player_list),
-    path('api/v1/draft/live/<int:year>/<str:season>/<str:draft_type>/', api_v.live_draft_api),
+    path('api/v1/draft/live/<int:year>/<str:season>/<str:draft_type>/', api_v.draft_api),
     path('api/v1/player/<int:playerid>/<str:action>/', api_v.player_action),
     path('api/v1/draft/<str:pickid>/', api_v.draft_action),
     path('teams/csv/', csv_v.all_csv),
@@ -18,7 +18,8 @@ urlpatterns = [
     path('trades/', site_v.trades),
     path('players/<int:playerid>/', site_v.player),
     path('players/search/', site_v.search),
-    path('draft/live/<int:year>/<str:season>/<str:draft_type>/edit/', site_v.live_draft_admin),
-    path('draft/live/<int:year>/<str:season>/<str:draft_type>/', site_v.live_draft_watch),
+    path('draft/live/<int:year>/<str:season>/<str:draft_type>/edit/', site_v.draft_admin),
+    path('draft/live/<int:year>/<str:season>/<str:draft_type>/', site_v.draft_watch),
+    path('draft/<int:year>/<str:season>/<str:draft_type>/', site_v.draft_recap),
     path('', site_v.index),
 ]

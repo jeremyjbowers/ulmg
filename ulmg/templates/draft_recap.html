@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1 class="is-title is-size-1 has-text-weight-bold">{{ year }} {{ season }} {{ draft_type }} draft</h1>
+<div class="columns">
+    <div class="column is-three-quarters">
+
+        {% regroup picks by draft_round as rounds %}
+
+        {% for round in rounds %}
+        <h1 class="is-title is-size-2 has-text-weight-bold">Round {{ round.grouper }}</h1>
+        <table class="table is-fullwidth">
+            <tr>
+                <th>Pick</th>
+                <th>Team</th>
+                <th></th>
+                <th>Pos</th>
+                <th>Name</th>
+            </tr>
+            {% for pick in round.list %}
+            <tr>
+                <td>{{ pick.pick_number }}</td>
+                <td><a href="/teams/{{ pick.team.abbreviation|lower }}">{{ pick.team }}</a></td>
+                <td>{% if pick.original_team != pick.team %}via <a href="/teams/{{ pick.original_team.abbreviation|lower }}">{{ pick.original_team }}</a>{% endif %}</td>
+                <td>{% if pick.player %}{{ pick.player.position }}{% endif %}</td>
+                <td class="left">{% if pick.player %}<a href="/players/{{ pick.player.id }}/">{{ pick.player.name }}</a>{% else %}{{ pick.player_name }}{% endif %}</a></td>
+            </tr>
+            {% endfor %}
+        </table>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

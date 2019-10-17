@@ -7,6 +7,7 @@ def build_context(request):
 
     # to build the nav
     context['teamnav'] = models.Team.objects.all().values('abbreviation')
+    context['draftnav'] = settings.DRAFTS
 
     # for showing stats
     context['advanced'] = False
