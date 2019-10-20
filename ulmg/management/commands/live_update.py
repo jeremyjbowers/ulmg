@@ -92,7 +92,7 @@ class Command(BaseCommand):
                         print(player)
 
     def get_mlbam(self):
-        curl_cmd = f'curl -o /tmp/mlbam.csv "https://baseballsavant.mlb.com/expected_statistics?type=batter&year={self.season}&position=&team=&min=1&csv=true"'
+        curl_cmd = f'curl -o /tmp/mlbam.csv "https://baseballsavant.mlb.com/expected_statistics?type=batter&year={self.season}&position=&team=&min=5&csv=true"'
         os.system(curl_cmd)
         with open('/tmp/mlbam.csv', 'r') as readfile:
             players = [dict(c) for c in csv.DictReader(readfile)]
@@ -113,7 +113,7 @@ class Command(BaseCommand):
 
 
     def get_hitters(self):
-        url = f"https://www.fangraphs.com/leaders.aspx?pos=all&stats=bat&lg=all&qual=1&type=8&season={self.season}&month=0&season1={self.season}&ind=0&team=0&rost=0&age=0&filter=&players=0&startdate=&enddate=&page=1_1500"
+        url = f"https://www.fangraphs.com/leaders.aspx?pos=all&stats=bat&lg=all&qual=5&type=8&season={self.season}&month=0&season1={self.season}&ind=0&team=0&rost=0&age=0&filter=&players=0&startdate=&enddate=&page=1_1500"
 
         rows = self.get_fg_results(url)
 
@@ -144,7 +144,7 @@ class Command(BaseCommand):
                 print("h,%s,%s" % (h[1].text.strip(), h[1].select('a')[0].attrs['href'].split('playerid=')[1].split('&')[0]))
 
     def get_pitchers(self):
-        url = f"https://www.fangraphs.com/leaders.aspx?pos=all&stats=pit&lg=all&qual=1&type=c,4,5,11,7,8,13,-1,36,37,40,43,44,48,51,-1,6,45,62,122,-1,59&season={self.season}&month=0&season1={self.season}&ind=0&team=0&rost=0&age=0&filter=&players=0&startdate=2019-01-01&enddate=2019-12-31&page=1_1100"
+        url = f"https://www.fangraphs.com/leaders.aspx?pos=all&stats=pit&lg=all&qual=5&type=c,4,5,11,7,8,13,-1,36,37,40,43,44,48,51,-1,6,45,62,122,-1,59&season={self.season}&month=0&season1={self.season}&ind=0&team=0&rost=0&age=0&filter=&players=0&startdate=2019-01-01&enddate=2019-12-31&page=1_1100"
 
         rows = self.get_fg_results(url)
 
