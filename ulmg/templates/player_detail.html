@@ -16,6 +16,7 @@
                             <strong><a href="/admin/ulmg/player/{{ player.id }}/change/">Edit player &#x270E;</a></strong>
                             {% if player.bref_url %}<br/><a class="has-text-weight-light" target="_blank" href="{{ player.bref_url }}">Baseball Reference &Gt;</a>{% endif %}
                             {% if player.fg_url %}<br/><a class="has-text-weight-light" target="_blank" href="{{ player.fg_url }}">Fangraphs &Gt;</a>{% endif %}
+                            {% if p.mlbam_id %}<br/><a class="has-text-weight-light" target="_blank" href="https://baseballsavant.mlb.com/savant-player/{{ p.mlbam_id }}">MLB &Gt;</a>{% endif %}
                         </p>
                     </div>
                 </div>
