@@ -83,18 +83,6 @@ class Player(BaseModel):
     first_name = models.CharField(max_length=255, null=True)
     position = models.CharField(max_length=255, null=True, choices=PLAYER_POSITION_CHOICES)
     birthdate = models.DateField(blank=True, null=True)
-    stats = JSONField(blank=True, null=True)
-    steamer_predix = JSONField(blank=True, null=True)
-    draft_eligibility_year = models.CharField(max_length=4, blank=True, null=True)
-    starts = models.IntegerField(blank=True, null=True)
-    relief_innings_pitched = models.DecimalField(max_digits=4, decimal_places=1, blank=True, null=True)
-    plate_appearances = models.CharField(max_length=255, blank=True, null=True)
-    is_relief_eligible = models.BooleanField(default=False)
-    verified = models.BooleanField(default=False)
-    bats = models.CharField(max_length=255, blank=True, null=True)
-    throws = models.CharField(max_length=255, blank=True, null=True)
-    birth_year = models.CharField(max_length=255, blank=True, null=True)
-    debut = models.CharField(max_length=255, blank=True, null=True)
 
     # IDENTIFIERS
     ba_id = models.CharField(max_length=255, blank=True, null=True)
@@ -104,9 +92,6 @@ class Player(BaseModel):
     fg_id = models.CharField(max_length=255, blank=True, null=True)
 
     # Value
-    raar = models.DecimalField(max_digits=4, decimal_places=1, blank=True, null=True)
-    raal = models.DecimalField(max_digits=4, decimal_places=1, blank=True, null=True)
-    raat = models.DecimalField(max_digits=4, decimal_places=1, blank=True, null=True)
     defense = ArrayField(models.CharField(max_length=10), blank=True, null=True)
 
     # LINKS TO THE WEB
@@ -114,7 +99,6 @@ class Player(BaseModel):
     bref_url = models.CharField(max_length=255, blank=True, null=True)
     bref_img = models.CharField(max_length=255, blank=True, null=True)
     fg_url = models.CharField(max_length=255, blank=True, null=True)
-    mlbam_url = models.CharField(max_length=255, blank=True, null=True)
 
     # ULMG-SPECIFIC
     team = models.ForeignKey(Team, on_delete=models.SET_NULL, blank=True, null=True)
@@ -136,6 +120,12 @@ class Player(BaseModel):
     is_1h_c = models.BooleanField(default=False)
     is_1h_pos = models.BooleanField(default=False)
     is_2h_draft = models.BooleanField(default=False)
+
+    # CAREER STATS (for level)
+    cs_pa = models.IntegerField(blank=True, null=True)
+    cs_gp = models.IntegerField(blank=True, null=True)
+    cs_st = models.IntegerField(blank=True, null=True)
+    cs_ip = models.DecimalField(max_digits=4, decimal_places=1, blank=True, null=True)
 
     # LIVE STATS
     ls_is_mlb = models.BooleanField(default=False)
@@ -216,31 +206,31 @@ class Player(BaseModel):
             return ", ".join([x['display'] for x in sorted(sortdef, key=lambda x: x['sort'])])
         return None
 
-    def set_usage(self):
-        if self.stats:
-            if "P" in self.position:
-                if self.stats.get('gs', None) == "0":
-                    if float(self.stats['ip']) > 70:
-                        return "%s IP" % round((float(self.stats['ip']) * 1.5), 1)
-                    else:
-                        return "%s IP" % round(float(self.stats['ip']), 1)
-                elif self.stats.get('gs', None):
-                    if int(self.stats['g']) > (int(self.stats['gs']) * 1.5):
-                        if float(self.stats['ip']) > 70:
-                            return "%s IP" % round((float(self.stats['ip']) * 1.5), 1)
-                        else:
-                            return "%s IP" % self.stats['ip']
-                    else:
-                        return "%s ST" % self.stats['gs']
-                else:
-                    return "%s IP" % self.stats['ip']
-            else:
-                if self.stats.get('pa', None):
-                    if int(self.stats['pa']) > 550:
-                        return "Unlimited"
-                    else:
-                        return "%s PA" % self.stats['pa']
-        return None
+    # def set_usage(self):
+    #     if self.stats:
+    #         if "P" in self.position:
+    #             if self.stats.get('gs', None) == "0":
+    #                 if float(self.stats['ip']) > 70:
+    #                     return "%s IP" % round((float(self.stats['ip']) * 1.5), 1)
+    #                 else:
+    #                     return "%s IP" % round(float(self.stats['ip']), 1)
+    #             elif self.stats.get('gs', None):
+    #                 if int(self.stats['g']) > (int(self.stats['gs']) * 1.5):
+    #                     if float(self.stats['ip']) > 70:
+    #                         return "%s IP" % round((float(self.stats['ip']) * 1.5), 1)
+    #                     else:
+    #                         return "%s IP" % self.stats['ip']
+    #                 else:
+    #                     return "%s ST" % self.stats['gs']
+    #             else:
+    #                 return "%s IP" % self.stats['ip']
+    #         else:
+    #             if self.stats.get('pa', None):
+    #                 if int(self.stats['pa']) > 550:
+    #                     return "Unlimited"
+    #                 else:
+    #                     return "%s PA" % self.stats['pa']
+    #     return None
 
 
     @property

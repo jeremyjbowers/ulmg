@@ -102,7 +102,7 @@ class PlayerAdmin(admin.ModelAdmin):
     list_display = ["last_name", "first_name", "is_owned", 'is_carded', "team", 'birthdate']
     list_filter = ["is_owned", "is_carded", "team", "level", "position"]
     list_editable = []
-    readonly_fields = ["name", "age", 'is_relief_eligible', 'relief_innings_pitched', 'starts', 'plate_appearances','stats', 'steamer_predix']
+    readonly_fields = ["name", "age"]
     search_fields = ["name"]
     autocomplete_fields = ['team']
     fieldsets = (
