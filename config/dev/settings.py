@@ -86,8 +86,8 @@ Section for site-specific settings, e.g., controlling tabs, current draft year, 
 """
 TEAM_PROTECT_TAB = False
 TEAM_ROSTER_TAB = False
-TEAM_SEASON_HALF = "2h"
-CURRENT_SEASON = 2019
+TEAM_SEASON_HALF = "1h"
+CURRENT_SEASON = 2020
 CURRENT_SEASON_TYPE = "offseason"
 CSV_COLUMNS = [
     'last_name', 
