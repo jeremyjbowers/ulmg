@@ -112,7 +112,7 @@ class PlayerAdmin(admin.ModelAdmin):
                 ('first_name', 'last_name'),
                 ('birthdate', 'age'),
                 'position',
-                'level',
+                ('level', 'is_amateur'),
                 'team',
             ),
         }),
@@ -124,18 +124,7 @@ class PlayerAdmin(admin.ModelAdmin):
                 'ba_id',
                 'fg_url',
                 'bref_url',
-                'mlbam_url',
                 'ba_url'
-            )
-        }),
-        ('Stats', {
-            'classes': ('collapse',),
-            'fields': (
-                'is_relief_eligible',
-                'relief_innings_pitched',
-                'starts',
-                'plate_appearances',
-                ('raar','raal','raat'),
             )
         }),
         ('Player flags', {
@@ -143,7 +132,6 @@ class PlayerAdmin(admin.ModelAdmin):
             'fields': (
                 'is_carded',
                 'is_owned',
-                'is_amateur'
             )
         }),
         ('Roster', {
@@ -163,13 +151,5 @@ class PlayerAdmin(admin.ModelAdmin):
                 'is_1h_pos',
                 'is_2h_draft',
             )
-        }),
-        ('Advanced', {
-            'classes': ('collapse',),
-            'fields': (
-                'stats',
-                'steamer_predix',
-                'notes'
-            )
-        }),
+        })
     )
