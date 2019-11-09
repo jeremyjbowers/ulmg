@@ -448,6 +448,19 @@ class Trade(BaseModel):
     def reciepts(self):
         return TradeReceipt.objects.filter(trade=self)
 
+    def summary_html(self):
+        r = self.reciepts()
+        t1 = r[0]
+        t2 = r[1]
+
+        return "%s: %s sends %s to %s for %s" % (
+            self.date,
+            "<a href='/teams/%s/'>%s</a>" % (t1.team.abbreviation.lower(), t1.team.abbreviation),
+            ", ".join(["%s <a href='/players/%s/'>%s</a>" % (p.position, p.id, p.name) for p in t2.players.all()] + ["%s" % (p.slug) for p in t2.picks.all()]),
+            "<a href='/teams/%s/'>%s</a>" % (t2.team.abbreviation.lower(), t2.team.abbreviation),
+            ", ".join(["%s <a href='/players/%s/'>%s</a>" % (p.position, p.id, p.name) for p in t1.players.all()] + ["%s" % (p.slug) for p in t1.picks.all()]),
+        )
+
     def summary(self):
         r = self.reciepts()
         t1 = r[0]
