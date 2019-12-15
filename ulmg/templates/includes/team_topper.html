@@ -11,3 +11,22 @@
         <br/><a href="/teams/{{ team.abbreviation }}/csv/{% if value %}?value=true{% endif %}">Download team roster &dtrif;</a>
     </span>
 </h1>
+<style>
+    p.level-heading {
+        font-size:20px;
+    }
+    p.level-title {
+        font-size:32px;
+        font-weight:bold;
+    }
+</style>
+<nav class="level is-mobile">
+    {% for level in level_distribution %}
+    <div class="level-item has-text-centered">
+        <div>
+        <p class="level-heading heading">{% if level.level_order == 0 %}B-LEVEL{% elif level.level_order == 5 %}A-LEVEL{% else %}VETERAN{% endif %}</p>
+        <p class="level-title title">{{ level.level_order__count }}</p>
+        </div>
+    </div>
+    {% endfor %}
+</nav>

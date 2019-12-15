@@ -50,6 +50,7 @@ def team_detail(request, abbreviation):
     context = utils.build_context(request)
     context['team'] = get_object_or_404(models.Team, abbreviation__icontains=abbreviation)
     team_players = models.Player.objects.filter(team=context['team'])
+    context['level_distribution'] = team_players.order_by('level_order').values('level_order').annotate(Count('level_order'))
     context['num_owned'] = models.Player.objects.filter(team=context['team']).count()
     context['hitters'] = team_players.exclude(position="P").order_by('position', '-level_order', 'last_name', 'first_name')
     context['pitchers'] = team_players.filter(position="P").order_by('-level_order', 'last_name', 'first_name')
@@ -60,6 +61,8 @@ def team_other(request, abbreviation):
     context = utils.build_context(request)
     team = get_object_or_404(models.Team, abbreviation__icontains=abbreviation)
     context['team'] = team
+    team_players = models.Player.objects.filter(team=context['team'])
+    context['level_distribution'] = team_players.order_by('level_order').values('level_order').annotate(Count('level_order'))
     context['num_owned'] = models.Player.objects.filter(team=team).count()
     context['trades'] = models.TradeReceipt.objects.filter(team=team, trade__isnull=False).order_by('-trade__date')
     context['picks'] = models.DraftPick.objects.filter(team=team).order_by('-year', 'season', 'draft_type', 'draft_round', 'pick_number')
