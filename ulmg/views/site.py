@@ -151,7 +151,7 @@ def search(request):
 
     if request.GET.get('name', None):
         name = request.GET['name']
-        query = query.filter(name__search=name)
+        query = query.filter(name__icontains=name)
         context['name'] = name
 
     if request.GET.get('position', None):
