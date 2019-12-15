@@ -38,10 +38,13 @@ def player(request, playerid):
 
 def player_detail(request, playerid):
     context = utils.build_context(request)
-
     context['player'] = models.Player.objects.get(id=playerid)
+    return render(request, "player_detail.html", context)
 
-    return renter(request, "player_detail.html", context)
+def player_util(request):
+    context = utils.build_context(request)
+    context['no_fg_ids'] = models.Player.objects.filter(fg_id__isnull=True).filter(is_amateur=False)
+    return render(request, "player_util.html", context)
 
 def team_detail(request, abbreviation):
     context = utils.build_context(request)
