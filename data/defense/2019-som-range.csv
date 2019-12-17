@@ -150,7 +150,7 @@ AL,CH,Thyago,Vieira,COMP,PIT,,,,,,,,
 AL,CI,Greg,Allen,REG,BAT,,,,,,2,2,2
 AL,CI,Jake,Bauers,REG,BAT,,2,,,,4(B3),,
 AL,CI,Bobby,Bradley,COMP,BAT,,4,,,,,,
-AL,CI,Yu-Cheng,Chang,ADD,BAT,,,,4,4,,,
+AL,CI,Yu,Chang,ADD,BAT,,,,4,4,,,
 AL,CI,Ryan,Flaherty,COMP,BAT,,,4,4,,,,
 AL,CI,Mike,Freeman,REG,BAT,,,3,3(B4),4,4,,
 AL,CI,Carlos,Gonzalez,ADD,BAT,,,,,,3,,3
@@ -565,7 +565,7 @@ AL,SM,Domingo,Santana,REG,BAT,,,,,,5,,5
 AL,SM,Kyle,Seager,REG,BAT,,,,2,,,,
 AL,SM,Mallex,Smith,REG,BAT,,,,,,4,4,4
 AL,SM,Ichiro,Suzuki,COMP,BAT,,,,,,,,4
-AL,SM,Daniel,Vogelbach,REG,BAT,,5(B4),,,,,,
+AL,SM,Dan,Vogelbach,REG,BAT,,5(B4),,,,,,
 AL,SM,Donnie,Walton,COMP,BAT,,,4,,4,,,
 AL,SM,Mac,Williamson,ADD,BAT,,,,,,4,,
 AL,SM,Austin L,Adams,REG,PIT,,,,,,,,
@@ -617,7 +617,7 @@ AL,TB,Guillermo,Heredia,REG,BAT,,,,,,2,2,2
 AL,TB,Kevin,Kiermaier,REG,BAT,,,,,,,1,
 AL,TB,Erik,Kratz,COMP,BAT,3,,,,,,,
 AL,TB,Brandon,Lowe,REG,BAT,,4,3,,,4,,4
-AL,TB,Nate,Lowe,ADD,BAT,,4,,5,,,,
+AL,TB,Nathaniel,Lowe,ADD,BAT,,4,,5,,,,
 AL,TB,Austin,Meadows,REG,BAT,,,,,,3,4,3
 AL,TB,Michael,Perez,COMP,BAT,3,4,,,,,,
 AL,TB,Tommy,Pham,REG,BAT,,,,,,3(B2),,
@@ -857,7 +857,7 @@ NL,CC,Javier,Baez,REG,BAT,,,,3,1(B2),,,
 NL,CC,David,Bote,REG,BAT,,,3,3(B4),4,,,5
 NL,CC,Kris,Bryant,REG,BAT,,4,,3,,4,,4
 NL,CC,Victor,Caratini,REG,BAT,4,4,,5,,,,
-NL,CC,Nicholas,Castellanos,REG,BAT,,,,,,5(B4),,5(B4)
+NL,CC,Nick,Castellanos,REG,BAT,,,,,,5(B4),,5(B4)
 NL,CC,Willson,Contreras,REG,BAT,3,4,,,,,,4
 NL,CC,Taylor,Davis,COMP,BAT,4,4,,,,,,
 NL,CC,Daniel,Descalso,REG,BAT,,4,4,4,,,,
@@ -1004,7 +1004,7 @@ NL,LD,David,Freese,REG,BAT,,4,,4,,,,
 NL,LD,Rocky,Gale,COMP,BAT,3,,,,,,,
 NL,LD,Kyle,Garlick,COMP,BAT,,,,,,4,,4
 NL,LD,Jedd,Gyorko,ADD,BAT,,4,4,3,,,,
-NL,LD,Kike,Hernandez,REG,BAT,,4,2,4,4,3,3,3
+NL,LD,Enrique,Hernandez,REG,BAT,,4,2,4,4,3,3,3
 NL,LD,Gavin,Lux,ADD,BAT,,,4,,,,,
 NL,LD,Russell,Martin,REG,BAT,2,,,4,,,,
 NL,LD,Max,Muncy,REG,BAT,,4,4,4,,,,
@@ -1138,7 +1138,7 @@ NL,ML,Devin,Williams,COMP,PIT,,,,,,,,
 NL,ML,Taylor,Williams,COMP,PIT,,,,,,,,
 NL,ML,Alex,Wilson,COMP,PIT,,,,,,,,
 NL,ML,Brandon,Woodruff,REG,PIT,,,,,,,,
-NL,NM,Pete,Alonso,REG,BAT,,4,,,,,,
+NL,NM,Peter,Alonso,REG,BAT,,4,,,,,,
 NL,NM,Aaron,Altherr,ADD,BAT,,,,,,2,3,3
 NL,NM,Keon,Broxton,COMP,BAT,,,,,,2,2,2
 NL,NM,Robinson,Cano,REG,BAT,,,4(B3),,,,,
