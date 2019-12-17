@@ -38,5 +38,33 @@ class Command(BaseCommand):
                                 d = f"{pos}-{rating}"
                                 defense.add(d)
                         obj.defense = list(defense)
+                        inf = False
+                        of = False
+                        c = False
+                        for p in obj.defense:
+                            if "C-" in p:
+                                c = True
+                            if "F-" in p:
+                                of = True
+                            if "B-" in p:
+                                inf = True
+                            if "SS" in p:
+                                inf = True
+
+                            if c == True:
+                                obj.position = "C"
+
+                            if inf == True:
+                                obj.position = "IF"
+
+                            if of == True:
+                                obj.position = "OF"
+
+                            if inf == True and of == True:
+                                obj.position = "IF-OF"
+
+                        if obj.defense == []:
+                            obj.position = "DH"
+
                         obj.save()
                         print(obj.name, obj.defense)
