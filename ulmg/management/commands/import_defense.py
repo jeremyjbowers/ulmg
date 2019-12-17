@@ -15,14 +15,16 @@ class Command(BaseCommand):
         parser.add_argument('year', type=str)
 
     def handle(self, *args, **options):
+
         year = options.get('year', None)
-    
         if year:
+
+            models.Player.objects.exclude(position="P").update(defense=[])
             with open(f'data/defense/{year}-som-range.csv', 'r') as readfile:
                 players = [dict(c) for c in csv.DictReader(readfile)]
 
                 for p in players:
-                    obj = models.Player.objects.filter(name__search=p['name']).exclude(position="P")
+                    obj = models.Player.objects.filter(name__search="%s %s" % (p['FIRST'], p['LAST'])).exclude(position="P")
                     if len(obj) == 1:
                         obj = obj[0]
                         if not obj.defense:
@@ -35,6 +37,6 @@ class Command(BaseCommand):
                                     rating = rating.split("(")[0]
                                 d = f"{pos}-{rating}"
                                 defense.add(d)
-                    obj.defense = list(defense)
-                    obj.save()
-                    print(obj.name, obj.defense)
+                        obj.defense = list(defense)
+                        obj.save()
+                        print(obj.name, obj.defense)
