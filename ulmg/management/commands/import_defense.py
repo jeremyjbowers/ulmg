@@ -51,9 +51,6 @@ class Command(BaseCommand):
                             if "SS" in p:
                                 inf = True
 
-                            if c == True:
-                                obj.position = "C"
-
                             if inf == True:
                                 obj.position = "IF"
 
@@ -62,6 +59,9 @@ class Command(BaseCommand):
 
                             if inf == True and of == True:
                                 obj.position = "IF-OF"
+
+                            if c == True:
+                                obj.position = "C"
 
                         if obj.defense == []:
                             obj.position = "DH"
