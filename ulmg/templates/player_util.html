@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h2>No FG ids</h2>
+    <ul>
+    {% for p in no_fg_ids %}
+    <li><a href="/admin/ulmg/player/{{ p.id }}/change/">{{ p.name }}</a></li>
+    {% endfor %}
+    </ul>
