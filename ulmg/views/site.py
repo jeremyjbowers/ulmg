@@ -38,15 +38,19 @@ def player(request, playerid):
 
 def player_detail(request, playerid):
     context = utils.build_context(request)
-
     context['player'] = models.Player.objects.get(id=playerid)
+    return render(request, "player_detail.html", context)
 
-    return renter(request, "player_detail.html", context)
+def player_util(request):
+    context = utils.build_context(request)
+    context['no_fg_ids'] = models.Player.objects.filter(fg_id__isnull=True).filter(is_amateur=False)
+    return render(request, "player_util.html", context)
 
 def team_detail(request, abbreviation):
     context = utils.build_context(request)
     context['team'] = get_object_or_404(models.Team, abbreviation__icontains=abbreviation)
     team_players = models.Player.objects.filter(team=context['team'])
+    context['level_distribution'] = team_players.order_by('level_order').values('level_order').annotate(Count('level_order'))
     context['num_owned'] = models.Player.objects.filter(team=context['team']).count()
     context['hitters'] = team_players.exclude(position="P").order_by('position', '-level_order', 'last_name', 'first_name')
     context['pitchers'] = team_players.filter(position="P").order_by('-level_order', 'last_name', 'first_name')
@@ -57,6 +61,8 @@ def team_other(request, abbreviation):
     context = utils.build_context(request)
     team = get_object_or_404(models.Team, abbreviation__icontains=abbreviation)
     context['team'] = team
+    team_players = models.Player.objects.filter(team=context['team'])
+    context['level_distribution'] = team_players.order_by('level_order').values('level_order').annotate(Count('level_order'))
     context['num_owned'] = models.Player.objects.filter(team=team).count()
     context['trades'] = models.TradeReceipt.objects.filter(team=team, trade__isnull=False).order_by('-trade__date')
     context['picks'] = models.DraftPick.objects.filter(team=team).order_by('-year', 'season', 'draft_type', 'draft_round', 'pick_number')
@@ -145,7 +151,7 @@ def search(request):
 
     if request.GET.get('name', None):
         name = request.GET['name']
-        query = query.filter(name__search=name)
+        query = query.filter(name__icontains=name)
         context['name'] = name
 
     if request.GET.get('position', None):

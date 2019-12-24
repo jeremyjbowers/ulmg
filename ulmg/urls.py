@@ -16,6 +16,7 @@ urlpatterns = [
     path('teams/<str:abbreviation>/other/', site_v.team_other),
     path('teams/<str:abbreviation>/', site_v.team_detail),
     path('trades/', site_v.trades),
+    path('players/util/', site_v.player),
     path('players/<int:playerid>/', site_v.player),
     path('players/search/', site_v.search),
     path('draft/live/<int:year>/<str:season>/<str:draft_type>/edit/', site_v.draft_admin),

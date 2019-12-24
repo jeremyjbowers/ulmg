@@ -15,14 +15,16 @@ class Command(BaseCommand):
         parser.add_argument('year', type=str)
 
     def handle(self, *args, **options):
+
         year = options.get('year', None)
-    
         if year:
+
+            models.Player.objects.exclude(position="P").update(defense=[])
             with open(f'data/defense/{year}-som-range.csv', 'r') as readfile:
                 players = [dict(c) for c in csv.DictReader(readfile)]
 
                 for p in players:
-                    obj = models.Player.objects.filter(name__search=p['name']).exclude(position="P")
+                    obj = models.Player.objects.filter(name__search="%s %s" % (p['FIRST'], p['LAST'])).exclude(position="P")
                     if len(obj) == 1:
                         obj = obj[0]
                         if not obj.defense:
@@ -35,6 +37,34 @@ class Command(BaseCommand):
                                     rating = rating.split("(")[0]
                                 d = f"{pos}-{rating}"
                                 defense.add(d)
-                    obj.defense = list(defense)
-                    obj.save()
-                    print(obj.name, obj.defense)
+                        obj.defense = list(defense)
+                        inf = False
+                        of = False
+                        c = False
+                        for p in obj.defense:
+                            if "C-" in p:
+                                c = True
+                            if "F-" in p:
+                                of = True
+                            if "B-" in p:
+                                inf = True
+                            if "SS" in p:
+                                inf = True
+
+                            if inf == True:
+                                obj.position = "IF"
+
+                            if of == True:
+                                obj.position = "OF"
+
+                            if inf == True and of == True:
+                                obj.position = "IF-OF"
+
+                            if c == True:
+                                obj.position = "C"
+
+                        if obj.defense == []:
+                            obj.position = "DH"
+
+                        obj.save()
+                        print(obj.name, obj.defense)
