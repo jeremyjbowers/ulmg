@@ -14,7 +14,6 @@ from ulmg import models, utils
 
 def all_csv(request):
     team_players = models.Player.objects.filter(is_owned=True).order_by('team', '-is_35man_roster', 'position', '-level_order', 'last_name', 'first_name').values(*settings.CSV_COLUMNS)
-
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = 'attachment; filename="all-teams-%s.csv"' % (datetime.datetime.now().isoformat().split('.')[0])
     writer = csv.DictWriter(response, fieldnames=settings.CSV_COLUMNS)

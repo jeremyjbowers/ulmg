@@ -92,21 +92,20 @@ CURRENT_SEASON_TYPE = "offseason"
 CSV_COLUMNS = [
     'last_name', 
     'first_name', 
-    'birthdate',
     'fg_id',
     'level', 
     'is_carded', 
-    'is_relief_eligible', 
-    'starts', 
-    'relief_innings_pitched', 
-    'plate_appearances', 
+    'ls_gs',
+    'ls_g',
+    'ls_plate_appearances', 
     'defense',
     'is_reserve',
     'is_1h_p',
     'is_1h_c',
     'is_1h_pos',
     'is_mlb_roster',
-    'is_aaa_roster'
+    'is_aaa_roster',
+    'team__abbreviation'
 ]
 DRAFTS = [
     {"title": "2019 Offseason Open", "url": "/draft/2019/offseason/open/"},
