@@ -101,7 +101,7 @@ class PlayerAdmin(admin.ModelAdmin):
     model = Player
     list_display = ["last_name", "first_name", "is_owned", "team", 'birthdate', 'is_amateur', 'fg_id', 'league']
     list_filter = ["is_owned", "team", "level", "position", 'is_amateur']
-    list_editable = ['birthdate', 'league']
+    list_editable = ['birthdate', 'league', 'is_amateur']
     readonly_fields = ["name", "age"]
     search_fields = ["name"]
     autocomplete_fields = ['team']
