@@ -82,8 +82,12 @@ class Player(BaseModel):
     J2 = "J2"
     TAIWAN = "TAI"
     MEXICO = "MEX"
+    NCAA = "NCAA"
+    USHS = "US HS"
     OTHER = "OTH"
     OTHER_PRO_LEAGUES = (
+        (NCAA, "NCAA"),
+        (USHS, "US HS"),
         (JAPAN,"JPN"),
         (KOREA,"KOR"),
         (J2,"J2"),
