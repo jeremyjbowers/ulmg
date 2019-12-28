@@ -98,7 +98,7 @@ class Player(BaseModel):
     name = models.CharField(max_length=255)
     last_name = models.CharField(max_length=255, null=True)
     first_name = models.CharField(max_length=255, null=True)
-    position = models.CharField(max_length=255, blank=True, null=True, choices=PLAYER_POSITION_CHOICES)
+    position = models.CharField(max_length=255, null=True, choices=PLAYER_POSITION_CHOICES)
     birthdate = models.DateField(blank=True, null=True)
 
     # IDENTIFIERS
@@ -127,7 +127,7 @@ class Player(BaseModel):
     is_owned = models.BooleanField(default=False)
     is_carded = models.BooleanField(default=False)
     is_amateur = models.BooleanField(default=False)
-    league = models.CharField(max_length=255, null=True, choices=OTHER_PRO_LEAGUES)
+    league = models.CharField(max_length=255, blank=True, null=True, choices=OTHER_PRO_LEAGUES)
 
     # ROSTERS
     is_mlb_roster = models.BooleanField(default=False)
