@@ -98,7 +98,7 @@ class Player(BaseModel):
     name = models.CharField(max_length=255)
     last_name = models.CharField(max_length=255, null=True)
     first_name = models.CharField(max_length=255, null=True)
-    position = models.CharField(max_length=255, null=True, choices=PLAYER_POSITION_CHOICES)
+    position = models.CharField(max_length=255, blank=True, null=True, choices=PLAYER_POSITION_CHOICES)
     birthdate = models.DateField(blank=True, null=True)
 
     # IDENTIFIERS
