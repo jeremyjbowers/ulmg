@@ -43,7 +43,7 @@ def player_detail(request, playerid):
 
 def player_util(request):
     context = utils.build_context(request)
-    context['no_fg_ids'] = models.Player.objects.filter(fg_id__isnull=True).filter(is_amateur=False)
+    context['no_fg_ids'] = models.Player.objects.filter(fg_id__isnull=True).filter(is_amateur=False).order_by('-created')
     return render(request, "player_util.html", context)
 
 def team_detail(request, abbreviation):

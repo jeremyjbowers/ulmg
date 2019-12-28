@@ -175,19 +175,6 @@ class Player(BaseModel):
         if self.fg_id:
             self.fg_url = "https://www.fangraphs.com/statss.aspx?playerid=%s" % self.fg_id
 
-    def ls(self):
-        try:
-            return LiveStat.objects.get(player=self)
-        except:
-            return LiveStat(**{
-                "wrc_plus": None, 
-                "plate_appearances": None, 
-                "iso": None, 
-                "k_pct": None, 
-                "bb_pct": None, 
-                "woba": None, 
-            })
-
     def to_dict(self):
         return {
             "name": self.name,
@@ -239,12 +226,6 @@ class Player(BaseModel):
             now = datetime.datetime.utcnow().date()
             return relativedelta(now, self.birthdate).years
         return None
-
-    def latest_note(self):
-        notes = PlayerNote.objects.filter(player=self)
-        if len(notes) > 0:
-            return notes[0].note
-        return ""
 
     def get_team(self):
         """
@@ -354,30 +335,6 @@ class DraftPick(BaseModel):
 
     def __unicode__(self):
         return "%s %s %s (%s)" % (self.year, self.season, self.slug, self.team)
-
-    def to_dict(self):
-        payload = dict(self.__dict__)
-        del payload['_state']
-        del payload['created']
-        del payload['last_modified']
-        if self.player:
-            payload['player'] = {}
-            payload['player']['birthdate'] = self.player.birthdate
-            payload['player']['name'] = self.player.name
-            payload['player']['age'] = self.player.age
-            payload['player']['position'] = self.player.position
-            if self.draft_type == "open":
-                payload['player']['raar'] = self.player.raar
-                payload['player']['raal'] = self.player.raal
-                payload['player']['raat'] = self.player.raat
-                payload['player']['defense'] = self.player.defense_display()
-            else:
-                payload['player']['amateur'] = self.player.is_amateur
-        if self.team:
-            payload['team'] = self.team.abbreviation
-        if self.original_team:
-            payload['original_team'] = self.original_team.abbreviation
-        return payload
 
     def slugify(self):
         if self.draft_type == "aa":
