@@ -59,6 +59,7 @@ class Player(BaseModel):
         (A_LEVEL,"A"),
         (B_LEVEL,"B"),
     )
+
     PITCHER = "P"
     CATCHER = "C"
     INFIELD = "IF"
@@ -75,6 +76,22 @@ class Player(BaseModel):
         (PITCHER_OF,"Pitcher/Outfield"),
         (PITCHER_IF,"Pitcher/Infield"),
     )
+
+    JAPAN = "JPN"
+    KOREA = "KOR"
+    J2 = "J2"
+    TAIWAN = "TAI"
+    MEXICO = "MEX"
+    OTHER = "OTH"
+    OTHER_PRO_LEAGUES = (
+        (JAPAN,"JPN"),
+        (KOREA,"KOR"),
+        (J2,"J2"),
+        (TAIWAN,"TAI"),
+        (MEXICO,"MEX"),
+        (OTHER,"OTH"),
+    )
+
     # STUFF ABOUT THE PLAYER
     level = models.CharField(max_length=255, null=True, choices=PLAYER_LEVEL_CHOICES)
     level_order = models.IntegerField(null=True, blank=True)
@@ -87,6 +104,7 @@ class Player(BaseModel):
     # IDENTIFIERS
     ba_id = models.CharField(max_length=255, blank=True, null=True)
     mlbam_id = models.CharField(max_length=255, blank=True, null=True)
+    mlb_dotcom = models.CharField(max_length=255, blank=True, null=True)
     bp_id = models.CharField(max_length=255, blank=True, null=True)
     bref_id = models.CharField(max_length=255, blank=True, null=True)
     fg_id = models.CharField(max_length=255, blank=True, null=True)
@@ -99,6 +117,7 @@ class Player(BaseModel):
     bref_url = models.CharField(max_length=255, blank=True, null=True)
     bref_img = models.CharField(max_length=255, blank=True, null=True)
     fg_url = models.CharField(max_length=255, blank=True, null=True)
+    mlb_dotcom_url = models.CharField(max_length=255, blank=True, null=True)
 
     # ULMG-SPECIFIC
     team = models.ForeignKey(Team, on_delete=models.SET_NULL, blank=True, null=True)
@@ -108,6 +127,7 @@ class Player(BaseModel):
     is_owned = models.BooleanField(default=False)
     is_carded = models.BooleanField(default=False)
     is_amateur = models.BooleanField(default=False)
+    league = models.CharField(max_length=255, null=True, choices=OTHER_PRO_LEAGUES)
 
     # ROSTERS
     is_mlb_roster = models.BooleanField(default=False)
