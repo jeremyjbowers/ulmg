@@ -99,9 +99,9 @@ class TeamAdmin(admin.ModelAdmin):
 @admin.register(Player)
 class PlayerAdmin(admin.ModelAdmin):
     model = Player
-    list_display = ["last_name", "first_name", "is_owned", "team", 'birthdate', 'is_amateur']
+    list_display = ["last_name", "first_name", "is_owned", "team", 'birthdate', 'is_amateur', 'fg_id', 'league']
     list_filter = ["is_owned", "team", "level", "position", 'is_amateur']
-    list_editable = ['birthdate']
+    list_editable = ['birthdate', 'league']
     readonly_fields = ["name", "age"]
     search_fields = ["name"]
     autocomplete_fields = ['team']
@@ -112,7 +112,7 @@ class PlayerAdmin(admin.ModelAdmin):
                 ('first_name', 'last_name'),
                 ('birthdate', 'age'),
                 'position',
-                ('level', 'is_amateur'),
+                ('level', 'is_amateur', 'league'),
                 'team',
             ),
         }),
@@ -121,10 +121,12 @@ class PlayerAdmin(admin.ModelAdmin):
                 'fg_id',
                 'bref_id',
                 'mlbam_id',
+                'mlb_dotcom',
                 'ba_id',
                 'fg_url',
                 'bref_url',
-                'ba_url'
+                'ba_url',
+                'mlb_dotcom_url'
             )
         }),
         ('Player flags', {
