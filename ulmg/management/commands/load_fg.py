@@ -122,7 +122,7 @@ class Command(BaseCommand):
                 obj = models.Player()
                 obj.first_name = name.first
                 obj.last_name = name.last
-                obj.position = "P"
+                obj.position = "IF/OF"
                 obj.level = "B"
                 obj.fg_id = p[1]
                 obj.save()
