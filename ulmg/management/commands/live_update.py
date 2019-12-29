@@ -42,7 +42,6 @@ class Command(BaseCommand):
 
         for k,v in players.items():
             url = f"https://www.fangraphs.com/api/leaders/minor-league/data?pos=all&lg=2,4,5,6,7,8,9,10,11,14,12,13,15,17,18,30,32,33&stats={k}&qual=5&type=0&team=&season={self.season}&seasonEnd={self.season}&org=&ind=0&splitTeam=false"
-            print(url)
             r = requests.get(url)
             players[k] += r.json()
 
@@ -114,7 +113,7 @@ class Command(BaseCommand):
 
     def get_hitters(self):
         url = f"https://www.fangraphs.com/leaders.aspx?pos=all&stats=bat&lg=all&qual=5&type=8&season={self.season}&month=0&season1={self.season}&ind=0&team=0&rost=0&age=0&filter=&players=0&startdate=&enddate=&page=1_1500"
-
+        print(url)
         rows = self.get_fg_results(url)
 
         for row in rows:
