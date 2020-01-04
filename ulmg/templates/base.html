@@ -9,7 +9,7 @@
         <meta name="msapplication-TileColor" content="#da532c">
         <meta name="theme-color" content="#ffffff">
 
-        <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bulma/0.7.5/css/bulma.min.css">
+        <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bulma/0.8.0/css/bulma.min.css">
         <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/sortable/0.8.0/css/sortable-theme-minimal.min.css">
         <link href="https://fonts.googleapis.com/css?family=Bungee" rel="stylesheet">
         <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/awesomplete/1.1.5/awesomplete.min.css">
@@ -287,10 +287,22 @@
                 margin: 10px 0 5px 0;
                 display:block;
             }
+            div.top-right-sticky {
+                position:fixed;
+                text-align: right;
+                z-index: 99999999;
+                width: 100%;
+                top: 50px;
+                right: 25px;
+            }
+            div.top-right-sticky div.roster-item {
+                float:right;
+            }
         </style>
         {% block extrahead %}{% endblock %}
     </head>
     <body>
+        {% if protect_tab %}{% include "includes/roster_status.html" %}{% endif %}
         {% include "includes/nav.html" %}
         {% block hero %}{% endblock %}
         <div class="section">

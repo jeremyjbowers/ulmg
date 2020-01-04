@@ -50,6 +50,7 @@ def team_detail(request, abbreviation):
     context = utils.build_context(request)
     context['team'] = get_object_or_404(models.Team, abbreviation__icontains=abbreviation)
     team_players = models.Player.objects.filter(team=context['team'])
+    context['35_roster_count'] = team_players.filter(is_35man_roster=True).count()
     context['level_distribution'] = team_players.order_by('level_order').values('level_order').annotate(Count('level_order'))
     context['num_owned'] = models.Player.objects.filter(team=context['team']).count()
     context['hitters'] = team_players.exclude(position="P").order_by('position', '-level_order', 'last_name', 'first_name')

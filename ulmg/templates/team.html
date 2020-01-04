@@ -35,6 +35,7 @@
             {% for p in position.list %}
             <tr class="
             {% if p.ls_is_mlb == False and p.ls_plate_appearances > 0 %} minors{% endif %}
+            {% if p.ls_is_mlb == False %} minors{% endif %}
             {% if p.ls_is_mlb == False and p.is_amateur == True %} amateur{% endif %}
             ">
                     <td data-value="{{ p.name }}" style="text-align: left!important;">
@@ -82,6 +83,7 @@
             <tr class="
             {% if p.ls_is_mlb == False and p.ls_ip > 0 %} minors{% endif %}
             {% if p.ls_is_mlb == False and p.is_amateur == True %} amateur{% endif %}
+            {% if p.ls_is_mlb == False %} minors{% endif %}
             ">
                     <td data-value="{{ p.name }}" style="text-align: left!important;"><span class="has-text-weight-semibold" data-value="{{ p.name }}">
                             <a href="/players/{{ p.id }}/" target="_blank">{{ p.name }}</a></span>

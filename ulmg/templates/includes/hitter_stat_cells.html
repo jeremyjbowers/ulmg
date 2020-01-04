@@ -8,11 +8,11 @@
 <td data-value="{{ p.ls_xwoba|default_if_none:"-999" }}">{{ p.ls_xwoba|kill_leading_zero|default_if_none:"-" }}</td>{% endif %}
 <td data-value="{{ p.ls_avg|default_if_none:"-999" }}">{{ p.ls_avg|kill_leading_zero|default_if_none:"-" }}</td>
 {% if not advanced %}<td data-value="{{ p.ls_obp|default_if_none:"-999" }}">{{ p.ls_obp|kill_leading_zero|default_if_none:"-" }}</td>{% endif %}
-<td data-value="{{ p.ls_slg|default_if_none:"-999" }}">{{ p.ls_slg|kill_leading_zero|default_if_none:"0" }}</td>
-{% if not advanced %}<td data-value="{{ p.ls_hr|default_if_none:"-999" }}">{{ p.ls_hr|kill_leading_zero|default_if_none:"0" }}</td>
-<td data-value="{{ p.ls_runs|default_if_none:"-999" }}">{{ p.ls_runs|kill_leading_zero|default_if_none:"0" }}</td>
-<td data-value="{{ p.ls_rbi|default_if_none:"-999" }}">{{ p.ls_rbi|kill_leading_zero|default_if_none:"0" }}</td>
-<td data-value="{{ p.ls_sb|default_if_none:"-999" }}">{{ p.ls_sb|kill_leading_zero|default_if_none:"0" }}</td>{% endif %}
+<td data-value="{{ p.ls_slg|default_if_none:"-999" }}">{{ p.ls_slg|kill_leading_zero|default_if_none:"-" }}</td>
+{% if not advanced %}<td data-value="{{ p.ls_hr|default_if_none:"-999" }}">{{ p.ls_hr|kill_leading_zero|default_if_none:"-" }}</td>
+<td data-value="{{ p.ls_runs|default_if_none:"-999" }}">{{ p.ls_runs|kill_leading_zero|default_if_none:"-" }}</td>
+<td data-value="{{ p.ls_rbi|default_if_none:"-999" }}">{{ p.ls_rbi|kill_leading_zero|default_if_none:"-" }}</td>
+<td data-value="{{ p.ls_sb|default_if_none:"-999" }}">{{ p.ls_sb|kill_leading_zero|default_if_none:"-" }}</td>{% endif %}
 {% if advanced %}<td data-value="{{ p.ls_xavg|default_if_none:"-999" }}">{{ p.ls_xavg|kill_leading_zero|default_if_none:"-" }}</td>
 <td data-value="{{ p.ls_xslg|default_if_none:"-999" }}">{{ p.ls_xslg|kill_leading_zero|default_if_none:"-" }}</td>
 <td data-value="{{ p.ls_babip|default_if_none:"-999" }}">{{ p.ls_babip|kill_leading_zero|default_if_none:"-" }}</td>

@@ -22,7 +22,7 @@ def player_action(request, playerid, action):
     is_1h_pos = models.BooleanField(default=False)
     """
 
-    if action == "to_35":
+    if action == "to_35_man":
         p = get_object_or_404(models.Player, id=playerid)
         p.is_reserve = False
         p.is_1h_c = False
@@ -43,6 +43,11 @@ def player_action(request, playerid, action):
     if action == "is_reserve":
         p = get_object_or_404(models.Player, id=playerid)
         old = models.Player.objects.filter(team=p.team, is_reserve=True).update(is_reserve=False)
+        p.is_reserve = False
+        p.is_1h_c = False
+        p.is_1h_p = False
+        p.is_1h_pos = False
+        p.is_35man_roster = False
         p.is_reserve = True
         p.save()
 
@@ -50,18 +55,33 @@ def player_action(request, playerid, action):
     if action == "is_1h_p":
         p = get_object_or_404(models.Player, id=playerid)
         old = models.Player.objects.filter(team=p.team, is_1h_p=True).update(is_1h_p=False)
+        p.is_reserve = False
+        p.is_1h_c = False
+        p.is_1h_p = False
+        p.is_1h_pos = False
+        p.is_35man_roster = False
         p.is_1h_p = True
         p.save()
 
     if action == "is_1h_c":
         p = get_object_or_404(models.Player, id=playerid)
         old = models.Player.objects.filter(team=p.team, is_1h_c=True).update(is_1h_c=False)
+        p.is_reserve = False
+        p.is_1h_c = False
+        p.is_1h_p = False
+        p.is_1h_pos = False
+        p.is_35man_roster = False
         p.is_1h_c = True
         p.save()
 
     if action == "is_1h_pos":
         p = get_object_or_404(models.Player, id=playerid)
         old = models.Player.objects.filter(team=p.team, is_1h_pos=True).update(is_1h_pos=False)
+        p.is_reserve = False
+        p.is_1h_c = False
+        p.is_1h_p = False
+        p.is_1h_pos = False
+        p.is_35man_roster = False
         p.is_1h_pos = True
         p.save()
 

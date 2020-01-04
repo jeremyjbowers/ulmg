@@ -1,4 +1,5 @@
 <td>
+    {% if p.is_35man_roster %}<strong>&check;</strong>{% endif %}
     {% if p.is_mlb_roster %}<strong>MLB</strong>{% endif %}
     {% if p.is_aaa_roster %}<em>AAA</em>{% endif %}
     {% if p.is_reserve %}<span style="color: red;">ASR</span>{% endif %}
@@ -7,18 +8,22 @@
     {% if p.is_1h_p %}<span style="color: red;">PIT1</span>{% endif %}
 </td>
 
-{% if roster_tab %}<td class="right">
+{% if roster_tab %}<td class="left">
     {% if p.is_carded and not p.is_mlb_roster and not p.is_reserve %}<a class="button is-small is-outlined is-success player-action" data-playerid="{{ p.id }}" data-action="to_mlb">MLB &uarr;</a>{% endif %}
     {% if p.is_carded and not p.is_aaa_roster and not p.is_reserve %}<a class="button is-small is-outlined is-info player-action" data-playerid="{{ p.id }}" data-action="to_aaa">AAA &darr;</a>{% endif %}
+    {% if p.is_mlb_roster or p.is_aaa_roster or p.is_reserve %}<a class="button is-small is-light is-warning player-action" data-playerid="{{ p.id }}" data-action="unprotect">O</a>{% endif %}
 </td>{% endif %}
 
-{% if protect_tab %}<td>
-    {% if p.position == "P" and p.level == "V" %}<a class="button is-outlined is-small is-link player-action" data-playerid="{{ p.id }}" data-action="is_1h_p">PIT1</a>{% endif %}
-    {% if p.position == "C" and p.level == "V" %}<a class="button is-outlined is-small is-link player-action" data-playerid="{{ p.id }}" data-action="is_1h_c">CAT1</a>{% endif %}
-    {% if p.position != "P" and p.position != "C" and p.level == "V" %}<a class="button is-outlined is-small is-link player-action" data-playerid="{{ p.id }}" data-action="is_1h_pos">POS1</a>{% endif %}
-    {% if p.level == "V" %}<a class="button is-outlined is-small is-link player-action" data-playerid="{{ p.id }}" data-action="is_reserve">ASR</a>{% endif %}
+{% if protect_tab %}<td class="left">
+    {% if p.is_35man_roster or p.is_reserve or p.is_1h_p or p.is_1h_c or p.is_1h_pos %}<a class="button is-small is-light is-warning player-action" data-playerid="{{ p.id }}" data-action="unprotect">&rarrhk;</a>{% endif %}
+
+    {% if p.is_carded and not p.is_35man_roster and not 35_roster_count == 35 and not p.level == "B" %}<a class="button is-small is-success is-outlined player-action" data-playerid="{{ p.id }}" data-action="to_35_man">35</a>{% endif %}
+    {% if p.position == "P" and p.level == "V" and not p.is_1h_p %}<a class="button is-outlined is-small is-link player-action" data-playerid="{{ p.id }}" data-action="is_1h_p">P</a>{% endif %}
+    {% if p.position == "C" and p.level == "V" and not p.is_1h_c %}<a class="button is-outlined is-small is-link player-action" data-playerid="{{ p.id }}" data-action="is_1h_c">C</a>{% endif %}
+    {% if p.position != "P" and p.position != "C" and p.level == "V" and not p.is_1h_p %}<a class="button is-outlined is-small is-link player-action" data-playerid="{{ p.id }}" data-action="is_1h_pos">H</a>{% endif %}
+    {% if p.level == "V" and not p.is_reserve %}<a class="button is-outlined is-small is-link player-action" data-playerid="{{ p.id }}" data-action="is_reserve">R</a>{% endif %}
 </td>{% endif %}
 
-{% if protect_tab or roster_tab%}<td>
+{% if protect_tab or roster_tab%}<td class="right">
     <a class="button is-small is-danger is-outlined player-drop" data-playerid="{{ p.id }}" data-playername="{{ p.name }}">X</a>
 </td>{% endif %}
