@@ -138,7 +138,7 @@ def search(request):
         protected = request.GET['protected']
         if protected.lower() != "":
             if to_bool(protected) == False:
-                query = query.filter(Q(is_1h_c=False), Q(is_1h_p=False), Q(is_1h_pos=False), Q(is_35man_roster=False), Q(is_reserve=False))
+                query = query.filter(Q(is_1h_c=False), Q(is_1h_p=False), Q(is_1h_pos=False), Q(is_35man_roster=False), Q(is_reserve=False)).exclude(level="B")
             else:
                 query = query.filter(
                     Q(is_1h_c=True)|\
@@ -146,7 +146,7 @@ def search(request):
                     Q(is_1h_pos=True)|\
                     Q(is_35man_roster=True)|\
                     Q(is_reserve=True)
-                ) 
+                )
 
             context['protected'] = protected
 
