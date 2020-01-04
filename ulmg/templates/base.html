@@ -301,7 +301,7 @@
         {% block extrahead %}{% endblock %}
     </head>
     <body>
-        {% if protect_tab %}{% include "includes/roster_status.html" %}{% endif %}
+        {% block prenav %}{% endblock %}
         {% include "includes/nav.html" %}
         {% block hero %}{% endblock %}
         <div class="section">
