@@ -1,0 +1,14 @@
+{% load ulmg_tags %}
+
+<td>{{ p.defense_display|default_if_none:"-" }}</td>
+<td data-value="{{ p.ps_pa|default_if_none:"-999" }}">{{ p.ps_pa|default_if_none:"-" }}</td>
+<td data-value="{{ p.ps_war|default_if_none:"-999" }}">{{ p.ps_war|default_if_none:"-" }}</td>
+<td data-value="{{ p.ps_wrc_plus|default_if_none:"-999" }}">{{ p.ps_wrc_plus|kill_leading_zero|default_if_none:"-" }}</td>
+<td data-value="{{ p.ps_woba|default_if_none:"-999" }}">{{ p.ps_woba|kill_leading_zero|default_if_none:"-" }}</td>
+<td data-value="{{ p.ps_avg|default_if_none:"-999" }}">{{ p.ps_avg|kill_leading_zero|default_if_none:"-" }}</td>
+<td data-value="{{ p.ps_obp|default_if_none:"-999" }}">{{ p.ps_obp|kill_leading_zero|default_if_none:"-" }}</td>
+<td data-value="{{ p.ps_slg|default_if_none:"-999" }}">{{ p.ps_slg|kill_leading_zero|default_if_none:"-" }}</td>
+<td data-value="{{ p.ps_hr|default_if_none:"-999" }}">{{ p.ps_hr|kill_leading_zero|default_if_none:"-" }}</td>
+<td data-value="{{ p.ps_sb|default_if_none:"-999" }}">{{ p.ps_sb|kill_leading_zero|default_if_none:"-" }}</td>
+<td data-value="{{ p.ps_def|default_if_none:"-999" }}">{{ p.ps_def|default_if_none:"-" }}</td>
+<td data-value="{{ p.ps_off|default_if_none:"-999" }}">{{ p.ps_off|default_if_none:"-" }}</td>

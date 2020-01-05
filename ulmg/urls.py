@@ -2,10 +2,16 @@ from django.contrib import admin
 from django.urls import include, path
 
 from ulmg.views import site as site_v
+from ulmg.views import adv as adv_v
+from ulmg.views import proj as proj_v
 from ulmg.views import api as api_v
 from ulmg.views import csv as csv_v
 
 urlpatterns = [
+    path('proj/', proj_v.index),
+    path('proj/players/search/', proj_v.search),
+    path('adv/', adv_v.index),
+    path('adv/players/search/', site_v.search),
     path('admin/', admin.site.urls),
     path('api/v1/player/', api_v.player_list),
     path('api/v1/draft/live/<int:year>/<str:season>/<str:draft_type>/', api_v.draft_api),

@@ -176,7 +176,7 @@ class Player(BaseModel):
     ps_fip = models.DecimalField(max_digits=4, decimal_places=2, blank=True, null=True)
     ps_gs = models.IntegerField(blank=True, null=True)
     ps_sv = models.IntegerField(blank=True, null=True)
-    ps_ip = models.DecimalField(max_digits=4, decimal_places=1, blank=True, null=True)
+    ps_ip = models.IntegerField(blank=True, null=True)
     ps_h = models.IntegerField(blank=True, null=True)
     ps_er = models.IntegerField(blank=True, null=True)
     ps_hr = models.IntegerField(blank=True, null=True)

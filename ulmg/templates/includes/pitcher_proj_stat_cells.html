@@ -1,0 +1,16 @@
+{% load ulmg_tags %}
+
+<td data-value="{{ p.ps_g|default_if_none:"-999" }}">{{ p.ps_g|default_if_none:"-" }}</td>
+<td data-value="{{ p.ps_gs|default_if_none:"-999" }}">{{ p.ps_gs|kill_leading_zero|default_if_none:"-" }}</td>
+<td data-value="{{ p.ps_ip|default_if_none:"-999" }}">{{ p.ps_ip|kill_leading_zero|default_if_none:"-" }}</td>
+<td data-value="{{ p.ps_sv|default_if_none:"-999" }}">{{ p.ps_sv|kill_leading_zero|default_if_none:"-" }}</td>
+<td data-value="{{ p.ps_h|default_if_none:"-999" }}">{{ p.ps_h|kill_leading_zero|default_if_none:"-" }}</td>
+<td data-value="{{ p.ps_er|default_if_none:"-999" }}">{{ p.ps_er|kill_leading_zero|default_if_none:"-" }}</td>
+<td data-value="{{ p.ps_hr|default_if_none:"-999" }}">{{ p.ps_hr|kill_leading_zero|default_if_none:"-" }}</td>
+<td data-value="{{ p.ps_so|default_if_none:"-999" }}">{{ p.ps_so|kill_leading_zero|default_if_none:"-" }}</td>
+<td data-value="{{ p.ps_bb|default_if_none:"-999" }}">{{ p.ps_bb|kill_leading_zero|default_if_none:"-" }}</td>
+<td data-value="{{ p.ps_whip|default_if_none:"-999" }}">{{ p.ps_whip|kill_leading_zero|default_if_none:"-" }}</td>
+<td data-value="{{ p.ps_k_9|default_if_none:"-999" }}">{{ p.ps_k_9|kill_leading_zero|default_if_none:"-" }}</td>
+<td data-value="{{ p.ps_bb_9|default_if_none:"-999" }}">{{ p.ps_bb_9|kill_leading_zero|default_if_none:"-" }}</td>
+<td data-value="{{ p.ps_ra9_war|default_if_none:"-999" }}">{{ p.ps_ra9_war|default_if_none:"-" }}</td>
+<td data-value="{{ p.ps_war|default_if_none:"-999" }}">{{ p.ps_war|default_if_none:"-" }}</td>

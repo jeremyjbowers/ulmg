@@ -1,0 +1,123 @@
+{% extends 'base.html' %}
+
+{% load ulmg_tags %}
+
+{% block content %}
+
+{% include "includes/proj_search_bar.html" %}
+
+<div class="columns">
+        <div class="column">
+            {% if hitters %}{% regroup hitters by position as position_players %}
+
+            <nav id="nav" class="level">
+                {% for position in position_players %}
+                <div class="level-item has-text-centered">
+                    <div>
+                        <p class="heading">{{ position.list|length }}</p>
+                        <p class="title"><a href="#pos-{{ position.grouper }}">{{ position.grouper }}</a></p>
+                    </div>
+                </div>
+                {% endfor %}
+                {% if pitchers %}
+                <div class="level-item has-text-centered">
+                    <div>
+                        <p class="heading">{{ pitchers|length }}</p>
+                        <p class="title"><a href="#pos-P">P</a></p>
+                    </div>
+                </div>
+                {% endif %}
+            </nav>
+            {% elif pitchers %}
+            <nav id="nav" class="level">
+                <div class="level-item has-text-centered">
+                    <div>
+                        <p class="heading">{{ pitchers|length }}</p>
+                        <p class="title"><a href="#pos-P">P</a></p>
+                    </div>
+                </div>
+            </nav>
+            {% else %}
+            <p>Could not find any players that matched your search.</p>
+            {% endif %}
+
+            {% for position in position_players %}
+            <h1 id="pos-{{ position.grouper }}" class="title is-3">{{ position.grouper }} ({{ position.list|length }}) <a href="#nav">&uparrow;</a></h1>
+            <table class="table is-fullwidth" data-sortable>
+                <thead>
+                    <tr>
+                        <th data-sortable-type="alpha">Name</th>
+                        <th></th>
+                        <th data-sortable-type="alpha">Team</th>
+                        <th data-sortable-type="numeric">Age</th>
+                        <th data-sortable-type="alpha">Lvl</th>
+                        <th data-sortable-type="numeric">MLB?</th>
+                        <th data-sortable-type="numeric">Card?</th>
+                        {% include "includes/hitter_proj_stat_headers.html" %}
+                    </tr>
+                </thead>
+                <tbody>
+                {% for p in position.list %}
+                    <tr{% if p.ls_is_mlb == False and p.ls_plate_appearances > 0 %} class="minors"{% endif %}>
+                        <td data-value="{{ p.name }}" style="text-align: left!important;"><span class="has-text-weight-semibold" data-value="{{ p.name }}">
+                            <a href="/players/{{ p.id }}/" target="_blank">{{ p.name }}</a></span>
+                        </td>
+                        <td class="left">
+                            <a href="/admin/ulmg/player/{{ p.id }}/change/">&#x270E; &Gt;</a>
+                            {% if p.bref_url %}<a class="has-text-weight-light" target="_blank" href="{{ p.bref_url }}">BBR &Gt;</a>{% endif %}
+                            {% if p.fg_url %}<a class="has-text-weight-light" target="_blank" href="{{ p.fg_url }}">FG &Gt;</a>{% endif %}
+                            {% if p.mlbam_id %}<a class="has-text-weight-light" target="_blank" href="https://baseballsavant.mlb.com/savant-player/{{ p.mlbam_id }}">MLB &Gt;</a>{% endif %}
+                        </td>
+                        <td data-value="{{ p.team|default_if_none:"" }}">{% if p.team %}<a href="/teams/{{ p.team.abbreviation }}/">{% endif %}{{ p.team|default_if_none:"-" }}{% if p.team %}</a>{% endif %}</td>
+                        <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
+                        <td data-value="{{ p.level|default_if_none:"Z" }}<">{{ p.level|default_if_none:"" }}</td>
+                        <td data-value="{% if p.ls_is_mlb %}1{% else %}0{% endif %}">{% if p.ls_is_mlb %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td>
+                        <td data-value="{% if p.is_carded %}1{% else %}0{% endif %}">{% if p.is_carded %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td>
+                        {% include "includes/hitter_proj_stat_cells.html" %}
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <div class="columns">
+        <div class="column">
+            {% if pitchers %}<h1 id="pos-P" class="title is-3">P ({{ pitchers|length }}) <a href="#nav">&uparrow;</a></h1>
+            <table class="table is-fullwidth" data-sortable>
+                <thead>
+                    <tr>
+                        <th data-sortable-type="alpha">Name</th>
+                        <th></th>
+                        <th data-sortable-type="alpha">Team</th>
+                        <th data-sortable-type="numeric">Age</th>
+                        <th data-sortable-type="alpha">Lvl</th>
+                        <th data-sortable-type="numeric">Card?</th>
+                        {% include "includes/pitcher_proj_stat_headers.html" %}
+                    </tr>
+                </thead>
+                <tbody>
+                {% for p in pitchers %}
+                    <tr{% if p.ls_is_mlb == False and p.ls_ip > 0 %} class="minors"{% endif %}>
+                        <td data-value="{{ p.name }}" style="text-align: left!important;"><span class="has-text-weight-semibold" data-value="{{ p.name }}">
+                            <a href="/players/{{ p.id }}/" target="_blank">{{ p.name }}</a></span>
+                        </td>
+                        <td class="left">
+                            <a href="/admin/ulmg/player/{{ p.id }}/change/">&#x270E; &Gt;</a>
+                            {% if p.bref_url %}<a class="has-text-weight-light" target="_blank" href="{{ p.bref_url }}">BBR &Gt;</a>{% endif %}
+                            {% if p.fg_url %}<a class="has-text-weight-light" target="_blank" href="{{ p.fg_url }}">FG &Gt;</a>{% endif %}
+                            {% if p.mlbam_id %}<a class="has-text-weight-light" target="_blank" href="https://baseballsavant.mlb.com/savant-player/{{ p.mlbam_id }}">MLB &Gt;</a>{% endif %}
+                        </td>
+                        <td data-value="{{ p.team|default_if_none:"" }}">{% if p.team %}<a href="/teams/{{ p.team.abbreviation }}/">{% endif %}{{ p.team|default_if_none:"-" }}{% if p.team %}</a>{% endif %}</td>
+                        <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
+                        <td data-value="{{ p.level|default_if_none:"Z" }}<">{{ p.level|default_if_none:"" }}</td>
+                        <td data-value="{% if p.is_carded %}1{% else %}0{% endif %}">{% if p.is_carded %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td>
+                        {% include "includes/pitcher_proj_stat_cells.html" %}
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>{% endif %}
+        </div>
+    </div>
+{% endblock %}
