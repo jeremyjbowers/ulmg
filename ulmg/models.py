@@ -185,7 +185,6 @@ class Player(BaseModel):
     ps_whip = models.DecimalField(max_digits=4, decimal_places=2, blank=True, null=True)
     ps_k_9 = models.DecimalField(max_digits=4, decimal_places=2, blank=True, null=True)
     ps_bb_9 = models.DecimalField(max_digits=4, decimal_places=2, blank=True, null=True)
-    ps_war = models.DecimalField(max_digits=3, decimal_places=1, blank=True, null=True)
     ps_ra9_war = models.DecimalField(max_digits=3, decimal_places=1, blank=True, null=True)
 
     # LIVE STATS
@@ -253,33 +252,6 @@ class Player(BaseModel):
             sortdef = [{"display": f"{d.split('-')[0]}{d.split('-')[2]}", "sort": f"{d.split('-')[1]}{d.split('-')[2]}"} for d in self.defense]
             return ", ".join([x['display'] for x in sorted(sortdef, key=lambda x: x['sort'])])
         return None
-
-    # def set_usage(self):
-    #     if self.stats:
-    #         if "P" in self.position:
-    #             if self.stats.get('gs', None) == "0":
-    #                 if float(self.stats['ip']) > 70:
-    #                     return "%s IP" % round((float(self.stats['ip']) * 1.5), 1)
-    #                 else:
-    #                     return "%s IP" % round(float(self.stats['ip']), 1)
-    #             elif self.stats.get('gs', None):
-    #                 if int(self.stats['g']) > (int(self.stats['gs']) * 1.5):
-    #                     if float(self.stats['ip']) > 70:
-    #                         return "%s IP" % round((float(self.stats['ip']) * 1.5), 1)
-    #                     else:
-    #                         return "%s IP" % self.stats['ip']
-    #                 else:
-    #                     return "%s ST" % self.stats['gs']
-    #             else:
-    #                 return "%s IP" % self.stats['ip']
-    #         else:
-    #             if self.stats.get('pa', None):
-    #                 if int(self.stats['pa']) > 550:
-    #                     return "Unlimited"
-    #                 else:
-    #                     return "%s PA" % self.stats['pa']
-    #     return None
-
 
     @property
     def age(self):
