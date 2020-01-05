@@ -80,4 +80,3 @@ class Command(BaseCommand):
                     obj.ps_ra9_war = Decimal(p['RA9-WAR'])
                     obj.ps_war = Decimal(p['WAR'])
                     obj.save()
-                    print(obj)
