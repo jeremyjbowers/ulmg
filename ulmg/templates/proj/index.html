@@ -93,7 +93,7 @@
                     <td data-value="{{ p.level|default_if_none:"Z" }}<">{{ p.level|default_if_none:"" }}</td>
                     <td data-value="{% if p.ls_is_mlb %}1{% else %}0{% endif %}">{% if p.ls_is_mlb %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td>
                     <td data-value="{% if p.is_carded %}1{% else %}0{% endif %}">{% if p.is_carded %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td>
-                    {% include "includes/hitter_oprj_stat_cells.html" %}
+                    {% include "includes/hitter_proj_stat_cells.html" %}
                 </tr>
             {% endfor %}
             </tbody>
@@ -136,7 +136,7 @@
                     <td data-value="{{ p.level|default_if_none:"Z" }}<">{{ p.level|default_if_none:"" }}</td>
                     <td data-value="{% if p.ls_is_mlb %}1{% else %}0{% endif %}">{% if p.ls_is_mlb %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td>
                     <td data-value="{% if p.is_carded %}1{% else %}0{% endif %}">{% if p.is_carded %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td>
-                    {% include "includes/pitcher_oprj_stat_cells.html" %}
+                    {% include "includes/pitcher_proj_stat_cells.html" %}
                 </tr>
             {% endfor %}
             </tbody>
