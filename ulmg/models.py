@@ -112,9 +112,7 @@ class Player(BaseModel):
     bp_id = models.CharField(max_length=255, blank=True, null=True)
     bref_id = models.CharField(max_length=255, blank=True, null=True)
     fg_id = models.CharField(max_length=255, blank=True, null=True)
-
-    # Value
-    defense = ArrayField(models.CharField(max_length=10), blank=True, null=True)
+    fantrax_id = models.CharField(max_length=255, blank=True, null=True)
 
     # LINKS TO THE WEB
     ba_url = models.CharField(max_length=255, blank=True, null=True)
@@ -122,10 +120,12 @@ class Player(BaseModel):
     bref_img = models.CharField(max_length=255, blank=True, null=True)
     fg_url = models.CharField(max_length=255, blank=True, null=True)
     mlb_dotcom_url = models.CharField(max_length=255, blank=True, null=True)
+    fantrax_url = models.CharField(max_length=255, blank=True, null=True)
 
     # ULMG-SPECIFIC
     team = models.ForeignKey(Team, on_delete=models.SET_NULL, blank=True, null=True)
     notes = models.TextField(blank=True, null=True)
+    scouting_reports = ArrayField(models.TextField(blank=True, null=True), default=list)
 
     # STATUS AND SUCH
     is_owned = models.BooleanField(default=False)
@@ -150,6 +150,14 @@ class Player(BaseModel):
     cs_gp = models.IntegerField(blank=True, null=True)
     cs_st = models.IntegerField(blank=True, null=True)
     cs_ip = models.DecimalField(max_digits=4, decimal_places=1, blank=True, null=True)
+
+    # DEFENSE
+    defense = ArrayField(models.CharField(max_length=10), blank=True, null=True)
+
+    # POSSIBLY FAKE SOMWORLD STATS
+    raar = models.DecimalField(max_digits=4, decimal_places=2, blank=True, null=True)
+    raal = models.DecimalField(max_digits=4, decimal_places=2, blank=True, null=True)
+    raat = models.DecimalField(max_digits=4, decimal_places=2, blank=True, null=True)
 
     # PROJECTED STATS
     ps_stat_origin = models.CharField(blank=True, null=True, max_length=255)
