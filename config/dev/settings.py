@@ -92,7 +92,7 @@ CURRENT_SEASON_TYPE = "offseason"
 CSV_COLUMNS = [
     'last_name', 
     'first_name',
-    'age',
+    'birthdate',
     'fg_id',
     'level', 
     'is_carded', 
