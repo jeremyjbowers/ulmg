@@ -67,12 +67,13 @@ class Command(BaseCommand):
                             season=season,
                             draft_type=draft_type,
                             draft_round=draft_round,
-                            team=team,
-                            team_name=team.city
+                            original_team=team
                         )
-                        # obj.pick_number = o+1
+                        obj.pick_number = o+1
                         obj.save()
                         if created:
+                            obj.team = team
+                            obj.save()
                             print("+%s" % obj)
                         else:
                             print("*%s" % obj)
