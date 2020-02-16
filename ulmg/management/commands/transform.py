@@ -1,12 +1,15 @@
 import csv
 import json
 import os
+import time
 
 from bs4 import BeautifulSoup
+import requests
 from django.apps import apps
 from django.db import connection
 from django.core.management import call_command
 from django.core.management.base import BaseCommand, CommandError
+import dateparser
 
 from ulmg import models
 from ulmg import utils
@@ -15,40 +18,14 @@ from ulmg import utils
 class Command(BaseCommand):
 
     def handle(self, *args, **options):
-        with open('data/2020/jb_aa_pro.csv', 'r') as readfile:
-            players = [dict(c) for c in csv.DictReader(readfile)]
-            for p in players:
-                # all the dudes without fg_ids
-                if p['fg_id'] == '':
-                    try:
-                        obj = models.Player.objects.get(first_name=p['first'], last_name=p['last'])
-                    except:
-                        obj = models.Player()
-                        obj.first_name = p['first']
-                        obj.last_name = p['last']
-                        obj.position = p['position']
-                        obj.fg_id = p['fg_id']
-                        obj.is_mlb = False
-                        obj.is_amateur = False
-                        obj.is_owned = False
-                        obj.level = "B"
-                        obj.save()
-                        print(obj)
+        for obj in models.Player.objects.filter(fg_id__isnull=False, birthdate__isnull=True).exclude(fg_id=''):
+            r = requests.get(obj.fg_url)
+            soup = BeautifulSoup(r.text, 'lxml')
+            b1 = soup.select('div.player-info-bio')[0].contents
+            b2 = b1[2].split(' (')[0].strip()
+            birthdate = dateparser.parse(b2)
+            obj.birthdate = birthdate.date()
+            obj.save()
+            print(obj)
+            time.sleep(1)
 
-                # all the dudes who have fg_ids
-                if p['fg_id'] != '':
-
-                    try:
-                        obj = models.Player.objects.get(fg_id=p['fg_id'])
-                    except:
-                        obj = models.Player()
-                        obj.first_name = p['first']
-                        obj.last_name = p['last']
-                        obj.position = p['position']
-                        obj.fg_id = p['fg_id']
-                        obj.is_mlb = False
-                        obj.is_amateur = False
-                        obj.is_owned = False
-                        obj.level = "B"
-                        obj.save()
-                        print(obj)

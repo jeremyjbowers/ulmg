@@ -9,3 +9,4 @@ nameparser
 django-reversion
 ujson
 lxml
+dateparser
