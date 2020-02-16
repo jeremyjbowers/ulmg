@@ -22,8 +22,8 @@
                 <td>{{ pick.pick_number }}</td>
                 <td><a href="/teams/{{ pick.team.abbreviation|lower }}">{{ pick.team }}</a></td>
                 <td>{% if pick.original_team != pick.team %}via <a href="/teams/{{ pick.original_team.abbreviation|lower }}">{{ pick.original_team }}</a>{% endif %}</td>
-                <td>{% if pick.player %}{{ pick.player.position }}{% endif %}</td>
-                <td class="left">{% if pick.player %}<a href="/players/{{ pick.player.id }}/">{{ pick.player.name }}</a>{% else %}{{ pick.player_name }}{% endif %}</a></td>
+                <td>{% if pick.player %}{{ pick.player.position }}{% else %}-{% endif %}</td>
+                <td class="left">{% if pick.player %}<a href="/players/{{ pick.player.id }}/">{{ pick.player.name }}</a>{% else %}{{ pick.player_name|default_if_none:"" }}{% endif %}</a></td>
             </tr>
             {% endfor %}
         </table>
