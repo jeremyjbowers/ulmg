@@ -26,6 +26,24 @@ def build_context(request):
 
     return context
 
+def write_csv(path, payload):
+    with open(path, 'w') as csvfile:
+        fieldnames = list(payload[0].keys())
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        writer.writeheader()
+        for p in payload:
+            writer.writerow(p)
+
+def normalize_pos(pos):
+    if pos.upper() in ["1B", "2B", "3B", "SS"]:
+        pos = "IF"
+    if pos.upper() in ["RF", "CF", "LF"]:
+        pos = "OF"
+    if "P" in pos.upper():
+        pos = "P"
+    return pos
+
+
 def str_to_bool(possible_bool):
     if possible_bool:
         if possible_bool.lower() in ['y', 'yes', 't', 'true']:

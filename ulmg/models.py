@@ -389,7 +389,7 @@ class DraftPick(BaseModel):
 
         self.slug = "%s %s%s" % (self.original_team, dt, self.draft_round)
 
-    def set_overalL_pick_number(self):
+    def set_overall_pick_number(self):
         if self.pick_number:
             rnd = self.draft_round - 1
             self.overall_pick_number = self.pick_number + (rnd * 16)
@@ -403,17 +403,17 @@ class DraftPick(BaseModel):
             self.player_name = self.player.name
 
     def save(self, *args, **kwargs):
-        if self.player and self.team:
-            if not self.player.team:
-                self.player.team = self.team
-                self.player.save()
+        # if self.player and self.team:
+        #     if not self.player.team:
+        #         self.player.team = self.team
+        #         self.player.save()
 
-            if self.player.team and self.player.team != self.team:
-                self.player.team = self.team
-                self.player.save()
+        #     if self.player.team and self.player.team != self.team:
+        #         self.player.team = self.team
+        #         self.player.save()
 
         self.set_original_team()
-        self.set_overalL_pick_number()
+        self.set_overall_pick_number()
         self.slugify()
         self.set_player_name()
 
