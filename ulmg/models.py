@@ -105,6 +105,11 @@ class Player(BaseModel):
     position = models.CharField(max_length=255, null=True, choices=PLAYER_POSITION_CHOICES)
     birthdate = models.DateField(blank=True, null=True)
 
+    # BOWERS DRAFT PREP
+    b_important = models.BooleanField(default=False)
+    b_interest = models.IntegerField(default=0)
+    b_info = models.IntegerField(default=0)
+
     # IDENTIFIERS
     ba_id = models.CharField(max_length=255, blank=True, null=True)
     mlbam_id = models.CharField(max_length=255, blank=True, null=True)

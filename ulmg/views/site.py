@@ -12,8 +12,14 @@ import ujson as json
 
 from ulmg import models, utils
 
-def index(request):
+def bowers_important(request):
     context = utils.build_context(request)
+    context['pro'] = models.Player.objects.filter(b_important=True, is_amateur=False)
+    context['am'] = models.Player.objects.filter(b_important=True, is_amateur=True)
+
+    return render(request, 'bowers_important.html', context)
+
+def index(request):
     context = utils.build_context(request)
     context['hitters'] = models.Player.objects\
         .filter(

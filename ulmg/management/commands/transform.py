@@ -18,22 +18,42 @@ from ulmg import utils
 class Command(BaseCommand):
 
     def handle(self, *args, **options):
-        with open('data/2020/jb_aa_am.csv', 'r') as readfile:
-            players = [dict(c) for c in csv.DictReader(readfile)]
-            for p in players:
-                name = "%s %s" % (p['first'], p['last'])
-                try:
-                    obj = models.Player.objects.get(name=name)
-                except:
-                    obj = models.Player()
-                    obj.first_name = p['first']
-                    obj.last_name = p['last']
-                    obj.position = p['pos']
-                    obj.is_mlb = False
-                    obj.is_amateur = True
-                    obj.is_owned = False
-                    obj.level = "B"
-                    obj.notes = p['notes']
-                    obj.save()
-                    print(obj)
+        def info_tranform(info):
+            info = info.strip()
+            if info == "med":
+                return 5
+            if info == "high":
+                return 10
+            return 0
 
+        def interest_transform(interest):
+            interest = interest.strip()
+            if interest == "xx":
+                return 10
+            if interest == "x":
+                return 5
+            return 0
+
+        for path in ['data/2020/jb_aa_am.csv', 'data/2020/jb_aa_pro.csv']:
+            with open(path, 'r') as readfile:
+                players = [dict(c) for c in csv.DictReader(readfile)]
+                for p in players:
+                    obj = None
+                    if p.get('fg_id', None):
+                        if p['fg_id'] != '':
+                            try:
+                                obj = models.Player.objects.get(fg_id=p['fg_id'])
+                            except:
+                                print(p)
+                    else:
+                        name = "%s %s" % (p['first'], p['last'])
+                        try:
+                            obj = models.Player.objects.get(name=name)
+                        except:
+                            print(p)
+
+                    if obj:
+                        obj.b_interest = interest_transform(p['interest'])
+                        obj.b_info = info_tranform(p['info'])
+                        obj.b_important = True
+                        obj.save()

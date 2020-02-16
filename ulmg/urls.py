@@ -22,6 +22,7 @@ urlpatterns = [
     path('teams/<str:abbreviation>/other/', site_v.team_other),
     path('teams/<str:abbreviation>/', site_v.team_detail),
     path('trades/', site_v.trades),
+    path('players/important/', site_v.bowers_important),
     path('players/util/', site_v.player_util),
     path('players/<int:playerid>/', site_v.player),
     path('players/search/', site_v.search),
