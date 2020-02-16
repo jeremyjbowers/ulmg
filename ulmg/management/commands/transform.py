@@ -15,10 +15,40 @@ from ulmg import utils
 class Command(BaseCommand):
 
     def handle(self, *args, **options):
-        for pick in models.DraftPick.objects.filter(year="2018"):
-            if pick.player_name:
-                player = models.Player.objects.filter(name=pick.player_name)
-                if len(player) == 1:
-                    pick.player = player[0]
-                    pick.save()
-                    print(pick.player.name)
+        with open('data/2020/jb_aa_pro.csv', 'r') as readfile:
+            players = [dict(c) for c in csv.DictReader(readfile)]
+            for p in players:
+                # all the dudes without fg_ids
+                if p['fg_id'] == '':
+                    try:
+                        obj = models.Player.objects.get(first_name=p['first'], last_name=p['last'])
+                    except:
+                        obj = models.Player()
+                        obj.first_name = p['first']
+                        obj.last_name = p['last']
+                        obj.position = p['position']
+                        obj.fg_id = p['fg_id']
+                        obj.is_mlb = False
+                        obj.is_amateur = False
+                        obj.is_owned = False
+                        obj.level = "B"
+                        obj.save()
+                        print(obj)
+
+                # all the dudes who have fg_ids
+                if p['fg_id'] != '':
+
+                    try:
+                        obj = models.Player.objects.get(fg_id=p['fg_id'])
+                    except:
+                        obj = models.Player()
+                        obj.first_name = p['first']
+                        obj.last_name = p['last']
+                        obj.position = p['position']
+                        obj.fg_id = p['fg_id']
+                        obj.is_mlb = False
+                        obj.is_amateur = False
+                        obj.is_owned = False
+                        obj.level = "B"
+                        obj.save()
+                        print(obj)
