@@ -18,14 +18,22 @@ from ulmg import utils
 class Command(BaseCommand):
 
     def handle(self, *args, **options):
-        for obj in models.Player.objects.filter(fg_id__isnull=False, birthdate__isnull=True).exclude(fg_id=''):
-            r = requests.get(obj.fg_url)
-            soup = BeautifulSoup(r.text, 'lxml')
-            b1 = soup.select('div.player-info-bio')[0].contents
-            b2 = b1[2].split(' (')[0].strip()
-            birthdate = dateparser.parse(b2)
-            obj.birthdate = birthdate.date()
-            obj.save()
-            print(obj)
-            time.sleep(1)
+        with open('data/2020/jb_aa_am.csv', 'r') as readfile:
+            players = [dict(c) for c in csv.DictReader(readfile)]
+            for p in players:
+                name = "%s %s" % (p['first'], p['last'])
+                try:
+                    obj = models.Player.objects.get(name=name)
+                except:
+                    obj = models.Player()
+                    obj.first_name = p['first']
+                    obj.last_name = p['last']
+                    obj.position = p['pos']
+                    obj.is_mlb = False
+                    obj.is_amateur = True
+                    obj.is_owned = False
+                    obj.level = "B"
+                    obj.notes = p['notes']
+                    obj.save()
+                    print(obj)
 
