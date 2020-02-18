@@ -1,7 +1,6 @@
 {% extends "base.html" %}
 
 {% block content %}
-
 <div class="columns">
     <div class="column">
 
@@ -20,7 +19,7 @@
             </thead>
             <tbody>
             {% for p in pro %}
-                <tr{% if p.is_owned %} class="owned"{% endif %}>
+                <tr{% if p.is_owned %} class="owned{% if p.team.abbreviation == "BOS" %} boston{% endif %}"{% endif %} id="player-{{ p.pk }}">
                     <td data-value="{{ p.name }}" style="text-align: left!important;"><span class="has-text-weight-semibold" data-value="{{ p.last_name }} {{ p.first_name }}">
                         <a href="/players/{{ p.id }}/" target="_blank">{{ p.name }}</a></span>
                     </td>
@@ -56,7 +55,7 @@
             </thead>
             <tbody>
             {% for p in am %}
-                <tr{% if p.is_owned %} class="owned"{% endif %}>
+                <tr{% if p.is_owned %} class="owned{% if p.team.abbreviation == "BOS" %} boston{% endif %}"{% endif %} id="player-{{ p.pk }}">
                     <td data-value="{{ p.name }}" style="text-align: left!important;"><span class="has-text-weight-semibold" data-value="{{ p.last_name }} {{ p.first_name }}">
                         <a href="/players/{{ p.id }}/" target="_blank">{{ p.name }}</a></span>
                     </td>
@@ -76,4 +75,37 @@
 
     </div>
   </div>
+  {% endblock %}
+
+  {% block extrascript %}
+  <script type="text/javascript">
+    $(function(){
+
+        const STATUS_URL="/api/v1/draft/live/players/important/";
+
+        var update_status = function() {
+            let xhr = new XMLHttpRequest();
+            xhr.open("GET", STATUS_URL, true)
+            xhr.send()
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    data = JSON.parse(xhr.response)
+                    data.forEach(obj => {
+                        if (obj.is_owned) {
+                            console.log(obj);
+                            var playerid = "#player-" + obj.pk;
+                            $(playerid).addClass('owned');
+                            if (obj.team__abbreviation === "BOS") {
+                                $(playerid).addClass('boston');
+                            }
+                        }      
+                    });
+                }
+            }
+        };
+
+        setInterval(update_status, 5000);
+
+    });
+  </script>
   {% endblock %}

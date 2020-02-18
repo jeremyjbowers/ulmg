@@ -192,6 +192,11 @@ def player_list(request):
 
     return JsonResponse(payload, safe=False)
 
+def bowers_important(request):
+    payload = [dict(p) for p in models.Player.objects.filter(b_important=True).values('pk', 'is_owned', 'team__abbreviation')]
+
+    return JsonResponse(payload, safe=False)
+
 def search(request):
     def to_bool(b):
         if b.lower() in ['y','yes', 't', 'true', 'on']:

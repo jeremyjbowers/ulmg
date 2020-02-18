@@ -14,6 +14,7 @@ urlpatterns = [
     path('adv/players/search/', site_v.search),
     path('admin/', admin.site.urls),
     path('api/v1/player/', api_v.player_list),
+    path('api/v1/draft/live/players/important/', api_v.bowers_important),
     path('api/v1/draft/live/<int:year>/<str:season>/<str:draft_type>/', api_v.draft_api),
     path('api/v1/player/<int:playerid>/<str:action>/', api_v.player_action),
     path('api/v1/draft/<str:pickid>/', api_v.draft_action),
