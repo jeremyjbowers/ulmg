@@ -120,3 +120,7 @@ DRAFTS = [
     {"title": "2018 Offseason AA", "url": "/draft/2018/offseason/aa/"},
     {"title": "2018 Offseason Open", "url": "/draft/2018/offseason/open/"},
 ]
+
+## BOWERS SPECIFIC THINGS
+BOWERS_DRAFT_SHEET = '1Wb9f6QrGULjg2qs2Bmq6EWVXXKmw-WdYg-loYvGnpFY'
+BOWERS_DRAFT_RANGES = ['AA-PRO!A1:AG1000', 'AA-AM!A1:AG1000']
