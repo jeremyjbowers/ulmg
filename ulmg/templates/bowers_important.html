@@ -38,15 +38,15 @@
                     <td data-value="{{ p.position }}">{{ p.position }}</td>
                     <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
                     <td data-value="{{ p.b_interest|default_if_none:"0" }}">{{ p.b_interest }}</td>
-                    <td data-value="{{ p.b_info|default_if_none:"0" }}">{{ p.b_info }}</td>
-                    <td data-value="{{ p.b_bp|default_if_none:"0" }}">{{ p.b_bp }}</td>
-                    <td data-value="{{ p.b_ba|default_if_none:"0" }}">{{ p.b_ba }}</td>
-                    <td data-value="{{ p.b_fg|default_if_none:"0" }}">{{ p.b_fg }}</td>
-                    <td data-value="{{ p.b_fv|default_if_none:"0" }}">{{ p.b_fv }}</td>
-                    <td data-value="{{ p.b_mlb|default_if_none:"0" }}">{{ p.b_mlb }}</td>
-                    <td data-value="{{ p.b_sckls|default_if_none:"0" }}">{{ p.b_sckls }}</td>
-                    <td data-value="{{ p.b_pl|default_if_none:"0" }}">{{ p.b_pl }}</td>
-                    <td data-value="{{ p.b_p365|default_if_none:"0" }}">{{ p.b_p365 }}</td>
+                    <td data-value="{{ p.b_info|default_if_none:"999" }}">{{ p.b_info|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.b_bp|default_if_none:"999" }}">{{ p.b_bp|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.b_ba|default_if_none:"999" }}">{{ p.b_ba|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.b_fg|default_if_none:"999" }}">{{ p.b_fg|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.b_fv|default_if_none:"0" }}">{{ p.b_fv|default_if_none:"35.0" }}</td>
+                    <td data-value="{{ p.b_mlb|default_if_none:"999" }}">{{ p.b_mlb|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.b_sckls|default_if_none:"999" }}">{{ p.b_sckls|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.b_pl|default_if_none:"999" }}">{{ p.b_pl|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.b_p365|default_if_none:"999" }}">{{ p.b_p365|default_if_none:"-" }}</td>
                 </tr>
             {% endfor %}
             </tbody>
@@ -84,11 +84,11 @@
                     <td data-value="{{ p.position }}">{{ p.position }}</td>
                     <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
                     <td data-value="{{ p.b_interest|default_if_none:"0" }}">{{ p.b_interest }}</td>
-                    <td data-value="{{ p.b_info|default_if_none:"0" }}">{{ p.b_info }}</td>
-                    <td data-value="{{ p.b_ba|default_if_none:"0" }}">{{ p.b_ba }}</td>
-                    <td data-value="{{ p.b_fg|default_if_none:"0" }}">{{ p.b_fg }}</td>
-                    <td data-value="{{ p.b_fv|default_if_none:"0" }}">{{ p.b_fv }}</td>
-                    <td data-value="{{ p.b_pl|default_if_none:"0" }}">{{ p.b_pl }}</td>
+                    <td data-value="{{ p.b_info|default_if_none:"0" }}">{{ p.b_info|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.b_ba|default_if_none:"999" }}">{{ p.b_ba|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.b_fg|default_if_none:"999" }}">{{ p.b_fg|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.b_fv|default_if_none:"0" }}">{{ p.b_fv|default_if_none:"35.0" }}</td>
+                    <td data-value="{{ p.b_pl|default_if_none:"999" }}">{{ p.b_pl|default_if_none:"-" }}</td>
                 </tr>
             {% endfor %}
             </tbody>

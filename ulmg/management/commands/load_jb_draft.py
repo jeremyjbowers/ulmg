@@ -48,32 +48,51 @@ class Command(BaseCommand):
                     obj.b_interest = int(p['interest'])
                     obj.b_info = info_tranform(p['info'])
                     obj.b_important = True
-                    
+
+                    obj.b_pl = None
+                    obj.b_fg = None
+                    obj.b_zips = None
+                    obj.b_sckls = None
+                    obj.b_fv = None
+                    obj.b_mlb = None
+                    obj.b_p365 = None
+                    obj.b_ba = None
+                    obj.b_bp = None
+
                     if p.get('pl', None):
-                        obj.b_pl = p['pl']
+                        if p['pl'] != '':
+                            obj.b_pl = p['pl']
 
                     if p.get('fg', None):
-                        obj.b_fg = p['fg']
+                        if p['fg'] != '':
+                            obj.b_fg = p['fg']
 
                     if p.get('zips', None):
-                        obj.b_zips = p['zips']
+                        if p['zips'] != '':
+                            obj.b_zips = p['zips']
 
                     if p.get('sickels', None):
-                        obj.b_sckls = p['sickels']
+                        if p['sickels'] != '':
+                            obj.b_sckls = p['sickels']
 
                     if p.get('fg_fv', None):
-                        obj.b_fv = p['fg_fv']
+                        if p['fg_fv'] != '':
+                            obj.b_fv = p['fg_fv']
 
                     if p.get('mlb', None):
-                        obj.b_mlb = p['mlb']
+                        if p['mlb'] != '':
+                            obj.b_mlb = p['mlb']
 
                     if p.get('p365', None):
-                        obj.b_p365 = p['p365']
+                        if p['p365'] != '':
+                            obj.b_p365 = p['p365']
 
                     if p.get('ba', None):
-                        obj.b_ba = p['ba']
+                        if p['ba'] != '':
+                            obj.b_ba = p['ba']
 
                     if p.get('bp', None):
-                        obj.b_bp = p['bp']
+                        if p['bp'] != '':
+                            obj.b_bp = p['bp']
 
                     obj.save()
