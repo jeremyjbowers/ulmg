@@ -2,7 +2,7 @@
 
 {% block content %}
 <div class="columns">
-    <div class="column">
+    <div class="column is-three-fifths">
 
         <h1 class="title is-3">Professional</h1>
 
@@ -11,10 +11,18 @@
                 <tr>
                     <th data-sortable-type="alpha">Name</th>
                     <th></th>
-                    <th data-sortable-type="alpha">Position</th>
+                    <th data-sortable-type="alpha">Pos</th>
                     <th data-sortable-type="numeric">Age</th>
-                    <th data-sortable-type="numeric">Interest</th>
+                    <th data-sortable-type="numeric">Int</th>
                     <th data-sortable-type="numeric">Info</th>
+                    <th data-sortable-type="numeric">BP</th>
+                    <th data-sortable-type="numeric">BA</th>
+                    <th data-sortable-type="numeric">FG</th>
+                    <th data-sortable-type="numeric">FV</th>
+                    <th data-sortable-type="numeric">MLB</th>
+                    <th data-sortable-type="numeric">JS</th>
+                    <th data-sortable-type="numeric">PL</th>
+                    <th data-sortable-type="numeric">365</th>
                 </tr>
             </thead>
             <tbody>
@@ -25,13 +33,20 @@
                     </td>
                     <td class="left">
                         <a href="/admin/ulmg/player/{{ p.id }}/change/">&#x270E; &Gt;</a>
-                        {% if p.bref_url %}<a class="has-text-weight-light" target="_blank" href="{{ p.bref_url }}">BBR &Gt;</a>{% endif %}
                         {% if p.fg_url %}<a class="has-text-weight-light" target="_blank" href="{{ p.fg_url }}">FG &Gt;</a>{% endif %}
-                        {% if p.mlbam_id %}<a class="has-text-weight-light" target="_blank" href="https://baseballsavant.mlb.com/savant-player/{{ p.mlbam_id }}">MLB &Gt;</a>{% endif %}
-                    </td>                    <td data-value="{{ p.position }}">{{ p.position }}</td>
+                    </td>
+                    <td data-value="{{ p.position }}">{{ p.position }}</td>
                     <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
                     <td data-value="{{ p.b_interest|default_if_none:"0" }}">{{ p.b_interest }}</td>
                     <td data-value="{{ p.b_info|default_if_none:"0" }}">{{ p.b_info }}</td>
+                    <td data-value="{{ p.b_bp|default_if_none:"0" }}">{{ p.b_bp }}</td>
+                    <td data-value="{{ p.b_ba|default_if_none:"0" }}">{{ p.b_ba }}</td>
+                    <td data-value="{{ p.b_fg|default_if_none:"0" }}">{{ p.b_fg }}</td>
+                    <td data-value="{{ p.b_fv|default_if_none:"0" }}">{{ p.b_fv }}</td>
+                    <td data-value="{{ p.b_mlb|default_if_none:"0" }}">{{ p.b_mlb }}</td>
+                    <td data-value="{{ p.b_sckls|default_if_none:"0" }}">{{ p.b_sckls }}</td>
+                    <td data-value="{{ p.b_pl|default_if_none:"0" }}">{{ p.b_pl }}</td>
+                    <td data-value="{{ p.b_p365|default_if_none:"0" }}">{{ p.b_p365 }}</td>
                 </tr>
             {% endfor %}
             </tbody>
@@ -47,10 +62,14 @@
                 <tr>
                     <th data-sortable-type="alpha">Name</th>
                     <th></th>
-                    <th data-sortable-type="alpha">Position</th>
+                    <th data-sortable-type="alpha">Pos</th>
                     <th data-sortable-type="numeric">Age</th>
-                    <th data-sortable-type="numeric">Interest</th>
+                    <th data-sortable-type="numeric">Int</th>
                     <th data-sortable-type="numeric">Info</th>
+                    <th data-sortable-type="numeric">BA</th>
+                    <th data-sortable-type="numeric">FG</th>
+                    <th data-sortable-type="numeric">FV</th>
+                    <th data-sortable-type="numeric">PL</th>
                 </tr>
             </thead>
             <tbody>
@@ -61,13 +80,15 @@
                     </td>
                     <td class="left">
                         <a href="/admin/ulmg/player/{{ p.id }}/change/">&#x270E; &Gt;</a>
-                        {% if p.bref_url %}<a class="has-text-weight-light" target="_blank" href="{{ p.bref_url }}">BBR &Gt;</a>{% endif %}
-                        {% if p.fg_url %}<a class="has-text-weight-light" target="_blank" href="{{ p.fg_url }}">FG &Gt;</a>{% endif %}
-                        {% if p.mlbam_id %}<a class="has-text-weight-light" target="_blank" href="https://baseballsavant.mlb.com/savant-player/{{ p.mlbam_id }}">MLB &Gt;</a>{% endif %}
-                    </td>                    <td data-value="{{ p.position }}">{{ p.position }}</td>
+                   </td>
+                    <td data-value="{{ p.position }}">{{ p.position }}</td>
                     <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
                     <td data-value="{{ p.b_interest|default_if_none:"0" }}">{{ p.b_interest }}</td>
                     <td data-value="{{ p.b_info|default_if_none:"0" }}">{{ p.b_info }}</td>
+                    <td data-value="{{ p.b_ba|default_if_none:"0" }}">{{ p.b_ba }}</td>
+                    <td data-value="{{ p.b_fg|default_if_none:"0" }}">{{ p.b_fg }}</td>
+                    <td data-value="{{ p.b_fv|default_if_none:"0" }}">{{ p.b_fv }}</td>
+                    <td data-value="{{ p.b_pl|default_if_none:"0" }}">{{ p.b_pl }}</td>
                 </tr>
             {% endfor %}
             </tbody>

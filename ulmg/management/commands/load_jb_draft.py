@@ -48,4 +48,32 @@ class Command(BaseCommand):
                     obj.b_interest = int(p['interest'])
                     obj.b_info = info_tranform(p['info'])
                     obj.b_important = True
+                    
+                    if p.get('pl', None):
+                        obj.b_pl = p['pl']
+
+                    if p.get('fg', None):
+                        obj.b_fg = p['fg']
+
+                    if p.get('zips', None):
+                        obj.b_zips = p['zips']
+
+                    if p.get('sickels', None):
+                        obj.b_sckls = p['sickels']
+
+                    if p.get('fg_fv', None):
+                        obj.b_fv = p['fg_fv']
+
+                    if p.get('mlb', None):
+                        obj.b_mlb = p['mlb']
+
+                    if p.get('p365', None):
+                        obj.b_p365 = p['p365']
+
+                    if p.get('ba', None):
+                        obj.b_ba = p['ba']
+
+                    if p.get('bp', None):
+                        obj.b_bp = p['bp']
+
                     obj.save()

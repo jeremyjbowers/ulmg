@@ -109,6 +109,15 @@ class Player(BaseModel):
     b_important = models.BooleanField(default=False)
     b_interest = models.IntegerField(default=0)
     b_info = models.IntegerField(default=0)
+    b_fv = models.DecimalField(max_digits=3, decimal_places=1, blank=True, null=True)
+    b_fg = models.IntegerField(default=999)
+    b_ba = models.IntegerField(default=999)
+    b_bp = models.IntegerField(default=999)
+    b_pl = models.IntegerField(default=999)
+    b_sckls = models.IntegerField(default=999)
+    b_p365 = models.IntegerField(default=999)
+    b_mlb = models.IntegerField(default=999)
+    b_zips = models.IntegerField(default=999)
 
     # IDENTIFIERS
     ba_id = models.CharField(max_length=255, blank=True, null=True)
