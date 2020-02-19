@@ -107,8 +107,8 @@ class Player(BaseModel):
 
     # BOWERS DRAFT PREP
     b_important = models.BooleanField(default=False)
-    b_interest = models.IntegerField(default=0)
-    b_info = models.IntegerField(default=0)
+    b_interest = models.IntegerField(default=None, blank=True, null=True)
+    b_info = models.IntegerField(default=None, blank=True, null=True)
     b_fv = models.DecimalField(max_digits=3, decimal_places=1, blank=True, null=True)
     b_fg = models.IntegerField(default=None, blank=True, null=True)
     b_ba = models.IntegerField(default=None, blank=True, null=True)

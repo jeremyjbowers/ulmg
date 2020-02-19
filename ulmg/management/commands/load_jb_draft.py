@@ -19,6 +19,9 @@ from ulmg import utils
 class Command(BaseCommand):
 
     def handle(self, *args, **options):
+
+        models.Player.objects.update(b_interest=None, b_info=None, b_important=False)
+
         def info_tranform(info):
             info = info.strip()
             if info == "med":
