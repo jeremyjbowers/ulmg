@@ -61,7 +61,7 @@ class Command(BaseCommand):
                     obj.b_p365 = None
                     obj.b_ba = None
                     obj.b_bp = None
-                    obj.b_rk = rk
+                    obj.b_rk = rk + 1
 
                     if p.get('pl', None):
                         if p['pl'] != '':
