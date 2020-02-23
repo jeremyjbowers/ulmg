@@ -9,10 +9,13 @@
         <table class="table" data-sortable>
             <thead>
                 <tr>
+                    <th data-sortable-type="numeric">Rank</th>
                     <th data-sortable-type="alpha">Name</th>
                     <th></th>
                     <th data-sortable-type="alpha">Pos</th>
                     <th data-sortable-type="numeric">Age</th>
+                    <th data-sortable-type="alpha">Am?</th>
+                    <th data-sortable-type="alpha">Card?</th>
                     <th data-sortable-type="numeric">Int</th>
                     <th data-sortable-type="numeric">Info</th>
                     <th data-sortable-type="numeric">BP</th>
@@ -28,6 +31,7 @@
             <tbody>
             {% for p in players %}
                 <tr{% if p.is_owned %} class="owned{% if p.team.abbreviation == "BOS" %} boston{% endif %}"{% endif %} id="player-{{ p.pk }}">
+                    <td data-value="{{ p.b_rk }}">{{ p.b_rk }}</td>
                     <td data-value="{{ p.name }}" style="text-align: left!important;"><span class="has-text-weight-semibold" data-value="{{ p.last_name }} {{ p.first_name }}">
                         <a href="/players/{{ p.id }}/" target="_blank">{{ p.name }}</a></span>
                     </td>
@@ -37,6 +41,8 @@
                     </td>
                     <td data-value="{{ p.position }}">{{ p.position }}</td>
                     <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
+                    <td data-value="{% if p.is_amateur %}1{% else %}0{% endif %}">{% if p.is_amateur %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td>
+                    <td data-value="{% if p.is_carded %}1{% else %}0{% endif %}">{% if p.is_carded %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td>
                     <td data-value="{{ p.b_interest|default_if_none:"0" }}">{{ p.b_interest }}</td>
                     <td data-value="{{ p.b_info|default_if_none:"999" }}">{{ p.b_info|default_if_none:"-" }}</td>
                     <td data-value="{{ p.b_bp|default_if_none:"999" }}">{{ p.b_bp|default_if_none:"-" }}</td>
