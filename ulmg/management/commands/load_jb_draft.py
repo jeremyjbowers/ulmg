@@ -20,7 +20,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
 
-        models.Player.objects.update(b_interest=None, b_info=None, b_important=False)
+        models.Player.objects.update(b_interest=None, b_info=None, b_important=False, b_rk=None)
 
         def info_tranform(info):
             info = info.strip()
@@ -32,7 +32,7 @@ class Command(BaseCommand):
         
         for sheet_range in settings.BOWERS_DRAFT_RANGES:
             players = utils.get_sheet(settings.BOWERS_DRAFT_SHEET, sheet_range)
-            for p in players:
+            for rk, p in enumerate(players):
                 obj = None
                 if p.get('fg_id', None):
                     if p['fg_id'] != '':
@@ -61,6 +61,7 @@ class Command(BaseCommand):
                     obj.b_p365 = None
                     obj.b_ba = None
                     obj.b_bp = None
+                    obj.b_rk = rk
 
                     if p.get('pl', None):
                         if p['pl'] != '':

@@ -14,9 +14,7 @@ from ulmg import models, utils
 
 def bowers_important(request):
     context = utils.build_context(request)
-    context['pro'] = models.Player.objects.filter(b_important=True, is_amateur=False).order_by('-b_interest', '-b_info', '-birthdate', 'last_name')
-    context['am'] = models.Player.objects.filter(b_important=True, is_amateur=True).order_by('-b_interest', '-b_info', '-birthdate', 'last_name')
-
+    context['players'] = models.Player.objects.filter(b_important=True).order_by('-b_interest', '-b_fv')
     return render(request, 'bowers_important.html', context)
 
 def index(request):
