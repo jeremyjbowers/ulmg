@@ -12,10 +12,10 @@ import ujson as json
 
 from ulmg import models, utils
 
-def bowers_important(request):
+def bowers_aa(request):
     context = utils.build_context(request)
     context['players'] = models.Player.objects.filter(b_important=True).order_by('-b_interest', '-b_fv')
-    return render(request, 'bowers_important.html', context)
+    return render(request, 'bowers_aa.html', context)
 
 def index(request):
     context = utils.build_context(request)
