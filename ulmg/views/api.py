@@ -298,3 +298,4 @@ def search(request):
 def player_owned(request):
     if request.POST:
         return request.POST
+    return ''
