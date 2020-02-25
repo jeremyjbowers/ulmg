@@ -295,6 +295,7 @@ def search(request):
     context['pitchers'] = query.filter(position="P")
     return render(request, "search.html", context)
 
+@csrf_exempt
 def player_owned(request):
     if request.POST:
         return JsonResponse(json.dumps(request.POST.__dict__))
