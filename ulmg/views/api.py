@@ -294,3 +294,7 @@ def search(request):
     context['hitters'] = query.exclude(position="P")
     context['pitchers'] = query.filter(position="P")
     return render(request, "search.html", context)
+
+def player_owned(request):
+    if request.POST:
+        return request.POST
