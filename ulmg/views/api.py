@@ -297,5 +297,5 @@ def search(request):
 
 def player_owned(request):
     if request.POST:
-        return request.POST
-    return ''
+        return JsonResponse(json.dumps(request.POST.__dict__))
+    return HttpResponse('ok')
