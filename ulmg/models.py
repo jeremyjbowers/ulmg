@@ -119,6 +119,7 @@ class Player(BaseModel):
     b_mlb = models.IntegerField(default=None, blank=True, null=True)
     b_zips = models.IntegerField(default=None, blank=True, null=True)
     b_rk = models.IntegerField(default=None, blank=True, null=True)
+    b_kl = models.IntegerField(default=None, blank=True, null=True)
     
     # IDENTIFIERS
     ba_id = models.CharField(max_length=255, blank=True, null=True)
