@@ -294,3 +294,23 @@ def search(request):
     context['hitters'] = query.exclude(position="P")
     context['pitchers'] = query.filter(position="P")
     return render(request, "search.html", context)
+
+@csrf_exempt
+def player_owned(request):
+    if request.POST:
+        if request.POST.get('text', None):
+            players = models.Player.objects.filter(name__search=request.POST['text'])
+            if len(players) > 0:
+                payload = []
+                for p in players:
+                    if p.is_owned:
+                        payload.append(f"{p.position} <http://theulmg.com/players/{p.id}/|{p.name}> is owned by <http://theulmg.com/teams/{p.team.abbreviation}/|{p.team}>")
+                    else:
+                        payload.append(f"{p.position} <http://theulmg.com/players/{p.id}/|{p.name}> is unowned.")
+                return HttpResponse("\n".join(payload))
+            else:
+                return HttpResponse(f'I don\'t see a player named {request.POST["text"]} in the ULMG database.')
+        else:
+            return HttpResponse('Ooops, please give me a player name to search for.')
+    else:
+        return HttpResponse('Not a POST.')
