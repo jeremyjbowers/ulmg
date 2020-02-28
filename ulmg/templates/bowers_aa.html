@@ -18,7 +18,6 @@
                     <th data-sortable-type="alpha">Am?</th>
                     <th data-sortable-type="alpha">Card?</th>
                     <th data-sortable-type="numeric">FV</th>
-                    <td></td>
                     <th data-sortable-type="numeric">BP</th>
                     <th data-sortable-type="numeric">BA</th>
                     <th data-sortable-type="numeric">PL</th>
@@ -46,7 +45,6 @@
                     <td data-value="{% if p.is_amateur %}1{% else %}0{% endif %}">{% if p.is_amateur %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td>
                     <td data-value="{% if p.is_carded %}1{% else %}0{% endif %}">{% if p.is_carded %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td>
                     <td data-value="{{ p.b_fv|default_if_none:"0" }}">{{ p.b_fv|default_if_none:"35.0" }}</td>
-                    <td></td>
                     <td data-value="{{ p.b_bp|default_if_none:"999" }}">{{ p.b_bp|default_if_none:"-" }}</td>
                     <td data-value="{{ p.b_ba|default_if_none:"999" }}">{{ p.b_ba|default_if_none:"-" }}</td>
                     <td data-value="{{ p.b_pl|default_if_none:"999" }}">{{ p.b_pl|default_if_none:"-" }}</td>
