@@ -62,6 +62,7 @@ class Command(BaseCommand):
                     obj.b_ba = None
                     obj.b_bp = None
                     obj.b_kl = None
+                    obj.b_avg = None
                     obj.b_rk = rk + 1
 
                     if p.get('kl', None):
@@ -83,6 +84,10 @@ class Command(BaseCommand):
                     if p.get('sickels', None):
                         if p['sickels'] != '':
                             obj.b_sckls = p['sickels']
+
+                    if p.get('avg', None):
+                        if p['avg'] != '':
+                            obj.b_avg = p['avg']
 
                     if p.get('fg_fv', None):
                         if p['fg_fv'] != '':
