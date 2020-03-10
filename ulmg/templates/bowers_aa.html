@@ -16,8 +16,7 @@
                     <th data-sortable-type="numeric">Age</th>
                     <th data-sortable-type="alpha">Am?</th>
                     <th data-sortable-type="alpha">Card?</th>
-                    <th data-sortable-type="numeric">Int</th>
-                    <th data-sortable-type="numeric">Info</th>
+                    <th data-sortable-type="numeric">Group</th>
                     <th data-sortable-type="numeric">BP</th>
                     <th data-sortable-type="numeric">BA</th>
                     <th data-sortable-type="numeric">FG</th>
@@ -43,8 +42,7 @@
                     <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
                     <td data-value="{% if p.is_amateur %}1{% else %}0{% endif %}">{% if p.is_amateur %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td>
                     <td data-value="{% if p.is_carded %}1{% else %}0{% endif %}">{% if p.is_carded %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td>
-                    <td data-value="{{ p.b_interest|default_if_none:"0" }}">{{ p.b_interest }}</td>
-                    <td data-value="{{ p.b_info|default_if_none:"999" }}">{{ p.b_info|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.b_grp|default_if_none:"999" }}">{{ p.b_grp }}</td>
                     <td data-value="{{ p.b_bp|default_if_none:"999" }}">{{ p.b_bp|default_if_none:"-" }}</td>
                     <td data-value="{{ p.b_ba|default_if_none:"999" }}">{{ p.b_ba|default_if_none:"-" }}</td>
                     <td data-value="{{ p.b_fg|default_if_none:"999" }}">{{ p.b_fg|default_if_none:"-" }}</td>
