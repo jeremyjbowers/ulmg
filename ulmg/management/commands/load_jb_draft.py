@@ -20,7 +20,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
 
-        models.Player.objects.update(b_interest=None, b_info=None, b_important=False, b_rk=None)
+        models.Player.objects.update(b_interest=None, b_info=None, b_important=False, b_rk=None, b_grp=None)
 
         def info_tranform(info):
             info = info.strip()
@@ -48,8 +48,7 @@ class Command(BaseCommand):
                         print(p)
 
                 if obj:
-                    obj.b_interest = int(p['interest'])
-                    obj.b_info = info_tranform(p['info'])
+                    obj.b_grp = p['grp']
                     obj.b_important = True
 
                     obj.b_pl = None
