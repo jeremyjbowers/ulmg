@@ -1,6 +1,6 @@
 {% load ulmg_tags %}
 
-<td>{{ p.defense_display|default_if_none:"-" }}</td>
+<td style="max-width:100px;">{{ p.defense_display|default_if_none:"-" }}</td>
 <td data-value="{{ p.ls_plate_appearances|default_if_none:"-999" }}">{{ p.ls_plate_appearances|default_if_none:"-" }}</td>
 {% if advanced %}<td data-value="{{ p.ls_wrc_plus|default_if_none:"-999" }}">{{ p.ls_wrc_plus|default_if_none:"-" }}</td>
 <td data-value="{{ p.ls_obp|default_if_none:"-999" }}">{{ p.ls_obp|kill_leading_zero|default_if_none:"-" }}</td>

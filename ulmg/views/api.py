@@ -38,6 +38,8 @@ def player_action(request, playerid, action):
         p.is_1h_p = False
         p.is_1h_pos = False
         p.is_35man_roster = False
+        p.is_mlb_roster = False
+        p.is_aaa_roster = False
         p.save()
 
     if action == "is_reserve":
@@ -49,6 +51,8 @@ def player_action(request, playerid, action):
         p.is_1h_pos = False
         p.is_35man_roster = False
         p.is_reserve = True
+        p.is_mlb_roster = False
+        p.is_aaa_roster = False
         p.save()
 
 
@@ -61,6 +65,8 @@ def player_action(request, playerid, action):
         p.is_1h_pos = False
         p.is_35man_roster = False
         p.is_1h_p = True
+        p.is_mlb_roster = False
+        p.is_aaa_roster = False
         p.save()
 
     if action == "is_1h_c":
@@ -72,6 +78,8 @@ def player_action(request, playerid, action):
         p.is_1h_pos = False
         p.is_35man_roster = False
         p.is_1h_c = True
+        p.is_mlb_roster = False
+        p.is_aaa_roster = False
         p.save()
 
     if action == "is_1h_pos":
@@ -83,24 +91,38 @@ def player_action(request, playerid, action):
         p.is_1h_pos = False
         p.is_35man_roster = False
         p.is_1h_pos = True
+        p.is_mlb_roster = False
+        p.is_aaa_roster = False
         p.save()
 
     if action == "to_mlb":
         p = get_object_or_404(models.Player, id=playerid)
         p.is_mlb_roster = True
         p.is_aaa_roster = False
+        p.is_reserve = False
+        p.is_1h_c = False
+        p.is_1h_p = False
+        p.is_1h_pos = False
         p.save()
 
     if action == "to_aaa":
         p = get_object_or_404(models.Player, id=playerid)
         p.is_mlb_roster = False
         p.is_aaa_roster = True
+        p.is_reserve = False
+        p.is_1h_c = False
+        p.is_1h_p = False
+        p.is_1h_pos = False
         p.save()
 
     if action == "off_roster":
         p = get_object_or_404(models.Player, id=playerid)
         p.is_mlb_roster = False
         p.is_aaa_roster = False
+        p.is_reserve = False
+        p.is_1h_c = False
+        p.is_1h_p = False
+        p.is_1h_pos = False
         p.save()
 
     if action == "drop":
