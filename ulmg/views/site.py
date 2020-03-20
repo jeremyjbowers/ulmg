@@ -56,13 +56,17 @@ def team_detail(request, abbreviation):
     context = utils.build_context(request)
     context['team'] = get_object_or_404(models.Team, abbreviation__icontains=abbreviation)
     team_players = models.Player.objects.filter(team=context['team'])
+    hitters = team_players.exclude(position="P").order_by('position', '-level_order', 'last_name', 'first_name')
+    pitchers = team_players.filter(position="P").order_by('-level_order', 'last_name', 'first_name')
+    if settings.TEAM_ROSTER_TAB == True:
+        hitters = hitters.filter(is_carded=True)
+        pitchers = pitchers.filter(is_carded=True)
     context['35_roster_count'] = team_players.filter(is_35man_roster=True).count()
-    context['mlb_roster_count'] = team_players.filter(is_mlb_roster=True).count()
+    context['mlb_roster_count'] = team_players.filter(is_mlb_roster=True, is_aaa_roster=False, is_reserve=False).count()
     context['level_distribution'] = team_players.order_by('level_order').values('level_order').annotate(Count('level_order'))
     context['num_owned'] = models.Player.objects.filter(team=context['team']).count()
-    context['hitters'] = team_players.exclude(position="P").order_by('position', '-level_order', 'last_name', 'first_name')
-    context['pitchers'] = team_players.filter(position="P").order_by('-level_order', 'last_name', 'first_name')
-    context['num_mlb'] = team_players.filter(is_mlb_roster=True, is_aaa_roster=False, is_reserve=False).count()
+    context['hitters'] = hitters
+    context['pitchers'] = pitchers
     return render(request, 'team.html', context)
 
 def team_other(request, abbreviation):
