@@ -15,6 +15,8 @@ from ulmg import models, utils
 def bowers_aa(request):
     context = utils.build_context(request)
     context['players'] = models.Player.objects.filter(b_important=True).order_by('b_rk')
+    context['next_hitters'] = models.Player.objects.filter(b_important=True, is_owned=False).exclude(position="P").order_by('b_rk')[0:10]
+    context['next_pitchers'] = models.Player.objects.filter(b_important=True, is_owned=False, position="P").order_by('b_rk')[0:10]
     return render(request, 'bowers_aa.html', context)
 
 def index(request):

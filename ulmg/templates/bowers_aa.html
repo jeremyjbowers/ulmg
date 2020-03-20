@@ -17,6 +17,7 @@
                     <th data-sortable-type="numeric">Age</th>
                     <th data-sortable-type="alpha">Am?</th>
                     <th data-sortable-type="alpha">Card?</th>
+                    <th data-sortable-type="numeric">Group</th>
                     <th data-sortable-type="numeric">FV</th>
                     <th data-sortable-type="numeric">BP</th>
                     <th data-sortable-type="numeric">BA</th>
@@ -44,6 +45,7 @@
                     <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
                     <td data-value="{% if p.is_amateur %}1{% else %}0{% endif %}">{% if p.is_amateur %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td>
                     <td data-value="{% if p.is_carded %}1{% else %}0{% endif %}">{% if p.is_carded %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td>
+                    <td data-value="{{ p.b_grp|default_if_none:"999" }}">{{ p.b_grp }}</td>
                     <td data-value="{{ p.b_fv|default_if_none:"0" }}">{{ p.b_fv|default_if_none:"35.0" }}</td>
                     <td data-value="{{ p.b_bp|default_if_none:"999" }}">{{ p.b_bp|default_if_none:"-" }}</td>
                     <td data-value="{{ p.b_ba|default_if_none:"999" }}">{{ p.b_ba|default_if_none:"-" }}</td>
@@ -53,6 +55,97 @@
                     <td data-value="{{ p.b_kl|default_if_none:"999" }}">{{ p.b_kl|default_if_none:"-" }}</td>
                     <td data-value="{{ p.b_sckls|default_if_none:"999" }}">{{ p.b_sckls|default_if_none:"-" }}</td>
                     <td data-value="{{ p.b_p365|default_if_none:"999" }}">{{ p.b_p365|default_if_none:"-" }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+
+    </div>
+    <div class="column is-two-fifths">
+
+        <h1 class="title is-3">Next 10 hitters</h1>
+
+        <table class="table" data-sortable>
+            <thead>
+                <tr>
+                    <th data-sortable-type="numeric">Rank</th>
+                    <th data-sortable-type="numeric">Avg</th>
+                    <th data-sortable-type="alpha">Name</th>
+                    <th></th>
+                    <th data-sortable-type="alpha">Pos</th>
+                    <th data-sortable-type="numeric">Age</th>
+                    <th data-sortable-type="numeric">Group</th>
+                    <th data-sortable-type="numeric">FV</th>
+                    <th data-sortable-type="numeric">BA</th>
+                    <th data-sortable-type="numeric">PL</th>
+                    <th data-sortable-type="numeric">FG</th>
+                    <th data-sortable-type="numeric">KL</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for p in next_hitters %}
+                <tr>
+                    <td data-value="{{ p.b_rk }}">{{ p.b_rk }}</td>
+                    <td data-value="{{ p.b_avg|default_if_none:"999" }}">{{ p.b_avg|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.name }}" style="text-align: left!important;"><span class="has-text-weight-semibold" data-value="{{ p.last_name }} {{ p.first_name }}">
+                        <a href="/players/{{ p.id }}/" target="_blank">{{ p.name }}</a></span>
+                    </td>
+                    <td class="left">
+                        <a href="/admin/ulmg/player/{{ p.id }}/change/">&#x270E; &Gt;</a>
+                        {% if p.fg_url %}<a class="has-text-weight-light" target="_blank" href="{{ p.fg_url }}">FG &Gt;</a>{% endif %}
+                    </td>
+                    <td data-value="{{ p.position }}">{{ p.position }}</td>
+                    <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.b_grp|default_if_none:"999" }}">{{ p.b_grp }}</td>
+                    <td data-value="{{ p.b_fv|default_if_none:"0" }}">{{ p.b_fv|default_if_none:"35.0" }}</td>
+                    <td data-value="{{ p.b_ba|default_if_none:"999" }}">{{ p.b_ba|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.b_pl|default_if_none:"999" }}">{{ p.b_pl|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.b_fg|default_if_none:"999" }}">{{ p.b_fg|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.b_kl|default_if_none:"999" }}">{{ p.b_kl|default_if_none:"-" }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+
+        <h1 class="title is-3">Next 10 pitchers</h1>
+
+        <table class="table" data-sortable>
+            <thead>
+                <tr>
+                    <th data-sortable-type="numeric">Rank</th>
+                    <th data-sortable-type="numeric">Avg</th>
+                    <th data-sortable-type="alpha">Name</th>
+                    <th></th>
+                    <th data-sortable-type="alpha">Pos</th>
+                    <th data-sortable-type="numeric">Age</th>
+                    <th data-sortable-type="numeric">Group</th>
+                    <th data-sortable-type="numeric">FV</th>
+                    <th data-sortable-type="numeric">BA</th>
+                    <th data-sortable-type="numeric">PL</th>
+                    <th data-sortable-type="numeric">FG</th>
+                    <th data-sortable-type="numeric">KL</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for p in next_pitchers %}
+                <tr>
+                    <td data-value="{{ p.b_rk }}">{{ p.b_rk }}</td>
+                    <td data-value="{{ p.b_avg|default_if_none:"999" }}">{{ p.b_avg|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.name }}" style="text-align: left!important;"><span class="has-text-weight-semibold" data-value="{{ p.last_name }} {{ p.first_name }}">
+                        <a href="/players/{{ p.id }}/" target="_blank">{{ p.name }}</a></span>
+                    </td>
+                    <td class="left">
+                        <a href="/admin/ulmg/player/{{ p.id }}/change/">&#x270E; &Gt;</a>
+                        {% if p.fg_url %}<a class="has-text-weight-light" target="_blank" href="{{ p.fg_url }}">FG &Gt;</a>{% endif %}
+                    </td>
+                    <td data-value="{{ p.position }}">{{ p.position }}</td>
+                    <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.b_grp|default_if_none:"999" }}">{{ p.b_grp }}</td>
+                    <td data-value="{{ p.b_fv|default_if_none:"0" }}">{{ p.b_fv|default_if_none:"35.0" }}</td>
+                    <td data-value="{{ p.b_ba|default_if_none:"999" }}">{{ p.b_ba|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.b_pl|default_if_none:"999" }}">{{ p.b_pl|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.b_fg|default_if_none:"999" }}">{{ p.b_fg|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.b_kl|default_if_none:"999" }}">{{ p.b_kl|default_if_none:"-" }}</td>
                 </tr>
             {% endfor %}
             </tbody>
