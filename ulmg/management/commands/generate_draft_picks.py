@@ -69,7 +69,10 @@ class Command(BaseCommand):
                             draft_round=draft_round,
                             original_team=team
                         )
-                        obj.pick_number = o+1
+                        ##
+                        ## COMMENT THIS LINE OUT IF YOU WANT TO LOAD PICKS WITHOUT ORDER
+                        ##
+                        # obj.pick_number = o+1
                         obj.save()
                         if created:
                             obj.team = team
