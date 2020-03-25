@@ -7,16 +7,16 @@
     <div class="column is-three-quarters">
         <div class="box">
             <article class="media">
-                {% if player.bref_img %}<div class="media-left"><figure class="image"><img src="{{ player.bref_img }}" alt="Image"></figure></div>{% endif %}
+                {% if p.bref_img %}<div class="media-left"><figure class="image"><img src="{{ p.bref_img }}" alt="Image"></figure></div>{% endif %}
                 <div class="media-content">
                     <div class="content">
-                        <h3>{% if player.team %}<a href="/teams/{{ player.team.abbreviation|lower }}/">{{ player.team }}</a>{% else %}Unowned{% endif %}</h3>
-                        <h1 class="is-title is-level-1">{{ player.name }}, {{ player.position }}</h1>
+                        <h3>{% if p.team %}<a href="/teams/{{ p.team.abbreviation|lower }}/">{{ p.team }}</a>{% else %}Unowned{% endif %}</h3>
+                        <h1 class="is-title is-level-1">{{ p.name }}, {{ p.position }}</h1>
                         <p>
-                            <strong><a href="/admin/ulmg/player/{{ player.id }}/change/">Edit player &#x270E;</a></strong>
-                            {% if player.bref_url %}<br/><a class="has-text-weight-light" target="_blank" href="{{ player.bref_url }}">Baseball Reference &Gt;</a>{% endif %}
-                            {% if player.fg_url %}<br/><a class="has-text-weight-light" target="_blank" href="{{ player.fg_url }}">Fangraphs &Gt;</a>{% endif %}
-                            {% if player.mlbam_id %}<br/><a class="has-text-weight-light" target="_blank" href="https://baseballsavant.mlb.com/savant-player/{{ player.mlbam_id }}">MLB &Gt;</a>{% endif %}
+                            <strong><a href="/admin/ulmg/player/{{ p.id }}/change/">Edit player &#x270E;</a></strong>
+                            {% if p.bref_url %}<br/><a class="has-text-weight-light" target="_blank" href="{{ p.bref_url }}">Baseball Reference &Gt;</a>{% endif %}
+                            {% if p.fg_url %}<br/><a class="has-text-weight-light" target="_blank" href="{{ p.fg_url }}">Fangraphs &Gt;</a>{% endif %}
+                            {% if p.mlbam_id %}<br/><a class="has-text-weight-light" target="_blank" href="https://baseballsavant.mlb.com/savant-player/{{ p.mlbam_id }}">MLB &Gt;</a>{% endif %}
                         </p>
                     </div>
                 </div>
@@ -24,7 +24,7 @@
             <article class="media">
                 <div class="media-content">
                     <div class="content">
-                        {% if player.position != "P" %}
+                        {% if p.position != "P" %}
                         <table class="table is-fullwidth is-hoverable" data-sortable>
                             <thead>
                                 <tr>
@@ -40,22 +40,22 @@
                             </thead>
                             <tbody>
                                 <tr class="
-                                {% if player.ls_is_mlb == False and player.ls_plate_appearances > 0 %} minors{% endif %}
-                                {% if player.ls_is_mlb == False %} minors{% endif %}
-                                {% if player.ls_is_mlb == False and player.is_amateur == True %} amateur{% endif %}
+                                {% if p.ls_is_mlb == False and p.ls_plate_appearances > 0 %} minors{% endif %}
+                                {% if p.ls_is_mlb == False %} minors{% endif %}
+                                {% if p.ls_is_mlb == False and p.is_amateur == True %} amateur{% endif %}
                                 ">
-                                        <td data-value="{{ player.name }}" style="text-align: left!important;">
-                                            <a class="has-text-weight-semibold" href="/players/{{ player.id }}/" target="_blank">{{ player.name }}</a>
+                                        <td data-value="{{ p.name }}" style="text-align: left!important;">
+                                            <a class="has-text-weight-semibold" href="/players/{{ p.id }}/" target="_blank">{{ p.name }}</a>
                                         </td>
                                         <td class="left">
-                                            <a href="/admin/ulmg/player/{{ player.id }}/change/">&#x270E; &Gt;</a>
-                                            {% if player.bref_url %}<a class="has-text-weight-light" target="_blank" href="{{ player.bref_url }}">BBR &Gt;</a>{% endif %}
-                                            {% if player.fg_url %}<a class="has-text-weight-light" target="_blank" href="{{ player.fg_url }}">FG &Gt;</a>{% endif %}
-                                            {% if player.mlbam_id %}<a class="has-text-weight-light" target="_blank" href="https://baseballsavant.mlb.com/savant-player/{{ player.mlbam_id }}">MLB &Gt;</a>{% endif %}
+                                            <a href="/admin/ulmg/player/{{ p.id }}/change/">&#x270E; &Gt;</a>
+                                            {% if p.bref_url %}<a class="has-text-weight-light" target="_blank" href="{{ p.bref_url }}">BBR &Gt;</a>{% endif %}
+                                            {% if p.fg_url %}<a class="has-text-weight-light" target="_blank" href="{{ p.fg_url }}">FG &Gt;</a>{% endif %}
+                                            {% if p.mlbam_id %}<a class="has-text-weight-light" target="_blank" href="https://baseballsavant.mlb.com/savant-player/{{ p.mlbam_id }}">MLB &Gt;</a>{% endif %}
                                         </td>
-                                        <td data-value="{{ player.age|default_if_none:"-999" }}">{{ player.age|default_if_none:"-" }}</td>
-                                        <td data-value="{{ player.level|default_if_none:"Z" }}<">{{ player.level|default_if_none:"" }}</td>
-                                        <td data-value="{% if player.is_carded %}1{% else %}0{% endif %}">{% if player.is_carded %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td>
+                                        <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
+                                        <td data-value="{{ p.level|default_if_none:"Z" }}<">{{ p.level|default_if_none:"" }}</td>
+                                        <td data-value="{% if p.is_carded %}1{% else %}0{% endif %}">{% if p.is_carded %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td>
                     
                                         {% include "includes/hitter_stat_cells.html" %}
                                 </tr>
@@ -78,22 +78,22 @@
                             </thead>
                             <tbody>
                                 <tr class="
-                                {% if player.ls_is_mlb == False and player.ls_plate_appearances > 0 %} minors{% endif %}
-                                {% if player.ls_is_mlb == False %} minors{% endif %}
-                                {% if player.ls_is_mlb == False and player.is_amateur == True %} amateur{% endif %}
+                                {% if p.ls_is_mlb == False and p.ls_plate_appearances > 0 %} minors{% endif %}
+                                {% if p.ls_is_mlb == False %} minors{% endif %}
+                                {% if p.ls_is_mlb == False and p.is_amateur == True %} amateur{% endif %}
                                 ">
-                                        <td data-value="{{ player.name }}" style="text-align: left!important;">
-                                            <a class="has-text-weight-semibold" href="/players/{{ player.id }}/" target="_blank">{{ player.name }}</a>
+                                        <td data-value="{{ p.name }}" style="text-align: left!important;">
+                                            <a class="has-text-weight-semibold" href="/players/{{ p.id }}/" target="_blank">{{ p.name }}</a>
                                         </td>
                                         <td class="left">
-                                            <a href="/admin/ulmg/player/{{ player.id }}/change/">&#x270E; &Gt;</a>
-                                            {% if player.bref_url %}<a class="has-text-weight-light" target="_blank" href="{{ player.bref_url }}">BBR &Gt;</a>{% endif %}
-                                            {% if player.fg_url %}<a class="has-text-weight-light" target="_blank" href="{{ player.fg_url }}">FG &Gt;</a>{% endif %}
-                                            {% if player.mlbam_id %}<a class="has-text-weight-light" target="_blank" href="https://baseballsavant.mlb.com/savant-player/{{ player.mlbam_id }}">MLB &Gt;</a>{% endif %}
+                                            <a href="/admin/ulmg/player/{{ p.id }}/change/">&#x270E; &Gt;</a>
+                                            {% if p.bref_url %}<a class="has-text-weight-light" target="_blank" href="{{ p.bref_url }}">BBR &Gt;</a>{% endif %}
+                                            {% if p.fg_url %}<a class="has-text-weight-light" target="_blank" href="{{ p.fg_url }}">FG &Gt;</a>{% endif %}
+                                            {% if p.mlbam_id %}<a class="has-text-weight-light" target="_blank" href="https://baseballsavant.mlb.com/savant-player/{{ p.mlbam_id }}">MLB &Gt;</a>{% endif %}
                                         </td>
-                                        <td data-value="{{ player.age|default_if_none:"-999" }}">{{ player.age|default_if_none:"-" }}</td>
-                                        <td data-value="{{ player.level|default_if_none:"Z" }}<">{{ player.level|default_if_none:"" }}</td>
-                                        <td data-value="{% if player.is_carded %}1{% else %}0{% endif %}">{% if player.is_carded %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td>
+                                        <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
+                                        <td data-value="{{ p.level|default_if_none:"Z" }}<">{{ p.level|default_if_none:"" }}</td>
+                                        <td data-value="{% if p.is_carded %}1{% else %}0{% endif %}">{% if p.is_carded %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td>
                     
                                         {% include "includes/pitcher_stat_cells.html" %}
                                 </tr>

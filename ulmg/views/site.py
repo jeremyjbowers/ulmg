@@ -38,13 +38,7 @@ def index(request):
 
 def player(request, playerid):
     context = utils.build_context(request)
-    context['player'] = models.Player.objects.get(id=playerid)
-
-    return render(request, 'player_detail.html', context)    
-
-def player_detail(request, playerid):
-    context = utils.build_context(request)
-    context['player'] = models.Player.objects.get(id=playerid)
+    context['p'] = models.Player.objects.get(id=playerid)
     return render(request, "player_detail.html", context)
 
 def player_util(request):
