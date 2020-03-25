@@ -390,7 +390,7 @@ class DraftPick(BaseModel):
     original_team = models.ForeignKey(Team, on_delete=models.SET_NULL, blank=True, null=True, related_name="original_team")
 
     class Meta:
-        ordering = ["year", "-season", "draft_type", "draft_round", "pick_number"]
+        ordering = ["-year", "-season", "draft_type", "draft_round", "pick_number"]
 
     def __unicode__(self):
         return "%s %s %s (%s)" % (self.year, self.season, self.slug, self.team)
