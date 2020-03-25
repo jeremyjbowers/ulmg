@@ -60,7 +60,7 @@ class DraftPickAdmin(admin.ModelAdmin):
     list_filter = ['team', 'year', 'season']
     list_editable = []
     autocomplete_fields = ['player', 'team', 'original_team']
-    search_fields = ['player__name', 'team__city', 'team__abbreviation', 'slug']
+    search_fields = ['player__name', 'team__city', 'team__abbreviation', 'slug', 'year', 'season', 'draft_type']
     fieldsets = (
         (None, {
             'fields': (
