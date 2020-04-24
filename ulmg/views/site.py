@@ -39,6 +39,8 @@ def index(request):
 def player(request, playerid):
     context = utils.build_context(request)
     context['p'] = models.Player.objects.get(id=playerid)
+    context['trades'] = models.TradeReceipt.objects.filter(players__id=playerid)
+    context['drafted'] = models.DraftPick.objects.filter(player__id=playerid)
     return render(request, "player_detail.html", context)
 
 def player_util(request):

@@ -99,8 +99,29 @@
                                 </tr>
                             </tbody>
                         </table>
-
                         {% endif %}
+                        <div class="container">
+                            {% if trades %}
+                            <div class="column">
+                                <h2 class="is-header-2">Trade summary</h2>
+                                <ul>
+                                {% for trade in trades %}
+                                    <li>{{ trade.trade.summary_html|safe }} </li>
+                                {% endfor %}
+                                </ul>
+                            </div>
+                            {% endif %}
+                            {% if drafted %}
+                            <div class="column">
+                                <h2 class="is-header-2">Draft summary</h2>
+                                <ul>
+                                {% for pick in drafted %}
+                                    <li>{{ pick }} </li>
+                                {% endfor %}
+                                </ul>
+                            </div>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
             </article>
