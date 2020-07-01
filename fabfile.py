@@ -43,6 +43,10 @@ def pull():
     api.run(cd_string + "git fetch; git pull origin %(branch)s" % env)
 
 @api.task
+def pip_update():
+    api.run(work_string + "pip install --upgrade pip")
+
+@api.task
 def pip_install():
     api.run(work_string + "pip install --upgrade -r requirements.txt")
 
