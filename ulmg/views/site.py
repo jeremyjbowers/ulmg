@@ -128,6 +128,25 @@ def draft_recap(request, year, season, draft_type):
 
     return render(request, "draft_recap.html", context)
 
+def player_available_midseason(request):
+    context = utils.build_context(request)
+    context['hitters'] = models.Player.objects\
+        .filter(
+            Q(level="V", team__isnull=True, ls_plate_appearances__gte=1, ls_is_mlb=True)|\
+            Q(level="V", is_owned=True, is_mlb_roster=False, is_1h_c=False, is_1h_pos=False, is_reserve=False)|\
+            Q(level__in=['A', 'B'], team__isnull=True, ls_plate_appearances__gte=1, ls_is_mlb=True))\
+    .exclude(position="P")\
+    .order_by('position', '-level_order', 'last_name', 'first_name')
+
+    context['pitchers'] = models.Player.objects\
+        .filter(
+            Q(level="V", team__isnull=True, ls_ip__gte=1, position="P", ls_is_mlb=True)|\
+            Q(level="V", position="P", is_owned=True, is_mlb_roster=False, is_1h_p=False, is_reserve=False)|\
+            Q(level__in=['A', 'B'], team__isnull=True, ls_ip__gte=1, position="P", ls_is_mlb=True))\
+    .order_by('-level_order', 'last_name', 'first_name')
+
+    return render(request, 'search.html', context)
+
 def search(request):
     def to_bool(b):
         if b.lower() in ['y','yes', 't', 'true', 'on']:

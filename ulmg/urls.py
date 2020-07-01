@@ -16,6 +16,7 @@ urlpatterns = [
     path('teams/<str:abbreviation>/', views.site.team_detail),
     path('trades/', views.site.trades),
     path('players/util/', views.site.player_util),
+    path('players/available/midseason/', views.site.player_available_midseason),
     path('players/<int:playerid>/', views.site.player),
     path('players/search/', views.site.search),
     path('draft/live/players/owned/', views.api.player_owned),
