@@ -9,7 +9,7 @@ from fabric.state import env
 env.project_name = "ulmg"
 env.user = "ubuntu"
 env.forward_agent = True
-env.branch = "master"
+env.branch = "main"
 
 # env.hosts = ["192.241.251.155"]
 env.hosts = ["159.89.241.126"]
@@ -23,13 +23,6 @@ def development():
     Work on development branch.
     """
     env.branch = "development"
-
-@api.task
-def master():
-    """
-    Work on stable branch.
-    """
-    env.branch = "master"
 
 @api.task
 def branch(branch_name):
