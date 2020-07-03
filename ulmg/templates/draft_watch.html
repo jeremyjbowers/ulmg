@@ -56,7 +56,11 @@
                                 {{ pick.team }} 
                                 <span class="is-size-4" ><a href="/admin/ulmg/draftpick/{{ pick.id }}/change/">&#x270E;</a></span>
                             </h1>
+                            {% if not pick.skipped %}
                             <h1>{% if pick.player %}{{ pick.player.position }}{% endif %} {{ pick.player_name }}</h1>
+                            {% else %}
+                            <span><strong>{{ pick.team }}</strong> has skipped this pick.</span>
+                            {% endif %}
                         </p>
                     </div>
                     </div>

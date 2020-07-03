@@ -193,6 +193,7 @@ def draft_api(request, year, season, draft_type):
 def draft_action(request, pickid):
     playerid = None
     name = None
+    skipped = None
 
     if request.GET.get('name', None):
         name = request.GET['name']
@@ -200,7 +201,15 @@ def draft_action(request, pickid):
     if request.GET.get('playerid', None):
         playerid = request.GET('playerid')
 
+    if request.GET.get('skipped', None):
+        skipped = True
+
     draftpick = get_object_or_404(models.DraftPick, pk=pickid)
+
+    if skipped:
+        draftpick.player = None
+        draftpick.skipped = True
+        draftpick.save()
 
     if playerid:
         draftpick.player = get_object_or_404(models.Player, pk=playerid)
@@ -233,6 +242,7 @@ def draft_action(request, pickid):
             draftpick.player_name = None
 
         draftpick.save()
+
     return HttpResponse('ok')
 
 def player_list(request):

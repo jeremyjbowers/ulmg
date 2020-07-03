@@ -114,7 +114,7 @@ def draft_admin(request, year, season, draft_type):
 def draft_watch(request, year, season, draft_type):
     context = utils.build_context(request)
     context['made_picks'] = models.DraftPick.objects\
-                                .filter(Q(player_name__isnull=False)|Q(player__isnull=False))\
+                                .filter(Q(player_name__isnull=False)|Q(player__isnull=False)|Q(skipped=True))\
                                 .filter(year=year, season=season, draft_type=draft_type)\
                                 .order_by("year", "-season", "draft_type", "-draft_round", "-pick_number")
     context['upcoming_picks'] = models.DraftPick.objects\

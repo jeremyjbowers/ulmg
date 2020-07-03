@@ -49,11 +49,10 @@ class DraftPickAdmin(admin.ModelAdmin):
     fieldsets = (
         (None, {
             'fields': (
-                ('year','slug','season'),
+                ('year','season', 'draft_type'),
                 'team',
                 ('player','player_name'),
-                'pick_notes',
-                'draft_type',
+                'skipped',
                 ('draft_round','overall_pick_number','pick_number'),
             ),
         }),

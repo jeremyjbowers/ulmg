@@ -392,6 +392,7 @@ class DraftPick(BaseModel):
     player_name = models.CharField(max_length=255, blank=True, null=True)
     pick_notes = models.TextField(blank=True, null=True)
     original_team = models.ForeignKey(Team, on_delete=models.SET_NULL, blank=True, null=True, related_name="original_team")
+    skipped = models.BooleanField(default=False)
 
     class Meta:
         ordering = ["-year", "-season", "draft_type", "draft_round", "pick_number"]
@@ -514,6 +515,8 @@ class TradeReceipt(BaseModel):
     def summary_html(self):
         return ", ".join(["<a class='has-text-weight-semibold' href='/players/%s/'>%s %s</a>" % (p.id, p.position, p.name) for p in self.players.all()] + ["%s" % (p.slug) for p in self.picks.all()])
 
+    ## Comment out these two methods and the m2m_changed signals below
+    ## when loading from a fixture.
     @staticmethod
     def trade_pick(sender, instance, action, reverse, model, pk_set, **kwargs):
         if action == 'post_add':

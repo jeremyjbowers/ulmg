@@ -7,20 +7,22 @@
             <br/>
             <br/>
             {% for pick in picks %}
-            <div class="box" id="pick-{{ pick.id }}" style="width:640px;">
+            <div class="box{% if pick.skipped %} skipped{% endif %}" id="pick-{{ pick.id }}" style="width:800px;">
                 <article class="media">
                     <div class="media-content">
                     <div class="content">
                         <p>
                         <span class="is-size-6">
+                            {% if pick.player or pick.player_name %}{% else %}{% if not pick.skipped %}<span><a class="skip-action has-text-danger" data-pickid="{{ pick.id }}" data-pick-input="pick-input-{{ pick.id }}">&#10006; skip</a></span>
+                            &nbsp; &nbsp;{% endif %}{% endif %}
                             {% if pick.original_team != pick.team %}(via <strong>{{ pick.original_team }}</strong>){% endif %}
                             <a href="#pick-{{ pick.id }}">
                                 Round <strong>{{ pick.draft_round }}</strong>, pick <strong>{{ pick.pick_number }}</strong>
-                            </a>
+                            </a>                            
                         </span>
                         <h1 class="is-title is-size-2">
                             {{ pick.team }} 
-                            <span class="is-size-4" ><a href="/admin/ulmg/draftpick/{{ pick.id }}/change/">&#x270E;</a></span>
+                            <span class="is-size-4"><a href="/admin/ulmg/draftpick/{{ pick.id }}/change/">&#x270E;</a></span>
                         </h1>
                         {% if pick.player or pick.player_name %}
                             <h1>
@@ -32,14 +34,20 @@
                                 {% endif %}
                             </h1>
                         {% else %}
+                        {% if not pick.skipped %}
                         <div class="field has-addons">
                             <div class="control" style="width:80%;">
-                                <input id="pick-input-{{ pick.id }}" class="input is-large autocomplete" type="text" placeholder="Type a player's name, e.g., Miles Mikolas">
+                                <input id="pick-input-{{ pick.id }}" class="input is-large autocomplete" type="text" placeholder="Type a player's name, e.g., Hank Aaron">
                             </div>
                             <div class="control">
-                                <a class="button is-info is-large draft-action" data-pickid="{{ pick.id }}" data-pick-input="pick-input-{{ pick.id }}">Draft</a>
+                                <a class="button is-success is-large draft-action" data-pickid="{{ pick.id }}" data-pick-input="pick-input-{{ pick.id }}">Draft</a>
                             </div>
                         </div>
+                        {% else %}
+                        <div>
+                            <p><strong>{{ pick.team }}</strong> has decided to skip this pick.</p>
+                        </div>
+                        {% endif %}
                         {% endif %}
                     </p>
                     </div>
@@ -62,6 +70,23 @@ $(function(){
         });
     });
 
+    var skip_click_handler = function(el) {
+
+        el.preventDefault();
+        $el = $(this);
+
+        var pickid = $el.attr('data-pickid')
+
+        $.ajax({
+            type: "GET",
+            url: '/api/v1/draft/' + pickid + '/?skipped=true',
+            success: function(response){
+                window.location.replace('#pick-' + pickid);
+                window.location.reload();
+            }
+        });
+    }
+
     var undraft_click_handler = function(el) {
 
         el.preventDefault();
@@ -79,6 +104,7 @@ $(function(){
             }
         });
     }
+
     var draft_click_handler = function(el) {
 
         el.preventDefault();
@@ -97,6 +123,7 @@ $(function(){
         });
     }
 
+    $('body').on('click', 'a.skip-action', skip_click_handler);
     $('body').on('click', 'a.draft-action', draft_click_handler);
     $('body').on('click', 'a.undraft-action', undraft_click_handler);
 });
