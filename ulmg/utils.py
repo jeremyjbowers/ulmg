@@ -15,6 +15,7 @@ def build_context(request):
     # to build the nav
     context['teamnav'] = models.Team.objects.all().values('abbreviation')
     context['draftnav'] = settings.DRAFTS
+    context['mlb_roster_size'] = settings.MLB_ROSTER_SIZE
 
     # for showing stats
     context['advanced'] = False

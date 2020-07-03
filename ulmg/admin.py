@@ -6,21 +6,6 @@ admin.site.site_title = "The ULMG"
 admin.site.site_header = "The ULMG: Admin"
 admin.site.index_title = "Administer The ULMG Website"
 
-
-class ScoutingReportInline(admin.StackedInline):
-    model = ScoutingReport
-    exclude = ('active', 'player_name', 'pv', 'risk', 'risk_name', 'season', 'evaluator', 'level', 'report_type')
-    extra = 1
-    fieldsets = (
-        (None, {
-            'fields': (
-                ('date','fv','rank'),
-                ('url', 'organization'),
-                'report',
-            ),
-        }),
-    )
-
 class TradeReceiptInline(admin.TabularInline):
     model = TradeReceipt
     exclude = ('active',)
@@ -152,6 +137,9 @@ class PlayerAdmin(admin.ModelAdmin):
                 'is_1h_c',
                 'is_1h_pos',
                 'is_2h_draft',
+                'is_2h_p',
+                'is_2h_c',
+                'is_2h_pos'
             )
         })
     )

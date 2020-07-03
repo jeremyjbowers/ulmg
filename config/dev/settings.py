@@ -84,9 +84,10 @@ STATIC_URL = '/static/'
 """
 Section for site-specific settings, e.g., controlling tabs, current draft year, etc.
 """
+MLB_ROSTER_SIZE = 30
 TEAM_PROTECT_TAB = False
 TEAM_ROSTER_TAB = True
-TEAM_SEASON_HALF = "1h"
+TEAM_SEASON_HALF = "2h"
 CURRENT_SEASON = 2020
 CURRENT_SEASON_TYPE = "offseason"
 CSV_COLUMNS = [
@@ -101,14 +102,16 @@ CSV_COLUMNS = [
     'ls_plate_appearances', 
     'defense',
     'is_reserve',
-    'is_1h_p',
-    'is_1h_c',
-    'is_1h_pos',
+    'is_2h_p',
+    'is_2h_c',
+    'is_2h_pos',
     'is_mlb_roster',
     'is_aaa_roster',
     'team__abbreviation'
 ]
 DRAFTS = [
+    {"title": "2020 Midseason AA", "url": "/draft/2020/midseason/aa/"},
+    {"title": "2020 Midseason Open", "url": "/draft/2020/midseason/open/"},
     {"title": "2020 Offseason AA", "url": "/draft/2020/offseason/aa/"},
     {"title": "2020 Offseason Open", "url": "/draft/2020/offseason/open/"},
     {"title": "2019 Midseason AA", "url": "/draft/2019/midseason/aa/"},
