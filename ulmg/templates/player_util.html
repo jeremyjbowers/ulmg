@@ -1,10 +1,68 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <h2>No FG ids</h2>
-    <ul>
-    {% for p in no_fg_ids %}
-    <li><a href="/admin/ulmg/player/{{ p.id }}/change/">{{ p.name }}, {{ p.created }}</a></li>
-    {% endfor %}
-    </ul>
+<div class="columns">
+    <div class="column">
+        <h2 class="title is-4">No IDs</h2>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>player</th>
+                    <th>team</th>
+                    <th>created</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in no_ids %}
+                <tr>
+                    <td class="left"><a href="/admin/ulmg/player/{{ p.id }}/change/" target="_blank">{{ p.name }}</a></td>
+                    <td>{{ p.team|default_if_none:"-" }}</td>
+                    <td>{{ p.created }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="column">
+        <h2 class="title is-4">No birthdate</h2>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>player</th>
+                    <th>team</th>
+                    <th>created</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in no_birthdates %}
+                <tr>
+                    <td class="left"><a href="/admin/ulmg/player/{{ p.id }}/change/" target="_blank">{{ p.name }}</a></td>
+                    <td>{{ p.team|default_if_none:"-" }}</td>
+                    <td>{{ p.created }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="column">
+        <h2 class="title is-4">Suspect birthdate</h2>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>player</th>
+                    <th>team</th>
+                    <th>birthdate</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in suspect_birthdates %}
+                <tr>
+                    <td class="left"><a href="/admin/ulmg/player/{{ p.id }}/change/" target="_blank">{{ p.name }}</a></td>
+                    <td>{{ p.team|default_if_none:"-" }}</td>
+                    <td>{{ p.birthdate }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 {% endblock %}

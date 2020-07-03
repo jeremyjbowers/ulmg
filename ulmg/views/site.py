@@ -45,7 +45,9 @@ def player(request, playerid):
 
 def player_util(request):
     context = utils.build_context(request)
-    context['no_fg_ids'] = models.Player.objects.filter(fg_id__isnull=True).filter(is_amateur=False).order_by('-created')
+    context['no_ids'] = models.Player.objects.filter(fg_id__isnull=True, bref_id__isnull=True, mlb_dotcom__isnull=True).filter(is_amateur=False).order_by('-created')
+    context['no_birthdates'] = models.Player.objects.filter(birthdate__isnull=True).order_by('-created')
+    context['suspect_birthdates'] = models.Player.objects.filter(birthdate_qa=False, birthdate__day=1).order_by('-birthdate')
     return render(request, "player_util.html", context)
 
 def team_detail(request, abbreviation):
@@ -91,8 +93,15 @@ def draft_admin(request, year, season, draft_type):
         for p in models.Player.objects.filter(is_owned=False).values('name', 'position'):
             players.append("%(name)s (%(position)s)" % p)
     
-        for p in models.Player.objects.filter(is_owned=True, level="V", team__isnull=False, is_mlb_roster=False, is_1h_c=False, is_1h_p=False, is_1h_pos=False, is_35man_roster=False, is_reserve=False).values('name', 'position'):
-            players.append("%(name)s (%(position)s)" % p)
+        if season == "offseason":
+            # 35-man roster is a form of protection for offseason drafts?
+            for p in models.Player.objects.filter(is_owned=True, level="V", team__isnull=False, is_mlb_roster=False, is_1h_c=False, is_1h_p=False, is_1h_pos=False, is_35man_roster=False, is_reserve=False).values('name', 'position'):
+                players.append("%(name)s (%(position)s)" % p)
+
+        if season == "midseason":
+            # have to have been previously protected.
+            for p in models.Player.objects.filter(is_owned=True, level="V", team__isnull=False, is_mlb_roster=False, is_1h_c=False, is_1h_p=False, is_1h_pos=False, is_reserve=False).values('name', 'position'):
+                players.append("%(name)s (%(position)s)" % p)
 
         context['players'] = json.dumps(players)
 
