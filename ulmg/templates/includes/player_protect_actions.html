@@ -1,3 +1,4 @@
+{% if protect_tab or roster_tab %}
 <td>
     <!--{% if p.is_35man_roster %}<strong>&check;</strong>{% endif %} -->
     {% if p.is_mlb_roster %}<strong>MLB</strong>{% endif %}
@@ -10,6 +11,7 @@
     {% if p.is_2h_pos %}<span style="color: red;">POS2</span>{% endif %}
     {% if p.is_2h_p %}<span style="color: red;">PIT2</span>{% endif %}
 </td>
+{% endif %}
 
 {% if roster_tab %}<td class="left">
     {% if p.is_carded and not p.is_mlb_roster and not p.is_reserve and mlb_roster_count < mlb_roster_size %}{% if not p.is_2h_c and not p.is_2h_pos and not p.is_2h_p %}<a class="button is-small is-outlined is-success player-action" data-playerid="{{ p.id }}" data-action="to_mlb">MLB &uarr;</a>{% endif %}{% endif %}
