@@ -514,33 +514,33 @@ class TradeReceipt(BaseModel):
     def summary_html(self):
         return ", ".join(["<a class='has-text-weight-semibold' href='/players/%s/'>%s %s</a>" % (p.id, p.position, p.name) for p in self.players.all()] + ["%s" % (p.slug) for p in self.picks.all()])
 
-    @staticmethod
-    def trade_pick(sender, instance, action, reverse, model, pk_set, **kwargs):
-        if action == 'post_add':
-            team = instance.team
-            for p in pk_set:
-                obj = DraftPick.objects.get(id=p)
-                obj.team = instance.team
-                obj.save()
+    # @staticmethod
+    # def trade_pick(sender, instance, action, reverse, model, pk_set, **kwargs):
+    #     if action == 'post_add':
+    #         team = instance.team
+    #         for p in pk_set:
+    #             obj = DraftPick.objects.get(id=p)
+    #             obj.team = instance.team
+    #             obj.save()
 
-    @staticmethod
-    def trade_player(sender, instance, action, reverse, model, pk_set, **kwargs):
-        if action == 'post_add':
-            team = instance.team
-            for p in pk_set:
-                obj = Player.objects.get(id=p)
-                obj.is_reserve = False
-                obj.is_1h_c = False
-                obj.is_1h_p = False
-                obj.is_1h_pos = False
-                obj.is_35man_roster = False
-                obj.is_owned = True
-                obj.team = instance.team
-                obj.save()
+    # @staticmethod
+    # def trade_player(sender, instance, action, reverse, model, pk_set, **kwargs):
+    #     if action == 'post_add':
+    #         team = instance.team
+    #         for p in pk_set:
+    #             obj = Player.objects.get(id=p)
+    #             obj.is_reserve = False
+    #             obj.is_1h_c = False
+    #             obj.is_1h_p = False
+    #             obj.is_1h_pos = False
+    #             obj.is_35man_roster = False
+    #             obj.is_owned = True
+    #             obj.team = instance.team
+    #             obj.save()
 
 
-m2m_changed.connect(receiver=TradeReceipt.trade_player, sender=TradeReceipt.players.through)
-m2m_changed.connect(receiver=TradeReceipt.trade_pick, sender=TradeReceipt.picks.through)
+# m2m_changed.connect(receiver=TradeReceipt.trade_player, sender=TradeReceipt.players.through)
+# m2m_changed.connect(receiver=TradeReceipt.trade_pick, sender=TradeReceipt.picks.through)
 
 
 class TradeSummary(BaseModel):
