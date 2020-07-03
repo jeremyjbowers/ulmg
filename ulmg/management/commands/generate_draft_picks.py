@@ -18,30 +18,9 @@ DRAFT_MAPS = {
 
 class Command(BaseCommand):
     """
-    AA_TYPE = "aa"
-    OPEN_TYPE = "open"
-    BALANCE_TYPE = "balance"
-    DRAFT_TYPE_CHOICES = (
-        (AA_TYPE,"aa"),
-        (OPEN_TYPE,"open"),
-        (BALANCE_TYPE,"balance"),
-    )
-    draft_type = models.CharField(max_length=255, choices=DRAFT_TYPE_CHOICES, null=True)
-    draft_round = models.IntegerField(null=True)
-    year = models.CharField(max_length=4)
-    pick_number = models.IntegerField()
-    OFFSEASON = "offseason"
-    MIDSEASON = "midseason"
-    SEASON_CHOICES = (
-        (OFFSEASON,"offseason"),
-        (MIDSEASON,"midseason"),
-    )
-    season = models.CharField(max_length=255, choices=SEASON_CHOICES)
-    team = models.ForeignKey(Team, on_delete=models.SET_NULL, blank=True, null=True)
-    team_name = models.CharField(max_length=255, blank=True, null=True)
-    player = models.ForeignKey(Player, on_delete=models.SET_NULL, blank=True, null=True)
-    player_name = models.CharField(max_length=255, blank=True, null=True)
-    pick_notes = models.TextField(blank=True, null=True)
+    django-admin generate_draft_picks 2020 midseason data/ulmg/2020-midseason-aa-order.txt
+    this will generate the picks without saving their order.
+    you can save the order with the generate_draft_order management command.
     """
 
     def add_arguments(self, parser):
@@ -69,10 +48,6 @@ class Command(BaseCommand):
                             draft_round=draft_round,
                             original_team=team
                         )
-                        ##
-                        ## COMMENT THIS LINE OUT IF YOU WANT TO LOAD PICKS WITHOUT ORDER
-                        ##
-                        # obj.pick_number = o+1
                         obj.save()
                         if created:
                             obj.team = team
