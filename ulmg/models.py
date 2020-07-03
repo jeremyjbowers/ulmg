@@ -458,7 +458,7 @@ class Trade(BaseModel):
         return self.summary()
 
     def set_season(self):
-        if self.date.month >= 10:
+        if self.date.month >= 11:
             self.season = int(self.date.year) + 1
         else:
             self.season = self.date.year

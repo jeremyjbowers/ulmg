@@ -35,7 +35,7 @@ class TradeAdmin(admin.ModelAdmin):
     inlines = [
         TradeReceiptInline
     ]
-    exclude = ('active',)
+    exclude = ('active','season')
 
 
 @admin.register(DraftPick)
