@@ -84,7 +84,7 @@
             </thead>
             <tbody>
             {% for p in pitchers %}
-            <tr class="level-{{ p.level }}
+            <tr class="{% if p.level == "V" and not p.is_protected %}unprotected{% endif %}
             {% if p.ls_is_mlb == False and p.ls_ip > 0 %} minors{% endif %}
             {% if p.ls_is_mlb == False and p.is_amateur == True %} amateur{% endif %}
             {% if p.ls_is_mlb == False %} minors{% endif %}
