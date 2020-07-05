@@ -22,6 +22,7 @@ class Command(BaseCommand):
         models.Player.objects.filter(is_1h_c=True).update(is_mlb_roster=True, is_protected=True)
         models.Player.objects.filter(is_1h_p=True).update(is_mlb_roster=True, is_protected=True)
         models.Player.objects.filter(is_1h_pos=True).update(is_mlb_roster=True, is_protected=True)
+        models.Player.objects.filter(is_reserve=True).update(is_protected=True)
 
         for p in models.DraftPick.objects.filter(year=settings.CURRENT_SEASON, season="midseason", draft_type="open"):
             if p.player:
