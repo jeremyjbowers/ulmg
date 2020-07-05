@@ -8,7 +8,7 @@
 
 {% block content %}
 {% include 'includes/team_topper.html' %}
-
+<div id="team">
 <div class="tabs is-centered is-boxed is-large">
     <ul>
         <li class="is-active"><a href="#">Roster{% if num_owned %} ({{ num_owned }}){% endif %}</a></li>
@@ -37,7 +37,7 @@
             </thead>
             <tbody>
             {% for p in position.list %}
-            <tr class="
+            <tr class="{% if p.level == "V" and not p.is_protected %}unprotected{% endif %}
             {% if p.ls_is_mlb == False and p.ls_plate_appearances > 0 %} minors{% endif %}
             {% if p.ls_is_mlb == False %} minors{% endif %}
             {% if p.ls_is_mlb == False and p.is_amateur == True %} amateur{% endif %}
@@ -84,7 +84,7 @@
             </thead>
             <tbody>
             {% for p in pitchers %}
-            <tr class="
+            <tr class="level-{{ p.level }}
             {% if p.ls_is_mlb == False and p.ls_ip > 0 %} minors{% endif %}
             {% if p.ls_is_mlb == False and p.is_amateur == True %} amateur{% endif %}
             {% if p.ls_is_mlb == False %} minors{% endif %}
@@ -111,6 +111,7 @@
             </tbody>
         </table>
     </div>
+</div>
 </div>
 {% if protect_tab or roster_tab %}
 <div class="modal" id="player-drop-modal">

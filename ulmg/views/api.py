@@ -43,6 +43,7 @@ def player_action(request, playerid, action):
         # p.is_35man_roster = False
         p.is_mlb_roster = False
         p.is_aaa_roster = False
+        p.is_protected = False
         p.save()
 
     # if action == "is_reserve":

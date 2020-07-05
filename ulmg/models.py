@@ -166,6 +166,7 @@ class Player(BaseModel):
     is_2h_c = models.BooleanField(default=False)
     is_2h_pos = models.BooleanField(default=False)
     is_2h_draft = models.BooleanField(default=False)
+    is_protected = models.BooleanField(default=False)
 
     # CAREER STATS (for level)
     cs_pa = models.IntegerField(blank=True, null=True)
@@ -346,6 +347,10 @@ class Player(BaseModel):
         else:
             self.is_owned = True
 
+    def set_protected(self):
+        if self.is_reserve or self.is_1h_p or self.is_1h_c or self.is_1h_pos or self.is_2h_p or self.is_2h_c or self.is_2h_pos or self.is_mlb_roster:
+            self.is_protected = True
+
     def team_display(self):
         if self.team:
             return self.team.abbreviation
@@ -360,6 +365,7 @@ class Player(BaseModel):
         self.set_fg_url()
         self.set_level_order()
         self.set_owned()
+        self.set_protected()
 
         super().save(*args, **kwargs)
 
