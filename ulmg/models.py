@@ -348,8 +348,10 @@ class Player(BaseModel):
             self.is_owned = True
 
     def set_protected(self):
-        if self.is_reserve or self.is_1h_p or self.is_1h_c or self.is_1h_pos or self.is_2h_p or self.is_2h_c or self.is_2h_pos or self.is_mlb_roster:
+        if self.is_reserve or self.is_2h_p or self.is_2h_c or self.is_2h_pos or self.is_mlb_roster:
             self.is_protected = True
+        else:
+            self.is_protected = False
 
     def team_display(self):
         if self.team:

@@ -177,6 +177,7 @@ def player_action(request, playerid, action):
         p.is_2h_c = False
         p.is_2h_p = False
         p.is_2h_pos = False
+        p.is_protected = False
         p.save()
 
     return HttpResponse("ok")
