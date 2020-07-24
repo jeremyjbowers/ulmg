@@ -8,6 +8,12 @@ from django.conf import settings
 
 from ulmg import models
 
+from django.contrib.postgres.search import TrigramSimilarity
+
+def fuzzy_find_player(name_fragment, score=0.5):
+    return models.Player.objects\
+        .annotate(similarity=TrigramSimilarity('name', name_fragment))\
+        .filter(similarity__gt=score).order_by('-similarity')
 
 def build_context(request):
     context = {}
@@ -50,7 +56,6 @@ def normalize_pos(pos):
     if "P" in pos.upper():
         pos = "P"
     return pos
-
 
 def str_to_bool(possible_bool):
     if possible_bool:
