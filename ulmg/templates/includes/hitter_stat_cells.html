@@ -3,7 +3,7 @@
 <td>{% if p.is_injured %}🚫{% endif %}</td>
 <td>
     {% if p.is_starter %}{{ p.role }}{% endif %}
-    {% if p.is_bench %}Bench{% endif %}
+    {% if not p.is_starter and p.is_bench %}Bench{% endif %}
     {% if p.is_player_pool %}Pool{% endif %}
 </td>
 <td style="max-width:100px;">{{ p.defense_display|default_if_none:"-" }}</td>
