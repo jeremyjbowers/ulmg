@@ -21,22 +21,31 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         self.season = settings.CURRENT_SEASON
         self.reset_players()
+        self.get_roster_info()
+        self.update_player_ids()
         self.get_hitters()
         self.get_pitchers()
         self.get_mlbam()
-        self.get_roster_info()
         self.parse_roster_info()
         # self.get_minors()
 
-    def parse_roster_info(self):
+    def update_player_ids(self):
+        print('UPDATE PLAYER IDS')
+        teams = settings.ROSTER_TEAM_IDS
+        for team_id, team_abbrev, team_name in teams:
+            with open(f'data/rosters/{team_abbrev}_roster.json', 'r') as readfile:
+                roster = json.loads(readfile.read())
+                for player in roster:
+                    if player.get('minormasterid', None) and player.get('playerid', None):
+                        try:
+                            p = models.Player.objects.get(fg_id=player['minormasterid'])
+                            p.fg_id = player['playerid']
+                            p.save()
+                        except:
+                            pass
 
-        #
-        # THIS COULD USE A LOOP
-        # THAT LOOKS UP PLAYERS
-        # BASED ON THEIR sa12345
-        # ID AND UPDATES TO THEIR
-        # REAL MLB ID
-        # 
+    def parse_roster_info(self):
+        print('PARSE ROSTER INFO')
 
         '''
         is_starter = models.BooleanField(default=False)
@@ -46,8 +55,7 @@ class Command(BaseCommand):
         is_player_pool = models.BooleanField(default=False)
         is_injured = models.BooleanField(default=False)
         injury_description = models.CharField(max_length=255, null=True)
-        batting_role = models.CharField(max_length=255, null=True)
-        pitching_role = models.CharField(max_length=255, null=True)
+        role = models.CharField(max_length=255, null=True)
         mlb_team = models.CharField(max_length=255, null=True)
         mlb_team_abbr = models.CharField(max_length=255, null=True)
         '''
@@ -60,53 +68,51 @@ class Command(BaseCommand):
                 roster = json.loads(readfile.read())
                 for player in roster:
                     try:
-                        p = models.Player.objects.get(fg_id=player['playerid'])
+                        try:
+                            p = models.Player.objects.get(fg_id=player['playerid'])
+                        except:
+                            try:
+                                p = models.Player.objects.get(fg_id=player['minormasterid'])
+                            except:
+                                print(f"can't find {player['player']}")
+
                         p.role = player['role']
 
+                        if player['type'] == "mlb-tx-pp":
+                            p.is_player_pool = True
+
+                        if player['type'] == "mlb-tx-pt":
+                            p.is_player_pool = True
+
                         if player['type'] == "mlb-bp":
-                            p.is_bench = False
-                            p.is_starter = False
                             p.is_bullpen = True
-                            p.is_injured = False
 
                         if player['type'] == "mlb-sp":
                             p.is_starter = True
-                            p.is_bench = False
-                            p.is_injured = False
-                            p.is_bullpen = False
 
                         if player['type'] == "mlb-bn":
-                            p.is_starter = False
                             p.is_bench = True
-                            p.is_bullpen = True
-                            p.is_injured = False
 
                         if player['type'] == 'mlb-sl':
                             p.is_starter = True
-                            p.is_bench = False
-                            p.is_bullpen = False
-                            p.is_injured = False
 
                         if "il" in player['type']:
-                            p.is_starter = False
-                            p.is_bench = False
-                            p.is_bullpen = False
                             p.is_injured = True
 
                         p.injury_description = player['injurynotes']
                         p.mlbam_id
                         p.mlb_team = team_name
-                        p.mlb_abbr = team_abbrev
+                        p.mlb_team_abbr = team_abbrev
 
                         if player['roster40'] == "Y":
                             p.is_mlb40man = True
 
                         p.save()
                     except:
-                        pass
+                        print(f"error loading {player['player']}")
 
     def get_roster_info(self):
-        print("ROSTER INFO")
+        print("GET ROSTER INFO")
         teams = settings.ROSTER_TEAM_IDS
         for team_id, team_abbrev, team_name in teams:
             url = f"https://cdn.fangraphs.com/api/depth-charts/roster?teamid={team_id}"
