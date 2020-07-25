@@ -182,6 +182,18 @@ class Player(BaseModel):
     raal = models.DecimalField(max_digits=4, decimal_places=2, blank=True, null=True)
     raat = models.DecimalField(max_digits=4, decimal_places=2, blank=True, null=True)
 
+    # FROM LIVE ROSTERS
+    is_starter = models.BooleanField(default=False)
+    is_bench = models.BooleanField(default=False)
+    is_player_pool = models.BooleanField(default=False)
+    is_injured = models.BooleanField(default=False)
+    injury_description = models.CharField(max_length=255, null=True)
+    role = models.CharField(max_length=255, null=True)
+    mlb_team = models.CharField(max_length=255, null=True)
+    mlb_team_abbr = models.CharField(max_length=255, null=True)
+    is_mlb40man = models.BooleanField(default=False)
+    is_bullpen = models.BooleanField(default=False)
+
     # PROJECTED STATS
     ps_stat_origin = models.CharField(blank=True, null=True, max_length=255)
     ps_is_mlb = models.BooleanField(default=False)

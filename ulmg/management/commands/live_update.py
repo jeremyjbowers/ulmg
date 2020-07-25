@@ -20,17 +20,102 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         self.season = settings.CURRENT_SEASON
-        print('RESET')
         self.reset_players()
-        print('FG HITTERS')
         self.get_hitters()
-        print('FG PITCHERS')
         self.get_pitchers()
-        print('MLBAM')
         self.get_mlbam()
+        self.get_roster_info()
+        self.parse_roster_info()
         # self.get_minors()
 
+    def parse_roster_info(self):
+
+        #
+        # THIS COULD USE A LOOP
+        # THAT LOOKS UP PLAYERS
+        # BASED ON THEIR sa12345
+        # ID AND UPDATES TO THEIR
+        # REAL MLB ID
+        # 
+
+        '''
+        is_starter = models.BooleanField(default=False)
+        is_bullpen = models.BooleanField(default=False)
+        is_mlb40man = models.BooleanField(default=False)
+        is_bench = models.BooleanField(default=False)
+        is_player_pool = models.BooleanField(default=False)
+        is_injured = models.BooleanField(default=False)
+        injury_description = models.CharField(max_length=255, null=True)
+        batting_role = models.CharField(max_length=255, null=True)
+        pitching_role = models.CharField(max_length=255, null=True)
+        mlb_team = models.CharField(max_length=255, null=True)
+        mlb_team_abbr = models.CharField(max_length=255, null=True)
+        '''
+
+        models.Player.objects.update(is_starter=False, is_bench=False, is_player_pool=False, is_injured=False, is_mlb40man=False, is_bullpen=False, injury_description="", role="", mlb_team="", mlb_team_abbr="")
+
+        teams = settings.ROSTER_TEAM_IDS
+        for team_id, team_abbrev, team_name in teams:
+            with open(f'data/rosters/{team_abbrev}_roster.json', 'r') as readfile:
+                roster = json.loads(readfile.read())
+                for player in roster:
+                    try:
+                        p = models.Player.objects.get(fg_id=player['playerid'])
+                        p.role = player['role']
+
+                        if player['type'] == "mlb-bp":
+                            p.is_bench = False
+                            p.is_starter = False
+                            p.is_bullpen = True
+                            p.is_injured = False
+
+                        if player['type'] == "mlb-sp":
+                            p.is_starter = True
+                            p.is_bench = False
+                            p.is_injured = False
+                            p.is_bullpen = False
+
+                        if player['type'] == "mlb-bn":
+                            p.is_starter = False
+                            p.is_bench = True
+                            p.is_bullpen = True
+                            p.is_injured = False
+
+                        if player['type'] == 'mlb-sl':
+                            p.is_starter = True
+                            p.is_bench = False
+                            p.is_bullpen = False
+                            p.is_injured = False
+
+                        if "il" in player['type']:
+                            p.is_starter = False
+                            p.is_bench = False
+                            p.is_bullpen = False
+                            p.is_injured = True
+
+                        p.injury_description = player['injurynotes']
+                        p.mlbam_id
+                        p.mlb_team = team_name
+                        p.mlb_abbr = team_abbrev
+
+                        if player['roster40'] == "Y":
+                            p.is_mlb40man = True
+
+                        p.save()
+                    except:
+                        pass
+
+    def get_roster_info(self):
+        print("ROSTER INFO")
+        teams = settings.ROSTER_TEAM_IDS
+        for team_id, team_abbrev, team_name in teams:
+            url = f"https://cdn.fangraphs.com/api/depth-charts/roster?teamid={team_id}"
+            roster = requests.get(url).json()
+            with open(f'data/rosters/{team_abbrev}_roster.json', 'w') as writefile:
+                writefile.write(json.dumps(roster))
+
     def reset_players(self):
+        print('RESET')
         try:
             models.Player.objects.update(ls_is_mlb=False,ls_hr=0,ls_sb=0,ls_runs=0,ls_rbi=0,ls_avg=0,ls_obp=0,ls_slg=0,ls_babip=0,ls_wrc_plus=0,ls_plate_appearances=0,ls_iso=0,ls_k_pct=0,ls_bb_pct=0,ls_woba=0,ls_g=0,ls_gs=0,ls_ip=0,ls_k_9=0,ls_bb_9=0,ls_hr_9=0,ls_lob_pct=0,ls_gb_pct=0,ls_hr_fb=0,ls_era=0,ls_fip=0,ls_xfip=0,ls_siera=0,ls_xavg=0,ls_xwoba=0,ls_xslg=0,ls_xavg_diff=0,ls_xwoba_diff=0,ls_xslg_diff=0)
             return True
@@ -103,6 +188,7 @@ class Command(BaseCommand):
                         print(player)
 
     def get_mlbam(self):
+        print('MLBAM')
         curl_cmd = f'curl --silent -o /tmp/mlbam.csv "https://baseballsavant.mlb.com/expected_statistics?type=batter&year={self.season}&position=&team=&min=5&csv=true"'
         os.system(curl_cmd)
         with open('/tmp/mlbam.csv', 'r') as readfile:
@@ -124,6 +210,7 @@ class Command(BaseCommand):
 
 
     def get_hitters(self):
+        print('FG HITTERS')
         url = f"https://www.fangraphs.com/leaders.aspx?pos=all&stats=bat&lg=all&qual=1&type=8&season={self.season}&month=0&season1={self.season}&ind=0&team=0&rost=0&age=0&filter=&players=0&startdate=&enddate=&page=1_1500"
         rows = self.get_fg_results(url)
 
@@ -154,6 +241,7 @@ class Command(BaseCommand):
                 print(f"h: {h[1].select('a')[0].attrs['href'].split('playerid=')[1].split('&')[0]}\t{h[1].text.strip()}\t{e}")
 
     def get_pitchers(self):
+        print('FG PITCHERS')
         url = f"https://www.fangraphs.com/leaders.aspx?pos=all&stats=pit&lg=all&qual=1&type=c,4,5,11,7,8,13,-1,36,37,40,43,44,48,51,-1,6,45,62,122,-1,59&season={self.season}&month=0&season1={self.season}&ind=0&team=0&rost=0&age=0&filter=&players=0&startdate=2019-01-01&enddate=2019-12-31&page=1_1100"
 
         rows = self.get_fg_results(url)
