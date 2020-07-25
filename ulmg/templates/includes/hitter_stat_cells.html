@@ -1,5 +1,11 @@
 {% load ulmg_tags %}
-
+<td>{{ p.mlb_team_abbr|default_if_none:"-" }}</td>
+<td>{% if p.is_injured %}🚫{% endif %}</td>
+<td>
+    {% if p.is_starter %}{{ p.role }}{% endif %}
+    {% if p.is_bench %}Bench{% endif %}
+    {% if p.is_player_pool %}Pool{% endif %}
+</td>
 <td style="max-width:100px;">{{ p.defense_display|default_if_none:"-" }}</td>
 <td data-value="{{ p.ls_plate_appearances|default_if_none:"-999" }}">{{ p.ls_plate_appearances|default_if_none:"-" }}</td>
 {% if advanced %}<td data-value="{{ p.ls_wrc_plus|default_if_none:"-999" }}">{{ p.ls_wrc_plus|default_if_none:"-" }}</td>

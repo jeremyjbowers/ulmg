@@ -28,7 +28,7 @@
                     <th></th>
                     <th data-sortable-type="numeric">Age</th>
                     <th data-sortable-type="alpha">Lvl</th>
-                    <th data-sortable-type="numeric">Card?</th>
+                    <!-- <th data-sortable-type="numeric">Card?</th> -->
 
                     {% include "includes/hitter_stat_headers.html" %}
 
@@ -53,7 +53,7 @@
                     </td>
                     <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
                     <td data-value="{{ p.level|default_if_none:"Z" }}<">{{ p.level|default_if_none:"" }}</td>
-                    <td data-value="{% if p.is_carded %}1{% else %}0{% endif %}">{% if p.is_carded %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td>
+                    <!-- <td data-value="{% if p.is_carded %}1{% else %}0{% endif %}">{% if p.is_carded %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td> -->
 
                     {% include "includes/hitter_stat_cells.html" %}
 
@@ -76,7 +76,7 @@
                     <th></th>
                     <th data-sortable-type="numeric">Age</th>
                     <th data-sortable-type="alpha">Lvl</th>
-                    <th data-sortable-type="numeric">Card?</th>
+                    <!-- <th data-sortable-type="numeric">Card?</th> -->
 
                     {% include "includes/pitcher_stat_headers.html" %}
                     {% include "includes/player_protect_headers.html" %}
@@ -100,7 +100,7 @@
                     </td>
                     <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
                     <td data-value="{{ p.level|default_if_none:"Z" }}<">{{ p.level|default_if_none:"" }}</td>
-                    <td data-value="{% if p.is_carded %}1{% else %}0{% endif %}">{% if p.is_carded %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td>
+                    <!-- <td data-value="{% if p.is_carded %}1{% else %}0{% endif %}">{% if p.is_carded %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td> -->
 
                     {% include "includes/pitcher_stat_cells.html" %}
 
