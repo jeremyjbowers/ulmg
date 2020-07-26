@@ -32,6 +32,8 @@ def build_context(request):
 
     context['protect_tab'] = settings.TEAM_PROTECT_TAB
 
+    context['live_tab'] = settings.TEAM_LIVE_TAB
+
     # for search
     queries_without_page = dict(request.GET)
     if queries_without_page.get('page', None):

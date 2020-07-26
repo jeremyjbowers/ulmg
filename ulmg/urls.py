@@ -13,6 +13,7 @@ urlpatterns = [
     path('teams/csv/', views.csv.all_csv),
     path('teams/<str:abbreviation>/csv/', views.csv.team_csv),
     path('teams/<str:abbreviation>/other/', views.site.team_other),
+    path('teams/<str:abbreviation>/live/', views.site.team_realtime),
     path('teams/<str:abbreviation>/', views.site.team_detail),
     path('trades/', views.site.trades),
     path('players/util/', views.site.player_util),
