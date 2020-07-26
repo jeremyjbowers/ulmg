@@ -100,7 +100,7 @@ class Command(BaseCommand):
                             p.is_injured = True
 
                         p.injury_description = player['injurynotes']
-                        p.mlbam_id
+                        p.mlbam_id = player['mlbamid1']
                         p.mlb_team = team_name
                         p.mlb_team_abbr = team_abbrev
 

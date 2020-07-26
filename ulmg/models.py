@@ -157,6 +157,18 @@ class Player(BaseModel):
     is_aaa_roster = models.BooleanField(default=False)
     is_35man_roster = models.BooleanField(default=False)
 
+    # REALTIME STATS
+    rt_ab = models.IntegerField(blank=True, null=True)
+    rt_r = models.IntegerField(blank=True, null=True)
+    rt_h = models.IntegerField(blank=True, null=True)
+    rt_doubles = models.IntegerField(blank=True, null=True)
+    rt_triples = models.IntegerField(blank=True, null=True)
+    rt_hr = models.IntegerField(blank=True, null=True)
+    rt_rbi = models.IntegerField(blank=True, null=True)
+    rt_sb = models.IntegerField(blank=True, null=True)
+    rt_bb = models.IntegerField(blank=True, null=True)
+    rt_k = models.IntegerField(blank=True, null=True)
+
     # PROTECTION
     is_reserve = models.BooleanField(default=False)
     is_1h_p = models.BooleanField(default=False)
