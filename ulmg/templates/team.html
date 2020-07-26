@@ -8,13 +8,35 @@
 
 {% block content %}
 {% include 'includes/team_topper.html' %}
+
+<style>
+    #live-throb {
+        width: 10px;
+        height: 10px;
+        border-radius: 10px;
+        background-color: red;
+        animation: glow 1s infinite alternate;
+    }
+
+    @keyframes glow {
+    from {
+        box-shadow: 0 0 2px -2px red;
+    } to {
+            box-shadow: 0 0 2px 2px red;
+        }
+    }
+</style>
+
 <div id="team">
 <div class="tabs is-centered is-boxed is-large">
     <ul>
         <li class="is-active"><a href="#">Roster{% if num_owned %} ({{ num_owned }}){% endif %}</a></li>
         <li><a href="/teams/{{ team.abbreviation|lower }}/other/">Trades & picks</a></li>
+        {% if live_tab %}<li><a href="/teams/{{ team.abbreviation|lower }}/live/"><span id="live-throb" style="color: red; font-size: 10px;"></span> &nbsp;Live stats</a></li>{% endif %}
     </ul>
 </div>
+
+
 
 <div class="columns">
     <div class="column">

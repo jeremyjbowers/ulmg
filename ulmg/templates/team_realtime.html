@@ -1,0 +1,120 @@
+{% extends 'base.html' %}
+
+{% load ulmg_tags %}
+
+{% block prenav %}
+        {% if protect_tab or roster_tab %}{% include "includes/roster_status.html" %}{% endif %}
+{% endblock %}
+
+{% block content %}
+{% include 'includes/team_topper.html' %}
+
+<style>
+    #live-throb {
+        width: 10px;
+        height: 10px;
+        border-radius: 10px;
+        background-color: red;
+        animation: glow 1s infinite alternate;
+    }
+
+    @keyframes glow {
+    from {
+        box-shadow: 0 0 2px -2px red;
+    } to {
+            box-shadow: 0 0 2px 2px red;
+        }
+    }
+</style>
+
+<div id="team">
+<div class="tabs is-centered is-boxed is-large">
+    <ul>
+        <li><a href="#">Roster{% if num_owned %} ({{ num_owned }}){% endif %}</a></li>
+        <li><a href="/teams/{{ team.abbreviation|lower }}/other/">Trades & picks</a></li>
+        {% if live_tab %}<li class="is-active"><a href="/teams/{{ team.abbreviation|lower }}/live/"><span id="live-throb" style="color: red; font-size: 10px;"></span> &nbsp;Live stats</a></li>{% endif %}
+    </ul>
+</div>
+
+
+
+<div class="columns">
+    <div class="column">
+        {% regroup hitters by position as position_players %}
+        {% for position in position_players %}
+        <h1 class="title is-3">{{ position.grouper }} ({{ position.list|length }})</h1>
+        <table class="table is-fullwidth is-hoverable" data-sortable>
+            <thead>
+                <tr>
+                    <th data-sortable-type="alpha">Name</th>
+                    <th></th>
+                    <th data-sortable-type="numeric">Age</th>
+                    <th data-sortable-type="alpha">Lvl</th>
+
+                    {% include "includes/hitter_realtime_stat_headers.html" %}
+                </tr>
+            </thead>
+            <tbody>
+            {% for p in position.list %}
+            <tr class="{% if p.level == "V" and not p.is_protected %}unprotected{% endif %}
+            {% if p.ls_is_mlb == False and p.ls_plate_appearances > 0 %} minors{% endif %}
+            {% if p.ls_is_mlb == False %} minors{% endif %}
+            {% if p.ls_is_mlb == False and p.is_amateur == True %} amateur{% endif %}
+            ">
+                    <td data-value="{{ p.name }}" style="text-align: left!important;">
+                        <a class="has-text-weight-semibold" href="/players/{{ p.id }}/" target="_blank">{{ p.name }}</a>
+                    </td>
+                    <td class="left">
+                        {% if p.fg_url %}<a class="has-text-weight-light" target="_blank" href="{{ p.fg_url }}">FG &Gt;</a>{% endif %}
+                    </td>
+                    <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.level|default_if_none:"Z" }}<">{{ p.level|default_if_none:"" }}</td>
+
+                    {% include "includes/hitter_realtime_stat_cells.html" %}
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="columns">
+    <div class="column">
+        <h1 class="title is-3">P ({{ pitchers|length }})</h1>
+        <table class="table is-fullwidth" data-sortable>
+            <thead>
+                <tr>
+                    <th data-sortable-type="alpha">Name</th>
+                    <th></th>
+                    <th data-sortable-type="numeric">Age</th>
+                    <th data-sortable-type="alpha">Lvl</th>
+
+                    {% include "includes/pitcher_realtime_stat_headers.html" %}
+                </tr>
+            </thead>
+            <tbody>
+            {% for p in pitchers %}
+            <tr class="{% if p.level == "V" and not p.is_protected %}unprotected{% endif %}
+            {% if p.ls_is_mlb == False and p.ls_ip > 0 %} minors{% endif %}
+            {% if p.ls_is_mlb == False and p.is_amateur == True %} amateur{% endif %}
+            {% if p.ls_is_mlb == False %} minors{% endif %}
+            ">
+                    <td data-value="{{ p.name }}" style="text-align: left!important;"><span class="has-text-weight-semibold" data-value="{{ p.name }}">
+                            <a href="/players/{{ p.id }}/" target="_blank">{{ p.name }}</a></span>
+                    </td>
+                    <td class="left">
+                        {% if p.fg_url %}<a class="has-text-weight-light" target="_blank" href="{{ p.fg_url }}">FG &Gt;</a>{% endif %}
+                    </td>
+                    <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.level|default_if_none:"Z" }}<">{{ p.level|default_if_none:"" }}</td>
+
+                    {% include "includes/pitcher_realtime_stat_cells.html" %}
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+</div>
+{% endblock %}

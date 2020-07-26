@@ -1,0 +1,17 @@
+<td>{{ p.mlb_team_abbr|default_if_none:"-" }}</td>
+<td>{% if p.is_injured %}🚫{% endif %}</td>
+<td>
+    {% if p.is_starter %}{{ p.role }}{% endif %}
+    {% if p.is_bench %}Bench{% endif %}
+    {% if p.is_player_pool %}Pool{% endif %}
+    {% if p.is_bullpen %}{{ p.role }}{% endif %}
+</td>
+<td data-value="{{ p.rt_ip|default_if_none:"-999" }}">{{ p.rt_ip|default_if_none:"-" }}</td>
+<td data-value="{{ p.rt_ph|default_if_none:"-999" }}">{{ p.rt_ph|default_if_none:"-" }}</td>
+<td data-value="{{ p.rt_pr|default_if_none:"-999" }}">{{ p.rt_pr|default_if_none:"-" }}</td>
+<td data-value="{{ p.rt_er|default_if_none:"-999" }}">{{ p.rt_er|default_if_none:"-" }}</td>
+<td data-value="{{ p.rt_pbb|default_if_none:"-999" }}">{{ p.rt_pbb|default_if_none:"-" }}</td>
+<td data-value="{{ p.rt_pk|default_if_none:"-999" }}">{{ p.rt_pk|default_if_none:"-" }}</td>
+<td data-value="{{ p.rt_phr|default_if_none:"-999" }}">{{ p.rt_phr|default_if_none:"-" }}</td>
+<td data-value="{{ p.rt_p|default_if_none:"-999" }}">{{ p.rt_p|default_if_none:"-" }}</td>
+<td data-value="{{ p.rt_s|default_if_none:"-999" }}">{{ p.rt_s|default_if_none:"-" }}</td>

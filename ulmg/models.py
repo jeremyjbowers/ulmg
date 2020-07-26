@@ -169,6 +169,16 @@ class Player(BaseModel):
     rt_bb = models.IntegerField(blank=True, null=True)
     rt_k = models.IntegerField(blank=True, null=True)
 
+    rt_ip = models.CharField(max_length=255, blank=True, null=True)
+    rt_ph = models.IntegerField(blank=True, null=True)
+    rt_pr = models.IntegerField(blank=True, null=True)
+    rt_er = models.IntegerField(blank=True, null=True)
+    rt_pbb = models.IntegerField(blank=True, null=True)
+    rt_pk = models.IntegerField(blank=True, null=True)
+    rt_phr = models.IntegerField(blank=True, null=True)
+    rt_p = models.IntegerField(blank=True, null=True)
+    rt_s = models.IntegerField(blank=True, null=True)
+
     # PROTECTION
     is_reserve = models.BooleanField(default=False)
     is_1h_p = models.BooleanField(default=False)
