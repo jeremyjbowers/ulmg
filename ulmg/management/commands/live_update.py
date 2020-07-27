@@ -63,6 +63,7 @@ class Command(BaseCommand):
             team.ls_k_9 = (team.ls_pk / float(team.ls_ip)) * 9.0
             team.ls_bb_9 = (team.ls_pbb / float(team.ls_ip)) * 9.0
             team.ls_hr_9 = (team.ls_hra / float(team.ls_ip)) * 9.0
+            team.ls_hits_9 = (team.ls_ha / float(team.ls_ip)) * 9.0
             team.ls_whip = (team.ls_ha + team.ls_bb) / float(team.ls_ip)
 
         for team in models.Team.objects.all():

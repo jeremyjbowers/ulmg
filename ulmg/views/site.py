@@ -21,6 +21,7 @@ def bowers_aa(request):
 
 def index(request):
     context = utils.build_context(request)
+    context['teams'] = models.Team.objects.all()
     context['hitters'] = models.Player.objects\
         .filter(
             Q(level="V", team__isnull=True, ls_plate_appearances__gte=1, ls_is_mlb=True)|\

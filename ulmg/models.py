@@ -36,8 +36,8 @@ class Team(BaseModel):
 
     # LIVE STATS!
     ls_hits = models.IntegerField(blank=True, null=True)
-    ls_doubles = models.IntegerField(blank=True, null=True)
-    ls_triples = models.IntegerField(blank=True, null=True)
+    ls_2b = models.IntegerField(blank=True, null=True)
+    ls_3b = models.IntegerField(blank=True, null=True)
     ls_hr = models.IntegerField(blank=True, null=True)
     ls_sb = models.IntegerField(blank=True, null=True)
     ls_runs = models.IntegerField(blank=True, null=True)
@@ -62,9 +62,11 @@ class Team(BaseModel):
     ls_hra = models.IntegerField(blank=True, null=True)
     ls_er = models.IntegerField(blank=True, null=True)
     ls_k_9 = models.DecimalField(max_digits=4, decimal_places=2, blank=True, null=True)
+    ls_hits_9 = models.DecimalField(max_digits=4, decimal_places=2, blank=True, null=True)
     ls_bb_9 = models.DecimalField(max_digits=4, decimal_places=2, blank=True, null=True)
     ls_hr_9 = models.DecimalField(max_digits=4, decimal_places=2, blank=True, null=True)
     ls_era = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
+    ls_whip = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
 
     class Meta:
         ordering = ["abbreviation"]
