@@ -31,8 +31,11 @@ class Command(BaseCommand):
         models.Player.objects.update(rt_ab=None,rt_r=None,rt_h=None,rt_doubles=None,rt_triples=None,rt_hr=None,rt_rbi=None,rt_sb=None,rt_bb=None,rt_k=None,rt_ip=None,rt_ph=None,rt_pr=None,rt_er=None,rt_pbb=None,rt_pk=None,rt_phr=None,rt_p=None,rt_s=None)
 
     def get_games(self):
-        now = datetime.datetime.utcnow().replace(tzinfo=pytz.timezone('US/Pacific'))
-        start_time = datetime.datetime(now.year, now.month, now.day, 8, 0, 0, 0, tzinfo=pytz.timezone('US/Pacific'))
+        pacific = pytz.timezone('US/Pacific')
+        now = datetime.datetime.now()
+        now = pacific.localize(now)
+        start_time = datetime.datetime(now.year, now.month, now.day, 8, 0, 0, 0)
+        start_time = pacific.localize(start_time)
         if now >= start_time:
             # wipe old data if we're past 8am PST
             self.wipe_realtime_stats()
