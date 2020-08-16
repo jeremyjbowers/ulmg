@@ -76,15 +76,14 @@ def mgmt(command):
 def get_data():
     api.run(work_string + "django-admin dumpdata ulmg > /tmp/ulmg.json")
     os.system("rm -rf data/fixtures/ulmg.json")
-    api.get(
-        remote_path="/tmp/ulmg.json", local_path="data/fixtures/ulmg.json"
-    )
+    api.get(remote_path="/tmp/ulmg.json", local_path="data/fixtures/ulmg.json")
 
 
 @api.task
 def reload():
     get_data()
-    api.local('ULMG_FIXTURE=true django-admin reload')
+    api.local("ULMG_FIXTURE=true django-admin reload")
+    api.local("django-admin createsuperuser")
 
 
 @api.task
