@@ -1,4 +1,5 @@
 import datetime
+import os
 
 from dateutil.relativedelta import *
 from django.contrib.auth.models import User
@@ -695,31 +696,35 @@ class TradeReceipt(BaseModel):
             + ["%s" % (p.slug) for p in self.picks.all()]
         )
 
-    ## Comment out these two methods and the m2m_changed signals below
-    ## when loading from a fixture.
     @staticmethod
     def trade_pick(sender, instance, action, reverse, model, pk_set, **kwargs):
-        if action == "post_add":
-            team = instance.team
-            for p in pk_set:
-                obj = DraftPick.objects.get(id=p)
-                obj.team = instance.team
-                obj.save()
+
+        # when loading fixtures, do not try to update the team reference for a pick
+        if not os.environ.get("ULMG_FIXTURES", None):
+            if action == "post_add":
+                team = instance.team
+                for p in pk_set:
+                    obj = DraftPick.objects.get(id=p)
+                    obj.team = instance.team
+                    obj.save()
 
     @staticmethod
     def trade_player(sender, instance, action, reverse, model, pk_set, **kwargs):
-        if action == "post_add":
-            team = instance.team
-            for p in pk_set:
-                obj = Player.objects.get(id=p)
-                obj.is_reserve = False
-                obj.is_1h_c = False
-                obj.is_1h_p = False
-                obj.is_1h_pos = False
-                obj.is_35man_roster = False
-                obj.is_owned = True
-                obj.team = instance.team
-                obj.save()
+
+        # when loading fixtures, do not try to update the team reference for a player
+        if not os.environ.get("ULMG_FIXTURES", None):
+            if action == "post_add":
+                team = instance.team
+                for p in pk_set:
+                    obj = Player.objects.get(id=p)
+                    obj.is_reserve = False
+                    obj.is_1h_c = False
+                    obj.is_1h_p = False
+                    obj.is_1h_pos = False
+                    obj.is_35man_roster = False
+                    obj.is_owned = True
+                    obj.team = instance.team
+                    obj.save()
 
 
 m2m_changed.connect(
@@ -744,27 +749,6 @@ class TradeSummary(BaseModel):
 
     class Meta:
         ordering = ["-season", "trade_type"]
-
-
-class SomRunsYear(BaseModel):
-    season = models.IntegerField()
-    player = models.ForeignKey(Player, on_delete=models.SET_NULL, null=True)
-    player_name = models.CharField(max_length=255, blank=True)
-    raar = models.DecimalField(max_digits=4, decimal_places=1)
-    raal = models.DecimalField(max_digits=4, decimal_places=1)
-    raat = models.DecimalField(max_digits=4, decimal_places=1)
-
-    def __unicode__(self):
-        return "%(player_name)s: %(raal)s (L) (R) %(raat)s [%(raat)s]" % self
-
-    def set_player_name(self):
-        if self.player:
-            self.player_name = self.player.name
-
-    def save(self, *args, **kwargs):
-        self.set_player_name()
-
-        super().save(*args, **kwargs)
 
 
 class ScoutingReport(BaseModel):
