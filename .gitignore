@@ -4,3 +4,4 @@ __pycache__
 *.pyo
 credentials.json
 data/rosters/*.json
+htmlcov/*
