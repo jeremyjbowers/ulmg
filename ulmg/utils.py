@@ -60,6 +60,7 @@ def write_csv(path, payload):
             writer.writerow(p)
 
 
+# covered
 def normalize_pos(pos):
     if pos.upper() in ["1B", "2B", "3B", "SS"]:
         pos = "IF"
@@ -70,8 +71,9 @@ def normalize_pos(pos):
     return pos
 
 
+# covered
 def str_to_bool(possible_bool):
-    if possible_bool:
+    if isinstance(possible_bool, str):
         if possible_bool.lower() in ["y", "yes", "t", "true"]:
             return True
         if possible_bool.lower() in ["n", "no", "f", "false"]:
