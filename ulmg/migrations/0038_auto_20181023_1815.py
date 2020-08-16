@@ -6,18 +6,22 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('ulmg', '0037_draftpick_trade_tradereceipt'),
+        ("ulmg", "0037_draftpick_trade_tradereceipt"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='draftpick',
-            name='draft_round',
+            model_name="draftpick",
+            name="draft_round",
             field=models.IntegerField(null=True),
         ),
         migrations.AddField(
-            model_name='draftpick',
-            name='draft_type',
-            field=models.CharField(choices=[('aa', 'aa'), ('open', 'open'), ('balance', 'balance')], max_length=255, null=True),
+            model_name="draftpick",
+            name="draft_type",
+            field=models.CharField(
+                choices=[("aa", "aa"), ("open", "open"), ("balance", "balance")],
+                max_length=255,
+                null=True,
+            ),
         ),
     ]

@@ -6,17 +6,14 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('ulmg', '0051_remove_tradesummary_teams'),
+        ("ulmg", "0051_remove_tradesummary_teams"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='tradesummary',
-            options={'ordering': ['-season', 'trade_type']},
+            name="tradesummary", options={"ordering": ["-season", "trade_type"]},
         ),
         migrations.RenameField(
-            model_name='player',
-            old_name='fangraphs_id',
-            new_name='fg_id',
+            model_name="player", old_name="fangraphs_id", new_name="fg_id",
         ),
     ]

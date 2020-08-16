@@ -10,45 +10,55 @@ from ulmg import models
 
 from django.contrib.postgres.search import TrigramSimilarity
 
+
 def fuzzy_find_player(name_fragment, score=0.5):
-    return models.Player.objects\
-        .annotate(similarity=TrigramSimilarity('name', name_fragment))\
-        .filter(similarity__gt=score).order_by('-similarity')
+    return (
+        models.Player.objects.annotate(
+            similarity=TrigramSimilarity("name", name_fragment)
+        )
+        .filter(similarity__gt=score)
+        .order_by("-similarity")
+    )
+
 
 def build_context(request):
     context = {}
 
     # to build the nav
-    context['teamnav'] = models.Team.objects.all().values('abbreviation')
-    context['draftnav'] = settings.DRAFTS
-    context['mlb_roster_size'] = settings.MLB_ROSTER_SIZE
+    context["teamnav"] = models.Team.objects.all().values("abbreviation")
+    context["draftnav"] = settings.DRAFTS
+    context["mlb_roster_size"] = settings.MLB_ROSTER_SIZE
 
     # for showing stats
-    context['advanced'] = False
-    if request.GET.get('adv', None):
-        context['advanced'] = True
+    context["advanced"] = False
+    if request.GET.get("adv", None):
+        context["advanced"] = True
 
-    context['roster_tab'] = settings.TEAM_ROSTER_TAB
+    context["roster_tab"] = settings.TEAM_ROSTER_TAB
 
-    context['protect_tab'] = settings.TEAM_PROTECT_TAB
+    context["protect_tab"] = settings.TEAM_PROTECT_TAB
 
-    context['live_tab'] = settings.TEAM_LIVE_TAB
+    context["live_tab"] = settings.TEAM_LIVE_TAB
 
     # for search
     queries_without_page = dict(request.GET)
-    if queries_without_page.get('page', None):
-        del queries_without_page['page']
-    context['q_string'] = "&".join(['%s=%s' % (k,v[-1]) for k,v in queries_without_page.items()])
+    if queries_without_page.get("page", None):
+        del queries_without_page["page"]
+    context["q_string"] = "&".join(
+        ["%s=%s" % (k, v[-1]) for k, v in queries_without_page.items()]
+    )
 
     return context
 
+
 def write_csv(path, payload):
-    with open(path, 'w') as csvfile:
+    with open(path, "w") as csvfile:
         fieldnames = list(payload[0].keys())
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
         for p in payload:
             writer.writerow(p)
+
 
 def normalize_pos(pos):
     if pos.upper() in ["1B", "2B", "3B", "SS"]:
@@ -59,23 +69,27 @@ def normalize_pos(pos):
         pos = "P"
     return pos
 
+
 def str_to_bool(possible_bool):
     if possible_bool:
-        if possible_bool.lower() in ['y', 'yes', 't', 'true']:
+        if possible_bool.lower() in ["y", "yes", "t", "true"]:
             return True
-        if possible_bool.lower() in ['n', 'no', 'f', 'false']:
+        if possible_bool.lower() in ["n", "no", "f", "false"]:
             return False
     return None
 
-def get_sheet(sheet_id, sheet_range):
-    SCOPES = ['https://www.googleapis.com/auth/spreadsheets.readonly']
 
-    creds = service_account.Credentials.from_service_account_file('credentials.json', scopes=SCOPES)
-    service = build('sheets', 'v4', credentials=creds)
+def get_sheet(sheet_id, sheet_range):
+    SCOPES = ["https://www.googleapis.com/auth/spreadsheets.readonly"]
+
+    creds = service_account.Credentials.from_service_account_file(
+        "credentials.json", scopes=SCOPES
+    )
+    service = build("sheets", "v4", credentials=creds)
     sheet = service.spreadsheets()
 
     result = sheet.values().get(spreadsheetId=sheet_id, range=sheet_range).execute()
-    values = result.get('values', None)
+    values = result.get("values", None)
 
     if values:
         return [dict(zip(values[0], r)) for r in values[1:]]

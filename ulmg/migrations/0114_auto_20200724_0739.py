@@ -6,58 +6,78 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('ulmg', '0113_auto_20200724_0727'),
+        ("ulmg", "0113_auto_20200724_0727"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='player',
-            name='ls_era',
-            field=models.DecimalField(blank=True, decimal_places=2, max_digits=5, null=True),
+            model_name="player",
+            name="ls_era",
+            field=models.DecimalField(
+                blank=True, decimal_places=2, max_digits=5, null=True
+            ),
         ),
         migrations.AlterField(
-            model_name='player',
-            name='ls_fip',
-            field=models.DecimalField(blank=True, decimal_places=2, max_digits=5, null=True),
+            model_name="player",
+            name="ls_fip",
+            field=models.DecimalField(
+                blank=True, decimal_places=2, max_digits=5, null=True
+            ),
         ),
         migrations.AlterField(
-            model_name='player',
-            name='ls_siera',
-            field=models.DecimalField(blank=True, decimal_places=2, max_digits=5, null=True),
+            model_name="player",
+            name="ls_siera",
+            field=models.DecimalField(
+                blank=True, decimal_places=2, max_digits=5, null=True
+            ),
         ),
         migrations.AlterField(
-            model_name='player',
-            name='ls_xavg',
-            field=models.DecimalField(blank=True, decimal_places=3, max_digits=5, null=True),
+            model_name="player",
+            name="ls_xavg",
+            field=models.DecimalField(
+                blank=True, decimal_places=3, max_digits=5, null=True
+            ),
         ),
         migrations.AlterField(
-            model_name='player',
-            name='ls_xavg_diff',
-            field=models.DecimalField(blank=True, decimal_places=3, max_digits=5, null=True),
+            model_name="player",
+            name="ls_xavg_diff",
+            field=models.DecimalField(
+                blank=True, decimal_places=3, max_digits=5, null=True
+            ),
         ),
         migrations.AlterField(
-            model_name='player',
-            name='ls_xfip',
-            field=models.DecimalField(blank=True, decimal_places=2, max_digits=5, null=True),
+            model_name="player",
+            name="ls_xfip",
+            field=models.DecimalField(
+                blank=True, decimal_places=2, max_digits=5, null=True
+            ),
         ),
         migrations.AlterField(
-            model_name='player',
-            name='ls_xslg',
-            field=models.DecimalField(blank=True, decimal_places=3, max_digits=5, null=True),
+            model_name="player",
+            name="ls_xslg",
+            field=models.DecimalField(
+                blank=True, decimal_places=3, max_digits=5, null=True
+            ),
         ),
         migrations.AlterField(
-            model_name='player',
-            name='ls_xslg_diff',
-            field=models.DecimalField(blank=True, decimal_places=3, max_digits=5, null=True),
+            model_name="player",
+            name="ls_xslg_diff",
+            field=models.DecimalField(
+                blank=True, decimal_places=3, max_digits=5, null=True
+            ),
         ),
         migrations.AlterField(
-            model_name='player',
-            name='ls_xwoba',
-            field=models.DecimalField(blank=True, decimal_places=3, max_digits=5, null=True),
+            model_name="player",
+            name="ls_xwoba",
+            field=models.DecimalField(
+                blank=True, decimal_places=3, max_digits=5, null=True
+            ),
         ),
         migrations.AlterField(
-            model_name='player',
-            name='ls_xwoba_diff',
-            field=models.DecimalField(blank=True, decimal_places=3, max_digits=5, null=True),
+            model_name="player",
+            name="ls_xwoba_diff",
+            field=models.DecimalField(
+                blank=True, decimal_places=3, max_digits=5, null=True
+            ),
         ),
     ]

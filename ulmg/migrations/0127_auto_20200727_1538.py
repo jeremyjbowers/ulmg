@@ -6,18 +6,14 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('ulmg', '0126_player_ls_er'),
+        ("ulmg", "0126_player_ls_er"),
     ]
 
     operations = [
         migrations.RenameField(
-            model_name='team',
-            old_name='ls_doubles',
-            new_name='ls_2b',
+            model_name="team", old_name="ls_doubles", new_name="ls_2b",
         ),
         migrations.RenameField(
-            model_name='team',
-            old_name='ls_triples',
-            new_name='ls_3b',
+            model_name="team", old_name="ls_triples", new_name="ls_3b",
         ),
     ]

@@ -7,13 +7,18 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('ulmg', '0064_scoutingreport'),
+        ("ulmg", "0064_scoutingreport"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='player',
-            name='defense',
-            field=django.contrib.postgres.fields.ArrayField(base_field=models.CharField(max_length=3), blank=True, null=True, size=None),
+            model_name="player",
+            name="defense",
+            field=django.contrib.postgres.fields.ArrayField(
+                base_field=models.CharField(max_length=3),
+                blank=True,
+                null=True,
+                size=None,
+            ),
         ),
     ]

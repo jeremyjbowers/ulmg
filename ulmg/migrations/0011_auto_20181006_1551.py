@@ -6,22 +6,22 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('ulmg', '0010_auto_20180202_1225'),
+        ("ulmg", "0010_auto_20180202_1225"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='player',
-            options={'ordering': ['last_name', 'first_name', 'position']},
+            name="player",
+            options={"ordering": ["last_name", "first_name", "position"]},
         ),
         migrations.AddField(
-            model_name='player',
-            name='birthdate',
+            model_name="player",
+            name="birthdate",
             field=models.DateField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='player',
-            name='mlb_team',
+            model_name="player",
+            name="mlb_team",
             field=models.CharField(blank=True, max_length=255, null=True),
         ),
     ]

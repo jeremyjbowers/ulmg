@@ -6,23 +6,23 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('ulmg', '0002_remove_playernote_author'),
+        ("ulmg", "0002_remove_playernote_author"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='player',
-            name='first_name',
+            model_name="player",
+            name="first_name",
             field=models.CharField(max_length=255, null=True),
         ),
         migrations.AddField(
-            model_name='player',
-            name='last_name',
+            model_name="player",
+            name="last_name",
             field=models.CharField(max_length=255, null=True),
         ),
         migrations.AlterField(
-            model_name='player',
-            name='name',
+            model_name="player",
+            name="name",
             field=models.CharField(editable=False, max_length=255),
         ),
     ]

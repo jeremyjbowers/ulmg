@@ -16,13 +16,14 @@ from ulmg import utils
 
 
 class Command(BaseCommand):
-
     def handle(self, *args, **options):
-        for obj in models.Player.objects.filter(fg_id__isnull=False, birthdate__isnull=True).exclude(fg_id=''):
+        for obj in models.Player.objects.filter(
+            fg_id__isnull=False, birthdate__isnull=True
+        ).exclude(fg_id=""):
             r = requests.get(obj.fg_url)
-            soup = BeautifulSoup(r.text, 'lxml')
-            b1 = soup.select('div.player-info-bio')[0].contents
-            b2 = b1[2].split(' (')[0].strip()
+            soup = BeautifulSoup(r.text, "lxml")
+            b1 = soup.select("div.player-info-bio")[0].contents
+            b2 = b1[2].split(" (")[0].strip()
             birthdate = dateparser.parse(b2)
             obj.birthdate = birthdate.date()
             obj.save()

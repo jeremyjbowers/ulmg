@@ -6,18 +6,18 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('ulmg', '0086_player_bref_img'),
+        ("ulmg", "0086_player_bref_img"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='player',
-            name='ls_rbi',
+            model_name="player",
+            name="ls_rbi",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='player',
-            name='ls_runs',
+            model_name="player",
+            name="ls_runs",
             field=models.IntegerField(blank=True, null=True),
         ),
     ]

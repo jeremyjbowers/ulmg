@@ -6,13 +6,27 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('ulmg', '0012_remove_player_roster_conflict'),
+        ("ulmg", "0012_remove_player_roster_conflict"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='player',
-            name='position',
-            field=models.CharField(choices=[('P', 'Pitcher'), ('C', 'Catcher'), ('IF', 'Infield'), ('OF', 'Outfield'), ('IF/OF', 'Infield/Outfield'), ('OF/P', 'Pitcher/Outfield'), ('IF/P', 'Pitcher/Infield'), ('UT', 'Utility'), ('DH', 'Hitter')], max_length=255, null=True),
+            model_name="player",
+            name="position",
+            field=models.CharField(
+                choices=[
+                    ("P", "Pitcher"),
+                    ("C", "Catcher"),
+                    ("IF", "Infield"),
+                    ("OF", "Outfield"),
+                    ("IF/OF", "Infield/Outfield"),
+                    ("OF/P", "Pitcher/Outfield"),
+                    ("IF/P", "Pitcher/Infield"),
+                    ("UT", "Utility"),
+                    ("DH", "Hitter"),
+                ],
+                max_length=255,
+                null=True,
+            ),
         ),
     ]

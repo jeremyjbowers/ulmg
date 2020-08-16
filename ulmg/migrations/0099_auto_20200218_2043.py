@@ -6,53 +6,35 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('ulmg', '0098_auto_20200216_1714'),
+        ("ulmg", "0098_auto_20200216_1714"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='player',
-            name='b_ba',
-            field=models.IntegerField(default=0),
+            model_name="player", name="b_ba", field=models.IntegerField(default=0),
         ),
         migrations.AddField(
-            model_name='player',
-            name='b_bp',
-            field=models.IntegerField(default=0),
+            model_name="player", name="b_bp", field=models.IntegerField(default=0),
         ),
         migrations.AddField(
-            model_name='player',
-            name='b_fg',
-            field=models.IntegerField(default=0),
+            model_name="player", name="b_fg", field=models.IntegerField(default=0),
         ),
         migrations.AddField(
-            model_name='player',
-            name='b_fv',
-            field=models.IntegerField(default=0),
+            model_name="player", name="b_fv", field=models.IntegerField(default=0),
         ),
         migrations.AddField(
-            model_name='player',
-            name='b_mlb',
-            field=models.IntegerField(default=0),
+            model_name="player", name="b_mlb", field=models.IntegerField(default=0),
         ),
         migrations.AddField(
-            model_name='player',
-            name='b_p365',
-            field=models.IntegerField(default=0),
+            model_name="player", name="b_p365", field=models.IntegerField(default=0),
         ),
         migrations.AddField(
-            model_name='player',
-            name='b_pl',
-            field=models.IntegerField(default=0),
+            model_name="player", name="b_pl", field=models.IntegerField(default=0),
         ),
         migrations.AddField(
-            model_name='player',
-            name='b_sckls',
-            field=models.IntegerField(default=0),
+            model_name="player", name="b_sckls", field=models.IntegerField(default=0),
         ),
         migrations.AddField(
-            model_name='player',
-            name='b_zips',
-            field=models.IntegerField(default=0),
+            model_name="player", name="b_zips", field=models.IntegerField(default=0),
         ),
     ]

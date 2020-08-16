@@ -6,13 +6,15 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('ulmg', '0128_team_ls_whip'),
+        ("ulmg", "0128_team_ls_whip"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='team',
-            name='ls_hits_9',
-            field=models.DecimalField(blank=True, decimal_places=2, max_digits=4, null=True),
+            model_name="team",
+            name="ls_hits_9",
+            field=models.DecimalField(
+                blank=True, decimal_places=2, max_digits=4, null=True
+            ),
         ),
     ]

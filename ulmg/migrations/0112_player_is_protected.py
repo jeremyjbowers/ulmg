@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('ulmg', '0111_draftpick_skipped'),
+        ("ulmg", "0111_draftpick_skipped"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='player',
-            name='is_protected',
+            model_name="player",
+            name="is_protected",
             field=models.BooleanField(default=False),
         ),
     ]

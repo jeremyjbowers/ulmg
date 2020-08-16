@@ -6,18 +6,16 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('ulmg', '0016_player_fg_fv'),
+        ("ulmg", "0016_player_fg_fv"),
     ]
 
     operations = [
         migrations.RenameField(
-            model_name='player',
-            old_name='fg_fv',
-            new_name='fg_prospect_fv',
+            model_name="player", old_name="fg_fv", new_name="fg_prospect_fv",
         ),
         migrations.AddField(
-            model_name='player',
-            name='fg_prospect_rank',
+            model_name="player",
+            name="fg_prospect_rank",
             field=models.CharField(blank=True, max_length=4, null=True),
         ),
     ]

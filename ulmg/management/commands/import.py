@@ -20,26 +20,26 @@ class Command(BaseCommand):
     def gen_people_map(self):
         people_map = {}
 
-        os.system('cd ../register && git pull origin master')
+        os.system("cd ../register && git pull origin master")
 
-        with open('../register/data/people.csv', 'r') as readfile:
+        with open("../register/data/people.csv", "r") as readfile:
             for c in csv.DictReader(readfile):
-                if c['key_fangraphs'] != "":
-                    people_map[c['key_fangraphs']] = dict(c)
-        
-        with open('data/ulmg/people_map.json', 'w') as writefile:
+                if c["key_fangraphs"] != "":
+                    people_map[c["key_fangraphs"]] = dict(c)
+
+        with open("data/ulmg/people_map.json", "w") as writefile:
             writefile.write(json.dumps(people_map))
 
     def load_mlbam_ids(self):
         models.Player.objects.update(mlbam_id=None)
-        with open('data/ulmg/people_map.json', 'r') as readfile:
+        with open("data/ulmg/people_map.json", "r") as readfile:
             people_map = json.loads(readfile.read())
 
             for p in models.Player.objects.filter(fg_id__isnull=False):
                 z = people_map.get(p.fg_id, None)
                 if z:
-                    if z['key_mlbam'] != "":
-                        p.mlbam_id = z['key_mlbam']
+                    if z["key_mlbam"] != "":
+                        p.mlbam_id = z["key_mlbam"]
                         p.save()
                         print(p)
 

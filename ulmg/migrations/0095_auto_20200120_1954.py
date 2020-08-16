@@ -7,38 +7,48 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('ulmg', '0094_auto_20200105_1105'),
+        ("ulmg", "0094_auto_20200105_1105"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='player',
-            name='fantrax_id',
+            model_name="player",
+            name="fantrax_id",
             field=models.CharField(blank=True, max_length=255, null=True),
         ),
         migrations.AddField(
-            model_name='player',
-            name='fantrax_url',
+            model_name="player",
+            name="fantrax_url",
             field=models.CharField(blank=True, max_length=255, null=True),
         ),
         migrations.AddField(
-            model_name='player',
-            name='raal',
-            field=models.DecimalField(blank=True, decimal_places=2, max_digits=4, null=True),
+            model_name="player",
+            name="raal",
+            field=models.DecimalField(
+                blank=True, decimal_places=2, max_digits=4, null=True
+            ),
         ),
         migrations.AddField(
-            model_name='player',
-            name='raar',
-            field=models.DecimalField(blank=True, decimal_places=2, max_digits=4, null=True),
+            model_name="player",
+            name="raar",
+            field=models.DecimalField(
+                blank=True, decimal_places=2, max_digits=4, null=True
+            ),
         ),
         migrations.AddField(
-            model_name='player',
-            name='raat',
-            field=models.DecimalField(blank=True, decimal_places=2, max_digits=4, null=True),
+            model_name="player",
+            name="raat",
+            field=models.DecimalField(
+                blank=True, decimal_places=2, max_digits=4, null=True
+            ),
         ),
         migrations.AddField(
-            model_name='player',
-            name='scouting_reports',
-            field=django.contrib.postgres.fields.ArrayField(base_field=models.TextField(blank=True, null=True), default=[], size=None),
+            model_name="player",
+            name="scouting_reports",
+            field=django.contrib.postgres.fields.ArrayField(
+                base_field=models.TextField(blank=True, null=True),
+                default=[],
+                size=None,
+            ),
         ),
     ]

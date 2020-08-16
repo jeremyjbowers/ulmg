@@ -9,7 +9,6 @@ from ulmg import models
 
 
 class Command(BaseCommand):
-
     def handle(self, *args, **options):
         for p in models.Player.objects.filter(is_35man_roster=True):
             p.is_35man_roster = False

@@ -15,16 +15,17 @@ from ulmg import models
 
 
 class Command(BaseCommand):
-
     def handle(self, *args, **options):
-        players = models.Player.objects.filter(bref_url__isnull=False, bref_img__isnull=True)
+        players = models.Player.objects.filter(
+            bref_url__isnull=False, bref_img__isnull=True
+        )
         for p in players:
             if p.bref_url != "":
                 r = requests.get(p.bref_url)
-                soup = BeautifulSoup(r.content, 'lxml')
-                img = soup.select('div#meta div.media-item img')
+                soup = BeautifulSoup(r.content, "lxml")
+                img = soup.select("div#meta div.media-item img")
                 try:
-                    image = img[0].attrs['src']
+                    image = img[0].attrs["src"]
                     p.bref_img = image
                     p.save()
                     print(p.name, image)

@@ -6,13 +6,26 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('ulmg', '0089_auto_20191228_1527'),
+        ("ulmg", "0089_auto_20191228_1527"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='player',
-            name='position',
-            field=models.CharField(blank=True, choices=[('P', 'Pitcher'), ('C', 'Catcher'), ('IF', 'Infield'), ('OF', 'Outfield'), ('IF-OF', 'Infield/Outfield'), ('OF-P', 'Pitcher/Outfield'), ('IF-P', 'Pitcher/Infield')], max_length=255, null=True),
+            model_name="player",
+            name="position",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ("P", "Pitcher"),
+                    ("C", "Catcher"),
+                    ("IF", "Infield"),
+                    ("OF", "Outfield"),
+                    ("IF-OF", "Infield/Outfield"),
+                    ("OF-P", "Pitcher/Outfield"),
+                    ("IF-P", "Pitcher/Infield"),
+                ],
+                max_length=255,
+                null=True,
+            ),
         ),
     ]

@@ -6,13 +6,17 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('ulmg', '0005_auto_20180202_1012'),
+        ("ulmg", "0005_auto_20180202_1012"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='player',
-            name='level',
-            field=models.CharField(choices=[('V', 'Veteran'), ('A', 'A-Level'), ('B', 'B-Level')], max_length=255, null=True),
+            model_name="player",
+            name="level",
+            field=models.CharField(
+                choices=[("V", "Veteran"), ("A", "A-Level"), ("B", "B-Level")],
+                max_length=255,
+                null=True,
+            ),
         ),
     ]

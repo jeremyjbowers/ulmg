@@ -6,12 +6,20 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('ulmg', '0038_auto_20181023_1815'),
+        ("ulmg", "0038_auto_20181023_1815"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='draftpick',
-            options={'ordering': ['year', '-season', 'draft_type', 'draft_round', 'pick_number']},
+            name="draftpick",
+            options={
+                "ordering": [
+                    "year",
+                    "-season",
+                    "draft_type",
+                    "draft_round",
+                    "pick_number",
+                ]
+            },
         ),
     ]

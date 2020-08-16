@@ -6,48 +6,48 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('ulmg', '0101_auto_20200218_2108'),
+        ("ulmg", "0101_auto_20200218_2108"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='player',
-            name='b_ba',
+            model_name="player",
+            name="b_ba",
             field=models.IntegerField(blank=True, default=None, null=True),
         ),
         migrations.AlterField(
-            model_name='player',
-            name='b_bp',
+            model_name="player",
+            name="b_bp",
             field=models.IntegerField(blank=True, default=None, null=True),
         ),
         migrations.AlterField(
-            model_name='player',
-            name='b_fg',
+            model_name="player",
+            name="b_fg",
             field=models.IntegerField(blank=True, default=None, null=True),
         ),
         migrations.AlterField(
-            model_name='player',
-            name='b_mlb',
+            model_name="player",
+            name="b_mlb",
             field=models.IntegerField(blank=True, default=None, null=True),
         ),
         migrations.AlterField(
-            model_name='player',
-            name='b_p365',
+            model_name="player",
+            name="b_p365",
             field=models.IntegerField(blank=True, default=None, null=True),
         ),
         migrations.AlterField(
-            model_name='player',
-            name='b_pl',
+            model_name="player",
+            name="b_pl",
             field=models.IntegerField(blank=True, default=None, null=True),
         ),
         migrations.AlterField(
-            model_name='player',
-            name='b_sckls',
+            model_name="player",
+            name="b_sckls",
             field=models.IntegerField(blank=True, default=None, null=True),
         ),
         migrations.AlterField(
-            model_name='player',
-            name='b_zips',
+            model_name="player",
+            name="b_zips",
             field=models.IntegerField(blank=True, default=None, null=True),
         ),
     ]

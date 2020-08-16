@@ -6,31 +6,16 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('ulmg', '0026_auto_20181015_2117'),
+        ("ulmg", "0026_auto_20181015_2117"),
     ]
 
     operations = [
-        migrations.RemoveField(
-            model_name='playerpositionyearrating',
-            name='player',
-        ),
-        migrations.RemoveField(
-            model_name='roster',
-            name='team',
-        ),
+        migrations.RemoveField(model_name="playerpositionyearrating", name="player",),
+        migrations.RemoveField(model_name="roster", name="team",),
         migrations.RenameField(
-            model_name='team',
-            old_name='mascot',
-            new_name='nickname',
+            model_name="team", old_name="mascot", new_name="nickname",
         ),
-        migrations.RemoveField(
-            model_name='player',
-            name='roster',
-        ),
-        migrations.DeleteModel(
-            name='PlayerPositionYearRating',
-        ),
-        migrations.DeleteModel(
-            name='Roster',
-        ),
+        migrations.RemoveField(model_name="player", name="roster",),
+        migrations.DeleteModel(name="PlayerPositionYearRating",),
+        migrations.DeleteModel(name="Roster",),
     ]

@@ -14,17 +14,24 @@ from ulmg import models
 
 
 class Command(BaseCommand):
-
     def handle(self, *args, **options):
         # DO NOT RUN THIS UNTIL AFTER THE DRAFT IS OVER
         models.Player.objects.filter(is_mlb_roster=True).update(is_mlb_roster=False)
         models.Player.objects.filter(is_aaa_roster=True).update(is_aaa_roster=False)
-        models.Player.objects.filter(is_1h_c=True).update(is_mlb_roster=True, is_protected=True)
-        models.Player.objects.filter(is_1h_p=True).update(is_mlb_roster=True, is_protected=True)
-        models.Player.objects.filter(is_1h_pos=True).update(is_mlb_roster=True, is_protected=True)
+        models.Player.objects.filter(is_1h_c=True).update(
+            is_mlb_roster=True, is_protected=True
+        )
+        models.Player.objects.filter(is_1h_p=True).update(
+            is_mlb_roster=True, is_protected=True
+        )
+        models.Player.objects.filter(is_1h_pos=True).update(
+            is_mlb_roster=True, is_protected=True
+        )
         models.Player.objects.filter(is_reserve=True).update(is_protected=True)
 
-        for p in models.DraftPick.objects.filter(year=settings.CURRENT_SEASON, season="midseason", draft_type="open"):
+        for p in models.DraftPick.objects.filter(
+            year=settings.CURRENT_SEASON, season="midseason", draft_type="open"
+        ):
             if p.player:
                 p.player.is_2h_draft = True
                 p.player.is_mlb_roster = True

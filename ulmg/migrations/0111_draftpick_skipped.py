@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('ulmg', '0110_player_birthdate_qa'),
+        ("ulmg", "0110_player_birthdate_qa"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='draftpick',
-            name='skipped',
+            model_name="draftpick",
+            name="skipped",
             field=models.BooleanField(default=False),
         ),
     ]
