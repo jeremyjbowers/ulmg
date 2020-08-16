@@ -6,17 +6,16 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('ulmg', '0006_player_level'),
+        ("ulmg", "0006_player_level"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='playernote',
-            options={'ordering': ['last_modified']},
+            name="playernote", options={"ordering": ["last_modified"]},
         ),
         migrations.AddField(
-            model_name='player',
-            name='position',
+            model_name="player",
+            name="position",
             field=models.CharField(max_length=255, null=True),
         ),
     ]

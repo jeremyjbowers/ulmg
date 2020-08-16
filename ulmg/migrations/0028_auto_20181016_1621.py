@@ -6,32 +6,22 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('ulmg', '0027_auto_20181016_1505'),
+        ("ulmg", "0027_auto_20181016_1505"),
     ]
 
     operations = [
-        migrations.RemoveField(
-            model_name='owner',
-            name='user',
-        ),
-        migrations.RemoveField(
-            model_name='playernote',
-            name='player',
-        ),
+        migrations.RemoveField(model_name="owner", name="user",),
+        migrations.RemoveField(model_name="playernote", name="player",),
         migrations.AddField(
-            model_name='team',
-            name='owner_email',
+            model_name="team",
+            name="owner_email",
             field=models.CharField(blank=True, max_length=255, null=True),
         ),
         migrations.AlterField(
-            model_name='team',
-            name='owner',
+            model_name="team",
+            name="owner",
             field=models.CharField(blank=True, max_length=255, null=True),
         ),
-        migrations.DeleteModel(
-            name='Owner',
-        ),
-        migrations.DeleteModel(
-            name='PlayerNote',
-        ),
+        migrations.DeleteModel(name="Owner",),
+        migrations.DeleteModel(name="PlayerNote",),
     ]

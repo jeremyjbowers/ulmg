@@ -6,53 +6,53 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('ulmg', '0114_auto_20200724_0739'),
+        ("ulmg", "0114_auto_20200724_0739"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='player',
-            name='injury_description',
+            model_name="player",
+            name="injury_description",
             field=models.CharField(max_length=255, null=True),
         ),
         migrations.AddField(
-            model_name='player',
-            name='is_bench',
+            model_name="player",
+            name="is_bench",
             field=models.BooleanField(default=False),
         ),
         migrations.AddField(
-            model_name='player',
-            name='is_injured',
+            model_name="player",
+            name="is_injured",
             field=models.BooleanField(default=False),
         ),
         migrations.AddField(
-            model_name='player',
-            name='is_mlb40man',
+            model_name="player",
+            name="is_mlb40man",
             field=models.BooleanField(default=False),
         ),
         migrations.AddField(
-            model_name='player',
-            name='is_player_pool',
+            model_name="player",
+            name="is_player_pool",
             field=models.BooleanField(default=False),
         ),
         migrations.AddField(
-            model_name='player',
-            name='is_starter',
+            model_name="player",
+            name="is_starter",
             field=models.BooleanField(default=False),
         ),
         migrations.AddField(
-            model_name='player',
-            name='mlb_team',
+            model_name="player",
+            name="mlb_team",
             field=models.CharField(max_length=255, null=True),
         ),
         migrations.AddField(
-            model_name='player',
-            name='mlb_team_abbr',
+            model_name="player",
+            name="mlb_team_abbr",
             field=models.CharField(max_length=255, null=True),
         ),
         migrations.AddField(
-            model_name='player',
-            name='role',
+            model_name="player",
+            name="role",
             field=models.CharField(max_length=255, null=True),
         ),
     ]

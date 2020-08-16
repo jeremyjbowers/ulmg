@@ -7,13 +7,13 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('ulmg', '0041_player_is_relief_eligible'),
+        ("ulmg", "0041_player_is_relief_eligible"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='player',
-            name='steamer_predix',
+            model_name="player",
+            name="steamer_predix",
             field=django.contrib.postgres.fields.jsonb.JSONField(blank=True, null=True),
         ),
     ]

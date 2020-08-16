@@ -6,48 +6,34 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('ulmg', '0100_auto_20200218_2048'),
+        ("ulmg", "0100_auto_20200218_2048"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='player',
-            name='b_ba',
+            model_name="player", name="b_ba", field=models.IntegerField(default=None),
+        ),
+        migrations.AlterField(
+            model_name="player", name="b_bp", field=models.IntegerField(default=None),
+        ),
+        migrations.AlterField(
+            model_name="player", name="b_fg", field=models.IntegerField(default=None),
+        ),
+        migrations.AlterField(
+            model_name="player", name="b_mlb", field=models.IntegerField(default=None),
+        ),
+        migrations.AlterField(
+            model_name="player", name="b_p365", field=models.IntegerField(default=None),
+        ),
+        migrations.AlterField(
+            model_name="player", name="b_pl", field=models.IntegerField(default=None),
+        ),
+        migrations.AlterField(
+            model_name="player",
+            name="b_sckls",
             field=models.IntegerField(default=None),
         ),
         migrations.AlterField(
-            model_name='player',
-            name='b_bp',
-            field=models.IntegerField(default=None),
-        ),
-        migrations.AlterField(
-            model_name='player',
-            name='b_fg',
-            field=models.IntegerField(default=None),
-        ),
-        migrations.AlterField(
-            model_name='player',
-            name='b_mlb',
-            field=models.IntegerField(default=None),
-        ),
-        migrations.AlterField(
-            model_name='player',
-            name='b_p365',
-            field=models.IntegerField(default=None),
-        ),
-        migrations.AlterField(
-            model_name='player',
-            name='b_pl',
-            field=models.IntegerField(default=None),
-        ),
-        migrations.AlterField(
-            model_name='player',
-            name='b_sckls',
-            field=models.IntegerField(default=None),
-        ),
-        migrations.AlterField(
-            model_name='player',
-            name='b_zips',
-            field=models.IntegerField(default=None),
+            model_name="player", name="b_zips", field=models.IntegerField(default=None),
         ),
     ]

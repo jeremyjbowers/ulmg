@@ -6,168 +6,202 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('ulmg', '0092_auto_20191228_1554'),
+        ("ulmg", "0092_auto_20191228_1554"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='player',
-            name='ps_avg',
-            field=models.DecimalField(blank=True, decimal_places=3, max_digits=4, null=True),
+            model_name="player",
+            name="ps_avg",
+            field=models.DecimalField(
+                blank=True, decimal_places=3, max_digits=4, null=True
+            ),
         ),
         migrations.AddField(
-            model_name='player',
-            name='ps_bb',
+            model_name="player",
+            name="ps_bb",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='player',
-            name='ps_bb_9',
-            field=models.DecimalField(blank=True, decimal_places=2, max_digits=4, null=True),
+            model_name="player",
+            name="ps_bb_9",
+            field=models.DecimalField(
+                blank=True, decimal_places=2, max_digits=4, null=True
+            ),
         ),
         migrations.AddField(
-            model_name='player',
-            name='ps_bsr',
-            field=models.DecimalField(blank=True, decimal_places=1, max_digits=3, null=True),
+            model_name="player",
+            name="ps_bsr",
+            field=models.DecimalField(
+                blank=True, decimal_places=1, max_digits=3, null=True
+            ),
         ),
         migrations.AddField(
-            model_name='player',
-            name='ps_cs',
+            model_name="player",
+            name="ps_cs",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='player',
-            name='ps_def',
-            field=models.DecimalField(blank=True, decimal_places=1, max_digits=3, null=True),
+            model_name="player",
+            name="ps_def",
+            field=models.DecimalField(
+                blank=True, decimal_places=1, max_digits=3, null=True
+            ),
         ),
         migrations.AddField(
-            model_name='player',
-            name='ps_er',
+            model_name="player",
+            name="ps_er",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='player',
-            name='ps_era',
-            field=models.DecimalField(blank=True, decimal_places=2, max_digits=4, null=True),
+            model_name="player",
+            name="ps_era",
+            field=models.DecimalField(
+                blank=True, decimal_places=2, max_digits=4, null=True
+            ),
         ),
         migrations.AddField(
-            model_name='player',
-            name='ps_fip',
-            field=models.DecimalField(blank=True, decimal_places=2, max_digits=4, null=True),
+            model_name="player",
+            name="ps_fip",
+            field=models.DecimalField(
+                blank=True, decimal_places=2, max_digits=4, null=True
+            ),
         ),
         migrations.AddField(
-            model_name='player',
-            name='ps_fld',
-            field=models.DecimalField(blank=True, decimal_places=1, max_digits=3, null=True),
+            model_name="player",
+            name="ps_fld",
+            field=models.DecimalField(
+                blank=True, decimal_places=1, max_digits=3, null=True
+            ),
         ),
         migrations.AddField(
-            model_name='player',
-            name='ps_g',
+            model_name="player",
+            name="ps_g",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='player',
-            name='ps_gs',
+            model_name="player",
+            name="ps_gs",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='player',
-            name='ps_h',
+            model_name="player",
+            name="ps_h",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='player',
-            name='ps_hr',
+            model_name="player",
+            name="ps_hr",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='player',
-            name='ps_ip',
-            field=models.DecimalField(blank=True, decimal_places=1, max_digits=4, null=True),
+            model_name="player",
+            name="ps_ip",
+            field=models.DecimalField(
+                blank=True, decimal_places=1, max_digits=4, null=True
+            ),
         ),
         migrations.AddField(
-            model_name='player',
-            name='ps_is_mlb',
+            model_name="player",
+            name="ps_is_mlb",
             field=models.BooleanField(default=False),
         ),
         migrations.AddField(
-            model_name='player',
-            name='ps_k',
+            model_name="player",
+            name="ps_k",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='player',
-            name='ps_k_9',
-            field=models.DecimalField(blank=True, decimal_places=2, max_digits=4, null=True),
+            model_name="player",
+            name="ps_k_9",
+            field=models.DecimalField(
+                blank=True, decimal_places=2, max_digits=4, null=True
+            ),
         ),
         migrations.AddField(
-            model_name='player',
-            name='ps_obp',
-            field=models.DecimalField(blank=True, decimal_places=3, max_digits=4, null=True),
+            model_name="player",
+            name="ps_obp",
+            field=models.DecimalField(
+                blank=True, decimal_places=3, max_digits=4, null=True
+            ),
         ),
         migrations.AddField(
-            model_name='player',
-            name='ps_off',
-            field=models.DecimalField(blank=True, decimal_places=1, max_digits=3, null=True),
+            model_name="player",
+            name="ps_off",
+            field=models.DecimalField(
+                blank=True, decimal_places=1, max_digits=3, null=True
+            ),
         ),
         migrations.AddField(
-            model_name='player',
-            name='ps_ops',
-            field=models.DecimalField(blank=True, decimal_places=3, max_digits=4, null=True),
+            model_name="player",
+            name="ps_ops",
+            field=models.DecimalField(
+                blank=True, decimal_places=3, max_digits=4, null=True
+            ),
         ),
         migrations.AddField(
-            model_name='player',
-            name='ps_pa',
+            model_name="player",
+            name="ps_pa",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='player',
-            name='ps_ra9_war',
-            field=models.DecimalField(blank=True, decimal_places=1, max_digits=3, null=True),
+            model_name="player",
+            name="ps_ra9_war",
+            field=models.DecimalField(
+                blank=True, decimal_places=1, max_digits=3, null=True
+            ),
         ),
         migrations.AddField(
-            model_name='player',
-            name='ps_sb',
+            model_name="player",
+            name="ps_sb",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='player',
-            name='ps_slg',
-            field=models.DecimalField(blank=True, decimal_places=3, max_digits=4, null=True),
+            model_name="player",
+            name="ps_slg",
+            field=models.DecimalField(
+                blank=True, decimal_places=3, max_digits=4, null=True
+            ),
         ),
         migrations.AddField(
-            model_name='player',
-            name='ps_so',
+            model_name="player",
+            name="ps_so",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='player',
-            name='ps_stat_origin',
+            model_name="player",
+            name="ps_stat_origin",
             field=models.CharField(blank=True, max_length=255, null=True),
         ),
         migrations.AddField(
-            model_name='player',
-            name='ps_sv',
+            model_name="player",
+            name="ps_sv",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='player',
-            name='ps_war',
-            field=models.DecimalField(blank=True, decimal_places=1, max_digits=3, null=True),
+            model_name="player",
+            name="ps_war",
+            field=models.DecimalField(
+                blank=True, decimal_places=1, max_digits=3, null=True
+            ),
         ),
         migrations.AddField(
-            model_name='player',
-            name='ps_whip',
-            field=models.DecimalField(blank=True, decimal_places=2, max_digits=4, null=True),
+            model_name="player",
+            name="ps_whip",
+            field=models.DecimalField(
+                blank=True, decimal_places=2, max_digits=4, null=True
+            ),
         ),
         migrations.AddField(
-            model_name='player',
-            name='ps_woba',
-            field=models.DecimalField(blank=True, decimal_places=3, max_digits=4, null=True),
+            model_name="player",
+            name="ps_woba",
+            field=models.DecimalField(
+                blank=True, decimal_places=3, max_digits=4, null=True
+            ),
         ),
         migrations.AddField(
-            model_name='player',
-            name='ps_wrc_plus',
+            model_name="player",
+            name="ps_wrc_plus",
             field=models.IntegerField(blank=True, null=True),
         ),
     ]

@@ -7,39 +7,33 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('ulmg', '0042_player_steamer_predix'),
+        ("ulmg", "0042_player_steamer_predix"),
     ]
 
     operations = [
-        migrations.RemoveField(
-            model_name='tradereceipt',
-            name='picks_received',
-        ),
-        migrations.RemoveField(
-            model_name='tradereceipt',
-            name='players_received',
-        ),
-        migrations.RemoveField(
-            model_name='tradereceipt',
-            name='receiving_team',
-        ),
-        migrations.RemoveField(
-            model_name='tradereceipt',
-            name='sending_team',
+        migrations.RemoveField(model_name="tradereceipt", name="picks_received",),
+        migrations.RemoveField(model_name="tradereceipt", name="players_received",),
+        migrations.RemoveField(model_name="tradereceipt", name="receiving_team",),
+        migrations.RemoveField(model_name="tradereceipt", name="sending_team",),
+        migrations.AddField(
+            model_name="tradereceipt",
+            name="picks",
+            field=models.ManyToManyField(
+                null=True, related_name="picks", to="ulmg.DraftPick"
+            ),
         ),
         migrations.AddField(
-            model_name='tradereceipt',
-            name='picks',
-            field=models.ManyToManyField(null=True, related_name='picks', to='ulmg.DraftPick'),
+            model_name="tradereceipt",
+            name="players",
+            field=models.ManyToManyField(
+                null=True, related_name="players", to="ulmg.Player"
+            ),
         ),
         migrations.AddField(
-            model_name='tradereceipt',
-            name='players',
-            field=models.ManyToManyField(null=True, related_name='players', to='ulmg.Player'),
-        ),
-        migrations.AddField(
-            model_name='tradereceipt',
-            name='team',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, to='ulmg.Team'),
+            model_name="tradereceipt",
+            name="team",
+            field=models.ForeignKey(
+                null=True, on_delete=django.db.models.deletion.SET_NULL, to="ulmg.Team"
+            ),
         ),
     ]

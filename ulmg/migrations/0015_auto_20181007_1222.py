@@ -7,17 +7,17 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('ulmg', '0014_auto_20181006_2159'),
+        ("ulmg", "0014_auto_20181006_2159"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='player',
-            options={'ordering': ['level', 'last_name', 'first_name', 'position']},
+            name="player",
+            options={"ordering": ["level", "last_name", "first_name", "position"]},
         ),
         migrations.AddField(
-            model_name='player',
-            name='stats',
+            model_name="player",
+            name="stats",
             field=django.contrib.postgres.fields.jsonb.JSONField(blank=True, null=True),
         ),
     ]

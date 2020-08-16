@@ -6,58 +6,58 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('ulmg', '0116_player_is_bullpen'),
+        ("ulmg", "0116_player_is_bullpen"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='player',
-            name='rt_ab',
+            model_name="player",
+            name="rt_ab",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='player',
-            name='rt_bb',
+            model_name="player",
+            name="rt_bb",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='player',
-            name='rt_doubles',
+            model_name="player",
+            name="rt_doubles",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='player',
-            name='rt_h',
+            model_name="player",
+            name="rt_h",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='player',
-            name='rt_hr',
+            model_name="player",
+            name="rt_hr",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='player',
-            name='rt_k',
+            model_name="player",
+            name="rt_k",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='player',
-            name='rt_r',
+            model_name="player",
+            name="rt_r",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='player',
-            name='rt_rbi',
+            model_name="player",
+            name="rt_rbi",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='player',
-            name='rt_sb',
+            model_name="player",
+            name="rt_sb",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='player',
-            name='rt_triples',
+            model_name="player",
+            name="rt_triples",
             field=models.IntegerField(blank=True, null=True),
         ),
     ]

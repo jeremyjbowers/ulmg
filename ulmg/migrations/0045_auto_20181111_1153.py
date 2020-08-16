@@ -6,18 +6,18 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('ulmg', '0044_auto_20181110_1958'),
+        ("ulmg", "0044_auto_20181110_1958"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='tradereceipt',
-            name='picks',
-            field=models.ManyToManyField(related_name='picks', to='ulmg.DraftPick'),
+            model_name="tradereceipt",
+            name="picks",
+            field=models.ManyToManyField(related_name="picks", to="ulmg.DraftPick"),
         ),
         migrations.AlterField(
-            model_name='tradereceipt',
-            name='players',
-            field=models.ManyToManyField(related_name='players', to='ulmg.Player'),
+            model_name="tradereceipt",
+            name="players",
+            field=models.ManyToManyField(related_name="players", to="ulmg.Player"),
         ),
     ]

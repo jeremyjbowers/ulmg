@@ -6,27 +6,26 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('ulmg', '0039_auto_20181031_1307'),
+        ("ulmg", "0039_auto_20181031_1307"),
     ]
 
     operations = [
-        migrations.RemoveField(
-            model_name='player',
-            name='usage',
-        ),
+        migrations.RemoveField(model_name="player", name="usage",),
         migrations.AddField(
-            model_name='player',
-            name='plate_appearances',
+            model_name="player",
+            name="plate_appearances",
             field=models.CharField(blank=True, max_length=255, null=True),
         ),
         migrations.AddField(
-            model_name='player',
-            name='relief_innings_pitched',
-            field=models.DecimalField(blank=True, decimal_places=1, max_digits=4, null=True),
+            model_name="player",
+            name="relief_innings_pitched",
+            field=models.DecimalField(
+                blank=True, decimal_places=1, max_digits=4, null=True
+            ),
         ),
         migrations.AddField(
-            model_name='player',
-            name='starts',
+            model_name="player",
+            name="starts",
             field=models.IntegerField(blank=True, null=True),
         ),
     ]

@@ -6,43 +6,43 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('ulmg', '0119_auto_20200726_1530'),
+        ("ulmg", "0119_auto_20200726_1530"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='player',
-            name='ls_bb',
+            model_name="player",
+            name="ls_bb",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='player',
-            name='ls_doubles',
+            model_name="player",
+            name="ls_doubles",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='player',
-            name='ls_ha',
+            model_name="player",
+            name="ls_ha",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='player',
-            name='ls_hits',
+            model_name="player",
+            name="ls_hits",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='player',
-            name='ls_hra',
+            model_name="player",
+            name="ls_hra",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='player',
-            name='ls_k',
+            model_name="player",
+            name="ls_k",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='player',
-            name='ls_triples',
+            model_name="player",
+            name="ls_triples",
             field=models.IntegerField(blank=True, null=True),
         ),
     ]

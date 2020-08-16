@@ -6,23 +6,34 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('ulmg', '0088_auto_20191027_1050'),
+        ("ulmg", "0088_auto_20191027_1050"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='player',
-            name='league',
-            field=models.CharField(choices=[('JPN', 'JPN'), ('KOR', 'KOR'), ('J2', 'J2'), ('TAI', 'TAI'), ('MEX', 'MEX'), ('OTH', 'OTH')], max_length=255, null=True),
+            model_name="player",
+            name="league",
+            field=models.CharField(
+                choices=[
+                    ("JPN", "JPN"),
+                    ("KOR", "KOR"),
+                    ("J2", "J2"),
+                    ("TAI", "TAI"),
+                    ("MEX", "MEX"),
+                    ("OTH", "OTH"),
+                ],
+                max_length=255,
+                null=True,
+            ),
         ),
         migrations.AddField(
-            model_name='player',
-            name='mlb_dotcom',
+            model_name="player",
+            name="mlb_dotcom",
             field=models.CharField(blank=True, max_length=255, null=True),
         ),
         migrations.AddField(
-            model_name='player',
-            name='mlb_dotcom_url',
+            model_name="player",
+            name="mlb_dotcom_url",
             field=models.CharField(blank=True, max_length=255, null=True),
         ),
     ]

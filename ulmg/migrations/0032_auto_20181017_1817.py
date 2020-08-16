@@ -6,18 +6,16 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('ulmg', '0031_player_notes'),
+        ("ulmg", "0031_player_notes"),
     ]
 
     operations = [
         migrations.RenameField(
-            model_name='player',
-            old_name='is_rostered',
-            new_name='is_aaa_roster',
+            model_name="player", old_name="is_rostered", new_name="is_aaa_roster",
         ),
         migrations.AddField(
-            model_name='player',
-            name='is_mlb_roster',
+            model_name="player",
+            name="is_mlb_roster",
             field=models.BooleanField(default=False),
         ),
     ]

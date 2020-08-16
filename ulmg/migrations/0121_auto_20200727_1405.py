@@ -6,138 +6,160 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('ulmg', '0120_auto_20200727_1337'),
+        ("ulmg", "0120_auto_20200727_1337"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='team',
-            name='ls_avg',
-            field=models.DecimalField(blank=True, decimal_places=3, max_digits=4, null=True),
+            model_name="team",
+            name="ls_avg",
+            field=models.DecimalField(
+                blank=True, decimal_places=3, max_digits=4, null=True
+            ),
         ),
         migrations.AddField(
-            model_name='team',
-            name='ls_bb',
+            model_name="team",
+            name="ls_bb",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='team',
-            name='ls_bb_9',
-            field=models.DecimalField(blank=True, decimal_places=2, max_digits=4, null=True),
+            model_name="team",
+            name="ls_bb_9",
+            field=models.DecimalField(
+                blank=True, decimal_places=2, max_digits=4, null=True
+            ),
         ),
         migrations.AddField(
-            model_name='team',
-            name='ls_bb_pct',
-            field=models.DecimalField(blank=True, decimal_places=1, max_digits=4, null=True),
+            model_name="team",
+            name="ls_bb_pct",
+            field=models.DecimalField(
+                blank=True, decimal_places=1, max_digits=4, null=True
+            ),
         ),
         migrations.AddField(
-            model_name='team',
-            name='ls_doubles',
+            model_name="team",
+            name="ls_doubles",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='team',
-            name='ls_er',
+            model_name="team",
+            name="ls_er",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='team',
-            name='ls_era',
-            field=models.DecimalField(blank=True, decimal_places=2, max_digits=5, null=True),
+            model_name="team",
+            name="ls_era",
+            field=models.DecimalField(
+                blank=True, decimal_places=2, max_digits=5, null=True
+            ),
         ),
         migrations.AddField(
-            model_name='team',
-            name='ls_g',
+            model_name="team",
+            name="ls_g",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='team',
-            name='ls_gs',
+            model_name="team",
+            name="ls_gs",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='team',
-            name='ls_ha',
+            model_name="team",
+            name="ls_ha",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='team',
-            name='ls_hits',
+            model_name="team",
+            name="ls_hits",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='team',
-            name='ls_hr',
+            model_name="team",
+            name="ls_hr",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='team',
-            name='ls_hr_9',
-            field=models.DecimalField(blank=True, decimal_places=2, max_digits=4, null=True),
+            model_name="team",
+            name="ls_hr_9",
+            field=models.DecimalField(
+                blank=True, decimal_places=2, max_digits=4, null=True
+            ),
         ),
         migrations.AddField(
-            model_name='team',
-            name='ls_hra',
+            model_name="team",
+            name="ls_hra",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='team',
-            name='ls_ip',
-            field=models.DecimalField(blank=True, decimal_places=1, max_digits=4, null=True),
+            model_name="team",
+            name="ls_ip",
+            field=models.DecimalField(
+                blank=True, decimal_places=1, max_digits=4, null=True
+            ),
         ),
         migrations.AddField(
-            model_name='team',
-            name='ls_iso',
-            field=models.DecimalField(blank=True, decimal_places=3, max_digits=4, null=True),
+            model_name="team",
+            name="ls_iso",
+            field=models.DecimalField(
+                blank=True, decimal_places=3, max_digits=4, null=True
+            ),
         ),
         migrations.AddField(
-            model_name='team',
-            name='ls_k',
+            model_name="team",
+            name="ls_k",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='team',
-            name='ls_k_9',
-            field=models.DecimalField(blank=True, decimal_places=2, max_digits=4, null=True),
+            model_name="team",
+            name="ls_k_9",
+            field=models.DecimalField(
+                blank=True, decimal_places=2, max_digits=4, null=True
+            ),
         ),
         migrations.AddField(
-            model_name='team',
-            name='ls_k_pct',
-            field=models.DecimalField(blank=True, decimal_places=1, max_digits=4, null=True),
+            model_name="team",
+            name="ls_k_pct",
+            field=models.DecimalField(
+                blank=True, decimal_places=1, max_digits=4, null=True
+            ),
         ),
         migrations.AddField(
-            model_name='team',
-            name='ls_obp',
-            field=models.DecimalField(blank=True, decimal_places=3, max_digits=4, null=True),
+            model_name="team",
+            name="ls_obp",
+            field=models.DecimalField(
+                blank=True, decimal_places=3, max_digits=4, null=True
+            ),
         ),
         migrations.AddField(
-            model_name='team',
-            name='ls_plate_appearances',
+            model_name="team",
+            name="ls_plate_appearances",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='team',
-            name='ls_rbi',
+            model_name="team",
+            name="ls_rbi",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='team',
-            name='ls_runs',
+            model_name="team",
+            name="ls_runs",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='team',
-            name='ls_sb',
+            model_name="team",
+            name="ls_sb",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='team',
-            name='ls_slg',
-            field=models.DecimalField(blank=True, decimal_places=3, max_digits=4, null=True),
+            model_name="team",
+            name="ls_slg",
+            field=models.DecimalField(
+                blank=True, decimal_places=3, max_digits=4, null=True
+            ),
         ),
         migrations.AddField(
-            model_name='team',
-            name='ls_triples',
+            model_name="team",
+            name="ls_triples",
             field=models.IntegerField(blank=True, null=True),
         ),
     ]

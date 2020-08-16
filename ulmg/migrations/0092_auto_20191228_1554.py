@@ -6,13 +6,27 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('ulmg', '0091_auto_20191228_1541'),
+        ("ulmg", "0091_auto_20191228_1541"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='player',
-            name='league',
-            field=models.CharField(blank=True, choices=[('NCAA', 'NCAA'), ('US HS', 'US HS'), ('JPN', 'JPN'), ('KOR', 'KOR'), ('J2', 'J2'), ('TAI', 'TAI'), ('MEX', 'MEX'), ('OTH', 'OTH')], max_length=255, null=True),
+            model_name="player",
+            name="league",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ("NCAA", "NCAA"),
+                    ("US HS", "US HS"),
+                    ("JPN", "JPN"),
+                    ("KOR", "KOR"),
+                    ("J2", "J2"),
+                    ("TAI", "TAI"),
+                    ("MEX", "MEX"),
+                    ("OTH", "OTH"),
+                ],
+                max_length=255,
+                null=True,
+            ),
         ),
     ]

@@ -14,35 +14,34 @@ from ulmg import models
 
 
 class Command(BaseCommand):
-
     def set_carded(self, *args, **optionals):
         print(".... setting carded status")
         for p in models.Player.objects.filter(ls_is_mlb=True, is_carded=False):
-            p.is_carded=True
+            p.is_carded = True
             p.save()
 
     def load_hitters(self, *args, **options):
         print(".... loading hitters")
-        with open('data/2019/300_pa_hit.csv', 'r') as readfile:
+        with open("data/2019/300_pa_hit.csv", "r") as readfile:
             players = csv.DictReader(readfile)
             for row in [dict(z) for z in players]:
                 try:
-                    p = models.Player.objects.get(fg_id=row['playerid'])
-                    p.cs_pa = row['PA']
+                    p = models.Player.objects.get(fg_id=row["playerid"])
+                    p.cs_pa = row["PA"]
                     p.save()
                 except:
                     pass
 
     def load_pitchers(self, *args, **options):
         print(".... loading pitchers")
-        with open('data/2019/40_ip_pit.csv', 'r') as readfile:
+        with open("data/2019/40_ip_pit.csv", "r") as readfile:
             players = csv.DictReader(readfile)
             for row in [dict(z) for z in players]:
                 try:
-                    p = models.Player.objects.get(fg_id=row['playerid'])
-                    p.cs_st = row['GS']
-                    p.cs_gp = row['G']
-                    p.cs_ip = row['IP']
+                    p = models.Player.objects.get(fg_id=row["playerid"])
+                    p.cs_st = row["GS"]
+                    p.cs_gp = row["G"]
+                    p.cs_ip = row["IP"]
                     p.save()
                 except:
                     pass
@@ -59,13 +58,17 @@ class Command(BaseCommand):
             print(p)
 
         print("--------- RELIEVERS B > A ---------")
-        for p in models.Player.objects.filter(level="B", position="P", cs_gp__gte=31, cs_st=0):
+        for p in models.Player.objects.filter(
+            level="B", position="P", cs_gp__gte=31, cs_st=0
+        ):
             p.level = "A"
             p.save()
             print(p)
 
         print("--------- SWINGMEN B > A ---------")
-        for p in models.Player.objects.filter(level="B", position="P", cs_gp__gte=40, cs_st__gte=15):
+        for p in models.Player.objects.filter(
+            level="B", position="P", cs_gp__gte=40, cs_st__gte=15
+        ):
             p.level = "A"
             p.save()
             print(p)
@@ -83,13 +86,17 @@ class Command(BaseCommand):
             print(p)
 
         print("--------- RELIEVERS A > V ---------")
-        for p in models.Player.objects.filter(level="A", position="P", cs_gp__gte=201, cs_st=0):
+        for p in models.Player.objects.filter(
+            level="A", position="P", cs_gp__gte=201, cs_st=0
+        ):
             p.level = "V"
             p.save()
             print(p)
 
         print("--------- SWINGMEN A > V ---------")
-        for p in models.Player.objects.filter(level="A", position="P", cs_gp__gte=220, cs_st__gte=30):
+        for p in models.Player.objects.filter(
+            level="A", position="P", cs_gp__gte=220, cs_st__gte=30
+        ):
             p.level = "V"
             p.save()
             print(p)

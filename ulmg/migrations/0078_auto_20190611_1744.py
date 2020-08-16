@@ -6,46 +6,32 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('ulmg', '0077_auto_20190610_1854'),
+        ("ulmg", "0077_auto_20190610_1854"),
     ]
 
     operations = [
         migrations.RenameField(
-            model_name='livestat',
-            old_name='x_avg',
-            new_name='avg',
+            model_name="livestat", old_name="x_avg", new_name="avg",
         ),
         migrations.RenameField(
-            model_name='livestat',
-            old_name='x_avg_diff',
-            new_name='babip',
+            model_name="livestat", old_name="x_avg_diff", new_name="babip",
         ),
         migrations.RenameField(
-            model_name='livestat',
-            old_name='x_slg',
-            new_name='obp',
+            model_name="livestat", old_name="x_slg", new_name="obp",
         ),
         migrations.RenameField(
-            model_name='livestat',
-            old_name='x_slg_diff',
-            new_name='slg',
+            model_name="livestat", old_name="x_slg_diff", new_name="slg",
         ),
-        migrations.RemoveField(
-            model_name='livestat',
-            name='x_woba',
-        ),
-        migrations.RemoveField(
-            model_name='livestat',
-            name='x_woba_diff',
-        ),
+        migrations.RemoveField(model_name="livestat", name="x_woba",),
+        migrations.RemoveField(model_name="livestat", name="x_woba_diff",),
         migrations.AddField(
-            model_name='livestat',
-            name='hr',
+            model_name="livestat",
+            name="hr",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='livestat',
-            name='sb',
+            model_name="livestat",
+            name="sb",
             field=models.IntegerField(blank=True, null=True),
         ),
     ]

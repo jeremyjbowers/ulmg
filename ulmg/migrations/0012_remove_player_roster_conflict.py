@@ -6,12 +6,9 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('ulmg', '0011_auto_20181006_1551'),
+        ("ulmg", "0011_auto_20181006_1551"),
     ]
 
     operations = [
-        migrations.RemoveField(
-            model_name='player',
-            name='roster_conflict',
-        ),
+        migrations.RemoveField(model_name="player", name="roster_conflict",),
     ]

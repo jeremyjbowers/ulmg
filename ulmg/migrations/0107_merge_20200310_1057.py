@@ -6,9 +6,8 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('ulmg', '0105_player_b_grp'),
-        ('ulmg', '0106_player_b_avg'),
+        ("ulmg", "0105_player_b_grp"),
+        ("ulmg", "0106_player_b_avg"),
     ]
 
-    operations = [
-    ]
+    operations = []

@@ -6,12 +6,9 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('ulmg', '0050_tradesummary'),
+        ("ulmg", "0050_tradesummary"),
     ]
 
     operations = [
-        migrations.RemoveField(
-            model_name='tradesummary',
-            name='teams',
-        ),
+        migrations.RemoveField(model_name="tradesummary", name="teams",),
     ]

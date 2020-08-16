@@ -8,13 +8,13 @@ import requests
 from ulmg import models
 from ulmg import utils
 
-class Command(BaseCommand):
 
+class Command(BaseCommand):
     def handle(self, *args, **options):
-        with open('prospects/ftx.json', 'r') as readfile:
+        with open("prospects/ftx.json", "r") as readfile:
             ftx = json.loads(readfile.read())
             for p in ftx:
-                hit = utils.fuzzy_find_player(p['name'])
+                hit = utils.fuzzy_find_player(p["name"])
                 if len(hit) == 0:
                     print(f"n {p}")
 

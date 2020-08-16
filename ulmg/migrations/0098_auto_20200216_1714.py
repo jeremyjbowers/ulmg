@@ -6,23 +6,21 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('ulmg', '0097_auto_20200120_1955'),
+        ("ulmg", "0097_auto_20200120_1955"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='player',
-            name='b_important',
+            model_name="player",
+            name="b_important",
             field=models.BooleanField(default=False),
         ),
         migrations.AddField(
-            model_name='player',
-            name='b_info',
-            field=models.IntegerField(default=0),
+            model_name="player", name="b_info", field=models.IntegerField(default=0),
         ),
         migrations.AddField(
-            model_name='player',
-            name='b_interest',
+            model_name="player",
+            name="b_interest",
             field=models.IntegerField(default=0),
         ),
     ]

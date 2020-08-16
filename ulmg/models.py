@@ -26,6 +26,7 @@ class Team(BaseModel):
     """
     Canonical representation of a ULMG team.
     """
+
     city = models.CharField(max_length=255)
     abbreviation = models.CharField(max_length=3)
     nickname = models.CharField(max_length=255)
@@ -50,8 +51,12 @@ class Team(BaseModel):
     ls_obp = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
     ls_slg = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
     ls_iso = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
-    ls_k_pct = models.DecimalField(max_digits=4, decimal_places=1, blank=True, null=True)
-    ls_bb_pct = models.DecimalField(max_digits=4, decimal_places=1, blank=True, null=True)
+    ls_k_pct = models.DecimalField(
+        max_digits=4, decimal_places=1, blank=True, null=True
+    )
+    ls_bb_pct = models.DecimalField(
+        max_digits=4, decimal_places=1, blank=True, null=True
+    )
 
     ls_g = models.IntegerField(blank=True, null=True)
     ls_gs = models.IntegerField(blank=True, null=True)
@@ -62,7 +67,9 @@ class Team(BaseModel):
     ls_hra = models.IntegerField(blank=True, null=True)
     ls_er = models.IntegerField(blank=True, null=True)
     ls_k_9 = models.DecimalField(max_digits=4, decimal_places=2, blank=True, null=True)
-    ls_hits_9 = models.DecimalField(max_digits=4, decimal_places=2, blank=True, null=True)
+    ls_hits_9 = models.DecimalField(
+        max_digits=4, decimal_places=2, blank=True, null=True
+    )
     ls_bb_9 = models.DecimalField(max_digits=4, decimal_places=2, blank=True, null=True)
     ls_hr_9 = models.DecimalField(max_digits=4, decimal_places=2, blank=True, null=True)
     ls_era = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
@@ -73,7 +80,7 @@ class Team(BaseModel):
 
     def __unicode__(self):
         return self.abbreviation
- 
+
     def players(self):
         """
         List of Player models associated with this team.
@@ -85,13 +92,14 @@ class Player(BaseModel):
     """
     Canonical representation of a baseball player.
     """
+
     VETERAN = "V"
     A_LEVEL = "A"
     B_LEVEL = "B"
     PLAYER_LEVEL_CHOICES = (
-        (VETERAN,"V"),
-        (A_LEVEL,"A"),
-        (B_LEVEL,"B"),
+        (VETERAN, "V"),
+        (A_LEVEL, "A"),
+        (B_LEVEL, "B"),
     )
 
     PITCHER = "P"
@@ -102,13 +110,13 @@ class Player(BaseModel):
     PITCHER_OF = "OF-P"
     PITCHER_IF = "IF-P"
     PLAYER_POSITION_CHOICES = (
-        (PITCHER,"Pitcher"),
-        (CATCHER,"Catcher"),
-        (INFIELD,"Infield"),
-        (OUTFIELD,"Outfield"),
-        (INFIELD_OUTFIELD,"Infield/Outfield"),
-        (PITCHER_OF,"Pitcher/Outfield"),
-        (PITCHER_IF,"Pitcher/Infield"),
+        (PITCHER, "Pitcher"),
+        (CATCHER, "Catcher"),
+        (INFIELD, "Infield"),
+        (OUTFIELD, "Outfield"),
+        (INFIELD_OUTFIELD, "Infield/Outfield"),
+        (PITCHER_OF, "Pitcher/Outfield"),
+        (PITCHER_IF, "Pitcher/Infield"),
     )
 
     JAPAN = "JPN"
@@ -122,12 +130,12 @@ class Player(BaseModel):
     OTHER_PRO_LEAGUES = (
         (NCAA, "NCAA"),
         (USHS, "US HS"),
-        (JAPAN,"JPN"),
-        (KOREA,"KOR"),
-        (J2,"J2"),
-        (TAIWAN,"TAI"),
-        (MEXICO,"MEX"),
-        (OTHER,"OTH"),
+        (JAPAN, "JPN"),
+        (KOREA, "KOR"),
+        (J2, "J2"),
+        (TAIWAN, "TAI"),
+        (MEXICO, "MEX"),
+        (OTHER, "OTH"),
     )
 
     # STUFF ABOUT THE PLAYER
@@ -136,7 +144,9 @@ class Player(BaseModel):
     name = models.CharField(max_length=255)
     last_name = models.CharField(max_length=255, null=True)
     first_name = models.CharField(max_length=255, null=True)
-    position = models.CharField(max_length=255, null=True, choices=PLAYER_POSITION_CHOICES)
+    position = models.CharField(
+        max_length=255, null=True, choices=PLAYER_POSITION_CHOICES
+    )
     birthdate = models.DateField(blank=True, null=True)
     birthdate_qa = models.BooleanField(default=False)
 
@@ -184,7 +194,9 @@ class Player(BaseModel):
     is_owned = models.BooleanField(default=False)
     is_carded = models.BooleanField(default=False)
     is_amateur = models.BooleanField(default=False)
-    league = models.CharField(max_length=255, blank=True, null=True, choices=OTHER_PRO_LEAGUES)
+    league = models.CharField(
+        max_length=255, blank=True, null=True, choices=OTHER_PRO_LEAGUES
+    )
 
     # ROSTERS
     is_mlb_roster = models.BooleanField(default=False)
@@ -284,7 +296,9 @@ class Player(BaseModel):
     ps_whip = models.DecimalField(max_digits=4, decimal_places=2, blank=True, null=True)
     ps_k_9 = models.DecimalField(max_digits=4, decimal_places=2, blank=True, null=True)
     ps_bb_9 = models.DecimalField(max_digits=4, decimal_places=2, blank=True, null=True)
-    ps_ra9_war = models.DecimalField(max_digits=3, decimal_places=1, blank=True, null=True)
+    ps_ra9_war = models.DecimalField(
+        max_digits=3, decimal_places=1, blank=True, null=True
+    )
 
     # LIVE STATS
     ls_is_mlb = models.BooleanField(default=False)
@@ -301,12 +315,18 @@ class Player(BaseModel):
     ls_avg = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
     ls_obp = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
     ls_slg = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
-    ls_babip = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
+    ls_babip = models.DecimalField(
+        max_digits=4, decimal_places=3, blank=True, null=True
+    )
     ls_wrc_plus = models.IntegerField(blank=True, null=True)
     ls_plate_appearances = models.IntegerField(blank=True, null=True)
     ls_iso = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
-    ls_k_pct = models.DecimalField(max_digits=4, decimal_places=1, blank=True, null=True)
-    ls_bb_pct = models.DecimalField(max_digits=4, decimal_places=1, blank=True, null=True)
+    ls_k_pct = models.DecimalField(
+        max_digits=4, decimal_places=1, blank=True, null=True
+    )
+    ls_bb_pct = models.DecimalField(
+        max_digits=4, decimal_places=1, blank=True, null=True
+    )
     ls_woba = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
     ls_g = models.IntegerField(blank=True, null=True)
     ls_gs = models.IntegerField(blank=True, null=True)
@@ -319,19 +339,35 @@ class Player(BaseModel):
     ls_k_9 = models.DecimalField(max_digits=4, decimal_places=2, blank=True, null=True)
     ls_bb_9 = models.DecimalField(max_digits=4, decimal_places=2, blank=True, null=True)
     ls_hr_9 = models.DecimalField(max_digits=4, decimal_places=2, blank=True, null=True)
-    ls_lob_pct = models.DecimalField(max_digits=4, decimal_places=1, blank=True, null=True)
-    ls_gb_pct = models.DecimalField(max_digits=4, decimal_places=1, blank=True, null=True)
-    ls_hr_fb = models.DecimalField(max_digits=4, decimal_places=1, blank=True, null=True)
+    ls_lob_pct = models.DecimalField(
+        max_digits=4, decimal_places=1, blank=True, null=True
+    )
+    ls_gb_pct = models.DecimalField(
+        max_digits=4, decimal_places=1, blank=True, null=True
+    )
+    ls_hr_fb = models.DecimalField(
+        max_digits=4, decimal_places=1, blank=True, null=True
+    )
     ls_era = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
     ls_fip = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
     ls_xfip = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
-    ls_siera = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
+    ls_siera = models.DecimalField(
+        max_digits=5, decimal_places=2, blank=True, null=True
+    )
     ls_xavg = models.DecimalField(max_digits=5, decimal_places=3, blank=True, null=True)
-    ls_xwoba = models.DecimalField(max_digits=5, decimal_places=3, blank=True, null=True)
+    ls_xwoba = models.DecimalField(
+        max_digits=5, decimal_places=3, blank=True, null=True
+    )
     ls_xslg = models.DecimalField(max_digits=5, decimal_places=3, blank=True, null=True)
-    ls_xavg_diff = models.DecimalField(max_digits=5, decimal_places=3, blank=True, null=True)
-    ls_xwoba_diff = models.DecimalField(max_digits=5, decimal_places=3, blank=True, null=True)
-    ls_xslg_diff = models.DecimalField(max_digits=5, decimal_places=3, blank=True, null=True)
+    ls_xavg_diff = models.DecimalField(
+        max_digits=5, decimal_places=3, blank=True, null=True
+    )
+    ls_xwoba_diff = models.DecimalField(
+        max_digits=5, decimal_places=3, blank=True, null=True
+    )
+    ls_xslg_diff = models.DecimalField(
+        max_digits=5, decimal_places=3, blank=True, null=True
+    )
 
     class Meta:
         ordering = ["last_name", "first_name", "level", "position"]
@@ -343,7 +379,9 @@ class Player(BaseModel):
 
     def set_fg_url(self):
         if self.fg_id:
-            self.fg_url = "https://www.fangraphs.com/statss.aspx?playerid=%s" % self.fg_id
+            self.fg_url = (
+                "https://www.fangraphs.com/statss.aspx?playerid=%s" % self.fg_id
+            )
 
     def to_dict(self):
         return {
@@ -359,8 +397,16 @@ class Player(BaseModel):
 
     def defense_display(self):
         if self.defense:
-            sortdef = [{"display": f"{d.split('-')[0]}{d.split('-')[2]}", "sort": f"{d.split('-')[1]}{d.split('-')[2]}"} for d in self.defense]
-            return ", ".join([x['display'] for x in sorted(sortdef, key=lambda x: x['sort'])])
+            sortdef = [
+                {
+                    "display": f"{d.split('-')[0]}{d.split('-')[2]}",
+                    "sort": f"{d.split('-')[1]}{d.split('-')[2]}",
+                }
+                for d in self.defense
+            ]
+            return ", ".join(
+                [x["display"] for x in sorted(sortdef, key=lambda x: x["sort"])]
+            )
         return None
 
     @property
@@ -400,16 +446,16 @@ class Player(BaseModel):
                 n = HumanName(self.name)
                 self.first_name = n.first
                 if n.middle:
-                    self.first_name = n.first + ' ' + n.middle
+                    self.first_name = n.first + " " + n.middle
                 self.last_name = n.last
                 if n.suffix:
-                    self.last_name = n.last + ' ' + n.suffix
+                    self.last_name = n.last + " " + n.suffix
 
     def set_ids(self):
         if self.fg_url and not self.fg_id:
             if self.fg_url:
                 if "?playerid=" in self.fg_url:
-                    self.fg_id = self.fg_url.split('?playerid=')[1].split('&')[0]
+                    self.fg_id = self.fg_url.split("?playerid=")[1].split("&")[0]
 
     def set_level_order(self):
         if self.level:
@@ -427,7 +473,13 @@ class Player(BaseModel):
             self.is_owned = True
 
     def set_protected(self):
-        if self.is_reserve or self.is_2h_p or self.is_2h_c or self.is_2h_pos or self.is_mlb_roster:
+        if (
+            self.is_reserve
+            or self.is_2h_p
+            or self.is_2h_c
+            or self.is_2h_pos
+            or self.is_mlb_roster
+        ):
             self.is_protected = True
         else:
             self.is_protected = False
@@ -456,9 +508,9 @@ class DraftPick(BaseModel):
     OPEN_TYPE = "open"
     BALANCE_TYPE = "balance"
     DRAFT_TYPE_CHOICES = (
-        (AA_TYPE,"aa"),
-        (OPEN_TYPE,"open"),
-        (BALANCE_TYPE,"balance"),
+        (AA_TYPE, "aa"),
+        (OPEN_TYPE, "open"),
+        (BALANCE_TYPE, "balance"),
     )
     draft_type = models.CharField(max_length=255, choices=DRAFT_TYPE_CHOICES, null=True)
     draft_round = models.IntegerField(null=True)
@@ -468,17 +520,25 @@ class DraftPick(BaseModel):
     OFFSEASON = "offseason"
     MIDSEASON = "midseason"
     SEASON_CHOICES = (
-        (OFFSEASON,"offseason"),
-        (MIDSEASON,"midseason"),
+        (OFFSEASON, "offseason"),
+        (MIDSEASON, "midseason"),
     )
     season = models.CharField(max_length=255, choices=SEASON_CHOICES)
     slug = models.CharField(max_length=255, null=True, blank=True)
-    team = models.ForeignKey(Team, on_delete=models.SET_NULL, blank=True, null=True, related_name="team")
+    team = models.ForeignKey(
+        Team, on_delete=models.SET_NULL, blank=True, null=True, related_name="team"
+    )
     team_name = models.CharField(max_length=255, blank=True, null=True)
     player = models.ForeignKey(Player, on_delete=models.SET_NULL, blank=True, null=True)
     player_name = models.CharField(max_length=255, blank=True, null=True)
     pick_notes = models.TextField(blank=True, null=True)
-    original_team = models.ForeignKey(Team, on_delete=models.SET_NULL, blank=True, null=True, related_name="original_team")
+    original_team = models.ForeignKey(
+        Team,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="original_team",
+    )
     skipped = models.BooleanField(default=False)
 
     class Meta:
@@ -532,6 +592,7 @@ class DraftPick(BaseModel):
 
         super().save(*args, **kwargs)
 
+
 class Trade(BaseModel):
     """
     On the frontend, there will just be two slots for teams
@@ -539,6 +600,7 @@ class Trade(BaseModel):
     On save, the view will create the Trade object and then two
     related TradeReceipt objects containing the players and picks.
     """
+
     date = models.DateField()
     season = models.IntegerField(blank=True, null=True)
 
@@ -566,10 +628,24 @@ class Trade(BaseModel):
 
         return "%s: %s sends %s to %s for %s" % (
             self.date,
-            "<a href='/teams/%s/'>%s</a>" % (t1.team.abbreviation.lower(), t1.team.abbreviation),
-            ", ".join(["%s <a href='/players/%s/'>%s</a>" % (p.position, p.id, p.name) for p in t2.players.all()] + ["%s" % (p.slug) for p in t2.picks.all()]),
-            "<a href='/teams/%s/'>%s</a>" % (t2.team.abbreviation.lower(), t2.team.abbreviation),
-            ", ".join(["%s <a href='/players/%s/'>%s</a>" % (p.position, p.id, p.name) for p in t1.players.all()] + ["%s" % (p.slug) for p in t1.picks.all()]),
+            "<a href='/teams/%s/'>%s</a>"
+            % (t1.team.abbreviation.lower(), t1.team.abbreviation),
+            ", ".join(
+                [
+                    "%s <a href='/players/%s/'>%s</a>" % (p.position, p.id, p.name)
+                    for p in t2.players.all()
+                ]
+                + ["%s" % (p.slug) for p in t2.picks.all()]
+            ),
+            "<a href='/teams/%s/'>%s</a>"
+            % (t2.team.abbreviation.lower(), t2.team.abbreviation),
+            ", ".join(
+                [
+                    "%s <a href='/players/%s/'>%s</a>" % (p.position, p.id, p.name)
+                    for p in t1.players.all()
+                ]
+                + ["%s" % (p.slug) for p in t1.picks.all()]
+            ),
         )
 
     def summary(self):
@@ -580,10 +656,17 @@ class Trade(BaseModel):
         return "%s: %s sends %s to %s for %s" % (
             self.date,
             t1.team.abbreviation,
-            ", ".join(["%s %s" % (p.position, p.name) for p in t2.players.all()] + ["%s" % (p.slug) for p in t2.picks.all()]),
+            ", ".join(
+                ["%s %s" % (p.position, p.name) for p in t2.players.all()]
+                + ["%s" % (p.slug) for p in t2.picks.all()]
+            ),
             t2.team.abbreviation,
-            ", ".join(["%s %s" % (p.position, p.name) for p in t1.players.all()] + ["%s" % (p.slug) for p in t1.picks.all()]),
+            ", ".join(
+                ["%s %s" % (p.position, p.name) for p in t1.players.all()]
+                + ["%s" % (p.slug) for p in t1.picks.all()]
+            ),
         )
+
 
 class TradeReceipt(BaseModel):
     trade = models.ForeignKey(Trade, on_delete=models.SET_NULL, null=True)
@@ -597,16 +680,26 @@ class TradeReceipt(BaseModel):
         return self.team.abbreviation
 
     def summary(self):
-        return ", ".join(["%s %s" % (p.position, p.name) for p in self.players.all()] + ["%s" % (p.slug) for p in self.picks.all()])
+        return ", ".join(
+            ["%s %s" % (p.position, p.name) for p in self.players.all()]
+            + ["%s" % (p.slug) for p in self.picks.all()]
+        )
 
     def summary_html(self):
-        return ", ".join(["<a class='has-text-weight-semibold' href='/players/%s/'>%s %s</a>" % (p.id, p.position, p.name) for p in self.players.all()] + ["%s" % (p.slug) for p in self.picks.all()])
+        return ", ".join(
+            [
+                "<a class='has-text-weight-semibold' href='/players/%s/'>%s %s</a>"
+                % (p.id, p.position, p.name)
+                for p in self.players.all()
+            ]
+            + ["%s" % (p.slug) for p in self.picks.all()]
+        )
 
     ## Comment out these two methods and the m2m_changed signals below
     ## when loading from a fixture.
     @staticmethod
     def trade_pick(sender, instance, action, reverse, model, pk_set, **kwargs):
-        if action == 'post_add':
+        if action == "post_add":
             team = instance.team
             for p in pk_set:
                 obj = DraftPick.objects.get(id=p)
@@ -615,7 +708,7 @@ class TradeReceipt(BaseModel):
 
     @staticmethod
     def trade_player(sender, instance, action, reverse, model, pk_set, **kwargs):
-        if action == 'post_add':
+        if action == "post_add":
             team = instance.team
             for p in pk_set:
                 obj = Player.objects.get(id=p)
@@ -629,7 +722,9 @@ class TradeReceipt(BaseModel):
                 obj.save()
 
 
-m2m_changed.connect(receiver=TradeReceipt.trade_player, sender=TradeReceipt.players.through)
+m2m_changed.connect(
+    receiver=TradeReceipt.trade_player, sender=TradeReceipt.players.through
+)
 m2m_changed.connect(receiver=TradeReceipt.trade_pick, sender=TradeReceipt.picks.through)
 
 
@@ -639,16 +734,16 @@ class TradeSummary(BaseModel):
     PLAYERS = "players only"
     PICKS = "players and picks"
     TRADE_TYPE_CHOICES = (
-        (PLAYERS,"players only"),
-        (PICKS,"players and picks"),
+        (PLAYERS, "players only"),
+        (PICKS, "players and picks"),
     )
     trade_type = models.CharField(max_length=255, choices=TRADE_TYPE_CHOICES)
-    
+
     def __unicode__(self):
         return "%s: %s (%s)" % (self.season, self.trade_type, self.pk)
 
     class Meta:
-        ordering = ['-season', 'trade_type']
+        ordering = ["-season", "trade_type"]
 
 
 class SomRunsYear(BaseModel):
@@ -670,6 +765,7 @@ class SomRunsYear(BaseModel):
         self.set_player_name()
 
         super().save(*args, **kwargs)
+
 
 class ScoutingReport(BaseModel):
     player = models.ForeignKey(Player, on_delete=models.SET_NULL, null=True)
