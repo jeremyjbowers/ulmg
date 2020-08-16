@@ -85,7 +85,7 @@ def get_data():
 @api.task
 def reload():
     get_data()
-    api.local("django-admin reload")
+    api.local('ULMG_FIXTURE=true django-admin reload')
 
 
 @api.task
