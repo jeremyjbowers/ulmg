@@ -29,14 +29,14 @@ class Command(BaseCommand):
         self.parse_roster_info()
 
         # FG CSVs
-        self.get_hitters_dash()
-        self.get_hitters_std()
-        self.get_pitchers_dash()
-        self.get_pitchers_std()
+        # self.get_hitters_dash()
+        # self.get_hitters_std()
+        # self.get_pitchers_dash()
+        # self.get_pitchers_std()
         # self.get_minors()
 
         # AGGREGATE LS BY TEAM
-        self.team_aggregates()
+        # self.team_aggregates()
 
         # MLBAM xSTATS
         # self.get_mlbam()
@@ -161,6 +161,7 @@ class Command(BaseCommand):
             with open(f"data/rosters/{team_abbrev}_roster.json", "r") as readfile:
                 roster = json.loads(readfile.read())
                 for player in roster:
+                    p = None
                     try:
                         try:
                             p = models.Player.objects.get(fg_id=player["playerid"])
@@ -170,42 +171,47 @@ class Command(BaseCommand):
                                     fg_id=player["minormasterid"]
                                 )
                             except:
-                                print(f"can't find {player['player']}")
+                                pass
 
-                        p.role = player["role"]
+                        if p:
+                            p.role = player["role"]
 
-                        if player["type"] == "mlb-tx-pp":
-                            p.is_player_pool = True
+                            if "pp" in player['type']:
+                                p.is_player_pool = True
 
-                        if player["type"] == "mlb-tx-pt":
-                            p.is_player_pool = True
+                            if player["type"] == "mlb-tx-pp":
+                                p.is_player_pool = True
 
-                        if player["type"] == "mlb-bp":
-                            p.is_bullpen = True
+                            if player["type"] == "mlb-tx-pt":
+                                p.is_player_pool = True
 
-                        if player["type"] == "mlb-sp":
-                            p.is_starter = True
+                            if player["type"] == "mlb-bp":
+                                p.is_bullpen = True
 
-                        if player["type"] == "mlb-bn":
-                            p.is_bench = True
+                            if player["type"] == "mlb-sp":
+                                p.is_starter = True
 
-                        if player["type"] == "mlb-sl":
-                            p.is_starter = True
+                            if player["type"] == "mlb-bn":
+                                p.is_bench = True
 
-                        if "il" in player["type"]:
-                            p.is_injured = True
+                            if player["type"] == "mlb-sl":
+                                p.is_starter = True
 
-                        p.injury_description = player["injurynotes"]
-                        p.mlbam_id = player["mlbamid1"]
-                        p.mlb_team = team_name
-                        p.mlb_team_abbr = team_abbrev
+                            if "il" in player["type"]:
+                                p.is_injured = True
 
-                        if player["roster40"] == "Y":
-                            p.is_mlb40man = True
+                            p.injury_description = player.get("injurynotes", None)
+                            p.mlbam_id = player.get("mlbamid1", None)
+                            p.mlb_team = team_name
+                            p.mlb_team_abbr = team_abbrev
 
-                        p.save()
-                    except:
-                        print(f"error loading {player['player']}")
+                            if player["roster40"] == "Y":
+                                p.is_mlb40man = True
+
+                            p.save()
+
+                    except Exception as e:
+                        print(f"error loading {player['player']}: {e}")
 
     def get_roster_info(self):
         print("GET ROSTER INFO")
