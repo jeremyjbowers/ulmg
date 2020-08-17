@@ -751,6 +751,51 @@ class TradeSummary(BaseModel):
         ordering = ["-season", "trade_type"]
 
 
+class Transaction(BaseModel):
+    TRANSACTION_TYPE_CHOICES = (
+        ("drafted", "drafted"),
+        ("dropped", "dropped"),
+        ("traded", "traded"),
+    )
+    transaction_type = models.CharField(
+        max_length=255, choices=TRANSACTION_TYPE_CHOICES
+    )
+    player = models.ForeignKey(Player, on_delete=models.SET_NULL, null=True, blank=True)
+    player_name = models.CharField(max_length=255, blank=True, null=True)
+    season = models.IntegerField()
+    date = models.DateField(auto_now=True)
+    origination_team = models.ForeignKey(
+        Team,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="origination_team",
+        blank=True,
+    )
+    destination_team = models.ForeignKey(
+        Team,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="destination_team",
+        blank=True,
+    )
+
+    def set_player_name(self):
+        if self.player:
+            self.player_name = self.player.name
+
+    def set_season(self):
+        if self.date.month >= 11:
+            self.season = int(self.date.year) + 1
+        else:
+            self.season = self.date.year
+
+    def save(self, *args, **kwargs):
+        self.set_season()
+        self.set_player_name()
+
+        super().save(*args, **kwargs)
+
+
 class ScoutingReport(BaseModel):
     player = models.ForeignKey(Player, on_delete=models.SET_NULL, null=True)
     player_name = models.CharField(max_length=255, blank=True)
