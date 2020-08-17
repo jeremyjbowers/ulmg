@@ -29,17 +29,17 @@ class Command(BaseCommand):
         self.parse_roster_info()
 
         # FG CSVs
-        # self.get_hitters_dash()
-        # self.get_hitters_std()
-        # self.get_pitchers_dash()
-        # self.get_pitchers_std()
+        self.get_hitters_dash()
+        self.get_hitters_std()
+        self.get_pitchers_dash()
+        self.get_pitchers_std()
         # self.get_minors()
 
         # AGGREGATE LS BY TEAM
-        # self.team_aggregates()
+        self.team_aggregates()
 
         # MLBAM xSTATS
-        # self.get_mlbam()
+        self.get_mlbam()
 
     def team_aggregates(self):
         print("TEAM AGGREGATES")
