@@ -82,7 +82,7 @@ Section for site-specific settings, e.g., controlling tabs, current draft year, 
 MLB_ROSTER_SIZE = 30
 TEAM_PROTECT_TAB = False
 TEAM_ROSTER_TAB = False
-TEAM_LIVE_TAB = True
+TEAM_LIVE_TAB = False
 TEAM_SEASON_HALF = "2h"
 CURRENT_SEASON = 2020
 CURRENT_SEASON_TYPE = "midseason"
