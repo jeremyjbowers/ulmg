@@ -176,7 +176,7 @@ class Command(BaseCommand):
                         if p:
                             p.role = player["role"]
 
-                            if "pp" in player['type']:
+                            if "pp" in player["type"]:
                                 p.is_player_pool = True
 
                             if player["type"] == "mlb-tx-pp":
