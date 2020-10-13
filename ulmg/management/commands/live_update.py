@@ -21,22 +21,22 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         self.season = settings.CURRENT_SEASON
-        self.reset_players()
+        # self.reset_players()
 
-        # FG VIA ROSTER RESOURCE
-        self.get_roster_info()
-        self.update_player_ids()
-        self.parse_roster_info()
+        # # FG VIA ROSTER RESOURCE
+        # self.get_roster_info()
+        # self.update_player_ids()
+        # self.parse_roster_info()
 
-        # FG CSVs
-        self.get_hitters_dash()
-        self.get_hitters_std()
-        self.get_pitchers_dash()
-        self.get_pitchers_std()
+        # # FG CSVs
+        # self.get_hitters_dash()
+        # self.get_hitters_std()
+        # self.get_pitchers_dash()
+        # self.get_pitchers_std()
         # self.get_minors()
 
         # AGGREGATE LS BY TEAM
-        self.team_aggregates()
+        # self.team_aggregates()
 
         # MLBAM xSTATS
         self.get_mlbam()
