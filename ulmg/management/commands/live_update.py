@@ -106,9 +106,8 @@ class Command(BaseCommand):
             team.ls_whip = (team.ls_ha + team.ls_bb) / float(team.ls_ip)
 
         for team in models.Team.objects.all():
-            # set_hitters(team)
+            set_hitters(team)
             set_pitchers(team)
-            print(team.__dict__)
             team.save()
 
     def update_player_ids(self):
