@@ -127,7 +127,7 @@
             <tbody>
             {% for t in teams %}
                 <tr>
-                    <td data-value="{{ t }}">{{ t }}</td>
+                    <td data-value="{{ t }}"><a href="/teams/{{ t.abbreviation }}/">{{ t }}</a></td>
                     <td data-value="{{ t.ls_plate_appearances|default_if_none:"-999" }}">{{ t.ls_plate_appearances|default_if_none:"-" }}</td>
                     <td data-value="{{ t.ls_avg|default_if_none:"-999" }}">{{ t.ls_avg|default_if_none:"-" }}</td>
                     <td data-value="{{ t.ls_obp|default_if_none:"-999" }}">{{ t.ls_obp|default_if_none:"-" }}</td>
