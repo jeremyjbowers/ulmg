@@ -29,10 +29,10 @@ class Command(BaseCommand):
         # self.parse_roster_info()
 
         # # FG CSVs
-        # self.get_hitters_dash()
-        # self.get_hitters_std()
-        # self.get_pitchers_dash()
-        # self.get_pitchers_std()
+        self.get_hitters_dash()
+        self.get_hitters_std()
+        self.get_pitchers_dash()
+        self.get_pitchers_std()
         # self.get_minors()
 
         # AGGREGATE LS BY TEAM
