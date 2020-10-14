@@ -21,7 +21,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         self.season = settings.CURRENT_SEASON
-        # self.reset_players()
+        self.reset_players()
 
         # # FG VIA ROSTER RESOURCE
         self.get_roster_info()
@@ -36,7 +36,7 @@ class Command(BaseCommand):
         # self.get_minors()
 
         # AGGREGATE LS BY TEAM
-        # self.team_aggregates()
+        self.team_aggregates()
 
         # MLBAM xSTATS
         self.get_mlbam()
@@ -106,8 +106,9 @@ class Command(BaseCommand):
             team.ls_whip = (team.ls_ha + team.ls_bb) / float(team.ls_ip)
 
         for team in models.Team.objects.all():
-            set_hitters(team)
+            # set_hitters(team)
             set_pitchers(team)
+            print(team.__dict__)
             team.save()
 
     def update_player_ids(self):

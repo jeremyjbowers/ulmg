@@ -61,7 +61,7 @@ class Team(BaseModel):
 
     ls_g = models.IntegerField(blank=True, null=True)
     ls_gs = models.IntegerField(blank=True, null=True)
-    ls_ip = models.DecimalField(max_digits=4, decimal_places=1, blank=True, null=True)
+    ls_ip = models.DecimalField(max_digits=5, decimal_places=1, blank=True, null=True)
     ls_pk = models.IntegerField(blank=True, null=True)
     ls_pbb = models.IntegerField(blank=True, null=True)
     ls_ha = models.IntegerField(blank=True, null=True)
