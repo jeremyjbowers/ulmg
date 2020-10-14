@@ -44,5 +44,5 @@ class Command(BaseCommand):
                         print(p)
 
     def handle(self, *args, **options):
-        self.gen_people_map()
+        # self.gen_people_map()
         self.load_mlbam_ids()
