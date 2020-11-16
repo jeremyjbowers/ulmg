@@ -579,19 +579,19 @@ class DraftPick(BaseModel):
         ## Need to comment this part out if saving archived draft picks
         ## that have a player name only but not a player object
         ## so that players are not swapped to a different team.
-        # if self.player and self.team:
-        #     if not self.player.team:
-        #         self.player.team = self.team
-        #         self.player.save()
+        if self.player and self.team:
+            if not self.player.team:
+                self.player.team = self.team
+                self.player.save()
 
-        #     if self.player.team and self.player.team != self.team:
-        #         self.player.team = self.team
-        #         self.player.save()
+            if self.player.team and self.player.team != self.team:
+                self.player.team = self.team
+                self.player.save()
 
-        # self.set_original_team()
-        # self.set_overall_pick_number()
+        self.set_original_team()
+        self.set_overall_pick_number()
         self.slugify()
-        # self.set_player_name()
+        self.set_player_name()
 
         super().save(*args, **kwargs)
 
