@@ -558,7 +558,9 @@ class DraftPick(BaseModel):
         if self.draft_type == "balance":
             dt = "CB"
 
-        self.slug = "%s %s%s" % (self.original_team, dt, self.draft_round)
+        self.slug = f"{self.original_team} {dt}{self.draft_round}"
+        if self.player:
+            self.slug = f"{self.original_team} {dt}{self.draft_round} ({self.player.name})"
 
     def set_overall_pick_number(self):
         if self.pick_number:
@@ -577,19 +579,19 @@ class DraftPick(BaseModel):
         ## Need to comment this part out if saving archived draft picks
         ## that have a player name only but not a player object
         ## so that players are not swapped to a different team.
-        if self.player and self.team:
-            if not self.player.team:
-                self.player.team = self.team
-                self.player.save()
+        # if self.player and self.team:
+        #     if not self.player.team:
+        #         self.player.team = self.team
+        #         self.player.save()
 
-            if self.player.team and self.player.team != self.team:
-                self.player.team = self.team
-                self.player.save()
+        #     if self.player.team and self.player.team != self.team:
+        #         self.player.team = self.team
+        #         self.player.save()
 
-        self.set_original_team()
-        self.set_overall_pick_number()
+        # self.set_original_team()
+        # self.set_overall_pick_number()
         self.slugify()
-        self.set_player_name()
+        # self.set_player_name()
 
         super().save(*args, **kwargs)
 
@@ -636,7 +638,7 @@ class Trade(BaseModel):
                     "%s <a href='/players/%s/'>%s</a>" % (p.position, p.id, p.name)
                     for p in t2.players.all()
                 ]
-                + ["%s" % (p.slug) for p in t2.picks.all()]
+                + [f"{p.slug}" for p in t2.picks.all()]
             ),
             "<a href='/teams/%s/'>%s</a>"
             % (t2.team.abbreviation.lower(), t2.team.abbreviation),
@@ -645,7 +647,7 @@ class Trade(BaseModel):
                     "%s <a href='/players/%s/'>%s</a>" % (p.position, p.id, p.name)
                     for p in t1.players.all()
                 ]
-                + ["%s" % (p.slug) for p in t1.picks.all()]
+                + [f"{p.slug}" for p in t1.picks.all()]
             ),
         )
 
@@ -659,12 +661,12 @@ class Trade(BaseModel):
             t1.team.abbreviation,
             ", ".join(
                 ["%s %s" % (p.position, p.name) for p in t2.players.all()]
-                + ["%s" % (p.slug) for p in t2.picks.all()]
+                + [f"{p.slug}" for p in t2.picks.all()]
             ),
             t2.team.abbreviation,
             ", ".join(
                 ["%s %s" % (p.position, p.name) for p in t1.players.all()]
-                + ["%s" % (p.slug) for p in t1.picks.all()]
+                + [f"{p.slug}" for p in t1.picks.all()]
             ),
         )
 
@@ -683,7 +685,7 @@ class TradeReceipt(BaseModel):
     def summary(self):
         return ", ".join(
             ["%s %s" % (p.position, p.name) for p in self.players.all()]
-            + ["%s" % (p.slug) for p in self.picks.all()]
+            + [f"{p.slug}" for p in self.picks.all()]
         )
 
     def summary_html(self):
@@ -693,7 +695,7 @@ class TradeReceipt(BaseModel):
                 % (p.id, p.position, p.name)
                 for p in self.players.all()
             ]
-            + ["%s" % (p.slug) for p in self.picks.all()]
+            + [f"{p.slug}" for p in self.picks.all()]
         )
 
     @staticmethod
