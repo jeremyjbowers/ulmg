@@ -560,7 +560,9 @@ class DraftPick(BaseModel):
 
         self.slug = f"{self.original_team} {dt}{self.draft_round}"
         if self.player:
-            self.slug = f"{self.original_team} {dt}{self.draft_round} ({self.player.name})"
+            self.slug = (
+                f"{self.original_team} {dt}{self.draft_round} ({self.player.name})"
+            )
 
     def set_overall_pick_number(self):
         if self.pick_number:
