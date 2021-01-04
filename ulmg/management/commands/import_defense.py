@@ -76,16 +76,20 @@ class Command(BaseCommand):
     def set_defense(self, year=None, dry_run=False):
         if year:
             with open(f"data/defense/{year}-som-range.csv", "r") as readfile:
-                players = [dict(c) for c in csv.DictReader(readfile) if c['B/P'] == "B"]
+                players = [dict(c) for c in csv.DictReader(readfile) if c["B/P"] == "B"]
 
                 for player_row in players:
                     name_string = f"{player_row['FIRST']} {player_row['LAST']}"
                     fuzzy_players = utils.fuzzy_find_player(name_string)
                     if len(fuzzy_players) > 0:
-                        self.set_player_defense(player_row, fuzzy_players[0], dry_run=dry_run)
+                        self.set_player_defense(
+                            player_row, fuzzy_players[0], dry_run=dry_run
+                        )
 
         else:
-            print("Please pass a year along with the command, e.g., django-admin import_defense 2020")
+            print(
+                "Please pass a year along with the command, e.g., django-admin import_defense 2020"
+            )
 
     def handle(self, *args, **options):
         year = options.get("year", None)
