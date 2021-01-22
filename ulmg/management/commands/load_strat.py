@@ -208,7 +208,6 @@ class Command(BaseCommand):
                     print(obj)
                     obj.ls_is_mlb = True
                     obj.ls_ha = int(row['IMAG H'])
-                    obj.ls_er = int()
                     obj.ls_hra = int(row['IMAG HR'])
                     obj.ls_pbb = int(row['IMAG BB'])
                     obj.ls_pk = int(row['IMAG K'])
@@ -223,6 +222,7 @@ class Command(BaseCommand):
                     # obj.ls_gb_pct = Decimal()
                     # obj.ls_hr_fb = Decimal()
                     obj.ls_era = Decimal(row['IMAG ERA'])
+                    obj.ls_er = int((int(row['IMAG IP'])/9.0) * float(row['IMAG ERA']))
                     # obj.ls_fip = Decimal()
                     # obj.ls_xfip = Decimal()
                     # obj.ls_siera = Decimal()
