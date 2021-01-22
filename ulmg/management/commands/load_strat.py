@@ -25,10 +25,10 @@ class Command(BaseCommand):
         self.reset_players()
 
         self.get_hitters()
-        self.get_pitchers()
+        # self.get_pitchers()
 
-        # AGGREGATE LS BY TEAM
-        self.team_aggregates()
+        # # AGGREGATE LS BY TEAM
+        # self.team_aggregates()
 
     def team_aggregates(self):
         print("TEAM AGGREGATES")
@@ -152,7 +152,7 @@ class Command(BaseCommand):
 
         for row in rows:
             obj = utils.fuzzy_find_player(f"{row['FIRST']} {row['LAST']}")
-            if len(obj) == 1:
+            if len(obj) > 0:
                 obj = obj[0]
                 try:
                     print(obj)
@@ -186,7 +186,7 @@ class Command(BaseCommand):
 
         for row in rows:
             obj = utils.fuzzy_find_player(f"{row['FIRST']} {row['LAST']}")
-            if len(obj) == 1:
+            if len(obj) > 0:
                 obj = obj[0]
                 try:
                     """
