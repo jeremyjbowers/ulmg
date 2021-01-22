@@ -25,10 +25,10 @@ class Command(BaseCommand):
         self.reset_players()
 
         self.get_hitters()
-        # self.get_pitchers()
+        self.get_pitchers()
 
-        # # AGGREGATE LS BY TEAM
-        # self.team_aggregates()
+        # AGGREGATE LS BY TEAM
+        self.team_aggregates()
 
     def team_aggregates(self):
         print("TEAM AGGREGATES")
@@ -99,7 +99,6 @@ class Command(BaseCommand):
             set_pitchers(team)
             team.save()
 
-
     def reset_players(self):
         print("RESET")
         try:
@@ -143,11 +142,10 @@ class Command(BaseCommand):
         except:
             return False
 
-
     def get_hitters(self):
         print("GET: STRAT HITTERS FROM CSV")
 
-        with open('data/2021/strat_imagined_hit.csv', 'r') as readfile:
+        with open("data/2021/strat_imagined_hit.csv", "r") as readfile:
             rows = list(csv.DictReader(readfile))
 
         for row in rows:
@@ -157,21 +155,25 @@ class Command(BaseCommand):
                 try:
                     print(obj)
                     obj.ls_is_mlb = True
-                    obj.ls_ab = int(row['IMAG AB'])
-                    obj.ls_hits = int(row['IMAG H'])
-                    obj.ls_2b = int(row['IMAG 2B'])
-                    obj.ls_3b = int(row['IMAG 3B'])
-                    obj.ls_bb = int(row['IMAG BB'])
-                    obj.ls_k = int(row['IMAG K'])
+                    obj.ls_ab = int(row["IMAG AB"])
+                    obj.ls_hits = int(row["IMAG H"])
+                    obj.ls_2b = int(row["IMAG 2B"])
+                    obj.ls_3b = int(row["IMAG 3B"])
+                    obj.ls_bb = int(row["IMAG BB"])
+                    obj.ls_k = int(row["IMAG K"])
                     obj.ls_plate_appearances = int(obj.ls_ab + obj.ls_bb)
-                    obj.ls_hr = int(row['IMAG HR'])
-                    obj.ls_rbi = int(row['IMAG RBI'])
-                    obj.ls_sb = int(row['IMAG SB'])
-                    obj.ls_bb_pct = Decimal( (float(obj.ls_bb) / float(obj.ls_plate_appearances)) * 100.0 )
-                    obj.ls_k_pct = Decimal( (float(obj.ls_k) / float(obj.ls_plate_appearances)) * 100.0 )
-                    obj.ls_avg = Decimal(row['IMAG AVG'])
-                    obj.ls_obp = Decimal(row['IMAG OBP'])
-                    obj.ls_slg = Decimal(row['IMAG SLG'])
+                    obj.ls_hr = int(row["IMAG HR"])
+                    obj.ls_rbi = int(row["IMAG RBI"])
+                    obj.ls_sb = int(row["IMAG SB"])
+                    obj.ls_bb_pct = Decimal(
+                        (float(obj.ls_bb) / float(obj.ls_plate_appearances)) * 100.0
+                    )
+                    obj.ls_k_pct = Decimal(
+                        (float(obj.ls_k) / float(obj.ls_plate_appearances)) * 100.0
+                    )
+                    obj.ls_avg = Decimal(row["IMAG AVG"])
+                    obj.ls_obp = Decimal(row["IMAG OBP"])
+                    obj.ls_slg = Decimal(row["IMAG SLG"])
                     obj.ls_iso = Decimal(obj.ls_slg - obj.ls_avg)
                     obj.save()
 
@@ -181,7 +183,7 @@ class Command(BaseCommand):
     def get_pitchers(self):
         print("GET: STRAT PITCHERS FROM CSV")
 
-        with open('data/2021/strat_imagined_pitch.csv', 'r') as readfile:
+        with open("data/2021/strat_imagined_pitch.csv", "r") as readfile:
             rows = list(csv.DictReader(readfile))
 
         for row in rows:
@@ -207,13 +209,13 @@ class Command(BaseCommand):
                     """
                     print(obj)
                     obj.ls_is_mlb = True
-                    obj.ls_ha = int(row['IMAG H'])
-                    obj.ls_hra = int(row['IMAG HR'])
-                    obj.ls_pbb = int(row['IMAG BB'])
-                    obj.ls_pk = int(row['IMAG K'])
+                    obj.ls_ha = int(row["IMAG H"])
+                    obj.ls_hra = int(row["IMAG HR"])
+                    obj.ls_pbb = int(row["IMAG BB"])
+                    obj.ls_pk = int(row["IMAG K"])
                     # obj.ls_g = int()
-                    obj.ls_gs = int(row['IMAG GS'])
-                    obj.ls_ip = Decimal(row['IMAG IP'])
+                    obj.ls_gs = int(row["IMAG GS"])
+                    obj.ls_ip = Decimal(row["IMAG IP"])
                     obj.ls_k_9 = Decimal((obj.ls_pk * 9) / obj.ls_ip)
                     obj.ls_bb_9 = Decimal((obj.ls_pbb * 9) / obj.ls_ip)
                     obj.ls_hr_9 = Decimal((obj.ls_hra * 9) / obj.ls_ip)
@@ -221,8 +223,10 @@ class Command(BaseCommand):
                     # obj.ls_lob_pct = Decimal()
                     # obj.ls_gb_pct = Decimal()
                     # obj.ls_hr_fb = Decimal()
-                    obj.ls_era = Decimal(row['IMAG ERA'])
-                    obj.ls_er = int((int(row['IMAG IP'])/9.0) * float(row['IMAG ERA']))
+                    obj.ls_era = Decimal(row["IMAG ERA"])
+                    obj.ls_er = int(
+                        (int(row["IMAG IP"]) / 9.0) * float(row["IMAG ERA"])
+                    )
                     # obj.ls_fip = Decimal()
                     # obj.ls_xfip = Decimal()
                     # obj.ls_siera = Decimal()
