@@ -19,7 +19,7 @@ class Command(BaseCommand):
         for p in models.Player.objects.filter(ls_is_mlb=True, is_carded=False):
             p.is_carded = True
             print(p)
-            if not options.get('dry_run', None):
+            if not options.get("dry_run", None):
                 p.save()
 
     def load_hitters(self, *args, **options):
@@ -31,7 +31,7 @@ class Command(BaseCommand):
                     p = models.Player.objects.get(fg_id=row["playerid"])
                     p.cs_pa = row["PA"]
                     print(p)
-                    if not options.get('dry_run', None):
+                    if not options.get("dry_run", None):
                         p.save()
                 except:
                     pass
@@ -47,7 +47,7 @@ class Command(BaseCommand):
                     p.cs_gp = row["G"]
                     p.cs_ip = row["IP"]
                     print(p)
-                    if not options.get('dry_run', None):
+                    if not options.get("dry_run", None):
                         p.save()
                 except:
                     pass
@@ -61,7 +61,7 @@ class Command(BaseCommand):
         for p in models.Player.objects.filter(level="B", position="P", cs_st__gte=21):
             p.level = "A"
             print(p)
-            if not options.get('dry_run', None):
+            if not options.get("dry_run", None):
                 p.save()
 
         print("--------- RELIEVERS B > A ---------")
@@ -70,7 +70,7 @@ class Command(BaseCommand):
         ):
             p.level = "A"
             print(p)
-            if not options.get('dry_run', None):
+            if not options.get("dry_run", None):
                 p.save()
         print("--------- SWINGMEN B > A ---------")
         for p in models.Player.objects.filter(
@@ -78,21 +78,21 @@ class Command(BaseCommand):
         ):
             p.level = "A"
             print(p)
-            if not options.get('dry_run', None):
+            if not options.get("dry_run", None):
                 p.save()
 
         print("--------- HITTERS B > A ---------")
         for p in models.Player.objects.filter(level="B", cs_pa__gte=300):
             p.level = "A"
             print(p)
-            if not options.get('dry_run', None):
+            if not options.get("dry_run", None):
                 p.save()
 
         print("--------- STARTERS A > V ---------")
         for p in models.Player.objects.filter(level="A", position="P", cs_st__gte=126):
             p.level = "V"
             print(p)
-            if not options.get('dry_run', None):
+            if not options.get("dry_run", None):
                 p.save()
 
         print("--------- RELIEVERS A > V ---------")
@@ -101,7 +101,7 @@ class Command(BaseCommand):
         ):
             p.level = "V"
             print(p)
-            if not options.get('dry_run', None):
+            if not options.get("dry_run", None):
                 p.save()
 
         print("--------- SWINGMEN A > V ---------")
@@ -110,19 +110,19 @@ class Command(BaseCommand):
         ):
             p.level = "V"
             print(p)
-            if not options.get('dry_run', None):
+            if not options.get("dry_run", None):
                 p.save()
 
         print("--------- HITTERS A > V ---------")
         for p in models.Player.objects.filter(level="A", cs_pa__gte=2500):
             p.level = "V"
             print(p)
-            if not options.get('dry_run', None):
+            if not options.get("dry_run", None):
                 p.save()
 
     def reset_rosters(self, *args, **options):
         print(".... resetting rosters")
-        if not options.get('dry_run', None):
+        if not options.get("dry_run", None):
             models.Player.objects.filter(is_mlb_roster=True).update(is_mlb_roster=False)
             models.Player.objects.filter(is_aaa_roster=True).update(is_aaa_roster=False)
             models.Player.objects.filter(is_1h_c=True).update(is_1h_c=False)
