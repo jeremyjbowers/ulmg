@@ -131,7 +131,7 @@ class Command(BaseCommand):
             models.Player.objects.filter(is_reserve=True).update(is_reserve=False)
 
     def handle(self, *args, **options):
-        # self.reset_rosters()
-        # self.set_carded()
+        self.reset_rosters()
+        self.set_carded()
         self.load_career_stats()
         self.set_levels(dry_run=True)
