@@ -13,18 +13,18 @@ import ujson as json
 from ulmg import models, utils
 
 
-def prospect_rating_list(request, year):
+def prospect_ranking_list(request, year):
     context = utils.build_context(request)
     context['year'] = year
-    context['ratings'] = models.ProspectRating.objects.filter(year=year).order_by('avg')
+    context['rankings'] = models.ProspectRating.objects.filter(year=year).order_by('avg')
     team_score_dict = {a.abbreviation: 0 for a in models.Team.objects.all()}
-    for r in context['ratings']:
+    for r in context['rankings']:
         if r.player.team:
             score = int(102.0-float(r.avg))
             team_score_dict[r.player.team.abbreviation] += score
 
     context['team_scores'] = sorted([{"team": k, "score": v} for k,v in team_score_dict.items()], key=lambda x:x['score'], reverse=True)
-    return render(request, "prospect_rating_list.html", context)
+    return render(request, "prospect_ranking_list.html", context)
 
 
 def bowers_aa(request):
