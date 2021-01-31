@@ -836,3 +836,25 @@ class ScoutingReport(BaseModel):
         self.set_season()
 
         super().save(*args, **kwargs)
+
+
+class ProspectRating(BaseModel):
+    year = models.CharField(max_length=4)
+    player = models.ForeignKey(Player, on_delete=models.SET_NULL, null=True)
+
+    skew = models.DecimalField(max_digits=4, decimal_places=1, blank=True, null=True)
+    med = models.DecimalField(max_digits=4, decimal_places=1, blank=True, null=True)
+    avg = models.DecimalField(max_digits=4, decimal_places=1, blank=True, null=True)
+
+    law = models.IntegerField(blank=True, null=True)
+    ba = models.IntegerField(blank=True, null=True)
+    bp = models.IntegerField(blank=True, null=True)
+    mlb = models.IntegerField(blank=True, null=True)
+    fg = models.IntegerField(blank=True, null=True)
+    p365 = models.IntegerField(blank=True, null=True)
+    plive = models.IntegerField(blank=True, null=True)
+    p1500 = models.IntegerField(blank=True, null=True)
+    ftrax = models.IntegerField(blank=True, null=True)
+
+    def __unicode__(self):
+        return f"{self.year}: Prospect ratings for {self.player}"

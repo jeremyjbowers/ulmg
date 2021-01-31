@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% load ulmg_tags %}
+
+{% block content %}
+
+<div class="columns"><div class="column">
+    <h1 class="title is-2">Top systems</h1>
+
+    <p>For each prospect rating, teams earns 102 points minus the player's average ranking across all rankers. For example, if a player averages a rank of 1.0, he is worth 101 points. If a player averages a rank of 101, he is worth 1 point.</p>
+
+    <table class="table is-fullwidth">
+        <tr>
+            {% for team in team_scores %}
+            <th><a href="/teams/{{ team.team }}/">{{ team.team }}</a></th>
+            {% endfor %}
+        </tr>
+        <tr>
+            {% for team in team_scores %}
+            <td>{{ team.score }}</td>
+            {% endfor %}
+        </tr>
+    </table>
+
+    <h1 class="title is-2">{{ year }} rankings</h1>
+    <table class="table is-fullwidth" data-sortable>
+        <thead>
+        <tr>
+            <th data-sortable-type="alpha">player</th>
+            <th data-sortable-type="alpha">team</th>
+            <th data-sortable-type="numeric">avg</th>
+            <th data-sortable-type="numeric">ba</th>
+            <th data-sortable-type="numeric">bp</th>
+            <th data-sortable-type="numeric">mlb</th>
+            <th data-sortable-type="numeric">law</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for r in ratings %}
+        <tr>
+            <td class="left" data-value="{{ r.player.name }}"><a href="/players/{{ r.player.id }}/">{{ r.player.name }}</a></td>
+            <td data-value="{% if r.player.team %}{{ r.player.team.abbreviation }}{% else %}zzz{% endif %}">{% if r.player.team %} <a href="/teams/{{ r.player.team.abbreviation }}/">{{ r.player.team.abbreviation }}</a>{% endif %}</td>
+            <td data-value="{{ r.avg|default_if_none:"999" }}">{{ r.avg }}</td>
+            <td data-value="{{ r.ba|default_if_none:"999" }}">{{ r.ba|default_if_none:"-" }}</td>
+            <td data-value="{{ r.bp|default_if_none:"999" }}">{{ r.bp|default_if_none:"-" }}</td>
+            <td data-value="{{ r.mlb|default_if_none:"999" }}">{{ r.mlb|default_if_none:"-" }}</td>
+            <td data-value="{{ r.law|default_if_none:"999" }}">{{ r.law|default_if_none:"-" }}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+</div>
+{% endblock %}
