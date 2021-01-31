@@ -35,7 +35,7 @@
         </tr>
         </thead>
         <tbody>
-        {% for r in ratings %}
+        {% for r in rankings %}
         <tr>
             <td class="left" data-value="{{ r.player.name }}"><a href="/players/{{ r.player.id }}/">{{ r.player.name }}</a></td>
             <td data-value="{% if r.player.team %}{{ r.player.team.abbreviation }}{% else %}zzz{% endif %}">{% if r.player.team %} <a href="/teams/{{ r.player.team.abbreviation }}/">{{ r.player.team.abbreviation }}</a>{% endif %}</td>
