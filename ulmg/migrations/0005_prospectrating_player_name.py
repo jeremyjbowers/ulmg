@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('ulmg', '0004_prospectrating_rank_type'),
+        ("ulmg", "0004_prospectrating_rank_type"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='prospectrating',
-            name='player_name',
+            model_name="prospectrating",
+            name="player_name",
             field=models.CharField(blank=True, max_length=255, null=True),
         ),
     ]

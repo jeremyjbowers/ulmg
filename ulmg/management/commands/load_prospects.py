@@ -15,7 +15,6 @@ from ulmg import utils
 
 
 class Command(BaseCommand):
-
     def int_or_null(self, possible_int):
         try:
             return int(possible_int)
@@ -28,25 +27,23 @@ class Command(BaseCommand):
 
         for row in rows:
             row = dict(row)
-            p = utils.fuzzy_find_player(row['player'])
+            p = utils.fuzzy_find_player(row["player"])
             if len(p) > 0:
                 p = p[0]
             else:
                 p = None
 
             pr, created = models.ProspectRating.objects.get_or_create(
-                year=2021,
-                player=p,
-                player_name=row['player']
+                year=2021, player=p, player_name=row["player"]
             )
 
-            pr.avg = row['avg']
-            pr.med = row['med']
-            pr.mlb = self.int_or_null(row['mlb'])
-            pr.ba = self.int_or_null(row['ba'])
-            pr.plive = self.int_or_null(row['plive'])
-            pr.p365 = self.int_or_null(row['p365'])
-            pr.fg = self.int_or_null(row['fg'])
+            pr.avg = row["avg"]
+            pr.med = row["med"]
+            pr.mlb = self.int_or_null(row["mlb"])
+            pr.ba = self.int_or_null(row["ba"])
+            pr.plive = self.int_or_null(row["plive"])
+            pr.p365 = self.int_or_null(row["p365"])
+            pr.fg = self.int_or_null(row["fg"])
 
             pr.rank_type = "top-draft"
 
@@ -58,33 +55,29 @@ class Command(BaseCommand):
 
         for row in rows:
             row = dict(row)
-            p = utils.fuzzy_find_player(row['player'])
+            p = utils.fuzzy_find_player(row["player"])
             if len(p) > 0:
                 p = p[0]
             else:
                 p = None
 
             pr, created = models.ProspectRating.objects.get_or_create(
-                year=2021,
-                player=p,
-                player_name=row['player']
-            )                  
+                year=2021, player=p, player_name=row["player"]
+            )
 
-            pr.skew = row['skew']
-            pr.avg = row['avg']
-            pr.med = row['med']
-            pr.mlb = self.int_or_null(row['mlb'])
-            pr.ba = self.int_or_null(row['ba'])
-            pr.bp = self.int_or_null(row['bp'])
-            pr.law = self.int_or_null(row['law'])
+            pr.skew = row["skew"]
+            pr.avg = row["avg"]
+            pr.med = row["med"]
+            pr.mlb = self.int_or_null(row["mlb"])
+            pr.ba = self.int_or_null(row["ba"])
+            pr.bp = self.int_or_null(row["bp"])
+            pr.law = self.int_or_null(row["law"])
 
             pr.rank_type = "top-100"
 
             pr.save()
 
-
     def handle(self, *args, **options):
         models.ProspectRating.objects.all().delete()
         self.load_top_100()
         self.load_top_draft()
-

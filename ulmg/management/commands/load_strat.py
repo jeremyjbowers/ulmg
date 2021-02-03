@@ -23,10 +23,8 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         self.season = settings.CURRENT_SEASON
         self.reset_players()
-
         self.get_hitters()
         self.get_pitchers()
-
         # AGGREGATE LS BY TEAM
         self.team_aggregates()
 
@@ -101,46 +99,54 @@ class Command(BaseCommand):
 
     def reset_players(self):
         print("RESET")
-        try:
-            models.Player.objects.update(
-                ls_is_mlb=False,
-                ls_hr=0,
-                ls_sb=0,
-                ls_runs=0,
-                ls_rbi=0,
-                ls_avg=0,
-                ls_obp=0,
-                ls_slg=0,
-                ls_babip=0,
-                ls_wrc_plus=0,
-                ls_plate_appearances=0,
-                ls_iso=0,
-                ls_k_pct=0,
-                ls_bb_pct=0,
-                ls_woba=0,
-                ls_g=0,
-                ls_gs=0,
-                ls_ip=0,
-                ls_k_9=0,
-                ls_bb_9=0,
-                ls_hr_9=0,
-                ls_lob_pct=0,
-                ls_gb_pct=0,
-                ls_hr_fb=0,
-                ls_era=0,
-                ls_fip=0,
-                ls_xfip=0,
-                ls_siera=0,
-                ls_xavg=0,
-                ls_xwoba=0,
-                ls_xslg=0,
-                ls_xavg_diff=0,
-                ls_xwoba_diff=0,
-                ls_xslg_diff=0,
-            )
-            return True
-        except:
-            return False
+        models.Player.objects.update(
+            ls_is_mlb=False,
+            is_carded=False,
+            ls_hits=0,
+            ls_2b=0,
+            ls_3b=0,
+            ls_ab=0,
+            ls_hr=0,
+            ls_sb=0,
+            ls_runs=0,
+            ls_rbi=0,
+            ls_k=0,
+            ls_bb=0,
+            ls_avg=Decimal(0.0),
+            ls_obp=Decimal(0.0),
+            ls_slg=Decimal(0.0),
+            ls_babip=Decimal(0.0),
+            ls_wrc_plus=0,
+            ls_plate_appearances=0,
+            ls_iso=Decimal(0.0),
+            ls_k_pct=Decimal(0.0),
+            ls_bb_pct=Decimal(0.0),
+            ls_woba=Decimal(0.0),
+            ls_g=0,
+            ls_gs=0,
+            ls_ip=Decimal(0.0),
+            ls_pk=0,
+            ls_pbb=0,
+            ls_ha=0,
+            ls_hra=0,
+            ls_er=0,
+            ls_k_9=Decimal(0.0),
+            ls_bb_9=Decimal(0.0),
+            ls_hr_9=Decimal(0.0),
+            ls_lob_pct=Decimal(0.0),
+            ls_gb_pct=Decimal(0.0),
+            ls_hr_fb=Decimal(0.0),
+            ls_era=Decimal(0.0),
+            ls_fip=Decimal(0.0),
+            ls_xfip=Decimal(0.0),
+            ls_siera=Decimal(0.0),
+            ls_xavg=Decimal(0.0),
+            ls_xwoba=Decimal(0.0),
+            ls_xslg=Decimal(0.0),
+            ls_xavg_diff=Decimal(0.0),
+            ls_xwoba_diff=Decimal(0.0),
+            ls_xslg_diff=Decimal(0.0)
+        )
 
     def get_hitters(self):
         print("GET: STRAT HITTERS FROM CSV")
@@ -155,25 +161,34 @@ class Command(BaseCommand):
                 try:
                     print(obj)
                     obj.ls_is_mlb = True
-                    obj.ls_ab = int(row["IMAG AB"])
-                    obj.ls_hits = int(row["IMAG H"])
-                    obj.ls_2b = int(row["IMAG 2B"])
-                    obj.ls_3b = int(row["IMAG 3B"])
-                    obj.ls_bb = int(row["IMAG BB"])
-                    obj.ls_k = int(row["IMAG K"])
-                    obj.ls_plate_appearances = int(obj.ls_ab + obj.ls_bb)
-                    obj.ls_hr = int(row["IMAG HR"])
-                    obj.ls_rbi = int(row["IMAG RBI"])
-                    obj.ls_sb = int(row["IMAG SB"])
+                    obj.is_carded = True
+                    obj.ls_ab = obj.ls_ab + int(row["IMAG AB"])
+                    obj.ls_hits = obj.ls_hits + int(row["IMAG H"])
+                    obj.ls_2b = obj.ls_2b + int(row["IMAG 2B"])
+                    obj.ls_3b = obj.ls_3b + int(row["IMAG 3B"])
+                    obj.ls_bb = obj.ls_bb + int(row["IMAG BB"])
+                    obj.ls_k = obj.ls_k + int(row["IMAG K"])
+                    obj.ls_plate_appearances = int(
+                        obj.ls_ab + obj.ls_bb
+                    )
+                    obj.ls_hr = obj.ls_hr + int(row["IMAG HR"])
+                    obj.ls_rbi = obj.ls_rbi + int(row["IMAG RBI"])
+                    obj.ls_sb = obj.ls_sb + int(row["IMAG SB"])
                     obj.ls_bb_pct = Decimal(
                         (float(obj.ls_bb) / float(obj.ls_plate_appearances)) * 100.0
                     )
                     obj.ls_k_pct = Decimal(
                         (float(obj.ls_k) / float(obj.ls_plate_appearances)) * 100.0
                     )
-                    obj.ls_avg = Decimal(row["IMAG AVG"])
-                    obj.ls_obp = Decimal(row["IMAG OBP"])
-                    obj.ls_slg = Decimal(row["IMAG SLG"])
+                    obj.ls_avg = Decimal((obj.ls_hits / float(obj.ls_ab)))
+                    obj.ls_obp = Decimal(((obj.ls_bb + obj.ls_hits)/ float(obj.ls_plate_appearances)))
+                    tb = (
+                        (obj.ls_hits - obj.ls_2b - obj.ls_3b - obj.ls_hr)
+                        + (2 * obj.ls_2b)
+                        + (3 * obj.ls_3b)
+                        + (4 * obj.ls_hr)
+                    )
+                    obj.ls_slg = Decimal((tb / float(obj.ls_ab)))
                     obj.ls_iso = Decimal(obj.ls_slg - obj.ls_avg)
                     obj.save()
 
@@ -209,13 +224,14 @@ class Command(BaseCommand):
                     """
                     print(obj)
                     obj.ls_is_mlb = True
-                    obj.ls_ha = int(row["IMAG H"])
-                    obj.ls_hra = int(row["IMAG HR"])
-                    obj.ls_pbb = int(row["IMAG BB"])
-                    obj.ls_pk = int(row["IMAG K"])
+                    obj.is_carded = True
+                    obj.ls_ha = obj.ls_ha + int(row["IMAG H"])
+                    obj.ls_hra = obj.ls_hra + int(row["IMAG HR"])
+                    obj.ls_pbb = obj.ls_pbb + int(row["IMAG BB"])
+                    obj.ls_pk = obj.ls_pk + int(row["IMAG K"])
                     # obj.ls_g = int()
-                    obj.ls_gs = int(row["IMAG GS"])
-                    obj.ls_ip = Decimal(row["IMAG IP"])
+                    obj.ls_gs = obj.ls_gs + int(row["IMAG GS"])
+                    obj.ls_ip = obj.ls_ip + Decimal(row["IMAG IP"])
                     obj.ls_k_9 = Decimal((obj.ls_pk * 9) / obj.ls_ip)
                     obj.ls_bb_9 = Decimal((obj.ls_pbb * 9) / obj.ls_ip)
                     obj.ls_hr_9 = Decimal((obj.ls_hra * 9) / obj.ls_ip)
@@ -223,10 +239,14 @@ class Command(BaseCommand):
                     # obj.ls_lob_pct = Decimal()
                     # obj.ls_gb_pct = Decimal()
                     # obj.ls_hr_fb = Decimal()
-                    obj.ls_era = Decimal(row["IMAG ERA"])
-                    obj.ls_er = int(
+                    # obj.ls_era = Decimal(row["IMAG ERA"])
+                    obj.ls_er = obj.ls_er + int(
                         (int(row["IMAG IP"]) / 9.0) * float(row["IMAG ERA"])
                     )
+                    try:
+                        obj.ls_era = Decimal((9 * obj.ls_er) / float(obj.ls_ip))
+                    except:
+                        obj.ls_era = Decimal(999)
                     # obj.ls_fip = Decimal()
                     # obj.ls_xfip = Decimal()
                     # obj.ls_siera = Decimal()
