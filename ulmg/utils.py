@@ -11,7 +11,7 @@ from ulmg import models
 from django.contrib.postgres.search import TrigramSimilarity
 
 
-def fuzzy_find_player(name_fragment, score=0.5):
+def fuzzy_find_player(name_fragment, score=0.7):
     return (
         models.Player.objects.annotate(
             similarity=TrigramSimilarity("name", name_fragment)

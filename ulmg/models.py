@@ -841,6 +841,7 @@ class ScoutingReport(BaseModel):
 class ProspectRating(BaseModel):
     year = models.CharField(max_length=4)
     player = models.ForeignKey(Player, on_delete=models.SET_NULL, null=True)
+    player_name = models.CharField(max_length=255, null=True, blank=True)
 
     skew = models.DecimalField(max_digits=4, decimal_places=1, blank=True, null=True)
     med = models.DecimalField(max_digits=4, decimal_places=1, blank=True, null=True)
@@ -855,6 +856,8 @@ class ProspectRating(BaseModel):
     plive = models.IntegerField(blank=True, null=True)
     p1500 = models.IntegerField(blank=True, null=True)
     ftrax = models.IntegerField(blank=True, null=True)
+
+    rank_type = models.CharField(max_length=255, null=True, blank=True)
 
     def __unicode__(self):
         return f"{self.year}: Prospect ratings for {self.player}"
