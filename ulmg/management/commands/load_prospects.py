@@ -15,39 +15,76 @@ from ulmg import utils
 
 
 class Command(BaseCommand):
-    def handle(self, *args, **options):
 
-        def int_or_null(possible_int):
-            try:
-                return int(possible_int)
-            except:
-                return None
+    def int_or_null(self, possible_int):
+        try:
+            return int(possible_int)
+        except:
+            return None
 
-        models.ProspectRating.objects.all().delete()
+    def load_top_draft(self):
+        with open("data/2021/top_draft_prospects.csv", "r") as readfile:
+            rows = list(csv.DictReader(readfile))
 
+        for row in rows:
+            row = dict(row)
+            p = utils.fuzzy_find_player(row['player'])
+            if len(p) > 0:
+                p = p[0]
+            else:
+                p = None
+
+            pr, created = models.ProspectRating.objects.get_or_create(
+                year=2021,
+                player=p,
+                player_name=row['player']
+            )
+
+            pr.avg = row['avg']
+            pr.med = row['med']
+            pr.mlb = self.int_or_null(row['mlb'])
+            pr.ba = self.int_or_null(row['ba'])
+            pr.plive = self.int_or_null(row['plive'])
+            pr.p365 = self.int_or_null(row['p365'])
+            pr.fg = self.int_or_null(row['fg'])
+
+            pr.rank_type = "top-draft"
+
+            pr.save()
+
+    def load_top_100(self):
         with open("data/2021/top_100_prospects.csv", "r") as readfile:
             rows = list(csv.DictReader(readfile))
 
         for row in rows:
             row = dict(row)
             p = utils.fuzzy_find_player(row['player'])
-            if len(p) > 0 and "Luis Garcia" not in row['player']:
+            if len(p) > 0:
                 p = p[0]
-
-                pr, created = models.ProspectRating.objects.get_or_create(
-                    year=2021,
-                    player=p
-                )                    
-
-                pr.skew = row['skew']
-                pr.avg = row['avg']
-                pr.med = row['med']
-                pr.mlb = int_or_null(row['mlb'])
-                pr.ba = int_or_null(row['ba'])
-                pr.bp = int_or_null(row['bp'])
-                pr.law = int_or_null(row['law'])
-
-                pr.save()
-
             else:
-                print(row)
+                p = None
+
+            pr, created = models.ProspectRating.objects.get_or_create(
+                year=2021,
+                player=p,
+                player_name=row['player']
+            )                  
+
+            pr.skew = row['skew']
+            pr.avg = row['avg']
+            pr.med = row['med']
+            pr.mlb = self.int_or_null(row['mlb'])
+            pr.ba = self.int_or_null(row['ba'])
+            pr.bp = self.int_or_null(row['bp'])
+            pr.law = self.int_or_null(row['law'])
+
+            pr.rank_type = "top-100"
+
+            pr.save()
+
+
+    def handle(self, *args, **options):
+        models.ProspectRating.objects.all().delete()
+        self.load_top_100()
+        self.load_top_draft()
+

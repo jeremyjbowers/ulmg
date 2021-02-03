@@ -16,12 +16,15 @@ from ulmg import models, utils
 def prospect_ranking_list(request, year):
     context = utils.build_context(request)
     context['year'] = year
-    context['rankings'] = models.ProspectRating.objects.filter(year=year).order_by('avg')
+    context['top_100'] = models.ProspectRating.objects.filter(year=year, rank_type="top-100").order_by('avg')
+    context['top_draft'] = models.ProspectRating.objects.filter(year=year, rank_type="top-draft").order_by('avg')
     team_score_dict = {a.abbreviation: 0 for a in models.Team.objects.all()}
-    for r in context['rankings']:
-        if r.player.team:
-            score = int(102.0-float(r.avg))
-            team_score_dict[r.player.team.abbreviation] += score
+    for ranking_type in [context['top_100'], context['top_draft']]:
+        for r in ranking_type:
+            if r.player:
+                if r.player.team:
+                    score = int(102.0-float(r.avg))
+                    team_score_dict[r.player.team.abbreviation] += score
 
     context['team_scores'] = sorted([{"team": k, "score": v} for k,v in team_score_dict.items()], key=lambda x:x['score'], reverse=True)
     return render(request, "prospect_ranking_list.html", context)
