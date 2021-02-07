@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block content %}
+{% include "includes/my/team_topper.html" %}
+
+<style>
+    #live-throb {
+        width: 10px;
+        height: 10px;
+        border-radius: 10px;
+        background-color: red;
+        animation: glow 1s infinite alternate;
+    }
+
+    @keyframes glow {
+    from {
+        box-shadow: 0 0 2px -2px red;
+    } to {
+            box-shadow: 0 0 2px 2px red;
+        }
+    }
+</style>
+
+<div class="tabs is-centered is-boxed is-large">
+    <ul>
+        <li><a href="/my/team/">Roster{% if num_owned %} ({{ num_owned }}){% endif %}</a></li>
+        <li class="is-active"><a href="#">Trades & picks</a></li>
+        {% if live_tab %}<li><a href="/my/team/live/"><span id="live-throb" style="color: red; font-size: 10px;"></span> &nbsp;Live stats</a></li>{% endif %}
+    </ul>
+</div>
+
+<div class="columns">
+    <div class="column">
+        {% regroup trades by trade.season as year_trades %}
+        {% for year in year_trades %}
+        <h1 class="title is-2">{{ year.grouper }} trades ({{ year.list|length }})</h1>
+        <div class="content">
+            <table class="table">
+                <tr>
+                    <th width="125px;">Date</th>
+                    <th width="75px;">Team</th>
+                    <th>Received</th>
+                    <th>Sent</th>
+                </tr>
+                {% for t in year.list %}
+                <tr>
+                    <td style="text-align:left!important;">{{ t.trade.date }}</td>
+                    <td>{% for r in t.trade.reciepts %}{% if r.team != t.team %}<a href="/teams/{{ r.team.abbreviation|lower }}/other/">{{ r.team }}</a>{% endif %}{% endfor %}</td>
+                    <td style="text-align:left!important;">{{ t.summary_html|safe }}</td>
+                    <td style="text-align:left!important;">{% for r in t.trade.reciepts %}{% if r.team != t.team %}{{ r.summary_html|safe }}{% endif %}{% endfor %}</td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+<div class="columns">
+    <div class="column">
+        {% regroup picks by year as year_picks %}
+        {% for year in year_picks %}
+        <div class="content">
+            <h1 class="title is-2">{{ year.grouper }}</h1>
+            <div class="columns">
+            {% regroup year.list by season as season_picks %}
+            {% for season in season_picks %}
+                <div class="column">
+                    <h1 class="title is-3">{{ season.grouper|capfirst }} draft picks ({{ season.list|length }})</h1>
+                    {% regroup season.list by draft_type as type_picks %}
+                    {% for pick in type_picks %}
+                    {% if pick.grouper == "aa"%}
+                    <h1 class="title is-4">{{ pick.grouper|upper }} draft</h1>
+                    {% else %}
+                    <h1 class="title is-4">{{ pick.grouper|title }} draft</h1>
+                    {% endif %}
+                    <table class="table is-fullwidth">
+                        <tr>
+                            <th>Round</th>
+                            <th>Pick</th>
+                            <th>Overall</th>
+                            <th>Via?</th>
+                            <th></th>
+                            <th>Player</th>
+                            <th></th>
+                            <th></th>
+                        </tr>
+                    {% for p in pick.list %}
+                        <tr>
+                            <td>{{ p.draft_round }}</td>
+                            <td>{{ p.pick_number|default_if_none:"-" }}</td>
+                            <td>{{ p.overall_pick_number|default_if_none:"-" }}</td>
+                            <td>{% if p.original_team != p.team %}{{ p.original_team }}{% else %}-{% endif %}</td>
+                            <td>{% if p.player %}{{ p.player.position }}{% else %}{% endif %}</td>
+                            <td class="left">{% if p.player %}<a class="has-text-weight-semibold" href="/players/{{ p.player.id }}/">{{ p.player.name }}</a>{% elif p.player_name %}{{ p.player_name }}{% else %}{% if p.skipped %}<em>skipped</em>{% else %}-{% endif %}{% endif %}</td>
+                            <td class="left">
+                            {% if p.player %}
+                                <a href="/admin/ulmg/player/{{ p.player.id }}/change/">&#x270E; &Gt;</a>
+                                {% if p.player.bref_url %}<a class="has-text-weight-light" target="_blank" href="{{ p.player.bref_url }}">BBR &Gt;</a>{% endif %}
+                                {% if p.player.fg_url %}<a class="has-text-weight-light" target="_blank" href="{{ p.player.fg_url }}">FG &Gt;</a>{% endif %}
+                            {% endif %}
+                            </td>
+                            <td>{% if p.player %}{{ p.player.level }}{% else %}{% endif %}</td>
+                        </tr>
+                    {% endfor %}
+                    </table>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+        </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+{% endblock %}}

@@ -15,7 +15,7 @@
             </div>
         </div>
         <a class="navbar-item" href="https://ulmg.wordpress.com/category/draft/" target="_blank">Archived drafts</a>
-        <a class="navbar-item" href="/prospect-rankings/2021/" target="_blank">Prospect rankings</a>
+        <a class="navbar-item" href="/prospect-rankings/2021/">Prospects</a>
         <a class="navbar-item" href="/{% if value %}?value=true{% endif %}">Search</a>
         <div class="navbar-item has-dropdown is-hoverable">
             <a class="navbar-link">Teams</a>
@@ -26,5 +26,19 @@
                 </div>
             </div>
         </div>
+
+        <div class="navbar-end">
+            <div class="navbar-item">
+            {% if user.is_authenticated %}
+                <div class="buttons">
+                    <a class="button is-white" href="/my/team/"><i class="fas fa-user-circle"></i>&nbsp;&nbsp;{{ user.username }}</a>
+                    <a class="button is-light" href="/accounts/logout/">Log out</a>
+                </div>
+            {% else %}
+                <div class="buttons"><a class="button is-light" href="/accounts/login/">Log in</a></div>
+            {% endif %}
+            </div>
+        </div>
+
     </div>
 </nav>

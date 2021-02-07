@@ -74,6 +74,11 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",},
 ]
 
+# LOGIN STUFF
+LOGIN_REDIRECT_URL = "/my/team/"
+LOGIN_URL="/accounts/login/"
+LOGOUT_REDIRECT_URL = "/"
+
 STATIC_URL = "/static/"
 
 """

@@ -8,6 +8,8 @@ from django.db.models import Count, Avg, Sum, Max, Min, Q
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.http import JsonResponse
 from django.conf import settings
+from django.contrib.auth.decorators import login_required
+
 import ujson as json
 
 from ulmg import models, utils

@@ -43,7 +43,9 @@ class Team(BaseModel):
     abbreviation = models.CharField(max_length=3)
     nickname = models.CharField(max_length=255)
     division = models.CharField(max_length=255, null=True, blank=True)
-    owner_obj = models.ForeignKey(Owner, on_delete=models.SET_NULL, null=True, blank=True)
+    owner_obj = models.ForeignKey(
+        Owner, on_delete=models.SET_NULL, null=True, blank=True
+    )
     owner = models.CharField(max_length=255, null=True, blank=True)
     owner_email = models.CharField(max_length=255, null=True, blank=True)
     championships = ArrayField(models.CharField(max_length=4), blank=True, null=True)
@@ -165,7 +167,9 @@ class Player(BaseModel):
 
     # PROSPECT STUFF
     is_prospect = models.BooleanField(default=False)
-    prospect_rating_avg = models.DecimalField(max_digits=4, decimal_places=1, blank=True, null=True)
+    prospect_rating_avg = models.DecimalField(
+        max_digits=4, decimal_places=1, blank=True, null=True
+    )
 
     # BOWERS DRAFT PREP
     b_important = models.BooleanField(default=False)

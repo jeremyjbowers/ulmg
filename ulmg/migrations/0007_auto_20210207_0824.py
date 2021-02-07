@@ -6,13 +6,15 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('ulmg', '0006_auto_20210207_0821'),
+        ("ulmg", "0006_auto_20210207_0821"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='player',
-            name='prospect_rating_avg',
-            field=models.DecimalField(blank=True, decimal_places=1, max_digits=4, null=True),
+            model_name="player",
+            name="prospect_rating_avg",
+            field=models.DecimalField(
+                blank=True, decimal_places=1, max_digits=4, null=True
+            ),
         ),
     ]

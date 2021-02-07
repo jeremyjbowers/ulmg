@@ -145,7 +145,7 @@ class Command(BaseCommand):
             ls_xslg=Decimal(0.0),
             ls_xavg_diff=Decimal(0.0),
             ls_xwoba_diff=Decimal(0.0),
-            ls_xslg_diff=Decimal(0.0)
+            ls_xslg_diff=Decimal(0.0),
         )
 
     def get_hitters(self):
@@ -168,9 +168,7 @@ class Command(BaseCommand):
                     obj.ls_3b = obj.ls_3b + int(row["IMAG 3B"])
                     obj.ls_bb = obj.ls_bb + int(row["IMAG BB"])
                     obj.ls_k = obj.ls_k + int(row["IMAG K"])
-                    obj.ls_plate_appearances = int(
-                        obj.ls_ab + obj.ls_bb
-                    )
+                    obj.ls_plate_appearances = int(obj.ls_ab + obj.ls_bb)
                     obj.ls_hr = obj.ls_hr + int(row["IMAG HR"])
                     obj.ls_rbi = obj.ls_rbi + int(row["IMAG RBI"])
                     obj.ls_sb = obj.ls_sb + int(row["IMAG SB"])
@@ -181,7 +179,9 @@ class Command(BaseCommand):
                         (float(obj.ls_k) / float(obj.ls_plate_appearances)) * 100.0
                     )
                     obj.ls_avg = Decimal((obj.ls_hits / float(obj.ls_ab)))
-                    obj.ls_obp = Decimal(((obj.ls_bb + obj.ls_hits)/ float(obj.ls_plate_appearances)))
+                    obj.ls_obp = Decimal(
+                        ((obj.ls_bb + obj.ls_hits) / float(obj.ls_plate_appearances))
+                    )
                     tb = (
                         (obj.ls_hits - obj.ls_2b - obj.ls_3b - obj.ls_hr)
                         + (2 * obj.ls_2b)

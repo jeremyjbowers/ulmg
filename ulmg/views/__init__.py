@@ -1,1 +1,1 @@
-from ulmg.views import site, api, csv
+from ulmg.views import site, api, csv, my

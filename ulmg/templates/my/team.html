@@ -2,8 +2,32 @@
 
 {% load ulmg_tags %}
 
+{% block prenav %}
+        {% if protect_tab or roster_tab %}{% include "includes/roster_status.html" %}{% endif %}
+{% endblock %}
+
 {% block content %}
-{% include 'includes/team_topper.html' %}
+{% include "includes/my/team_topper.html" %}
+
+<style>
+    p.level-heading {
+        font-size:20px;
+    }
+    p.level-title {
+        font-size:32px;
+        font-weight:bold;
+    }
+</style>
+<nav class="level is-mobile">
+    {% for level in level_distribution %}
+    <div class="level-item has-text-centered">
+        <div>
+        <p class="level-heading heading">{% if level.level_order == 0 %}B-LEVEL{% elif level.level_order == 5 %}A-LEVEL{% else %}VETERAN{% endif %}</p>
+        <p class="level-title title">{{ level.level_order__count }}</p>
+        </div>
+    </div>
+    {% endfor %}
+</nav>
 
 <style>
     #live-throb {
@@ -27,8 +51,8 @@
 <div class="tabs is-centered is-boxed is-large">
     <ul>
         <li class="is-active"><a href="#">Roster{% if num_owned %} ({{ num_owned }}){% endif %}</a></li>
-        <li><a href="/teams/{{ team.abbreviation|lower }}/other/">Trades & picks</a></li>
-        {% if live_tab %}<li><a href="/teams/{{ team.abbreviation|lower }}/live/"><span id="live-throb" style="color: red; font-size: 10px;"></span> &nbsp;Live stats</a></li>{% endif %}
+        <li><a href="/my/team/other/">Trades & picks</a></li>
+        {% if live_tab %}<li><a href="/my/team/live/"><span id="live-throb" style="color: red; font-size: 10px;"></span> &nbsp;Live stats</a></li>{% endif %}
     </ul>
 </div>
 
@@ -47,6 +71,8 @@
                     <th data-sortable-type="alpha">Lvl</th>
 
                     {% include "includes/hitter_stat_headers.html" %}
+
+                    {% include "includes/player_protect_headers.html" %}
                 </tr>
             </thead>
             <tbody>
@@ -61,13 +87,16 @@
                         {% if p.is_prospect %}<span class="icon-text"><span class="icon has-text-success"><i class="fab fa-product-hunt"></i></span><span>{{ p.prospect_rating_avg }}</span></span>{% endif %}
                     </td>
                     <td class="left">
+                        {% if p.bref_url %}<a class="has-text-weight-light" target="_blank" href="{{ p.bref_url }}">BBR &Gt;</a>{% endif %}
                         {% if p.fg_url %}<a class="has-text-weight-light" target="_blank" href="{{ p.fg_url }}">FG &Gt;</a>{% endif %}
+                        {% if p.mlbam_id %}<a class="has-text-weight-light" target="_blank" href="https://baseballsavant.mlb.com/savant-player/{{ p.mlbam_id }}">MLB &Gt;</a>{% endif %}
                     </td>
                     <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
                     <td data-value="{{ p.level|default_if_none:"Z" }}<">{{ p.level|default_if_none:"" }}</td>
 
                     {% include "includes/hitter_stat_cells.html" %}
 
+                    {% include "includes/player_protect_actions.html" %}
                 </tr>
             {% endfor %}
             </tbody>
@@ -88,6 +117,7 @@
                     <th data-sortable-type="alpha">Lvl</th>
 
                     {% include "includes/pitcher_stat_headers.html" %}
+                    {% include "includes/player_protect_headers.html" %}
                 </tr>
             </thead>
             <tbody>
@@ -102,12 +132,16 @@
                             {% if p.is_prospect %}<span class="icon-text"><span class="icon has-text-success"><i class="fab fa-product-hunt"></i></span><span>{{ p.prospect_rating_avg }}</span></span>{% endif %}
                     </td>
                     <td class="left">
+                        {% if p.bref_url %}<a class="has-text-weight-light" target="_blank" href="{{ p.bref_url }}">BBR &Gt;</a>{% endif %}
                         {% if p.fg_url %}<a class="has-text-weight-light" target="_blank" href="{{ p.fg_url }}">FG &Gt;</a>{% endif %}
+                        {% if p.mlbam_id %}<a class="has-text-weight-light" target="_blank" href="https://baseballsavant.mlb.com/savant-player/{{ p.mlbam_id }}">MLB &Gt;</a>{% endif %}
                     </td>
                     <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
                     <td data-value="{{ p.level|default_if_none:"Z" }}<">{{ p.level|default_if_none:"" }}</td>
 
                     {% include "includes/pitcher_stat_cells.html" %}
+
+                    {% include "includes/player_protect_actions.html" %}
 
                 </tr>
             {% endfor %}
@@ -116,4 +150,58 @@
     </div>
 </div>
 </div>
+{% if protect_tab or roster_tab %}
+<div class="modal" id="player-drop-modal">
+    <div class="modal-background"></div>
+    <div class="modal-content"></div>
+    <button class="modal-close is-large" aria-label="close"></button>
+</div>
+{% endif %}
+{% endblock %}
+        
+{% block extrascript %}
+{% if protect_tab or roster_tab%}<script type="text/javascript">
+$(function(){
+    var player_click_handler = function(el) {
+
+        el.preventDefault();
+        $el = $(this);
+
+        var playerid = $el.attr('data-playerid')
+        var action = $el.attr('data-action')
+
+        console.log(playerid, action);
+
+        $.ajax({
+            type: "POST",
+            url: '/api/v1/player/' + playerid + '/' +  action + '/',
+            success: function(response){
+                window.location.reload();
+            }
+        });
+    }
+
+    var player_drop_handler = function(el) {
+        el.preventDefault();
+        $el = $(this);
+
+        var playerid = $el.attr('data-playerid');
+        var playername = $el.attr('data-playername');
+        $('#player-drop-modal div.modal-content').html('<div class="box"><div class="content"><p class="subtitle">Are you sure you want to <strong>permanently drop ' + playername + '?</strong></p><p><a class="button is-danger is-large player-action" data-action="drop" data-playerid=' + playerid + '>Drop ' + playername + '</a>&nbsp;&nbsp;&nbsp;<a class="cancel button is-info is-large">Cancel</a></p></div></div>');
+        $('#player-drop-modal').addClass('is-active');
+    }
+
+    var modal_close_handler = function(el){
+        el.preventDefault();
+        $el = $(this);
+
+        $('#player-drop-modal').removeClass('is-active');
+        $('#player-drop-modal div.modal-content').html('');
+    }
+
+    $('body').on('click', 'a.player-action', player_click_handler);
+    $('body').on('click', 'a.player-drop', player_drop_handler);
+    $('body').on('click', '.modal-close, .modal-background, a.cancel', modal_close_handler);
+});
+</script>{% endif %}
 {% endblock %}

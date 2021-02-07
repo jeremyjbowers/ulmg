@@ -5,6 +5,7 @@ from ulmg import views
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path("accounts/", include("django.contrib.auth.urls")),
     path("api/v1/player/", views.api.player_list),
     path("api/v1/draft/live/players/important/", views.api.bowers_important),
     path(
@@ -34,5 +35,7 @@ urlpatterns = [
         "draft/live/<int:year>/<str:season>/<str:draft_type>/", views.site.draft_watch
     ),
     path("draft/<int:year>/<str:season>/<str:draft_type>/", views.site.draft_recap),
+    path("my/team/other/", views.my.my_team_other),
+    path("my/team/", views.my.my_team),
     path("", views.site.index),
 ]

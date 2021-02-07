@@ -5,10 +5,10 @@ from googleapiclient.discovery import build
 from google.oauth2 import service_account
 
 from django.conf import settings
+from django.contrib.postgres.search import TrigramSimilarity
 
 from ulmg import models
 
-from django.contrib.postgres.search import TrigramSimilarity
 
 
 def fuzzy_find_player(name_fragment, score=0.7):
