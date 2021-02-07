@@ -7,22 +7,24 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('ulmg', '0010_team_owner'),
+        ("ulmg", "0010_team_owner"),
     ]
 
     operations = [
-        migrations.RemoveField(
-            model_name='team',
-            name='owner_name',
-        ),
+        migrations.RemoveField(model_name="team", name="owner_name",),
         migrations.AddField(
-            model_name='team',
-            name='owner_obj',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='ulmg.Owner'),
+            model_name="team",
+            name="owner_obj",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                to="ulmg.Owner",
+            ),
         ),
         migrations.AlterField(
-            model_name='team',
-            name='owner',
+            model_name="team",
+            name="owner",
             field=models.CharField(blank=True, max_length=255, null=True),
         ),
     ]

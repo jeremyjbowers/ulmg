@@ -34,8 +34,8 @@ class Command(BaseCommand):
                 p = None
 
             if p:
-                p.is_prospect=True
-                p.prospect_rating_avg=Decimal(row['avg'])
+                p.is_prospect = True
+                p.prospect_rating_avg = Decimal(row["avg"])
                 p.save()
 
             pr, created = models.ProspectRating.objects.get_or_create(
@@ -67,8 +67,8 @@ class Command(BaseCommand):
                 p = None
 
             if p:
-                p.is_prospect=True
-                p.prospect_rating_avg=Decimal(row['avg'])
+                p.is_prospect = True
+                p.prospect_rating_avg = Decimal(row["avg"])
                 p.save()
 
             pr, created = models.ProspectRating.objects.get_or_create(

@@ -8,25 +8,31 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('auth', '0011_update_proxy_permissions'),
-        ('ulmg', '0007_auto_20210207_0824'),
+        ("auth", "0011_update_proxy_permissions"),
+        ("ulmg", "0007_auto_20210207_0824"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Owner',
+            name="Owner",
             fields=[
-                ('active', models.BooleanField(default=True)),
-                ('created', models.DateTimeField(auto_now_add=True, null=True)),
-                ('last_modified', models.DateTimeField(auto_now=True, null=True)),
-                ('name', models.CharField(blank=True, max_length=255, null=True)),
-                ('email', models.CharField(blank=True, max_length=255, null=True)),
-                ('user', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, primary_key=True, serialize=False, to=settings.AUTH_USER_MODEL)),
-                ('wins', models.IntegerField(blank=True, null=True)),
-                ('losses', models.IntegerField(blank=True, null=True)),
+                ("active", models.BooleanField(default=True)),
+                ("created", models.DateTimeField(auto_now_add=True, null=True)),
+                ("last_modified", models.DateTimeField(auto_now=True, null=True)),
+                ("name", models.CharField(blank=True, max_length=255, null=True)),
+                ("email", models.CharField(blank=True, max_length=255, null=True)),
+                (
+                    "user",
+                    models.OneToOneField(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        primary_key=True,
+                        serialize=False,
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                ("wins", models.IntegerField(blank=True, null=True)),
+                ("losses", models.IntegerField(blank=True, null=True)),
             ],
-            options={
-                'abstract': False,
-            },
+            options={"abstract": False,},
         ),
     ]

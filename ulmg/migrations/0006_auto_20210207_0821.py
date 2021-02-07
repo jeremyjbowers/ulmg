@@ -6,18 +6,20 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('ulmg', '0005_prospectrating_player_name'),
+        ("ulmg", "0005_prospectrating_player_name"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='player',
-            name='is_prospect',
+            model_name="player",
+            name="is_prospect",
             field=models.BooleanField(default=False),
         ),
         migrations.AddField(
-            model_name='player',
-            name='prospect_rating_avg',
-            field=models.DecimalField(blank=True, decimal_places=3, max_digits=4, null=True),
+            model_name="player",
+            name="prospect_rating_avg",
+            field=models.DecimalField(
+                blank=True, decimal_places=3, max_digits=4, null=True
+            ),
         ),
     ]
