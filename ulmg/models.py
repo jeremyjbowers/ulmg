@@ -23,6 +23,17 @@ class BaseModel(models.Model):
         return self.__unicode__()
 
 
+class Owner(BaseModel):
+    name = models.CharField(max_length=255, null=True, blank=True)
+    email = models.CharField(max_length=255, null=True, blank=True)
+    user = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True)
+    wins = models.IntegerField(blank=True, null=True)
+    losses = models.IntegerField(blank=True, null=True)
+
+    def __unicode__(self):
+        return f"{self.name}, {self.email}"
+
+
 class Team(BaseModel):
     """
     Canonical representation of a ULMG team.
@@ -32,6 +43,7 @@ class Team(BaseModel):
     abbreviation = models.CharField(max_length=3)
     nickname = models.CharField(max_length=255)
     division = models.CharField(max_length=255, null=True, blank=True)
+    owner_obj = models.ForeignKey(Owner, on_delete=models.SET_NULL, null=True, blank=True)
     owner = models.CharField(max_length=255, null=True, blank=True)
     owner_email = models.CharField(max_length=255, null=True, blank=True)
     championships = ArrayField(models.CharField(max_length=4), blank=True, null=True)
