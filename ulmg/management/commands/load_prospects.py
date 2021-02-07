@@ -33,6 +33,11 @@ class Command(BaseCommand):
             else:
                 p = None
 
+            if p:
+                p.is_prospect=True
+                p.prospect_rating_avg=Decimal(row['avg'])
+                p.save()
+
             pr, created = models.ProspectRating.objects.get_or_create(
                 year=2021, player=p, player_name=row["player"]
             )
@@ -61,6 +66,11 @@ class Command(BaseCommand):
             else:
                 p = None
 
+            if p:
+                p.is_prospect=True
+                p.prospect_rating_avg=Decimal(row['avg'])
+                p.save()
+
             pr, created = models.ProspectRating.objects.get_or_create(
                 year=2021, player=p, player_name=row["player"]
             )
@@ -79,5 +89,6 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         models.ProspectRating.objects.all().delete()
+        models.Player.objects.update(is_prospect=False)
         self.load_top_100()
         self.load_top_draft()

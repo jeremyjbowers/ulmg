@@ -151,6 +151,10 @@ class Player(BaseModel):
     birthdate = models.DateField(blank=True, null=True)
     birthdate_qa = models.BooleanField(default=False)
 
+    # PROSPECT STUFF
+    is_prospect = models.BooleanField(default=False)
+    prospect_rating_avg = models.DecimalField(max_digits=4, decimal_places=1, blank=True, null=True)
+
     # BOWERS DRAFT PREP
     b_important = models.BooleanField(default=False)
     b_interest = models.IntegerField(default=None, blank=True, null=True)
