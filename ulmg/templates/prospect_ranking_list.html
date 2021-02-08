@@ -38,15 +38,15 @@
         </tr>
         </thead>
         <tbody>
-        {% for r in top_100 %}
+        {% for p in top_100 %}
         <tr>
-            <td class="left" data-value="{{ r.player_name  }}">{% if r.player %}<a href="/players/{{ r.player.id }}/">{{ r.player.name }}</a>{% else %}{{ r.player_name }}{% endif %}</td>
-            <td data-value="{% if r.player.team %}{{ r.player.team.abbreviation }}{% else %}zzz{% endif %}">{% if r.player.team %} <a href="/teams/{{ r.player.team.abbreviation }}/">{{ r.player.team.abbreviation }}</a>{% endif %}</td>
-            <td data-value="{{ r.avg|default_if_none:"999" }}">{{ r.avg }}</td>
-            <td data-value="{{ r.ba|default_if_none:"999" }}">{{ r.ba|default_if_none:"-" }}</td>
-            <td data-value="{{ r.bp|default_if_none:"999" }}">{{ r.bp|default_if_none:"-" }}</td>
-            <td data-value="{{ r.mlb|default_if_none:"999" }}">{{ r.mlb|default_if_none:"-" }}</td>
-            <td data-value="{{ r.law|default_if_none:"999" }}">{{ r.law|default_if_none:"-" }}</td>
+            {% include "includes/my/player_name.html" %}
+            <td data-value="{% if p.player.team %}{{ p.player.team.abbreviation }}{% else %}zzz{% endif %}">{% if p.player.team %} <a href="/teams/{{ p.player.team.abbreviation }}/">{{ p.player.team.abbreviation }}</a>{% endif %}</td>
+            <td data-value="{{ p.avg|default_if_none:"999" }}">{{ p.avg }}</td>
+            <td data-value="{{ p.ba|default_if_none:"999" }}">{{ p.ba|default_if_none:"-" }}</td>
+            <td data-value="{{ p.bp|default_if_none:"999" }}">{{ p.bp|default_if_none:"-" }}</td>
+            <td data-value="{{ p.mlb|default_if_none:"999" }}">{{ p.mlb|default_if_none:"-" }}</td>
+            <td data-value="{{ p.law|default_if_none:"999" }}">{{ p.law|default_if_none:"-" }}</td>
         </tr>
         {% endfor %}
         </tbody>
@@ -70,16 +70,16 @@
             </tr>
             </thead>
             <tbody>
-            {% for r in top_draft %}
+            {% for p in top_draft %}
             <tr>
-                <td class="left" data-value="{{ r.player_name }}">{% if r.player %}<a href="/players/{{ r.player.id }}/">{{ r.player.name }}</a>{% else %}{{ r.player_name }}{% endif %}</td>
-                <td data-value="{% if r.player.team %}{{ r.player.team.abbreviation }}{% else %}zzz{% endif %}">{% if r.player.team %} <a href="/teams/{{ r.player.team.abbreviation }}/">{{ r.player.team.abbreviation }}</a>{% endif %}</td>
-                <td data-value="{{ r.avg|default_if_none:"999" }}">{{ r.avg }}</td>
-                <td data-value="{{ r.ba|default_if_none:"999" }}">{{ r.ba|default_if_none:"-" }}</td>
-                <td data-value="{{ r.plive|default_if_none:"999" }}">{{ r.plive|default_if_none:"-" }}</td>
-                <td data-value="{{ r.mlb|default_if_none:"999" }}">{{ r.mlb|default_if_none:"-" }}</td>
-                <td data-value="{{ r.p365|default_if_none:"999" }}">{{ r.p365|default_if_none:"-" }}</td>
-                <td data-value="{{ r.fg|default_if_none:"999" }}">{{ r.fg|default_if_none:"-" }}</td>
+                {% include "includes/my/player_name.html" %}
+                <td data-value="{% if p.player.team %}{{ p.player.team.abbreviation }}{% else %}zzz{% endif %}">{% if p.player.team %} <a href="/teams/{{ p.player.team.abbreviation }}/">{{ p.player.team.abbreviation }}</a>{% endif %}</td>
+                <td data-value="{{ p.avg|default_if_none:"999" }}">{{ p.avg }}</td>
+                <td data-value="{{ p.ba|default_if_none:"999" }}">{{ p.ba|default_if_none:"-" }}</td>
+                <td data-value="{{ p.plive|default_if_none:"999" }}">{{ p.plive|default_if_none:"-" }}</td>
+                <td data-value="{{ p.mlb|default_if_none:"999" }}">{{ p.mlb|default_if_none:"-" }}</td>
+                <td data-value="{{ p.p365|default_if_none:"999" }}">{{ p.p365|default_if_none:"-" }}</td>
+                <td data-value="{{ p.fg|default_if_none:"999" }}">{{ p.fg|default_if_none:"-" }}</td>
             </tr>
             {% endfor %}
             </tbody>
@@ -87,4 +87,48 @@
         </div>
 
 </div>
+{% endblock %}
+
+{% block extrascript %}
+{% if user.is_authenticated %}
+<script type="text/javascript">
+$(function(){
+
+    var add_wishlist_handler = function(el) {
+
+        el.preventDefault();
+        $el = $(this);
+
+        var playerid = $el.attr('data-playerid')
+
+        $.ajax({
+            type: "GET",
+            url: '/api/v1/wishlist/' + playerid + '/?rank=0&tier=0',
+            success: function(response){
+                window.location.reload();
+            }
+        });
+    }
+
+    var remove_wishlist_handler = function(el) {
+
+        el.preventDefault();
+        $el = $(this);
+
+        var playerid = $el.attr('data-playerid')
+
+        $.ajax({
+            type: "GET",
+            url: '/api/v1/wishlist/' + playerid + '/?remove=true',
+            success: function(response){
+                window.location.reload();
+            }
+        });
+    }
+
+    $('body').on('click', 'span.action-remove-wishlist', remove_wishlist_handler);
+    $('body').on('click', 'span.action-add-wishlist', add_wishlist_handler);
+});
+</script>
+{% endif %}
 {% endblock %}
