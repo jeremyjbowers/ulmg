@@ -173,8 +173,6 @@
                     <th></th>
                     <th data-sortable-type="numeric">Age</th>
                     <th data-sortable-type="alpha">Lvl</th>
-                    <th data-sortable-type="numeric">MLB?</th>
-                    <!-- <th data-sortable-type="numeric">Card?</th> -->
                     {% include "includes/hitter_stat_headers.html" %}
                 </tr>
             </thead>
@@ -184,10 +182,7 @@
             {% if p.ls_is_mlb == False and p.ls_plate_appearances > 0 %} minors{% endif %}
             {% if p.ls_is_mlb == False and p.is_amateur == True %} amateur{% endif %}
             ">
-                <td data-value="{{ p.name }}" style="text-align: left!important;"><span class="has-text-weight-semibold" data-value="{{ p.name }}">
-                        <a href="/players/{{ p.id }}/" target="_blank">{{ p.name }}</a></span>
-                        {% if p.is_prospect %}<span class="icon-text"><span class="icon has-text-success"><i class="fab fa-product-hunt"></i></span><span>{{ p.prospect_rating_avg }}</span></span>{% endif %}
-                    </td>
+                    {% include "includes/player_name.html" %}
                     <td class="left">
                         <a href="/admin/ulmg/player/{{ p.id }}/change/">&#x270E; &Gt;</a>
                         {% if p.bref_url %}<a class="has-text-weight-light" target="_blank" href="{{ p.bref_url }}">BBR &Gt;</a>{% endif %}
@@ -196,8 +191,6 @@
                     </td>
                     <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
                     <td data-value="{{ p.level|default_if_none:"Z" }}<">{{ p.level|default_if_none:"" }}</td>
-                    <td data-value="{% if p.ls_is_mlb %}1{% else %}0{% endif %}">{% if p.ls_is_mlb %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td>
-                    <!-- <td data-value="{% if p.is_carded %}1{% else %}0{% endif %}">{% if p.is_carded %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td> -->
                     {% include "includes/hitter_stat_cells.html" %}
                 </tr>
             {% endfor %}
@@ -217,8 +210,6 @@
                     <th></th>
                     <th data-sortable-type="numeric">Age</th>
                     <th data-sortable-type="alpha">Lvl</th>
-                    <th data-sortable-type="numeric">MLB?</th>
-                    <!-- <th data-sortable-type="numeric">Card?</th> -->
                     {% include "includes/pitcher_stat_headers.html" %}
                 </tr>
             </thead>
@@ -228,10 +219,7 @@
                 {% if p.ls_is_mlb == False and p.ls_ip > 0 %} minors{% endif %}
                 {% if p.ls_is_mlb == False and p.is_amateur == True %} amateur{% endif %}
                 ">
-                    <td data-value="{{ p.name }}" style="text-align: left!important;"><span class="has-text-weight-semibold" data-value="{{ p.name }}">
-                        <a href="/players/{{ p.id }}/" target="_blank">{{ p.name }}</a></span>
-                        {% if p.is_prospect %}<span class="icon-text"><span class="icon has-text-success"><i class="fab fa-product-hunt"></i></span><span>{{ p.prospect_rating_avg }}</span></span>{% endif %}
-                    </td>
+                    {% include "includes/player_name.html" %}
                     <td class="left">
                         <a href="/admin/ulmg/player/{{ p.id }}/change/">&#x270E; &Gt;</a>
                         {% if p.bref_url %}<a class="has-text-weight-light" target="_blank" href="{{ p.bref_url }}">BBR &Gt;</a>{% endif %}
@@ -240,8 +228,6 @@
                     </td>
                     <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
                     <td data-value="{{ p.level|default_if_none:"Z" }}<">{{ p.level|default_if_none:"" }}</td>
-                    <td data-value="{% if p.ls_is_mlb %}1{% else %}0{% endif %}">{% if p.ls_is_mlb %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td>
-                    <!-- <td data-value="{% if p.is_carded %}1{% else %}0{% endif %}">{% if p.is_carded %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td> -->
                     {% include "includes/pitcher_stat_cells.html" %}
                 </tr>
             {% endfor %}
@@ -249,4 +235,47 @@
         </table>
     </div>
 </div>
+{% endblock %}
+{% block extrascript %}
+{% if user.is_authenticated %}
+<script type="text/javascript">
+$(function(){
+
+    var add_wishlist_handler = function(el) {
+
+        el.preventDefault();
+        $el = $(this);
+
+        var playerid = $el.attr('data-playerid')
+
+        $.ajax({
+            type: "GET",
+            url: '/api/v1/wishlist/' + playerid + '/?rank=0&tier=0',
+            success: function(response){
+                window.location.reload();
+            }
+        });
+    }
+
+    var remove_wishlist_handler = function(el) {
+
+        el.preventDefault();
+        $el = $(this);
+
+        var playerid = $el.attr('data-playerid')
+
+        $.ajax({
+            type: "GET",
+            url: '/api/v1/wishlist/' + playerid + '/?remove=true',
+            success: function(response){
+                window.location.reload();
+            }
+        });
+    }
+
+    $('body').on('click', 'span.action-remove-wishlist', remove_wishlist_handler);
+    $('body').on('click', 'span.action-add-wishlist', add_wishlist_handler);
+});
+</script>
+{% endif %}
 {% endblock %}

@@ -14,6 +14,7 @@ urlpatterns = [
     ),
     path("api/v1/player/<int:playerid>/<str:action>/", views.api.player_action),
     path("api/v1/draft/<str:pickid>/", views.api.draft_action),
+    path("api/v1/wishlist/<str:playerid>/", views.api.wishlist_action),
     path("teams/csv/", views.csv.all_csv),
     path("teams/<str:abbreviation>/csv/", views.csv.team_csv),
     path("teams/<str:abbreviation>/other/", views.site.team_other),
@@ -35,7 +36,7 @@ urlpatterns = [
         "draft/live/<int:year>/<str:season>/<str:draft_type>/", views.site.draft_watch
     ),
     path("draft/<int:year>/<str:season>/<str:draft_type>/", views.site.draft_recap),
-    path("my/team/other/", views.my.my_team_other),
+    path("my/wishlist/<str:list_type>/", views.my.my_wishlist),
     path("my/team/", views.my.my_team),
     path("", views.site.index),
 ]

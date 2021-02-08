@@ -56,10 +56,7 @@
             {% if p.ls_is_mlb == False %} minors{% endif %}
             {% if p.ls_is_mlb == False and p.is_amateur == True %} amateur{% endif %}
             ">
-                    <td data-value="{{ p.name }}" style="text-align: left!important;">
-                        <a class="has-text-weight-semibold" href="/players/{{ p.id }}/" target="_blank">{{ p.name }}</a></span>
-                        {% if p.is_prospect %}<span class="icon-text"><span class="icon has-text-success"><i class="fab fa-product-hunt"></i></span><span>{{ p.prospect_rating_avg }}</span></span>{% endif %}
-                    </td>
+                    {% include "includes/player_name.html" %}
                     <td class="left">
                         {% if p.fg_url %}<a class="has-text-weight-light" target="_blank" href="{{ p.fg_url }}">FG &Gt;</a>{% endif %}
                     </td>
@@ -97,10 +94,7 @@
             {% if p.ls_is_mlb == False and p.is_amateur == True %} amateur{% endif %}
             {% if p.ls_is_mlb == False %} minors{% endif %}
             ">
-                    <td data-value="{{ p.name }}" style="text-align: left!important;"><span class="has-text-weight-semibold" data-value="{{ p.name }}">
-                            <a href="/players/{{ p.id }}/" target="_blank">{{ p.name }}</a></span>
-                            {% if p.is_prospect %}<span class="icon-text"><span class="icon has-text-success"><i class="fab fa-product-hunt"></i></span><span>{{ p.prospect_rating_avg }}</span></span>{% endif %}
-                    </td>
+                    {% include "includes/player_name.html" %}
                     <td class="left">
                         {% if p.fg_url %}<a class="has-text-weight-light" target="_blank" href="{{ p.fg_url }}">FG &Gt;</a>{% endif %}
                     </td>

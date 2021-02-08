@@ -10,7 +10,6 @@ from django.contrib.postgres.search import TrigramSimilarity
 from ulmg import models
 
 
-
 def fuzzy_find_player(name_fragment, score=0.7):
     return (
         models.Player.objects.annotate(
@@ -19,6 +18,23 @@ def fuzzy_find_player(name_fragment, score=0.7):
         .filter(similarity__gt=score)
         .order_by("-similarity")
     )
+
+
+def update_wishlist(playerid, wishlist, tier, rank, remove=False):
+    p = models.Player.objects.get(id=playerid)
+    w, created = models.WishlistPlayer.objects.get_or_create(
+        player=p,
+        wishlist=wishlist
+    )
+    if remove:
+        player_name = str(w.player.name)
+        w.delete()
+        return player_name
+    else:
+        w.tier = tier
+        w.rank = rank
+        w.save()
+        return w.player.name
 
 
 def build_context(request):
@@ -47,6 +63,19 @@ def build_context(request):
     context["q_string"] = "&".join(
         ["%s=%s" % (k, v[-1]) for k, v in queries_without_page.items()]
     )
+
+    # wishlist
+    context['wishlist'] = None
+    context['owner'] = None
+    context['wishlist_players'] = []
+    if request.user.is_authenticated:
+        owner = models.Owner.objects.get(user=request.user)
+        context['owner'] = owner
+        w = models.Wishlist.objects.filter(owner=owner)
+        if len(w) > 0:
+            context['wishlist'] = w[0]
+        context['wishlist_players'] = [p.player.id for p in models.WishlistPlayer.objects.filter(wishlist=context['wishlist'])]
+
 
     return context
 

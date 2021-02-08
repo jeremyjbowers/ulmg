@@ -17,9 +17,8 @@ from ulmg import models, utils
 @login_required
 def my_team(request):
     context = utils.build_context(request)
-    owner = models.Owner.objects.get(user=request.user)
     context["team"] = get_object_or_404(
-        models.Team, owner_obj=owner
+        models.Team, owner_obj=context['owner']
     )
     team_players = models.Player.objects.filter(team=context["team"])
     hitters = team_players.exclude(position="P").order_by(
@@ -44,24 +43,47 @@ def my_team(request):
 
 
 @login_required
-def my_team_other(request):
+def my_wishlist(request, list_type):
     context = utils.build_context(request)
-    owner = models.Owner.objects.get(user=request.user)
-    team = get_object_or_404(
-        models.Team, owner_obj=owner
+    context["team"] = get_object_or_404(
+        models.Team, owner_obj=context['owner']
     )
-    context["team"] = team
-    team_players = models.Player.objects.filter(team=context["team"])
-    context["level_distribution"] = (
-        team_players.order_by("level_order")
-        .values("level_order")
-        .annotate(Count("level_order"))
-    )
-    context["num_owned"] = models.Player.objects.filter(team=team).count()
-    context["trades"] = models.TradeReceipt.objects.filter(
-        team=team, trade__isnull=False
-    ).order_by("-trade__date")
-    context["picks"] = models.DraftPick.objects.filter(team=team).order_by(
-        "-year", "season", "draft_type", "draft_round", "pick_number"
-    )
-    return render(request, "my/team_other.html", context)
+    context['list_type'] = list_type
+
+    context['aa_hitters'] = []
+    context['aa_pitchers'] = []
+    context['op_hitters'] = []
+    context['op_pitchers'] = []
+    context['hitters'] = []
+    context['pitchers'] = []
+
+    if list_type == "draft":
+        for p in models.WishlistPlayer.objects.filter(wishlist=context['wishlist']):
+            if not p.player.is_owned:
+                if p.player.level == "B":
+                    if p.player.position == "P":
+                        context['aa_pitchers'].append(p)
+                    else:
+                        context['aa_hitters'].append(p)
+                else:
+                    if p.player.position == "P":
+                        context['op_pitchers'].append(p)
+                    else:
+                        context['op_hitters'].append(p)
+        context['aa_hitters'] = sorted(context['aa_hitters'], key=lambda x:(x.tier, x.rank), reverse=True)
+        context['aa_pitchers'] = sorted(context['aa_pitchers'], key=lambda x:(x.tier, x.rank), reverse=True)
+        context['op_hitters'] = sorted(context['op_hitters'], key=lambda x:(x.tier, x.rank), reverse=True)
+        context['op_pitchers'] = sorted(context['op_pitchers'], key=lambda x:(x.tier, x.rank), reverse=True)
+
+    if list_type == "trade":
+        for p in models.WishlistPlayer.objects.filter(wishlist=context['wishlist']):
+            if p.player.is_owned:
+                if p.player.position == "P":
+                    context['pitchers'].append(p)
+                else:
+                    context['hitters'].append(p)
+
+        context['hitters'] = sorted(context['hitters'], key=lambda x:(x.tier, x.rank), reverse=True)
+        context['pitchers'] = sorted(context['pitchers'], key=lambda x:(x.tier, x.rank), reverse=True)
+
+    return render(request, "my/wishlist.html", context)
