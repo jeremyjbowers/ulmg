@@ -57,10 +57,7 @@
                 <tbody>
                 {% for p in position.list %}
                     <tr{% if p.ls_is_mlb == False and p.ls_plate_appearances > 0 %} class="minors"{% endif %}>
-                        <td data-value="{{ p.name }}" style="text-align: left!important;"><span class="has-text-weight-semibold" data-value="{{ p.name }}">
-                            <a href="/players/{{ p.id }}/" target="_blank">{{ p.name }}</a></span>
-                            {% if p.is_prospect %}<span class="icon-text"><span class="icon has-text-success"><i class="fab fa-product-hunt"></i></span><span>{{ p.prospect_rating_avg }}</span></span>{% endif %}
-                        </td>
+                        {% include "includes/player_name.html" %}
                         <td class="left">
                             <a href="/admin/ulmg/player/{{ p.id }}/change/">&#x270E; &Gt;</a>
                             {% if p.bref_url %}<a class="has-text-weight-light" target="_blank" href="{{ p.bref_url }}">BBR &Gt;</a>{% endif %}
@@ -96,10 +93,7 @@
                 <tbody>
                 {% for p in pitchers %}
                     <tr{% if p.ls_is_mlb == False and p.ls_ip > 0 %} class="minors"{% endif %}>
-                        <td data-value="{{ p.name }}" style="text-align: left!important;"><span class="has-text-weight-semibold" data-value="{{ p.name }}">
-                            <a href="/players/{{ p.id }}/" target="_blank">{{ p.name }}</a></span>
-                            {% if p.is_prospect %}<span class="icon-text"><span class="icon has-text-success"><i class="fab fa-product-hunt"></i></span><span>{{ p.prospect_rating_avg }}</span></span>{% endif %}
-                        </td>
+                        {% include "includes/player_name.html" %}
                         <td class="left">
                             <a href="/admin/ulmg/player/{{ p.id }}/change/">&#x270E; &Gt;</a>
                             {% if p.bref_url %}<a class="has-text-weight-light" target="_blank" href="{{ p.bref_url }}">BBR &Gt;</a>{% endif %}
@@ -116,4 +110,48 @@
             </table>{% endif %}
         </div>
     </div>
+{% endblock %}
+
+{% block extrascript %}
+{% if user.is_authenticated %}
+<script type="text/javascript">
+$(function(){
+
+    var add_wishlist_handler = function(el) {
+
+        el.preventDefault();
+        $el = $(this);
+
+        var playerid = $el.attr('data-playerid')
+
+        $.ajax({
+            type: "GET",
+            url: '/api/v1/wishlist/' + playerid + '/?rank=0&tier=0',
+            success: function(response){
+                window.location.reload();
+            }
+        });
+    }
+
+    var remove_wishlist_handler = function(el) {
+
+        el.preventDefault();
+        $el = $(this);
+
+        var playerid = $el.attr('data-playerid')
+
+        $.ajax({
+            type: "GET",
+            url: '/api/v1/wishlist/' + playerid + '/?remove=true',
+            success: function(response){
+                window.location.reload();
+            }
+        });
+    }
+
+    $('body').on('click', 'span.action-remove-wishlist', remove_wishlist_handler);
+    $('body').on('click', 'span.action-add-wishlist', add_wishlist_handler);
+});
+</script>
+{% endif %}
 {% endblock %}

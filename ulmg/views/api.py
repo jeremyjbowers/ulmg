@@ -6,11 +6,21 @@ from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import render, get_object_or_404
 from django.db.models import Count, Avg, Sum, Max, Min, Q
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
+from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.conf import settings
 import ujson as json
 
 from ulmg import models, utils
+
+@login_required
+@csrf_exempt
+def wishlist_action(request, playerid):
+    context = utils.build_context(request)
+    w = utils.update_wishlist(playerid, context['wishlist'], request.GET.get('rank'), request.GET.get('tier'), remove=utils.str_to_bool(request.GET.get('remove')))
+    if w:
+        return JsonResponse({"success": True, "player": w})
+    return JsonResponse({"success": False, "player": w})
 
 
 @csrf_exempt
