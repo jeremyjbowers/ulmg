@@ -1,10 +1,24 @@
 from django.contrib import admin
 
-from ulmg.models import Team, Player, DraftPick, Trade, TradeReceipt, ScoutingReport
+from ulmg.models import Team, Player, DraftPick, Trade, TradeReceipt, Wishlist, WishlistPlayer
 
 admin.site.site_title = "The ULMG"
 admin.site.site_header = "The ULMG: Admin"
 admin.site.index_title = "Administer The ULMG Website"
+
+
+@admin.register(Wishlist)
+class WishlistAdmin(admin.ModelAdmin):
+    model = Wishlist
+    list_display = ['owner']
+    list_filter = ['owner']
+
+
+@admin.register(WishlistPlayer)
+class WishlistPlayer(admin.ModelAdmin):
+    model = WishlistPlayer
+    list_display = ['player', 'owner_name', 'rank', 'tier']
+    list_filter = ['wishlist']
 
 
 class TradeReceiptInline(admin.TabularInline):

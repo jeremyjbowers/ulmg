@@ -889,7 +889,7 @@ class Wishlist(BaseModel):
     )
 
     def __unicode__(self):
-        return f"Wishlist for {self.owner.name}"
+        return f"{self.owner.name}"
 
 
 class WishlistPlayer(BaseModel):
@@ -904,3 +904,7 @@ class WishlistPlayer(BaseModel):
 
     def __unicode__(self):
         return f"{self.player} [{self.rank}][{self.tier}]"
+
+    @property
+    def owner_name(self):
+        return self.wishlist.owner.name
