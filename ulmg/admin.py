@@ -25,8 +25,6 @@ class OwnerAdmin(admin.ModelAdmin):
 @admin.register(Wishlist)
 class WishlistAdmin(admin.ModelAdmin):
     model = Wishlist
-    list_display = ["owner"]
-    list_filter = ["owner"]
 
 
 @admin.register(WishlistPlayer)

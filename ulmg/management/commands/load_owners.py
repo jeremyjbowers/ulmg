@@ -117,34 +117,39 @@ class Command(BaseCommand):
         }
 
         for t in models.Team.objects.all():
-            owner = owner_list.get(t.abbreviation, None)
-
+            owner = t.owner_obj
             if owner:
-                firstword = f"0201{slugify(t.city)}!"
-
-                print(firstword)
-
-                u, u_created = User.objects.get_or_create(
-                    first_name=owner["first_name"],
-                    last_name=owner["last_name"],
-                    username=owner["username"],
-                    is_staff=owner["is_staff"],
-                    is_superuser=owner["is_superuser"],
+                models.Wishlist.objects.get_or_create(
+                    owner = owner
                 )
-                u.email = t.owner_email
+            # owner = owner_list.get(t.abbreviation, None)
 
-                u.set_password(firstword)
-                u.save()
+            # if owner:
+            #     firstword = f"0201{slugify(t.city)}!"
 
-                print(u)
+            #     print(firstword)
 
-                o, o_created = models.Owner.objects.get_or_create(
-                    user=u, name=f"{u.first_name} {u.last_name}", email=u.email
-                )
+            #     u, u_created = User.objects.get_or_create(
+            #         first_name=owner["first_name"],
+            #         last_name=owner["last_name"],
+            #         username=owner["username"],
+            #         is_staff=owner["is_staff"],
+            #         is_superuser=owner["is_superuser"],
+            #     )
+            #     u.email = t.owner_email
 
-                print(o)
+            #     u.set_password(firstword)
+            #     u.save()
 
-                t.owner_obj = o
-                t.save()
+            #     print(u)
 
-                print(t)
+            #     o, o_created = models.Owner.objects.get_or_create(
+            #         user=u, name=f"{u.first_name} {u.last_name}", email=u.email
+            #     )
+
+            #     print(o)
+
+            #     t.owner_obj = o
+            #     t.save()
+
+            #     print(t)
