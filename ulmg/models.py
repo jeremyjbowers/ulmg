@@ -884,18 +884,14 @@ class ProspectRating(BaseModel):
 
 
 class Wishlist(BaseModel):
-    owner = models.ForeignKey(
-        Owner, on_delete=models.SET_NULL, null=True, blank=True
-    )
+    owner = models.ForeignKey(Owner, on_delete=models.SET_NULL, null=True, blank=True)
 
     def __unicode__(self):
         return f"{self.owner.name}"
 
 
 class WishlistPlayer(BaseModel):
-    player = models.ForeignKey(
-        Player, on_delete=models.SET_NULL, null=True, blank=True
-    )
+    player = models.ForeignKey(Player, on_delete=models.SET_NULL, null=True, blank=True)
     wishlist = models.ForeignKey(
         Wishlist, on_delete=models.SET_NULL, null=True, blank=True
     )
