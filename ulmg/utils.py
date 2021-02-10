@@ -23,8 +23,7 @@ def fuzzy_find_player(name_fragment, score=0.7):
 def update_wishlist(playerid, wishlist, tier, rank, remove=False):
     p = models.Player.objects.get(id=playerid)
     w, created = models.WishlistPlayer.objects.get_or_create(
-        player=p,
-        wishlist=wishlist
+        player=p, wishlist=wishlist
     )
     if remove:
         player_name = str(w.player.name)
@@ -65,17 +64,19 @@ def build_context(request):
     )
 
     # wishlist
-    context['wishlist'] = None
-    context['owner'] = None
-    context['wishlist_players'] = []
+    context["wishlist"] = None
+    context["owner"] = None
+    context["wishlist_players"] = []
     if request.user.is_authenticated:
         owner = models.Owner.objects.get(user=request.user)
-        context['owner'] = owner
+        context["owner"] = owner
         w = models.Wishlist.objects.filter(owner=owner)
         if len(w) > 0:
-            context['wishlist'] = w[0]
-        context['wishlist_players'] = [p.player.id for p in models.WishlistPlayer.objects.filter(wishlist=context['wishlist'])]
-
+            context["wishlist"] = w[0]
+        context["wishlist_players"] = [
+            p.player.id
+            for p in models.WishlistPlayer.objects.filter(wishlist=context["wishlist"])
+        ]
 
     return context
 

@@ -76,7 +76,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 # LOGIN STUFF
 LOGIN_REDIRECT_URL = "/my/team/"
-LOGIN_URL="/accounts/login/"
+LOGIN_URL = "/accounts/login/"
 LOGOUT_REDIRECT_URL = "/"
 
 STATIC_URL = "/static/"

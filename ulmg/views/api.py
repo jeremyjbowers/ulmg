@@ -13,11 +13,18 @@ import ujson as json
 
 from ulmg import models, utils
 
+
 @login_required
 @csrf_exempt
 def wishlist_action(request, playerid):
     context = utils.build_context(request)
-    w = utils.update_wishlist(playerid, context['wishlist'], request.GET.get('rank'), request.GET.get('tier'), remove=utils.str_to_bool(request.GET.get('remove')))
+    w = utils.update_wishlist(
+        playerid,
+        context["wishlist"],
+        request.GET.get("rank"),
+        request.GET.get("tier"),
+        remove=utils.str_to_bool(request.GET.get("remove")),
+    )
     if w:
         return JsonResponse({"success": True, "player": w})
     return JsonResponse({"success": False, "player": w})

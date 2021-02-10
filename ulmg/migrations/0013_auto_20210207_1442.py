@@ -7,28 +7,47 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('ulmg', '0012_wishlist'),
+        ("ulmg", "0012_wishlist"),
     ]
 
     operations = [
-        migrations.RemoveField(
-            model_name='wishlist',
-            name='players',
-        ),
+        migrations.RemoveField(model_name="wishlist", name="players",),
         migrations.CreateModel(
-            name='WishlistPlayer',
+            name="WishlistPlayer",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('active', models.BooleanField(default=True)),
-                ('created', models.DateTimeField(auto_now_add=True, null=True)),
-                ('last_modified', models.DateTimeField(auto_now=True, null=True)),
-                ('rank', models.IntegerField(blank=True, null=True)),
-                ('tier', models.IntegerField(blank=True, null=True)),
-                ('player', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='ulmg.Player')),
-                ('wishlist', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='ulmg.Wishlist')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("active", models.BooleanField(default=True)),
+                ("created", models.DateTimeField(auto_now_add=True, null=True)),
+                ("last_modified", models.DateTimeField(auto_now=True, null=True)),
+                ("rank", models.IntegerField(blank=True, null=True)),
+                ("tier", models.IntegerField(blank=True, null=True)),
+                (
+                    "player",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        to="ulmg.Player",
+                    ),
+                ),
+                (
+                    "wishlist",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        to="ulmg.Wishlist",
+                    ),
+                ),
             ],
-            options={
-                'abstract': False,
-            },
+            options={"abstract": False,},
         ),
     ]
