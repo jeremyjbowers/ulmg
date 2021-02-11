@@ -74,7 +74,7 @@ def mgmt(command):
 
 @api.task
 def get_data():
-    api.run(work_string + "django-admin dumpdata ulmg > /tmp/ulmg.json")
+    api.run(work_string + "django-admin dumpdata ulmg auth > /tmp/ulmg.json")
     os.system("rm -rf data/fixtures/ulmg.json")
     api.get(remote_path="/tmp/ulmg.json", local_path="data/fixtures/ulmg.json")
 
