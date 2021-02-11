@@ -74,9 +74,9 @@ def mgmt(command):
 
 @api.task
 def get_data():
-    api.run(work_string + "django-admin dumpdata > /tmp/ulmg.json")
-    os.system("rm -rf data/fixtures/ulmg.json")
-    api.get(remote_path="/tmp/ulmg.json", local_path="data/fixtures/ulmg.json")
+    api.run('pg_dump -U ulmg -f /tmp/ulmg.sql -Fp -E UTF8 --inserts ulmg')
+    os.system("rm -rf data/sql/ulmg.sql")
+    api.get(remote_path="/tmp/ulmg.sql", local_path="data/sql/ulmg.sql")
 
 
 @api.task
