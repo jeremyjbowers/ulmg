@@ -77,7 +77,8 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         self.season = settings.CURRENT_SEASON
 
-        # self.get_roster_info()
+        ## fangraphs is apparently down right now?
+        self.get_roster_info()
         self.get_new_players()
         self.parse_new_players()
         self.update_player_ids()
