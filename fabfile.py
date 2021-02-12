@@ -82,8 +82,7 @@ def get_data():
 @api.task
 def reload():
     get_data()
-    api.local("ULMG_FIXTURES=true django-admin reload")
-    api.local("django-admin createsuperuser")
+    api.local("psql ulmg < data/sql/ulmg.sql")
 
 
 @api.task
