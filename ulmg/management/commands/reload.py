@@ -14,5 +14,4 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         os.system("dropdb ulmg")
         os.system("createdb ulmg")
-        call_command("migrate")
-        call_command("loaddata", "data/fixtures/ulmg.json")
+        os.system('psql ulmg < data/sql/ulmg.sql')

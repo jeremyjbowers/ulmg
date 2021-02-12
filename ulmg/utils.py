@@ -92,13 +92,38 @@ def write_csv(path, payload):
 
 # covered
 def normalize_pos(pos):
-    if pos.upper() in ["1B", "2B", "3B", "SS"]:
-        pos = "IF"
-    if pos.upper() in ["RF", "CF", "LF"]:
-        pos = "OF"
+    """
+    Normalize positions to P, C, IF, OF or IF/OF
+    """
+    # Any pitcher.
     if "P" in pos.upper():
-        pos = "P"
-    return pos
+        return "P"
+
+    # Catcher-only.
+    if pos.upper() == "C":
+        return "C"
+
+    # One of the IF positions.
+    if pos.upper() in ["1B", "2B", "3B", "SS"]:
+        return "IF"
+
+    # One of the OF positions.
+    if pos.upper() in ["RF", "CF", "LF"]:
+        return "OF"
+
+    # Catch folks who are more than one OF and maybe some IF.
+    if "F" in pos.upper():
+        if "B" in pos.upper() or "SS" in pos.upper():
+            return "IF-OF"
+        return "OF"
+
+    # If you're left, you're a mix of IF.
+    if "B" in pos.upper() or "SS" in pos.upper():
+        return "IF"
+
+    # Die if we cannot get a position.
+    # This will likely fail to save, as positions are required?
+    return None
 
 
 # covered

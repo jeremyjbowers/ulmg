@@ -164,6 +164,7 @@ class Player(BaseModel):
     )
     birthdate = models.DateField(blank=True, null=True)
     birthdate_qa = models.BooleanField(default=False)
+    raw_age = models.IntegerField(default=None, blank=True, null=True)
 
     # PROSPECT STUFF
     is_prospect = models.BooleanField(default=False)
@@ -435,6 +436,8 @@ class Player(BaseModel):
         if self.birthdate:
             now = datetime.datetime.utcnow().date()
             return relativedelta(now, self.birthdate).years
+        elif self.raw_age:
+            return self.raw_age
         return None
 
     def get_team(self):
