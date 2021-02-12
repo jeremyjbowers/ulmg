@@ -3,5 +3,7 @@ __pycache__
 *.pyc
 *.pyo
 credentials.json
-data/rosters/*.json
+data/rosters/more_than_one_players.json
+data/rosters/new_players.json
+data/rosters/no_id_players.json
 htmlcov/*
