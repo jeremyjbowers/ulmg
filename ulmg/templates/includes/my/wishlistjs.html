@@ -1,0 +1,47 @@
+{% if user.is_authenticated %}
+<script type="text/javascript">
+$(function(){
+
+    var toggle_classes = function($el) {
+        $el.toggleClass('action-remove-wishlist')
+        $el.toggleClass('has-text-success')
+        $el.toggleClass('action-add-wishlist')
+    }
+
+    var add_wishlist_handler = function(el) {
+
+        el.preventDefault();
+        $el = $(this);
+
+        var playerid = $el.attr('data-playerid')
+
+        $.ajax({
+            type: "GET",
+            url: '/api/v1/wishlist/' + playerid + '/?rank=0&tier=0',
+            success: function(response){
+                toggle_classes($el)
+            }
+        });
+    }
+
+    var remove_wishlist_handler = function(el) {
+
+        el.preventDefault();
+        $el = $(this);
+
+        var playerid = $el.attr('data-playerid')
+
+        $.ajax({
+            type: "GET",
+            url: '/api/v1/wishlist/' + playerid + '/?remove=true',
+            success: function(response){
+                toggle_classes($el)
+            }
+        });
+    }
+
+    $('body').on('click', 'span.action-remove-wishlist', remove_wishlist_handler);
+    $('body').on('click', 'span.action-add-wishlist', add_wishlist_handler);
+});
+</script>
+{% endif %}

@@ -236,46 +236,5 @@
     </div>
 </div>
 {% endblock %}
-{% block extrascript %}
-{% if user.is_authenticated %}
-<script type="text/javascript">
-$(function(){
 
-    var add_wishlist_handler = function(el) {
-
-        el.preventDefault();
-        $el = $(this);
-
-        var playerid = $el.attr('data-playerid')
-
-        $.ajax({
-            type: "GET",
-            url: '/api/v1/wishlist/' + playerid + '/?rank=0&tier=0',
-            success: function(response){
-                window.location.reload();
-            }
-        });
-    }
-
-    var remove_wishlist_handler = function(el) {
-
-        el.preventDefault();
-        $el = $(this);
-
-        var playerid = $el.attr('data-playerid')
-
-        $.ajax({
-            type: "GET",
-            url: '/api/v1/wishlist/' + playerid + '/?remove=true',
-            success: function(response){
-                window.location.reload();
-            }
-        });
-    }
-
-    $('body').on('click', 'span.action-remove-wishlist', remove_wishlist_handler);
-    $('body').on('click', 'span.action-add-wishlist', add_wishlist_handler);
-});
-</script>
-{% endif %}
-{% endblock %}
+{% block extrascript %}{% include "includes/my/wishlistjs.html" %}{% endblock %}
