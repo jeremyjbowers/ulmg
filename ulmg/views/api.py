@@ -16,7 +16,17 @@ from ulmg import models, utils
 
 @login_required
 @csrf_exempt
-def wishlist_action(request, playerid):
+def wishlist_bulk_action(request):
+    for raw_json_string,_ in request.POST.items():
+        players = json.loads(raw_json_string)
+        for p in players:
+            models.WishlistPlayer.objects.filter(id=p['playerid']).update(rank=p['rank'])
+
+    return(JsonResponse({"success": True, "updated": len(players)}))
+
+@login_required
+@csrf_exempt
+def wishlist_player_action(request, playerid):
     context = utils.build_context(request)
     w = utils.update_wishlist(
         playerid,

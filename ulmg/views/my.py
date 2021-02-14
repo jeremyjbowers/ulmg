@@ -68,16 +68,16 @@ def my_wishlist(request, list_type):
                     else:
                         context["op_hitters"].append(p)
         context["aa_hitters"] = sorted(
-            context["aa_hitters"], key=lambda x: (x.tier, x.rank), reverse=True
+            context["aa_hitters"], key=lambda x: (x.tier, x.rank)
         )
         context["aa_pitchers"] = sorted(
-            context["aa_pitchers"], key=lambda x: (x.tier, x.rank), reverse=True
+            context["aa_pitchers"], key=lambda x: (x.tier, x.rank)
         )
         context["op_hitters"] = sorted(
-            context["op_hitters"], key=lambda x: (x.tier, x.rank), reverse=True
+            context["op_hitters"], key=lambda x: (x.tier, x.rank)
         )
         context["op_pitchers"] = sorted(
-            context["op_pitchers"], key=lambda x: (x.tier, x.rank), reverse=True
+            context["op_pitchers"], key=lambda x: (x.tier, x.rank)
         )
 
     if list_type == "trade":
@@ -89,10 +89,10 @@ def my_wishlist(request, list_type):
                     context["hitters"].append(p)
 
         context["hitters"] = sorted(
-            context["hitters"], key=lambda x: (x.tier, x.rank), reverse=True
+            context["hitters"], key=lambda x: (x.tier, x.rank)
         )
         context["pitchers"] = sorted(
-            context["pitchers"], key=lambda x: (x.tier, x.rank), reverse=True
+            context["pitchers"], key=lambda x: (x.tier, x.rank)
         )
 
     return render(request, "my/wishlist.html", context)
