@@ -82,7 +82,7 @@
             {% if p.ls_is_mlb == False %} minors{% endif %}
             {% if p.ls_is_mlb == False and p.is_amateur == True %} amateur{% endif %}
             ">
-            {% include "includes/my/player_name.html" %}
+            {% include "includes/player_name.html" %}
                     <td class="left">
                         {% if p.bref_url %}<a class="has-text-weight-light" target="_blank" href="{{ p.bref_url }}">BBR &Gt;</a>{% endif %}
                         {% if p.fg_url %}<a class="has-text-weight-light" target="_blank" href="{{ p.fg_url }}">FG &Gt;</a>{% endif %}
@@ -124,7 +124,7 @@
             {% if p.ls_is_mlb == False and p.is_amateur == True %} amateur{% endif %}
             {% if p.ls_is_mlb == False %} minors{% endif %}
             ">
-            {% include "includes/my/player_name.html" %}
+            {% include "includes/player_name.html" %}
                     <td class="left">
                         {% if p.bref_url %}<a class="has-text-weight-light" target="_blank" href="{{ p.bref_url }}">BBR &Gt;</a>{% endif %}
                         {% if p.fg_url %}<a class="has-text-weight-light" target="_blank" href="{{ p.fg_url }}">FG &Gt;</a>{% endif %}
