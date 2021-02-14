@@ -20,19 +20,27 @@ def fuzzy_find_player(name_fragment, score=0.7):
     )
 
 
-def update_wishlist(playerid, wishlist, tier, rank, remove=False):
+def update_wishlist(playerid, wishlist, rank, tier, remove=False):
     p = models.Player.objects.get(id=playerid)
     w, created = models.WishlistPlayer.objects.get_or_create(
         player=p, wishlist=wishlist
     )
+
     if remove:
         player_name = str(w.player.name)
         w.delete()
         return player_name
+
     else:
-        w.tier = tier
-        w.rank = rank
-        w.save()
+        if tier:
+            w.tier = tier
+    
+        if rank:
+            w.rank = rank
+
+        if tier or rank:
+            w.save()
+
         return w.player.name
 
 

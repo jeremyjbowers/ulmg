@@ -179,4 +179,43 @@
 {% block extrascript %}
 {% include "includes/my/wishlistjs.html" %}
 {% include "includes/my/sortablejs.html" %}
+<script src="http://SortableJS.github.io/Sortable/Sortable.js"></script>
+
+{% if user.is_authenticated %}
+<script type="text/javascript">
+$(function(){
+
+    var tier_select_handler = function(el) {
+
+        el.preventDefault();
+        $el = $(this);
+
+        var playerid = $el.parent('div').attr('data-playerid');
+        var tier = $el.text();
+
+        $el.parent('div').children('a.tier-selection').removeClass('is-primary').removeClass('is-info').removeClass('is-success').removeClass('is-warning').removeClass('is-danger')
+
+        var tier_map = {
+            "1": "is-primary",
+            "2": "is-info",
+            "3": "is-success",
+            "4": "is-warning",
+            "5": "is-danger",            
+        }
+
+        $el.addClass(tier_map[tier]);
+
+        $.ajax({
+            type: "GET",
+            url: '/api/v1/wishlist/' + playerid + '/?tier=' + tier,
+            success: function(response){
+                console.log(tier);
+            }
+        });
+    }
+
+    $('body').on('click', 'div.tier-selector a.tier-selection', tier_select_handler);
+});
+</script>
+{% endif %}
 {% endblock %}
