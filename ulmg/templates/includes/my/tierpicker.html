@@ -1,0 +1,27 @@
+<!-- <div class="select is-small">
+    <select id="tier-{{ p.player.pk }}" data-playerid="{{ p.player.pk }}" class="tier-selector">
+      <option{% if p.tier == 1 %} selected{% endif %}>1</option>
+      <option{% if p.tier == 2 %} selected{% endif %}>2</option>
+      <option{% if p.tier == 3 %} selected{% endif %}>3</option>
+      <option{% if p.tier == 4 %} selected{% endif %}>4</option>
+      <option{% if p.tier == 5 %} selected{% endif %}>5</option>
+      <option{% if p.tier == 6 %} selected{% endif %}>6</option>
+      <option{% if p.tier == 7 %} selected{% endif %}>7</option>
+      <option{% if p.tier == 8 %} selected{% endif %}>8</option>
+      <option{% if p.tier == 9 %} selected{% endif %}>9</option>
+      <option{% if p.tier == 10 %} selected{% endif %}>10</option>
+      <option{% if p.tier == 11 %} selected{% endif %}>11</option>
+      <option{% if p.tier == 12 %} selected{% endif %}>12</option>
+      <option{% if p.tier == 13 %} selected{% endif %}>13</option>
+      <option{% if p.tier == 14 %} selected{% endif %}>14</option>
+      <option{% if p.tier == 15 %} selected{% endif %}>15</option>
+    </select>
+  </div> -->
+
+<div id="tier-{{ p.player.pk }}" data-playerid="{{ p.player.pk }}" class="tier-selector">
+  <a class="tier-selection button is-small{% if p.tier == 1 %} is-primary{% endif %}">1</a>
+  <a class="tier-selection button is-small{% if p.tier == 2 %} is-info{% endif %}">2</a>
+  <a class="tier-selection button is-small{% if p.tier == 3 %} is-success{% endif %}">3</a>
+  <a class="tier-selection button is-small{% if p.tier == 4 %} is-warning{% endif %}">4</a>
+  <a class="tier-selection button is-small{% if p.tier == 5 %} is-danger{% endif %}">5</a>
+</div>

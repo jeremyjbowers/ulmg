@@ -17,7 +17,7 @@ $(function(){
 
         $.ajax({
             type: "GET",
-            url: '/api/v1/wishlist/' + playerid + '/?rank=0&tier=0',
+            url: '/api/v1/wishlist/' + playerid + '/?rank=0&tier=6',
             success: function(response){
                 toggle_classes($el)
             }
