@@ -129,10 +129,10 @@
                 <tr>
                     <td data-value="{{ t }}"><a href="/teams/{{ t.abbreviation }}/">{{ t }}</a></td>
                     <td data-value="{{ t.ls_plate_appearances|default_if_none:"-999" }}">{{ t.ls_plate_appearances|default_if_none:"-" }}</td>
-                    <td data-value="{{ t.ls_avg|default_if_none:"-999" }}">{{ t.ls_avg|default_if_none:"-" }}</td>
-                    <td data-value="{{ t.ls_obp|default_if_none:"-999" }}">{{ t.ls_obp|default_if_none:"-" }}</td>
-                    <td data-value="{{ t.ls_slg|default_if_none:"-999" }}">{{ t.ls_slg|default_if_none:"-" }}</td>
-                    <td data-value="{{ t.ls_iso|default_if_none:"-999" }}">{{ t.ls_iso|default_if_none:"-" }}</td>
+                    <td data-value="{{ t.ls_avg|kill_leading_zero|default_if_none:"-999" }}">{{ t.ls_avg|kill_leading_zero|default_if_none:"-" }}</td>
+                    <td data-value="{{ t.ls_obp|kill_leading_zero|default_if_none:"-999" }}">{{ t.ls_obp|kill_leading_zero|default_if_none:"-" }}</td>
+                    <td data-value="{{ t.ls_slg|kill_leading_zero|default_if_none:"-999" }}">{{ t.ls_slg|kill_leading_zero|default_if_none:"-" }}</td>
+                    <td data-value="{{ t.ls_iso|kill_leading_zero|default_if_none:"-999" }}">{{ t.ls_iso|kill_leading_zero|default_if_none:"-" }}</td>
                     <td data-value="{{ t.ls_hits|default_if_none:"-999" }}">{{ t.ls_hits|default_if_none:"-" }}</td>
                     <!-- <td data-value="{{ t.ls_runs|default_if_none:"-999" }}">{{ t.ls_runs|default_if_none:"-" }}</td> -->
                     <td data-value="{{ t.ls_rbi|default_if_none:"-999" }}">{{ t.ls_rbi|default_if_none:"-" }}</td>
