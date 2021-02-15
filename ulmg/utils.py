@@ -1,5 +1,6 @@
 import pickle
 import os.path
+from decimal import Decimal
 
 from googleapiclient.discovery import build
 from google.oauth2 import service_account
@@ -9,6 +10,14 @@ from django.contrib.postgres.search import TrigramSimilarity
 
 from ulmg import models
 
+def fuzzy_find_prospectrating(name_fragment, score=0.7):
+    return (
+        models.ProspectRating.objects.annotate(
+            similarity=TrigramSimilarity("player_name", name_fragment)
+        )
+        .filter(similarity__gt=score)
+        .order_by("-similarity")
+    )
 
 def fuzzy_find_player(name_fragment, score=0.7):
     return (
@@ -42,6 +51,12 @@ def update_wishlist(playerid, wishlist, rank, tier, remove=False):
             w.save()
 
         return w.player.name
+
+
+def parse_fg_fv(raw_fv_str):
+    if "+" in raw_fv_str:
+        return Decimal(f"{raw_fv_str.split('+')[0]}.5")
+    return Decimal(f"{raw_fv_str}")
 
 
 def build_context(request):
