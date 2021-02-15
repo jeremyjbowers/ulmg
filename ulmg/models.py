@@ -171,24 +171,8 @@ class Player(BaseModel):
     prospect_rating_avg = models.DecimalField(
         max_digits=4, decimal_places=1, blank=True, null=True
     )
-
-    # BOWERS DRAFT PREP
-    b_important = models.BooleanField(default=False)
-    b_interest = models.IntegerField(default=None, blank=True, null=True)
-    b_info = models.IntegerField(default=None, blank=True, null=True)
-    b_fv = models.DecimalField(max_digits=3, decimal_places=1, blank=True, null=True)
-    b_fg = models.IntegerField(default=None, blank=True, null=True)
-    b_ba = models.IntegerField(default=None, blank=True, null=True)
-    b_bp = models.IntegerField(default=None, blank=True, null=True)
-    b_pl = models.IntegerField(default=None, blank=True, null=True)
-    b_sckls = models.IntegerField(default=None, blank=True, null=True)
-    b_p365 = models.IntegerField(default=None, blank=True, null=True)
-    b_mlb = models.IntegerField(default=None, blank=True, null=True)
-    b_zips = models.IntegerField(default=None, blank=True, null=True)
-    b_rk = models.IntegerField(default=None, blank=True, null=True)
-    b_grp = models.IntegerField(default=None, blank=True, null=True)
-    b_kl = models.IntegerField(default=None, blank=True, null=True)
-    b_avg = models.IntegerField(default=None, blank=True, null=True)
+    fg_fv = models.DecimalField(max_digits=3, decimal_places=1, blank=True, null=True)
+    class_year = models.IntegerField(blank=True, null=True)
 
     # IDENTIFIERS
     ba_id = models.CharField(max_length=255, blank=True, null=True)
@@ -210,7 +194,6 @@ class Player(BaseModel):
     # ULMG-SPECIFIC
     team = models.ForeignKey(Team, on_delete=models.SET_NULL, blank=True, null=True)
     notes = models.TextField(blank=True, null=True)
-    scouting_reports = ArrayField(models.TextField(blank=True, null=True), default=list)
 
     # STATUS AND SUCH
     is_owned = models.BooleanField(default=False)
@@ -819,44 +802,6 @@ class Transaction(BaseModel):
     def save(self, *args, **kwargs):
         self.set_season()
         self.set_player_name()
-
-        super().save(*args, **kwargs)
-
-
-class ScoutingReport(BaseModel):
-    player = models.ForeignKey(Player, on_delete=models.SET_NULL, null=True)
-    player_name = models.CharField(max_length=255, blank=True)
-    season = models.IntegerField()
-    date = models.DateField()
-    pv = models.CharField(max_length=5, blank=True, null=True)
-    fv = models.CharField(max_length=5, blank=True, null=True)
-    risk = models.IntegerField(blank=True, null=True)
-    risk_name = models.CharField(max_length=255, blank=True, null=True)
-    url = models.CharField(max_length=255, blank=True, null=True)
-    organization = models.CharField(max_length=255, blank=True, null=True)
-    rank = models.IntegerField(blank=True, null=True)
-    evaluator = models.CharField(max_length=255, blank=True, null=True)
-    report_type = models.CharField(max_length=255, blank=True, null=True)
-    level = models.CharField(max_length=255, blank=True, null=True)
-    report = models.TextField(blank=True)
-
-    def __unicode__(self):
-        base = "%(organization)s %(date)s: %(player_name)s" % self.__dict__
-        if self.fv:
-            base += " (%s)" % self.fv
-        return base
-
-    def set_season(self):
-        if not self.season:
-            self.season = settings.CURRENT_SEASON
-
-    def set_player_name(self):
-        if self.player:
-            self.player_name = self.player.name
-
-    def save(self, *args, **kwargs):
-        self.set_player_name()
-        self.set_season()
 
         super().save(*args, **kwargs)
 

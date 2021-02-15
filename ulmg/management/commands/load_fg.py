@@ -16,15 +16,31 @@ from ulmg import utils
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
-        with open("data/2020/fg_2019_board.csv", "r") as readfile:
+        with open("data/2021/fg_2021_draft_board.csv", "r") as readfile:
             players = [dict(c) for c in csv.DictReader(readfile)]
             for p in players:
-                if p["playerId"] != "":
-                    try:
-                        obj = models.Player.objects.get(fg_id=p["playerId"])
-                        obj.notes = p["Report"]
-                        obj.save()
-                    except:
+                obj = None
+                objs = utils.fuzzy_find_player(p['Name'])
+                if len(objs) == 1:
+                    obj = objs[0]
+                    obj.notes = p['Report']
+                    obj.fg_fv = utils.parse_fg_fv(p['FV'])
+                    obj.raw_age = int(p['Age'].split('.')[0])
+                    obj.class_year = int(p['Class'])
+
+                    prs = utils.fuzzy_find_prospectrating(p['Name'])
+                    if len(prs) == 1:
+                        pr = prs[0]
+                        if not pr.player:
+                            pr.player = obj
+                            pr.save()
+                            print(f"* +pr {obj}")
+                        else:
+                            print(f"* {obj}")
+                
+                else:
+                    if len(objs) == 0:
+                        obj = models.Player()
                         obj = models.Player()
                         name = HumanName(p["Name"])
                         obj.name = p["Name"]
@@ -34,11 +50,15 @@ class Command(BaseCommand):
                         else:
                             obj.last_name = name.last
                         obj.position = utils.normalize_pos(p["Pos"])
-                        obj.fg_id = p["playerId"]
                         obj.is_mlb = False
-                        obj.is_amateur = False
+                        obj.is_amateur = True
                         obj.is_owned = False
                         obj.level = "B"
                         obj.notes = p["Report"]
-                        obj.save()
-                        print(obj)
+                        obj.fg_fv = utils.parse_fg_fv(p['FV'])
+                        obj.raw_age = int(p['Age'].split('.')[0])
+                        obj.class_year = int(p['Class']) 
+                        print(f"+ {obj}")
+
+                if obj:
+                    obj.save()
