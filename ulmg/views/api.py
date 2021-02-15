@@ -28,8 +28,6 @@ def wishlist_bulk_action(request):
 @csrf_exempt
 def wishlist_player_action(request, playerid):
     context = utils.build_context(request)
-    print(request.GET.get('rank', None))
-    print(request.GET.get('tier', None))
     w = utils.update_wishlist(
         playerid,
         context["wishlist"],
