@@ -31,11 +31,11 @@
             <div class="navbar-item">
             {% if user.is_authenticated %}
                 <div class="buttons">
-                    <a class="button is-white" href="/my/team/"><i class="fas fa-user-circle"></i>&nbsp;&nbsp;{{ user.username }}</a>
-                    <a class="button is-light" href="/accounts/logout/">Log out</a>
+                    <a class="button is-success is-outlined is-small" href="/my/team/"><i class="fas fa-user-circle"></i>&nbsp;&nbsp;{{ user.username }}</a>
+                    <a class="button is-danger is-small" href="/accounts/logout/">Log out</a>
                 </div>
             {% else %}
-                <div class="buttons"><a class="button is-light" href="/accounts/login/">Log in</a></div>
+                <div class="buttons"><a class="button is-info is-small" href="/accounts/login/">Log in</a></div>
             {% endif %}
             </div>
         </div>
