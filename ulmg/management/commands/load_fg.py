@@ -16,9 +16,9 @@ from ulmg import utils
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
-        with open("data/2021/fg_2021_draft_board.csv", "r") as readfile:
+        with open("data/2021/fg_int_board.csv", "r") as readfile:
             players = [dict(c) for c in csv.DictReader(readfile)]
-            for p in players:
+            for idx, p in enumerate(players):
                 obj = None
                 objs = utils.fuzzy_find_player(p['Name'])
                 if len(objs) == 1:
@@ -26,21 +26,10 @@ class Command(BaseCommand):
                     obj.notes = p['Report']
                     obj.fg_fv = utils.parse_fg_fv(p['FV'])
                     obj.raw_age = int(p['Age'].split('.')[0])
-                    obj.class_year = int(p['Class'])
-
-                    prs = utils.fuzzy_find_prospectrating(p['Name'])
-                    if len(prs) == 1:
-                        pr = prs[0]
-                        if not pr.player:
-                            pr.player = obj
-                            pr.save()
-                            print(f"* +pr {obj}")
-                        else:
-                            print(f"* {obj}")
+                    obj.class_year = int(p['ETA'])
                 
                 else:
                     if len(objs) == 0:
-                        obj = models.Player()
                         obj = models.Player()
                         name = HumanName(p["Name"])
                         obj.name = p["Name"]
@@ -57,8 +46,31 @@ class Command(BaseCommand):
                         obj.notes = p["Report"]
                         obj.fg_fv = utils.parse_fg_fv(p['FV'])
                         obj.raw_age = int(p['Age'].split('.')[0])
-                        obj.class_year = int(p['Class']) 
+                        obj.class_year = int(p['ETA']) 
                         print(f"+ {obj}")
 
                 if obj:
                     obj.save()
+
+                    prs = utils.fuzzy_find_prospectrating(p['Name'])
+                    if len(prs) == 1:
+                        pr = prs[0]
+                        if not pr.player:
+                            pr.player = obj
+                            pr.save()
+                            print(f"* +pr {obj}")
+                        else:
+                            print(f"* {obj}")
+                    else:
+                        if len(prs) == 0:
+                            
+                            pr, created = models.ProspectRating.objects.get_or_create(
+                                year=2021, player=obj, player_name=p["Name"]
+                            )
+
+                            pr.fg = idx
+
+                            pr.rank_type = "top-int"
+
+                            pr.save()
+                            print(f"* +pr {obj}")
