@@ -54,8 +54,13 @@
                         <th>Name</th>
                         <th></th>
                         <th>Age</th>
-                        <!-- <th>Tier</th>
-                        <th>Rank</th> -->
+                        <th>Pos</th>
+                        <th>MLB</th>
+                        <th>Team</th>
+                        <th>PA</th>
+                        <th>AVG</th>
+                        <th>OBP</th>
+                        <th>SLG</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -69,8 +74,13 @@
                             {% if p.player.mlbam_id %}<a class="has-text-weight-light" target="_blank" href="https://baseballsavant.mlb.com/savant-player/{{ p.player.mlbam_id }}">MLB &Gt;</a>{% endif %}
                         </td>
                         <td>{{ p.player.age|default_if_none:"-" }}</td>
-                        <!-- <td>{{ p.tier }}</td>
-                        <td>{{ p.rank }}</td> -->
+                        <td>{% if p.player.defense %}{{ p.player.defense_display }}{% else %}{{ p.player.position }}{% endif %}</td>
+                        <td>{{ p.player.mlb_team_abbr|default_if_none:"-" }}</td>
+                        <td><a href="/teams/{{ p.player.team.abbrev|lower }}/">{{ p.player.team }}</a></td>
+                        <td>{% if p.player.ls_plate_appearances > 0 %}{{ p.player.ls_plate_appearances }}{% endif %}</td>
+                        <td>{% if p.player.ls_plate_appearances > 0 %}{{ p.player.ls_avg|kill_leading_zero }}{% endif %}</td>
+                        <td>{% if p.player.ls_plate_appearances > 0 %}{{ p.player.ls_obp|kill_leading_zero }}{% endif %}</td>
+                        <td>{% if p.player.ls_plate_appearances > 0 %}{{ p.player.ls_slg|kill_leading_zero }}{% endif %}</td>
                     </tr>
                 {% endfor %}
                 </tbody>
@@ -84,8 +94,12 @@
                         <th>Name</th>
                         <th></th>
                         <th>Age</th>
-                        <!-- <th>Tier</th>
-                        <th>Rank</th> -->
+                        <th>MLB</th>
+                        <th>Team</th>
+                        <th>IP</th>
+                        <th>ERA</th>
+                        <th>K/9</th>
+                        <th>BB/9</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -99,8 +113,12 @@
                             {% if p.player.mlbam_id %}<a class="has-text-weight-light" target="_blank" href="https://baseballsavant.mlb.com/savant-player/{{ p.player.mlbam_id }}">MLB &Gt;</a>{% endif %}
                         </td>
                         <td>{{ p.player.age|default_if_none:"-" }}</td>
-                        <!-- <td>{{ p.tier }}</td>
-                        <td>{{ p.rank }}</td> -->
+                        <td>{{ p.player.mlb_team_abbr|default_if_none:"-" }}</td>
+                        <td><a href="/teams/{{ p.player.team.abbrev|lower }}/">{{ p.player.team }}</a></td>
+                        <td>{% if p.player.ls_ip > 0 %}{{ p.player.ls_ip }}{% endif %}</td>
+                        <td>{% if p.player.ls_ip > 0 %}{{ p.player.ls_era }}{% endif %}</td>
+                        <td>{% if p.player.ls_ip > 0 %}{{ p.player.ls_k_9 }}{% endif %}</td>
+                        <td>{% if p.player.ls_ip > 0 %}{{ p.player.ls_bb_9 }}{% endif %}</td>
                     </tr>
                 {% endfor %}
                 </tbody>
