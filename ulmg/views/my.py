@@ -82,7 +82,7 @@ def my_wishlist(request, list_type):
 
     if list_type == "trade":
         for p in models.WishlistPlayer.objects.filter(wishlist=context["wishlist"]):
-            if p.player.is_owned:
+            if p.player.is_owned and p.player.team != context['team']:
                 if p.player.position == "P":
                     context["pitchers"].append(p)
                 else:
