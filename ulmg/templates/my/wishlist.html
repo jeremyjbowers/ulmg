@@ -2,10 +2,6 @@
 
 {% load ulmg_tags %}
 
-{% block prenav %}
-        {% if protect_tab or roster_tab %}{% include "includes/my/roster_status.html" %}{% endif %}
-{% endblock %}
-
 {% block content %}
 {% include "includes/my/team_topper.html" %}
 
