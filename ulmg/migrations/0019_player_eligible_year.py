@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('ulmg', '0018_player_fg_fv'),
+        ("ulmg", "0018_player_fg_fv"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='player',
-            name='eligible_year',
+            model_name="player",
+            name="eligible_year",
             field=models.IntegerField(blank=True, null=True),
         ),
     ]

@@ -6,79 +6,26 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('ulmg', '0016_auto_20210211_2037'),
+        ("ulmg", "0016_auto_20210211_2037"),
     ]
 
     operations = [
-        migrations.RemoveField(
-            model_name='player',
-            name='b_avg',
-        ),
-        migrations.RemoveField(
-            model_name='player',
-            name='b_ba',
-        ),
-        migrations.RemoveField(
-            model_name='player',
-            name='b_bp',
-        ),
-        migrations.RemoveField(
-            model_name='player',
-            name='b_fg',
-        ),
-        migrations.RemoveField(
-            model_name='player',
-            name='b_fv',
-        ),
-        migrations.RemoveField(
-            model_name='player',
-            name='b_grp',
-        ),
-        migrations.RemoveField(
-            model_name='player',
-            name='b_important',
-        ),
-        migrations.RemoveField(
-            model_name='player',
-            name='b_info',
-        ),
-        migrations.RemoveField(
-            model_name='player',
-            name='b_interest',
-        ),
-        migrations.RemoveField(
-            model_name='player',
-            name='b_kl',
-        ),
-        migrations.RemoveField(
-            model_name='player',
-            name='b_mlb',
-        ),
-        migrations.RemoveField(
-            model_name='player',
-            name='b_p365',
-        ),
-        migrations.RemoveField(
-            model_name='player',
-            name='b_pl',
-        ),
-        migrations.RemoveField(
-            model_name='player',
-            name='b_rk',
-        ),
-        migrations.RemoveField(
-            model_name='player',
-            name='b_sckls',
-        ),
-        migrations.RemoveField(
-            model_name='player',
-            name='b_zips',
-        ),
-        migrations.RemoveField(
-            model_name='player',
-            name='scouting_reports',
-        ),
-        migrations.DeleteModel(
-            name='ScoutingReport',
-        ),
+        migrations.RemoveField(model_name="player", name="b_avg",),
+        migrations.RemoveField(model_name="player", name="b_ba",),
+        migrations.RemoveField(model_name="player", name="b_bp",),
+        migrations.RemoveField(model_name="player", name="b_fg",),
+        migrations.RemoveField(model_name="player", name="b_fv",),
+        migrations.RemoveField(model_name="player", name="b_grp",),
+        migrations.RemoveField(model_name="player", name="b_important",),
+        migrations.RemoveField(model_name="player", name="b_info",),
+        migrations.RemoveField(model_name="player", name="b_interest",),
+        migrations.RemoveField(model_name="player", name="b_kl",),
+        migrations.RemoveField(model_name="player", name="b_mlb",),
+        migrations.RemoveField(model_name="player", name="b_p365",),
+        migrations.RemoveField(model_name="player", name="b_pl",),
+        migrations.RemoveField(model_name="player", name="b_rk",),
+        migrations.RemoveField(model_name="player", name="b_sckls",),
+        migrations.RemoveField(model_name="player", name="b_zips",),
+        migrations.RemoveField(model_name="player", name="scouting_reports",),
+        migrations.DeleteModel(name="ScoutingReport",),
     ]

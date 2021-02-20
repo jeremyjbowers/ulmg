@@ -20,14 +20,14 @@ class Command(BaseCommand):
             players = [dict(c) for c in csv.DictReader(readfile)]
             for idx, p in enumerate(players):
                 obj = None
-                objs = utils.fuzzy_find_player(p['Name'])
+                objs = utils.fuzzy_find_player(p["Name"])
                 if len(objs) == 1:
                     obj = objs[0]
-                    obj.notes = p['Report']
-                    obj.fg_fv = utils.parse_fg_fv(p['FV'])
-                    obj.raw_age = int(p['Age'].split('.')[0])
-                    obj.class_year = int(p['ETA'])
-                
+                    obj.notes = p["Report"]
+                    obj.fg_fv = utils.parse_fg_fv(p["FV"])
+                    obj.raw_age = int(p["Age"].split(".")[0])
+                    obj.class_year = int(p["ETA"])
+
                 else:
                     if len(objs) == 0:
                         obj = models.Player()
@@ -44,15 +44,15 @@ class Command(BaseCommand):
                         obj.is_owned = False
                         obj.level = "B"
                         obj.notes = p["Report"]
-                        obj.fg_fv = utils.parse_fg_fv(p['FV'])
-                        obj.raw_age = int(p['Age'].split('.')[0])
-                        obj.class_year = int(p['ETA']) 
+                        obj.fg_fv = utils.parse_fg_fv(p["FV"])
+                        obj.raw_age = int(p["Age"].split(".")[0])
+                        obj.class_year = int(p["ETA"])
                         print(f"+ {obj}")
 
                 if obj:
                     obj.save()
 
-                    prs = utils.fuzzy_find_prospectrating(p['Name'])
+                    prs = utils.fuzzy_find_prospectrating(p["Name"])
                     if len(prs) == 1:
                         pr = prs[0]
                         if not pr.player:
@@ -63,7 +63,7 @@ class Command(BaseCommand):
                             print(f"* {obj}")
                     else:
                         if len(prs) == 0:
-                            
+
                             pr, created = models.ProspectRating.objects.get_or_create(
                                 year=2021, player=obj, player_name=p["Name"]
                             )

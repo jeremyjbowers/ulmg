@@ -10,6 +10,7 @@ from django.contrib.postgres.search import TrigramSimilarity
 
 from ulmg import models
 
+
 def fuzzy_find_prospectrating(name_fragment, score=0.7):
     return (
         models.ProspectRating.objects.annotate(
@@ -18,6 +19,7 @@ def fuzzy_find_prospectrating(name_fragment, score=0.7):
         .filter(similarity__gt=score)
         .order_by("-similarity")
     )
+
 
 def fuzzy_find_player(name_fragment, score=0.7):
     return (
@@ -43,7 +45,7 @@ def update_wishlist(playerid, wishlist, rank, tier, remove=False):
     else:
         if tier:
             w.tier = tier
-    
+
         if rank:
             w.rank = rank
 

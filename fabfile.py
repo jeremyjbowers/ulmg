@@ -74,7 +74,7 @@ def mgmt(command):
 
 @api.task
 def get_data():
-    api.run('pg_dump -U ulmg -f /tmp/ulmg.sql -Fp -E UTF8 --inserts ulmg')
+    api.run("pg_dump -U ulmg -f /tmp/ulmg.sql -Fp -E UTF8 --inserts ulmg")
     os.system("rm -rf data/sql/ulmg.sql")
     api.get(remote_path="/tmp/ulmg.sql", local_path="data/sql/ulmg.sql")
 

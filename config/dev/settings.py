@@ -81,16 +81,17 @@ LOGOUT_REDIRECT_URL = "/"
 
 STATIC_URL = "/static/"
 
-"""
-Section for site-specific settings, e.g., controlling tabs, current draft year, etc.
-"""
+# ULMG SPECIFIC SETTINGS
 MLB_ROSTER_SIZE = 30
-TEAM_PROTECT_TAB = False
+
+TEAM_PROTECT_TAB = True
 TEAM_ROSTER_TAB = False
 TEAM_LIVE_TAB = False
-TEAM_SEASON_HALF = "2h"
-CURRENT_SEASON = 2020
-CURRENT_SEASON_TYPE = "midseason"
+
+TEAM_SEASON_HALF = "1h"
+CURRENT_SEASON = 2021
+CURRENT_SEASON_TYPE = "offseason"
+
 ROSTER_TEAM_IDS = [
     ("1", "LAA", "Los Angeles Angels"),
     ("2", "BAL", "Baltimore Orioles"),
@@ -123,6 +124,7 @@ ROSTER_TEAM_IDS = [
     ("29", "SDP", "San Diego Padres"),
     ("30", "SFG", "San Francisco Giants"),
 ]
+
 CSV_COLUMNS = [
     "last_name",
     "first_name",
@@ -142,6 +144,7 @@ CSV_COLUMNS = [
     "is_aaa_roster",
     "team__abbreviation",
 ]
+
 DRAFTS = [
     {"title": "2020 Midseason AA", "url": "/draft/2020/midseason/aa/"},
     {"title": "2020 Midseason Open", "url": "/draft/2020/midseason/open/"},
