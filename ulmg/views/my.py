@@ -82,15 +82,13 @@ def my_wishlist(request, list_type):
 
     if list_type == "trade":
         for p in models.WishlistPlayer.objects.filter(wishlist=context["wishlist"]):
-            if p.player.is_owned and p.player.team != context['team']:
+            if p.player.is_owned and p.player.team != context["team"]:
                 if p.player.position == "P":
                     context["pitchers"].append(p)
                 else:
                     context["hitters"].append(p)
 
-        context["hitters"] = sorted(
-            context["hitters"], key=lambda x: (x.tier, x.rank)
-        )
+        context["hitters"] = sorted(context["hitters"], key=lambda x: (x.tier, x.rank))
         context["pitchers"] = sorted(
             context["pitchers"], key=lambda x: (x.tier, x.rank)
         )

@@ -7,23 +7,29 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('ulmg', '0013_auto_20210207_1442'),
+        ("ulmg", "0013_auto_20210207_1442"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='wishlist',
-            name='owner',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='ulmg.Owner'),
+            model_name="wishlist",
+            name="owner",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE, to="ulmg.Owner"
+            ),
         ),
         migrations.AlterField(
-            model_name='wishlistplayer',
-            name='player',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='ulmg.Player'),
+            model_name="wishlistplayer",
+            name="player",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE, to="ulmg.Player"
+            ),
         ),
         migrations.AlterField(
-            model_name='wishlistplayer',
-            name='wishlist',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='ulmg.Wishlist'),
+            model_name="wishlistplayer",
+            name="wishlist",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE, to="ulmg.Wishlist"
+            ),
         ),
     ]

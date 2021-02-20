@@ -208,6 +208,18 @@ class Player(BaseModel):
     is_aaa_roster = models.BooleanField(default=False)
     is_35man_roster = models.BooleanField(default=False)
 
+    # PROTECTION
+    is_reserve = models.BooleanField(default=False)
+    is_1h_p = models.BooleanField(default=False)
+    is_1h_c = models.BooleanField(default=False)
+    is_1h_pos = models.BooleanField(default=False)
+    is_2h_p = models.BooleanField(default=False)
+    is_2h_c = models.BooleanField(default=False)
+    is_2h_pos = models.BooleanField(default=False)
+    is_2h_draft = models.BooleanField(default=False)
+    is_protected = models.BooleanField(default=False)
+    cannot_be_protected = models.BooleanField(default=False)
+
     # REALTIME STATS
     rt_ab = models.IntegerField(blank=True, null=True)
     rt_r = models.IntegerField(blank=True, null=True)
@@ -229,17 +241,6 @@ class Player(BaseModel):
     rt_phr = models.IntegerField(blank=True, null=True)
     rt_p = models.IntegerField(blank=True, null=True)
     rt_s = models.IntegerField(blank=True, null=True)
-
-    # PROTECTION
-    is_reserve = models.BooleanField(default=False)
-    is_1h_p = models.BooleanField(default=False)
-    is_1h_c = models.BooleanField(default=False)
-    is_1h_pos = models.BooleanField(default=False)
-    is_2h_p = models.BooleanField(default=False)
-    is_2h_c = models.BooleanField(default=False)
-    is_2h_pos = models.BooleanField(default=False)
-    is_2h_draft = models.BooleanField(default=False)
-    is_protected = models.BooleanField(default=False)
 
     # CAREER STATS (for level)
     cs_pa = models.IntegerField(blank=True, null=True)
@@ -480,15 +481,24 @@ class Player(BaseModel):
             self.is_owned = True
 
     def set_protected(self):
+
+        # Set protections
         if (
             self.is_reserve
+            or self.is_1h_p
+            or self.is_1h_c
+            or self.is_1h_pos
             or self.is_2h_p
             or self.is_2h_c
             or self.is_2h_pos
             or self.is_mlb_roster
+            or self.is_protected
         ):
             self.is_protected = True
         else:
+            self.is_protected = False
+
+        if self.cannot_be_protected:
             self.is_protected = False
 
     def team_display(self):
@@ -841,9 +851,7 @@ class Wishlist(BaseModel):
 
 class WishlistPlayer(BaseModel):
     player = models.ForeignKey(Player, on_delete=models.CASCADE)
-    wishlist = models.ForeignKey(
-        Wishlist, on_delete=models.CASCADE
-    )
+    wishlist = models.ForeignKey(Wishlist, on_delete=models.CASCADE)
     rank = models.IntegerField(blank=True, null=True)
     tier = models.IntegerField(blank=True, null=True)
 

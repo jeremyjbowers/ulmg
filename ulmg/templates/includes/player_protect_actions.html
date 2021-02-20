@@ -13,7 +13,7 @@
 </td>
 {% endif %}
 
-{% if roster_tab %}<td class="left">
+{% if roster_tab %}<td>
     {% if p.is_carded and not p.is_mlb_roster and not p.is_reserve and mlb_roster_count < mlb_roster_size %}{% if not p.is_2h_c and not p.is_2h_pos and not p.is_2h_p %}<a class="button is-small is-outlined is-success player-action" data-playerid="{{ p.id }}" data-action="to_mlb">MLB &uarr;</a>{% endif %}{% endif %}
     {% if p.is_carded and not p.is_aaa_roster and not p.is_reserve %}{% if not p.is_2h_c and not p.is_2h_pos and not p.is_2h_p %}<a class="button is-small is-outlined is-info player-action" data-playerid="{{ p.id }}" data-action="to_aaa">AAA &darr;</a>{% endif %}{% endif %}
     <!-- {% if p.is_mlb_roster or p.is_aaa_roster or p.is_reserve %}<a class="button is-small is-warning player-action" data-playerid="{{ p.id }}" data-action="unprotect">CLR ⟲</a>{% endif %} -->
@@ -29,12 +29,12 @@
     <!-- {% if p.level == "V" and not p.is_reserve %}<a class="button is-primary is-light is-small is-link player-action" data-playerid="{{ p.id }}" data-action="is_reserve">R</a>{% endif %} -->
 </td>{% endif %}
 
-{% if protect_tab %}<td class="left">
+{% if protect_tab %}<td>
     {% if p.is_35man_roster or p.is_reserve or p.is_1h_p or p.is_1h_c or p.is_1h_pos %}<a class="button is-small is-light is-warning player-action" data-playerid="{{ p.id }}" data-action="unprotect">&rarrhk;</a>{% endif %}
 
-    {% if p.is_carded and not p.is_35man_roster and not 35_roster_count == 35 and not p.level == "B" %}<a class="button is-small is-success is-outlined player-action" data-playerid="{{ p.id }}" data-action="to_35_man">35</a>{% endif %}
+    {% if p.is_carded and not p.is_35man_roster and not 35_roster_count == 35 and not p.level == "B" and not p.cannot_be_protected %}<a class="button is-small is-success is-outlined player-action" data-playerid="{{ p.id }}" data-action="to_35_man">35</a>{% endif %}
 </td>{% endif %}
 
-{% if protect_tab or roster_tab%}<td class="right">
+{% if protect_tab or roster_tab%}<td>
     <a class="button is-small is-danger is-outlined player-drop" data-playerid="{{ p.id }}" data-playername="{{ p.name }}">X</a>
 </td>{% endif %}

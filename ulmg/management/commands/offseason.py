@@ -125,6 +125,9 @@ class Command(BaseCommand):
         if not options.get("dry_run", None):
             models.Player.objects.filter(is_mlb_roster=True).update(is_mlb_roster=False)
             models.Player.objects.filter(is_aaa_roster=True).update(is_aaa_roster=False)
+            models.Player.objects.filter(is_35man_roster=True).update(
+                is_35man_roster=False
+            )
             models.Player.objects.filter(is_1h_c=True).update(is_1h_c=False)
             models.Player.objects.filter(is_1h_p=True).update(is_1h_p=False)
             models.Player.objects.filter(is_1h_pos=True).update(is_1h_pos=False)
@@ -132,6 +135,14 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         self.reset_rosters()
-        self.set_carded()
-        self.load_career_stats()
-        self.set_levels(dry_run=True)
+
+        # Unprotect all V and A players prior to the 35-man roster.
+        models.Player.objects.filter(level__in=['A', 'V']).update(is_protected=False)
+
+        # Second half failed to protect players.
+        unprotected = [2599,2611,2588,2762,2831,2886,2890,2895,2909,2741,2993,3062,3042,3044,3045,3189,3212,3215,2973,3237,3265,2504,3304,3305,3306,3426,3421,3507,2580,2969,3564,3488,3568,2990,6986]
+        models.Player.objects.filter(id__in=unprotected).update(cannot_be_protected=True)
+
+        # self.set_carded()
+        # self.load_career_stats()
+        # self.set_levels(dry_run=True)

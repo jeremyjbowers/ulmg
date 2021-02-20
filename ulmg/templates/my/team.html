@@ -29,24 +29,6 @@
     {% endfor %}
 </nav>
 
-<style>
-    #live-throb {
-        width: 10px;
-        height: 10px;
-        border-radius: 10px;
-        background-color: red;
-        animation: glow 1s infinite alternate;
-    }
-
-    @keyframes glow {
-    from {
-        box-shadow: 0 0 2px -2px red;
-    } to {
-            box-shadow: 0 0 2px 2px red;
-        }
-    }
-</style>
-
 <div id="team">
 <div class="tabs is-centered is-boxed is-large">
     <ul>
@@ -77,7 +59,7 @@
             </thead>
             <tbody>
             {% for p in position.list %}
-            <tr class="{% if p.level == "V" and not p.is_protected %}unprotected{% endif %}
+            <tr class="{% if p.level != "B" and not p.is_protected %}unprotected{% endif %}
             {% if p.ls_is_mlb == False and p.ls_plate_appearances > 0 %} minors{% endif %}
             {% if p.ls_is_mlb == False %} minors{% endif %}
             {% if p.ls_is_mlb == False and p.is_amateur == True %} amateur{% endif %}
@@ -119,7 +101,7 @@
             </thead>
             <tbody>
             {% for p in pitchers %}
-            <tr class="{% if p.level == "V" and not p.is_protected %}unprotected{% endif %}
+            <tr class="{% if p.level != "B" and not p.is_protected %}unprotected{% endif %}
             {% if p.ls_is_mlb == False and p.ls_ip > 0 %} minors{% endif %}
             {% if p.ls_is_mlb == False and p.is_amateur == True %} amateur{% endif %}
             {% if p.ls_is_mlb == False %} minors{% endif %}
@@ -163,8 +145,6 @@ $(function(){
 
         var playerid = $el.attr('data-playerid')
         var action = $el.attr('data-action')
-
-        console.log(playerid, action);
 
         $.ajax({
             type: "POST",

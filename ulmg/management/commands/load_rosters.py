@@ -71,6 +71,7 @@ from ulmg import models, utils
 "team_name": "Minnesota Twins"}
 """
 
+
 class Command(BaseCommand):
     season = None
 
@@ -96,18 +97,18 @@ class Command(BaseCommand):
                 roster = json.loads(readfile.read())
                 for player in roster:
 
-                    for id_type in ['minormasterid', 'oPlayerId']:
+                    for id_type in ["minormasterid", "oPlayerId"]:
                         # we want to find those players whose fangraphs id changed
                         # from like sa12345 to 12345 because they got promoted last year.
                         # so, first: look up by one of the minor league ids.
-                        # then, if that matches, update with the correct playerid.                    
+                        # then, if that matches, update with the correct playerid.
                         if player.get(id_type, None) and player.get("playerid", None):
                             try:
                                 p = models.Player.objects.get(fg_id=player[id_type])
                                 p.fg_id = player["playerid"]
 
                                 # while we got you here, update your mlb ids too.
-                                for mlb_id in ['mlbamid', 'minorbamid', 'mlbamid2']:
+                                for mlb_id in ["mlbamid", "minorbamid", "mlbamid2"]:
                                     if player.get(mlb_id, None):
                                         p.mlbam_id = player[mlb_id]
                                 p.save()
@@ -116,25 +117,24 @@ class Command(BaseCommand):
                                 # if we can't find you, don't create anyone.
                                 pass
 
-
     def parse_new_players(self):
         no_id_players = []
 
         print("PARSE NEW PLAYERS")
-        with open('data/rosters/new_players.json', 'r') as readfile:
+        with open("data/rosters/new_players.json", "r") as readfile:
             players = list(json.loads(readfile.read()))
 
         for player in players:
             fg_id = None
 
             # there are so many options for fg_ids
-            if player.get('playerid', None):
-                fg_id = player['playerid']
-            elif player.get('oPlayerId', None):
-                fg_id = player['oPlayerId']
-            elif player.get('minormasterid', None):
-                fg_id = player['minormasterid']
-            
+            if player.get("playerid", None):
+                fg_id = player["playerid"]
+            elif player.get("oPlayerId", None):
+                fg_id = player["oPlayerId"]
+            elif player.get("minormasterid", None):
+                fg_id = player["minormasterid"]
+
             if not fg_id:
                 no_id_players.append(player)
 
@@ -144,7 +144,7 @@ class Command(BaseCommand):
                     p = models.Player.objects.get(fg_id=fg_id)
 
                     # we got a bingo! let's set the MLB id now because we know it.
-                    for mlb_id in ['mlbamid', 'minorbamid', 'mlbamid2']:
+                    for mlb_id in ["mlbamid", "minorbamid", "mlbamid2"]:
                         if player.get(mlb_id, None):
                             p.mlbam_id = player[mlb_id]
 
@@ -157,28 +157,28 @@ class Command(BaseCommand):
                     # we have a player id, so let's use it.
 
                     p = models.Player()
-                    p.name = player['player']
+                    p.name = player["player"]
 
                     # there are so many options for fg_ids
                     p.fg_id = fg_id
 
                     # set a raw age, this won't matter if we have a birthdate.
-                    p.raw_age = int(player['age'].split('.')[0])
+                    p.raw_age = int(player["age"].split(".")[0])
 
                     # get an mlbam id if we can
-                    for mlb_id in ['mlbamid', 'minorbamid', 'mlbamid2']:
+                    for mlb_id in ["mlbamid", "minorbamid", "mlbamid2"]:
                         if player.get(mlb_id, None):
                             p.mlbam_id = player[mlb_id]
 
                     # get and set a position.
-                    p.position = utils.normalize_pos(player.get('position', None))
+                    p.position = utils.normalize_pos(player.get("position", None))
                     p.level = "B"
 
                     if p.position:
                         # won't save if position is null
                         p.save()
 
-        with open('data/rosters/no_id_players.json', 'w') as writefile:
+        with open("data/rosters/no_id_players.json", "w") as writefile:
             writefile.write(json.dumps(no_id_players))
 
     def get_new_players(self):
@@ -201,23 +201,25 @@ class Command(BaseCommand):
             with open(f"data/rosters/{team_abbrev}_roster.json", "r") as readfile:
                 roster = json.loads(readfile.read())
                 for player in roster:
-                    player['team_abbrev'] = team_abbrev
-                    player['team_name'] = team_name
+                    player["team_abbrev"] = team_abbrev
+                    player["team_name"] = team_name
 
                     # search by all combinations of fg id
-                    for possible_id in ['playerid', 'oPlayerId', 'minormasterid']:
+                    for possible_id in ["playerid", "oPlayerId", "minormasterid"]:
                         if player.get(possible_id, None):
                             try:
                                 p = models.Player.objects.get(fg_id=player[possible_id])
-                            
+
                             except models.Player.DoesNotExist:
 
                                 # do a really tight fuzzy name search? (or dump to "possible")
-                                p = utils.fuzzy_find_player(player['player'], score=0.75)
+                                p = utils.fuzzy_find_player(
+                                    player["player"], score=0.75
+                                )
 
                                 if len(p) == 0:
 
-                                    new_players.append(player)                                    
+                                    new_players.append(player)
 
                                 if len(p) > 1:
                                     more_than_one_players.append(player)
@@ -226,12 +228,11 @@ class Command(BaseCommand):
                                 p = 1
                                 more_than_one_players.append(player)
 
-        with open('data/rosters/more_than_one_players.json', 'w') as writefile:
+        with open("data/rosters/more_than_one_players.json", "w") as writefile:
             writefile.write(json.dumps(more_than_one_players))
 
-        with open('data/rosters/new_players.json', 'w') as writefile:
+        with open("data/rosters/new_players.json", "w") as writefile:
             writefile.write(json.dumps(new_players))
-
 
     def parse_roster_info(self):
         print("PARSE ROSTER INFO")
@@ -315,7 +316,7 @@ class Command(BaseCommand):
                                 p.is_mlb40man = True
 
                             # set a raw age, this won't matter if we have a birthdate.
-                            p.raw_age = int(player['age'].split('.')[0])
+                            p.raw_age = int(player["age"].split(".")[0])
 
                             p.save()
 

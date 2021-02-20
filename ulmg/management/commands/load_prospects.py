@@ -49,7 +49,7 @@ class Command(BaseCommand):
             pr.plive = self.int_or_null(row["plive"])
             pr.p365 = self.int_or_null(row["p365"])
             pr.fg = self.int_or_null(row["fg"])
-            pr.cbs = self.int_or_null(row['cbs'])
+            pr.cbs = self.int_or_null(row["cbs"])
 
             pr.rank_type = "top-draft"
 

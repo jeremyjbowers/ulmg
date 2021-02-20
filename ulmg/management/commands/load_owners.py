@@ -119,9 +119,7 @@ class Command(BaseCommand):
         for t in models.Team.objects.all():
             owner = t.owner_obj
             if owner:
-                models.Wishlist.objects.get_or_create(
-                    owner = owner
-                )
+                models.Wishlist.objects.get_or_create(owner=owner)
             # owner = owner_list.get(t.abbreviation, None)
 
             # if owner:

@@ -17,12 +17,15 @@ from ulmg import models, utils
 @login_required
 @csrf_exempt
 def wishlist_bulk_action(request):
-    for raw_json_string,_ in request.POST.items():
+    for raw_json_string, _ in request.POST.items():
         players = json.loads(raw_json_string)
         for p in players:
-            models.WishlistPlayer.objects.filter(id=p['playerid']).update(rank=p['rank'])
+            models.WishlistPlayer.objects.filter(id=p["playerid"]).update(
+                rank=p["rank"]
+            )
 
-    return(JsonResponse({"success": True, "updated": len(players)}))
+    return JsonResponse({"success": True, "updated": len(players)})
+
 
 @login_required
 @csrf_exempt
@@ -40,39 +43,37 @@ def wishlist_player_action(request, playerid):
     return JsonResponse({"success": False, "player": w})
 
 
+@login_required
 @csrf_exempt
 def player_action(request, playerid, action):
-    """
-    # PROTECTION
-    is_reserve = models.BooleanField(default=False)
-    is_1h_p = models.BooleanField(default=False)
-    is_1h_c = models.BooleanField(default=False)
-    is_1h_pos = models.BooleanField(default=False)
-    """
 
-    # if action == "to_35_man":
-    #     p = get_object_or_404(models.Player, id=playerid)
-    #     p.is_reserve = False
-    #     p.is_1h_c = False
-    #     p.is_1h_p = False
-    #     p.is_1h_pos = False
-    #     p.is_35man_roster = True
-    #     p.save()
+    if action == "to_35_man":
+        p = get_object_or_404(models.Player, id=playerid)
+        p.is_reserve = False
+        p.is_1h_c = False
+        p.is_1h_p = False
+        p.is_1h_pos = False
+        p.is_35man_roster = True
+        p.is_protected = True
+        p.save()
+        print(p, p.is_protected)
+        return HttpResponse("ok")
 
     if action == "unprotect":
         p = get_object_or_404(models.Player, id=playerid)
-        # p.is_reserve = False
-        # p.is_1h_c = False
-        # p.is_1h_p = False
-        # p.is_1h_pos = False
-        p.is_2h_c = False
-        p.is_2h_p = False
-        p.is_2h_pos = False
-        # p.is_35man_roster = False
+        p.is_reserve = False
+        p.is_1h_c = False
+        p.is_1h_p = False
+        p.is_1h_pos = False
+        # p.is_2h_c = False
+        # p.is_2h_p = False
+        # p.is_2h_pos = False
+        p.is_35man_roster = False
         p.is_mlb_roster = False
         p.is_aaa_roster = False
         p.is_protected = False
         p.save()
+        return HttpResponse("ok")
 
     # if action == "is_reserve":
     #     p = get_object_or_404(models.Player, id=playerid)
@@ -86,48 +87,52 @@ def player_action(request, playerid, action):
     #     p.is_mlb_roster = False
     #     p.is_aaa_roster = False
     #     p.save()
+    #     return HttpResponse("ok")
 
-    if action == "is_2h_p":
-        p = get_object_or_404(models.Player, id=playerid)
-        old = models.Player.objects.filter(team=p.team, is_2h_p=True).update(
-            is_2h_p=False
-        )
-        p.is_reserve = False
-        p.is_2h_c = False
-        p.is_2h_p = False
-        p.is_2h_pos = False
-        p.is_2h_p = True
-        p.is_mlb_roster = False
-        p.is_aaa_roster = False
-        p.save()
+    # if action == "is_2h_p":
+    #     p = get_object_or_404(models.Player, id=playerid)
+    #     old = models.Player.objects.filter(team=p.team, is_2h_p=True).update(
+    #         is_2h_p=False
+    #     )
+    #     p.is_reserve = False
+    #     p.is_2h_c = False
+    #     p.is_2h_p = False
+    #     p.is_2h_pos = False
+    #     p.is_2h_p = True
+    #     p.is_mlb_roster = False
+    #     p.is_aaa_roster = False
+    #     p.save()
+    #     return HttpResponse("ok")
 
-    if action == "is_2h_c":
-        p = get_object_or_404(models.Player, id=playerid)
-        old = models.Player.objects.filter(team=p.team, is_2h_c=True).update(
-            is_2h_c=False
-        )
-        p.is_reserve = False
-        p.is_2h_c = False
-        p.is_2h_p = False
-        p.is_2h_pos = False
-        p.is_2h_c = True
-        p.is_mlb_roster = False
-        p.is_aaa_roster = False
-        p.save()
+    # if action == "is_2h_c":
+    #     p = get_object_or_404(models.Player, id=playerid)
+    #     old = models.Player.objects.filter(team=p.team, is_2h_c=True).update(
+    #         is_2h_c=False
+    #     )
+    #     p.is_reserve = False
+    #     p.is_2h_c = False
+    #     p.is_2h_p = False
+    #     p.is_2h_pos = False
+    #     p.is_2h_c = True
+    #     p.is_mlb_roster = False
+    #     p.is_aaa_roster = False
+    #     p.save()
+    #     return HttpResponse("ok")
 
-    if action == "is_2h_pos":
-        p = get_object_or_404(models.Player, id=playerid)
-        old = models.Player.objects.filter(team=p.team, is_2h_pos=True).update(
-            is_2h_pos=False
-        )
-        p.is_reserve = False
-        p.is_2h_c = False
-        p.is_2h_p = False
-        p.is_2h_pos = False
-        p.is_2h_pos = True
-        p.is_mlb_roster = False
-        p.is_aaa_roster = False
-        p.save()
+    # if action == "is_2h_pos":
+    #     p = get_object_or_404(models.Player, id=playerid)
+    #     old = models.Player.objects.filter(team=p.team, is_2h_pos=True).update(
+    #         is_2h_pos=False
+    #     )
+    #     p.is_reserve = False
+    #     p.is_2h_c = False
+    #     p.is_2h_p = False
+    #     p.is_2h_pos = False
+    #     p.is_2h_pos = True
+    #     p.is_mlb_roster = False
+    #     p.is_aaa_roster = False
+    #     p.save()
+    #     return HttpResponse("ok")
 
     # if action == "is_1h_p":
     #     p = get_object_or_404(models.Player, id=playerid)
@@ -141,6 +146,7 @@ def player_action(request, playerid, action):
     #     p.is_mlb_roster = False
     #     p.is_aaa_roster = False
     #     p.save()
+    #     return HttpResponse("ok")
 
     # if action == "is_1h_c":
     #     p = get_object_or_404(models.Player, id=playerid)
@@ -154,6 +160,7 @@ def player_action(request, playerid, action):
     #     p.is_mlb_roster = False
     #     p.is_aaa_roster = False
     #     p.save()
+    #     return HttpResponse("ok")
 
     # if action == "is_1h_pos":
     #     p = get_object_or_404(models.Player, id=playerid)
@@ -167,6 +174,7 @@ def player_action(request, playerid, action):
     #     p.is_mlb_roster = False
     #     p.is_aaa_roster = False
     #     p.save()
+    #     return HttpResponse("ok")
 
     if action == "to_mlb":
         p = get_object_or_404(models.Player, id=playerid)
@@ -177,6 +185,7 @@ def player_action(request, playerid, action):
         # p.is_1h_p = False
         # p.is_1h_pos = False
         p.save()
+        return HttpResponse("ok")
 
     if action == "to_aaa":
         p = get_object_or_404(models.Player, id=playerid)
@@ -187,6 +196,7 @@ def player_action(request, playerid, action):
         # p.is_1h_p = False
         # p.is_1h_pos = False
         p.save()
+        return HttpResponse("ok")
 
     if action == "off_roster":
         p = get_object_or_404(models.Player, id=playerid)
@@ -197,6 +207,7 @@ def player_action(request, playerid, action):
         # p.is_1h_p = False
         # p.is_1h_pos = False
         p.save()
+        return HttpResponse("ok")
 
     if action == "drop":
         p = get_object_or_404(models.Player, id=playerid)
@@ -213,10 +224,10 @@ def player_action(request, playerid, action):
         p.is_2h_pos = False
         p.is_protected = False
         p.save()
+        return HttpResponse("ok")
 
-    return HttpResponse("ok")
 
-
+@login_required
 def draft_api(request, year, season, draft_type):
     context = {}
     context["picks"] = [
@@ -232,6 +243,7 @@ def draft_api(request, year, season, draft_type):
     return JsonResponse(context)
 
 
+@login_required
 @csrf_exempt
 def draft_action(request, pickid):
     playerid = None
@@ -289,6 +301,7 @@ def draft_action(request, pickid):
     return HttpResponse("ok")
 
 
+@login_required
 def player_list(request):
     is_carded = request.GET.get("is_carded", None)
     is_owned = request.GET.get("is_owned", None)
@@ -324,6 +337,7 @@ def player_list(request):
     return JsonResponse(payload, safe=False)
 
 
+@login_required
 def bowers_important(request):
     payload = [
         dict(p)
@@ -335,6 +349,7 @@ def bowers_important(request):
     return JsonResponse(payload, safe=False)
 
 
+@login_required
 def search(request):
     def to_bool(b):
         if b.lower() in ["y", "yes", "t", "true", "on"]:

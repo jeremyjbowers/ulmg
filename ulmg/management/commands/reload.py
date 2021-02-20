@@ -14,4 +14,4 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         os.system("dropdb ulmg")
         os.system("createdb ulmg")
-        os.system('psql ulmg < data/sql/ulmg.sql')
+        os.system("psql ulmg < data/sql/ulmg.sql")
