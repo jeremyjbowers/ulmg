@@ -25,8 +25,6 @@ def my_team(request, abbreviation):
     )
     context['owner'] = context['team'].owner
 
-    # context['wishlist'] = models.Wishlist.objects.get(owner=context['team'].owner)
-
     team_players = models.Player.objects.filter(team=context["team"])
     hitters = team_players.exclude(position="P").order_by(
         "position", "-level_order", "-is_carded", "last_name", "first_name"

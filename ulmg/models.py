@@ -219,6 +219,7 @@ class Player(BaseModel):
     is_2h_draft = models.BooleanField(default=False)
     is_protected = models.BooleanField(default=False)
     cannot_be_protected = models.BooleanField(default=False)
+    covid_protected = models.BooleanField(default=False)
 
     # REALTIME STATS
     rt_ab = models.IntegerField(blank=True, null=True)
