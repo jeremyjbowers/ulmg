@@ -19,14 +19,86 @@ from ulmg import utils
 
 class Command(BaseCommand):
     season = None
+    team_lookup = {
+        'LD': "LAD",
+        "SF": "SFG",
+        "DT": "DET",
+        "PI": "PIT",
+        "NM": "NYM",
+        "SD": "SDP",
+        "MI": "MIA",
+        "AT": "ATL",
+    }
 
     def handle(self, *args, **options):
         self.season = settings.CURRENT_SEASON
         self.reset_players()
-        self.get_hitters()
+        # self.get_hitters()
         self.get_pitchers()
-        # AGGREGATE LS BY TEAM
-        self.team_aggregates()
+        # # AGGREGATE LS BY TEAM
+        # self.team_aggregates()
+
+    def save_pitcher(self, obj, row):
+        try:
+            obj.ls_is_mlb = True
+            obj.is_carded = True
+            obj.ls_ha = obj.ls_ha + int(row["IMAG H"])
+            obj.ls_hra = obj.ls_hra + int(row["IMAG HR"])
+            obj.ls_pbb = obj.ls_pbb + int(row["IMAG BB"])
+            obj.ls_pk = obj.ls_pk + int(row["IMAG K"])
+            obj.ls_gs = obj.ls_gs + int(row["IMAG GS"])
+            obj.ls_ip = obj.ls_ip + Decimal(row["IMAG IP"])
+            obj.ls_k_9 = Decimal((obj.ls_pk * 9) / obj.ls_ip)
+            obj.ls_bb_9 = Decimal((obj.ls_pbb * 9) / obj.ls_ip)
+            obj.ls_hr_9 = Decimal((obj.ls_hra * 9) / obj.ls_ip)
+            obj.ls_er = obj.ls_er + int(
+                (int(row["IMAG IP"]) / 9.0) * float(row["IMAG ERA"])
+            )
+            try:
+                obj.ls_era = Decimal((9 * obj.ls_er) / float(obj.ls_ip))
+            except:
+                obj.ls_era = Decimal(999)
+            obj.save()
+
+        except Exception as e:
+            print(e)
+
+    def save_hitter(self, obj, row):
+        try:
+            obj.ls_is_mlb = True
+            obj.is_carded = True
+            obj.ls_ab = obj.ls_ab + int(row["IMAG AB"])
+            obj.ls_hits = obj.ls_hits + int(row["IMAG H"])
+            obj.ls_2b = obj.ls_2b + int(row["IMAG 2B"])
+            obj.ls_3b = obj.ls_3b + int(row["IMAG 3B"])
+            obj.ls_bb = obj.ls_bb + int(row["IMAG BB"])
+            obj.ls_k = obj.ls_k + int(row["IMAG K"])
+            obj.ls_plate_appearances = int(obj.ls_ab + obj.ls_bb)
+            obj.ls_hr = obj.ls_hr + int(row["IMAG HR"])
+            obj.ls_rbi = obj.ls_rbi + int(row["IMAG RBI"])
+            obj.ls_sb = obj.ls_sb + int(row["IMAG SB"])
+            obj.ls_bb_pct = Decimal(
+                (float(obj.ls_bb) / float(obj.ls_plate_appearances)) * 100.0
+            )
+            obj.ls_k_pct = Decimal(
+                (float(obj.ls_k) / float(obj.ls_plate_appearances)) * 100.0
+            )
+            obj.ls_avg = Decimal((obj.ls_hits / float(obj.ls_ab)))
+            obj.ls_obp = Decimal(
+                ((obj.ls_bb + obj.ls_hits) / float(obj.ls_plate_appearances))
+            )
+            tb = (
+                (obj.ls_hits - obj.ls_2b - obj.ls_3b - obj.ls_hr)
+                + (2 * obj.ls_2b)
+                + (3 * obj.ls_3b)
+                + (4 * obj.ls_hr)
+            )
+            obj.ls_slg = Decimal((tb / float(obj.ls_ab)))
+            obj.ls_iso = Decimal(obj.ls_slg - obj.ls_avg)
+            obj.save()
+
+        except Exception as e:
+            print(e)
 
     def team_aggregates(self):
         print("TEAM AGGREGATES")
@@ -92,7 +164,6 @@ class Command(BaseCommand):
             team.ls_whip = (team.ls_ha + team.ls_bb) / float(team.ls_ip)
 
         for team in models.Team.objects.all():
-            print(f"SETTING AGGREGATES FOR {team}")
             set_hitters(team)
             set_pitchers(team)
             team.save()
@@ -155,45 +226,52 @@ class Command(BaseCommand):
             rows = list(csv.DictReader(readfile))
 
         for row in rows:
-            obj = utils.fuzzy_find_player(f"{row['FIRST']} {row['LAST']}")
-            if len(obj) > 0:
-                obj = obj[0]
-                try:
-                    print(obj)
-                    obj.ls_is_mlb = True
-                    obj.is_carded = True
-                    obj.ls_ab = obj.ls_ab + int(row["IMAG AB"])
-                    obj.ls_hits = obj.ls_hits + int(row["IMAG H"])
-                    obj.ls_2b = obj.ls_2b + int(row["IMAG 2B"])
-                    obj.ls_3b = obj.ls_3b + int(row["IMAG 3B"])
-                    obj.ls_bb = obj.ls_bb + int(row["IMAG BB"])
-                    obj.ls_k = obj.ls_k + int(row["IMAG K"])
-                    obj.ls_plate_appearances = int(obj.ls_ab + obj.ls_bb)
-                    obj.ls_hr = obj.ls_hr + int(row["IMAG HR"])
-                    obj.ls_rbi = obj.ls_rbi + int(row["IMAG RBI"])
-                    obj.ls_sb = obj.ls_sb + int(row["IMAG SB"])
-                    obj.ls_bb_pct = Decimal(
-                        (float(obj.ls_bb) / float(obj.ls_plate_appearances)) * 100.0
-                    )
-                    obj.ls_k_pct = Decimal(
-                        (float(obj.ls_k) / float(obj.ls_plate_appearances)) * 100.0
-                    )
-                    obj.ls_avg = Decimal((obj.ls_hits / float(obj.ls_ab)))
-                    obj.ls_obp = Decimal(
-                        ((obj.ls_bb + obj.ls_hits) / float(obj.ls_plate_appearances))
-                    )
-                    tb = (
-                        (obj.ls_hits - obj.ls_2b - obj.ls_3b - obj.ls_hr)
-                        + (2 * obj.ls_2b)
-                        + (3 * obj.ls_3b)
-                        + (4 * obj.ls_hr)
-                    )
-                    obj.ls_slg = Decimal((tb / float(obj.ls_ab)))
-                    obj.ls_iso = Decimal(obj.ls_slg - obj.ls_avg)
-                    obj.save()
+            
+            # Skip empty rows
+            if row['FIRST'] == "" and row['LAST'] == "":
+                continue
 
-                except Exception as e:
-                    print(e)
+            # Catch our edge cases
+            if f"{row['FIRST']} {row['LAST']}" == "Daniel Robertson":
+                obj = models.Player.objects.get(fg_id=14145)
+                self.save_hitter(obj, row)
+                continue
+
+            # Do the standard lookup
+            obj = utils.fuzzy_find_player(f"{row['FIRST']} {row['LAST']}")
+
+            # If the lookup works, save the hitter and continue.
+            if len(obj) == 1:
+                obj = obj[0]
+                self.save_hitter(obj, row)
+                continue
+
+            # If there's nobody, get out quick.
+            if len(obj) == 0:
+                print("[]", row)
+                continue
+
+            # If there's two players with this score, try to narrow by team.
+            if len(obj) > 1:
+                mlb_team_abbr = self.team_lookup.get(row['TM'], None)
+                obj = utils.fuzzy_find_player(f"{row['FIRST']} {row['LAST']}", mlb_team_abbr=mlb_team_abbr)
+
+                # If we got a match with the team, save and continue.
+                if len(obj) == 1:
+                    obj = obj[0]
+                    self.save_hitter(obj, row)
+                    continue
+
+                # Two? Even with the same team? Show me!
+                if len(obj) > 1:
+                    print(obj, row)
+                    continue
+
+                # Zero? That's bad. Show me.
+                if len(obj) == 0:
+                    print("[]", row)
+                    continue
+
 
     def get_pitchers(self):
         print("GET: STRAT PITCHERS FROM CSV")
@@ -202,55 +280,42 @@ class Command(BaseCommand):
             rows = list(csv.DictReader(readfile))
 
         for row in rows:
-            obj = utils.fuzzy_find_player(f"{row['FIRST']} {row['LAST']}")
-            if len(obj) > 0:
-                obj = obj[0]
-                try:
-                    """
-                    LG
-                    TM
-                    LAST
-                    FIRST
-                    IMAG W
-                    IMAG L
-                    IMAG ERA
-                    IMAG GS
-                    IMAG SV
-                    IMAG IP
-                    IMAG H
-                    IMAG BB
-                    IMAG K
-                    IMAG HR
-                    """
-                    print(obj)
-                    obj.ls_is_mlb = True
-                    obj.is_carded = True
-                    obj.ls_ha = obj.ls_ha + int(row["IMAG H"])
-                    obj.ls_hra = obj.ls_hra + int(row["IMAG HR"])
-                    obj.ls_pbb = obj.ls_pbb + int(row["IMAG BB"])
-                    obj.ls_pk = obj.ls_pk + int(row["IMAG K"])
-                    # obj.ls_g = int()
-                    obj.ls_gs = obj.ls_gs + int(row["IMAG GS"])
-                    obj.ls_ip = obj.ls_ip + Decimal(row["IMAG IP"])
-                    obj.ls_k_9 = Decimal((obj.ls_pk * 9) / obj.ls_ip)
-                    obj.ls_bb_9 = Decimal((obj.ls_pbb * 9) / obj.ls_ip)
-                    obj.ls_hr_9 = Decimal((obj.ls_hra * 9) / obj.ls_ip)
-                    # obj.ls_babip = Decimal()
-                    # obj.ls_lob_pct = Decimal()
-                    # obj.ls_gb_pct = Decimal()
-                    # obj.ls_hr_fb = Decimal()
-                    # obj.ls_era = Decimal(row["IMAG ERA"])
-                    obj.ls_er = obj.ls_er + int(
-                        (int(row["IMAG IP"]) / 9.0) * float(row["IMAG ERA"])
-                    )
-                    try:
-                        obj.ls_era = Decimal((9 * obj.ls_er) / float(obj.ls_ip))
-                    except:
-                        obj.ls_era = Decimal(999)
-                    # obj.ls_fip = Decimal()
-                    # obj.ls_xfip = Decimal()
-                    # obj.ls_siera = Decimal()
-                    obj.save()
+            if row['FIRST'] == "" and row['LAST'] == "":
+                continue
 
-                except Exception as e:
-                    print(e)
+            obj = utils.fuzzy_find_player(f"{row['FIRST']} {row['LAST']}")
+
+            if len(obj) == 0:
+                print("[]", row)
+                continue
+
+            if len(obj) == 1:
+                obj = obj[0]
+                self.save_pitcher(obj, row)
+                continue
+
+            # If there's two players with this score, try to narrow by team.
+            if len(obj) > 1:
+                mlb_team_abbr = self.team_lookup.get(row['TM'], None)
+                obj = utils.fuzzy_find_player(f"{row['FIRST']} {row['LAST']}", mlb_team_abbr=mlb_team_abbr)
+
+                # If we got a match with the team, save and continue.
+                if len(obj) == 1:
+                    obj = obj[0]
+                    self.save_pitcher(obj, row)
+                    continue
+
+                # Two? Even with the same team? Show me!
+                if len(obj) > 1:
+                    print(obj, row)
+                    continue
+
+                # Zero? That's bad. Show me.
+                if len(obj) == 0:
+                    print("[]", row)
+                    continue
+
+
+
+
+

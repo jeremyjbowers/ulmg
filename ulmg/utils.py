@@ -11,24 +11,39 @@ from django.contrib.postgres.search import TrigramSimilarity
 from ulmg import models
 
 
-def fuzzy_find_prospectrating(name_fragment, score=0.7):
-    return (
-        models.ProspectRating.objects.annotate(
-            similarity=TrigramSimilarity("player_name", name_fragment)
-        )
-        .filter(similarity__gt=score)
-        .order_by("-similarity")
-    )
+def fuzzy_find_prospectrating(name_fragment, score=0.7, position=None, mlb_team_abbr=None):
+
+    players = models.ProspectRating.objects
+
+    if position:
+        players = players.filter(position=position)
+
+    if mlb_team_abbr:
+        players = players.filter(mlb_team_abbr=mlb_team_abbr)
+    
+    players = players.annotate(similarity=TrigramSimilarity("name", name_fragment))
+    players = players.filter(similarity__gt=score)
+    players = players.order_by("-similarity")
+
+    return players
 
 
-def fuzzy_find_player(name_fragment, score=0.7):
-    return (
-        models.Player.objects.annotate(
-            similarity=TrigramSimilarity("name", name_fragment)
-        )
-        .filter(similarity__gt=score)
-        .order_by("-similarity")
-    )
+def fuzzy_find_player(name_fragment, score=0.7, position=None, mlb_team_abbr=None):
+
+    players = models.Player.objects
+
+    if position:
+        players = players.filter(position=position)
+
+    if mlb_team_abbr:
+        players = players.filter(mlb_team_abbr=mlb_team_abbr)
+    
+    players = players.annotate(similarity=TrigramSimilarity("name", name_fragment))
+    players = players.filter(similarity__gt=score)
+    players = players.order_by("-similarity")
+
+    return players
+
 
 
 def update_wishlist(playerid, wishlist, rank, tier, remove=False):
