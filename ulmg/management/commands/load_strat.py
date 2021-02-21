@@ -33,10 +33,10 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         self.season = settings.CURRENT_SEASON
         self.reset_players()
-        # self.get_hitters()
+        self.get_hitters()
         self.get_pitchers()
         # # AGGREGATE LS BY TEAM
-        # self.team_aggregates()
+        self.team_aggregates()
 
     def save_pitcher(self, obj, row):
         try:
