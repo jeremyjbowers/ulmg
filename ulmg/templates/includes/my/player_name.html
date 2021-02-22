@@ -15,6 +15,6 @@
     {% else %}
         {{ p.player_name }}
     {% endif %}
-    {% if p.player.notes %}<a class="report-toggle" data-playerid="{{ p.id }}" href="#">&#9918;</a>{% endif %}
     {% if p.player.is_prospect %}<span class="icon-text"><span class="icon has-text-danger"><i class="fab fa-product-hunt"></i></span><span>{{ p.player.prospect_rating_avg }}</span></span>{% endif %}
+    {% if p.player.notes %}<a class="report-toggle" data-playerid="{{ p.id }}" href="#">&#9918;</a>{% endif %}
 </td>
