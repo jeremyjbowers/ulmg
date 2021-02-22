@@ -13,7 +13,9 @@ from ulmg import models
 
 def fuzzy_find_prospectrating(name_fragment, score=0.7, position=None, mlb_team_abbr=None):
 
-    players = models.ProspectRating.objects
+    output = []
+
+    players = models.Player.objects
 
     if position:
         players = players.filter(position=position)
@@ -25,7 +27,14 @@ def fuzzy_find_prospectrating(name_fragment, score=0.7, position=None, mlb_team_
     players = players.filter(similarity__gt=score)
     players = players.order_by("-similarity")
 
-    return players
+    for p in players:
+        try:
+            obj = models.ProspectRating.objects.get(player=p)
+            output.append(obj)
+        except models.ProspectRating.DoesNotExist:
+            pass
+
+    return output
 
 
 def fuzzy_find_player(name_fragment, score=0.7, position=None, mlb_team_abbr=None):
@@ -71,9 +80,17 @@ def update_wishlist(playerid, wishlist, rank, tier, remove=False):
 
 
 def parse_fg_fv(raw_fv_str):
+    if raw_fv_str == "":
+        return None
+
     if "+" in raw_fv_str:
         return Decimal(f"{raw_fv_str.split('+')[0]}.5")
-    return Decimal(f"{raw_fv_str}")
+
+    try:
+        return Decimal(f"{raw_fv_str}")
+
+    except:
+        return None
 
 
 def build_context(request):

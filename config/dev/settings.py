@@ -99,7 +99,7 @@ ROSTER_TEAM_IDS = [
     ("4", "CHW", "Chicago White Sox"),
     ("5", "CLE", "Cleveland Indians"),
     ("6", "DET", "Detroit Tigers"),
-    ("7", "KCA", "Kansas City Royals"),
+    ("7", "KCR", "Kansas City Royals"),
     ("8", "MIN", "Minnesota Twins"),
     ("9", "NYY", "New York Yankees"),
     ("10", "OAK", "Oakland Athletics"),
