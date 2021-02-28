@@ -837,6 +837,7 @@ class ProspectRating(BaseModel):
     p1500 = models.IntegerField(blank=True, null=True)
     ftrax = models.IntegerField(blank=True, null=True)
     cbs = models.IntegerField(blank=True, null=True)
+    espn = models.IntegerField(blank=True, null=True)
 
     rank_type = models.CharField(max_length=255, null=True, blank=True)
 
