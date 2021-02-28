@@ -83,6 +83,7 @@ class Command(BaseCommand):
             pr.bp = self.int_or_null(row["bp"])
             pr.law = self.int_or_null(row["law"])
             pr.fg = self.int_or_null(row['fg'])
+            pr.espn = self.int_or_null(row['espn'])
 
             pr.rank_type = "top-100"
 
