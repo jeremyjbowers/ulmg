@@ -158,9 +158,9 @@ class PlayerAdmin(admin.ModelAdmin):
                 "fields": (
                     "name",
                     ("first_name", "last_name"),
-                    ("birthdate", "age"),
+                    ("birthdate", "birthdate_qa", "age", "raw_age"),
                     "position",
-                    ("level", "is_amateur", "league"),
+                    "level",
                     "team",
                 ),
             },
@@ -169,27 +169,21 @@ class PlayerAdmin(admin.ModelAdmin):
             "External",
             {
                 "fields": (
-                    "fg_id",
-                    "bref_id",
+                    ("fg_id", "fg_url"),
+                    ("bref_id", "bref_url"),
+                    ("ba_id", "ba_url"),
                     "mlbam_id",
-                    "mlb_dotcom",
-                    "ba_id",
-                    "fg_url",
-                    "bref_url",
-                    "ba_url",
-                    "mlb_dotcom_url",
+                    ("mlb_dotcom", "mlb_dotcom_url"),
                 )
             },
-        ),
-        (
-            "Player flags",
-            {"classes": ("collapse",), "fields": ("is_carded", "is_owned",)},
         ),
         (
             "Roster",
             {
                 "classes": ("collapse",),
-                "fields": ("is_mlb_roster", "is_aaa_roster", "is_35man_roster",),
+                "fields": (
+                    ("is_mlb_roster", "is_aaa_roster", "is_35man_roster"),
+                ),
             },
         ),
         (
@@ -197,15 +191,42 @@ class PlayerAdmin(admin.ModelAdmin):
             {
                 "classes": ("collapse",),
                 "fields": (
-                    "is_reserve",
-                    "is_1h_p",
-                    "is_1h_c",
-                    "is_1h_pos",
-                    "is_2h_draft",
-                    "is_2h_p",
-                    "is_2h_c",
-                    "is_2h_pos",
+                    ("is_reserve",),
+                    ("is_1h_p", "is_1h_c", "is_1h_pos"),
+                    ("is_2h_draft", "is_2h_p", "is_2h_c", "is_2h_pos"),
+                    ("is_protected", "cannot_be_protected", "covid_protected")
                 ),
             },
+        ),
+        (
+            "Live stats",
+            {
+                "classes": ("collapse",),
+                "fields": (
+                    ("is_starter", "is_bench", "is_player_pool"),
+                    "is_injured", 
+                    "injury_description",
+                    ("role",),
+                    ("mlb_team", "mlb_team_abbr"),
+                    ("is_mlb40man", "is_bullpen"),
+                ),
+            },
+        ),
+        (
+            "Prospect",
+            {
+                "classes": ("collapse",),
+                "fields": (
+                    ("is_prospect","is_amateur"), 
+                    "league",
+                    "prospect_rating_avg",
+                    "class_year",
+                    ("fg_fv", "fg_eta"),
+                ),
+            },
+        ),
+        (
+            "Advanced",
+            {"classes": ("collapse",), "fields": ("is_carded", "is_owned",)},
         ),
     )
