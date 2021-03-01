@@ -18,6 +18,41 @@ from ulmg import models, utils
 
 @staff_member_required
 @login_required
+def player_util(request):
+    context = utils.build_context(request)
+    context["no_ids"] = (
+        models.Player.objects.filter(
+            fg_id__isnull=True, bref_id__isnull=True, mlb_dotcom__isnull=True
+        )
+        .filter(is_amateur=False)
+        .order_by("-created")
+    )
+    context["no_birthdates"] = models.Player.objects.filter(
+        birthdate__isnull=True
+    ).order_by("-created")
+    context["suspect_birthdates"] = models.Player.objects.filter(
+        birthdate_qa=False, birthdate__day=1
+    ).order_by("-birthdate")
+    return render(request, "player_util.html", context)
+
+
+@staff_member_required
+@login_required
+def trade_util(request):
+    if request.method == "GET":
+        context = utils.build_context(request)
+        context['hitters'] = models.Player.objects.filter(is_owned=True).exclude(position="P")
+        context['pitchers'] = models.Player.objects.filter(is_owned=True, position="P")
+        context['picks'] = models.DraftPick.objects.filter(year=settings.CURRENT_SEASON, season=settings.CURRENT_SEASON_TYPE)
+        return render(request, "trade_form.html", context)
+
+    if request.method == "POST":
+        payload = {}
+        return JsonResponse(payload, safe=False)
+
+
+@staff_member_required
+@login_required
 def my_team(request, abbreviation):
     context = utils.build_context(request)
     context["team"] = get_object_or_404(

@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    div.player-container button.button {
+        display: none;
+    }
+    div.player-container button.visible {
+        display: flex;
+    }
+    div.player-container {
+        margin: 5px 0;
+        padding: 5px 0;
+    }
+    div.player-container button.button {
+        margin: 2px;
+    }
+</style>
+<button class="button is-large submit is-primary">Submit</button>
+<div class="columns">
+    <div class="column player-selector">
+        <h1 class="title is-3">Team 1</h1>
+        <div class="select">
+            <select id="team-1-select">
+                <option value="">Select team</option>
+                {% for t in teamnav %}
+                <option value="{{ t.abbreviation|lower }}">{{ t.abbreviation }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="player-container container" id="player-1-select">
+            <div class="columns">
+                <div class="column">
+                    {% for p in hitters %}
+                        <button id="player-{{ p.id }}" class="is-small is-fullwidth button team-{{ p.team.abbreviation|lower }}">{{ p.name }} {{ p.position }}</button>
+                    {% endfor %}
+                </div>
+                <div class="column">
+                    {% for p in pitchers %}
+                        <button id="player-{{ p.id }}" class="is-small is-fullwidth button team-{{ p.team.abbreviation|lower }}">{{ p.name }} {{ p.position }}</button>
+                    {% endfor %}
+                </div>
+                <div class="column">
+                    {% for p in picks %}
+                        <button id="pick-{{ p.id }}" class="is-small is-fullwidth button team-{{ p.team.abbreviation|lower }}">{{ p.slug }}</button>
+                    {% endfor %}                    
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="column player-selector">
+        <h1 class="title is-3">Team 2</h1>
+        <div class="select">
+            <select id="team-2-select">
+                <option value="">Select team</option>
+                {% for t in teamnav %}
+                <option value="{{ t.abbreviation|lower }}">{{ t.abbreviation }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="player-container container" id="player-2-select">
+            <div class="columns">
+                <div class="column">
+                    {% for p in hitters %}
+                        <button id="player-{{ p.id }}" class="is-small is-fullwidth button team-{{ p.team.abbreviation|lower }}">{{ p.name }} {{ p.position }}</button>
+                    {% endfor %}
+                </div>
+                <div class="column">
+                    {% for p in pitchers %}
+                        <button id="player-{{ p.id }}" class="is-small is-fullwidth button team-{{ p.team.abbreviation|lower }}">{{ p.name }} {{ p.position }}</button>
+                    {% endfor %}
+                </div>
+                <div class="column">
+                    {% for p in picks %}
+                        <button id="pick-{{ p.id }}" class="is-small is-fullwidth button team-{{ p.team.abbreviation|lower }}">{{ p.slug }}</button>
+                    {% endfor %}                    
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+{% block extrascript %}
+<script type="text/javascript">
+    $(function(){
+    
+        var trade_submit_handler = function(el) {
+            el.preventDefault();
+            $el = $(this);
+            
+            var payload = []
+            $.each(["1", "2"], function(idx, side){
+                var team_abbr = $('#team-' + side + '-select option:selected').text().toLowerCase();
+                var receipt = []
+                $.each($('#player-' + side + '-select button.is-info'), function(idx, plr){
+                    receipt.push($(plr).attr('id'));
+                })
+                payload.push({
+                    "team": team_abbr,
+                    "receipt": receipt
+                })
+            })
+            console.log(payload);
+            // AJAX this to the server via POST
+            // server should create a trade
+            // and a pair of trade receipts
+        }
+
+        var player_select_handler = function(el) {
+    
+            el.preventDefault();
+            $el = $(this);
+            $el.toggleClass('is-info')
+
+        }
+
+        var team_select_handler = function(el) {
+    
+            el.preventDefault();
+            $el = $(this);
+
+            var side = $el.attr('id').split('team-')[1].split('-select')[0]
+            
+            $('#player-' + side + '-select button.button').removeClass('visible')
+            $('#player-' + side + '-select button.button').removeClass('is-info')
+
+            var team_abbr = $('#team-' + side + '-select option:selected').text().toLowerCase();
+            $('#player-' + side + '-select button.team-' + team_abbr).addClass('visible');
+        }
+    
+        $('body').on('click', 'button.submit', trade_submit_handler);
+        $('body').on('click', 'div.player-selector button.button', player_select_handler);
+        $('body').on('change', 'div.select #team-1-select, div.select #team-2-select', team_select_handler);
+    });
+    </script>
+{% endblock %}

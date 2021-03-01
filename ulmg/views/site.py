@@ -93,24 +93,6 @@ def player(request, playerid):
     return render(request, "player_detail.html", context)
 
 
-def player_util(request):
-    context = utils.build_context(request)
-    context["no_ids"] = (
-        models.Player.objects.filter(
-            fg_id__isnull=True, bref_id__isnull=True, mlb_dotcom__isnull=True
-        )
-        .filter(is_amateur=False)
-        .order_by("-created")
-    )
-    context["no_birthdates"] = models.Player.objects.filter(
-        birthdate__isnull=True
-    ).order_by("-created")
-    context["suspect_birthdates"] = models.Player.objects.filter(
-        birthdate_qa=False, birthdate__day=1
-    ).order_by("-birthdate")
-    return render(request, "player_util.html", context)
-
-
 def team_detail(request, abbreviation):
     context = utils.build_context(request)
     context["team"] = get_object_or_404(
