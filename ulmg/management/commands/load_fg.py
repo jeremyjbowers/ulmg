@@ -69,7 +69,7 @@ class Command(BaseCommand):
         obj.is_mlb = False
         obj.is_prospect = True
         obj.level = "B"
-        obj.notes = p["Report"]
+        obj.notes = p["Report"].replace('<em>', '').replace('</em>', '')
         obj.fg_fv = utils.parse_fg_fv(p["FV"])
         obj.raw_age = int(p["Age"].split(".")[0])
         obj.fg_org_rank = utils.int_or_none(p['Org Rk'])
