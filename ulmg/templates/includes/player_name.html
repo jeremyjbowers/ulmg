@@ -9,5 +9,5 @@
     {% endif %}{% endif %}
     <a class="has-text-weight-semibold" href="/players/{{ p.id }}/" target="_blank">{{ p.name }}</a>
     {% if p.covid_protected %} &copy;{% endif %}
-    {% if p.is_prospect %}<span class="icon-text"><span class="icon has-text-danger"><i class="fab fa-product-hunt"></i></span><span>{{ p.prospect_rating_avg }}</span></span>{% endif %}
+    {% if p.is_prospect %}<span class="icon-text"><span class="icon has-text-danger"><i class="fab fa-product-hunt"></i></span><span>{{ p.prospect_rating_avg|default_if_none:"" }}</span></span>{% endif %}
 </td>
