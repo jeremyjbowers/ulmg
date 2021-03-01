@@ -67,7 +67,7 @@ class Command(BaseCommand):
     def save_player(self, obj, p):
         obj.position = utils.normalize_pos(p["Pos"])
         obj.is_mlb = False
-        obj.prospect = True
+        obj.is_prospect = True
         obj.level = "B"
         obj.notes = p["Report"]
         obj.fg_fv = utils.parse_fg_fv(p["FV"])
