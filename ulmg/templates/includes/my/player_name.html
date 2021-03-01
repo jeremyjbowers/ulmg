@@ -21,7 +21,7 @@
         <span class="icon has-text-danger"><i class="fab fa-product-hunt"></i></span>
         
         {% if p.player.prospect_rating_avg %}
-            <span class="tag is-success is-light">{{ p.player.prospect_rating_avg|floatformat:"0" }}</span>
+            <span class="tag is-danger is-light">{{ p.player.prospect_rating_avg|floatformat:"0" }}</span>
         {% endif %}
 
         {% if p.player.notes %}
