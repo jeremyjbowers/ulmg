@@ -72,6 +72,7 @@ class Command(BaseCommand):
         obj.notes = p["Report"]
         obj.fg_fv = utils.parse_fg_fv(p["FV"])
         obj.raw_age = int(p["Age"].split(".")[0])
+        obj.fg_org_rank = utils.int_or_none(p['Org Rk'])
 
         try:
             obj.fg_eta = int(p["ETA"])

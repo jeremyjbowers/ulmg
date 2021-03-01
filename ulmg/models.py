@@ -173,6 +173,7 @@ class Player(BaseModel):
     )
     fg_fv = models.DecimalField(max_digits=3, decimal_places=1, blank=True, null=True)
     fg_eta = models.CharField(max_length=255, blank=True, null=True)
+    fg_org_rank = models.IntegerField(blank=True, null=True)
     class_year = models.IntegerField(blank=True, null=True)
 
     # IDENTIFIERS
