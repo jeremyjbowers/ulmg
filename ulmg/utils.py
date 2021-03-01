@@ -193,6 +193,16 @@ def str_to_bool(possible_bool):
     return None
 
 
+def int_or_none(possible_int):
+    if isinstance(possible_int, int):
+        return possible_int
+    try:
+        return int(possible_int)
+    except:
+        pass
+    return None
+
+
 def get_sheet(sheet_id, sheet_range):
     SCOPES = ["https://www.googleapis.com/auth/spreadsheets.readonly"]
 
