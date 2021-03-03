@@ -130,24 +130,16 @@ class PlayerAdmin(admin.ModelAdmin):
         "first_name",
         "is_owned",
         "team",
-        "birthdate",
-        "is_amateur",
-        "fg_id",
-        "league",
-        "ls_is_mlb",
         "level",
-        "is_mlb_roster",
     ]
     list_filter = [
         "is_owned",
         "team",
         "level",
         "position",
-        "is_amateur",
-        "league",
         "ls_is_mlb",
     ]
-    list_editable = ["birthdate", "league", "is_amateur", "fg_id", "is_mlb_roster"]
+    list_editable = []
     readonly_fields = ["name", "age"]
     search_fields = ["name"]
     autocomplete_fields = ["team"]
@@ -158,7 +150,7 @@ class PlayerAdmin(admin.ModelAdmin):
                 "fields": (
                     "name",
                     ("first_name", "last_name"),
-                    ("birthdate", "birthdate_qa", "age", "raw_age"),
+                    ("birthdate", "birthdate_qa", "raw_age"),
                     "position",
                     "level",
                     "team",
