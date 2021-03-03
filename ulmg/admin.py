@@ -222,6 +222,7 @@ class PlayerAdmin(admin.ModelAdmin):
                     "prospect_rating_avg",
                     "class_year",
                     ("fg_fv", "fg_eta", "fg_org_rank"),
+                    "notes",
                 ),
             },
         ),
