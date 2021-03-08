@@ -744,7 +744,13 @@ class TradeReceipt(BaseModel):
                     obj.is_1h_c = False
                     obj.is_1h_p = False
                     obj.is_1h_pos = False
+                    obj.is_2h_c = False
+                    obj.is_2h_p = False
+                    obj.is_2h_pos = False
                     obj.is_35man_roster = False
+                    obj.is_mlb = False
+                    obj.is_aaa_roster = False
+                    obj.is_protected = False
                     obj.is_owned = True
                     obj.team = instance.team
                     obj.save()
