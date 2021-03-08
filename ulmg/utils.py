@@ -7,8 +7,21 @@ from google.oauth2 import service_account
 
 from django.conf import settings
 from django.contrib.postgres.search import TrigramSimilarity
+import requests
 
 from ulmg import models
+
+
+def send_email(from_email=None, to_emails=[], text=None, subject=None):
+    if from_email and len(to_emails) > 0:
+        return requests.post(
+            "https://api.mailgun.net/v3/mail.theulmg.com/messages",
+            auth=("api", settings.MAILGUN_API_KEY),
+            data={"from": from_email,
+                "to": to_emails,
+                "subject": subject,
+                "text": text})
+    return None
 
 
 def fuzzy_find_prospectrating(name_fragment, score=0.7, position=None, mlb_team_abbr=None):
