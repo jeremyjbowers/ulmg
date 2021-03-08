@@ -203,6 +203,16 @@ def int_or_none(possible_int):
     return None
 
 
+def is_even(possible_int):
+    possible_int = int_or_none(possible_int)
+    if possible_int:
+        if possible_int == 0:
+            return True
+        if possible_int % 2 == 0:
+            return True
+    return False
+
+
 def get_sheet(sheet_id, sheet_range):
     SCOPES = ["https://www.googleapis.com/auth/spreadsheets.readonly"]
 

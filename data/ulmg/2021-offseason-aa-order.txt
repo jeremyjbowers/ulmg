@@ -1,10 +1,10 @@
 WCH
 ATL
-ANA
-NYH
+ANA|+
+NYH|-
 LOU
-PHI
-ADK
+PHI|+
+ADK|-
 NWW
 CHI
 PIT
