@@ -246,7 +246,7 @@ def draft_watch(request, year, season, draft_type):
     )
     context["upcoming_picks"] = models.DraftPick.objects.filter(
         year=year, season=season, draft_type=draft_type
-    ).exclude(Q(player_name__isnull=False) | Q(player__isnull=False))
+    ).exclude(Q(player_name__isnull=False) | Q(player__isnull=False) | Q(skipped=True))
     context["year"] = year
     context["season"] = season
     context["draft_type"] = draft_type
