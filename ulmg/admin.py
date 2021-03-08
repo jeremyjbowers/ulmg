@@ -9,11 +9,42 @@ from ulmg.models import (
     Wishlist,
     WishlistPlayer,
     Owner,
+    ProspectRating
 )
 
 admin.site.site_title = "The ULMG"
 admin.site.site_header = "The ULMG: Admin"
 admin.site.index_title = "Administer The ULMG Website"
+
+
+@admin.register(ProspectRating)
+class ProspectRatingAdmin(admin.ModelAdmin):
+    """
+        year = models.CharField(max_length=4)
+        player = models.ForeignKey(Player, on_delete=models.SET_NULL, null=True)
+        player_name = models.CharField(max_length=255, null=True, blank=True)
+
+        skew = models.DecimalField(max_digits=4, decimal_places=1, blank=True, null=True)
+        med = models.DecimalField(max_digits=4, decimal_places=1, blank=True, null=True)
+        avg = models.DecimalField(max_digits=4, decimal_places=1, blank=True, null=True)
+
+        law = models.IntegerField(blank=True, null=True)
+        ba = models.IntegerField(blank=True, null=True)
+        bp = models.IntegerField(blank=True, null=True)
+        mlb = models.IntegerField(blank=True, null=True)
+        fg = models.IntegerField(blank=True, null=True)
+        p365 = models.IntegerField(blank=True, null=True)
+        plive = models.IntegerField(blank=True, null=True)
+        p1500 = models.IntegerField(blank=True, null=True)
+        ftrax = models.IntegerField(blank=True, null=True)
+        cbs = models.IntegerField(blank=True, null=True)
+        espn = models.IntegerField(blank=True, null=True)
+    """
+    model = ProspectRating
+    list_display = ['player', 'year', 'avg']
+    list_filter = ['year']
+    search_fields = ['player', 'player_name']
+    autocomplete_fields = ['player']
 
 
 @admin.register(Owner)
