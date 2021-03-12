@@ -4,6 +4,14 @@
     {% include "includes/my/player_name.html" %}
     <td>{{ p.player.position|default_if_none:"-" }}</td>
     <td>{{ p.player.age|default_if_none:"-" }}</td>
+    <td>{{ p.player.fg_fv|default_if_none:"-" }}</td>
+    <td>{% if p.player.mlb_team_abbr %}{{ p.player.mlb_team_abbr|default_if_none:"-" }}{% else %}-{% endif %}</td>
+    <td>{% if p.player.fg_org_rank > 0 %}{{ p.player.fg_org_rank|default_if_none:"-" }}{% else %}-{% endif %}</td>
+    <td>{% if p.player.latest_rating %}{{ p.player.latest_rating.espn|default_if_none:"-" }}{% else %}-{% endif %}</td>
+    <td>{% if p.player.latest_rating %}{{ p.player.latest_rating.fg|default_if_none:"-" }}{% else %}-{% endif %}</td>
+    <td>{% if p.player.latest_rating %}{{ p.player.latest_rating.plive|default_if_none:"-" }}{% else %}-{% endif %}</td>
+    <td>{% if p.player.latest_rating %}{{ p.player.latest_rating.law|default_if_none:"-" }}{% else %}-{% endif %}</td>
+    <td>{% if p.player.latest_rating %}{{ p.player.latest_rating.p365|default_if_none:"-" }}{% else %}-{% endif %}</td>
     <td>{% if p.player.ls_plate_appearances > 0 %}{{ p.player.ls_plate_appearances }}{% endif %}</td>
     <td>{% if p.player.ls_plate_appearances > 0 %}{{ p.player.ls_avg|kill_leading_zero }}{% endif %}</td>
     <td>{% if p.player.ls_plate_appearances > 0 %}{{ p.player.ls_obp|kill_leading_zero }}{% endif %}</td>

@@ -6,7 +6,7 @@
 <div class="columns"><div class="column">
     <h1 class="title is-2">Top systems</h1>
 
-    <p>For each prospect rating, teams earns 102 points minus the player's average ranking across all rankers. For example, if a player averages a rank of 1.0, he is worth 101 points. If a player averages a rank of 101, he is worth 1 point. This includes top 100 prospects as well as top draft prospects.</p>
+    <p>For each prospect rating, teams earns 301 points minus the player's average ranking across all rankers. For example, if a player averages a rank of 1.0, he is worth 300 points. If a player averages a rank of 151, he is worth 150 points. And a player ranked 300 is worth 1 point. This includes top 100 prospects as well as top draft prospects.</p>
 
     <table class="table is-fullwidth">
         <tr>
@@ -30,6 +30,7 @@
         <tr>
             <th data-sortable-type="alpha">player</th>
             <th data-sortable-type="alpha">team</th>
+            <th data-sortable-type="alpha">org</th>
             <th data-sortable-type="numeric">avg</th>
             <th data-sortable-type="numeric">ba</th>
             <th data-sortable-type="numeric">bp</th>
@@ -37,6 +38,8 @@
             <th data-sortable-type="numeric">espn</th>
             <th data-sortable-type="numeric">mlb</th>
             <th data-sortable-type="numeric">law</th>
+            <th data-sortable-type="numeric">plive</th>
+            <th data-sortable-type="numeric">ftrax</th>
         </tr>
         </thead>
         <tbody>
@@ -44,6 +47,7 @@
         <tr>
             {% include "includes/my/player_name.html" %}
             <td data-value="{% if p.player.team %}{{ p.player.team.abbreviation }}{% else %}zzz{% endif %}">{% if p.player.team %} <a href="/teams/{{ p.player.team.abbreviation }}/">{{ p.player.team.abbreviation }}</a>{% endif %}</td>
+            <td data-value="{{ p.avg|default_if_none:"999" }}">{{ p.player.mlb_team_abbr }}</td>
             <td data-value="{{ p.avg|default_if_none:"999" }}">{{ p.avg }}</td>
             <td data-value="{{ p.ba|default_if_none:"999" }}">{{ p.ba|default_if_none:"-" }}</td>
             <td data-value="{{ p.bp|default_if_none:"999" }}">{{ p.bp|default_if_none:"-" }}</td>
@@ -51,6 +55,8 @@
             <td data-value="{{ p.espn|default_if_none:"999" }}">{{ p.espn|default_if_none:"-" }}</td>
             <td data-value="{{ p.mlb|default_if_none:"999" }}">{{ p.mlb|default_if_none:"-" }}</td>
             <td data-value="{{ p.law|default_if_none:"999" }}">{{ p.law|default_if_none:"-" }}</td>
+            <td data-value="{{ p.plive|default_if_none:"999" }}">{{ p.plive|default_if_none:"-" }}</td>
+            <td data-value="{{ p.ftrax|default_if_none:"999" }}">{{ p.ftrax|default_if_none:"-" }}</td>
         </tr>
         {% endfor %}
         </tbody>
@@ -72,6 +78,8 @@
                 <th data-sortable-type="numeric">365</th>
                 <th data-sortable-type="numeric">fg</th>
                 <th data-sortable-type="numeric">cbs</th>
+                <th data-sortable-type="numeric">espn</th>
+                <th data-sortable-type="numeric">law</th>
             </tr>
             </thead>
             <tbody>
@@ -86,6 +94,8 @@
                 <td data-value="{{ p.p365|default_if_none:"999" }}">{{ p.p365|default_if_none:"-" }}</td>
                 <td data-value="{{ p.fg|default_if_none:"999" }}">{{ p.fg|default_if_none:"-" }}</td>
                 <td data-value="{{ p.cbs|default_if_none:"999" }}">{{ p.cbs|default_if_none:"-" }}</td>
+                <td data-value="{{ p.espn|default_if_none:"999" }}">{{ p.espn|default_if_none:"-" }}</td>
+                <td data-value="{{ p.law|default_if_none:"999" }}">{{ p.law|default_if_none:"-" }}</td>
             </tr>
             {% endfor %}
             </tbody>
