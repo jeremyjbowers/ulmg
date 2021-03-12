@@ -25,11 +25,11 @@ def prospect_ranking_list(request, year):
         year=year, rank_type="top-draft"
     ).order_by("avg")
     team_score_dict = {a.abbreviation: 0 for a in models.Team.objects.all()}
-    for ranking_type in [context["top_100"], context["top_draft"]]:
+    for ranking_type, max_points in [(context["top_100"], 300), (context["top_draft"], 100)]:
         for r in ranking_type:
             if r.player:
                 if r.player.team:
-                    score = int(102.0 - float(r.avg))
+                    score = int(max_points / float(r.avg))
                     team_score_dict[r.player.team.abbreviation] += score
 
     context["team_scores"] = sorted(

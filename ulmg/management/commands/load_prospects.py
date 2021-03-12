@@ -47,6 +47,8 @@ class Command(BaseCommand):
             pr.mlb = self.int_or_null(row["mlb"])
             pr.ba = self.int_or_null(row["ba"])
             pr.plive = self.int_or_null(row["plive"])
+            pr.espn = self.int_or_null(row["espn"])
+            pr.law = self.int_or_null(row["law"])
             pr.p365 = self.int_or_null(row["p365"])
             pr.fg = self.int_or_null(row["fg"])
             pr.cbs = self.int_or_null(row["cbs"])
@@ -84,6 +86,8 @@ class Command(BaseCommand):
             pr.law = self.int_or_null(row["law"])
             pr.fg = self.int_or_null(row['fg'])
             pr.espn = self.int_or_null(row['espn'])
+            pr.plive = self.int_or_null(row['plive'])
+            pr.ftrax = self.int_or_null(row['ftrax'])
 
             pr.rank_type = "top-100"
 

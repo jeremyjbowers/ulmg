@@ -386,6 +386,15 @@ class Player(BaseModel):
             return "%s (%s)" % (self.name, self.get_team().abbreviation)
         return self.name
 
+
+    @property
+    def latest_rating(self):
+        ratings = ProspectRating.objects.filter(player=self).order_by("-year")
+        if len(ratings) > 0:
+            return ratings[0]
+        return None
+
+
     def set_fg_url(self):
         if self.fg_id:
             self.fg_url = (
