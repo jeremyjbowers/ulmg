@@ -75,19 +75,19 @@ def player_action(request, playerid, action):
         p.save()
         return HttpResponse("ok")
 
-    # if action == "is_reserve":
-    #     p = get_object_or_404(models.Player, id=playerid)
-    #     old = models.Player.objects.filter(team=p.team, is_reserve=True).update(is_reserve=False)
-    #     p.is_reserve = False
-    #     p.is_1h_c = False
-    #     p.is_1h_p = False
-    #     p.is_1h_pos = False
-    #     p.is_35man_roster = False
-    #     p.is_reserve = True
-    #     p.is_mlb_roster = False
-    #     p.is_aaa_roster = False
-    #     p.save()
-    #     return HttpResponse("ok")
+    if action == "is_reserve":
+        p = get_object_or_404(models.Player, id=playerid)
+        old = models.Player.objects.filter(team=p.team, is_reserve=True).update(is_reserve=False)
+        p.is_reserve = False
+        p.is_1h_c = False
+        p.is_1h_p = False
+        p.is_1h_pos = False
+        p.is_35man_roster = False
+        p.is_reserve = True
+        p.is_mlb_roster = False
+        p.is_aaa_roster = False
+        p.save()
+        return HttpResponse("ok")
 
     # if action == "is_2h_p":
     #     p = get_object_or_404(models.Player, id=playerid)
@@ -134,56 +134,56 @@ def player_action(request, playerid, action):
     #     p.save()
     #     return HttpResponse("ok")
 
-    # if action == "is_1h_p":
-    #     p = get_object_or_404(models.Player, id=playerid)
-    #     old = models.Player.objects.filter(team=p.team, is_1h_p=True).update(is_1h_p=False)
-    #     p.is_reserve = False
-    #     p.is_1h_c = False
-    #     p.is_1h_p = False
-    #     p.is_1h_pos = False
-    #     p.is_35man_roster = False
-    #     p.is_1h_p = True
-    #     p.is_mlb_roster = False
-    #     p.is_aaa_roster = False
-    #     p.save()
-    #     return HttpResponse("ok")
+    if action == "is_1h_p":
+        p = get_object_or_404(models.Player, id=playerid)
+        old = models.Player.objects.filter(team=p.team, is_1h_p=True).update(is_1h_p=False)
+        p.is_reserve = False
+        p.is_1h_c = False
+        p.is_1h_p = False
+        p.is_1h_pos = False
+        p.is_35man_roster = False
+        p.is_1h_p = True
+        p.is_mlb_roster = False
+        p.is_aaa_roster = False
+        p.save()
+        return HttpResponse("ok")
 
-    # if action == "is_1h_c":
-    #     p = get_object_or_404(models.Player, id=playerid)
-    #     old = models.Player.objects.filter(team=p.team, is_1h_c=True).update(is_1h_c=False)
-    #     p.is_reserve = False
-    #     p.is_1h_c = False
-    #     p.is_1h_p = False
-    #     p.is_1h_pos = False
-    #     p.is_35man_roster = False
-    #     p.is_1h_c = True
-    #     p.is_mlb_roster = False
-    #     p.is_aaa_roster = False
-    #     p.save()
-    #     return HttpResponse("ok")
+    if action == "is_1h_c":
+        p = get_object_or_404(models.Player, id=playerid)
+        old = models.Player.objects.filter(team=p.team, is_1h_c=True).update(is_1h_c=False)
+        p.is_reserve = False
+        p.is_1h_c = False
+        p.is_1h_p = False
+        p.is_1h_pos = False
+        p.is_35man_roster = False
+        p.is_1h_c = True
+        p.is_mlb_roster = False
+        p.is_aaa_roster = False
+        p.save()
+        return HttpResponse("ok")
 
-    # if action == "is_1h_pos":
-    #     p = get_object_or_404(models.Player, id=playerid)
-    #     old = models.Player.objects.filter(team=p.team, is_1h_pos=True).update(is_1h_pos=False)
-    #     p.is_reserve = False
-    #     p.is_1h_c = False
-    #     p.is_1h_p = False
-    #     p.is_1h_pos = False
-    #     p.is_35man_roster = False
-    #     p.is_1h_pos = True
-    #     p.is_mlb_roster = False
-    #     p.is_aaa_roster = False
-    #     p.save()
-    #     return HttpResponse("ok")
+    if action == "is_1h_pos":
+        p = get_object_or_404(models.Player, id=playerid)
+        old = models.Player.objects.filter(team=p.team, is_1h_pos=True).update(is_1h_pos=False)
+        p.is_reserve = False
+        p.is_1h_c = False
+        p.is_1h_p = False
+        p.is_1h_pos = False
+        p.is_35man_roster = False
+        p.is_1h_pos = True
+        p.is_mlb_roster = False
+        p.is_aaa_roster = False
+        p.save()
+        return HttpResponse("ok")
 
     if action == "to_mlb":
         p = get_object_or_404(models.Player, id=playerid)
         p.is_mlb_roster = True
         p.is_aaa_roster = False
         p.is_reserve = False
-        # p.is_1h_c = False
-        # p.is_1h_p = False
-        # p.is_1h_pos = False
+        p.is_1h_c = False
+        p.is_1h_p = False
+        p.is_1h_pos = False
         p.save()
         return HttpResponse("ok")
 
@@ -192,9 +192,9 @@ def player_action(request, playerid, action):
         p.is_mlb_roster = False
         p.is_aaa_roster = True
         p.is_reserve = False
-        # p.is_1h_c = False
-        # p.is_1h_p = False
-        # p.is_1h_pos = False
+        p.is_1h_c = False
+        p.is_1h_p = False
+        p.is_1h_pos = False
         p.save()
         return HttpResponse("ok")
 
@@ -202,10 +202,10 @@ def player_action(request, playerid, action):
         p = get_object_or_404(models.Player, id=playerid)
         p.is_mlb_roster = False
         p.is_aaa_roster = False
-        # p.is_reserve = False
-        # p.is_1h_c = False
-        # p.is_1h_p = False
-        # p.is_1h_pos = False
+        p.is_reserve = False
+        p.is_1h_c = False
+        p.is_1h_p = False
+        p.is_1h_pos = False
         p.save()
         return HttpResponse("ok")
 
