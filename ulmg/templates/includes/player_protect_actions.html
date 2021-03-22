@@ -4,12 +4,12 @@
     {% if p.is_mlb_roster %}<strong>MLB</strong>{% endif %}
     {% if p.is_aaa_roster %}<em>AAA</em>{% endif %}
     {% if p.is_reserve %}<span style="color: red;">ASR</span>{% endif %}
-    <!-- {% if p.is_1h_c %}<span style="color: red;">CAT1</span>{% endif %}
+    {% if p.is_1h_c %}<span style="color: red;">CAT1</span>{% endif %}
     {% if p.is_1h_pos %}<span style="color: red;">POS1</span>{% endif %}
-    {% if p.is_1h_p %}<span style="color: red;">PIT1</span>{% endif %} -->
-    {% if p.is_2h_c %}<span style="color: red;">CAT2</span>{% endif %}
+    {% if p.is_1h_p %}<span style="color: red;">PIT1</span>{% endif %}
+    <!-- {% if p.is_2h_c %}<span style="color: red;">CAT2</span>{% endif %}
     {% if p.is_2h_pos %}<span style="color: red;">POS2</span>{% endif %}
-    {% if p.is_2h_p %}<span style="color: red;">PIT2</span>{% endif %}
+    {% if p.is_2h_p %}<span style="color: red;">PIT2</span>{% endif %} -->
 </td>
 {% endif %}
 
@@ -19,13 +19,14 @@
     <!-- {% if p.is_mlb_roster or p.is_aaa_roster or p.is_reserve %}<a class="button is-small is-warning player-action" data-playerid="{{ p.id }}" data-action="unprotect">CLR ⟲</a>{% endif %} -->
     {% if p.is_mlb_roster or p.is_aaa_roster %}<a class="button is-small is-warning player-action" data-playerid="{{ p.id }}" data-action="unprotect">CLR ⟲</a>{% endif %}
 </td><td>
-    <!-- {% if p.position == "P" and p.level == "V" and not p.is_1h_p %}<a class="button is-primary is-light is-small is-link player-action" data-playerid="{{ p.id }}" data-action="is_1h_p">P</a>{% endif %}
+    {% if p.position == "P" and p.level == "V" and not p.is_1h_p %}<a class="button is-primary is-light is-small is-link player-action" data-playerid="{{ p.id }}" data-action="is_1h_p">P</a>{% endif %}
     {% if p.position == "C" and p.level == "V" and not p.is_1h_c %}<a class="button is-primary is-light is-small is-link player-action" data-playerid="{{ p.id }}" data-action="is_1h_c">C</a>{% endif %}
-    {% if p.position != "P" and p.position != "C" and p.level == "V" and not p.is_1h_p %}<a class="button is-primary is-light is-small is-link player-action" data-playerid="{{ p.id }}" data-action="is_1h_pos">H</a>{% endif %} -->    
-    {% if p.position == "P" and p.level == "V" and not p.is_1h_p and not p.is_reserve %} {% if not p.is_2h_p %}<a class="button is-primary is-light is-small is-link player-action" data-playerid="{{ p.id }}" data-action="is_2h_p">P</a>{% endif %}{% endif %}
+    {% if p.position != "P" and p.position != "C" and p.level == "V" and not p.is_1h_pos %}<a class="button is-primary is-light is-small is-link player-action" data-playerid="{{ p.id }}" data-action="is_1h_pos">H</a>{% endif %}
+    {% if p.level == "V" and not p.is_1h_p and not p.is_1h_pos and not p.is_1h_c and not p.is_reserve %}<a class="button is-primary is-light is-success is-small is-link player-action" data-playerid="{{ p.id }}" data-action="is_reserve">ASR</a>{% endif %}
+    <!-- {% if p.position == "P" and p.level == "V" and not p.is_1h_p and not p.is_reserve %} {% if not p.is_2h_p %}<a class="button is-primary is-light is-small is-link player-action" data-playerid="{{ p.id }}" data-action="is_2h_p">P</a>{% endif %}{% endif %}
     {% if p.position == "C" and p.level == "V" and not p.is_1h_c and not p.is_reserve %} {% if not p.is_2h_c%}<a class="button is-primary is-light is-small is-link player-action" data-playerid="{{ p.id }}" data-action="is_2h_c">C</a>{% endif %}{% endif %}
     {% if p.position != "P" and p.position != "C" and p.level == "V" and not p.is_1h_pos and not p.is_reserve %} {% if not p.is_2h_pos%}<a class="button is-primary is-light is-small is-link player-action" data-playerid="{{ p.id }}" data-action="is_2h_pos">H</a>{% endif %}{% endif %}
-    {% if p.is_2h_p or p.is_2h_c or p.is_2h_pos %}<a class="button is-small is-light is-warning player-action" data-playerid="{{ p.id }}" data-action="unprotect">&rarrhk;</a>{% endif %}
+    {% if p.is_2h_p or p.is_2h_c or p.is_2h_pos %}<a class="button is-small is-light is-warning player-action" data-playerid="{{ p.id }}" data-action="unprotect">&rarrhk;</a>{% endif %} -->
     <!-- {% if p.level == "V" and not p.is_reserve %}<a class="button is-primary is-light is-small is-link player-action" data-playerid="{{ p.id }}" data-action="is_reserve">R</a>{% endif %} -->
 </td>{% endif %}
 
