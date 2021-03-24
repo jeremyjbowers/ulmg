@@ -15,8 +15,25 @@
     div.player-container button.button {
         margin: 2px;
     }
+    div.bottom-attached {
+        position: fixed;
+        width:100%;
+        bottom:0;
+        left:0;
+        right:0;
+        padding: 10px;
+        z-index:999;
+        background-color: #fff;
+    }
+    body {
+        padding-bottom: 50px;
+    }
 </style>
-<button class="button is-large submit is-primary">Submit</button>
+
+<div class="bottom-attached">
+    <button class="button is-large submit is-primary" id="trade-submit">Submit</button>
+    <div id="success-message" class="notification is-primary" style="display:none;">Successful trade! Reloading form ...</div>
+</div>
 <div class="columns">
     <div class="column player-selector">
         <h1 class="title is-3">Team 1</h1>
@@ -42,7 +59,7 @@
                 </div>
                 <div class="column">
                     {% for p in picks %}
-                        <button id="pick-{{ p.id }}" class="is-small is-fullwidth button team-{{ p.team.abbreviation|lower }}">{{ p.slug }}</button>
+                        <button id="pick-{{ p.id }}" class="is-small is-fullwidth button team-{{ p.team.abbreviation|lower }}">{{ p.year }} {{ p.season }} {{ p.slug }}</button>
                     {% endfor %}                    
                 </div>
             </div>
@@ -101,10 +118,21 @@
                     "receipt": receipt
                 })
             })
-            console.log(payload);
-            // AJAX this to the server via POST
-            // server should create a trade
-            // and a pair of trade receipts
+
+            $.ajax({
+                type: "POST",
+                url: '/api/v1/trade/bulk/',
+                data: JSON.stringify(payload),
+                success: function(response){
+                    console.log(response);
+                    if (response['success'] == true) {
+                        $('#trade-submit').remove();
+                        $('#success-message').show();
+                        location.reload();
+                    }
+                }
+            });
+
         }
 
         var player_select_handler = function(el) {

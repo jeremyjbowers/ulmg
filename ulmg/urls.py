@@ -16,6 +16,7 @@ urlpatterns = [
     path("api/v1/draft/<str:pickid>/", views.api.draft_action),
     path("api/v1/wishlist/bulk/", views.api.wishlist_bulk_action),
     path("api/v1/wishlist/<str:playerid>/", views.api.wishlist_player_action),
+    path("api/v1/trade/bulk/", views.api.trade_bulk_action),
     path("teams/csv/", views.csv.all_csv),
     path("teams/<str:abbreviation>/csv/", views.csv.team_csv),
     path("teams/<str:abbreviation>/other/", views.site.team_other),
