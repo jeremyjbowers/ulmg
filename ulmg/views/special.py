@@ -43,7 +43,7 @@ def trade_util(request):
         context = utils.build_context(request)
         context['hitters'] = models.Player.objects.filter(is_owned=True).exclude(position="P")
         context['pitchers'] = models.Player.objects.filter(is_owned=True, position="P")
-        context['picks'] = models.DraftPick.objects.filter(year=settings.CURRENT_SEASON, season=settings.CURRENT_SEASON_TYPE)
+        context['picks'] = models.DraftPick.objects.filter(year__gte=settings.CURRENT_SEASON).exclude(player__isnull=False)
         return render(request, "trade_form.html", context)
 
     if request.method == "POST":
