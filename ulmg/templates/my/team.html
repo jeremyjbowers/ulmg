@@ -142,28 +142,7 @@
 {% endif %}
 {% endfor %}
 
-{% for p in pitchers %}
-{% if p.notes %}
-<div id="modal-report-{{ p.id }}" class="modal">
-<div class="modal-background"></div>
-<div class="modal-content">
-    <div class="box">
-        <h2 class="title is-4">{{ p.name }} ({{ p.position }})</h2>
-        <p class="notes">{{ p.notes }}</p>
-    </div>
-</div>
-<button class="modal-close is-large" aria-label="close"></button>
-</div>
-{% endif %}
-{% endfor %}
-
-{% if protect_tab or roster_tab %}
-<div class="modal" id="player-drop-modal">
-    <div class="modal-background"></div>
-    <div class="modal-content"></div>
-    <button class="modal-close is-large" aria-label="close"></button>
-</div>
-{% endif %}
+{% include 'includes/player_modal.html' %}
 {% endblock %}
         
 {% block extrascript %}

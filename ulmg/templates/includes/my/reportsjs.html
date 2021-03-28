@@ -13,7 +13,21 @@
             $el = $(this);
     
             var playerid = $el.attr('data-playerid');
-            $('#modal-report-' + playerid).toggleClass('is-active');
+            var url_base = '/api/v1/player/scouting-report/';
+
+            $.ajax({
+                type: "GET",
+                url: url_base + playerid + '/',
+                success: function(response){
+                    var title = response.position + ' ' + response.name;
+                    var notes = '<strong>' + response.mlb_team + '</strong>: ' + response.notes;
+                    $('#modal-title').html(title);
+                    $('#modal-notes').html(notes)
+                    $('#modal-report').toggleClass('is-active');
+                }
+            });
+            
+            
         }
     
         var tier_select_handler = function(el) {
