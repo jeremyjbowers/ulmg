@@ -89,7 +89,7 @@
                 </div>
                 <div class="column">
                     {% for p in picks %}
-                        <button id="pick-{{ p.id }}" class="is-small is-fullwidth button team-{{ p.team.abbreviation|lower }}">{{ p.slug }}</button>
+                        <button id="pick-{{ p.id }}" class="is-small is-fullwidth button team-{{ p.team.abbreviation|lower }}">{{ p.year }} {{ p.season }} {{ p.slug }}</button>
                     {% endfor %}                    
                 </div>
             </div>
