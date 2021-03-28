@@ -23,33 +23,47 @@ def trade_bulk_action(request):
 
             trade = models.Trade.objects.create(date=datetime.datetime.today())
 
-            team_1 = models.Team.objects.get(abbreviation__icontains=trade_payload[0]['team'])
-            players_1 = [models.Player.objects.get(id=f.split('player-')[1]) for f in trade_payload[1]['receipt'] if "player-" in f]
-            picks_1 = [models.DraftPick.objects.get(id=f.split('pick-')[1]) for f in trade_payload[1]['receipt'] if "pick-" in f]
-
-            team_2 = models.Team.objects.get(abbreviation__icontains=trade_payload[1]['team'])
-            players_2 = [models.Player.objects.get(id=f.split('player-')[1]) for f in trade_payload[0]['receipt'] if "player-" in f]
-            picks_2 = [models.DraftPick.objects.get(id=f.split('pick-')[1]) for f in trade_payload[0]['receipt'] if "pick-" in f]
-
-            tr_1 = models.TradeReceipt.objects.create(
-                trade=trade,
-                team=team_1
+            team_1 = models.Team.objects.get(
+                abbreviation__icontains=trade_payload[0]["team"]
             )
+            players_1 = [
+                models.Player.objects.get(id=f.split("player-")[1])
+                for f in trade_payload[1]["receipt"]
+                if "player-" in f
+            ]
+            picks_1 = [
+                models.DraftPick.objects.get(id=f.split("pick-")[1])
+                for f in trade_payload[1]["receipt"]
+                if "pick-" in f
+            ]
+
+            team_2 = models.Team.objects.get(
+                abbreviation__icontains=trade_payload[1]["team"]
+            )
+            players_2 = [
+                models.Player.objects.get(id=f.split("player-")[1])
+                for f in trade_payload[0]["receipt"]
+                if "player-" in f
+            ]
+            picks_2 = [
+                models.DraftPick.objects.get(id=f.split("pick-")[1])
+                for f in trade_payload[0]["receipt"]
+                if "pick-" in f
+            ]
+
+            tr_1 = models.TradeReceipt.objects.create(trade=trade, team=team_1)
             for p in players_1:
                 tr_1.players.add(p)
-            
+
             for p in picks_1:
                 tr_1.picks.add(p)
 
             tr_1.save()
 
-            tr_2 = models.TradeReceipt.objects.create(
-                trade=trade,
-                team=team_2
-            )
+            tr_2 = models.TradeReceipt.objects.create(trade=trade, team=team_2)
             for p in players_2:
                 tr_2.players.add(p)
-            
+
             for p in picks_2:
                 tr_2.picks.add(p)
 
@@ -124,7 +138,9 @@ def player_action(request, playerid, action):
 
     if action == "is_reserve":
         p = get_object_or_404(models.Player, id=playerid)
-        old = models.Player.objects.filter(team=p.team, is_reserve=True).update(is_reserve=False)
+        old = models.Player.objects.filter(team=p.team, is_reserve=True).update(
+            is_reserve=False
+        )
         p.is_reserve = False
         p.is_1h_c = False
         p.is_1h_p = False
@@ -183,7 +199,9 @@ def player_action(request, playerid, action):
 
     if action == "is_1h_p":
         p = get_object_or_404(models.Player, id=playerid)
-        old = models.Player.objects.filter(team=p.team, is_1h_p=True).update(is_1h_p=False)
+        old = models.Player.objects.filter(team=p.team, is_1h_p=True).update(
+            is_1h_p=False
+        )
         p.is_reserve = False
         p.is_1h_c = False
         p.is_1h_p = False
@@ -197,7 +215,9 @@ def player_action(request, playerid, action):
 
     if action == "is_1h_c":
         p = get_object_or_404(models.Player, id=playerid)
-        old = models.Player.objects.filter(team=p.team, is_1h_c=True).update(is_1h_c=False)
+        old = models.Player.objects.filter(team=p.team, is_1h_c=True).update(
+            is_1h_c=False
+        )
         p.is_reserve = False
         p.is_1h_c = False
         p.is_1h_p = False
@@ -211,7 +231,9 @@ def player_action(request, playerid, action):
 
     if action == "is_1h_pos":
         p = get_object_or_404(models.Player, id=playerid)
-        old = models.Player.objects.filter(team=p.team, is_1h_pos=True).update(is_1h_pos=False)
+        old = models.Player.objects.filter(team=p.team, is_1h_pos=True).update(
+            is_1h_pos=False
+        )
         p.is_reserve = False
         p.is_1h_c = False
         p.is_1h_p = False
@@ -388,12 +410,12 @@ def player_list(request):
 def scouting_report(request, playerid):
     p = get_object_or_404(models.Player, id=playerid)
     payload = {}
-    payload['name'] = p.name
-    payload['position'] = p.position
-    payload['notes'] = p.notes
-    payload['mlb_team'] = "No MLB team"
+    payload["name"] = p.name
+    payload["position"] = p.position
+    payload["notes"] = p.notes
+    payload["mlb_team"] = "No MLB team"
     if p.mlb_team:
-        payload['mlb_team'] = p.mlb_team
+        payload["mlb_team"] = p.mlb_team
     return JsonResponse(payload, safe=False)
 
 

@@ -35,18 +35,18 @@ class Command(BaseCommand):
                     flipped = True
 
                     # grab the team
-                    team = models.Team.objects.get(abbreviation=t.split('|')[0])
+                    team = models.Team.objects.get(abbreviation=t.split("|")[0])
 
                     # apply a modifier to be added to even-numbered rounds
-                    if t.split('|')[1] == "+":
+                    if t.split("|")[1] == "+":
                         modify = 1
-                    if t.split('|')[1] == "-":
+                    if t.split("|")[1] == "-":
                         modify = -1
 
                 else:
                     # if there's no pipe, just grab a team
                     team = models.Team.objects.get(abbreviation=t)
-    
+
                 for r in range(0, DRAFT_MAPS[season][draft_type]):
                     # fix zero indexing for the draft round
                     draft_round = r + 1

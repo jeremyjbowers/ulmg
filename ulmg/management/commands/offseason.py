@@ -137,12 +137,54 @@ class Command(BaseCommand):
         self.reset_rosters()
 
         # Unprotect all V and A players prior to the 35-man roster.
-        models.Player.objects.filter(is_owned=True, level__in=['A', 'V']).update(is_protected=False)
-        models.Player.objects.filter(is_owned=True, is_carded=False, level__in=['A', 'V']).update(is_protected=True)
+        models.Player.objects.filter(is_owned=True, level__in=["A", "V"]).update(
+            is_protected=False
+        )
+        models.Player.objects.filter(
+            is_owned=True, is_carded=False, level__in=["A", "V"]
+        ).update(is_protected=True)
 
         # Second half failed to protect players.
-        unprotected = [2599,2611,2588,2762,2831,2886,2890,2895,2909,2741,2993,3062,3042,3044,3045,3189,3212,3215,2973,3237,3265,2504,3304,3305,3306,3426,3421,3507,2580,2969,3564,3488,3568,2990,6986]
-        models.Player.objects.filter(id__in=unprotected).update(cannot_be_protected=True)
+        unprotected = [
+            2599,
+            2611,
+            2588,
+            2762,
+            2831,
+            2886,
+            2890,
+            2895,
+            2909,
+            2741,
+            2993,
+            3062,
+            3042,
+            3044,
+            3045,
+            3189,
+            3212,
+            3215,
+            2973,
+            3237,
+            3265,
+            2504,
+            3304,
+            3305,
+            3306,
+            3426,
+            3421,
+            3507,
+            2580,
+            2969,
+            3564,
+            3488,
+            3568,
+            2990,
+            6986,
+        ]
+        models.Player.objects.filter(id__in=unprotected).update(
+            cannot_be_protected=True
+        )
 
         # self.set_carded()
         # self.load_career_stats()

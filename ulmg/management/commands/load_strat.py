@@ -20,7 +20,7 @@ from ulmg import utils
 class Command(BaseCommand):
     season = None
     team_lookup = {
-        'LD': "LAD",
+        "LD": "LAD",
         "SF": "SFG",
         "DT": "DET",
         "PI": "PIT",
@@ -226,9 +226,9 @@ class Command(BaseCommand):
             rows = list(csv.DictReader(readfile))
 
         for row in rows:
-            
+
             # Skip empty rows
-            if row['FIRST'] == "" and row['LAST'] == "":
+            if row["FIRST"] == "" and row["LAST"] == "":
                 continue
 
             # Catch our edge cases
@@ -253,8 +253,10 @@ class Command(BaseCommand):
 
             # If there's two players with this score, try to narrow by team.
             if len(obj) > 1:
-                mlb_team_abbr = self.team_lookup.get(row['TM'], None)
-                obj = utils.fuzzy_find_player(f"{row['FIRST']} {row['LAST']}", mlb_team_abbr=mlb_team_abbr)
+                mlb_team_abbr = self.team_lookup.get(row["TM"], None)
+                obj = utils.fuzzy_find_player(
+                    f"{row['FIRST']} {row['LAST']}", mlb_team_abbr=mlb_team_abbr
+                )
 
                 # If we got a match with the team, save and continue.
                 if len(obj) == 1:
@@ -272,7 +274,6 @@ class Command(BaseCommand):
                     print("[]", row)
                     continue
 
-
     def get_pitchers(self):
         print("GET: STRAT PITCHERS FROM CSV")
 
@@ -280,7 +281,7 @@ class Command(BaseCommand):
             rows = list(csv.DictReader(readfile))
 
         for row in rows:
-            if row['FIRST'] == "" and row['LAST'] == "":
+            if row["FIRST"] == "" and row["LAST"] == "":
                 continue
 
             obj = utils.fuzzy_find_player(f"{row['FIRST']} {row['LAST']}")
@@ -296,8 +297,10 @@ class Command(BaseCommand):
 
             # If there's two players with this score, try to narrow by team.
             if len(obj) > 1:
-                mlb_team_abbr = self.team_lookup.get(row['TM'], None)
-                obj = utils.fuzzy_find_player(f"{row['FIRST']} {row['LAST']}", mlb_team_abbr=mlb_team_abbr)
+                mlb_team_abbr = self.team_lookup.get(row["TM"], None)
+                obj = utils.fuzzy_find_player(
+                    f"{row['FIRST']} {row['LAST']}", mlb_team_abbr=mlb_team_abbr
+                )
 
                 # If we got a match with the team, save and continue.
                 if len(obj) == 1:
@@ -314,8 +317,3 @@ class Command(BaseCommand):
                 if len(obj) == 0:
                     print("[]", row)
                     continue
-
-
-
-
-

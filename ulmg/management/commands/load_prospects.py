@@ -84,10 +84,10 @@ class Command(BaseCommand):
             pr.ba = self.int_or_null(row["ba"])
             pr.bp = self.int_or_null(row["bp"])
             pr.law = self.int_or_null(row["law"])
-            pr.fg = self.int_or_null(row['fg'])
-            pr.espn = self.int_or_null(row['espn'])
-            pr.plive = self.int_or_null(row['plive'])
-            pr.ftrax = self.int_or_null(row['ftrax'])
+            pr.fg = self.int_or_null(row["fg"])
+            pr.espn = self.int_or_null(row["espn"])
+            pr.plive = self.int_or_null(row["plive"])
+            pr.ftrax = self.int_or_null(row["ftrax"])
 
             pr.rank_type = "top-100"
 

@@ -41,9 +41,13 @@ def player_util(request):
 def trade_util(request):
     if request.method == "GET":
         context = utils.build_context(request)
-        context['hitters'] = models.Player.objects.filter(is_owned=True).exclude(position="P")
-        context['pitchers'] = models.Player.objects.filter(is_owned=True, position="P")
-        context['picks'] = models.DraftPick.objects.filter(year__gte=settings.CURRENT_SEASON).exclude(player__isnull=False)
+        context["hitters"] = models.Player.objects.filter(is_owned=True).exclude(
+            position="P"
+        )
+        context["pitchers"] = models.Player.objects.filter(is_owned=True, position="P")
+        context["picks"] = models.DraftPick.objects.filter(
+            year__gte=settings.CURRENT_SEASON
+        ).exclude(player__isnull=False)
         return render(request, "trade_form.html", context)
 
     if request.method == "POST":
@@ -58,7 +62,7 @@ def my_team(request, abbreviation):
     context["team"] = get_object_or_404(
         models.Team, abbreviation__icontains=abbreviation
     )
-    context['owner'] = context['team'].owner
+    context["owner"] = context["team"].owner
 
     team_players = models.Player.objects.filter(team=context["team"])
     hitters = team_players.exclude(position="P").order_by(
@@ -89,9 +93,9 @@ def my_wishlist(request, list_type, abbreviation):
     context["team"] = get_object_or_404(
         models.Team, abbreviation__icontains=abbreviation
     )
-    context['owner'] = models.Team.owner
-    context['wishlist'] = models.Wishlist.objects.get(owner=context['owner'])
-    
+    context["owner"] = models.Team.owner
+    context["wishlist"] = models.Wishlist.objects.get(owner=context["owner"])
+
     context["list_type"] = list_type
 
     context["aa_hitters"] = []
