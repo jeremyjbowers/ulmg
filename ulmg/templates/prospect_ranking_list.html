@@ -103,40 +103,7 @@
         </div>
 
 </div>
-
-{% if top_draft %}
-{% for p in top_draft %}{% if p.player.notes %}
-<div id="modal-report-{{ p.id }}" class="modal">
-<div class="modal-background"></div>
-<div class="modal-content">
-    <div class="box">
-        <h2 class="title is-4">{{ p.player.name }} ({{ p.player.position }})</h2>
-        <p class="notes">{{ p.player.notes }}</p>
-    </div>
-</div>
-<button class="modal-close is-large" aria-label="close"></button>
-</div>
-{% endif %}
-{% endfor %}
-{% endif %}
-
-{% if top_100 %}
-{% for p in top_100 %}{% if p.player.notes %}
-<div id="modal-report-{{ p.id }}" class="modal">
-<div class="modal-background"></div>
-<div class="modal-content">
-    <div class="box">
-        <h2 class="title is-4">{{ p.player.name }} ({{ p.player.position }})</h2>
-        <p class="notes">{{ p.player.notes }}</p>
-    </div>
-</div>
-<button class="modal-close is-large" aria-label="close"></button>
-</div>
-{% endif %}
-{% endfor %}
-{% endif %}
-
-
+{% include 'includes/player_modal.html' %}
 {% endblock %}
 
 {% block extrascript %}

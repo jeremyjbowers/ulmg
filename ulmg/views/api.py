@@ -60,6 +60,7 @@ def trade_bulk_action(request):
     except Exception as e:
         return JsonResponse({"success": False, "error": f"{e}"})
 
+
 @login_required
 @csrf_exempt
 def wishlist_bulk_action(request):
@@ -384,14 +385,15 @@ def player_list(request):
 
 
 @login_required
-def bowers_important(request):
-    payload = [
-        dict(p)
-        for p in models.Player.objects.filter(b_important=True).values(
-            "pk", "is_owned", "team__abbreviation"
-        )
-    ]
-
+def scouting_report(request, playerid):
+    p = get_object_or_404(models.Player, id=playerid)
+    payload = {}
+    payload['name'] = p.name
+    payload['position'] = p.position
+    payload['notes'] = p.notes
+    payload['mlb_team'] = "No MLB team"
+    if p.mlb_team:
+        payload['mlb_team'] = p.mlb_team
     return JsonResponse(payload, safe=False)
 
 

@@ -6,8 +6,8 @@ from ulmg import views
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("accounts/", include("django.contrib.auth.urls")),
+    path("api/v1/player/scouting-report/<int:playerid>/", views.api.scouting_report),
     path("api/v1/player/", views.api.player_list),
-    path("api/v1/draft/live/players/important/", views.api.bowers_important),
     path(
         "api/v1/draft/live/<int:year>/<str:season>/<str:draft_type>/",
         views.api.draft_api,
@@ -30,7 +30,6 @@ urlpatterns = [
     path("players/<int:playerid>/", views.site.player),
     path("players/search/", views.site.search),
     path("draft/live/players/owned/", views.api.player_owned),
-    path("draft/live/bowers/aa/", views.site.bowers_aa),
     path(
         "draft/live/<int:year>/<str:season>/<str:draft_type>/edit/",
         views.site.draft_admin,
