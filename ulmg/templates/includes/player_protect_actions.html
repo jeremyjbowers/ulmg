@@ -1,5 +1,8 @@
 {% if roster_tab %}
 <td>
+    {% if p.covid_protected %}
+    <strong style="color: maroon;">** COVID **</strong>
+    {% else %}
     <!--{% if p.is_35man_roster %}<strong>&check;</strong>{% endif %} -->
     {% if p.is_mlb_roster %}<strong>MLB</strong>{% endif %}
     {% if p.is_aaa_roster %}<em>AAA</em>{% endif %}
@@ -10,15 +13,19 @@
     <!-- {% if p.is_2h_c %}<span style="color: red;">CAT2</span>{% endif %}
     {% if p.is_2h_pos %}<span style="color: red;">POS2</span>{% endif %}
     {% if p.is_2h_p %}<span style="color: red;">PIT2</span>{% endif %} -->
+    {% endif %}
 </td>
 {% endif %}
 
 {% if roster_tab %}<td>
+    {% if not p.covid_protected %}
     {% if p.is_carded and not p.is_mlb_roster and not p.is_reserve and mlb_roster_count < mlb_roster_size %}{% if not p.is_2h_c and not p.is_2h_pos and not p.is_2h_p %}<a class="button is-small is-outlined is-success player-action" data-playerid="{{ p.id }}" data-action="to_mlb">MLB &uarr;</a>{% endif %}{% endif %}
     {% if p.is_carded and not p.is_aaa_roster and not p.is_reserve %}{% if not p.is_2h_c and not p.is_2h_pos and not p.is_2h_p %}<a class="button is-small is-outlined is-info player-action" data-playerid="{{ p.id }}" data-action="to_aaa">AAA &darr;</a>{% endif %}{% endif %}
     <!-- {% if p.is_mlb_roster or p.is_aaa_roster or p.is_reserve %}<a class="button is-small is-warning player-action" data-playerid="{{ p.id }}" data-action="unprotect">CLR ⟲</a>{% endif %} -->
     {% if p.is_mlb_roster or p.is_aaa_roster %}<a class="button is-small is-warning player-action" data-playerid="{{ p.id }}" data-action="unprotect">CLR ⟲</a>{% endif %}
+    {% endif %}
 </td><td>
+    {% if not p.covid_protected %}
     {% if p.position == "P" and p.level == "V" and not p.is_1h_p %}<a class="button is-primary is-light is-small is-link player-action" data-playerid="{{ p.id }}" data-action="is_1h_p">P</a>{% endif %}
     {% if p.position == "C" and p.level == "V" and not p.is_1h_c %}<a class="button is-primary is-light is-small is-link player-action" data-playerid="{{ p.id }}" data-action="is_1h_c">C</a>{% endif %}
     {% if p.position != "P" and p.position != "C" and p.level == "V" and not p.is_1h_pos %}<a class="button is-primary is-light is-small is-link player-action" data-playerid="{{ p.id }}" data-action="is_1h_pos">H</a>{% endif %}
@@ -28,6 +35,7 @@
     {% if p.position != "P" and p.position != "C" and p.level == "V" and not p.is_1h_pos and not p.is_reserve %} {% if not p.is_2h_pos%}<a class="button is-primary is-light is-small is-link player-action" data-playerid="{{ p.id }}" data-action="is_2h_pos">H</a>{% endif %}{% endif %}
     {% if p.is_2h_p or p.is_2h_c or p.is_2h_pos %}<a class="button is-small is-light is-warning player-action" data-playerid="{{ p.id }}" data-action="unprotect">&rarrhk;</a>{% endif %} -->
     <!-- {% if p.level == "V" and not p.is_reserve %}<a class="button is-primary is-light is-small is-link player-action" data-playerid="{{ p.id }}" data-action="is_reserve">R</a>{% endif %} -->
+    {% endif %}
 </td>{% endif %}
 
 {% if protect_tab %}<td>
