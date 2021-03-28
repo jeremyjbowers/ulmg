@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('ulmg', '0022_player_cannot_be_protected'),
+        ("ulmg", "0022_player_cannot_be_protected"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='player',
-            name='covid_protected',
+            model_name="player",
+            name="covid_protected",
             field=models.BooleanField(default=False),
         ),
     ]

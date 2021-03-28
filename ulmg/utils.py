@@ -17,14 +17,19 @@ def send_email(from_email=None, to_emails=[], text=None, subject=None):
         return requests.post(
             "https://api.mailgun.net/v3/mail.theulmg.com/messages",
             auth=("api", settings.MAILGUN_API_KEY),
-            data={"from": from_email,
+            data={
+                "from": from_email,
                 "to": to_emails,
                 "subject": subject,
-                "text": text})
+                "text": text,
+            },
+        )
     return None
 
 
-def fuzzy_find_prospectrating(name_fragment, score=0.7, position=None, mlb_team_abbr=None):
+def fuzzy_find_prospectrating(
+    name_fragment, score=0.7, position=None, mlb_team_abbr=None
+):
 
     output = []
 
@@ -35,7 +40,7 @@ def fuzzy_find_prospectrating(name_fragment, score=0.7, position=None, mlb_team_
 
     if mlb_team_abbr:
         players = players.filter(mlb_team_abbr=mlb_team_abbr)
-    
+
     players = players.annotate(similarity=TrigramSimilarity("name", name_fragment))
     players = players.filter(similarity__gt=score)
     players = players.order_by("-similarity")
@@ -59,13 +64,12 @@ def fuzzy_find_player(name_fragment, score=0.7, position=None, mlb_team_abbr=Non
 
     if mlb_team_abbr:
         players = players.filter(mlb_team_abbr=mlb_team_abbr)
-    
+
     players = players.annotate(similarity=TrigramSimilarity("name", name_fragment))
     players = players.filter(similarity__gt=score)
     players = players.order_by("-similarity")
 
     return players
-
 
 
 def update_wishlist(playerid, wishlist, rank, tier, remove=False):

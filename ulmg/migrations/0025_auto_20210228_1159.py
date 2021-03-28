@@ -6,28 +6,28 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('ulmg', '0024_player_fg_eta'),
+        ("ulmg", "0024_player_fg_eta"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='player',
-            name='injury_description',
+            model_name="player",
+            name="injury_description",
             field=models.CharField(blank=True, max_length=255, null=True),
         ),
         migrations.AlterField(
-            model_name='player',
-            name='mlb_team',
+            model_name="player",
+            name="mlb_team",
             field=models.CharField(blank=True, max_length=255, null=True),
         ),
         migrations.AlterField(
-            model_name='player',
-            name='mlb_team_abbr',
+            model_name="player",
+            name="mlb_team_abbr",
             field=models.CharField(blank=True, max_length=255, null=True),
         ),
         migrations.AlterField(
-            model_name='player',
-            name='role',
+            model_name="player",
+            name="role",
             field=models.CharField(blank=True, max_length=255, null=True),
         ),
     ]

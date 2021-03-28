@@ -17,7 +17,6 @@ class Command(BaseCommand):
     def set_carded(self, *args, **optionals):
         print(".... setting carded status")
 
-
     def reset_rosters(self):
         print(".... resetting rosters")
         models.Player.objects.filter(is_mlb_roster=True).update(is_mlb_roster=False)

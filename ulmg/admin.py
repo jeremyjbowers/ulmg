@@ -9,7 +9,7 @@ from ulmg.models import (
     Wishlist,
     WishlistPlayer,
     Owner,
-    ProspectRating
+    ProspectRating,
 )
 
 admin.site.site_title = "The ULMG"
@@ -40,11 +40,12 @@ class ProspectRatingAdmin(admin.ModelAdmin):
         cbs = models.IntegerField(blank=True, null=True)
         espn = models.IntegerField(blank=True, null=True)
     """
+
     model = ProspectRating
-    list_display = ['player', 'year', 'avg']
-    list_filter = ['year']
-    search_fields = ['player', 'player_name']
-    autocomplete_fields = ['player']
+    list_display = ["player", "year", "avg"]
+    list_filter = ["year"]
+    search_fields = ["player", "player_name"]
+    autocomplete_fields = ["player"]
 
 
 @admin.register(Owner)
@@ -205,9 +206,7 @@ class PlayerAdmin(admin.ModelAdmin):
             "Roster",
             {
                 "classes": ("collapse",),
-                "fields": (
-                    ("is_mlb_roster", "is_aaa_roster", "is_35man_roster"),
-                ),
+                "fields": (("is_mlb_roster", "is_aaa_roster", "is_35man_roster"),),
             },
         ),
         (
@@ -218,7 +217,7 @@ class PlayerAdmin(admin.ModelAdmin):
                     ("is_reserve",),
                     ("is_1h_p", "is_1h_c", "is_1h_pos"),
                     ("is_2h_draft", "is_2h_p", "is_2h_c", "is_2h_pos"),
-                    ("is_protected", "cannot_be_protected", "covid_protected")
+                    ("is_protected", "cannot_be_protected", "covid_protected"),
                 ),
             },
         ),
@@ -228,7 +227,7 @@ class PlayerAdmin(admin.ModelAdmin):
                 "classes": ("collapse",),
                 "fields": (
                     ("is_starter", "is_bench", "is_player_pool"),
-                    "is_injured", 
+                    "is_injured",
                     "injury_description",
                     ("role",),
                     ("is_mlb40man", "is_bullpen"),
@@ -240,7 +239,7 @@ class PlayerAdmin(admin.ModelAdmin):
             {
                 "classes": ("collapse",),
                 "fields": (
-                    ("is_prospect","is_amateur"), 
+                    ("is_prospect", "is_amateur"),
                     "league",
                     "prospect_rating_avg",
                     "class_year",
@@ -249,8 +248,5 @@ class PlayerAdmin(admin.ModelAdmin):
                 ),
             },
         ),
-        (
-            "Advanced",
-            {"classes": ("collapse",), "fields": ("is_carded", "is_owned",)},
-        ),
+        ("Advanced", {"classes": ("collapse",), "fields": ("is_carded", "is_owned",)},),
     )

@@ -386,14 +386,12 @@ class Player(BaseModel):
             return "%s (%s)" % (self.name, self.get_team().abbreviation)
         return self.name
 
-
     @property
     def latest_rating(self):
         ratings = ProspectRating.objects.filter(player=self).order_by("-year")
         if len(ratings) > 0:
             return ratings[0]
         return None
-
 
     def set_fg_url(self):
         if self.fg_id:
@@ -677,7 +675,7 @@ class Trade(BaseModel):
                     "%s <a href='/players/%s/'>%s</a>" % (p.position, p.id, p.name)
                     for p in t1.players.all()
                 ]
-                + [f"{p.slug}" for p in t1.picks.all()]
+                + [f"{p.year} {p.season } {p.slug}" for p in t1.picks.all()]
             ),
         )
 
@@ -696,7 +694,7 @@ class Trade(BaseModel):
             t2.team.abbreviation,
             ", ".join(
                 ["%s %s" % (p.position, p.name) for p in t1.players.all()]
-                + [f"{p.slug}" for p in t1.picks.all()]
+                + [f"{p.year} {p.season } {p.slug}" for p in t1.picks.all()]
             ),
         )
 
