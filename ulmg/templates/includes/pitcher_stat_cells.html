@@ -1,3 +1,9 @@
+<td>{{ p.mlb_team_abbr|default_if_none:"-" }}</td>
+<td>{% if p.is_injured %}🚫{% endif %}</td>
+<td>
+    {{ p.role }}
+</td>
+<td data-value="{{ p.ls_g|default_if_none:"-999" }}">{% if p.ls_ip > 0 %}{{ p.ls_g|default_if_none:"-" }}{% else %}-{% endif %}</td>
 <td data-value="{{ p.ls_gs|default_if_none:"-999" }}">{% if p.ls_ip > 0 %}{{ p.ls_gs|default_if_none:"-" }}{% else %}-{% endif %}</td>
 <td data-value="{{ p.ls_ip|default_if_none:"-999" }}">{% if p.ls_ip > 0 %}{{ p.ls_ip|default_if_none:"-" }}{% else %}-{% endif %}</td>
 <td data-value="{{ p.ls_era|default_if_none:"999" }}">{% if p.ls_ip > 0 %}{{ p.ls_era|default_if_none:"-" }}{% else %}-{% endif %}</td>
