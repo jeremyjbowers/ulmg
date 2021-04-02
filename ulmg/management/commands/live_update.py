@@ -24,9 +24,9 @@ class Command(BaseCommand):
         self.reset_players()
 
         # # FG VIA ROSTER RESOURCE
-        # self.get_roster_info()
-        # self.update_player_ids()
-        # self.parse_roster_info()
+        self.get_roster_info()
+        self.update_player_ids()
+        self.parse_roster_info()
 
         # # FG CSVs
         self.get_hitters_dash()
