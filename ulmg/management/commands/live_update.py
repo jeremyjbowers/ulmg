@@ -374,7 +374,7 @@ class Command(BaseCommand):
 
     def get_hitters_std(self):
         print("FG HITTERS - STD")
-        url = f"https://www.fangraphs.com/leaders.aspx?pos=all&stats=bat&lg=all&qual=1&type=0&season={self.season}&month=0&season1={self.season}&ind=0&team=0&rost=0&age=0&filter=&players=0&startdate={self.season}-01-01&enddate={self.season}-12-31&page=1_1500"
+        url = f"https://www.fangraphs.com/leaders.aspx?pos=all&stats=bat&lg=all&qual=n&type=0&season={self.season}&month=0&season1={self.season}&ind=0&team=0&rost=0&age=0&filter=&players=0&startdate={self.season}-01-01&enddate={self.season}-12-31&page=1_1500"
         rows = self.get_fg_results(url)
 
         for row in rows:
@@ -404,7 +404,7 @@ class Command(BaseCommand):
 
     def get_hitters_dash(self):
         print("FG HITTERS - DASH")
-        url = f"https://www.fangraphs.com/leaders.aspx?pos=all&stats=bat&lg=all&qual=y&type=8&season={self.season}&month=0&season1={self.season}&ind=0&team=0&rost=0&age=0&filter=&players=0&startdate=&enddate=&page=1_100000"
+        url = f"https://www.fangraphs.com/leaders.aspx?pos=all&stats=bat&lg=all&qual=n&type=8&season={self.season}&month=0&season1={self.season}&ind=0&team=0&rost=0&age=0&filter=&players=0&startdate=&enddate=&page=1_100000"
         rows = self.get_fg_results(url)
 
         for row in rows:
@@ -443,7 +443,7 @@ class Command(BaseCommand):
 
     def get_pitchers_std(self):
         print("FG PITCHERS - STD")
-        url = f"https://www.fangraphs.com/leaders.aspx?pos=all&stats=pit&lg=all&qual=1&type=0&season={self.season}&month=0&season1={self.season}&ind=0&team=0&rost=0&age=0&filter=&players=0&startdate={self.season}-01-01&enddate={self.season}-12-31&page=1_1100"
+        url = f"https://www.fangraphs.com/leaders.aspx?pos=all&stats=pit&lg=all&qual=n&type=0&season={self.season}&month=0&season1={self.season}&ind=0&team=0&rost=0&age=0&filter=&players=0&startdate={self.season}-01-01&enddate={self.season}-12-31&page=1_1100"
 
         rows = self.get_fg_results(url)
 
@@ -474,7 +474,7 @@ class Command(BaseCommand):
 
     def get_pitchers_dash(self):
         print("FG PITCHERS - DASH")
-        url = f"https://www.fangraphs.com/leaders.aspx?pos=all&stats=pit&lg=all&qual=1&type=c,4,5,11,7,8,13,-1,36,37,40,43,44,48,51,-1,6,45,62,122,-1,59&season={self.season}&month=0&season1={self.season}&ind=0&team=0&rost=0&age=0&filter=&players=0&startdate={self.season}-01-01&enddate={self.season}-12-31&page=1_1100"
+        url = f"https://www.fangraphs.com/leaders.aspx?pos=all&stats=pit&lg=all&qual=n&type=c,4,5,11,7,8,13,-1,36,37,40,43,44,48,51,-1,6,45,62,122,-1,59&season={self.season}&month=0&season1={self.season}&ind=0&team=0&rost=0&age=0&filter=&players=0&startdate={self.season}-01-01&enddate={self.season}-12-31&page=1_1100"
 
         rows = self.get_fg_results(url)
 
