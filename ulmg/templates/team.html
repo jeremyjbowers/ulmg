@@ -52,8 +52,7 @@
             <tbody>
             {% for p in position.list %}
             <tr class="{% if p.level != "B" and not p.is_protected and not p.covid_protected %}unprotected{% endif %}
-            {% if p.ls_is_mlb == False and p.ls_plate_appearances > 0 %} minors{% endif %}
-            {% if p.ls_is_mlb == False and not p.covid_protected %} minors{% endif %}
+            {% if p.is_prospect > 0 %} minors{% endif %}
             {% if p.ls_is_mlb == False and p.is_amateur == True %} amateur{% endif %}
             ">
                     {% include "includes/player_name.html" %}
@@ -90,9 +89,8 @@
             <tbody>
             {% for p in pitchers %}
             <tr class="{% if p.level == "V" and not p.is_protected and not p.covid_protected %}unprotected{% endif %}
-            {% if p.ls_is_mlb == False and p.ls_ip > 0 %} minors{% endif %}
+            {% if p.is_prospect > 0 %} minors{% endif %}
             {% if p.ls_is_mlb == False and p.is_amateur == True %} amateur{% endif %}
-            {% if p.ls_is_mlb == False and not p.covid_protected %} minors{% endif %}
             ">
                     {% include "includes/player_name.html" %}
                     <td class="left">

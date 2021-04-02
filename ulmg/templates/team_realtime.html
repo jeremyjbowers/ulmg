@@ -56,10 +56,9 @@
             </thead>
             <tbody>
             {% for p in position.list %}
-            <tr class="{% if p.level == "V" and not p.is_protected %}unprotected{% endif %}
-            {% if p.ls_is_mlb == False and p.ls_plate_appearances > 0 %} minors{% endif %}
-            {% if p.ls_is_mlb == False %} minors{% endif %}
-            {% if p.ls_is_mlb == False and p.is_amateur == True %} amateur{% endif %}
+            <tr class="
+            {% if p.is_prospect %} minors{% endif %}
+            {% if p.is_amateur == True %} amateur{% endif %}
             ">
                     <td data-value="{{ p.name }}" style="text-align: left!important;">
                         <a class="has-text-weight-semibold" href="/players/{{ p.id }}/" target="_blank">{{ p.name }}</a>
@@ -95,10 +94,9 @@
             </thead>
             <tbody>
             {% for p in pitchers %}
-            <tr class="{% if p.level == "V" and not p.is_protected %}unprotected{% endif %}
-            {% if p.ls_is_mlb == False and p.ls_ip > 0 %} minors{% endif %}
-            {% if p.ls_is_mlb == False and p.is_amateur == True %} amateur{% endif %}
-            {% if p.ls_is_mlb == False %} minors{% endif %}
+            <tr class="
+            {% if p.is_prospect %} minors{% endif %}
+            {% if p.is_amateur == True %} amateur{% endif %}
             ">
                     <td data-value="{{ p.name }}" style="text-align: left!important;"><span class="has-text-weight-semibold" data-value="{{ p.name }}">
                             <a href="/players/{{ p.id }}/" target="_blank">{{ p.name }}</a></span>

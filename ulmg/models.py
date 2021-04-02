@@ -271,42 +271,73 @@ class Player(BaseModel):
     is_mlb40man = models.BooleanField(default=False)
     is_bullpen = models.BooleanField(default=False)
 
-    # PROJECTED STATS
-    ps_stat_origin = models.CharField(blank=True, null=True, max_length=255)
-    ps_is_mlb = models.BooleanField(default=False)
-    ps_g = models.IntegerField(blank=True, null=True)
-    ps_pa = models.IntegerField(blank=True, null=True)
-    ps_hr = models.IntegerField(blank=True, null=True)
-    ps_bb = models.IntegerField(blank=True, null=True)
-    ps_k = models.IntegerField(blank=True, null=True)
-    ps_sb = models.IntegerField(blank=True, null=True)
-    ps_cs = models.IntegerField(blank=True, null=True)
-    ps_avg = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
-    ps_obp = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
-    ps_slg = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
-    ps_ops = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
-    ps_woba = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
-    ps_wrc_plus = models.IntegerField(blank=True, null=True)
-    ps_bsr = models.DecimalField(max_digits=3, decimal_places=1, blank=True, null=True)
-    ps_fld = models.DecimalField(max_digits=3, decimal_places=1, blank=True, null=True)
-    ps_off = models.DecimalField(max_digits=3, decimal_places=1, blank=True, null=True)
-    ps_def = models.DecimalField(max_digits=3, decimal_places=1, blank=True, null=True)
-    ps_war = models.DecimalField(max_digits=3, decimal_places=1, blank=True, null=True)
-    ps_era = models.DecimalField(max_digits=4, decimal_places=2, blank=True, null=True)
-    ps_fip = models.DecimalField(max_digits=4, decimal_places=2, blank=True, null=True)
-    ps_gs = models.IntegerField(blank=True, null=True)
-    ps_sv = models.IntegerField(blank=True, null=True)
-    ps_ip = models.IntegerField(blank=True, null=True)
-    ps_h = models.IntegerField(blank=True, null=True)
-    ps_er = models.IntegerField(blank=True, null=True)
-    ps_hr = models.IntegerField(blank=True, null=True)
-    ps_so = models.IntegerField(blank=True, null=True)
-    ps_bb = models.IntegerField(blank=True, null=True)
-    ps_whip = models.DecimalField(max_digits=4, decimal_places=2, blank=True, null=True)
-    ps_k_9 = models.DecimalField(max_digits=4, decimal_places=2, blank=True, null=True)
-    ps_bb_9 = models.DecimalField(max_digits=4, decimal_places=2, blank=True, null=True)
-    ps_ra9_war = models.DecimalField(
-        max_digits=3, decimal_places=1, blank=True, null=True
+    # PREVIOUS_YEAR STATS
+    py_is_mlb = models.BooleanField(default=False)
+    py_hits = models.IntegerField(blank=True, null=True)
+    py_2b = models.IntegerField(blank=True, null=True)
+    py_3b = models.IntegerField(blank=True, null=True)
+    py_ab = models.IntegerField(blank=True, null=True)
+    py_hr = models.IntegerField(blank=True, null=True)
+    py_sb = models.IntegerField(blank=True, null=True)
+    py_runs = models.IntegerField(blank=True, null=True)
+    py_rbi = models.IntegerField(blank=True, null=True)
+    py_k = models.IntegerField(blank=True, null=True)
+    py_bb = models.IntegerField(blank=True, null=True)
+    py_avg = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
+    py_obp = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
+    py_slg = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
+    py_babip = models.DecimalField(
+        max_digits=4, decimal_places=3, blank=True, null=True
+    )
+    py_wrc_plus = models.IntegerField(blank=True, null=True)
+    py_plate_appearances = models.IntegerField(blank=True, null=True)
+    py_iso = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
+    py_k_pct = models.DecimalField(
+        max_digits=4, decimal_places=1, blank=True, null=True
+    )
+    py_bb_pct = models.DecimalField(
+        max_digits=4, decimal_places=1, blank=True, null=True
+    )
+    py_woba = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
+    py_g = models.IntegerField(blank=True, null=True)
+    py_gs = models.IntegerField(blank=True, null=True)
+    py_ip = models.DecimalField(max_digits=4, decimal_places=1, blank=True, null=True)
+    py_pk = models.IntegerField(blank=True, null=True)
+    py_pbb = models.IntegerField(blank=True, null=True)
+    py_ha = models.IntegerField(blank=True, null=True)
+    py_hra = models.IntegerField(blank=True, null=True)
+    py_er = models.IntegerField(blank=True, null=True)
+    py_k_9 = models.DecimalField(max_digits=4, decimal_places=2, blank=True, null=True)
+    py_bb_9 = models.DecimalField(max_digits=4, decimal_places=2, blank=True, null=True)
+    py_hr_9 = models.DecimalField(max_digits=4, decimal_places=2, blank=True, null=True)
+    py_lob_pct = models.DecimalField(
+        max_digits=4, decimal_places=1, blank=True, null=True
+    )
+    py_gb_pct = models.DecimalField(
+        max_digits=4, decimal_places=1, blank=True, null=True
+    )
+    py_hr_fb = models.DecimalField(
+        max_digits=4, decimal_places=1, blank=True, null=True
+    )
+    py_era = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
+    py_fip = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
+    py_xfip = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
+    py_siera = models.DecimalField(
+        max_digits=5, decimal_places=2, blank=True, null=True
+    )
+    py_xavg = models.DecimalField(max_digits=5, decimal_places=3, blank=True, null=True)
+    py_xwoba = models.DecimalField(
+        max_digits=5, decimal_places=3, blank=True, null=True
+    )
+    py_xslg = models.DecimalField(max_digits=5, decimal_places=3, blank=True, null=True)
+    py_xavg_diff = models.DecimalField(
+        max_digits=5, decimal_places=3, blank=True, null=True
+    )
+    py_xwoba_diff = models.DecimalField(
+        max_digits=5, decimal_places=3, blank=True, null=True
+    )
+    py_xslg_diff = models.DecimalField(
+        max_digits=5, decimal_places=3, blank=True, null=True
     )
 
     # LIVE STATS
