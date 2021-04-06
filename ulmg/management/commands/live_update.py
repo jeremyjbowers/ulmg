@@ -434,6 +434,8 @@ class Command(BaseCommand):
                 obj.ls_slg = Decimal(h[15].text.strip())
                 obj.ls_woba = Decimal(h[16].text.strip())
                 obj.ls_wrc_plus = h[18].text.strip()
+                if obj.ls_wrc_plus == "":
+                    obj.ls_wrc_plus = None
                 obj.save()
 
             except Exception as e:
