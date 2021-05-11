@@ -170,7 +170,6 @@
             <thead>
                 <tr>
                     <th data-sortable-type="alpha">Name</th>
-                    <th></th>
                     <th data-sortable-type="numeric">Age</th>
                     <th data-sortable-type="alpha">Lvl</th>
                     {% include "includes/hitter_stat_headers.html" %}
@@ -183,12 +182,6 @@
             {% if p.ls_is_mlb == False and p.is_amateur == True %} amateur{% endif %}
             ">
                     {% include "includes/player_name.html" %}
-                    <td class="left">
-                        <a href="/admin/ulmg/player/{{ p.id }}/change/">&#x270E; &Gt;</a>
-                        {% if p.bref_url %}<a class="has-text-weight-light" target="_blank" href="{{ p.bref_url }}">BBR &Gt;</a>{% endif %}
-                        {% if p.fg_url %}<a class="has-text-weight-light" target="_blank" href="{{ p.fg_url }}">FG &Gt;</a>{% endif %}
-                        {% if p.mlbam_id %}<a class="has-text-weight-light" target="_blank" href="https://baseballsavant.mlb.com/savant-player/{{ p.mlbam_id }}">MLB &Gt;</a>{% endif %}
-                    </td>
                     <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
                     <td data-value="{{ p.level|default_if_none:"Z" }}<">{{ p.level|default_if_none:"" }}</td>
                     {% include "includes/hitter_stat_cells.html" %}
@@ -207,7 +200,6 @@
             <thead>
                 <tr>
                     <th data-sortable-type="alpha">Name</th>
-                    <th></th>
                     <th data-sortable-type="numeric">Age</th>
                     <th data-sortable-type="alpha">Lvl</th>
                     {% include "includes/pitcher_stat_headers.html" %}
@@ -220,12 +212,6 @@
                 {% if p.ls_is_mlb == False and p.is_amateur == True %} amateur{% endif %}
                 ">
                     {% include "includes/player_name.html" %}
-                    <td class="left">
-                        <a href="/admin/ulmg/player/{{ p.id }}/change/">&#x270E; &Gt;</a>
-                        {% if p.bref_url %}<a class="has-text-weight-light" target="_blank" href="{{ p.bref_url }}">BBR &Gt;</a>{% endif %}
-                        {% if p.fg_url %}<a class="has-text-weight-light" target="_blank" href="{{ p.fg_url }}">FG &Gt;</a>{% endif %}
-                        {% if p.mlbam_id %}<a class="has-text-weight-light" target="_blank" href="https://baseballsavant.mlb.com/savant-player/{{ p.mlbam_id }}">MLB &Gt;</a>{% endif %}
-                    </td>
                     <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
                     <td data-value="{{ p.level|default_if_none:"Z" }}<">{{ p.level|default_if_none:"" }}</td>
                     {% include "includes/pitcher_stat_cells.html" %}
