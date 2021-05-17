@@ -117,6 +117,7 @@ ROSTER_TEAM_IDS = [
     ("22", "LAD", "Los Angeles Dodgers"),
     ("23", "MIL", "Milwaukee Brewers"),
     ("24", "WAS", "Washington Nationals"),
+    ("24", "WSN", "Washington Nationals"),
     ("25", "NYM", "New York Mets"),
     ("26", "PHI", "Philadelphia Phillies"),
     ("27", "PIT", "Pittsburgh Pirates"),
