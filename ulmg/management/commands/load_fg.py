@@ -29,19 +29,19 @@ class Command(BaseCommand):
         except models.ProspectRating.DoesNotExist:
 
             prs = utils.fuzzy_find_prospectrating(obj.name)
-            print(prs)
+            # print(prs)
 
             if len(prs) == 1:
                 pr = prs[0]
                 self.save_prospectrating(p, pr, idx)
-                print(f"* {pr}")
+                # print(f"* {pr}")
 
             elif len(prs) == 0:
                 pr, created = models.ProspectRating.objects.get_or_create(
                     year=2021, player=obj, player_name=obj.name
                 )
                 self.save_prospectrating(p, pr, idx)
-                print(f"+ {pr}")
+                # print(f"+ {pr}")
 
     def find_player(self, p):
         objs = utils.fuzzy_find_player(p["Name"])
