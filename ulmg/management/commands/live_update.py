@@ -29,19 +29,14 @@ class Command(BaseCommand):
         self.parse_roster_info()
 
         # FG CSVs
-        self.get_hitters_dash()
-        self.get_hitters_std()
-        self.get_pitchers_dash()
-        self.get_pitchers_std()
+        self.get_hitters()
+        self.get_pitchers()
 
         # FG weird API URL
         self.get_minors()
 
         # AGGREGATE LS BY TEAM
         self.team_aggregates()
-
-        # # MLBAM xSTATS
-        # self.get_mlbam()
 
     def team_aggregates(self):
         print("TEAM AGGREGATES")
@@ -176,7 +171,15 @@ class Command(BaseCommand):
                                 pass
 
                         if p:
-                            p.role = player["role"]
+                            if player.get('mlevel', None):
+                                p.role = player["mlevel"]
+                            elif player.get('role', None):
+                                if player['role'] != '':
+                                    p.role = player["role"]
+
+                            if p.role == "MLB":
+                                p.ls_is_mlb = True
+                                p.is_mlb = True
 
                             if "pp" in player["type"]:
                                 p.is_player_pool = True
@@ -339,74 +342,62 @@ class Command(BaseCommand):
                     except:
                         print(player)
 
-    def get_mlbam(self):
-        print("MLBAM")
-        curl_cmd = f'curl --silent -o /tmp/mlbam.csv "https://baseballsavant.mlb.com/expected_statistics?type=batter&year={self.season}&position=&team=&min=5&csv=true"'
-        os.system(curl_cmd)
-        with open("/tmp/mlbam.csv", "r") as readfile:
-            players = [dict(c) for c in csv.DictReader(readfile)]
-            for p in players:
-                try:
-                    obj = models.Player.objects.get(mlbam_id=p["player_id"])
-                    obj.ls_is_mlb = True
-                    obj.ls_xavg = 0.000 if p["est_ba"] == "" else Decimal(p["est_ba"])
-                    obj.ls_xwoba = (
-                        0.000 if p["est_woba"] == "" else Decimal(p["est_woba"])
-                    )
-                    obj.ls_xslg = 0.000 if p["est_slg"] == "" else Decimal(p["est_slg"])
-                    obj.ls_xwoba_diff = (
-                        0.000
-                        if p["est_woba_minus_woba_diff"] == ""
-                        else Decimal(p["est_woba_minus_woba_diff"])
-                    )
-                    obj.ls_xslg_diff = (
-                        0.000
-                        if p["est_slg_minus_slg_diff"] == ""
-                        else Decimal(p["est_slg_minus_slg_diff"])
-                    )
-                    obj.ls_xavg_diff = (
-                        0.000
-                        if p["est_ba_minus_ba_diff"] == ""
-                        else Decimal(p["est_ba_minus_ba_diff"])
-                    )
+
+    def get_hitters(self):
+        print("FG HITTERS")
+        url = f"https://www.fangraphs.com/leaders.aspx?pos=all&stats=bat&lg=all&qual=0&type=c,6,-1,312,305,309,306,307,308,310,311,-1,23,315,-1,38,316,-1,50,317,7,8,9,10,11,12,13,14,21,23,34,35,37,38,39,40,41,50,52,57,58,61,62&season={self.season}&month=0&season1={self.season}&ind=0&team=0&rost=0&age=0&filter=&players=0&startdate={self.season}-01-01&enddate={self.season}-12-31&sort=3,d&page=1_5000"
+        rows = self.get_fg_results(url)
+
+        """
+        0: number, 1: name, 2: team, 3: pa, 4: events, 5: ev, 6: max_ev, 7: la, 8: barrels, 9: barrel_pct, 10: hard_hit, 11: hard_hit_pct, 12: avg, 13: xavg, 14: slg, 15: xslg, 16: woba, 17: xwoba, 18: h, 19: 1b, 20: 2b, 21: 3b, 22: hr, 23: r, 24: rbi, 25: bb, 26: sb, 27: avg, 28: bb%, 29: k%, 30: obp, 31: slg, 32: ops, 33: iso, 34: babip, 35: woba, 36: wrc, 37: rar, 38: war, 39: wrc+, 40: wpa
+        """
+        for row in rows:
+            h = row.select("td")
+            ls_dict = {}
+
+            try:
+                obj = models.Player.objects.get(
+                    fg_id=h[1]
+                    .select("a")[0]
+                    .attrs["href"]
+                    .split("playerid=")[1]
+                    .split("&")[0]
+                )
+                if obj.position != "P":
+                    obj.ls_hits = int(h[18].text)
+                    obj.ls_2b = int(h[20].text)
+                    obj.ls_3b = int(h[21].text)
+                    obj.ls_hr = int(h[22].text)
+                    obj.ls_sb = int(h[26].text)
+                    obj.ls_runs = int(h[23].text)
+                    obj.ls_rbi = int(h[24].text)
+                    obj.ls_avg = Decimal(h[12].text)
+                    obj.ls_xavg = Decimal(h[13].text)
+                    obj.ls_obp = Decimal(h[30].text)
+                    obj.ls_slg = Decimal(h[14].text)
+                    obj.ls_xslg = Decimal(h[15].text)
+                    obj.ls_babip = Decimal(h[34].text)
+                    obj.ls_wrc_plus = int(h[39].text)
+                    obj.ls_plate_appearances = int(h[3].text)
+                    obj.ls_iso = Decimal(h[33].text)
+                    obj.ls_k_pct = Decimal(round(float(h[29].text.replace('%', '')), 1))
+                    obj.ls_bb_pct = Decimal(round(float(h[28].text.replace('%', '')), 1))
+                    obj.ls_woba = Decimal(h[16].text)
+                    obj.ls_xwoba = Decimal(h[17].text)
                     obj.save()
 
-                except Exception as e:
-                    print(f"{p}\n{e}")
-
-    def get_hitters_std(self):
-        print("FG HITTERS - STD")
-        url = f"https://www.fangraphs.com/leaders.aspx?pos=all&stats=bat&lg=all&qual=n&type=0&season={self.season}&month=0&season1={self.season}&ind=0&team=0&rost=0&age=0&filter=&players=0&startdate={self.season}-01-01&enddate={self.season}-12-31&page=1_1500"
-        rows = self.get_fg_results(url)
-
-        for row in rows:
-            h = row.select("td")
-            ls_dict = {}
-
-            try:
-                obj = models.Player.objects.get(
-                    fg_id=h[1]
-                    .select("a")[0]
-                    .attrs["href"]
-                    .split("playerid=")[1]
-                    .split("&")[0]
-                )
-                obj.ls_ab = int(h[4].text.strip())
-                obj.ls_hits = int(h[6].text.strip())
-                obj.ls_2b = int(h[8].text.strip())
-                obj.ls_3b = int(h[9].text.strip())
-                obj.ls_bb = int(h[13].text.strip())
-                obj.ls_k = int(h[15].text.strip())
-                obj.save()
-
             except Exception as e:
+                print(round(float(h[29].text.replace('%', '')), 1))
+                print(round(float(h[28].text.replace('%', '')), 1))
                 print(
                     f"h: {h[1].select('a')[0].attrs['href'].split('playerid=')[1].split('&')[0]}\t{h[1].text.strip()}\t{e}"
                 )
 
-    def get_hitters_dash(self):
-        print("FG HITTERS - DASH")
-        url = f"https://www.fangraphs.com/leaders.aspx?pos=all&stats=bat&lg=all&qual=n&type=8&season={self.season}&month=0&season1={self.season}&ind=0&team=0&rost=0&age=0&filter=&players=0&startdate=&enddate=&page=1_100000"
+
+    def get_pitchers(self):
+        print("FG PITCHERS")
+        url = f"https://www.fangraphs.com/leaders.aspx?pos=all&stats=pit&lg=all&qual=2&type=c,4,5,11,7,8,13,-1,24,19,15,18,36,37,40,43,44,48,51,-1,240,-1,6,332,45,62,122,-1,59&season={self.season}&month=0&season1={self.season}&ind=0&team=0&rost=0&age=0&filter=&players=0&startdate={self.season}-01-01&enddate={self.season}-12-31&sort=8,d&page=1_5000"
+
         rows = self.get_fg_results(url)
 
         for row in rows:
@@ -421,94 +412,25 @@ class Command(BaseCommand):
                     .split("playerid=")[1]
                     .split("&")[0]
                 )
-                obj.ls_is_mlb = True
-                obj.ls_plate_appearances = int(h[4].text.strip())
-                obj.ls_hr = int(h[5].text.strip())
-                obj.ls_runs = int(h[6].text.strip())
-                obj.ls_rbi = int(h[7].text.strip())
-                obj.ls_sb = int(h[8].text.strip())
-                obj.ls_bb_pct = Decimal(h[9].text.replace("%", "").strip())
-                obj.ls_k_pct = Decimal(h[10].text.replace("%", "").strip())
-                obj.ls_iso = Decimal(h[11].text.strip())
-                obj.ls_babip = Decimal(h[12].text.strip())
-                obj.ls_avg = Decimal(h[13].text.strip())
-                obj.ls_obp = Decimal(h[14].text.strip())
-                obj.ls_slg = Decimal(h[15].text.strip())
-                obj.ls_woba = Decimal(h[16].text.strip())
-                obj.ls_wrc_plus = h[18].text.strip()
-                if obj.ls_wrc_plus == "":
-                    obj.ls_wrc_plus = None
+                obj.ls_g = int(h[6].text)
+                obj.ls_gs = int(h[7].text)
+                obj.ls_k = int(h[9].text)
+                obj.ls_bb = int(h[10].text)
+                obj.ls_ha = int(h[11].text)
+                obj.ls_hra = int(h[12].text)
+                obj.ls_ip = Decimal(round(float(h[8].text.replace('%', '')), 1))
+                obj.ls_k_9 = Decimal(round(float(h[13].text.replace('%', '')), 2))
+                obj.ls_bb_9 = Decimal(round(float(h[14].text.replace('%', '')), 2))
+                obj.ls_hr_9 = Decimal(round(float(h[15].text.replace('%', '')), 2))
+                obj.ls_lob_pct = Decimal(round(float(h[17].text.replace('%', '')), 1))
+                obj.ls_gb_pct = Decimal(round(float(h[18].text.replace('%', '')), 1))
+                obj.ls_hr_fb = Decimal(round(float(h[19].text.replace('%', '')), 1))
+                obj.ls_era = Decimal(round(float(h[21].text.replace('%', '')), 2))
+                obj.ls_fip = Decimal(round(float(h[23].text.replace('%', '')), 2))
+                obj.ls_xfip = Decimal(round(float(h[24].text.replace('%', '')), 2))
+                obj.ls_siera = Decimal(round(float(h[25].text.replace('%', '')), 2))
                 obj.save()
 
-            except Exception as e:
-                print(
-                    f"h: {h[1].select('a')[0].attrs['href'].split('playerid=')[1].split('&')[0]}\t{h[1].text.strip()}\t{e}"
-                )
-
-    def get_pitchers_std(self):
-        print("FG PITCHERS - STD")
-        url = f"https://www.fangraphs.com/leaders.aspx?pos=all&stats=pit&lg=all&qual=n&type=0&season={self.season}&month=0&season1={self.season}&ind=0&team=0&rost=0&age=0&filter=&players=0&startdate={self.season}-01-01&enddate={self.season}-12-31&page=1_1100"
-
-        rows = self.get_fg_results(url)
-
-        for row in rows:
-            h = row.select("td")
-            ls_dict = {}
-
-            try:
-                obj = models.Player.objects.get(
-                    fg_id=h[1]
-                    .select("a")[0]
-                    .attrs["href"]
-                    .split("playerid=")[1]
-                    .split("&")[0]
-                )
-                obj.ls_ha = int(h[15].text.strip())
-                obj.ls_er = int(h[17].text.strip())
-                obj.ls_hra = int(h[18].text.strip())
-                obj.ls_pbb = int(h[19].text.strip())
-                obj.ls_pk = int(h[24].text.strip())
-
-                obj.save()
-
-            except Exception as e:
-                print(
-                    f"p: {h[1].select('a')[0].attrs['href'].split('playerid=')[1].split('&')[0]}\t{h[1].text.strip()}\t{e}"
-                )
-
-    def get_pitchers_dash(self):
-        print("FG PITCHERS - DASH")
-        url = f"https://www.fangraphs.com/leaders.aspx?pos=all&stats=pit&lg=all&qual=n&type=c,4,5,11,7,8,13,-1,36,37,40,43,44,48,51,-1,6,45,62,122,-1,59&season={self.season}&month=0&season1={self.season}&ind=0&team=0&rost=0&age=0&filter=&players=0&startdate={self.season}-01-01&enddate={self.season}-12-31&page=1_1100"
-
-        rows = self.get_fg_results(url)
-
-        for row in rows:
-            h = row.select("td")
-            ls_dict = {}
-
-            try:
-                obj = models.Player.objects.get(
-                    fg_id=h[1]
-                    .select("a")[0]
-                    .attrs["href"]
-                    .split("playerid=")[1]
-                    .split("&")[0]
-                )
-                obj.ls_is_mlb = True
-                obj.ls_g = int(h[6].text.strip())
-                obj.ls_gs = int(h[7].text.strip())
-                obj.ls_ip = Decimal(h[8].text.replace("%", "").strip())
-                obj.ls_k_9 = Decimal(h[9].text.replace("%", "").strip())
-                obj.ls_bb_9 = Decimal(h[10].text.replace("%", "").strip())
-                obj.ls_hr_9 = Decimal(h[11].text.replace("%", "").strip())
-                obj.ls_babip = Decimal(h[12].text.replace("%", "").strip())
-                obj.ls_lob_pct = Decimal(h[13].text.replace("%", "").strip())
-                obj.ls_gb_pct = Decimal(h[14].text.replace("%", "").strip())
-                obj.ls_hr_fb = Decimal(h[15].text.replace("%", "").strip())
-                obj.ls_era = Decimal(h[16].text.replace("%", "").strip())
-                obj.ls_fip = Decimal(h[17].text.replace("%", "").strip())
-                obj.ls_xfip = Decimal(h[18].text.replace("%", "").strip())
-                obj.ls_siera = Decimal(h[19].text.replace("%", "").strip())
                 obj.save()
 
             except Exception as e:
