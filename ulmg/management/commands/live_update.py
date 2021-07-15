@@ -63,7 +63,7 @@ class Command(BaseCommand):
                     .aggregate(Sum(field))[f"{field}__sum"],
                 )
 
-            team.ls_avg = float(team.ls_hits) / float(team.ls_ab)
+            team.ls_avg = float(team.ls_hits) / float(team.ls_plate_appearances - team.ls_bb)
             team.ls_obp = (team.ls_hits + team.ls_bb) / float(team.ls_plate_appearances)
             teamtb = (
                 (team.ls_hits - team.ls_hr - team.ls_2b - team.ls_3b)
