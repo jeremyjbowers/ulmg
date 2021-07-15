@@ -1,7 +1,7 @@
 {% load ulmg_tags %}
 <td>{{ p.mlb_team_abbr|default_if_none:"-" }}</td>
 <td>{% if p.is_injured %}🚫{% endif %}</td>
-<td>{{ p.role }}</td>
+<td>{{ p.role|default_if_none:"" }}</td>
 
 <td style="max-width:75px;">{% if p.defense_display %}{{ p.defense_display }}{% else %}{{ p.position }}{% endif %}</td>
 
