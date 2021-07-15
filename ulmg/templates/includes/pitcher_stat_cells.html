@@ -1,8 +1,6 @@
 <td>{{ p.mlb_team_abbr|default_if_none:"-" }}</td>
 <td>{% if p.is_injured %}🚫{% endif %}</td>
-<td>
-    {{ p.role }}
-</td>
+<td>{{ p.role }}</td>
 <td data-value="{{ p.ls_g|default_if_none:"-999" }}">{% if p.ls_ip > 0 %}{{ p.ls_g|default_if_none:"-" }}{% else %}-{% endif %}</td>
 <td data-value="{{ p.ls_gs|default_if_none:"-999" }}">{% if p.ls_ip > 0 %}{{ p.ls_gs|default_if_none:"-" }}{% else %}-{% endif %}</td>
 <td data-value="{{ p.ls_ip|default_if_none:"-999" }}">{% if p.ls_ip > 0 %}{{ p.ls_ip|default_if_none:"-" }}{% else %}-{% endif %}</td>
@@ -10,6 +8,9 @@
 <td data-value="{{ p.ls_k_9|default_if_none:"-999" }}">{% if p.ls_ip > 0 %}{{ p.ls_k_9|default_if_none:"-" }}{% else %}-{% endif %}</td>
 <td data-value="{{ p.ls_bb_9|default_if_none:"999" }}">{% if p.ls_ip > 0 %}{{ p.ls_bb_9|default_if_none:"-" }}{% else %}-{% endif %}</td>
 <td data-value="{{ p.ls_hr_9|default_if_none:"999" }}">{% if p.ls_ip > 0 %}{{ p.ls_hr_9|default_if_none:"-" }}{% else %}-{% endif %}</td>
+<td data-value="{{ p.ls_fip|default_if_none:"999" }}">{% if p.ls_ip > 0 %}{{ p.ls_fip|default_if_none:"-" }}{% else %}-{% endif %}</td>
+<td data-value="{{ p.ls_xfip|default_if_none:"999" }}">{% if p.ls_ip > 0 %}{{ p.ls_xfip|default_if_none:"-" }}{% else %}-{% endif %}</td>
+<td data-value="{{ p.ls_siera|default_if_none:"999" }}">{% if p.ls_ip > 0 %}{{ p.ls_siera|default_if_none:"-" }}{% else %}-{% endif %}</td>
 
 <td data-value="{{ p.py_gs|default_if_none:"-999" }}" style="background-color: #eee;">{% if p.py_ip > 0 %}{{ p.py_gs|default_if_none:"-" }}{% else %}-{% endif %}</td>
 <td data-value="{{ p.py_ip|default_if_none:"-999" }}" style="background-color: #eee;">{% if p.py_ip > 0 %}{{ p.py_ip|default_if_none:"-" }}{% else %}-{% endif %}</td>

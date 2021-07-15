@@ -48,7 +48,6 @@
             <thead>
                 <tr>
                     <th data-sortable-type="alpha">Name</th>
-                    <th></th>
                     <th data-sortable-type="numeric">Age</th>
                     <th data-sortable-type="alpha">Lvl</th>
 
@@ -59,17 +58,12 @@
             </thead>
             <tbody>
             {% for p in position.list %}
-            <tr class="{% if p.level != "B" and not p.is_protected and not p.covid_protected %}unprotected{% endif %}
-            {% if p.ls_is_mlb == False and p.ls_plate_appearances > 0 %} minors{% endif %}
-            {% if p.ls_is_mlb == False and not p.covid_protected %} minors{% endif %}
-            {% if p.ls_is_mlb == False and p.is_amateur == True %} amateur{% endif %}
-            ">
-            {% include "includes/player_name.html" %}
-                    <td class="left">
-                        {% if p.bref_url %}<a class="has-text-weight-light" target="_blank" href="{{ p.bref_url }}">BBR &Gt;</a>{% endif %}
-                        {% if p.fg_url %}<a class="has-text-weight-light" target="_blank" href="{{ p.fg_url }}">FG &Gt;</a>{% endif %}
-                        {% if p.mlbam_id %}<a class="has-text-weight-light" target="_blank" href="https://baseballsavant.mlb.com/savant-player/{{ p.mlbam_id }}">MLB &Gt;</a>{% endif %}
-                    </td>
+                <tr class="{% if p.level != "B" and not p.is_protected and not p.covid_protected %}unprotected{% endif %}
+                {% if p.ls_is_mlb == False and p.ls_plate_appearances > 0 %} minors{% endif %}
+                {% if p.ls_is_mlb == False and not p.covid_protected %} minors{% endif %}
+                {% if p.ls_is_mlb == False and p.is_amateur == True %} amateur{% endif %}
+                ">
+                    {% include "includes/player_name.html" %}
                     <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
                     <td data-value="{{ p.level|default_if_none:"Z" }}<">{{ p.level|default_if_none:"" }}</td>
 
@@ -91,7 +85,6 @@
             <thead>
                 <tr>
                     <th data-sortable-type="alpha">Name</th>
-                    <th></th>
                     <th data-sortable-type="numeric">Age</th>
                     <th data-sortable-type="alpha">Lvl</th>
 
@@ -107,11 +100,6 @@
             {% if p.ls_is_mlb == False and not p.covid_protected %} minors{% endif %}
             ">
             {% include "includes/player_name.html" %}
-                    <td class="left">
-                        {% if p.bref_url %}<a class="has-text-weight-light" target="_blank" href="{{ p.bref_url }}">BBR &Gt;</a>{% endif %}
-                        {% if p.fg_url %}<a class="has-text-weight-light" target="_blank" href="{{ p.fg_url }}">FG &Gt;</a>{% endif %}
-                        {% if p.mlbam_id %}<a class="has-text-weight-light" target="_blank" href="https://baseballsavant.mlb.com/savant-player/{{ p.mlbam_id }}">MLB &Gt;</a>{% endif %}
-                    </td>
                     <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
                     <td data-value="{{ p.level|default_if_none:"Z" }}<">{{ p.level|default_if_none:"" }}</td>
 
