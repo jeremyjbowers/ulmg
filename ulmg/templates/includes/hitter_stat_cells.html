@@ -1,11 +1,9 @@
 {% load ulmg_tags %}
 <td>{{ p.mlb_team_abbr|default_if_none:"-" }}</td>
 <td>{% if p.is_injured %}🚫{% endif %}</td>
-<td>
-    {{ p.role }}
-</td>
+<td>{{ p.role }}</td>
 
-<td style="max-width:100px;">{% if p.defense_display %}{{ p.defense_display }}{% else %}{{ p.position }}{% endif %}</td>
+<td style="max-width:75px;">{% if p.defense_display %}{{ p.defense_display }}{% else %}{{ p.position }}{% endif %}</td>
 
 <td data-value="{{ p.ls_plate_appearances|default_if_none:"-999" }}">
     {% if p.ls_plate_appearances > 0 %}{{ p.ls_plate_appearances|default_if_none:"-" }}{% else %}-{% endif %}
@@ -37,31 +35,50 @@
 <td data-value="{{ p.ls_bb_pct|default_if_none:"-999" }}">
     {% if p.ls_plate_appearances > 0 %}{{ p.ls_bb_pct|default_if_none:"-" }}{% else %}-{% endif %}
 </td>
+<td data-value="{{ p.ls_wrc_plus|default_if_none:"-999" }}">
+    {% if p.ls_plate_appearances > 0 %}{{ p.ls_wrc_plus|default_if_none:"-" }}{% else %}-{% endif %}
+</td>
+
+{% if p.ls_is_mlb %}
+<td data-value="{{ p.ls_xavg|default_if_none:"-999" }}">
+    {% if p.ls_plate_appearances > 0 %}{{ p.ls_xavg|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
+</td>
+<td data-value="{{ p.ls_xwoba|default_if_none:"-999" }}">
+    {% if p.ls_plate_appearances > 0 %}{{ p.ls_xwoba|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
+</td>
+<td data-value="{{ p.ls_xslg|default_if_none:"-999" }}">
+    {% if p.ls_plate_appearances > 0 %}{{ p.ls_xslg|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
+</td>
+{% else %}
+<td data-value="-999">-</td>
+<td data-value="-999">-</td>
+<td data-value="-999">-</td>
+{% endif %}
 
 <td data-value="{{ p.py_plate_appearances|default_if_none:"-999" }}" style="background-color: #eee;">
-{% if p.py_plate_appearances > 0 %}{{ p.py_plate_appearances|default_if_none:"-" }}{% else %}-{% endif %}
+    {% if p.py_plate_appearances > 0 %}{{ p.py_plate_appearances|default_if_none:"-" }}{% else %}-{% endif %}
 </td>
 <td data-value="{{ p.py_avg|default_if_none:"-999" }}" style="background-color: #eee;">
-{% if p.py_plate_appearances > 0 %}{{ p.py_avg|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
+    {% if p.py_plate_appearances > 0 %}{{ p.py_avg|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
 </td>
 <td data-value="{{ p.py_obp|default_if_none:"-999" }}" style="background-color: #eee;">
-{% if p.py_plate_appearances > 0 %}{{ p.py_obp|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
+    {% if p.py_plate_appearances > 0 %}{{ p.py_obp|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
 </td>
 <td data-value="{{ p.py_slg|default_if_none:"-999" }}" style="background-color: #eee;">
-{% if p.py_plate_appearances > 0 %}{{ p.py_slg|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
+    {% if p.py_plate_appearances > 0 %}{{ p.py_slg|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
 </td>
 <td data-value="{{ p.py_hr|default_if_none:"-999" }}" style="background-color: #eee;">
-{% if p.py_plate_appearances > 0 %}{{ p.py_hr|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
+    {% if p.py_plate_appearances > 0 %}{{ p.py_hr|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
 </td>
 <td data-value="{{ p.py_rbi|default_if_none:"-999" }}" style="background-color: #eee;">
-{% if p.py_plate_appearances > 0 %}{{ p.py_rbi|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
+    {% if p.py_plate_appearances > 0 %}{{ p.py_rbi|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
 </td>
 <td data-value="{{ p.py_sb|default_if_none:"-999" }}" style="background-color: #eee;">
-{% if p.py_plate_appearances > 0 %}{{ p.py_sb|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
+    {% if p.py_plate_appearances > 0 %}{{ p.py_sb|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
 </td>
 <td data-value="{{ p.py_k_pct|default_if_none:"-999" }}" style="background-color: #eee;">
-{% if p.py_plate_appearances > 0 %}{{ p.py_k_pct|default_if_none:"-" }}{% else %}-{% endif %}
+    {% if p.py_plate_appearances > 0 %}{{ p.py_k_pct|default_if_none:"-" }}{% else %}-{% endif %}
 </td>
 <td data-value="{{ p.py_bb_pct|default_if_none:"-999" }}" style="background-color: #eee;">
-{% if p.py_plate_appearances > 0 %}{{ p.py_bb_pct|default_if_none:"-" }}{% else %}-{% endif %}
+    {% if p.py_plate_appearances > 0 %}{{ p.py_bb_pct|default_if_none:"-" }}{% else %}-{% endif %}
 </td>

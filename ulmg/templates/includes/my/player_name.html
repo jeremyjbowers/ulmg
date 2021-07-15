@@ -15,21 +15,10 @@
     {% else %}
         {{ p.player_name }}
     {% endif %}
+
     {% if p.player.is_prospect %}
     <span class="icon-text">
-
-        <span class="icon has-text-danger"><i class="fab fa-product-hunt"></i></span>
-        
-        {% if p.player.prospect_rating_avg %}
-            <span class="tag is-danger is-light">{{ p.player.prospect_rating_avg|floatformat:"0" }}</span>
-        {% endif %}
-
-        {% if p.player.notes %}
-            <a class="report-toggle" data-playerid="{{ p.player.id }}" href="#">
-                <span class="icon has-text-black"><i class="far fa-file-alt"></i></span>
-            </a>
-        {% endif %}
-
+        <span class="icon has-text-danger"><i class="fab fa-product-hunt"></i></span>{% if p.player.notes %}<a class="report-toggle" data-playerid="{{ p.player.id }}" href="#"><span class="icon has-text-black"><i class="far fa-file-alt"></i></span></a>{% endif %}
     </span>
     {% endif %}
 </td>
