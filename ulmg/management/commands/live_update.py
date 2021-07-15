@@ -58,12 +58,12 @@ class Command(BaseCommand):
                 setattr(
                     team,
                     field,
-                    models.Player.objects.filter(ls_is_mlb=True, team=team)
+                    models.Player.objects.filter(role="MLB", team=team)
                     .exclude(position="P")
                     .aggregate(Sum(field))[f"{field}__sum"],
                 )
 
-            team.ls_avg = float(team.ls_hits) / float(team.ls_plate_appearances - team.ls_bb)
+            team.ls_avg = float(team.ls_hits) / float(team.ls_ab)
             team.ls_obp = (team.ls_hits + team.ls_bb) / float(team.ls_plate_appearances)
             teamtb = (
                 (team.ls_hits - team.ls_hr - team.ls_2b - team.ls_3b)
@@ -90,7 +90,7 @@ class Command(BaseCommand):
                 setattr(
                     team,
                     field,
-                    models.Player.objects.filter(ls_is_mlb=True, team=team).aggregate(
+                    models.Player.objects.filter(role="MLB", team=team).aggregate(
                         Sum(field)
                     )[f"{field}__sum"],
                 )
@@ -242,6 +242,7 @@ class Command(BaseCommand):
                 ls_babip=0,
                 ls_wrc_plus=0,
                 ls_plate_appearances=0,
+                ls_ab=0,
                 ls_iso=0,
                 ls_k_pct=0,
                 ls_bb_pct=0,
@@ -249,6 +250,7 @@ class Command(BaseCommand):
                 ls_g=0,
                 ls_gs=0,
                 ls_ip=0,
+                ls_er=0,
                 ls_k_9=0,
                 ls_bb_9=0,
                 ls_hr_9=0,
@@ -345,7 +347,7 @@ class Command(BaseCommand):
 
     def get_hitters(self):
         print("FG HITTERS")
-        url = f"https://www.fangraphs.com/leaders.aspx?pos=all&stats=bat&lg=all&qual=0&type=c,6,-1,312,305,309,306,307,308,310,311,-1,23,315,-1,38,316,-1,50,317,7,8,9,10,11,12,13,14,21,23,34,35,37,38,39,40,41,50,52,57,58,61,62&season={self.season}&month=0&season1={self.season}&ind=0&team=0&rost=0&age=0&filter=&players=0&startdate={self.season}-01-01&enddate={self.season}-12-31&sort=3,d&page=1_5000"
+        url = f"https://www.fangraphs.com/leaders.aspx?pos=all&stats=bat&lg=all&qual=0&type=c,6,-1,312,305,309,306,307,308,310,311,-1,23,315,-1,38,316,-1,50,317,7,8,9,10,11,12,13,14,21,23,34,35,37,38,39,40,41,50,52,57,58,61,62,5&season={self.season}&month=0&season1={self.season}&ind=0&team=0&rost=0&age=0&filter=&players=0&startdate={self.season}-01-01&enddate={self.season}-12-31&sort=3,d&page=1_5000"
         rows = self.get_fg_results(url)
 
         """
@@ -379,6 +381,7 @@ class Command(BaseCommand):
                     obj.ls_babip = Decimal(h[34].text)
                     obj.ls_wrc_plus = int(h[39].text)
                     obj.ls_plate_appearances = int(h[3].text)
+                    obj.ls_ab = int(h[41].text)
                     obj.ls_iso = Decimal(h[33].text)
                     obj.ls_k_pct = Decimal(round(float(h[29].text.replace('%', '')), 1))
                     obj.ls_bb_pct = Decimal(round(float(h[28].text.replace('%', '')), 1))
@@ -396,7 +399,7 @@ class Command(BaseCommand):
 
     def get_pitchers(self):
         print("FG PITCHERS")
-        url = f"https://www.fangraphs.com/leaders.aspx?pos=all&stats=pit&lg=all&qual=2&type=c,4,5,11,7,8,13,-1,24,19,15,18,36,37,40,43,44,48,51,-1,240,-1,6,332,45,62,122,-1,59&season={self.season}&month=0&season1={self.season}&ind=0&team=0&rost=0&age=0&filter=&players=0&startdate={self.season}-01-01&enddate={self.season}-12-31&sort=8,d&page=1_5000"
+        url = f"https://www.fangraphs.com/leaders.aspx?pos=all&stats=pit&lg=all&qual=2&type=c,4,5,11,7,8,13,-1,24,19,15,18,36,37,40,43,44,48,51,-1,240,-1,6,332,45,62,122,-1,59,17&season={self.season}&month=0&season1={self.season}&ind=0&team=0&rost=0&age=0&filter=&players=0&startdate={self.season}-01-01&enddate={self.season}-12-31&sort=8,d&page=1_5000"
 
         rows = self.get_fg_results(url)
 
@@ -429,6 +432,7 @@ class Command(BaseCommand):
                 obj.ls_fip = Decimal(round(float(h[23].text.replace('%', '')), 2))
                 obj.ls_xfip = Decimal(round(float(h[24].text.replace('%', '')), 2))
                 obj.ls_siera = Decimal(round(float(h[25].text.replace('%', '')), 2))
+                obj.ls_er = Decimal(round(float(h[27].text.replace('%', '')), 2))
                 obj.save()
 
                 obj.save()
