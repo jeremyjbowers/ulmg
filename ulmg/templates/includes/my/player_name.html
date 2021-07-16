@@ -1,5 +1,5 @@
 <td data-value="{{ p.player.name }}" style="text-align: left!important;">
-    <!-- {% if user.is_authenticated %}{% if p.player.team.owner_obj.user != user %}
+    {% if user.is_authenticated %}{% if p.player.team.owner_obj.user != user %}
         {% if p.player %}
             {% if p.player.id in wishlist_players %}
             <span class="icon eye action-remove-wishlist has-text-success" data-playerid="{{ p.player.id }}"><i class="fas fa-eye"></i></span>
@@ -8,7 +8,7 @@
             {% endif %}
         {% endif %}
 
-    {% endif %}{% endif %} -->
+    {% endif %}{% endif %}
 
     {% if p.player %}
     <a class="has-text-weight-semibold" href="/players/{{ p.player.id }}/" target="_blank">{{ p.player.name }}</a></span>
