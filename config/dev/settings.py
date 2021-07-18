@@ -88,9 +88,9 @@ TEAM_PROTECT_TAB = False
 TEAM_ROSTER_TAB = False
 TEAM_LIVE_TAB = False
 
-TEAM_SEASON_HALF = "1h"
+TEAM_SEASON_HALF = "2h"
 CURRENT_SEASON = 2021
-CURRENT_SEASON_TYPE = "offseason"
+CURRENT_SEASON_TYPE = "midseason"
 
 ROSTER_TEAM_IDS = [
     ("1", "LAA", "Los Angeles Angels"),
@@ -147,6 +147,8 @@ CSV_COLUMNS = [
 ]
 
 DRAFTS = [
+    {"title": "2021 Midseason AA", "url": "/draft/2021/midseason/aa/"},
+    {"title": "2021 Midseason Open", "url": "/draft/2021/midseason/open/"},
     {"title": "2021 Offseason AA", "url": "/draft/2021/offseason/aa/"},
     {"title": "2021 Offseason Open", "url": "/draft/2021/offseason/open/"},
     {"title": "2020 Midseason AA", "url": "/draft/2020/midseason/aa/"},
