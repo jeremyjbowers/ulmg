@@ -144,13 +144,13 @@ def build_context(request):
     if request.user.is_authenticated:
         owner = models.Owner.objects.get(user=request.user)
         context["owner"] = owner
-        # w = models.Wishlist.objects.filter(owner=owner)
-        # if len(w) > 0:
-        #     context["wishlist"] = w[0]
-        # context["wishlist_players"] = [
-        #     p.player.id
-        #     for p in models.WishlistPlayer.objects.filter(wishlist=context["wishlist"])
-        # ]
+        w = models.Wishlist.objects.filter(owner=owner)
+        if len(w) > 0:
+            context["wishlist"] = w[0]
+        context["wishlist_players"] = [
+            p.player.id
+            for p in models.WishlistPlayer.objects.filter(wishlist=context["wishlist"])
+        ]
 
     return context
 
