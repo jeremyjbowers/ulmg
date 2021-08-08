@@ -13,10 +13,16 @@
                         <h3>{% if p.team %}<a href="/teams/{{ p.team.abbreviation|lower }}/">{{ p.team }}</a>{% else %}Unowned{% endif %}</h3>
                         <h1 class="is-title is-level-1">{{ p.name }}, {{ p.position }}</h1>
                         <p>
-                            <strong><a href="/admin/ulmg/player/{{ p.id }}/change/">Edit player &#x270E;</a></strong>
-                            {% if p.bref_url %}<br/><a class="has-text-weight-light" target="_blank" href="{{ p.bref_url }}">Baseball Reference &Gt;</a>{% endif %}
-                            {% if p.fg_url %}<br/><a class="has-text-weight-light" target="_blank" href="{{ p.fg_url }}">Fangraphs &Gt;</a>{% endif %}
-                            {% if p.mlbam_id %}<br/><a class="has-text-weight-light" target="_blank" href="https://baseballsavant.mlb.com/savant-player/{{ p.mlbam_id }}">MLB &Gt;</a>{% endif %}
+                            <strong><a href="/admin/ulmg/player/{{ p.id }}/change/">Edit player &#x270E;</a></strong><br/>
+                            {% if p.bref_url %}
+                            <a class="has-text-weight-light" target="_blank" href="{{ p.bref_url }}">Baseball Reference &rarr;</a>
+                            {% endif %}
+                            {% if p.fg_url %}
+                            <a class="has-text-weight-light" target="_blank" href="{{ p.fg_url }}">FanGraphs &rarr;</a>
+                            {% endif %}
+                            {% if p.mlbam_id %}
+                            <a class="has-text-weight-light" target="_blank" href="https://baseballsavant.mlb.com/savant-player/{{ p.mlbam_id }}">MLB &rarr;</a>
+                            {% endif %}
                         </p>
 
                         {% if p.notes %}
@@ -32,17 +38,12 @@
                 <div class="media-content">
                     <div class="content">
                         {% if p.position != "P" %}
-                        <table class="table is-fullwidth is-hoverable" data-sortable>
+                        <table class="table is-fullwidth is-hoverable">
                             <thead>
                                 <tr>
-                                    <th data-sortable-type="alpha">Name</th>
-                                    <th></th>
-                                    <th data-sortable-type="numeric">Age</th>
-                                    <th data-sortable-type="alpha">Lvl</th>
-                                    <!-- <th data-sortable-type="numeric">Card?</th> -->
-                
+                                    <th>Age</th>
+                                    <th>Lvl</th>
                                     {% include "includes/hitter_stat_headers.html" %}
-
                                 </tr>
                             </thead>
                             <tbody>
@@ -51,21 +52,9 @@
                                 {% if p.ls_is_mlb == False %} minors{% endif %}
                                 {% if p.ls_is_mlb == False and p.is_amateur == True %} amateur{% endif %}
                                 ">
-                                        <td data-value="{{ p.name }}" style="text-align: left!important;">
-                                            <a class="has-text-weight-semibold" href="/players/{{ p.id }}/" target="_blank">{{ p.name }}</a>
-                                            {% if p.is_prospect %}<span class="icon-text"><span class="icon has-text-success"><i class="fab fa-product-hunt"></i></span><span>{{ p.prospect_rating_avg }}</span></span>{% endif %}
-                                        </td>
-                                        <td class="left">
-                                            <a href="/admin/ulmg/player/{{ p.id }}/change/">&#x270E; &Gt;</a>
-                                            {% if p.bref_url %}<a class="has-text-weight-light" target="_blank" href="{{ p.bref_url }}">BBR &Gt;</a>{% endif %}
-                                            {% if p.fg_url %}<a class="has-text-weight-light" target="_blank" href="{{ p.fg_url }}">FG &Gt;</a>{% endif %}
-                                            {% if p.mlbam_id %}<a class="has-text-weight-light" target="_blank" href="https://baseballsavant.mlb.com/savant-player/{{ p.mlbam_id }}">MLB &Gt;</a>{% endif %}
-                                        </td>
-                                        <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
-                                        <td data-value="{{ p.level|default_if_none:"Z" }}<">{{ p.level|default_if_none:"" }}</td>
-                                        <!-- <td data-value="{% if p.is_carded %}1{% else %}0{% endif %}">{% if p.is_carded %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td> -->
-                    
-                                        {% include "includes/hitter_stat_cells.html" %}
+                                    <td>{{ p.age|default_if_none:"-" }}</td>
+                                    <td>{{ p.level|default_if_none:"" }}</td>
+                                    {% include "includes/hitter_stat_cells.html" %}
                                 </tr>
                             </tbody>
                         </table>
@@ -75,7 +64,6 @@
                             <thead>
                                 <tr>
                                     <th data-sortable-type="alpha">Name</th>
-                                    <th></th>
                                     <th data-sortable-type="numeric">Age</th>
                                     <th data-sortable-type="alpha">Lvl</th>
                                     <!-- <th data-sortable-type="numeric">Card?</th> -->
@@ -94,12 +82,6 @@
                                             <a class="has-text-weight-semibold" href="/players/{{ p.id }}/" target="_blank">{{ p.name }}</a>
                                             {% if p.is_prospect %}<span class="icon-text"><span class="icon has-text-success"><i class="fab fa-product-hunt"></i></span><span>{{ p.prospect_rating_avg }}</span></span>{% endif %}
                                         </td>
-                                        <td class="left">
-                                            <a href="/admin/ulmg/player/{{ p.id }}/change/">&#x270E; &Gt;</a>
-                                            {% if p.bref_url %}<a class="has-text-weight-light" target="_blank" href="{{ p.bref_url }}">BBR &Gt;</a>{% endif %}
-                                            {% if p.fg_url %}<a class="has-text-weight-light" target="_blank" href="{{ p.fg_url }}">FG &Gt;</a>{% endif %}
-                                            {% if p.mlbam_id %}<a class="has-text-weight-light" target="_blank" href="https://baseballsavant.mlb.com/savant-player/{{ p.mlbam_id }}">MLB &Gt;</a>{% endif %}
-                                        </td>
                                         <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
                                         <td data-value="{{ p.level|default_if_none:"Z" }}<">{{ p.level|default_if_none:"" }}</td>
                                         <!-- <td data-value="{% if p.is_carded %}1{% else %}0{% endif %}">{% if p.is_carded %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td> -->
@@ -113,21 +95,53 @@
                             {% if trades %}
                             <div class="column">
                                 <h2 class="is-header-2">Trade summary</h2>
-                                <ul>
+                                <table class="table is-fullwidth">
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Gets</th>
+                                        <th></th>
+                                        <th>Gets</th>
+                                        <th></th>
+                                    </tr>
                                 {% for trade in trades %}
-                                    <li>{{ trade.trade.summary_html|safe }} </li>
+                                    <tr>
+                                        <td class="left">{{ trade.trade.summary_dict.date }}</td>
+                                        <td class="left"><a href="/teams/{{ trade.trade.summary_dict.t1_abbr }}/">{{ trade.trade.summary_dict.t1_abbr }}</a></td>
+                                        <td class="left">{% for p in trade.trade.summary_dict.t2_players %}{% if not forloop.first %}, {% endif %}<a href="/players/{{ p.id }}/">{{ p.pos }} {{ p.name }}</a>{% endfor %}{% if trade.trade.summary_dict.t2_picks and trade.trade.summary_dict.t2_players %}, {% for p in trade.trade.summary_dict.t2_picks %}{{ p }}{% endfor %}{% endif %}</td>
+                                        <td class="left"><a href="/teams/{{ trade.trade.summary_dict.t2_abbr }}/">{{ trade.trade.summary_dict.t2_abbr }}</a></td>
+                                        <td class="left">{% for p in trade.trade.summary_dict.t1_players %}{% if not forloop.first %}, {% endif %}<a href="/players/{{ p.id }}/">{{ p.pos }} {{ p.name }}</a>{% endfor %}{% if trade.trade.summary_dict.t1_picks and trade.trade.summary_dict.t1_players %}, {% for p in trade.trade.summary_dict.t1_picks %}{{ p }}{% endfor %}{% endif %}</td>
+                                    </tr>
                                 {% endfor %}
-                                </ul>
+                                </table>
                             </div>
                             {% endif %}
                             {% if drafted %}
                             <div class="column">
                                 <h2 class="is-header-2">Draft summary</h2>
-                                <ul>
-                                {% for pick in drafted %}
-                                    <li>{{ pick }} </li>
-                                {% endfor %}
-                                </ul>
+                                <table class="table is-fullwidth">
+                                    <tr>
+                                        <th>Year</th>
+                                        <th>Season</th>
+                                        <th>Type</th>
+                                        <th>Original team</th>
+                                        <th>Drafting team</th>
+                                        <th>Round</th>
+                                        <th>Pick</th>
+                                        <th>Overall</th>
+                                    </tr>
+                                    {% for pick in drafted %}
+                                    <tr>
+                                        <td>{{ pick.year }}</td>
+                                        <td>{{ pick.season }}</td>
+                                        <td>{{ pick.draft_type }}</td>
+                                        <td>{{ pick.original_team }}</td>
+                                        <td>{{ pick.team }}</td>
+                                        <td>{{ pick.draft_round }}</td>
+                                        <td>{{ pick.pick_number }}</td>
+                                        <td>{{ pick.overall_pick_number }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </table>
                             </div>
                             {% endif %}
                         </div>

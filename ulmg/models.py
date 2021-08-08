@@ -710,6 +710,20 @@ class Trade(BaseModel):
             ),
         )
 
+    def summary_dict(self):
+        r = self.reciepts()
+        t1 = r[0]
+        t2 = r[1]
+        return {
+            "date": self.date,
+            "t1_abbr": t1.team.abbreviation,
+            "t1_players": [{"pos": p.position, "name": p.name, "id": p.id} for p in t2.players.all()],
+            "t1_picks": [f"{p.slug}" for p in t2.picks.all()],
+            "t2_abbr": t2.team.abbreviation,
+            "t2_players": [{"pos": p.position, "name": p.name, "id": p.id} for p in t1.players.all()],
+            "t2_picks": [f"{p.slug}" for p in t1.picks.all()],
+        }
+
     def summary(self):
         r = self.reciepts()
         t1 = r[0]
