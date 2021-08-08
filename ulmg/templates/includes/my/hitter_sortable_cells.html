@@ -17,7 +17,6 @@
     <td>{% if p.player.ls_plate_appearances > 0 %}{{ p.player.ls_obp|kill_leading_zero }}{% endif %}</td>
     <td>{% if p.player.ls_plate_appearances > 0 %}{{ p.player.ls_slg|kill_leading_zero }}{% endif %}</td>
     <!-- <td>{% include "includes/my/tierpicker.html" %}</td> -->
-    <td>{% if p.player.ls_plate_appearances > 0 %}{{ p.player.ls_sb|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}</td>
     <td>{% if p.player.ls_plate_appearances > 0 %}{{ p.player.ls_k_pct|default_if_none:"-" }}{% else %}-{% endif %}</td>
     <td>{% if p.player.ls_plate_appearances > 0 %}{{ p.player.ls_bb_pct|default_if_none:"-" }}{% else %}-{% endif %}</td>    
     {% if p.player.ls_is_mlb %}
