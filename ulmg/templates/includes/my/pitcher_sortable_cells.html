@@ -1,5 +1,5 @@
 {% load ulmg_tags %}
-<tr class="list-group-item" data-playername="{{ p.player.name }}" data-playerid="{{ p.pk }}" data-rank="{{ p.rank }}">
+<tr class="list-group-item {% if p.player.is_prospect %}{% if not p.player.ls_is_mlb %} minors{% endif %}{% endif %}{% if p.player.ls_is_mlb == False and p.player.is_amateur == True %} amateur{% endif %}" data-playername="{{ p.player.name }}" data-playerid="{{ p.pk }}" data-rank="{{ p.rank }}">
     <td id="rank-{{ p.pk }}">{% if p.rank == 0 %}-{% else %}{{ p.rank }}{% endif %}</td>
     {% include "includes/my/player_name.html" %}         
     <td>{{ p.player.age|default_if_none:"-" }}</td>
@@ -7,5 +7,13 @@
     <td>{% if p.player.ls_ip > 0 %}{{ p.player.ls_era }}{% endif %}</td>
     <td>{% if p.player.ls_ip > 0 %}{{ p.player.ls_k_9 }}{% endif %}</td>
     <td>{% if p.player.ls_ip > 0 %}{{ p.player.ls_bb_9 }}{% endif %}</td>
-    <td>{% include "includes/my/tierpicker.html" %}</td>
+    <!-- <td>{% include "includes/my/tierpicker.html" %}</td> -->
+    <td>{% if p.player.ls_ip > 0 %}{{ p.player.ls_fip|default_if_none:"-" }}{% else %}-{% endif %}</td>
+    <td>{% if p.player.ls_ip > 0 %}{{ p.player.ls_xfip|default_if_none:"-" }}{% else %}-{% endif %}</td>
+    
+    {% if not p.player.ls_is_mlb or p.player.ls_ip == 0 %}
+    <td>-</td>
+    {% else %}
+    <td>{% if p.player.ls_ip > 0 %}{{ p.player.ls_siera|default_if_none:"-" }}{% else %}-{% endif %}</td>
+    {% endif %}
 </tr>

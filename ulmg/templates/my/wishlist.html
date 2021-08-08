@@ -48,7 +48,6 @@
                 <thead>
                     <tr>
                         <th>Name</th>
-                        <th></th>
                         <th>Age</th>
                         <th>Pos</th>
                         <th>MLB</th>
@@ -57,39 +56,50 @@
                         <th>AVG</th>
                         <th>OBP</th>
                         <th>SLG</th>
+                        <th>SB</th>
+                        <th>K%</th>
+                        <th>BB%</th>
+                        <th>xA</th>
+                        <th>xO</th>
+                        <th>xS</th>
                     </tr>
                 </thead>
                 <tbody>
                 {% for p in hitters %}
-                <tr>
+                <tr class="{% if p.player.is_prospect %}{% if not p.player.ls_is_mlb %} minors{% endif %}{% endif %}{% if p.player.ls_is_mlb == False and p.player.is_amateur == True %} amateur{% endif %}">
                 {% include "includes/my/player_name.html" %}
-                        <td class="left">
-                            {% if p.player.bref_url %}<a class="has-text-weight-light" target="_blank" href="{{ p.player.bref_url }}">BBR &Gt;</a>{% endif %}
-                            {% if p.player.fg_url %}<a class="has-text-weight-light" target="_blank" href="{{ p.player.fg_url }}">FG &Gt;</a>{% endif %}
-                            {% if p.player.mlbam_id %}<a class="has-text-weight-light" target="_blank" href="https://baseballsavant.mlb.com/savant-player/{{ p.player.mlbam_id }}">MLB &Gt;</a>{% endif %}
-                        </td>
                         <td>{{ p.player.age|default_if_none:"-" }}</td>
                         <td>{% if p.player.defense %}{{ p.player.defense_display }}{% else %}{{ p.player.position }}{% endif %}</td>
                         <td>{{ p.player.mlb_team_abbr|default_if_none:"-" }}</td>
                         <td><a href="/teams/{{ p.player.team.abbrev|lower }}/">{{ p.player.team }}</a></td>
-                        <td>{% if p.player.ls_plate_appearances > 0 %}{{ p.player.ls_plate_appearances }}{% endif %}</td>
-                        <td>{% if p.player.ls_plate_appearances > 0 %}{{ p.player.ls_avg|kill_leading_zero }}{% endif %}</td>
-                        <td>{% if p.player.ls_plate_appearances > 0 %}{{ p.player.ls_obp|kill_leading_zero }}{% endif %}</td>
-                        <td>{% if p.player.ls_plate_appearances > 0 %}{{ p.player.ls_slg|kill_leading_zero }}{% endif %}</td>
+                        <td>{% if p.player.ls_plate_appearances > 0 %}{{ p.player.ls_plate_appearances|default_if_none:"-"  }}{% else %}-{% endif %}</td>
+                        <td>{% if p.player.ls_plate_appearances > 0 %}{{ p.player.ls_avg|kill_leading_zero|default_if_none:"-"  }}{% else %}-{% endif %}</td>
+                        <td>{% if p.player.ls_plate_appearances > 0 %}{{ p.player.ls_obp|kill_leading_zero|default_if_none:"-"  }}{% else %}-{% endif %}</td>
+                        <td>{% if p.player.ls_plate_appearances > 0 %}{{ p.player.ls_slg|kill_leading_zero|default_if_none:"-"  }}{% else %}-{% endif %}</td>
+                        <td>{% if p.player.ls_plate_appearances > 0 %}{{ p.player.ls_sb|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}</td>
+                        <td>{% if p.player.ls_plate_appearances > 0 %}{{ p.player.ls_k_pct|default_if_none:"-" }}{% else %}-{% endif %}</td>
+                        <td>{% if p.player.ls_plate_appearances > 0 %}{{ p.player.ls_bb_pct|default_if_none:"-" }}{% else %}-{% endif %}</td>
+                        
+                        {% if p.player.ls_is_mlb %}
+                        <td>{% if p.player.ls_plate_appearances > 0 %}{{ p.player.ls_xavg|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}</td>
+                        <td>{% if p.player.ls_plate_appearances > 0 %}{{ p.player.ls_xwoba|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}</td>
+                        <td>{% if p.player.ls_plate_appearances > 0 %}{{ p.player.ls_xslg|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}</td>
+                        {% else %}
+                        <td>-</td>
+                        <td>-</td>
+                        <td>-</td>
+                        {% endif %}
                     </tr>
                 {% endfor %}
                 </tbody>
             </table>
         </div>
-    </div>
-    <div class="columns">
         <div class="column">
             <h1 class="title is-3">Pitchers ({{ pitchers|length }})</h1>
             <table class="table is-fullwidth">
                 <thead>
                     <tr>
                         <th>Name</th>
-                        <th></th>
                         <th>Age</th>
                         <th>MLB</th>
                         <th>Team</th>
@@ -97,18 +107,15 @@
                         <th>ERA</th>
                         <th>K/9</th>
                         <th>BB/9</th>
+                        <th>FIP</th>
+                        <th>xFIP</th>
+                        <th>SIERA</th>
                     </tr>
                 </thead>
                 <tbody>
                 {% for p in pitchers %}
-                <tr>
+                <tr class="{% if p.player.is_prospect %}{% if not p.player.ls_is_mlb %} minors{% endif %}{% endif %}{% if p.player.ls_is_mlb == False and p.player.is_amateur == True %} amateur{% endif %}">
                 {% include "includes/my/player_name.html" %}
-
-                        <td class="left">
-                            {% if p.player.bref_url %}<a class="has-text-weight-light" target="_blank" href="{{ p.player.bref_url }}">BBR &Gt;</a>{% endif %}
-                            {% if p.player.fg_url %}<a class="has-text-weight-light" target="_blank" href="{{ p.player.fg_url }}">FG &Gt;</a>{% endif %}
-                            {% if p.player.mlbam_id %}<a class="has-text-weight-light" target="_blank" href="https://baseballsavant.mlb.com/savant-player/{{ p.player.mlbam_id }}">MLB &Gt;</a>{% endif %}
-                        </td>
                         <td>{{ p.player.age|default_if_none:"-" }}</td>
                         <td>{{ p.player.mlb_team_abbr|default_if_none:"-" }}</td>
                         <td><a href="/teams/{{ p.player.team.abbrev|lower }}/">{{ p.player.team }}</a></td>
@@ -116,6 +123,14 @@
                         <td>{% if p.player.ls_ip > 0 %}{{ p.player.ls_era }}{% endif %}</td>
                         <td>{% if p.player.ls_ip > 0 %}{{ p.player.ls_k_9 }}{% endif %}</td>
                         <td>{% if p.player.ls_ip > 0 %}{{ p.player.ls_bb_9 }}{% endif %}</td>
+                        <td>{% if p.player.ls_ip > 0 %}{{ p.player.ls_fip|default_if_none:"-" }}{% else %}-{% endif %}</td>
+                        <td>{% if p.player.ls_ip > 0 %}{{ p.player.ls_xfip|default_if_none:"-" }}{% else %}-{% endif %}</td>
+                        
+                        {% if not p.player.ls_is_mlb or p.player.ls_ip == 0 %}
+                        <td>-</td>
+                        {% else %}
+                        <td>{% if p.player.ls_ip > 0 %}{{ p.player.ls_siera|default_if_none:"-" }}{% else %}-{% endif %}</td>
+                        {% endif %}
                     </tr>
                 {% endfor %}
                 </tbody>
@@ -142,8 +157,6 @@
                 </tbody>
             </table>
         </div>
-    </div>
-    <div class="columns">
         <div class="column">
             <h1 class="title is-3">Pitchers ({{ aa_pitchers|length }})</h1>
             <table class="table is-fullwidth">
@@ -176,8 +189,6 @@
                 </tbody>
             </table>
         </div>
-    </div>
-    <div class="columns">
         <div class="column">
             <h1 class="title is-3">Pitchers ({{ op_pitchers|length }})</h1>
             <table class="table is-fullwidth">
