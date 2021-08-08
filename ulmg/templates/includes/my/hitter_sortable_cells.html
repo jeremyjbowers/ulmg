@@ -1,20 +1,32 @@
 {% load ulmg_tags %}
-<tr class="list-group-item" data-playername="{{ p.player.name }}" data-playerid="{{ p.pk }}" data-rank="{{ p.rank }}">
+<tr class="list-group-item {% if p.player.is_prospect %}{% if not p.player.ls_is_mlb %} minors{% endif %}{% endif %}{% if p.player.ls_is_mlb == False and p.player.is_amateur == True %} amateur{% endif %}" data-playername="{{ p.player.name }}" data-playerid="{{ p.pk }}" data-rank="{{ p.rank }}">
     <td id="rank-{{ p.pk }}">{% if p.rank == 0 %}-{% else %}{{ p.rank }}{% endif %}</td>
     {% include "includes/my/player_name.html" %}
     <td>{{ p.player.position|default_if_none:"-" }}</td>
     <td>{{ p.player.age|default_if_none:"-" }}</td>
-    <td>{{ p.player.fg_fv|default_if_none:"-" }}</td>
+    <!-- <td>{{ p.player.fg_fv|default_if_none:"-" }}</td> -->
     <td>{% if p.player.mlb_team_abbr %}{{ p.player.mlb_team_abbr|default_if_none:"-" }}{% else %}-{% endif %}</td>
-    <td>{% if p.player.fg_org_rank > 0 %}{{ p.player.fg_org_rank|default_if_none:"-" }}{% else %}-{% endif %}</td>
+    <!-- <td>{% if p.player.fg_org_rank > 0 %}{{ p.player.fg_org_rank|default_if_none:"-" }}{% else %}-{% endif %}</td>
     <td>{% if p.player.latest_rating %}{{ p.player.latest_rating.espn|default_if_none:"-" }}{% else %}-{% endif %}</td>
     <td>{% if p.player.latest_rating %}{{ p.player.latest_rating.fg|default_if_none:"-" }}{% else %}-{% endif %}</td>
     <td>{% if p.player.latest_rating %}{{ p.player.latest_rating.plive|default_if_none:"-" }}{% else %}-{% endif %}</td>
     <td>{% if p.player.latest_rating %}{{ p.player.latest_rating.law|default_if_none:"-" }}{% else %}-{% endif %}</td>
-    <td>{% if p.player.latest_rating %}{{ p.player.latest_rating.p365|default_if_none:"-" }}{% else %}-{% endif %}</td>
+    <td>{% if p.player.latest_rating %}{{ p.player.latest_rating.p365|default_if_none:"-" }}{% else %}-{% endif %}</td> -->
     <td>{% if p.player.ls_plate_appearances > 0 %}{{ p.player.ls_plate_appearances }}{% endif %}</td>
     <td>{% if p.player.ls_plate_appearances > 0 %}{{ p.player.ls_avg|kill_leading_zero }}{% endif %}</td>
     <td>{% if p.player.ls_plate_appearances > 0 %}{{ p.player.ls_obp|kill_leading_zero }}{% endif %}</td>
     <td>{% if p.player.ls_plate_appearances > 0 %}{{ p.player.ls_slg|kill_leading_zero }}{% endif %}</td>
-    <td>{% include "includes/my/tierpicker.html" %}</td>
+    <!-- <td>{% include "includes/my/tierpicker.html" %}</td> -->
+    <td>{% if p.player.ls_plate_appearances > 0 %}{{ p.player.ls_sb|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}</td>
+    <td>{% if p.player.ls_plate_appearances > 0 %}{{ p.player.ls_k_pct|default_if_none:"-" }}{% else %}-{% endif %}</td>
+    <td>{% if p.player.ls_plate_appearances > 0 %}{{ p.player.ls_bb_pct|default_if_none:"-" }}{% else %}-{% endif %}</td>    
+    {% if p.player.ls_is_mlb %}
+    <td>{% if p.player.ls_plate_appearances > 0 %}{{ p.player.ls_xavg|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}</td>
+    <td>{% if p.player.ls_plate_appearances > 0 %}{{ p.player.ls_xwoba|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}</td>
+    <td>{% if p.player.ls_plate_appearances > 0 %}{{ p.player.ls_xslg|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}</td>
+    {% else %}
+    <td>-</td>
+    <td>-</td>
+    <td>-</td>
+    {% endif %}
 </tr>

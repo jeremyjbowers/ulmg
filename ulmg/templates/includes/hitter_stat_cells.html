@@ -20,12 +20,12 @@
 <td data-value="{{ p.ls_hr|default_if_none:"-999" }}">
     {% if p.ls_plate_appearances > 0 %}{{ p.ls_hr|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
 </td>
-<td data-value="{{ p.ls_runs|default_if_none:"-999" }}">
+<!-- <td data-value="{{ p.ls_runs|default_if_none:"-999" }}">
     {% if p.ls_plate_appearances > 0 %}{{ p.ls_runs|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
 </td>
 <td data-value="{{ p.ls_rbi|default_if_none:"-999" }}">
     {% if p.ls_plate_appearances > 0 %}{{ p.ls_rbi|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
-</td>
+</td> -->
 <td data-value="{{ p.ls_sb|default_if_none:"-999" }}">
     {% if p.ls_plate_appearances > 0 %}{{ p.ls_sb|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
 </td>
@@ -70,9 +70,9 @@
 <td data-value="{{ p.py_hr|default_if_none:"-999" }}" style="background-color: #eee;">
     {% if p.py_plate_appearances > 0 %}{{ p.py_hr|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
 </td>
-<td data-value="{{ p.py_rbi|default_if_none:"-999" }}" style="background-color: #eee;">
+<!-- <td data-value="{{ p.py_rbi|default_if_none:"-999" }}" style="background-color: #eee;">
     {% if p.py_plate_appearances > 0 %}{{ p.py_rbi|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
-</td>
+</td> -->
 <td data-value="{{ p.py_sb|default_if_none:"-999" }}" style="background-color: #eee;">
     {% if p.py_plate_appearances > 0 %}{{ p.py_sb|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
 </td>

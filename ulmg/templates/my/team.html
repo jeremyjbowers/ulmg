@@ -50,10 +50,8 @@
                     <th data-sortable-type="alpha">Name</th>
                     <th data-sortable-type="numeric">Age</th>
                     <th data-sortable-type="alpha">Lvl</th>
-
                     {% include "includes/hitter_stat_headers.html" %}
-
-                    {% include "includes/player_protect_headers.html" %}
+                    {# include "includes/player_protect_headers.html" #}
                 </tr>
             </thead>
             <tbody>
@@ -66,10 +64,8 @@
                     {% include "includes/player_name.html" %}
                     <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
                     <td data-value="{{ p.level|default_if_none:"Z" }}<">{{ p.level|default_if_none:"" }}</td>
-
                     {% include "includes/hitter_stat_cells.html" %}
-
-                    {% include "includes/player_protect_actions.html" %}
+                    {# include "includes/player_protect_actions.html" #}
                 </tr>
             {% endfor %}
             </tbody>
@@ -87,9 +83,8 @@
                     <th data-sortable-type="alpha">Name</th>
                     <th data-sortable-type="numeric">Age</th>
                     <th data-sortable-type="alpha">Lvl</th>
-
                     {% include "includes/pitcher_stat_headers.html" %}
-                    {% include "includes/player_protect_headers.html" %}
+                    {# include "includes/player_protect_headers.html" #}
                 </tr>
             </thead>
             <tbody>
@@ -102,11 +97,8 @@
             {% include "includes/player_name.html" %}
                     <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
                     <td data-value="{{ p.level|default_if_none:"Z" }}<">{{ p.level|default_if_none:"" }}</td>
-
                     {% include "includes/pitcher_stat_cells.html" %}
-
-                    {% include "includes/player_protect_actions.html" %}
-
+                    {# include "includes/player_protect_actions.html" #}
                 </tr>
             {% endfor %}
             </tbody>
