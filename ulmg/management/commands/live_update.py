@@ -223,7 +223,7 @@ class Command(BaseCommand):
         teams = settings.ROSTER_TEAM_IDS
         for team_id, team_abbrev, team_name in teams:
             url = f"https://cdn.fangraphs.com/api/depth-charts/roster?teamid={team_id}"
-            roster = requests.get(url).json()
+            roster = requests.get(url, verify=False).json()
             with open(f"data/rosters/{team_abbrev}_roster.json", "w") as writefile:
                 writefile.write(json.dumps(roster))
 
@@ -273,7 +273,7 @@ class Command(BaseCommand):
             return False
 
     def get_fg_results(self, url):
-        r = requests.get(url)
+        r = requests.get(url, verify=False)
         soup = BeautifulSoup(r.text, "lxml")
         return soup.select("#LeaderBoard1_dg1_ctl00 tbody tr")
 
@@ -289,7 +289,7 @@ class Command(BaseCommand):
 
         for k,v in players.items():
             url = f"https://www.fangraphs.com/api/leaders/minor-league/data?pos=all&lg=2,4,5,6,7,8,9,10,11,14,12,13,15,17,18,30,32,33&stats={k}&qual=5&type=0&team=&season={self.season}&seasonEnd={self.season}&org=&ind=0&splitTeam=false"
-            r = requests.get(url)
+            r = requests.get(url, verify=False)
             players[k] += r.json()
 
         for k,v in players.items():
