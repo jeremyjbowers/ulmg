@@ -383,15 +383,22 @@ class Command(BaseCommand):
                     obj.ls_plate_appearances = int(h[3].text)
                     obj.ls_ab = int(h[41].text)
                     obj.ls_iso = Decimal(h[33].text)
-                    obj.ls_k_pct = Decimal(round(float(h[29].text.replace('%', '')), 1))
-                    obj.ls_bb_pct = Decimal(round(float(h[28].text.replace('%', '')), 1))
+
+                    if h[29].text.replace('%', '') == "0.0":
+                        obj.ls_k_pct = Decimal(0.0)
+                    else:
+                        obj.ls_k_pct = Decimal(round(float(h[29].text.replace('%', '')), 1))
+
+                    if h[28].text.replace('%', '') == "0.0":
+                        obj.ls_bb_pct = Decimal(0.0)
+                    else:
+                        obj.ls_bb_pct = Decimal(round(float(h[28].text.replace('%', '')), 1))
+
                     obj.ls_woba = Decimal(h[16].text)
                     obj.ls_xwoba = Decimal(h[17].text)
                     obj.save()
 
             except Exception as e:
-                print(round(float(h[29].text.replace('%', '')), 1))
-                print(round(float(h[28].text.replace('%', '')), 1))
                 print(
                     f"h: {h[1].select('a')[0].attrs['href'].split('playerid=')[1].split('&')[0]}\t{h[1].text.strip()}\t{e}"
                 )
