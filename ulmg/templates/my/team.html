@@ -20,6 +20,7 @@
 </style>
 
 <div id="team" class="section is-desktop">
+    
     <div class="tabs is-centered is-boxed is-large">
         <ul>
             <li class="is-active"><a href="#">My Roster{% if num_owned %} ({{ num_owned }}){% endif %}</a></li>
@@ -29,6 +30,60 @@
     </div>
 
 
+    <div class="columns is-centered is-8">
+        <div class="column is-3 is-fullwidth-mobile">
+            <table class="table is-fullwidth">
+                <thead>
+                    <th>Level</th><th>Players</th>
+                </thead>
+                <tbody>
+                    {% for level in level_distribution %}
+                    <tr class="">
+                        <td class="pr-1 has-text-left">{% if level.level_order == 0 %}B{% elif level.level_order == 5 %}A{% else %}V{% endif %}</td>
+                        <td class="is-size-6 has-text-weight-semibold has-text-right">{{ level.level_order__count }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+            <div class="column is-3 is-fullwidth-mobile">
+                <table class="table is-fullwidth">
+                    <thead>
+                        <th>Position</th><th>Players</th>
+                    </thead>
+                    <tbody>
+                        <tr class="">
+                            <td class="pr-1 has-text-left">Hitters</td>
+                            <td class="is-size-6 has-text-weight-semibold has-text-right">{{ hitters|length }}</td>
+                        </tr>
+                        <tr class="">
+                            <td class="pr-1 has-text-left">Pitchers</td>
+                            <td class="is-size-6 has-text-weight-semibold has-text-right">{{ pitchers|length }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="column is-3 is-fullwidth-mobile">
+                <table class="table is-fullwidth">
+                    <thead>
+                        <th>Position</th>
+                        <th class="has-text-right">Players (all)</th>
+                        <th class="has-text-right">PA (carded)</th>
+                        <th class="has-text-right">PA (2021 MLB)</th>
+                    </thead>
+                    <tbody>
+                        {% for position in combined_pa %}
+                        <tr class="">
+                            <td class="pr-1 has-text-left">{{position.position}}</td>
+                            <td class="is-size-6 has-text-weight-semibold has-text-right">{{position.count}}</td>
+                            <td class="is-size-6 has-text-weight-semibold has-text-right">{{ position.carded_pa|commafy }}</td>
+                            <td class="is-size-6 has-text-weight-semibold has-text-right">{{position.current_pa|commafy}}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+    </div>
     <div class="columns">
         <div class="column">
             {% regroup hitters by position as position_players %}
