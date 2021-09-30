@@ -7,3 +7,5 @@ htmlcov/*
 
 data/rosters/*
 !data/rosters/.gitkeep
+
+.DS_Store
