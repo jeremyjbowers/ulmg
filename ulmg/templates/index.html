@@ -83,142 +83,143 @@
         font-size: 30px;
     }
 </style>
-
-<div class="columns">
-    <div class="column">
-        <p class="title">Search</p>
-        <p class="subtitle">All players</p>
-        {% include "includes/search_bar.html" %}
+<div class="section is-desktop">
+    <div class="columns">
+        <div class="column">
+            <p class="title">Search</p>
+            <p class="subtitle">All players</p>
+            {% include "includes/search_bar.html" %}
+        </div>
     </div>
-</div>
 
-<h1 id="players-unowned" class="title is-1">Team Performance <small>with live 2021 stats</small></h1>
+    <h1 id="players-unowned" class="title is-1">Team Performance <small>with live 2021 stats</small></h1>
 
-<div class="columns">
-    <div class="column">
-        <table class="table is-fullwidth" data-sortable>
-            <thead>
-                <tr>
-                    <th data-sortable-type="alpha">Team</th>
-                    <th data-sortable-type="numeric">PA</th>
-                    <th data-sortable-type="numeric">AVG</th>
-                    <th data-sortable-type="numeric">OBP</th>
-                    <th data-sortable-type="numeric">SLG</th>
-                    <th data-sortable-type="numeric">ISO</th>
-                    <th data-sortable-type="numeric">H</th>
-                    <!-- <th data-sortable-type="numeric">R</th> -->
-                    <th data-sortable-type="numeric">RBI</th>
-                    <th data-sortable-type="numeric">2B</th>
-                    <th data-sortable-type="numeric">3B</th>
-                    <th data-sortable-type="numeric">HR</th>
-                    <th data-sortable-type="numeric">IP</th>
-                    <th data-sortable-type="numeric">ERA</th>
-                    <th data-sortable-type="numeric">WHIP</th>
-                    <th data-sortable-type="numeric">K</th>
-                    <th data-sortable-type="numeric">BB</th>
-                    <th data-sortable-type="numeric">H</th>
-                    <th data-sortable-type="numeric">HR</th>
-                    <th data-sortable-type="numeric">K/9</th>
-                    <th data-sortable-type="numeric">BB/9</th>
-                    <th data-sortable-type="numeric">HR/9</th>
-                    <th data-sortable-type="numeric">H/9</th>
-                </tr>
-            </thead>
-            <tbody>
-            {% for t in teams %}
-                <tr>
-                    <td data-value="{{ t }}"><a href="/teams/{{ t.abbreviation }}/">{{ t }}</a></td>
-                    <td data-value="{{ t.ls_plate_appearances|default_if_none:"-999" }}">{{ t.ls_plate_appearances|default_if_none:"-" }}</td>
-                    <td data-value="{{ t.ls_avg|kill_leading_zero|default_if_none:"-999" }}">{{ t.ls_avg|kill_leading_zero|default_if_none:"-" }}</td>
-                    <td data-value="{{ t.ls_obp|kill_leading_zero|default_if_none:"-999" }}">{{ t.ls_obp|kill_leading_zero|default_if_none:"-" }}</td>
-                    <td data-value="{{ t.ls_slg|kill_leading_zero|default_if_none:"-999" }}">{{ t.ls_slg|kill_leading_zero|default_if_none:"-" }}</td>
-                    <td data-value="{{ t.ls_iso|kill_leading_zero|default_if_none:"-999" }}">{{ t.ls_iso|kill_leading_zero|default_if_none:"-" }}</td>
-                    <td data-value="{{ t.ls_hits|default_if_none:"-999" }}">{{ t.ls_hits|default_if_none:"-" }}</td>
-                    <!-- <td data-value="{{ t.ls_runs|default_if_none:"-999" }}">{{ t.ls_runs|default_if_none:"-" }}</td> -->
-                    <td data-value="{{ t.ls_rbi|default_if_none:"-999" }}">{{ t.ls_rbi|default_if_none:"-" }}</td>
-                    <td data-value="{{ t.ls_2b|default_if_none:"-999" }}">{{ t.ls_2b|default_if_none:"-" }}</td>
-                    <td data-value="{{ t.ls_3b|default_if_none:"-999" }}">{{ t.ls_3b|default_if_none:"-" }}</td>
-                    <td data-value="{{ t.ls_hr|default_if_none:"-999" }}">{{ t.ls_hr|default_if_none:"-" }}</td>
-                    <td data-value="{{ t.ls_ip|default_if_none:"-999" }}">{{ t.ls_ip|default_if_none:"-" }}</td>
-                    <td data-value="{{ t.ls_era|default_if_none:"-999" }}">{{ t.ls_era|default_if_none:"-" }}</td>
-                    <td data-value="{{ t.ls_whip|default_if_none:"-999" }}">{{ t.ls_whip|default_if_none:"-" }}</td>
-                    <td data-value="{{ t.ls_pk|default_if_none:"-999" }}">{{ t.ls_pk|default_if_none:"-" }}</td>
-                    <td data-value="{{ t.ls_pbb|default_if_none:"-999" }}">{{ t.ls_pbb|default_if_none:"-" }}</td>
-                    <td data-value="{{ t.ls_ha|default_if_none:"-999" }}">{{ t.ls_ha|default_if_none:"-" }}</td>
-                    <td data-value="{{ t.ls_hra|default_if_none:"-999" }}">{{ t.ls_hra|default_if_none:"-" }}</td>
-                    <td data-value="{{ t.ls_k_9|default_if_none:"-999" }}">{{ t.ls_k_9|default_if_none:"-" }}</td>
-                    <td data-value="{{ t.ls_bb_9|default_if_none:"-999" }}">{{ t.ls_bb_9|default_if_none:"-" }}</td>
-                    <td data-value="{{ t.ls_hr_9|default_if_none:"-999" }}">{{ t.ls_hr_9|default_if_none:"-" }}</td>
-                    <td data-value="{{ t.ls_hits_9|default_if_none:"-999" }}">{{ t.ls_hits_9|default_if_none:"-" }}</td>
+    <div class="columns">
+        <div class="column">
+            <table class="table is-fullwidth" data-sortable>
+                <thead>
+                    <tr>
+                        <th data-sortable-type="alpha">Team</th>
+                        <th data-sortable-type="numeric">PA</th>
+                        <th data-sortable-type="numeric">AVG</th>
+                        <th data-sortable-type="numeric">OBP</th>
+                        <th data-sortable-type="numeric">SLG</th>
+                        <th data-sortable-type="numeric">ISO</th>
+                        <th data-sortable-type="numeric">H</th>
+                        <!-- <th data-sortable-type="numeric">R</th> -->
+                        <th data-sortable-type="numeric">RBI</th>
+                        <th data-sortable-type="numeric">2B</th>
+                        <th data-sortable-type="numeric">3B</th>
+                        <th data-sortable-type="numeric">HR</th>
+                        <th data-sortable-type="numeric">IP</th>
+                        <th data-sortable-type="numeric">ERA</th>
+                        <th data-sortable-type="numeric">WHIP</th>
+                        <th data-sortable-type="numeric">K</th>
+                        <th data-sortable-type="numeric">BB</th>
+                        <th data-sortable-type="numeric">H</th>
+                        <th data-sortable-type="numeric">HR</th>
+                        <th data-sortable-type="numeric">K/9</th>
+                        <th data-sortable-type="numeric">BB/9</th>
+                        <th data-sortable-type="numeric">HR/9</th>
+                        <th data-sortable-type="numeric">H/9</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for t in teams %}
+                    <tr>
+                        <td data-value="{{ t }}"><a href="/teams/{{ t.abbreviation }}/">{{ t }}</a></td>
+                        <td data-value="{{ t.ls_plate_appearances|default_if_none:"-999" }}">{{ t.ls_plate_appearances|default_if_none:"-" }}</td>
+                        <td data-value="{{ t.ls_avg|kill_leading_zero|default_if_none:"-999" }}">{{ t.ls_avg|kill_leading_zero|default_if_none:"-" }}</td>
+                        <td data-value="{{ t.ls_obp|kill_leading_zero|default_if_none:"-999" }}">{{ t.ls_obp|kill_leading_zero|default_if_none:"-" }}</td>
+                        <td data-value="{{ t.ls_slg|kill_leading_zero|default_if_none:"-999" }}">{{ t.ls_slg|kill_leading_zero|default_if_none:"-" }}</td>
+                        <td data-value="{{ t.ls_iso|kill_leading_zero|default_if_none:"-999" }}">{{ t.ls_iso|kill_leading_zero|default_if_none:"-" }}</td>
+                        <td data-value="{{ t.ls_hits|default_if_none:"-999" }}">{{ t.ls_hits|default_if_none:"-" }}</td>
+                        <!-- <td data-value="{{ t.ls_runs|default_if_none:"-999" }}">{{ t.ls_runs|default_if_none:"-" }}</td> -->
+                        <td data-value="{{ t.ls_rbi|default_if_none:"-999" }}">{{ t.ls_rbi|default_if_none:"-" }}</td>
+                        <td data-value="{{ t.ls_2b|default_if_none:"-999" }}">{{ t.ls_2b|default_if_none:"-" }}</td>
+                        <td data-value="{{ t.ls_3b|default_if_none:"-999" }}">{{ t.ls_3b|default_if_none:"-" }}</td>
+                        <td data-value="{{ t.ls_hr|default_if_none:"-999" }}">{{ t.ls_hr|default_if_none:"-" }}</td>
+                        <td data-value="{{ t.ls_ip|default_if_none:"-999" }}">{{ t.ls_ip|default_if_none:"-" }}</td>
+                        <td data-value="{{ t.ls_era|default_if_none:"-999" }}">{{ t.ls_era|default_if_none:"-" }}</td>
+                        <td data-value="{{ t.ls_whip|default_if_none:"-999" }}">{{ t.ls_whip|default_if_none:"-" }}</td>
+                        <td data-value="{{ t.ls_pk|default_if_none:"-999" }}">{{ t.ls_pk|default_if_none:"-" }}</td>
+                        <td data-value="{{ t.ls_pbb|default_if_none:"-999" }}">{{ t.ls_pbb|default_if_none:"-" }}</td>
+                        <td data-value="{{ t.ls_ha|default_if_none:"-999" }}">{{ t.ls_ha|default_if_none:"-" }}</td>
+                        <td data-value="{{ t.ls_hra|default_if_none:"-999" }}">{{ t.ls_hra|default_if_none:"-" }}</td>
+                        <td data-value="{{ t.ls_k_9|default_if_none:"-999" }}">{{ t.ls_k_9|default_if_none:"-" }}</td>
+                        <td data-value="{{ t.ls_bb_9|default_if_none:"-999" }}">{{ t.ls_bb_9|default_if_none:"-" }}</td>
+                        <td data-value="{{ t.ls_hr_9|default_if_none:"-999" }}">{{ t.ls_hr_9|default_if_none:"-" }}</td>
+                        <td data-value="{{ t.ls_hits_9|default_if_none:"-999" }}">{{ t.ls_hits_9|default_if_none:"-" }}</td>
 
-                </tr>
-            {% endfor %}
-            </tbody>
-        </table>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
 
+        </div>
     </div>
-</div>
 
-<h1 id="players-unowned" class="title is-1">Unowned Players <small>with live 2021 stats and imagined 2020 stats</small></h1>
+    <h1 id="players-unowned" class="title is-1">Unowned Players <small>with live 2021 stats and imagined 2020 stats</small></h1>
 
-<div class="columns">
-    <div class="column">
-        {% regroup hitters by position as position_players %}
-        {% for position in position_players %}
-        <h1 class="title is-3">{{ position.grouper }} ({{ position.list|length }})</h1>
-        <table class="table is-fullwidth" data-sortable>
-            <thead>
-                <tr>
-                    <th data-sortable-type="alpha">Name</th>
-                    <th data-sortable-type="numeric">Age</th>
-                    <th data-sortable-type="alpha">Lvl</th>
-                    {% include "includes/hitter_stat_headers.html" %}
-                </tr>
-            </thead>
-            <tbody>
-            {% for p in position.list %}
-            <tr class="
-            {% if p.ls_is_mlb == False and p.ls_plate_appearances > 0 %} minors{% endif %}
-            {% if p.ls_is_mlb == False and p.is_amateur == True %} amateur{% endif %}
-            ">
-                    {% include "includes/player_name.html" %}
-                    <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
-                    <td data-value="{{ p.level|default_if_none:"Z" }}<">{{ p.level|default_if_none:"" }}</td>
-                    {% include "includes/hitter_stat_cells.html" %}
-                </tr>
-            {% endfor %}
-            </tbody>
-        </table>
-        {% endfor %}
-    </div>
-</div>
-
-<div class="columns">
-    <div class="column">
-        <h1 class="title is-3">P ({{ pitchers|length }})</h1>
-        <table class="table is-fullwidth" data-sortable>
-            <thead>
-                <tr>
-                    <th data-sortable-type="alpha">Name</th>
-                    <th data-sortable-type="numeric">Age</th>
-                    <th data-sortable-type="alpha">Lvl</th>
-                    {% include "includes/pitcher_stat_headers.html" %}
-                </tr>
-            </thead>
-            <tbody>
-            {% for p in pitchers %}
+    <div class="columns">
+        <div class="column">
+            {% regroup hitters by position as position_players %}
+            {% for position in position_players %}
+            <h1 class="title is-3">{{ position.grouper }} ({{ position.list|length }})</h1>
+            <table class="table is-fullwidth" data-sortable>
+                <thead>
+                    <tr>
+                        <th data-sortable-type="alpha">Name</th>
+                        <th data-sortable-type="numeric">Age</th>
+                        <th data-sortable-type="alpha">Lvl</th>
+                        {% include "includes/hitter_stat_headers.html" %}
+                    </tr>
+                </thead>
+                <tbody>
+                {% for p in position.list %}
                 <tr class="
-                {% if p.ls_is_mlb == False and p.ls_ip > 0 %} minors{% endif %}
+                {% if p.ls_is_mlb == False and p.ls_plate_appearances > 0 %} minors{% endif %}
                 {% if p.ls_is_mlb == False and p.is_amateur == True %} amateur{% endif %}
                 ">
-                    {% include "includes/player_name.html" %}
-                    <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
-                    <td data-value="{{ p.level|default_if_none:"Z" }}<">{{ p.level|default_if_none:"" }}</td>
-                    {% include "includes/pitcher_stat_cells.html" %}
-                </tr>
+                        {% include "includes/player_name.html" %}
+                        <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
+                        <td data-value="{{ p.level|default_if_none:"Z" }}<">{{ p.level|default_if_none:"" }}</td>
+                        {% include "includes/hitter_stat_cells.html" %}
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
             {% endfor %}
-            </tbody>
-        </table>
+        </div>
+    </div>
+
+    <div class="columns">
+        <div class="column">
+            <h1 class="title is-3">P ({{ pitchers|length }})</h1>
+            <table class="table is-fullwidth" data-sortable>
+                <thead>
+                    <tr>
+                        <th data-sortable-type="alpha">Name</th>
+                        <th data-sortable-type="numeric">Age</th>
+                        <th data-sortable-type="alpha">Lvl</th>
+                        {% include "includes/pitcher_stat_headers.html" %}
+                    </tr>
+                </thead>
+                <tbody>
+                {% for p in pitchers %}
+                    <tr class="
+                    {% if p.ls_is_mlb == False and p.ls_ip > 0 %} minors{% endif %}
+                    {% if p.ls_is_mlb == False and p.is_amateur == True %} amateur{% endif %}
+                    ">
+                        {% include "includes/player_name.html" %}
+                        <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
+                        <td data-value="{{ p.level|default_if_none:"Z" }}<">{{ p.level|default_if_none:"" }}</td>
+                        {% include "includes/pitcher_stat_cells.html" %}
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 {% include 'includes/player_modal.html' %}

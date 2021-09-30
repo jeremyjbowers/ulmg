@@ -1,5 +1,7 @@
 import csv
 import datetime
+import itertools
+from django.db.models.expressions import OrderBy
 
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -26,6 +28,34 @@ def my_team(request):
     pitchers = team_players.filter(position="P").order_by(
         "-level_order", "-is_carded", "last_name", "first_name"
     )
+
+    position_groups = (
+        team_players.exclude(position="P")
+            .order_by('position')
+            .values('position')
+            .annotate(Count('position'))
+    )
+
+    carded_pa = (
+        team_players.exclude(position="P").filter(is_carded=True)
+            .order_by('position')
+            .values('position')
+            .annotate(Sum('py_plate_appearances'))
+    )
+    
+    current_pa = (
+        team_players.exclude(position="P").filter(ls_is_mlb=True)
+            .order_by('position')
+            .values('position')
+            .annotate(Sum('ls_plate_appearances'))
+    )
+
+    combined_pa = [{
+        'position':p[1]['position'],
+        'count':p[0]['position__count'],
+        'carded_pa':p[1]['py_plate_appearances__sum'],
+        'current_pa':p[2]['ls_plate_appearances__sum']} for p in list(itertools.zip_longest(position_groups,carded_pa,current_pa))]
+
     context["35_roster_count"] = team_players.filter(is_35man_roster=True).count()
     context["mlb_roster_count"] = team_players.filter(
         is_mlb_roster=True, is_aaa_roster=False, is_reserve=False
@@ -38,6 +68,7 @@ def my_team(request):
     context["num_owned"] = models.Player.objects.filter(team=context["team"]).count()
     context["hitters"] = hitters
     context["pitchers"] = pitchers
+    context["combined_pa"] = combined_pa
     return render(request, "my/team.html", context)
 
 

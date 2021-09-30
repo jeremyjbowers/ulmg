@@ -16,38 +16,4 @@
         {% endif %}
         <br/><a href="/teams/{{ team.abbreviation }}/csv/{% if value %}?value=true{% endif %}">Download team roster &dtrif;</a>
     </p>
-    <div class="columns is-12">
-        <div class="column is-2 ">
-            <table class="table is-fullwidth">
-                <thead>
-                    <th>Level</th><th>Players</th>
-                </thead>
-                <tbody>
-                    {% for level in level_distribution %}
-                    <tr class="">
-                        <td class="pr-1">{% if level.level_order == 0 %}B{% elif level.level_order == 5 %}A{% else %}V{% endif %}</td>
-                        <td class="title is-4 has-text-right">{{ level.level_order__count }}</td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        <div class="column is-2 ">
-            <table class="table is-fullwidth">
-                <thead>
-                    <th>Position</th><th>Players</th>
-                </thead>
-                <tbody>
-                    <tr class="">
-                        <td class="pr-1">Hitters</td>
-                        <td class="title is-4 has-text-right">{{ hitters|length }}</td>
-                    </tr>
-                    <tr class="">
-                        <td class="pr-1">Pitchers</td>
-                        <td class="title is-4 has-text-right">{{ pitchers|length }}</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
 </div>
