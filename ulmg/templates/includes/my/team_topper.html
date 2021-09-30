@@ -1,14 +1,53 @@
-<div class="columns">
-    <div class="column">
-
-        <h1 class="title is-1">
-            <span class="icon-text">
-                <span class="icon has-text-success">&nbsp;<i class="fas fa-user-circle"></i></span>
-                <span>&nbsp;{{ team.city }} "{{ team.nickname }}", {{ team.division }} division{% if team.championships %}</span>
-            </span>
-        </h1>
-        <span class="title is-5 has-text-weight-light champs">{% for c in team.championships %}🏆 {{ c }}{% if forloop.last %}{% else %}, {% endif %}{% endfor %}</span>{% else %}<br/>{% endif %}
-        <span class="title is-3 has-text-weight-regular has-text-grey"><a href="/teams/{{ team.abbreviation }}/csv/{% if value %}?value=true{% endif %}">Download team roster &dtrif;</a></span>        
-
+<div class="section is-desktop">
+    {% if team.championships %}<p class="title is-6 has-text-weight-light champs">{% for c in team.championships %}🏆 {{ c }}{% if forloop.last %}{% else %}, {% endif %}{% endfor %}</p>{% else %}<br/>{% endif %}
+    <p class="title is-1">
+        <span class="icon-text">
+            <span class="icon has-text-success">&nbsp;<i class="fas fa-user-circle"></i></span>
+            <span>&nbsp;{{ team.city }} {{ team.nickname }}</span>
+        </span>
+    </p>
+    <p class="subtitle is-4"><span>{{ team.division }} division</span></p>
+    <p class="subtitle is-5 has-text-weight-regular has-text-grey">
+        Owner:
+        {% if team.owner_obj %}
+            {{ team.owner_obj.name }}<br><a href="mailto:{{ team.owner_obj.email }}">Send owner email &#x2709;</a>
+        {% else %}
+            &mdash;
+        {% endif %}
+        <br/><a href="/teams/{{ team.abbreviation }}/csv/{% if value %}?value=true{% endif %}">Download team roster &dtrif;</a>
+    </p>
+    <div class="columns is-12">
+        <div class="column is-2 ">
+            <table class="table is-fullwidth">
+                <thead>
+                    <th>Level</th><th>Players</th>
+                </thead>
+                <tbody>
+                    {% for level in level_distribution %}
+                    <tr class="">
+                        <td class="pr-1">{% if level.level_order == 0 %}B{% elif level.level_order == 5 %}A{% else %}V{% endif %}</td>
+                        <td class="title is-4 has-text-right">{{ level.level_order__count }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="column is-2 ">
+            <table class="table is-fullwidth">
+                <thead>
+                    <th>Position</th><th>Players</th>
+                </thead>
+                <tbody>
+                    <tr class="">
+                        <td class="pr-1">Hitters</td>
+                        <td class="title is-4 has-text-right">{{ hitters|length }}</td>
+                    </tr>
+                    <tr class="">
+                        <td class="pr-1">Pitchers</td>
+                        <td class="title is-4 has-text-right">{{ pitchers|length }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
