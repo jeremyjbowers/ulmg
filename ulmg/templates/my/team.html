@@ -75,7 +75,7 @@
                         {% for position in combined_pa %}
                         <tr class="">
                             <td class="pr-1 has-text-left">{{position.position}}</td>
-                            <td class="is-size-6 has-text-weight-semibold has-text-right">{{position.count}}</td>
+                            <td class="is-size-6 has-text-weight-semibold has-text-right">{{position.position__count}}</td>
                             <td class="is-size-6 has-text-weight-semibold has-text-right">{{ position.carded_pa|commafy }}</td>
                             <td class="is-size-6 has-text-weight-semibold has-text-right">{{position.current_pa|commafy}}</td>
                             </tr>
