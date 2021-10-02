@@ -123,19 +123,19 @@ def team_detail(request, abbreviation):
             .values('position')
             .annotate(Sum('py_plate_appearances'))
     )
+    carded_positions = [x['position'] for x in carded_pa]
     
     current_pa = (
-        team_players.exclude(position="P").filter(ls_is_mlb=True)
+        team_players.exclude(position="P").filter(role="MLB")
             .order_by('position')
             .values('position')
             .annotate(Sum('ls_plate_appearances'))
     )
+    current_positions = [x['position'] for x in current_pa]
 
-    combined_pa = [{
-        'position':p[1]['position'],
-        'count':p[0]['position__count'],
-        'carded_pa':p[1]['py_plate_appearances__sum'],
-        'current_pa':p[2]['ls_plate_appearances__sum']} for p in list(itertools.zip_longest(position_groups,carded_pa,current_pa))]
+    for pos in position_groups:
+        pos['carded_pa'] = carded_pa[carded_positions.index(pos['position'])]['py_plate_appearances__sum'] if pos['position'] in carded_positions else 0
+        pos['current_pa'] = current_pa[current_positions.index(pos['position'])]['ls_plate_appearances__sum'] if pos['position'] in current_positions else 0
 
     context["35_roster_count"] = team_players.filter(is_35man_roster=True).count()
     context["mlb_roster_count"] = team_players.filter(
@@ -149,7 +149,7 @@ def team_detail(request, abbreviation):
     context["num_owned"] = models.Player.objects.filter(team=context["team"]).count()
     context["hitters"] = hitters
     context["pitchers"] = pitchers
-    context["combined_pa"] = combined_pa
+    context["combined_pa"] = position_groups
     return render(request, "team.html", context)
 
 
