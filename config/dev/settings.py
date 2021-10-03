@@ -7,9 +7,9 @@ SECRET_KEY = os.environ.get(
     ")(hv#e)wqd-9pwuvd94wq5-snmz+@m(&-g5e74&zg)+geh-xqe+++++sadjklfhlkh7",
 )
 
-DEBUG = True
+DEBUG = os.environ.get('DEBUG', True)
 
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = ['*']
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -59,9 +59,9 @@ DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql_psycopg2",
         "NAME": os.environ.get("DB_NAME", "ulmg"),
-        "USER": os.environ.get("DB_USER", None),
-        "PASSWORD": os.environ.get("DB_PASSWORD", None),
-        "HOST": os.environ.get("DB_HOST", None),
+        "USER": os.environ.get("DB_USER", "ulmg"),
+        "PASSWORD": os.environ.get("DB_PASSWORD", "ulmg"),
+        "HOST": os.environ.get("DB_HOST", "127.0.0.1"),
     }
 }
 
@@ -80,6 +80,7 @@ LOGIN_URL = "/accounts/login/"
 LOGOUT_REDIRECT_URL = "/"
 
 STATIC_URL = "/static/"
+STATIC_ROOT = "/static/"
 
 # ULMG SPECIFIC SETTINGS
 MLB_ROSTER_SIZE = 30
