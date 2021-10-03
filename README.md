@@ -39,50 +39,43 @@ A Django site for maintaining baseball data for a strat-o-matic league because t
 * We do have http basic auth for the site since we cannot trust the rest of the internet to not be evil
 
 ## Contribute to the site code
-### 0: prerequisites
-* Running PostgreSQL instance
-* Consult the `database` section in `config.dev.settings` to make sure you have a database / user set up and exported so Django can see it.
-* Python3, virtualenv and virtualenvwrapper installed
-* Talked to Jeremy about getting SSH access to the server
+### Docker Version
+#### 0: Install Docker Locally
+Make sure you have the newest version.
 
-### 1: Get it started
+#### 1: Get secrets
+Talk to Joe or Jeremy
+
+#### 2: Build and run
+```
+docker-compose build
+docker-compose up -d
+./bin/run_load_initial_data.sh
+```
+*Note*: Only run the `run_load_initial_data.sh` command once. If you need to run it again, you should `docker-compose down -v` to destroy the persistent volume and then `docker compose build && docker-compose up -d` before running it.
+
+### Virtualenv/Virtualenvwrapper version
+#### 0: Install dependencies
+Make sure you're running Python3 and have a local Postgres running.
+
+#### 1: Get it started (OLD)
 ```
 mkvirtualenv ulmg
 git clone https://github.com/jeremyjbowers/ulmg.git && cd ulmg
 pip install -r requirements.txt
-pip install -r dev.requirements.txt
+pip install -r requirements/dev.requirements.txt
 add2virtualenv .
 add2virtualenv config
 add2virtualenv ulmg
 export DJANGO_SETTINGS_MODULE=config.dev.settings
 ```
 
-### 2: Pull and load data
+#### 2: Pull and load data (OLD)
 ```
 fab get_data
-django-admin migrate
 django-admin reload
+django-admin migrate
 ```
-
-### 3: Preserve your data changes
-```
-django-admin dumpdata ulmg > data/fixtures/ulmg.json
-git add .
-git commit -m "data updated"
-git push origin master
-```
-
-### 4: Deploy changes
-```
-fab deploy
-```
-
-If data changes:
-```
-fab mgmt:reload
-```
-WARNING: Do not run reload on the server if you have not pulled updated data recently. You might overwrite a change made on the server not represented on your local database, e.g., a recent trade, a correction to a player, or some other update.
-
 
 ## Production stuff
 ### Crons
@@ -96,7 +89,3 @@ crontab -e
 /var/log/backup.log
 /var/log/liveup.log
 ```
-
-## Coming Features
-### Slack integration
-* [slack slash commands](https://api.slack.com/slash-commands)

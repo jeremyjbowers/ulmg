@@ -1,0 +1,1 @@
+docker exec ulmg-db-1 /usr/src/app/bin/load_initial_data.sh

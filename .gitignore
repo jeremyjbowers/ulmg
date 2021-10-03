@@ -9,3 +9,6 @@ data/rosters/*
 !data/rosters/.gitkeep
 
 .DS_Store
+
+*.env
+*.env.*

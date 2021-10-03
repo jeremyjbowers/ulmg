@@ -18,5 +18,3 @@ DATABASES = {
 
 STATIC_ROOT = "/var/www/theulmg.com/static"
 STATIC_URL = "/static/"
-
-ALLOWED_HOSTS = ["*"]

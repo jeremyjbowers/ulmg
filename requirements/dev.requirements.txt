@@ -1,0 +1,4 @@
+Fabric3
+black
+ipython
+psycopg2
