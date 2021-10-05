@@ -1,4 +1,5 @@
 {% load ulmg_tags %}
+<td style="max-width:75px;">{% if p.defense_display %}{{ p.defense_display }}{% else %}{{ p.position }}{% endif %}</td>
 <td data-value="{{ p.py_plate_appearances|default_if_none:"-999" }}" style="background-color: #eee;">
     {% if p.py_plate_appearances > 0 %}{{ p.py_plate_appearances|default_if_none:"-" }}{% else %}-{% endif %}
 </td>
