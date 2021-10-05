@@ -23,7 +23,7 @@
     
     <div class="tabs is-centered is-boxed is-large">
         <ul>
-            <li class="is-active"><a href="#">My Roster{% if num_owned %} ({{ num_owned }}){% endif %}</a></li>
+            <li class="is-active"><a href="#!">My Roster{% if num_owned %} ({{ num_owned }}){% endif %}</a></li>
             <li><a href="/my/wishlist/draft/">My Draft List</a></li>
             <li><a href="/my/wishlist/trade/">My Trade List</a></li>
         </ul>
@@ -89,7 +89,13 @@
             {% regroup hitters by position as position_players %}
             {% for position in position_players %}
             <h1 class="title is-3">{{ position.grouper }} ({{ position.list|length }})</h1>
-            <table class="table is-fullwidth is-hoverable" data-sortable>
+            <div class="tabs is-medium">
+                <ul>
+                    <li class="real-stat-link is-active"><a class="" href="#!">Real stats</a></li>
+                    <li class="strat-link"><a class="" href="#!">Strat cards</a></li>
+                </ul>
+            </div>
+            <table class="table is-fullwidth is-hoverable real-stat-table" data-sortable>
                 <thead>
                     <tr>
                         <th data-sortable-type="alpha">Name</th>
@@ -115,6 +121,32 @@
                 {% endfor %}
                 </tbody>
             </table>
+            <table class="table is-fullwidth is-hoverable strat-table hidden" data-sortable>
+                <thead>
+                    <tr>
+                        <th data-sortable-type="alpha">Name</th>
+                        <th data-sortable-type="numeric">Age</th>
+                        <th data-sortable-type="alpha">Lvl</th>
+                        {% include "includes/hitter_strat_headers.html" %}
+                        {# include "includes/player_protect_headers.html" #}
+                    </tr>
+                </thead>
+                <tbody>
+                {% for p in position.list %}
+                    <tr class="{% if p.level != "B" and not p.is_protected and not p.covid_protected %}unprotected{% endif %}
+                    {% if p.ls_is_mlb == False and p.ls_plate_appearances > 0 %} minors{% endif %}
+                    {% if p.ls_is_mlb == False and not p.covid_protected %} minors{% endif %}
+                    {% if p.ls_is_mlb == False and p.is_amateur == True %} amateur{% endif %}
+                    ">
+                        {% include "includes/player_name.html" %}
+                        <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
+                        <td data-value="{{ p.level|default_if_none:"Z" }}<">{{ p.level|default_if_none:"" }}</td>
+                        {% include "includes/hitter_strat_cells.html" %}
+                        {# include "includes/player_protect_actions.html" #}
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
             {% endfor %}
         </div>
     </div>
@@ -122,7 +154,13 @@
     <div class="columns">
         <div class="column">
             <h1 class="title is-3">P ({{ pitchers|length }})</h1>
-            <table class="table is-fullwidth" data-sortable>
+            <div class="tabs is-medium">
+                <ul>
+                    <li class="real-stat-link is-active"><a class="" href="#!">Real stats</a></li>
+                    <li class="strat-link"><a class="" href="#!">Strat cards</a></li>
+                </ul>
+            </div>
+            <table class="table is-fullwidth real-stat-table" data-sortable>
                 <thead>
                     <tr>
                         <th data-sortable-type="alpha">Name</th>
@@ -143,6 +181,32 @@
                         <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
                         <td data-value="{{ p.level|default_if_none:"Z" }}<">{{ p.level|default_if_none:"" }}</td>
                         {% include "includes/pitcher_stat_cells.html" %}
+                        {# include "includes/player_protect_actions.html" #}
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            <table class="table is-fullwidth strat-table hidden" data-sortable>
+                <thead>
+                    <tr>
+                        <th data-sortable-type="alpha">Name</th>
+                        <th data-sortable-type="numeric">Age</th>
+                        <th data-sortable-type="alpha">Lvl</th>
+                        {% include "includes/pitcher_strat_headers.html" %}
+                        {# include "includes/player_protect_headers.html" #}
+                    </tr>
+                </thead>
+                <tbody>
+                {% for p in pitchers %}
+                <tr class="{% if p.level != "B" and not p.is_protected and not p.covid_protected %}unprotected{% endif %}
+                {% if p.ls_is_mlb == False and p.ls_ip > 0 %} minors{% endif %}
+                {% if p.ls_is_mlb == False and p.is_amateur == True %} amateur{% endif %}
+                {% if p.ls_is_mlb == False and not p.covid_protected %} minors{% endif %}
+                ">
+                {% include "includes/player_name.html" %}
+                        <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
+                        <td data-value="{{ p.level|default_if_none:"Z" }}<">{{ p.level|default_if_none:"" }}</td>
+                        {% include "includes/pitcher_strat_cells.html" %}
                         {# include "includes/player_protect_actions.html" #}
                     </tr>
                 {% endfor %}
@@ -208,4 +272,43 @@ $(function(){
     $('body').on('click', '.modal-close, .modal-background, a.cancel', modal_close_handler);
 });
 </script>{% endif %}
+<script>
+document.addEventListener('DOMContentLoaded',() => {
+    document.querySelectorAll('.strat-link a').forEach(el => {
+        console.log(el)
+        el.addEventListener('click', e => {
+            document.querySelectorAll('.strat-link').forEach(link => {
+                link.classList.add('is-active')
+            })
+            document.querySelectorAll('.real-stat-link').forEach(link => {
+                link.classList.remove('is-active')
+            })
+            document.querySelectorAll('.strat-table').forEach(table => {
+                table.classList.remove('hidden')
+            })
+            document.querySelectorAll('.real-stat-table').forEach(table => {
+                table.classList.add('hidden')
+            })
+        })
+    })
+
+    document.querySelectorAll('.real-stat-link a').forEach(el => {
+        el.addEventListener('click', e => {
+            e.preventDefault()
+            document.querySelectorAll('.strat-link').forEach(link => {
+                link.classList.remove('is-active')
+            })
+            document.querySelectorAll('.real-stat-link').forEach(link => {
+                link.classList.add('is-active')
+            })
+            document.querySelectorAll('.strat-table').forEach(table => {
+                table.classList.add('hidden')
+            })
+            document.querySelectorAll('.real-stat-table').forEach(table => {
+                table.classList.remove('hidden')
+            })
+        })
+    })
+})
+</script>
 {% endblock %}

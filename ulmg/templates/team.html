@@ -68,12 +68,18 @@
                 </table>
             </div>
     </div>
-    <div class="columns">
+    <div class="columns is-centered mw-large">
         <div class="column">
             {% regroup hitters by position as position_players %}
             {% for position in position_players %}
             <h1 class="title is-3">{{ position.grouper }} ({{ position.list|length }})</h1>
-            <table class="table is-fullwidth is-hoverable" data-sortable>
+            <div class="tabs is-medium">
+                <ul>
+                    <li class="real-stat-link is-active"><a class="" href="#!">Real stats</a></li>
+                    <li class="strat-link"><a class="" href="#!">Strat cards</a></li>
+                </ul>
+            </div>
+            <table class="table real-stat-table is-fullwidth is-hoverable" data-sortable>
                 <thead>
                     <tr>
                         <th data-sortable-type="alpha">Name</th>
@@ -97,6 +103,31 @@
                 {% endfor %}
                 </tbody>
             </table>
+            <table class="table is-fullwidth is-hoverable strat-table hidden" data-sortable>
+                <thead>
+                    <tr>
+                        <th data-sortable-type="alpha">Name</th>
+                        <th data-sortable-type="numeric">Age</th>
+                        <th data-sortable-type="alpha">Lvl</th>
+                        {% include "includes/hitter_strat_headers.html" %}
+                        {# include "includes/player_protect_headers.html" #}
+                    </tr>
+                </thead>
+                <tbody>
+                {% for p in position.list %}
+                    <tr class="{% if p.level != "B" and not p.is_protected and not p.covid_protected %}unprotected{% endif %}
+                    {% if p.ls_is_mlb == False and p.ls_plate_appearances > 0 %} minors{% endif %}
+                    {% if p.ls_is_mlb == False and not p.covid_protected %} minors{% endif %}
+                    {% if p.ls_is_mlb == False and p.is_amateur == True %} amateur{% endif %}
+                    ">
+                        {% include "includes/player_name.html" %}
+                        <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
+                        <td data-value="{{ p.level|default_if_none:"Z" }}<">{{ p.level|default_if_none:"" }}</td>
+                        {% include "includes/hitter_strat_cells.html" %}
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
             {% endfor %}
         </div>
     </div>
@@ -104,7 +135,13 @@
     <div class="columns">
         <div class="column">
             <h1 class="title is-3">P ({{ pitchers|length }})</h1>
-            <table class="table is-fullwidth" data-sortable>
+            <div class="tabs is-medium">
+                <ul>
+                    <li class="real-stat-link is-active"><a class="" href="#!">Real stats</a></li>
+                    <li class="strat-link"><a class="" href="#!">Strat cards</a></li>
+                </ul>
+            </div>
+            <table class="table real-stat-table is-fullwidth" data-sortable>
                 <thead>
                     <tr>
                         <th data-sortable-type="alpha">Name</th>
@@ -127,8 +164,33 @@
                 {% endfor %}
                 </tbody>
             </table>
+            <table class="table strat-table  is-fullwidth strat-table hidden" data-sortable>
+                <thead>
+                    <tr>
+                        <th data-sortable-type="alpha">Name</th>
+                        <th data-sortable-type="numeric">Age</th>
+                        <th data-sortable-type="alpha">Lvl</th>
+                        {% include "includes/pitcher_strat_headers.html" %}
+                        {# include "includes/player_protect_headers.html" #}
+                    </tr>
+                </thead>
+                <tbody>
+                {% for p in pitchers %}
+                <tr class="{% if p.level != "B" and not p.is_protected and not p.covid_protected %}unprotected{% endif %}
+                {% if p.ls_is_mlb == False and p.ls_ip > 0 %} minors{% endif %}
+                {% if p.ls_is_mlb == False and p.is_amateur == True %} amateur{% endif %}
+                {% if p.ls_is_mlb == False and not p.covid_protected %} minors{% endif %}
+                ">
+                {% include "includes/player_name.html" %}
+                        <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
+                        <td data-value="{{ p.level|default_if_none:"Z" }}<">{{ p.level|default_if_none:"" }}</td>
+                        {% include "includes/pitcher_strat_cells.html" %}
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
         </div>
-    </div>
+        </div>
 </div>
 {% include 'includes/player_modal.html' %}
 {% endblock %}
@@ -136,4 +198,43 @@
 {% block extrascript %}
 {% include "includes/my/wishlistjs.html" %}
 {% include "includes/my/reportsjs.html" %}
+<script>
+    document.addEventListener('DOMContentLoaded',() => {
+        document.querySelectorAll('.strat-link a').forEach(el => {
+            console.log(el)
+            el.addEventListener('click', e => {
+                document.querySelectorAll('.strat-link').forEach(link => {
+                    link.classList.add('is-active')
+                })
+                document.querySelectorAll('.real-stat-link').forEach(link => {
+                    link.classList.remove('is-active')
+                })
+                document.querySelectorAll('.strat-table').forEach(table => {
+                    table.classList.remove('hidden')
+                })
+                document.querySelectorAll('.real-stat-table').forEach(table => {
+                    table.classList.add('hidden')
+                })
+            })
+        })
+    
+        document.querySelectorAll('.real-stat-link a').forEach(el => {
+            el.addEventListener('click', e => {
+                e.preventDefault()
+                document.querySelectorAll('.strat-link').forEach(link => {
+                    link.classList.remove('is-active')
+                })
+                document.querySelectorAll('.real-stat-link').forEach(link => {
+                    link.classList.add('is-active')
+                })
+                document.querySelectorAll('.strat-table').forEach(table => {
+                    table.classList.add('hidden')
+                })
+                document.querySelectorAll('.real-stat-table').forEach(table => {
+                    table.classList.remove('hidden')
+                })
+            })
+        })
+    })
+</script>
 {% endblock %}
