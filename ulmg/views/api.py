@@ -542,7 +542,7 @@ def search(request):
 
 @csrf_exempt
 def player_owned(request):
-    if request.POST:
+    if request.method == "POST":
         if request.POST.get("text", None):
             players = models.Player.objects.filter(name__search=request.POST["text"])
             if len(players) > 0:
