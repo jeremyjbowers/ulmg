@@ -6,17 +6,15 @@ import dj_database_url
 
 from config.dev.settings import *
 
-DEBUG = os.getenv("DEBUG", "False") == "True"
-
-WSGI_APPLICATION = "config.prd.app.application"
+WSGI_APPLICATION = "config.do_app_platform.app.application"
 
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", get_random_secret_key())
 
-DEBUG = os.getenv("DEBUG", "False") == "True"
+DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
-DEVELOPMENT_MODE = os.getenv("DEVELOPMENT_MODE", "False") == "True"
+DEVELOPMENT_MODE = True
 
 DATABASE_URL = os.environ.get("DATABASE_URL", None)
 
@@ -24,5 +22,16 @@ DATABASES = {
     "default": dj_database_url.parse(DATABASE_URL),
 }
 
-STATIC_ROOT = "/workspace/config/staticfiles/"
-STATIC_URL = "/static/"
+AWS_S3_REGION_NAME = "nyc3"
+AWS_S3_ENDPOINT_URL = f"https://${AWS_S3_REGION_NAME}.digitaloceanspaces.com"
+AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID", None)
+AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY", None)
+AWS_DEFAULT_ACL = "public-read"
+AWS_STORAGE_BUCKET_NAME = "static-theulmg"
+AWS_S3_CUSTOM_DOMAIN = "https://static-theulmg.nyc3.cdn.digitaloceanspaces.com"
+AWS_LOCATION = 'static'
+
+STATIC_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/{AWS_LOCATION}/'
+STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+
+INSTALLED_APPS = INSTALLED_APPS.append('storages')
