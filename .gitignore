@@ -12,3 +12,6 @@ data/rosters/*
 
 *.env
 *.env.*
+
+app-id.txt
+app.yaml
