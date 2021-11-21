@@ -45,11 +45,12 @@ def my_team(request):
     carded_positions = [x['position'] for x in carded_pa]
     
     current_pa = (
-        team_players.exclude(position="P").filter(role="MLB")
+        team_players.exclude(position="P").filter(ls_is_mlb=True)
             .order_by('position')
             .values('position')
             .annotate(Sum('ls_plate_appearances'))
     )
+
     current_positions = [x['position'] for x in current_pa]
 
     for pos in position_groups:
