@@ -33,6 +33,9 @@ class Owner(BaseModel):
     def __unicode__(self):
         return f"{self.name}, {self.email}"
 
+    def team(self):
+        return Team.objects.get(owner_obj=self)
+
 
 class Team(BaseModel):
     """
