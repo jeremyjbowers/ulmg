@@ -2,6 +2,9 @@
     {% if team.championships %}<p class="title is-6 has-text-weight-light champs">{% for c in team.championships %}🏆 {{ c }}{% if forloop.last %}{% else %}, {% endif %}{% endfor %}</p>{% else %}<br/>{% endif %}
     <p class="title is-1">
         <span class="icon-text">
+            {% if own_team %}
+            <span class="icon has-text-success">&nbsp;<i class="fas fa-user-circle"></i></span>&nbsp;
+            {% endif %}
             <span>{{ team.city }} {{ team.nickname }}</span>
         </span>
     </p>
@@ -9,7 +12,9 @@
     <p class="subtitle is-5 has-text-weight-regular has-text-grey">
         Owner:
         {% if team.owner_obj %}
-            {{ team.owner_obj.name }}<br><a href="mailto:{{ team.owner_obj.email }}">Send owner email &#x2709;</a>
+            {{ team.owner_obj.name }}
+            {% if not own_team %}<br><a href="mailto:{{ team.owner_obj.email }}">Send owner email &#x2709;</a>
+            {% endif %}
         {% else %}
             &mdash;
         {% endif %}
