@@ -253,6 +253,7 @@
                 type: "POST",
                 url: '/api/v1/player/' + playerid + '/' +  action + '/',
                 success: function(response){
+                    console.log(response);
                     window.location.reload();
                 }
             });
