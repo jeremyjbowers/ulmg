@@ -101,6 +101,13 @@ def team_detail(request, abbreviation):
     context["team"] = get_object_or_404(
         models.Team, abbreviation__icontains=abbreviation
     )
+    if request.user.is_authenticated:
+        owner = models.Owner.objects.get(user=request.user)
+        if owner.team() == context['team']:
+            context['own_team'] = True
+        else:
+            context['own_team'] = False
+
     team_players = models.Player.objects.filter(team=context["team"])
     hitters = team_players.exclude(position="P").order_by(
         "position", "-level_order", "-is_carded", "last_name", "first_name"
