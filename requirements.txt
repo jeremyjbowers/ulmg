@@ -22,9 +22,9 @@ psycopg2-binary
 pyasn1==0.4.8
 pyasn1-modules==0.2.8
 pyparsing==2.4.7
-python-dateutil==2.8.2
+python-dateutil
 python-Levenshtein==0.12.2
-pytz==2021.3
+pytz
 requests==2.26.0
 rsa==4.7.2
 six==1.16.0
