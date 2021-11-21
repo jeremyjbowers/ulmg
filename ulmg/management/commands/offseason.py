@@ -24,7 +24,7 @@ class Command(BaseCommand):
 
     def load_hitters(self, *args, **options):
         print(".... loading hitters")
-        with open("data/2021/300_pa_hit.csv", "r") as readfile:
+        with open("data/2022/hit.csv", "r") as readfile:
             players = csv.DictReader(readfile)
             for row in [dict(z) for z in players]:
                 try:
@@ -38,7 +38,7 @@ class Command(BaseCommand):
 
     def load_pitchers(self, *args, **options):
         print(".... loading pitchers")
-        with open("data/2021/40_ip_pit.csv", "r") as readfile:
+        with open("data/2022/pitch.csv", "r") as readfile:
             players = csv.DictReader(readfile)
             for row in [dict(z) for z in players]:
                 try:
@@ -144,48 +144,48 @@ class Command(BaseCommand):
             is_owned=True, is_carded=False, level__in=["A", "V"]
         ).update(is_protected=True)
 
-        # Second half failed to protect players.
-        unprotected = [
-            2599,
-            2611,
-            2588,
-            2762,
-            2831,
-            2886,
-            2890,
-            2895,
-            2909,
-            2741,
-            2993,
-            3062,
-            3042,
-            3044,
-            3045,
-            3189,
-            3212,
-            3215,
-            2973,
-            3237,
-            3265,
-            2504,
-            3304,
-            3305,
-            3306,
-            3426,
-            3421,
-            3507,
-            2580,
-            2969,
-            3564,
-            3488,
-            3568,
-            2990,
-            6986,
-        ]
-        models.Player.objects.filter(id__in=unprotected).update(
-            cannot_be_protected=True
-        )
+        # # Second half failed to protect players.
+        # unprotected = [
+        #     2599,
+        #     2611,
+        #     2588,
+        #     2762,
+        #     2831,
+        #     2886,
+        #     2890,
+        #     2895,
+        #     2909,
+        #     2741,
+        #     2993,
+        #     3062,
+        #     3042,
+        #     3044,
+        #     3045,
+        #     3189,
+        #     3212,
+        #     3215,
+        #     2973,
+        #     3237,
+        #     3265,
+        #     2504,
+        #     3304,
+        #     3305,
+        #     3306,
+        #     3426,
+        #     3421,
+        #     3507,
+        #     2580,
+        #     2969,
+        #     3564,
+        #     3488,
+        #     3568,
+        #     2990,
+        #     6986,
+        # ]
+        # models.Player.objects.filter(id__in=unprotected).update(
+        #     cannot_be_protected=True
+        # )
 
         # self.set_carded()
         # self.load_career_stats()
-        # self.set_levels(dry_run=True)
+        self.set_levels(dry_run=True)

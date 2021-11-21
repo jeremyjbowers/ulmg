@@ -198,8 +198,10 @@ class Command(BaseCommand):
 
         teams = settings.ROSTER_TEAM_IDS
         for team_id, team_abbrev, team_name in teams:
+
             with open(f"data/rosters/{team_abbrev}_roster.json", "r") as readfile:
                 roster = json.loads(readfile.read())
+
                 for player in roster:
                     player["team_abbrev"] = team_abbrev
                     player["team_name"] = team_name
