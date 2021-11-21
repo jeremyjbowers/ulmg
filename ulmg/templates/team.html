@@ -94,6 +94,9 @@
                         <th data-sortable-type="numeric">Age</th>
                         <th data-sortable-type="alpha">Lvl</th>
                         {% include "includes/hitter_stat_headers.html" %}
+                        {% if own_team %}
+                            {% include "includes/player_protect_headers.html" %}
+                        {% endif %}
                     </tr>
                 </thead>
                 <tbody>
@@ -106,7 +109,9 @@
                         <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
                         <td data-value="{{ p.level|default_if_none:"Z" }}<">{{ p.level|default_if_none:"" }}</td>
                         {% include "includes/hitter_stat_cells.html" %}
-
+                        {% if own_team %}
+                            {% include "includes/player_protect_actions.html" %}
+                        {% endif %}
                     </tr>
                 {% endfor %}
                 </tbody>
@@ -118,7 +123,9 @@
                         <th data-sortable-type="numeric">Age</th>
                         <th data-sortable-type="alpha">Lvl</th>
                         {% include "includes/hitter_strat_headers.html" %}
-                        {# include "includes/player_protect_headers.html" #}
+                        {% if own_team %}
+                            {% include "includes/player_protect_headers.html" %}
+                        {% endif %}
                     </tr>
                 </thead>
                 <tbody>
@@ -132,6 +139,9 @@
                         <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
                         <td data-value="{{ p.level|default_if_none:"Z" }}<">{{ p.level|default_if_none:"" }}</td>
                         {% include "includes/hitter_strat_cells.html" %}
+                        {% if own_team %}
+                            {% include "includes/player_protect_actions.html" %}
+                        {% endif %}
                     </tr>
                 {% endfor %}
                 </tbody>
@@ -156,6 +166,9 @@
                         <th data-sortable-type="numeric">Age</th>
                         <th data-sortable-type="alpha">Lvl</th>
                         {% include "includes/pitcher_stat_headers.html" %}
+                        {% if own_team %}
+                            {% include "includes/player_protect_headers.html" %}
+                        {% endif %}
                     </tr>
                 </thead>
                 <tbody>
@@ -168,6 +181,9 @@
                         <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
                         <td data-value="{{ p.level|default_if_none:"Z" }}<">{{ p.level|default_if_none:"" }}</td>
                         {% include "includes/pitcher_stat_cells.html" %}
+                        {% if own_team %}
+                            {% include "includes/player_protect_actions.html" %}
+                        {% endif %}
                     </tr>
                 {% endfor %}
                 </tbody>
@@ -179,7 +195,9 @@
                         <th data-sortable-type="numeric">Age</th>
                         <th data-sortable-type="alpha">Lvl</th>
                         {% include "includes/pitcher_strat_headers.html" %}
-                        {# include "includes/player_protect_headers.html" #}
+                        {% if own_team %}
+                            {% include "includes/player_protect_headers.html" %}
+                        {% endif %}
                     </tr>
                 </thead>
                 <tbody>
@@ -193,6 +211,9 @@
                         <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
                         <td data-value="{{ p.level|default_if_none:"Z" }}<">{{ p.level|default_if_none:"" }}</td>
                         {% include "includes/pitcher_strat_cells.html" %}
+                        {% if own_team %}
+                            {% include "includes/player_protect_actions.html" %}
+                        {% endif %}
                     </tr>
                 {% endfor %}
                 </tbody>
@@ -200,11 +221,68 @@
         </div>
         </div>
 </div>
+{% if own_team %}
+    {% if protect_tab or roster_tab %}
+    <div class="modal" id="player-drop-modal">
+        <div class="modal-background"></div>
+        <div class="modal-content"></div>
+        <button class="modal-close is-large" aria-label="close"></button>
+    </div>
+    {% endif %}
+{% endif %}
 {% include 'includes/player_modal.html' %}
 {% endblock %}
 
 {% block extrascript %}
-{% include "includes/my/wishlistjs.html" %}
+{% if not own_team %}
+    {% include "includes/my/wishlistjs.html" %}
+{% endif %}
+{% if own_team %}
+    {% if protect_tab or roster_tab%}
+    <script type="text/javascript">
+    $(function(){
+        var player_click_handler = function(el) {
+
+            el.preventDefault();
+            $el = $(this);
+
+            var playerid = $el.attr('data-playerid')
+            var action = $el.attr('data-action')
+
+            $.ajax({
+                type: "POST",
+                url: '/api/v1/player/' + playerid + '/' +  action + '/',
+                success: function(response){
+                    window.location.reload();
+                }
+            });
+        }
+
+        var player_drop_handler = function(el) {
+            el.preventDefault();
+            $el = $(this);
+
+            var playerid = $el.attr('data-playerid');
+            var playername = $el.attr('data-playername');
+            $('#player-drop-modal div.modal-content').html('<div class="box"><div class="content"><p class="subtitle">Are you sure you want to <strong>permanently drop ' + playername + '?</strong></p><p><a class="button is-danger is-large player-action" data-action="drop" data-playerid=' + playerid + '>Drop ' + playername + '</a>&nbsp;&nbsp;&nbsp;<a class="cancel button is-info is-large">Cancel</a></p></div></div>');
+            $('#player-drop-modal').addClass('is-active');
+        }
+
+        var modal_close_handler = function(el){
+            el.preventDefault();
+            $el = $(this);
+
+            $('#player-drop-modal').removeClass('is-active');
+            $('#player-drop-modal div.modal-content').html('');
+        }
+
+        $('body').on('click', 'a.player-action', player_click_handler);
+        $('body').on('click', 'a.player-drop', player_drop_handler);
+        $('body').on('click', '.modal-close, .modal-background, a.cancel', modal_close_handler);
+    });
+    </script>
+    {% endif %}
+{% endif %}
 {% include "includes/my/reportsjs.html" %}
 <script>
     document.addEventListener('DOMContentLoaded',() => {
