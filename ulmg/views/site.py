@@ -107,6 +107,8 @@ def team_detail(request, abbreviation):
             context['own_team'] = True
         else:
             context['own_team'] = False
+    else:
+        context['own_team'] = False
 
     team_players = models.Player.objects.filter(team=context["team"])
     hitters = team_players.exclude(position="P").order_by(
@@ -191,6 +193,16 @@ def team_other(request, abbreviation):
     context = utils.build_context(request)
     team = get_object_or_404(models.Team, abbreviation__icontains=abbreviation)
     context["team"] = team
+    
+    if request.user.is_authenticated:
+        owner = models.Owner.objects.get(user=request.user)
+        if owner.team() == context['team']:
+            context['own_team'] = True
+        else:
+            context['own_team'] = False
+    else:
+        context['own_team'] = False
+
     team_players = models.Player.objects.filter(team=context["team"])
     context["level_distribution"] = (
         team_players.order_by("level_order")
