@@ -186,6 +186,6 @@ class Command(BaseCommand):
         #     cannot_be_protected=True
         # )
 
-        # self.set_carded()
-        # self.load_career_stats()
+        self.set_carded()
+        self.load_career_stats()
         self.set_levels(dry_run=True)
