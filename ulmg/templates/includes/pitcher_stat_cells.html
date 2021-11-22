@@ -11,9 +11,4 @@
 <td data-value="{{ p.ls_hr_9|default_if_none:"999" }}">{% if p.ls_ip > 0 %}{{ p.ls_hr_9|default_if_none:"-" }}{% else %}-{% endif %}</td>
 <td data-value="{{ p.ls_fip|default_if_none:"999" }}">{% if p.ls_ip > 0 %}{{ p.ls_fip|default_if_none:"-" }}{% else %}-{% endif %}</td>
 <td data-value="{{ p.ls_xfip|default_if_none:"999" }}">{% if p.ls_ip > 0 %}{{ p.ls_xfip|default_if_none:"-" }}{% else %}-{% endif %}</td>
-
-{% if not p.ls_is_mlb or p.ls_ip == 0 %}
-<td data-value="999">-</td>
-{% else %}
-<td data-value="{{ p.ls_siera|default_if_none:"999" }}">{% if p.ls_ip > 0 %}{{ p.ls_siera|default_if_none:"-" }}{% else %}-{% endif %}</td>
-{% endif %}
+<td data-value="{{ p.ls_siera|default_if_none:"999" }}">{% if p.ls_ip > 0 and p.ls_siera %}{{ p.ls_siera|default_if_none:"-" }}{% else %}-{% endif %}</td>
