@@ -39,18 +39,12 @@
     {% if p.ls_plate_appearances > 0 %}{{ p.ls_wrc_plus|default_if_none:"-" }}{% else %}-{% endif %}
 </td>
 
-{% if p.ls_is_mlb %}
 <td data-value="{{ p.ls_xavg|default_if_none:"-999" }}">
-    {% if p.ls_plate_appearances > 0 %}{{ p.ls_xavg|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
+    {% if p.ls_plate_appearances > 0 and p.ls_xavg %}{{ p.ls_xavg|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
 </td>
 <td data-value="{{ p.ls_xwoba|default_if_none:"-999" }}">
-    {% if p.ls_plate_appearances > 0 %}{{ p.ls_xwoba|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
+    {% if p.ls_plate_appearances > 0 and p.ls_xwoba %}{{ p.ls_xwoba|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
 </td>
 <td data-value="{{ p.ls_xslg|default_if_none:"-999" }}">
-    {% if p.ls_plate_appearances > 0 %}{{ p.ls_xslg|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
+    {% if p.ls_plate_appearances > 0 and p.ls_xslg %}{{ p.ls_xslg|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
 </td>
-{% else %}
-<td data-value="-999">-</td>
-<td data-value="-999">-</td>
-<td data-value="-999">-</td>
-{% endif %}
