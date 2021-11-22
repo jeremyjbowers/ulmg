@@ -5,7 +5,7 @@ from django.db.models.expressions import OrderBy
 
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from django.db.models import Count, Avg, Sum, Max, Min, Q
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.http import JsonResponse
@@ -20,57 +20,59 @@ from ulmg import models, utils
 @login_required
 def my_team(request):
     context = utils.build_context(request)
-    context["team"] = get_object_or_404(models.Team, owner_obj=context["owner"])
-    team_players = models.Player.objects.filter(team=context["team"])
-    hitters = team_players.exclude(position="P").order_by(
-        "position", "-level_order", "-is_carded", "last_name", "first_name"
-    )
-    pitchers = team_players.filter(position="P").order_by(
-        "-level_order", "-is_carded", "last_name", "first_name"
-    )
+    # context["team"] = get_object_or_404(models.Team, owner_obj=context["owner"])
+    # team_players = models.Player.objects.filter(team=context["team"])
+    # hitters = team_players.exclude(position="P").order_by(
+    #     "position", "-level_order", "-is_carded", "last_name", "first_name"
+    # )
+    # pitchers = team_players.filter(position="P").order_by(
+    #     "-level_order", "-is_carded", "last_name", "first_name"
+    # )
 
-    position_groups = (
-        team_players.exclude(position="P")
-            .order_by('position')
-            .values('position')
-            .annotate(Count('position'))
-    )
+    # position_groups = (
+    #     team_players.exclude(position="P")
+    #         .order_by('position')
+    #         .values('position')
+    #         .annotate(Count('position'))
+    # )
 
-    carded_pa = (
-        team_players.exclude(position="P").filter(is_carded=True)
-            .order_by('position')
-            .values('position')
-            .annotate(Sum('py_plate_appearances'))
-    )
-    carded_positions = [x['position'] for x in carded_pa]
+    # carded_pa = (
+    #     team_players.exclude(position="P").filter(is_carded=True)
+    #         .order_by('position')
+    #         .values('position')
+    #         .annotate(Sum('py_plate_appearances'))
+    # )
+    # carded_positions = [x['position'] for x in carded_pa]
     
-    current_pa = (
-        team_players.exclude(position="P").filter(ls_is_mlb=True)
-            .order_by('position')
-            .values('position')
-            .annotate(Sum('ls_plate_appearances'))
-    )
+    # current_pa = (
+    #     team_players.exclude(position="P").filter(ls_is_mlb=True)
+    #         .order_by('position')
+    #         .values('position')
+    #         .annotate(Sum('ls_plate_appearances'))
+    # )
 
-    current_positions = [x['position'] for x in current_pa]
+    # current_positions = [x['position'] for x in current_pa]
 
-    for pos in position_groups:
-        pos['carded_pa'] = carded_pa[carded_positions.index(pos['position'])]['py_plate_appearances__sum']
-        pos['current_pa'] = current_pa[current_positions.index(pos['position'])]['ls_plate_appearances__sum']
+    # for pos in position_groups:
+    #     pos['carded_pa'] = carded_pa[carded_positions.index(pos['position'])]['py_plate_appearances__sum']
+    #     pos['current_pa'] = current_pa[current_positions.index(pos['position'])]['ls_plate_appearances__sum']
 
-    context["35_roster_count"] = team_players.filter(is_35man_roster=True).count()
-    context["mlb_roster_count"] = team_players.filter(
-        is_mlb_roster=True, is_aaa_roster=False, is_reserve=False
-    ).count()
-    context["level_distribution"] = (
-        team_players.order_by("level_order")
-        .values("level_order")
-        .annotate(Count("level_order"))
-    )
-    context["num_owned"] = models.Player.objects.filter(team=context["team"]).count()
-    context["hitters"] = hitters
-    context["pitchers"] = pitchers
-    context["combined_pa"] = position_groups
-    return render(request, "my/team.html", context)
+    # context["35_roster_count"] = team_players.filter(is_35man_roster=True).count()
+    # context["mlb_roster_count"] = team_players.filter(
+    #     is_mlb_roster=True, is_aaa_roster=False, is_reserve=False
+    # ).count()
+    # context["level_distribution"] = (
+    #     team_players.order_by("level_order")
+    #     .values("level_order")
+    #     .annotate(Count("level_order"))
+    # )
+    # context["num_owned"] = models.Player.objects.filter(team=context["team"]).count()
+    # context["hitters"] = hitters
+    # context["pitchers"] = pitchers
+    # context["combined_pa"] = position_groups
+    # return render(request, "my/team.html", context)
+    team = get_object_or_404(models.Team, owner_obj=context["owner"])
+    return redirect(f'/teams/{ team.abbreviation }/')
 
 
 @login_required
