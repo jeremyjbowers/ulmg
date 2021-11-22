@@ -20,23 +20,25 @@ class Command(BaseCommand):
     season = None
 
     def handle(self, *args, **options):
+        requests.packages.urllib3.disable_warnings() 
+
         self.season = settings.CURRENT_SEASON
-        self.reset_players()
+        # self.reset_players()
 
         # FG VIA ROSTER RESOURCE
-        self.get_roster_info()
-        self.update_player_ids()
-        self.parse_roster_info()
+        # self.get_roster_info()
+        # self.update_player_ids()
+        # self.parse_roster_info()
 
         # FG CSVs
         self.get_hitters()
         self.get_pitchers()
 
-        # FG weird API URL
-        self.get_minors()
+        # # FG weird API URL
+        # self.get_minors()
 
-        # AGGREGATE LS BY TEAM
-        self.team_aggregates()
+        # # AGGREGATE LS BY TEAM
+        # self.team_aggregates()
 
     def team_aggregates(self):
         print("TEAM AGGREGATES")
@@ -115,11 +117,11 @@ class Command(BaseCommand):
                 roster = json.loads(readfile.read())
                 for player in roster:
                     if player.get("minormasterid", None) and player.get(
-                        "playerid", None
+                        "playerid1", None
                     ):
                         try:
                             p = models.Player.objects.get(fg_id=player["minormasterid"])
-                            p.fg_id = player["playerid"]
+                            p.fg_id = player["playerid1"]
                             p.save()
                         except:
                             pass
@@ -161,7 +163,7 @@ class Command(BaseCommand):
                     p = None
                     try:
                         try:
-                            p = models.Player.objects.get(fg_id=player["playerid"])
+                            p = models.Player.objects.get(fg_id=player["playerid1"])
                         except:
                             try:
                                 p = models.Player.objects.get(
@@ -358,6 +360,7 @@ class Command(BaseCommand):
             ls_dict = {}
 
             try:
+                
                 obj = models.Player.objects.get(
                     fg_id=h[1]
                     .select("a")[0]
@@ -373,16 +376,38 @@ class Command(BaseCommand):
                     obj.ls_sb = int(h[26].text)
                     obj.ls_runs = int(h[23].text)
                     obj.ls_rbi = int(h[24].text)
-                    obj.ls_avg = Decimal(h[12].text)
-                    obj.ls_xavg = Decimal(h[13].text)
-                    obj.ls_obp = Decimal(h[30].text)
-                    obj.ls_slg = Decimal(h[14].text)
-                    obj.ls_xslg = Decimal(h[15].text)
-                    obj.ls_babip = Decimal(h[34].text)
                     obj.ls_wrc_plus = int(h[39].text)
                     obj.ls_plate_appearances = int(h[3].text)
                     obj.ls_ab = int(h[41].text)
-                    obj.ls_iso = Decimal(h[33].text)
+
+                    try:
+                        obj.ls_avg = Decimal(h[12].text)
+                    except:
+                        pass
+
+                    obj.ls_xavg = Decimal(h[13].text)
+
+                    try:   
+                        obj.ls_obp = Decimal(h[30].text)
+                    except:
+                        pass
+
+                    try:
+                        obj.ls_slg = Decimal(h[14].text)
+                    except:
+                        pass
+
+                    obj.ls_xslg = Decimal(h[15].text)
+
+                    try:
+                        obj.ls_babip = Decimal(h[34].text)
+                    except:
+                        pass
+
+                    try:
+                        obj.ls_iso = Decimal(h[33].text)
+                    except:
+                        pass
 
                     if h[29].text.replace('%', '') == "0.0":
                         obj.ls_k_pct = Decimal(0.0)
@@ -394,8 +419,13 @@ class Command(BaseCommand):
                     else:
                         obj.ls_bb_pct = Decimal(round(float(h[28].text.replace('%', '')), 1))
 
-                    obj.ls_woba = Decimal(h[16].text)
+                    try:
+                        obj.ls_woba = Decimal(h[16].text)
+                    except:
+                        pass
+
                     obj.ls_xwoba = Decimal(h[17].text)
+
                     obj.save()
 
             except Exception as e:
