@@ -23,22 +23,22 @@ class Command(BaseCommand):
         requests.packages.urllib3.disable_warnings() 
 
         self.season = settings.CURRENT_SEASON
-        # self.reset_players()
+        self.reset_players()
 
         # FG VIA ROSTER RESOURCE
         # self.get_roster_info()
-        # self.update_player_ids()
-        # self.parse_roster_info()
+        self.update_player_ids()
+        self.parse_roster_info()
 
         # FG CSVs
         self.get_hitters()
         self.get_pitchers()
 
         # # FG weird API URL
-        # self.get_minors()
+        self.get_minors()
 
         # # AGGREGATE LS BY TEAM
-        # self.team_aggregates()
+        self.team_aggregates()
 
     def team_aggregates(self):
         print("TEAM AGGREGATES")
