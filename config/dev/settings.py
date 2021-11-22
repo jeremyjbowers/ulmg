@@ -98,7 +98,7 @@ ROSTER_TEAM_IDS = [
     ("2", "BAL", "Baltimore Orioles"),
     ("3", "BOS", "Boston Red Sox"),
     ("4", "CHW", "Chicago White Sox"),
-    ("5", "CLE", "Cleveland Indians"),
+    ("5", "CLE", "Cleveland Guardians"),
     ("6", "DET", "Detroit Tigers"),
     ("7", "KCR", "Kansas City Royals"),
     ("8", "MIN", "Minnesota Twins"),
