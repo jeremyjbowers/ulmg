@@ -274,6 +274,23 @@ class Player(BaseModel):
     is_mlb40man = models.BooleanField(default=False)
     is_bullpen = models.BooleanField(default=False)
 
+    # STATS
+    # Here's the schema for a stats dictionary
+    # required keys: year, level, type, timestamp
+    # YEAR — the season these stats accrued in, or "career"
+    # LEVEL - the levels these stats cover, e.g., A/AA or AA/AAA or MLB
+    # TYPE — the type of stats, e.g., majors, minors
+    # note: we combine all minor league stats in a single record
+    # but we do not combine major leage WITH minor league.
+    # this is because major league stats are used for the game
+    # but minor / other pro league stats are not.
+    # TIMESTAMP - a UNIX timestamp of when this record was created
+    #
+    # Any actual stats keys are fine following these.
+    # Pitching and hitting stats can be in the same dictionary.
+    #
+    stats = models.JSONField(null=True, blank=True)
+
     # PREVIOUS_YEAR STATS
     py_is_mlb = models.BooleanField(default=False)
     py_hits = models.IntegerField(blank=True, null=True)
@@ -419,6 +436,15 @@ class Player(BaseModel):
         if self.get_team():
             return "%s (%s)" % (self.name, self.get_team().abbreviation)
         return self.name
+
+    def set_stats(self, stats_dict):
+        if not self.stats:
+            self.stats = {}
+
+        if type(self.stats) is not dict:
+            self.stats = {}
+
+        self.stats[stats_dict['slug']] = stats_dict
 
     @property
     def latest_rating(self):

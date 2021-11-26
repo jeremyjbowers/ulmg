@@ -1,15 +1,70 @@
 import pickle
 import os.path
+import platform
+import sys
 from decimal import Decimal
+from datetime import datetime
 
+from bs4 import BeautifulSoup
+from dateutil.parser import parse
+from django.apps import apps
+from django.db import connection
+from django.db.models import Avg, Sum, Count
+from django.core.management import call_command
+from django.core.management.base import BaseCommand, CommandError
+from django.conf import settings
 from googleapiclient.discovery import build
 from google.oauth2 import service_account
-
-from django.conf import settings
-from django.contrib.postgres.search import TrigramSimilarity
 import requests
+import ujson as json
 
 from ulmg import models
+
+
+def to_int(might_int, default=None):
+    try:
+        return int(might_int.strip().replace('\xa0', ''))
+    except:
+        pass
+
+    if default:
+        return default
+
+    return None
+
+
+def to_float(might_float, default=None):
+    try:
+        return float(might_float)
+    except:
+        pass
+
+    if default:
+        return default
+
+    return None
+
+
+def reset_player_stats(id_type=None, player_ids=None):
+    if id_type and player_ids:
+        lookup = f"{id_type}__in"
+        keyword = player_ids
+        models.Player.objects.filter(**{lookup: keyword}).update(stats=None)
+
+    else:
+        models.Player.objects.filter(stats__isnull=False).update(stats=None)
+
+
+def get_scriptname():
+    return " ".join(sys.argv)
+
+
+def get_hostname():
+    return platform.node()
+
+
+def generate_timestamp():
+    return to_int(datetime.now().timestamp())
 
 
 def send_email(from_email=None, to_emails=[], text=None, subject=None):
@@ -214,7 +269,7 @@ def int_or_none(possible_int):
     if isinstance(possible_int, int):
         return possible_int
     try:
-        return int(possible_int)
+        return to_int(possible_int)
     except:
         pass
     return None
@@ -245,3 +300,398 @@ def get_sheet(sheet_id, sheet_range):
     if values:
         return [dict(zip(values[0], r)) for r in values[1:]]
     return []
+
+
+def get_fg_results(url):
+    r = requests.get(url, verify=False)
+    soup = BeautifulSoup(r.text, "lxml")
+    return soup.select("#LeaderBoard1_dg1_ctl00 tbody tr")
+
+
+def get_fg_minor_season(season=None, timestamp=None, scriptname=None, hostname=None):
+    
+    if not hostname:
+        hostname = get_hostname()
+
+    if not scriptname:
+        scriptname = get_scriptname()
+
+    if not timestamp:
+        timestamp = generate_timestamp()
+
+    if not season:
+        season = settings.CURRENT_SEASON
+
+    headers = {
+        "accept": "application/json"
+    }
+
+    players = {
+        'bat': [],
+        'pit': []
+    }
+
+    for k,v in players.items():
+        url = f"https://www.fangraphs.com/api/leaders/minor-league/data?pos=all&lg=2,4,5,6,7,8,9,10,11,14,12,13,15,17,18,30,32,33&stats={k}&qual=5&type=0&team=&season={season}&seasonEnd={season}&org=&ind=0&splitTeam=false"
+        r = requests.get(url, verify=False)
+        players[k] += r.json()
+
+    for k,v in players.items():
+        for player in v:
+            fg_id = player['playerids']
+            name = player['PlayerName']
+            p = models.Player.objects.filter(fg_id=fg_id)
+            count = models.Player.objects.filter(fg_id=fg_id, ls_is_mlb=False).count()
+
+            if count == 1:
+                obj = p[0]
+
+                stats_dict = {}
+                stats_dict['year'] = season
+                stats_dict['type'] = "minors"
+                stats_dict['timestamp'] = timestamp
+                stats_dict['level'] = player['aLevel']
+                stats_dict['script'] = scriptname
+                stats_dict['host'] = hostname
+                stats_dict['slug'] = f"{stats_dict['year']}-{stats_dict['type']}"
+
+                if k == "bat":
+                    stats_dict['side'] = "hit"
+                    stats_dict['hits'] = to_int(player['H'])
+                    stats_dict['2b'] = to_int(player['2B'])
+                    stats_dict['3b'] = to_int(player['3B'])
+                    stats_dict['hr'] = to_int(player['HR'])
+                    stats_dict['sb'] = to_int(player['SB'])
+                    stats_dict['runs'] = to_int(player['R'])
+                    stats_dict['rbi'] = to_int(player['RBI'])
+                    stats_dict['avg'] = to_float(player['AVG'])
+                    stats_dict['obp'] = to_float(player['OBP'])
+                    stats_dict['slg'] = to_float(player['SLG'])
+                    stats_dict['babip'] = to_float(player['BABIP'])
+                    stats_dict['wrc_plus'] = to_int(player['wRC+'])
+                    stats_dict['plate_appearances'] = to_int(player['PA'])
+                    stats_dict['iso'] = to_float(player['ISO'])
+                    stats_dict['k_pct'] = to_float(player['K%']) * 100.0
+                    stats_dict['bb_pct'] = to_float(player['BB%']) * 100.0
+                    stats_dict['woba'] = to_float(player['wOBA'])
+
+                if k == "pit":
+                    stats_dict['side'] = "pitch"
+                    stats_dict['g'] = to_int(player['G'])
+                    stats_dict['gs'] = to_int(player['GS'])
+                    stats_dict['k'] = to_int(player['SO'])
+                    stats_dict['bb'] = to_int(player['BB'])
+                    stats_dict['ha'] = to_int(player['H'])
+                    stats_dict['hra'] = to_int(player['HR'])
+                    stats_dict['ip'] = to_float(player['IP'])
+                    stats_dict['k_9'] = to_float(player['K/9'])
+                    stats_dict['bb_9'] = to_float(player['BB/9'])
+                    stats_dict['hr_9'] = to_float(player['HR/9'])
+                    stats_dict['lob_pct'] = to_float(player['LOB%']) * 100.0
+                    stats_dict['gb_pct'] = to_float(player['GB%']) * 100.0
+                    stats_dict['hr_fb'] = to_float(player['HR/FB'])
+                    stats_dict['era'] = to_float(player['ERA'])
+                    stats_dict['fip'] = to_float(player['FIP'])
+                    stats_dict['xfip'] = to_float(player['xFIP'])
+
+                obj.set_stats(stats_dict)
+                obj.save()
+
+
+def get_fg_roster_files():
+    teams = settings.ROSTER_TEAM_IDS
+
+    for team_id, team_abbrev, team_name in teams:
+
+        url = f"https://cdn.fangraphs.com/api/depth-charts/roster?teamid={team_id}"
+        roster = requests.get(url, verify=False).json()
+
+        with open(f"data/rosters/{team_abbrev}_roster.json", "w") as writefile:
+            writefile.write(json.dumps(roster))
+
+
+def import_players_from_rosters():
+    teams = settings.ROSTER_TEAM_IDS
+
+    for team_id, team_abbrev, team_name in teams:
+
+        with open(f"data/rosters/{team_abbrev}_roster.json", "r") as readfile:
+
+            roster = json.loads(readfile.read())
+
+            for player in roster:
+
+                if player.get("minormasterid", None) and player.get("playerid1", None):
+
+                    try:
+                        models.Player.objects.get(fg_id=player["minormasterid"]).update(fg_id=player['playerid1'])
+
+                    except:
+                        pass
+
+
+def parse_roster_info():
+
+    teams = settings.ROSTER_TEAM_IDS
+    for team_id, team_abbrev, team_name in teams:
+        with open(f"data/rosters/{team_abbrev}_roster.json", "r") as readfile:
+            roster = json.loads(readfile.read())
+            for player in roster:
+                p = None
+                try:
+                    try:
+                        p = models.Player.objects.get(fg_id=player["playerid1"])
+                    except:
+                        try:
+                            p = models.Player.objects.get(
+                                fg_id=player["minormasterid"]
+                            )
+                        except:
+                            pass
+
+                    if p:
+                        if player.get('mlevel', None):
+                            p.role = player["mlevel"]
+                        elif player.get('role', None):
+                            if player['role'] != '':
+                                p.role = player["role"]
+
+                        if p.role == "MLB":
+                            p.ls_is_mlb = True
+                            p.is_mlb = True
+
+                        if "pp" in player["type"]:
+                            p.is_player_pool = True
+
+                        if player["type"] == "mlb-tx-pp":
+                            p.is_player_pool = True
+
+                        if player["type"] == "mlb-tx-pt":
+                            p.is_player_pool = True
+
+                        if player["type"] == "mlb-bp":
+                            p.is_bullpen = True
+
+                        if player["type"] == "mlb-sp":
+                            p.is_starter = True
+
+                        if player["type"] == "mlb-bn":
+                            p.is_bench = True
+
+                        if player["type"] == "mlb-sl":
+                            p.is_starter = True
+
+                        if "il" in player["type"]:
+                            p.is_injured = True
+
+                        p.injury_description = player.get("injurynotes", None)
+                        p.mlbam_id = player.get("mlbamid1", None)
+                        p.mlb_team = team_name
+                        p.mlb_team_abbr = team_abbrev
+
+                        if player["roster40"] == "Y":
+                            p.is_mlb40man = True
+
+                        p.save()
+
+                except Exception as e:
+                    prto_int(f"error loading {player['player']}: {e}")
+
+def get_fg_major_hitter_season(season=None, timestamp=None, scriptname=None, hostname=None):
+
+    if not hostname:
+        hostname = get_hostname()
+
+    if not scriptname:
+        scriptname = get_scriptname()
+
+    if not timestamp:
+        timestamp = generate_timestamp()
+
+    if not season:
+        season = settings.CURRENT_SEASON
+
+    url = f"https://www.fangraphs.com/leaders.aspx?pos=all&stats=bat&lg=all&qual=0&type=c,6,-1,312,305,309,306,307,308,310,311,-1,23,315,-1,38,316,-1,50,317,7,8,9,10,11,12,13,14,21,23,34,35,37,38,39,40,41,50,52,57,58,61,62,5&season={season}&month=0&season1={season}&ind=0&team=0&rost=0&age=0&filter=&players=0&startdate={season}-01-01&enddate={season}-12-31&sort=3,d&page=1_5000"
+    
+    rows = get_fg_results(url)
+
+    for row in rows:
+        h = row.select("td")
+        stats_dict = {}
+
+        stats_dict['year'] = season
+        stats_dict['type'] = "majors"
+        stats_dict['timestamp'] = timestamp
+        stats_dict['level'] = "mlb"
+        stats_dict['side'] = "hit"
+        stats_dict['script'] = scriptname
+        stats_dict['host'] = hostname
+        stats_dict['slug'] = f"{stats_dict['year']}-{stats_dict['type']}"
+
+        obj = models.Player.objects.filter(
+            fg_id=h[1]
+            .select("a")[0]
+            .attrs["href"]
+            .split("playerid=")[1]
+            .split("&")[0]
+        )
+
+        if obj.count() > 0:
+            obj = obj[0]
+
+            stats_dict['hits'] = to_int(h[18].text)
+            stats_dict['2b'] = to_int(h[20].text)
+            stats_dict['3b'] = to_int(h[21].text)
+            stats_dict['hr'] = to_int(h[22].text)
+            stats_dict['sb'] = to_int(h[26].text)
+            stats_dict['runs'] = to_int(h[23].text)
+            stats_dict['rbi'] = to_int(h[24].text)
+            stats_dict['wrc_plus'] = to_int(h[39].text)
+            stats_dict['plate_appearances'] = to_int(h[3].text)
+            stats_dict['ab'] = to_int(h[41].text)
+
+            stats_dict['avg'] = to_float(h[12].text)
+            stats_dict['xavg'] = to_float(h[13].text)
+            stats_dict['obp'] = to_float(h[30].text)
+            stats_dict['slg'] = to_float(h[14].text)
+            stats_dict['xslg'] = to_float(h[15].text)
+            stats_dict['babip'] = to_float(h[34].text)
+            stats_dict['iso'] = to_float(h[33].text)
+            stats_dict['k_pct'] = to_float(h[29].text.replace('%', ''))
+            stats_dict['bb_pct'] = to_float(h[28].text.replace('%', ''))
+            stats_dict['xwoba'] = to_float(h[17].text)
+
+            obj.set_stats(stats_dict)
+            obj.save()
+
+
+def get_fg_major_pitcher_season(season=None, timestamp=None, scriptname=None, hostname=None):
+
+    if not hostname:
+        hostname = get_hostname()
+
+    if not scriptname:
+        scriptname = get_scriptname()
+
+    if not timestamp:
+        timestamp = generate_timestamp()
+
+    if not season:
+        season = settings.CURRENT_SEASON
+
+    url = f"https://www.fangraphs.com/leaders.aspx?pos=all&stats=pit&lg=all&qual=2&type=c,4,5,11,7,8,13,-1,24,19,15,18,36,37,40,43,44,48,51,-1,240,-1,6,332,45,62,122,-1,59,17&season={season}&month=0&season1={season}&ind=0&team=0&rost=0&age=0&filter=&players=0&startdate={season}-01-01&enddate={season}-12-31&sort=8,d&page=1_5000"
+
+    rows = get_fg_results(url)
+
+    for row in rows:
+        h = row.select("td")
+        stats_dict = {}
+
+        stats_dict['year'] = season
+        stats_dict['type'] = "majors"
+        stats_dict['timestamp'] = timestamp
+        stats_dict['level'] = "mlb"
+        stats_dict['side'] = "pitch"
+        stats_dict['script'] = scriptname
+        stats_dict['host'] = hostname
+        stats_dict['slug'] = f"{stats_dict['year']}-{stats_dict['type']}"
+
+        obj = models.Player.objects.filter(
+            fg_id=h[1]
+            .select("a")[0]
+            .attrs["href"]
+            .split("playerid=")[1]
+            .split("&")[0]
+        )
+
+        if obj.count() > 0:
+            obj = obj[0]
+
+            stats_dict['g'] = to_int(h[6].text)
+            stats_dict['gs'] = to_int(h[7].text)
+            stats_dict['k'] = to_int(h[9].text)
+            stats_dict['bb'] = to_int(h[10].text)
+            stats_dict['ha'] = to_int(h[11].text)
+            stats_dict['hra'] = to_int(h[12].text)
+            stats_dict['ip'] = to_float(h[8].text.replace('%', ''))
+            stats_dict['k_9'] = to_float(h[13].text.replace('%', ''))
+            stats_dict['bb_9'] = to_float(h[14].text.replace('%', ''))
+            stats_dict['hr_9'] = to_float(h[15].text.replace('%', ''))
+            stats_dict['lob_pct'] = to_float(h[17].text.replace('%', ''))
+            stats_dict['gb_pct'] = to_float(h[18].text.replace('%', ''))
+            stats_dict['hr_fb'] = to_float(h[19].text.replace('%', ''))
+            stats_dict['era'] = to_float(h[21].text.replace('%', ''))
+            stats_dict['fip'] = to_float(h[23].text.replace('%', ''))
+            stats_dict['xfip'] = to_float(h[24].text.replace('%', ''))
+            stats_dict['siera'] = to_float(h[25].text.replace('%', ''))
+            stats_dict['er'] = to_float(h[27].text.replace('%', ''))
+
+            obj.set_stats(stats_dict)
+            obj.save()
+
+# def aggregate_team_stats_season(self):
+#     def set_hitters(team):
+#         for field in [
+#             "ls_hits",
+#             "ls_2b",
+#             "ls_3b",
+#             "ls_hr",
+#             "ls_sb",
+#             "ls_runs",
+#             "ls_rbi",
+#             "ls_plate_appearances",
+#             "ls_ab",
+#             "ls_bb",
+#             "ls_k",
+#         ]:
+#             setattr(
+#                 team,
+#                 field,
+#                 models.Player.objects.filter(role="MLB", team=team)
+#                 .exclude(position="P")
+#                 .aggregate(Sum(field))[f"{field}__sum"],
+#             )
+
+#         team.ls_avg = to_float(team.ls_hits) / to_float(team.ls_ab)
+#         team.ls_obp = (team.ls_hits + team.ls_bb) / to_float(team.ls_plate_appearances)
+#         teamtb = (
+#             (team.ls_hits - team.ls_hr - team.ls_2b - team.ls_3b)
+#             + (team.ls_2b * 2)
+#             + (team.ls_3b * 3)
+#             + (team.ls_hr * 4)
+#         )
+#         team.ls_slg = teamtb / to_float(team.ls_plate_appearances)
+#         team.ls_iso = team.ls_slg - team.ls_avg
+#         team.ls_k_pct = team.ls_k / to_float(team.ls_plate_appearances)
+#         team.ls_bb_pct = team.ls_bb / to_float(team.ls_plate_appearances)
+
+#     def set_pitchers(team):
+#         for field in [
+#             "ls_g",
+#             "ls_gs",
+#             "ls_ip",
+#             "ls_pk",
+#             "ls_pbb",
+#             "ls_ha",
+#             "ls_hra",
+#             "ls_er",
+#         ]:
+#             setattr(
+#                 team,
+#                 field,
+#                 models.Player.objects.filter(role="MLB", team=team).aggregate(
+#                     Sum(field)
+#                 )[f"{field}__sum"],
+#             )
+
+#         team.ls_era = (team.ls_er / to_float(team.ls_ip)) * 9.0
+#         team.ls_k_9 = (team.ls_pk / to_float(team.ls_ip)) * 9.0
+#         team.ls_bb_9 = (team.ls_pbb / to_float(team.ls_ip)) * 9.0
+#         team.ls_hr_9 = (team.ls_hra / to_float(team.ls_ip)) * 9.0
+#         team.ls_hits_9 = (team.ls_ha / to_float(team.ls_ip)) * 9.0
+#         team.ls_whip = (team.ls_ha + team.ls_bb) / to_float(team.ls_ip)
+
+#     for team in models.Team.objects.all():
+#         set_hitters(team)
+#         set_pitchers(team)
+#         team.save()
