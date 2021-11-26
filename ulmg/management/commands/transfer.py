@@ -1,53 +1,79 @@
 from django.core.management.base import BaseCommand, CommandError
 
-from ulmg import models
+from ulmg import models, utils
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
-        for obj in models.Player.objects.filter(ls_is_mlb=True):
-            obj.py_is_mlb = obj.ls_is_mlb
-            obj.py_hits = obj.ls_hits
-            obj.py_2b = obj.ls_2b
-            obj.py_3b = obj.ls_3b
-            obj.py_ab = obj.ls_ab
-            obj.py_hr = obj.ls_hr
-            obj.py_sb = obj.ls_sb
-            obj.py_runs = obj.ls_runs
-            obj.py_rbi = obj.ls_rbi
-            obj.py_k = obj.ls_k
-            obj.py_bb = obj.ls_bb
-            obj.py_avg = obj.ls_avg
-            obj.py_obp = obj.ls_obp
-            obj.py_slg = obj.ls_slg
-            obj.py_babip = obj.ls_babip
-            obj.py_wrc_plus = obj.ls_wrc_plus
-            obj.py_plate_appearances = obj.ls_plate_appearances
-            obj.py_iso = obj.ls_iso
-            obj.py_k_pct = obj.ls_k_pct
-            obj.py_bb_pct = obj.ls_bb_pct
-            obj.py_woba = obj.ls_woba
-            obj.py_g = obj.ls_g
-            obj.py_gs = obj.ls_gs
-            obj.py_ip = obj.ls_ip
-            obj.py_pk = obj.ls_pk
-            obj.py_pbb = obj.ls_pbb
-            obj.py_ha = obj.ls_ha
-            obj.py_hra = obj.ls_hra
-            obj.py_er = obj.ls_er
-            obj.py_k_9 = obj.ls_k_9
-            obj.py_bb_9 = obj.ls_bb_9
-            obj.py_hr_9 = obj.ls_hr_9
-            obj.py_lob_pct = obj.ls_lob_pct
-            obj.py_gb_pct = obj.ls_gb_pct
-            obj.py_hr_fb = obj.ls_hr_fb
-            obj.py_era = obj.ls_era
-            obj.py_fip = obj.ls_fip
-            obj.py_xfip = obj.ls_xfip
-            obj.py_siera = obj.ls_siera
-            obj.py_xavg = obj.ls_xavg
-            obj.py_xwoba = obj.ls_xwoba
-            obj.py_xslg = obj.ls_xslg
-            obj.py_xavg_diff = obj.ls_xavg_diff
-            obj.py_xwoba_diff = obj.ls_xwoba_diff
-            obj.py_xslg_diff = obj.ls_xslg_diff
+
+        hostname = utils.get_hostname()
+        scriptname = utils.get_scriptname()
+        timestamp = utils.generate_timestamp()
+        season = 2020
+
+        for obj in models.Player.objects.filter(py_is_mlb=True, py_ab__gte=1):
+
+            stats_dict = {}
+
+            stats_dict['year'] = season
+            stats_dict['type'] = "strat-imagined"
+            stats_dict['timestamp'] = timestamp
+            stats_dict['level'] = "mlb"
+            stats_dict['side'] = "hit"
+            stats_dict['script'] = scriptname
+            stats_dict['host'] = hostname
+            stats_dict['slug'] = f"{stats_dict['year']}-{stats_dict['type']}"
+
+            stats_dict['hits'] = obj.py_hits
+            stats_dict['2b'] = obj.py_2b
+            stats_dict['3b'] = obj.py_3b
+            stats_dict['ab'] = obj.py_ab
+            stats_dict['hr'] = obj.py_hr
+            stats_dict['sb'] = obj.py_sb
+            stats_dict['runs'] = obj.py_runs
+            stats_dict['rbi'] = obj.py_rbi
+            stats_dict['k'] = obj.py_k
+            stats_dict['bb'] = obj.py_bb
+            stats_dict['avg'] = utils.to_float(obj.py_avg)
+            stats_dict['obp'] = utils.to_float(obj.py_obp)
+            stats_dict['slg'] = utils.to_float(obj.py_slg)
+            stats_dict['babip'] = utils.to_float(obj.py_babip)
+            stats_dict['wrc_plus'] = utils.to_float(obj.py_wrc_plus)
+            stats_dict['plate_appearances'] = obj.py_plate_appearances
+            stats_dict['iso'] = utils.to_float(obj.py_iso)
+            stats_dict['k_pct'] = utils.to_float(obj.py_k_pct)
+            stats_dict['bb_pct'] = utils.to_float(obj.py_bb_pct)
+
+            obj.set_stats(stats_dict)
+            obj.save()
+
+        for obj in models.Player.objects.filter(py_is_mlb=True, py_g__gte=1):
+
+            stats_dict = {}
+
+            stats_dict['year'] = season
+            stats_dict['type'] = "strat-imagined"
+            stats_dict['timestamp'] = timestamp
+            stats_dict['level'] = "mlb"
+            stats_dict['side'] = "pitch"
+            stats_dict['script'] = scriptname
+            stats_dict['host'] = hostname
+            stats_dict['slug'] = f"{stats_dict['year']}-{stats_dict['type']}"
+
+            stats_dict['g'] = obj.py_g
+            stats_dict['gs'] = obj.py_gs
+            stats_dict['ip'] = obj.py_ip
+            stats_dict['pk'] = obj.py_pk
+            stats_dict['pbb'] = obj.py_pbb
+            stats_dict['ha'] = obj.py_ha
+            stats_dict['hra'] = obj.py_hra
+            stats_dict['er'] = obj.py_er
+            stats_dict['k_9'] = utils.to_float(obj.py_k_9)
+            stats_dict['bb_9'] = utils.to_float(obj.py_bb_9)
+            stats_dict['hr_9'] = utils.to_float(obj.py_hr_9)
+            stats_dict['lob_pct'] = utils.to_float(obj.py_lob_pct)
+            stats_dict['gb_pct'] = utils.to_float(obj.py_gb_pct)
+            stats_dict['hr_fb'] = utils.to_float(obj.py_hr_fb)
+            stats_dict['era'] = utils.to_float(obj.py_era)
+
+            obj.set_stats(stats_dict)
             obj.save()
