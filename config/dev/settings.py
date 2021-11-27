@@ -74,6 +74,8 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",},
 ]
 
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
+
 # LOGIN STUFF
 LOGIN_REDIRECT_URL = "/"
 LOGIN_URL = "/accounts/login/"
@@ -90,7 +92,7 @@ TEAM_ROSTER_TAB = False
 TEAM_LIVE_TAB = False
 
 TEAM_SEASON_HALF = "1h"
-CURRENT_SEASON = 2021
+CURRENT_SEASON = 2022
 CURRENT_SEASON_TYPE = "offseason"
 
 ROSTER_TEAM_IDS = [

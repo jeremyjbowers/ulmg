@@ -22,10 +22,20 @@ from ulmg import models
 
 
 def to_int(might_int, default=None):
+    if type(might_int) is int:
+        return might_int
+
+    if type(might_int) is str:
+        try:
+            return int(might_int.strip().replace('\xa0', ''))
+        except:
+            pass
+
     try:
-        return int(might_int.strip().replace('\xa0', ''))
+        return int(might_int)
     except:
         pass
+
 
     if default:
         return default
@@ -64,7 +74,7 @@ def get_hostname():
 
 
 def generate_timestamp():
-    return to_int(datetime.now().timestamp())
+    return int(datetime.now().timestamp())
 
 
 def send_email(from_email=None, to_emails=[], text=None, subject=None):
@@ -353,7 +363,7 @@ def get_fg_minor_season(season=None, timestamp=None, scriptname=None, hostname=N
                 stats_dict['level'] = player['aLevel']
                 stats_dict['script'] = scriptname
                 stats_dict['host'] = hostname
-                stats_dict['slug'] = f"{stats_dict['year']}-{stats_dict['type']}"
+                stats_dict['slug'] = f"{stats_dict['year']}_{stats_dict['type']}"
 
                 if k == "bat":
                     stats_dict['side'] = "hit"
@@ -526,7 +536,7 @@ def get_fg_major_hitter_season(season=None, timestamp=None, scriptname=None, hos
         stats_dict['side'] = "hit"
         stats_dict['script'] = scriptname
         stats_dict['host'] = hostname
-        stats_dict['slug'] = f"{stats_dict['year']}-{stats_dict['type']}"
+        stats_dict['slug'] = f"{stats_dict['year']}_{stats_dict['type']}"
 
         obj = models.Player.objects.filter(
             fg_id=h[1]
@@ -594,7 +604,7 @@ def get_fg_major_pitcher_season(season=None, timestamp=None, scriptname=None, ho
         stats_dict['side'] = "pitch"
         stats_dict['script'] = scriptname
         stats_dict['host'] = hostname
-        stats_dict['slug'] = f"{stats_dict['year']}-{stats_dict['type']}"
+        stats_dict['slug'] = f"{stats_dict['year']}_{stats_dict['type']}"
 
         obj = models.Player.objects.filter(
             fg_id=h[1]
