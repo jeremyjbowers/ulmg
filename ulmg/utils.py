@@ -357,12 +357,12 @@ def get_fg_minor_season(season=None, timestamp=None, scriptname=None, hostname=N
                 obj = p[0]
 
                 stats_dict = {}
-                stats_dict['year'] = season
                 stats_dict['type'] = "minors"
                 stats_dict['timestamp'] = timestamp
                 stats_dict['level'] = player['aLevel']
                 stats_dict['script'] = scriptname
                 stats_dict['host'] = hostname
+                stats_dict['year'] = season
                 stats_dict['slug'] = f"{stats_dict['year']}_{stats_dict['type']}"
 
                 if k == "bat":
@@ -404,6 +404,11 @@ def get_fg_minor_season(season=None, timestamp=None, scriptname=None, hostname=N
                     stats_dict['fip'] = to_float(player['FIP'])
                     stats_dict['xfip'] = to_float(player['xFIP'])
 
+                obj.set_stats(stats_dict)
+                obj.save()
+
+                stats_dict['year'] = "current"
+                stats_dict['slug'] = "current"
                 obj.set_stats(stats_dict)
                 obj.save()
 
@@ -574,6 +579,11 @@ def get_fg_major_hitter_season(season=None, timestamp=None, scriptname=None, hos
             obj.set_stats(stats_dict)
             obj.save()
 
+            stats_dict['year'] = "current"
+            stats_dict['slug'] = "current"
+            obj.set_stats(stats_dict)
+            obj.save()
+
 
 def get_fg_major_pitcher_season(season=None, timestamp=None, scriptname=None, hostname=None):
 
@@ -636,6 +646,11 @@ def get_fg_major_pitcher_season(season=None, timestamp=None, scriptname=None, ho
             stats_dict['siera'] = to_float(h[25].text.replace('%', ''))
             stats_dict['er'] = to_float(h[27].text.replace('%', ''))
 
+            obj.set_stats(stats_dict)
+            obj.save()
+
+            stats_dict['year'] = "current"
+            stats_dict['slug'] = "current"
             obj.set_stats(stats_dict)
             obj.save()
 
