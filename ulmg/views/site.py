@@ -11,6 +11,7 @@ from django.conf import settings
 from django.contrib.auth.decorators import login_required
 
 import ujson as json
+from datetime import datetime
 
 from ulmg import models, utils
 
@@ -43,47 +44,36 @@ def prospect_ranking_list(request, year):
     return render(request, "prospect_ranking_list.html", context)
 
 
-def bowers_aa(request):
-    context = utils.build_context(request)
-    context["players"] = models.Player.objects.filter(b_important=True).order_by("b_rk")
-    context["next_hitters"] = (
-        models.Player.objects.filter(b_important=True, is_owned=False)
-        .exclude(position="P")
-        .order_by("b_rk")[0:10]
-    )
-    context["next_pitchers"] = models.Player.objects.filter(
-        b_important=True, is_owned=False, position="P"
-    ).order_by("b_rk")[0:10]
-    return render(request, "bowers_aa.html", context)
-
-
 def index(request):
     context = utils.build_context(request)
     context["teams"] = models.Team.objects.all()
+
+    season = datetime.today().year
+
+    if datetime.today().month < 4:
+        season = datetime.toda().year - 1
+
+    hitter_dict = {
+        "team__isnull": True,
+        f"stats__{season}_majors__plate_appearances__gte": 1
+    }
+
+    pitcher_dict = {
+        "team__isnull": True,
+        f"stats__{season}_majors__g__gte": 1,
+        "position": "P"
+    }
+
     context["hitters"] = (
-        models.Player.objects.filter(
-            Q(level="V", team__isnull=True, ls_plate_appearances__gte=1, ls_is_mlb=True)
-            | Q(
-                level__in=["A", "B"],
-                team__isnull=True,
-                ls_plate_appearances__gte=1,
-                ls_is_mlb=True,
-            )
-        )
+        models.Player.objects.filter(**hitter_dict)
         .exclude(position="P")
         .order_by("position", "-level_order", "last_name", "first_name")
     )
 
-    context["pitchers"] = models.Player.objects.filter(
-        Q(level="V", team__isnull=True, ls_ip__gte=1, position="P", ls_is_mlb=True)
-        | Q(
-            level__in=["A", "B"],
-            team__isnull=True,
-            ls_ip__gte=1,
-            position="P",
-            ls_is_mlb=True,
-        )
-    ).order_by("-level_order", "last_name", "first_name")
+    context["pitchers"] = (
+        models.Player.objects.filter(**pitcher_dict)
+        .order_by("-level_order", "last_name", "first_name")
+    )
 
     return render(request, "index.html", context)
 

@@ -21,7 +21,7 @@ class Command(BaseCommand):
             stats_dict['side'] = "hit"
             stats_dict['script'] = scriptname
             stats_dict['host'] = hostname
-            stats_dict['slug'] = f"{stats_dict['year']}-{stats_dict['type']}"
+            stats_dict['slug'] = f"{stats_dict['year']}_{stats_dict['type']}"
 
             stats_dict['hits'] = obj.py_hits
             stats_dict['2b'] = obj.py_2b
@@ -57,7 +57,7 @@ class Command(BaseCommand):
             stats_dict['side'] = "pitch"
             stats_dict['script'] = scriptname
             stats_dict['host'] = hostname
-            stats_dict['slug'] = f"{stats_dict['year']}-{stats_dict['type']}"
+            stats_dict['slug'] = f"{stats_dict['year']}_{stats_dict['type']}"
 
             stats_dict['g'] = obj.py_g
             stats_dict['gs'] = obj.py_gs

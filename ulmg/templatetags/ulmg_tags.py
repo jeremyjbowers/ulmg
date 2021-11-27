@@ -8,6 +8,13 @@ register = template.Library()
 def kill_leading_zero(value):
     if isinstance(value, Decimal):
         return str(value).replace("0.", ".")
+
+    if isinstance(value, float):
+        return str(value).replace("0.", ".")
+
+    if isinstance(value, str):
+        return value.replace("0.", ".")
+
     return value
 
 @register.filter(name="commafy")

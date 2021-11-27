@@ -5,46 +5,46 @@
 
 <td style="max-width:75px;">{% if p.defense_display %}{{ p.defense_display }}{% else %}{{ p.position }}{% endif %}</td>
 
-<td data-value="{{ p.ls_plate_appearances|default_if_none:"-999" }}">
-    {% if p.ls_plate_appearances > 0 %}{{ p.ls_plate_appearances|default_if_none:"-" }}{% else %}-{% endif %}
+<td data-value="{{ p.stats.2021_majors.plate_appearances|default_if_none:"-999" }}">
+    {% if p.stats.2021_majors.plate_appearances > 0 %}{{ p.stats.2021_majors.plate_appearances|default_if_none:"-" }}{% else %}-{% endif %}
 </td>
-<td data-value="{{ p.ls_avg|default_if_none:"-999" }}">
-    {% if p.ls_plate_appearances > 0 %}{{ p.ls_avg|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
+<td data-value="{{ p.stats.2021_majors.avg|default_if_none:"-999" }}">
+    {% if p.stats.2021_majors.plate_appearances > 0 %}{{ p.stats.2021_majors.avg|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
 </td>
-<td data-value="{{ p.ls_obp|default_if_none:"-999" }}">
-    {% if p.ls_plate_appearances > 0 %}{{ p.ls_obp|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
+<td data-value="{{ p.stats.2021_majors.obp|default_if_none:"-999" }}">
+    {% if p.stats.2021_majors.plate_appearances > 0 %}{{ p.stats.2021_majors.obp|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
 </td>
-<td data-value="{{ p.ls_slg|default_if_none:"-999" }}">
-    {% if p.ls_plate_appearances > 0 %}{{ p.ls_slg|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
+<td data-value="{{ p.stats.2021_majors.slg|default_if_none:"-999" }}">
+    {% if p.stats.2021_majors.plate_appearances > 0 %}{{ p.stats.2021_majors.slg|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
 </td>
-<td data-value="{{ p.ls_hr|default_if_none:"-999" }}">
-    {% if p.ls_plate_appearances > 0 %}{{ p.ls_hr|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
+<td data-value="{{ p.stats.2021_majors.hr|default_if_none:"-999" }}">
+    {% if p.stats.2021_majors.plate_appearances > 0 %}{{ p.stats.2021_majors.hr|default_if_none:"-" }}{% else %}-{% endif %}
 </td>
-<!-- <td data-value="{{ p.ls_runs|default_if_none:"-999" }}">
-    {% if p.ls_plate_appearances > 0 %}{{ p.ls_runs|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
+<!-- <td data-value="{{ p.stats.2021_majors.runs|default_if_none:"-999" }}">
+    {% if p.stats.2021_majors.plate_appearances > 0 %}{{ p.stats.2021_majors.runs|default_if_none:"-" }}{% else %}-{% endif %}
 </td>
-<td data-value="{{ p.ls_rbi|default_if_none:"-999" }}">
-    {% if p.ls_plate_appearances > 0 %}{{ p.ls_rbi|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
+<td data-value="{{ p.stats.2021_majors.rbi|default_if_none:"-999" }}">
+    {% if p.stats.2021_majors.plate_appearances > 0 %}{{ p.stats.2021_majors.rbi|default_if_none:"-" }}{% else %}-{% endif %}
 </td> -->
-<td data-value="{{ p.ls_sb|default_if_none:"-999" }}">
-    {% if p.ls_plate_appearances > 0 %}{{ p.ls_sb|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
+<td data-value="{{ p.stats.2021_majors.sb|default_if_none:"-999" }}">
+    {% if p.stats.2021_majors.plate_appearances > 0 %}{{ p.stats.2021_majors.sb|default_if_none:"-" }}{% else %}-{% endif %}
 </td>
-<td data-value="{{ p.ls_k_pct|default_if_none:"-999" }}">
-    {% if p.ls_plate_appearances > 0 %}{{ p.ls_k_pct|default_if_none:"-" }}{% else %}-{% endif %}
+<td data-value="{{ p.stats.2021_majors.k_pct|default_if_none:"-999" }}">
+    {% if p.stats.2021_majors.plate_appearances > 0 %}{{ p.stats.2021_majors.k_pct|floatformat:1|default_if_none:"-" }}{% else %}-{% endif %}
 </td>
-<td data-value="{{ p.ls_bb_pct|default_if_none:"-999" }}">
-    {% if p.ls_plate_appearances > 0 %}{{ p.ls_bb_pct|default_if_none:"-" }}{% else %}-{% endif %}
+<td data-value="{{ p.stats.2021_majors.bb_pct|default_if_none:"-999" }}">
+    {% if p.stats.2021_majors.plate_appearances > 0 %}{{ p.stats.2021_majors.bb_pct|floatformat:1|default_if_none:"-" }}{% else %}-{% endif %}
 </td>
-<td data-value="{{ p.ls_wrc_plus|default_if_none:"-999" }}">
-    {% if p.ls_plate_appearances > 0 %}{{ p.ls_wrc_plus|default_if_none:"-" }}{% else %}-{% endif %}
+<td data-value="{{ p.stats.2021_majors.wrc_plus|default_if_none:"-999" }}">
+    {% if p.stats.2021_majors.plate_appearances > 0 %}{{ p.stats.2021_majors.wrc_plus|default_if_none:"-" }}{% else %}-{% endif %}
 </td>
 
-<td data-value="{{ p.ls_xavg|default_if_none:"-999" }}">
-    {% if p.ls_plate_appearances > 0 and p.ls_xavg %}{{ p.ls_xavg|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
+<td data-value="{{ p.stats.2021_majors.xavg|default_if_none:"-999" }}">
+    {% if p.stats.2021_majors.plate_appearances > 0 and p.stats.2021_majors.xavg %}{{ p.stats.2021_majors.xavg|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
 </td>
-<td data-value="{{ p.ls_xwoba|default_if_none:"-999" }}">
-    {% if p.ls_plate_appearances > 0 and p.ls_xwoba %}{{ p.ls_xwoba|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
+<td data-value="{{ p.stats.2021_majors.xwoba|default_if_none:"-999" }}">
+    {% if p.stats.2021_majors.plate_appearances > 0 and p.stats.2021_majors.xwoba %}{{ p.stats.2021_majors.xwoba|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
 </td>
-<td data-value="{{ p.ls_xslg|default_if_none:"-999" }}">
-    {% if p.ls_plate_appearances > 0 and p.ls_xslg %}{{ p.ls_xslg|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
+<td data-value="{{ p.stats.2021_majors.xslg|default_if_none:"-999" }}">
+    {% if p.stats.2021_majors.plate_appearances > 0 and p.stats.2021_majors.xslg %}{{ p.stats.2021_majors.xslg|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
 </td>
