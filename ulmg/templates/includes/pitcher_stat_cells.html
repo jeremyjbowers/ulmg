@@ -2,13 +2,13 @@
 <td>{% if p.is_injured %}🚫{% endif %}</td>
 <td>{{ p.role|default_if_none:"" }}</td>
 
-<td data-value="{{ p.stats.2021_majors.g|default_if_none:"-999" }}">{% if p.stats.2021_majors.ip > 0 %}{{ p.stats.2021_majors.g|default_if_none:"-" }}{% else %}-{% endif %}</td>
-<td data-value="{{ p.stats.2021_majors.gs|default_if_none:"-999" }}">{% if p.stats.2021_majors.ip > 0 %}{{ p.stats.2021_majors.gs|default_if_none:"-" }}{% else %}-{% endif %}</td>
-<td data-value="{{ p.stats.2021_majors.ip|default_if_none:"-999" }}">{% if p.stats.2021_majors.ip > 0 %}{{ p.stats.2021_majors.ip|default_if_none:"-" }}{% else %}-{% endif %}</td>
-<td data-value="{{ p.stats.2021_majors.era|default_if_none:"999" }}">{% if p.stats.2021_majors.ip > 0 %}{{ p.stats.2021_majors.era|default_if_none:"-" }}{% else %}-{% endif %}</td>
-<td data-value="{{ p.stats.2021_majors.k_9|default_if_none:"-999" }}">{% if p.stats.2021_majors.ip > 0 %}{{ p.stats.2021_majors.k_9|default_if_none:"-" }}{% else %}-{% endif %}</td>
-<td data-value="{{ p.stats.2021_majors.bb_9|default_if_none:"999" }}">{% if p.stats.2021_majors.ip > 0 %}{{ p.stats.2021_majors.bb_9|default_if_none:"-" }}{% else %}-{% endif %}</td>
-<td data-value="{{ p.stats.2021_majors.hr_9|default_if_none:"999" }}">{% if p.stats.2021_majors.ip > 0 %}{{ p.stats.2021_majors.hr_9|default_if_none:"-" }}{% else %}-{% endif %}</td>
-<td data-value="{{ p.stats.2021_majors.fip|default_if_none:"999" }}">{% if p.stats.2021_majors.ip > 0 %}{{ p.stats.2021_majors.fip|default_if_none:"-" }}{% else %}-{% endif %}</td>
-<td data-value="{{ p.stats.2021_majors.xfip|default_if_none:"999" }}">{% if p.stats.2021_majors.ip > 0 %}{{ p.stats.2021_majors.xfip|default_if_none:"-" }}{% else %}-{% endif %}</td>
-<td data-value="{{ p.stats.2021_majors.siera|default_if_none:"999" }}">{% if p.stats.2021_majors.ip > 0 and p.stats.2021_majors.siera %}{{ p.ls_siera|default_if_none:"-" }}{% else %}-{% endif %}</td>
+<td data-value="{{ p.stats.current.g|default_if_none:"-999" }}">{% if p.stats.current.ip > 0 %}{{ p.stats.current.g|default_if_none:"-" }}{% else %}-{% endif %}</td>
+<td data-value="{{ p.stats.current.gs|default_if_none:"-999" }}">{% if p.stats.current.ip > 0 %}{{ p.stats.current.gs|default_if_none:"-" }}{% else %}-{% endif %}</td>
+<td data-value="{{ p.stats.current.ip|default_if_none:"-999" }}">{% if p.stats.current.ip > 0 %}{{ p.stats.current.ip|default_if_none:"-" }}{% else %}-{% endif %}</td>
+<td data-value="{{ p.stats.current.era|default_if_none:"999" }}">{% if p.stats.current.ip > 0 %}{{ p.stats.current.era|default_if_none:"-" }}{% else %}-{% endif %}</td>
+<td data-value="{{ p.stats.current.k_9|default_if_none:"-999" }}">{% if p.stats.current.ip > 0 %}{{ p.stats.current.k_9|default_if_none:"-" }}{% else %}-{% endif %}</td>
+<td data-value="{{ p.stats.current.bb_9|default_if_none:"999" }}">{% if p.stats.current.ip > 0 %}{{ p.stats.current.bb_9|default_if_none:"-" }}{% else %}-{% endif %}</td>
+<td data-value="{{ p.stats.current.hr_9|default_if_none:"999" }}">{% if p.stats.current.ip > 0 %}{{ p.stats.current.hr_9|default_if_none:"-" }}{% else %}-{% endif %}</td>
+<td data-value="{{ p.stats.current.fip|default_if_none:"999" }}">{% if p.stats.current.ip > 0 %}{{ p.stats.current.fip|default_if_none:"-" }}{% else %}-{% endif %}</td>
+<td data-value="{{ p.stats.current.xfip|default_if_none:"999" }}">{% if p.stats.current.ip > 0 %}{{ p.stats.current.xfip|default_if_none:"-" }}{% else %}-{% endif %}</td>
+<td data-value="{{ p.stats.current.siera|default_if_none:"999" }}">{% if p.stats.current.ip > 0 and p.stats.current.siera %}{{ p.ls_siera|default_if_none:"-" }}{% else %}-{% endif %}</td>
