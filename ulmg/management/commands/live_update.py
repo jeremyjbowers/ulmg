@@ -32,6 +32,8 @@ class Command(BaseCommand):
             "scriptname": utils.get_scriptname()
         }
 
+        # utils.reset_player_stats()
+
         utils.get_fg_roster_files()
         utils.import_players_from_rosters()
         utils.parse_roster_info()
