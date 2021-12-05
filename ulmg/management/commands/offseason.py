@@ -10,55 +10,13 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db.models import Count, Avg, Sum, Max, Min, Q
 from django.conf import settings
 
-from ulmg import models
+from ulmg import models, utils
 
 
 class Command(BaseCommand):
-    def set_carded(self, *args, **options):
-        print(".... setting carded status")
-        for p in models.Player.objects.filter(ls_is_mlb=True, is_carded=False):
-            p.is_carded = True
-            print(p)
-            if not options.get("dry_run", None):
-                p.save()
-
-    def load_hitters(self, *args, **options):
-        print(".... loading hitters")
-        with open("data/2022/hit.csv", "r") as readfile:
-            players = csv.DictReader(readfile)
-            for row in [dict(z) for z in players]:
-                try:
-                    p = models.Player.objects.get(fg_id=row["playerid"])
-                    p.cs_pa = row["PA"]
-                    print(p)
-                    if not options.get("dry_run", None):
-                        p.save()
-                except:
-                    pass
-
-    def load_pitchers(self, *args, **options):
-        print(".... loading pitchers")
-        with open("data/2022/pitch.csv", "r") as readfile:
-            players = csv.DictReader(readfile)
-            for row in [dict(z) for z in players]:
-                try:
-                    p = models.Player.objects.get(fg_id=row["playerid"])
-                    p.cs_st = row["GS"]
-                    p.cs_gp = row["G"]
-                    p.cs_ip = row["IP"]
-                    print(p)
-                    if not options.get("dry_run", None):
-                        p.save()
-                except:
-                    pass
-
-    def load_career_stats(self, *args, **options):
-        self.load_hitters()
-        self.load_pitchers()
-
     def set_levels(self, *args, **options):
         print("--------- STARTERS B > A ---------")
-        for p in models.Player.objects.filter(level="B", position="P", cs_st__gte=21):
+        for p in models.Player.objects.filter(level="B", position="P", stats__career__g=21):
             p.level = "A"
             print(p)
             if not options.get("dry_run", None):
@@ -66,7 +24,7 @@ class Command(BaseCommand):
 
         print("--------- RELIEVERS B > A ---------")
         for p in models.Player.objects.filter(
-            level="B", position="P", cs_gp__gte=31, cs_st=0
+            level="B", position="P", stats__career__g__gte=31, stats__career__gs=0
         ):
             p.level = "A"
             print(p)
@@ -74,7 +32,7 @@ class Command(BaseCommand):
                 p.save()
         print("--------- SWINGMEN B > A ---------")
         for p in models.Player.objects.filter(
-            level="B", position="P", cs_gp__gte=40, cs_st__gte=15
+            level="B", position="P", stats__career__g__gte=40, stats__career__gs__gte=15
         ):
             p.level = "A"
             print(p)
@@ -82,14 +40,14 @@ class Command(BaseCommand):
                 p.save()
 
         print("--------- HITTERS B > A ---------")
-        for p in models.Player.objects.filter(level="B", cs_pa__gte=300):
+        for p in models.Player.objects.filter(level="B", stats__career__pa__gte=300):
             p.level = "A"
             print(p)
             if not options.get("dry_run", None):
                 p.save()
 
         print("--------- STARTERS A > V ---------")
-        for p in models.Player.objects.filter(level="A", position="P", cs_st__gte=126):
+        for p in models.Player.objects.filter(level="A", position="P", stats__career__gs__gte=126):
             p.level = "V"
             print(p)
             if not options.get("dry_run", None):
@@ -97,7 +55,7 @@ class Command(BaseCommand):
 
         print("--------- RELIEVERS A > V ---------")
         for p in models.Player.objects.filter(
-            level="A", position="P", cs_gp__gte=201, cs_st=0
+            level="A", position="P", stats__career__g__gte=201, stats__career__gs=0
         ):
             p.level = "V"
             print(p)
@@ -106,7 +64,7 @@ class Command(BaseCommand):
 
         print("--------- SWINGMEN A > V ---------")
         for p in models.Player.objects.filter(
-            level="A", position="P", cs_gp__gte=220, cs_st__gte=30
+            level="A", position="P", stats__career__g__gte=220, stats__career__gs__gte=30
         ):
             p.level = "V"
             print(p)
@@ -114,27 +72,15 @@ class Command(BaseCommand):
                 p.save()
 
         print("--------- HITTERS A > V ---------")
-        for p in models.Player.objects.filter(level="A", cs_pa__gte=2500):
+        for p in models.Player.objects.filter(level="A", stats__career__pa__gte=2500):
             p.level = "V"
             print(p)
             if not options.get("dry_run", None):
                 p.save()
 
-    def reset_rosters(self, *args, **options):
-        print(".... resetting rosters")
-        if not options.get("dry_run", None):
-            models.Player.objects.filter(is_mlb_roster=True).update(is_mlb_roster=False)
-            models.Player.objects.filter(is_aaa_roster=True).update(is_aaa_roster=False)
-            models.Player.objects.filter(is_35man_roster=True).update(
-                is_35man_roster=False
-            )
-            models.Player.objects.filter(is_1h_c=True).update(is_1h_c=False)
-            models.Player.objects.filter(is_1h_p=True).update(is_1h_p=False)
-            models.Player.objects.filter(is_1h_pos=True).update(is_1h_pos=False)
-            models.Player.objects.filter(is_reserve=True).update(is_reserve=False)
 
     def handle(self, *args, **options):
-        self.reset_rosters()
+        utils.reset_rosters()
 
         # Unprotect all V and A players prior to the 35-man roster.
         models.Player.objects.filter(is_owned=True, level__in=["A", "V"]).update(
@@ -144,6 +90,7 @@ class Command(BaseCommand):
             is_owned=True, is_carded=False, level__in=["A", "V"]
         ).update(is_protected=True)
 
-        self.set_carded()
-        self.load_career_stats()
+        utils.set_carded()
+        utils.load_career_hit()
+        utils.load_career_pitch()
         self.set_levels(dry_run=True)

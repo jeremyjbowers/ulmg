@@ -20,9 +20,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         requests.packages.urllib3.disable_warnings()
 
-        season = settings.CURRENT_SEASON
-        if settings.CURRENT_SEASON_TYPE == "offseason":
-            season = season - 1
+        season = utils.get_current_season()
 
         script_info = {
             "season": season,
@@ -31,9 +29,9 @@ class Command(BaseCommand):
             "scriptname": utils.get_scriptname(),
         }
 
-        utils.get_fg_roster_files()
-        utils.import_players_from_rosters()
-        utils.parse_roster_info()
+        # utils.get_fg_roster_files()
+        # utils.import_players_from_rosters()
+        # utils.parse_roster_info()
 
         utils.get_fg_minor_season(**script_info)
         utils.get_fg_major_hitter_season(**script_info)

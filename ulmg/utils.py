@@ -1,3 +1,4 @@
+import csv
 import pickle
 import os.path
 import platform
@@ -19,6 +20,13 @@ import requests
 import ujson as json
 
 from ulmg import models
+
+
+def get_current_season():
+    season = settings.CURRENT_SEASON
+    if settings.CURRENT_SEASON_TYPE == "offseason":
+        season = season - 1
+    return season
 
 
 def to_int(might_int, default=None):
@@ -329,7 +337,9 @@ def get_fg_minor_season(season=None, timestamp=None, scriptname=None, hostname=N
         timestamp = generate_timestamp()
 
     if not season:
-        season = settings.CURRENT_SEASON
+        season = get_current_season()
+
+    print(f"{timestamp}\t{season}\tget_fg_minor_season")
 
     headers = {"accept": "application/json"}
 
@@ -401,9 +411,10 @@ def get_fg_minor_season(season=None, timestamp=None, scriptname=None, hostname=N
                 obj.set_stats(stats_dict)
                 obj.save()
 
-                stats_dict["year"] = "current"
-                stats_dict["slug"] = "current"
-                obj.set_stats(stats_dict)
+                current_dict = stats_dict.copy()
+                current_dict["slug"] = "current"
+
+                obj.set_stats(current_dict)
                 obj.save()
 
 
@@ -521,7 +532,9 @@ def get_fg_major_hitter_season(
         timestamp = generate_timestamp()
 
     if not season:
-        season = settings.CURRENT_SEASON
+        season = get_current_season()
+
+    print(f"{timestamp}\t{season}\tget_fg_major_hitter_season")
 
     url = f"https://www.fangraphs.com/leaders.aspx?pos=all&stats=bat&lg=all&qual=0&type=c,6,-1,312,305,309,306,307,308,310,311,-1,23,315,-1,38,316,-1,50,317,7,8,9,10,11,12,13,14,21,23,34,35,37,38,39,40,41,50,52,57,58,61,62,5&season={season}&month=0&season1={season}&ind=0&team=0&rost=0&age=0&filter=&players=0&startdate={season}-01-01&enddate={season}-12-31&sort=3,d&page=1_5000"
 
@@ -572,9 +585,10 @@ def get_fg_major_hitter_season(
             obj.set_stats(stats_dict)
             obj.save()
 
-            stats_dict["year"] = "current"
-            stats_dict["slug"] = "current"
-            obj.set_stats(stats_dict)
+            current_dict = stats_dict.copy()
+            current_dict["slug"] = "current"
+
+            obj.set_stats(current_dict)
             obj.save()
 
 
@@ -592,7 +606,9 @@ def get_fg_major_pitcher_season(
         timestamp = generate_timestamp()
 
     if not season:
-        season = settings.CURRENT_SEASON
+        season = get_current_season()
+
+    print(f"{timestamp}\t{season}\tget_fg_major_pitcher_season")
 
     url = f"https://www.fangraphs.com/leaders.aspx?pos=all&stats=pit&lg=all&qual=2&type=c,4,5,11,7,8,13,-1,24,19,15,18,36,37,40,43,44,48,51,-1,240,-1,6,332,45,62,122,-1,59,17&season={season}&month=0&season1={season}&ind=0&team=0&rost=0&age=0&filter=&players=0&startdate={season}-01-01&enddate={season}-12-31&sort=8,d&page=1_5000"
 
@@ -640,9 +656,10 @@ def get_fg_major_pitcher_season(
             obj.set_stats(stats_dict)
             obj.save()
 
-            stats_dict["year"] = "current"
-            stats_dict["slug"] = "current"
-            obj.set_stats(stats_dict)
+            current_dict = stats_dict.copy()
+            current_dict["slug"] = "current"
+
+            obj.set_stats(current_dict)
             obj.save()
 
 
@@ -712,3 +729,100 @@ def get_fg_major_pitcher_season(
 #         set_hitters(team)
 #         set_pitchers(team)
 #         team.save()
+
+def set_carded(*args, **options):
+    season = get_current_season()
+
+    if not options.get("dry_run", None):
+        models.Player.objects.all().update(is_carded=False)
+        models.Player.objects.filter(stats__current__year=season, stats__current__type="majors").update(is_carded=True)
+    else:
+        print(models.Player.objects.filter(stats__current__year=season).count())
+
+
+def reset_rosters(*args, **options):
+    if not options.get("dry_run", None):
+        models.Player.objects.filter(is_mlb_roster=True).update(is_mlb_roster=False)
+        models.Player.objects.filter(is_aaa_roster=True).update(is_aaa_roster=False)
+        models.Player.objects.filter(is_35man_roster=True).update(
+            is_35man_roster=False
+        )
+        models.Player.objects.filter(is_1h_c=True).update(is_1h_c=False)
+        models.Player.objects.filter(is_1h_p=True).update(is_1h_p=False)
+        models.Player.objects.filter(is_1h_pos=True).update(is_1h_pos=False)
+        models.Player.objects.filter(is_reserve=True).update(is_reserve=False)
+
+
+def load_career_hit(*args, **options):
+
+    hostname = get_hostname()
+    scriptname = get_scriptname()
+    timestamp = generate_timestamp()
+
+    print(f"{timestamp}\tcareer\tload_career_hit")
+
+    with open("data/career/hit.csv", "r") as readfile:
+        players = csv.DictReader(readfile)
+        for row in [dict(z) for z in players]:
+            try:
+                p = models.Player.objects.get(fg_id=row["playerid"])
+                if not p.stats.get('career', None):
+                    p.stats['career'] = {}
+                    p.stats['career']['pa'] = None
+
+                p.stats['career']["year"] = "career"
+                p.stats['career']["type"] = "majors"
+                p.stats['career']["timestamp"] = timestamp
+                p.stats['career']["level"] = "mlb"
+                p.stats['career']["side"] = "pitch"
+                p.stats['career']["script"] = scriptname
+                p.stats['career']["host"] = hostname
+                p.stats['career']["slug"] = f"{ p.stats['career']['year']}_{ p.stats['career']['type']}"
+
+                p.stats['career']['pa'] = int(row['PA'])
+
+                if not options.get("dry_run", None):
+                    p.save()
+
+            except:
+                pass
+
+
+def load_career_pitch(*args, **options):
+
+    hostname = get_hostname()
+    scriptname = get_scriptname()
+    timestamp = generate_timestamp()
+
+    print(f"{timestamp}\tcareer\tload_career_pitch")
+
+    with open("data/career/pitch.csv", "r") as readfile:
+        players = csv.DictReader(readfile)
+        for row in [dict(z) for z in players]:
+            try:
+                p = models.Player.objects.get(fg_id=row["playerid"])
+                if not p.stats.get('career', None):
+                    p.stats['career'] = {}
+
+                    p.stats['career']['gs'] = None
+                    p.stats['career']['g'] = None
+                    p.stats['career']['ip'] = None
+
+                p.stats['career']["year"] = "career"
+                p.stats['career']["type"] = "majors"
+                p.stats['career']["timestamp"] = timestamp
+                p.stats['career']["level"] = "mlb"
+                p.stats['career']["side"] = "pitch"
+                p.stats['career']["script"] = scriptname
+                p.stats['career']["host"] = hostname
+                p.stats['career']["slug"] = f"{ p.stats['career']['year']}_{ p.stats['career']['type']}"
+
+                p.stats['career']['gs'] = int(row["GS"])
+                p.stats['career']['g'] = int(row["G"])
+                p.stats['career']['ip'] = int(row["IP"].split('.')[0])
+
+                if not options.get("dry_run", None):
+                    p.save()
+
+            except:
+                pass
