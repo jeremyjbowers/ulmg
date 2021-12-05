@@ -15,7 +15,7 @@ class Command(BaseCommand):
             stats_dict = {}
 
             stats_dict['year'] = season
-            stats_dict['type'] = "strat-imagined"
+            stats_dict['type'] = "imagined"
             stats_dict['timestamp'] = timestamp
             stats_dict['level'] = "mlb"
             stats_dict['side'] = "hit"
@@ -51,7 +51,7 @@ class Command(BaseCommand):
             stats_dict = {}
 
             stats_dict['year'] = season
-            stats_dict['type'] = "strat-imagined"
+            stats_dict['type'] = "imagined"
             stats_dict['timestamp'] = timestamp
             stats_dict['level'] = "mlb"
             stats_dict['side'] = "pitch"

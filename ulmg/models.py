@@ -99,6 +99,19 @@ class Team(BaseModel):
     def __unicode__(self):
         return self.abbreviation
 
+
+    def to_api_obj(self):
+        payload = {
+            "city": self.city,
+            "abbreviation": self.abbreviation,
+            "nickname": self.nickname,
+            "division": self.division,
+            "owner": self.owner,
+            "owner_email": self.owner_email,
+        }
+        return payload
+
+
     def players(self):
         """
         List of Player models associated with this team.
@@ -458,6 +471,55 @@ class Player(BaseModel):
             self.fg_url = (
                 "https://www.fangraphs.com/statss.aspx?playerid=%s" % self.fg_id
             )
+
+
+    def to_api_obj(self):
+        payload = {
+            "level": self.level,
+            "name": self.name,
+            "position": self.position,
+            "age": self.age,
+            "bref_img": self.bref_img,
+            "ids": {
+                "ba_id": self.ba_id,
+                "mlbam_id": self.mlbam_id,
+                "mlb_dotcom": self.mlb_dotcom,
+                "bp_id": self.bp_id,
+                "bref_id": self.bref_id,
+                "fg_id": self.fg_id,
+                "fantrax_id": self.fantrax_id,
+                "ba_url": self.ba_url,
+                "bref_url": self.bref_url,
+                "fg_url": self.fg_url,
+                "mlb_dotcom_url": self.mlb_dotcom_url,
+                "fantrax_url": self.fantrax_url
+            },
+            "notes": self.notes,
+            "is_owned": self.is_owned,
+            "is_carded": self.is_carded,
+            "is_amateur": self.is_amateur,
+            "is_mlb_roster": self.is_mlb_roster,
+            "is_aaa_roster": self.is_aaa_roster,
+            "is_35man_roster": self.is_35man_roster,
+            "is_reserve": self.is_reserve,
+            "is_1h_p": self.is_1h_p,
+            "is_1h_c": self.is_1h_c,
+            "is_1h_pos": self.is_1h_pos,
+            "is_2h_p": self.is_2h_p,
+            "is_2h_c": self.is_2h_c,
+            "is_2h_pos": self.is_2h_pos,
+            "is_2h_draft": self.is_2h_draft,
+            "is_protected": self.is_protected,
+            "cannot_be_protected": self.cannot_be_protected,
+            "team": None,
+            "stats": self.stats
+        }
+
+        if self.team:
+            self.payload['team'] = self.team.to_api_obj()
+
+        return payload
+
 
     def to_dict(self):
         return {

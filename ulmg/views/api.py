@@ -541,6 +541,21 @@ def search(request):
 
 
 @csrf_exempt
+def player_detail(request):
+    if request.method == "GET":
+        if request.GET.get('id_type', None):
+            if request.GET.get('playerid', None):
+                id_type = request.GET['id_type']
+                playerid = request.GET['playerid']
+
+                search_dict = {id_type: playerid}
+                p = models.Player.objects.get(**search_dict)
+                return JsonResponse(p.to_api_obj())
+    return None
+
+
+
+@csrf_exempt
 def player_owned(request):
     if request.method == "POST":
         if request.POST.get("text", None):
