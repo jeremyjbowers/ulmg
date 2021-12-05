@@ -55,13 +55,13 @@ def index(request):
 
     hitter_dict = {
         "team__isnull": True,
-        f"stats__{season}_majors__plate_appearances__gte": 1
+        f"stats__{season}_majors__plate_appearances__gte": 1,
     }
 
     pitcher_dict = {
         "team__isnull": True,
         f"stats__{season}_majors__g__gte": 1,
-        "position": "P"
+        "position": "P",
     }
 
     context["hitters"] = (
@@ -70,9 +70,8 @@ def index(request):
         .order_by("position", "-level_order", "last_name", "first_name")
     )
 
-    context["pitchers"] = (
-        models.Player.objects.filter(**pitcher_dict)
-        .order_by("-level_order", "last_name", "first_name")
+    context["pitchers"] = models.Player.objects.filter(**pitcher_dict).order_by(
+        "-level_order", "last_name", "first_name"
     )
 
     return render(request, "index.html", context)
@@ -81,7 +80,9 @@ def index(request):
 def player(request, playerid):
     context = utils.build_context(request)
     context["p"] = models.Player.objects.get(id=playerid)
-    context["trades"] = models.TradeReceipt.objects.filter(players__id=playerid).order_by('-trade__date')
+    context["trades"] = models.TradeReceipt.objects.filter(
+        players__id=playerid
+    ).order_by("-trade__date")
     context["drafted"] = models.DraftPick.objects.filter(player__id=playerid)
     return render(request, "player_detail.html", context)
 
@@ -93,12 +94,12 @@ def team_detail(request, abbreviation):
     )
     if request.user.is_authenticated:
         owner = models.Owner.objects.get(user=request.user)
-        if owner.team() == context['team']:
-            context['own_team'] = True
+        if owner.team() == context["team"]:
+            context["own_team"] = True
         else:
-            context['own_team'] = False
+            context["own_team"] = False
     else:
-        context['own_team'] = False
+        context["own_team"] = False
 
     team_players = models.Player.objects.filter(team=context["team"])
     hitters = team_players.exclude(position="P").order_by(
@@ -108,33 +109,46 @@ def team_detail(request, abbreviation):
         "-level_order", "-is_carded", "last_name", "first_name"
     )
 
-
     position_groups = (
         team_players.exclude(position="P")
-            .order_by('position')
-            .values('position')
-            .annotate(Count('position'))
+        .order_by("position")
+        .values("position")
+        .annotate(Count("position"))
     )
 
     carded_pa = (
-        team_players.exclude(position="P").filter(is_carded=True)
-            .order_by('position')
-            .values('position')
-            .annotate(Sum('py_plate_appearances'))
+        team_players.exclude(position="P")
+        .filter(is_carded=True)
+        .order_by("position")
+        .values("position")
+        .annotate(Sum("py_plate_appearances"))
     )
-    carded_positions = [x['position'] for x in carded_pa]
-    
+    carded_positions = [x["position"] for x in carded_pa]
+
     current_pa = (
-        team_players.exclude(position="P").filter(ls_is_mlb=True)
-            .order_by('position')
-            .values('position')
-            .annotate(Sum('ls_plate_appearances'))
+        team_players.exclude(position="P")
+        .filter(ls_is_mlb=True)
+        .order_by("position")
+        .values("position")
+        .annotate(Sum("ls_plate_appearances"))
     )
-    current_positions = [x['position'] for x in current_pa]
+    current_positions = [x["position"] for x in current_pa]
 
     for pos in position_groups:
-        pos['carded_pa'] = carded_pa[carded_positions.index(pos['position'])]['py_plate_appearances__sum'] if pos['position'] in carded_positions else 0
-        pos['current_pa'] = current_pa[current_positions.index(pos['position'])]['ls_plate_appearances__sum'] if pos['position'] in current_positions else 0
+        pos["carded_pa"] = (
+            carded_pa[carded_positions.index(pos["position"])][
+                "py_plate_appearances__sum"
+            ]
+            if pos["position"] in carded_positions
+            else 0
+        )
+        pos["current_pa"] = (
+            current_pa[current_positions.index(pos["position"])][
+                "ls_plate_appearances__sum"
+            ]
+            if pos["position"] in current_positions
+            else 0
+        )
 
     context["35_roster_count"] = team_players.filter(is_35man_roster=True).count()
     context["mlb_roster_count"] = team_players.filter(
@@ -183,15 +197,15 @@ def team_other(request, abbreviation):
     context = utils.build_context(request)
     team = get_object_or_404(models.Team, abbreviation__icontains=abbreviation)
     context["team"] = team
-    
+
     if request.user.is_authenticated:
         owner = models.Owner.objects.get(user=request.user)
-        if owner.team() == context['team']:
-            context['own_team'] = True
+        if owner.team() == context["team"]:
+            context["own_team"] = True
         else:
-            context['own_team'] = False
+            context["own_team"] = False
     else:
-        context['own_team'] = False
+        context["own_team"] = False
 
     team_players = models.Player.objects.filter(team=context["team"])
     context["level_distribution"] = (

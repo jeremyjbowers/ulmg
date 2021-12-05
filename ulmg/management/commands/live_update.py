@@ -17,22 +17,19 @@ from ulmg import models, utils
 
 
 class Command(BaseCommand):
-
     def handle(self, *args, **options):
-        requests.packages.urllib3.disable_warnings() 
+        requests.packages.urllib3.disable_warnings()
 
         season = settings.CURRENT_SEASON
         if settings.CURRENT_SEASON_TYPE == "offseason":
-            season = season - 1 
+            season = season - 1
 
         script_info = {
             "season": season,
             "timestamp": utils.generate_timestamp(),
             "hostname": utils.get_hostname(),
-            "scriptname": utils.get_scriptname()
+            "scriptname": utils.get_scriptname(),
         }
-
-        # utils.reset_player_stats()
 
         utils.get_fg_roster_files()
         utils.import_players_from_rosters()

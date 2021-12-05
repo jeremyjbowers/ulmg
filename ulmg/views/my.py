@@ -43,7 +43,7 @@ def my_team(request):
     #         .annotate(Sum('py_plate_appearances'))
     # )
     # carded_positions = [x['position'] for x in carded_pa]
-    
+
     # current_pa = (
     #     team_players.exclude(position="P").filter(ls_is_mlb=True)
     #         .order_by('position')
@@ -72,7 +72,7 @@ def my_team(request):
     # context["combined_pa"] = position_groups
     # return render(request, "my/team.html", context)
     team = get_object_or_404(models.Team, owner_obj=context["owner"])
-    return redirect(f'/teams/{ team.abbreviation }/')
+    return redirect(f"/teams/{ team.abbreviation }/")
 
 
 @login_required
@@ -115,12 +115,8 @@ def my_wishlist(request, list_type):
         except:
             pass
 
-        context["op_hitters"] = sorted(
-            context["op_hitters"], key=lambda x: (x.rank)
-        )
-        context["op_pitchers"] = sorted(
-            context["op_pitchers"], key=lambda x: (x.rank)
-        )
+        context["op_hitters"] = sorted(context["op_hitters"], key=lambda x: (x.rank))
+        context["op_pitchers"] = sorted(context["op_pitchers"], key=lambda x: (x.rank))
 
     if list_type == "trade":
         for p in models.WishlistPlayer.objects.filter(wishlist=context["wishlist"]):

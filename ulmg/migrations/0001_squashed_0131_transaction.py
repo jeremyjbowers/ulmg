@@ -280,7 +280,10 @@ class Migration(migrations.Migration):
                     ),
                 ),
             ],
-            options={"abstract": False, "ordering": ["abbreviation"],},
+            options={
+                "abstract": False,
+                "ordering": ["abbreviation"],
+            },
         ),
         migrations.CreateModel(
             name="Player",
@@ -795,7 +798,9 @@ class Migration(migrations.Migration):
                 ("date", models.DateField()),
                 ("season", models.IntegerField(blank=True, null=True)),
             ],
-            options={"abstract": False,},
+            options={
+                "abstract": False,
+            },
         ),
         migrations.CreateModel(
             name="DraftPick",
@@ -914,7 +919,10 @@ class Migration(migrations.Migration):
                     ),
                 ),
             ],
-            options={"abstract": False, "ordering": ["-season", "trade_type"],},
+            options={
+                "abstract": False,
+                "ordering": ["-season", "trade_type"],
+            },
         ),
         migrations.CreateModel(
             name="TradeReceipt",
@@ -960,7 +968,9 @@ class Migration(migrations.Migration):
                     ),
                 ),
             ],
-            options={"abstract": False,},
+            options={
+                "abstract": False,
+            },
         ),
         migrations.CreateModel(
             name="ScoutingReport",
@@ -1006,7 +1016,9 @@ class Migration(migrations.Migration):
                 ),
                 ("report", models.TextField(blank=True)),
             ],
-            options={"abstract": False,},
+            options={
+                "abstract": False,
+            },
         ),
         migrations.CreateModel(
             name="Transaction",
@@ -1070,6 +1082,8 @@ class Migration(migrations.Migration):
                     ),
                 ),
             ],
-            options={"abstract": False,},
+            options={
+                "abstract": False,
+            },
         ),
     ]

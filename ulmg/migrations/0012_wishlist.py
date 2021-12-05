@@ -37,6 +37,8 @@ class Migration(migrations.Migration):
                 ),
                 ("players", models.ManyToManyField(to="ulmg.Player")),
             ],
-            options={"abstract": False,},
+            options={
+                "abstract": False,
+            },
         ),
     ]

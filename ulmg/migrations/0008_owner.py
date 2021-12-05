@@ -33,6 +33,8 @@ class Migration(migrations.Migration):
                 ("wins", models.IntegerField(blank=True, null=True)),
                 ("losses", models.IntegerField(blank=True, null=True)),
             ],
-            options={"abstract": False,},
+            options={
+                "abstract": False,
+            },
         ),
     ]
