@@ -475,6 +475,7 @@ class Player(BaseModel):
             "level": self.level,
             "name": self.name,
             "position": self.position,
+            "strat_defense": self.defense_display(),
             "age": self.age,
             "bref_img": self.bref_img,
             "ids": {
