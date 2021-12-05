@@ -12,7 +12,7 @@ SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", get_random_secret_key())
 
 DEBUG = True
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ["*"]
 
 DEVELOPMENT_MODE = True
 
@@ -29,9 +29,9 @@ AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY", None)
 AWS_DEFAULT_ACL = "public-read"
 AWS_STORAGE_BUCKET_NAME = "static-theulmg"
 AWS_S3_CUSTOM_DOMAIN = "static-theulmg.nyc3.cdn.digitaloceanspaces.com"
-AWS_LOCATION = 'static'
+AWS_LOCATION = "static"
 
-STATIC_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/{AWS_LOCATION}/'
-STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+STATIC_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/{AWS_LOCATION}/"
+STATICFILES_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
 
-INSTALLED_APPS = INSTALLED_APPS + ['storages']
+INSTALLED_APPS = INSTALLED_APPS + ["storages"]

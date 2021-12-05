@@ -11,7 +11,10 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RemoveField(model_name="wishlist", name="players",),
+        migrations.RemoveField(
+            model_name="wishlist",
+            name="players",
+        ),
         migrations.CreateModel(
             name="WishlistPlayer",
             fields=[
@@ -48,6 +51,8 @@ class Migration(migrations.Migration):
                     ),
                 ),
             ],
-            options={"abstract": False,},
+            options={
+                "abstract": False,
+            },
         ),
     ]

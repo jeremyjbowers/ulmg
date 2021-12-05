@@ -27,7 +27,7 @@ def to_int(might_int, default=None):
 
     if type(might_int) is str:
         try:
-            return int(might_int.strip().replace('\xa0', ''))
+            return int(might_int.strip().replace("\xa0", ""))
         except:
             pass
 
@@ -35,7 +35,6 @@ def to_int(might_int, default=None):
         return int(might_int)
     except:
         pass
-
 
     if default:
         return default
@@ -319,7 +318,7 @@ def get_fg_results(url):
 
 
 def get_fg_minor_season(season=None, timestamp=None, scriptname=None, hostname=None):
-    
+
     if not hostname:
         hostname = get_hostname()
 
@@ -332,24 +331,19 @@ def get_fg_minor_season(season=None, timestamp=None, scriptname=None, hostname=N
     if not season:
         season = settings.CURRENT_SEASON
 
-    headers = {
-        "accept": "application/json"
-    }
+    headers = {"accept": "application/json"}
 
-    players = {
-        'bat': [],
-        'pit': []
-    }
+    players = {"bat": [], "pit": []}
 
-    for k,v in players.items():
+    for k, v in players.items():
         url = f"https://www.fangraphs.com/api/leaders/minor-league/data?pos=all&lg=2,4,5,6,7,8,9,10,11,14,12,13,15,17,18,30,32,33&stats={k}&qual=5&type=0&team=&season={season}&seasonEnd={season}&org=&ind=0&splitTeam=false"
         r = requests.get(url, verify=False)
         players[k] += r.json()
 
-    for k,v in players.items():
+    for k, v in players.items():
         for player in v:
-            fg_id = player['playerids']
-            name = player['PlayerName']
+            fg_id = player["playerids"]
+            name = player["PlayerName"]
             p = models.Player.objects.filter(fg_id=fg_id)
             count = models.Player.objects.filter(fg_id=fg_id, ls_is_mlb=False).count()
 
@@ -357,58 +351,58 @@ def get_fg_minor_season(season=None, timestamp=None, scriptname=None, hostname=N
                 obj = p[0]
 
                 stats_dict = {}
-                stats_dict['type'] = "minors"
-                stats_dict['timestamp'] = timestamp
-                stats_dict['level'] = player['aLevel']
-                stats_dict['script'] = scriptname
-                stats_dict['host'] = hostname
-                stats_dict['year'] = season
-                stats_dict['slug'] = f"{stats_dict['year']}_{stats_dict['type']}"
+                stats_dict["type"] = "minors"
+                stats_dict["timestamp"] = timestamp
+                stats_dict["level"] = player["aLevel"]
+                stats_dict["script"] = scriptname
+                stats_dict["host"] = hostname
+                stats_dict["year"] = season
+                stats_dict["slug"] = f"{stats_dict['year']}_{stats_dict['type']}"
 
                 if k == "bat":
-                    stats_dict['side'] = "hit"
-                    stats_dict['hits'] = to_int(player['H'])
-                    stats_dict['2b'] = to_int(player['2B'])
-                    stats_dict['3b'] = to_int(player['3B'])
-                    stats_dict['hr'] = to_int(player['HR'])
-                    stats_dict['sb'] = to_int(player['SB'])
-                    stats_dict['runs'] = to_int(player['R'])
-                    stats_dict['rbi'] = to_int(player['RBI'])
-                    stats_dict['avg'] = to_float(player['AVG'])
-                    stats_dict['obp'] = to_float(player['OBP'])
-                    stats_dict['slg'] = to_float(player['SLG'])
-                    stats_dict['babip'] = to_float(player['BABIP'])
-                    stats_dict['wrc_plus'] = to_int(player['wRC+'])
-                    stats_dict['plate_appearances'] = to_int(player['PA'])
-                    stats_dict['iso'] = to_float(player['ISO'])
-                    stats_dict['k_pct'] = to_float(player['K%']) * 100.0
-                    stats_dict['bb_pct'] = to_float(player['BB%']) * 100.0
-                    stats_dict['woba'] = to_float(player['wOBA'])
+                    stats_dict["side"] = "hit"
+                    stats_dict["hits"] = to_int(player["H"])
+                    stats_dict["2b"] = to_int(player["2B"])
+                    stats_dict["3b"] = to_int(player["3B"])
+                    stats_dict["hr"] = to_int(player["HR"])
+                    stats_dict["sb"] = to_int(player["SB"])
+                    stats_dict["runs"] = to_int(player["R"])
+                    stats_dict["rbi"] = to_int(player["RBI"])
+                    stats_dict["avg"] = to_float(player["AVG"])
+                    stats_dict["obp"] = to_float(player["OBP"])
+                    stats_dict["slg"] = to_float(player["SLG"])
+                    stats_dict["babip"] = to_float(player["BABIP"])
+                    stats_dict["wrc_plus"] = to_int(player["wRC+"])
+                    stats_dict["plate_appearances"] = to_int(player["PA"])
+                    stats_dict["iso"] = to_float(player["ISO"])
+                    stats_dict["k_pct"] = to_float(player["K%"]) * 100.0
+                    stats_dict["bb_pct"] = to_float(player["BB%"]) * 100.0
+                    stats_dict["woba"] = to_float(player["wOBA"])
 
                 if k == "pit":
-                    stats_dict['side'] = "pitch"
-                    stats_dict['g'] = to_int(player['G'])
-                    stats_dict['gs'] = to_int(player['GS'])
-                    stats_dict['k'] = to_int(player['SO'])
-                    stats_dict['bb'] = to_int(player['BB'])
-                    stats_dict['ha'] = to_int(player['H'])
-                    stats_dict['hra'] = to_int(player['HR'])
-                    stats_dict['ip'] = to_float(player['IP'])
-                    stats_dict['k_9'] = to_float(player['K/9'])
-                    stats_dict['bb_9'] = to_float(player['BB/9'])
-                    stats_dict['hr_9'] = to_float(player['HR/9'])
-                    stats_dict['lob_pct'] = to_float(player['LOB%']) * 100.0
-                    stats_dict['gb_pct'] = to_float(player['GB%']) * 100.0
-                    stats_dict['hr_fb'] = to_float(player['HR/FB'])
-                    stats_dict['era'] = to_float(player['ERA'])
-                    stats_dict['fip'] = to_float(player['FIP'])
-                    stats_dict['xfip'] = to_float(player['xFIP'])
+                    stats_dict["side"] = "pitch"
+                    stats_dict["g"] = to_int(player["G"])
+                    stats_dict["gs"] = to_int(player["GS"])
+                    stats_dict["k"] = to_int(player["SO"])
+                    stats_dict["bb"] = to_int(player["BB"])
+                    stats_dict["ha"] = to_int(player["H"])
+                    stats_dict["hra"] = to_int(player["HR"])
+                    stats_dict["ip"] = to_float(player["IP"])
+                    stats_dict["k_9"] = to_float(player["K/9"])
+                    stats_dict["bb_9"] = to_float(player["BB/9"])
+                    stats_dict["hr_9"] = to_float(player["HR/9"])
+                    stats_dict["lob_pct"] = to_float(player["LOB%"]) * 100.0
+                    stats_dict["gb_pct"] = to_float(player["GB%"]) * 100.0
+                    stats_dict["hr_fb"] = to_float(player["HR/FB"])
+                    stats_dict["era"] = to_float(player["ERA"])
+                    stats_dict["fip"] = to_float(player["FIP"])
+                    stats_dict["xfip"] = to_float(player["xFIP"])
 
                 obj.set_stats(stats_dict)
                 obj.save()
 
-                stats_dict['year'] = "current"
-                stats_dict['slug'] = "current"
+                stats_dict["year"] = "current"
+                stats_dict["slug"] = "current"
                 obj.set_stats(stats_dict)
                 obj.save()
 
@@ -439,7 +433,9 @@ def import_players_from_rosters():
                 if player.get("minormasterid", None) and player.get("playerid1", None):
 
                     try:
-                        models.Player.objects.get(fg_id=player["minormasterid"]).update(fg_id=player['playerid1'])
+                        models.Player.objects.get(fg_id=player["minormasterid"]).update(
+                            fg_id=player["playerid1"]
+                        )
 
                     except:
                         pass
@@ -458,17 +454,15 @@ def parse_roster_info():
                         p = models.Player.objects.get(fg_id=player["playerid1"])
                     except:
                         try:
-                            p = models.Player.objects.get(
-                                fg_id=player["minormasterid"]
-                            )
+                            p = models.Player.objects.get(fg_id=player["minormasterid"])
                         except:
                             pass
 
                     if p:
-                        if player.get('mlevel', None):
+                        if player.get("mlevel", None):
                             p.role = player["mlevel"]
-                        elif player.get('role', None):
-                            if player['role'] != '':
+                        elif player.get("role", None):
+                            if player["role"] != "":
                                 p.role = player["role"]
 
                         if p.role == "MLB":
@@ -512,7 +506,10 @@ def parse_roster_info():
                 except Exception as e:
                     prto_int(f"error loading {player['player']}: {e}")
 
-def get_fg_major_hitter_season(season=None, timestamp=None, scriptname=None, hostname=None):
+
+def get_fg_major_hitter_season(
+    season=None, timestamp=None, scriptname=None, hostname=None
+):
 
     if not hostname:
         hostname = get_hostname()
@@ -527,65 +524,63 @@ def get_fg_major_hitter_season(season=None, timestamp=None, scriptname=None, hos
         season = settings.CURRENT_SEASON
 
     url = f"https://www.fangraphs.com/leaders.aspx?pos=all&stats=bat&lg=all&qual=0&type=c,6,-1,312,305,309,306,307,308,310,311,-1,23,315,-1,38,316,-1,50,317,7,8,9,10,11,12,13,14,21,23,34,35,37,38,39,40,41,50,52,57,58,61,62,5&season={season}&month=0&season1={season}&ind=0&team=0&rost=0&age=0&filter=&players=0&startdate={season}-01-01&enddate={season}-12-31&sort=3,d&page=1_5000"
-    
+
     rows = get_fg_results(url)
 
     for row in rows:
         h = row.select("td")
         stats_dict = {}
 
-        stats_dict['year'] = season
-        stats_dict['type'] = "majors"
-        stats_dict['timestamp'] = timestamp
-        stats_dict['level'] = "mlb"
-        stats_dict['side'] = "hit"
-        stats_dict['script'] = scriptname
-        stats_dict['host'] = hostname
-        stats_dict['slug'] = f"{stats_dict['year']}_{stats_dict['type']}"
+        stats_dict["year"] = season
+        stats_dict["type"] = "majors"
+        stats_dict["timestamp"] = timestamp
+        stats_dict["level"] = "mlb"
+        stats_dict["side"] = "hit"
+        stats_dict["script"] = scriptname
+        stats_dict["host"] = hostname
+        stats_dict["slug"] = f"{stats_dict['year']}_{stats_dict['type']}"
 
         obj = models.Player.objects.filter(
-            fg_id=h[1]
-            .select("a")[0]
-            .attrs["href"]
-            .split("playerid=")[1]
-            .split("&")[0]
+            fg_id=h[1].select("a")[0].attrs["href"].split("playerid=")[1].split("&")[0]
         )
 
         if obj.count() > 0:
             obj = obj[0]
 
-            stats_dict['hits'] = to_int(h[18].text)
-            stats_dict['2b'] = to_int(h[20].text)
-            stats_dict['3b'] = to_int(h[21].text)
-            stats_dict['hr'] = to_int(h[22].text)
-            stats_dict['sb'] = to_int(h[26].text)
-            stats_dict['runs'] = to_int(h[23].text)
-            stats_dict['rbi'] = to_int(h[24].text)
-            stats_dict['wrc_plus'] = to_int(h[39].text)
-            stats_dict['plate_appearances'] = to_int(h[3].text)
-            stats_dict['ab'] = to_int(h[41].text)
+            stats_dict["hits"] = to_int(h[18].text)
+            stats_dict["2b"] = to_int(h[20].text)
+            stats_dict["3b"] = to_int(h[21].text)
+            stats_dict["hr"] = to_int(h[22].text)
+            stats_dict["sb"] = to_int(h[26].text)
+            stats_dict["runs"] = to_int(h[23].text)
+            stats_dict["rbi"] = to_int(h[24].text)
+            stats_dict["wrc_plus"] = to_int(h[39].text)
+            stats_dict["plate_appearances"] = to_int(h[3].text)
+            stats_dict["ab"] = to_int(h[41].text)
 
-            stats_dict['avg'] = to_float(h[12].text)
-            stats_dict['xavg'] = to_float(h[13].text)
-            stats_dict['obp'] = to_float(h[30].text)
-            stats_dict['slg'] = to_float(h[14].text)
-            stats_dict['xslg'] = to_float(h[15].text)
-            stats_dict['babip'] = to_float(h[34].text)
-            stats_dict['iso'] = to_float(h[33].text)
-            stats_dict['k_pct'] = to_float(h[29].text.replace('%', ''))
-            stats_dict['bb_pct'] = to_float(h[28].text.replace('%', ''))
-            stats_dict['xwoba'] = to_float(h[17].text)
+            stats_dict["avg"] = to_float(h[12].text)
+            stats_dict["xavg"] = to_float(h[13].text)
+            stats_dict["obp"] = to_float(h[30].text)
+            stats_dict["slg"] = to_float(h[14].text)
+            stats_dict["xslg"] = to_float(h[15].text)
+            stats_dict["babip"] = to_float(h[34].text)
+            stats_dict["iso"] = to_float(h[33].text)
+            stats_dict["k_pct"] = to_float(h[29].text.replace("%", ""))
+            stats_dict["bb_pct"] = to_float(h[28].text.replace("%", ""))
+            stats_dict["xwoba"] = to_float(h[17].text)
 
             obj.set_stats(stats_dict)
             obj.save()
 
-            stats_dict['year'] = "current"
-            stats_dict['slug'] = "current"
+            stats_dict["year"] = "current"
+            stats_dict["slug"] = "current"
             obj.set_stats(stats_dict)
             obj.save()
 
 
-def get_fg_major_pitcher_season(season=None, timestamp=None, scriptname=None, hostname=None):
+def get_fg_major_pitcher_season(
+    season=None, timestamp=None, scriptname=None, hostname=None
+):
 
     if not hostname:
         hostname = get_hostname()
@@ -607,52 +602,49 @@ def get_fg_major_pitcher_season(season=None, timestamp=None, scriptname=None, ho
         h = row.select("td")
         stats_dict = {}
 
-        stats_dict['year'] = season
-        stats_dict['type'] = "majors"
-        stats_dict['timestamp'] = timestamp
-        stats_dict['level'] = "mlb"
-        stats_dict['side'] = "pitch"
-        stats_dict['script'] = scriptname
-        stats_dict['host'] = hostname
-        stats_dict['slug'] = f"{stats_dict['year']}_{stats_dict['type']}"
+        stats_dict["year"] = season
+        stats_dict["type"] = "majors"
+        stats_dict["timestamp"] = timestamp
+        stats_dict["level"] = "mlb"
+        stats_dict["side"] = "pitch"
+        stats_dict["script"] = scriptname
+        stats_dict["host"] = hostname
+        stats_dict["slug"] = f"{stats_dict['year']}_{stats_dict['type']}"
 
         obj = models.Player.objects.filter(
-            fg_id=h[1]
-            .select("a")[0]
-            .attrs["href"]
-            .split("playerid=")[1]
-            .split("&")[0]
+            fg_id=h[1].select("a")[0].attrs["href"].split("playerid=")[1].split("&")[0]
         )
 
         if obj.count() > 0:
             obj = obj[0]
 
-            stats_dict['g'] = to_int(h[6].text)
-            stats_dict['gs'] = to_int(h[7].text)
-            stats_dict['k'] = to_int(h[9].text)
-            stats_dict['bb'] = to_int(h[10].text)
-            stats_dict['ha'] = to_int(h[11].text)
-            stats_dict['hra'] = to_int(h[12].text)
-            stats_dict['ip'] = to_float(h[8].text.replace('%', ''))
-            stats_dict['k_9'] = to_float(h[13].text.replace('%', ''))
-            stats_dict['bb_9'] = to_float(h[14].text.replace('%', ''))
-            stats_dict['hr_9'] = to_float(h[15].text.replace('%', ''))
-            stats_dict['lob_pct'] = to_float(h[17].text.replace('%', ''))
-            stats_dict['gb_pct'] = to_float(h[18].text.replace('%', ''))
-            stats_dict['hr_fb'] = to_float(h[19].text.replace('%', ''))
-            stats_dict['era'] = to_float(h[21].text.replace('%', ''))
-            stats_dict['fip'] = to_float(h[23].text.replace('%', ''))
-            stats_dict['xfip'] = to_float(h[24].text.replace('%', ''))
-            stats_dict['siera'] = to_float(h[25].text.replace('%', ''))
-            stats_dict['er'] = to_float(h[27].text.replace('%', ''))
+            stats_dict["g"] = to_int(h[6].text)
+            stats_dict["gs"] = to_int(h[7].text)
+            stats_dict["k"] = to_int(h[9].text)
+            stats_dict["bb"] = to_int(h[10].text)
+            stats_dict["ha"] = to_int(h[11].text)
+            stats_dict["hra"] = to_int(h[12].text)
+            stats_dict["ip"] = to_float(h[8].text.replace("%", ""))
+            stats_dict["k_9"] = to_float(h[13].text.replace("%", ""))
+            stats_dict["bb_9"] = to_float(h[14].text.replace("%", ""))
+            stats_dict["hr_9"] = to_float(h[15].text.replace("%", ""))
+            stats_dict["lob_pct"] = to_float(h[17].text.replace("%", ""))
+            stats_dict["gb_pct"] = to_float(h[18].text.replace("%", ""))
+            stats_dict["hr_fb"] = to_float(h[19].text.replace("%", ""))
+            stats_dict["era"] = to_float(h[21].text.replace("%", ""))
+            stats_dict["fip"] = to_float(h[23].text.replace("%", ""))
+            stats_dict["xfip"] = to_float(h[24].text.replace("%", ""))
+            stats_dict["siera"] = to_float(h[25].text.replace("%", ""))
+            stats_dict["er"] = to_float(h[27].text.replace("%", ""))
 
             obj.set_stats(stats_dict)
             obj.save()
 
-            stats_dict['year'] = "current"
-            stats_dict['slug'] = "current"
+            stats_dict["year"] = "current"
+            stats_dict["slug"] = "current"
             obj.set_stats(stats_dict)
             obj.save()
+
 
 # def aggregate_team_stats_season(self):
 #     def set_hitters(team):

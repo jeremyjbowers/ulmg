@@ -99,7 +99,6 @@ class Team(BaseModel):
     def __unicode__(self):
         return self.abbreviation
 
-
     def to_api_obj(self):
         payload = {
             "city": self.city,
@@ -110,7 +109,6 @@ class Team(BaseModel):
             "owner_email": self.owner_email,
         }
         return payload
-
 
     def players(self):
         """
@@ -457,7 +455,7 @@ class Player(BaseModel):
         if type(self.stats) is not dict:
             self.stats = {}
 
-        self.stats[stats_dict['slug']] = stats_dict
+        self.stats[stats_dict["slug"]] = stats_dict
 
     @property
     def latest_rating(self):
@@ -471,7 +469,6 @@ class Player(BaseModel):
             self.fg_url = (
                 "https://www.fangraphs.com/statss.aspx?playerid=%s" % self.fg_id
             )
-
 
     def to_api_obj(self):
         payload = {
@@ -492,7 +489,7 @@ class Player(BaseModel):
                 "bref_url": self.bref_url,
                 "fg_url": self.fg_url,
                 "mlb_dotcom_url": self.mlb_dotcom_url,
-                "fantrax_url": self.fantrax_url
+                "fantrax_url": self.fantrax_url,
             },
             "notes": self.notes,
             "is_owned": self.is_owned,
@@ -512,14 +509,13 @@ class Player(BaseModel):
             "is_protected": self.is_protected,
             "cannot_be_protected": self.cannot_be_protected,
             "team": None,
-            "stats": self.stats
+            "stats": self.stats,
         }
 
         if self.team:
-            self.payload['team'] = self.team.to_api_obj()
+            self.payload["team"] = self.team.to_api_obj()
 
         return payload
-
 
     def to_dict(self):
         return {
@@ -574,7 +570,7 @@ class Player(BaseModel):
 
     def set_name(self):
         """
-        Turn first / last into a name or 
+        Turn first / last into a name or
         """
         if self.first_name and self.last_name:
             name_string = "%s" % self.first_name
@@ -808,10 +804,16 @@ class Trade(BaseModel):
         return {
             "date": self.date,
             "t1_abbr": t1.team.abbreviation,
-            "t1_players": [{"pos": p.position, "name": p.name, "id": p.id} for p in t2.players.all()],
+            "t1_players": [
+                {"pos": p.position, "name": p.name, "id": p.id}
+                for p in t2.players.all()
+            ],
             "t1_picks": [f"{p.slug}" for p in t2.picks.all()],
             "t2_abbr": t2.team.abbreviation,
-            "t2_players": [{"pos": p.position, "name": p.name, "id": p.id} for p in t1.players.all()],
+            "t2_players": [
+                {"pos": p.position, "name": p.name, "id": p.id}
+                for p in t1.players.all()
+            ],
             "t2_picks": [f"{p.slug}" for p in t1.picks.all()],
         }
 

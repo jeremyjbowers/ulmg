@@ -6,269 +6,303 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('ulmg', '0027_player_fg_org_rank'),
+        ("ulmg", "0027_player_fg_org_rank"),
     ]
 
     operations = [
         migrations.RenameField(
-            model_name='player',
-            old_name='ps_bb',
-            new_name='py_2b',
+            model_name="player",
+            old_name="ps_bb",
+            new_name="py_2b",
         ),
         migrations.RenameField(
-            model_name='player',
-            old_name='ps_cs',
-            new_name='py_3b',
+            model_name="player",
+            old_name="ps_cs",
+            new_name="py_3b",
         ),
         migrations.RenameField(
-            model_name='player',
-            old_name='ps_er',
-            new_name='py_ab',
+            model_name="player",
+            old_name="ps_er",
+            new_name="py_ab",
         ),
         migrations.RenameField(
-            model_name='player',
-            old_name='ps_avg',
-            new_name='py_avg',
+            model_name="player",
+            old_name="ps_avg",
+            new_name="py_avg",
         ),
         migrations.RenameField(
-            model_name='player',
-            old_name='ps_obp',
-            new_name='py_babip',
+            model_name="player",
+            old_name="ps_obp",
+            new_name="py_babip",
         ),
         migrations.RenameField(
-            model_name='player',
-            old_name='ps_g',
-            new_name='py_bb',
+            model_name="player",
+            old_name="ps_g",
+            new_name="py_bb",
         ),
         migrations.RenameField(
-            model_name='player',
-            old_name='ps_bb_9',
-            new_name='py_bb_9',
+            model_name="player",
+            old_name="ps_bb_9",
+            new_name="py_bb_9",
         ),
         migrations.RenameField(
-            model_name='player',
-            old_name='ps_gs',
-            new_name='py_er',
+            model_name="player",
+            old_name="ps_gs",
+            new_name="py_er",
         ),
         migrations.RenameField(
-            model_name='player',
-            old_name='ps_h',
-            new_name='py_g',
+            model_name="player",
+            old_name="ps_h",
+            new_name="py_g",
         ),
         migrations.RenameField(
-            model_name='player',
-            old_name='ps_hr',
-            new_name='py_gs',
+            model_name="player",
+            old_name="ps_hr",
+            new_name="py_gs",
         ),
         migrations.RenameField(
-            model_name='player',
-            old_name='ps_ip',
-            new_name='py_ha',
+            model_name="player",
+            old_name="ps_ip",
+            new_name="py_ha",
         ),
         migrations.RenameField(
-            model_name='player',
-            old_name='ps_k',
-            new_name='py_hits',
+            model_name="player",
+            old_name="ps_k",
+            new_name="py_hits",
         ),
         migrations.RenameField(
-            model_name='player',
-            old_name='ps_pa',
-            new_name='py_hr',
+            model_name="player",
+            old_name="ps_pa",
+            new_name="py_hr",
         ),
         migrations.RenameField(
-            model_name='player',
-            old_name='ps_era',
-            new_name='py_hr_9',
+            model_name="player",
+            old_name="ps_era",
+            new_name="py_hr_9",
         ),
         migrations.RenameField(
-            model_name='player',
-            old_name='ps_sb',
-            new_name='py_hra',
+            model_name="player",
+            old_name="ps_sb",
+            new_name="py_hra",
         ),
         migrations.RenameField(
-            model_name='player',
-            old_name='ps_is_mlb',
-            new_name='py_is_mlb',
+            model_name="player",
+            old_name="ps_is_mlb",
+            new_name="py_is_mlb",
         ),
         migrations.RenameField(
-            model_name='player',
-            old_name='ps_ops',
-            new_name='py_iso',
+            model_name="player",
+            old_name="ps_ops",
+            new_name="py_iso",
         ),
         migrations.RenameField(
-            model_name='player',
-            old_name='ps_so',
-            new_name='py_k',
+            model_name="player",
+            old_name="ps_so",
+            new_name="py_k",
         ),
         migrations.RenameField(
-            model_name='player',
-            old_name='ps_fip',
-            new_name='py_k_9',
+            model_name="player",
+            old_name="ps_fip",
+            new_name="py_k_9",
         ),
         migrations.RenameField(
-            model_name='player',
-            old_name='ps_slg',
-            new_name='py_obp',
+            model_name="player",
+            old_name="ps_slg",
+            new_name="py_obp",
         ),
         migrations.RenameField(
-            model_name='player',
-            old_name='ps_sv',
-            new_name='py_pbb',
+            model_name="player",
+            old_name="ps_sv",
+            new_name="py_pbb",
         ),
         migrations.RenameField(
-            model_name='player',
-            old_name='ps_wrc_plus',
-            new_name='py_pk',
+            model_name="player",
+            old_name="ps_wrc_plus",
+            new_name="py_pk",
         ),
         migrations.RenameField(
-            model_name='player',
-            old_name='ps_woba',
-            new_name='py_slg',
+            model_name="player",
+            old_name="ps_woba",
+            new_name="py_slg",
         ),
         migrations.RemoveField(
-            model_name='player',
-            name='ps_bsr',
+            model_name="player",
+            name="ps_bsr",
         ),
         migrations.RemoveField(
-            model_name='player',
-            name='ps_def',
+            model_name="player",
+            name="ps_def",
         ),
         migrations.RemoveField(
-            model_name='player',
-            name='ps_fld',
+            model_name="player",
+            name="ps_fld",
         ),
         migrations.RemoveField(
-            model_name='player',
-            name='ps_k_9',
+            model_name="player",
+            name="ps_k_9",
         ),
         migrations.RemoveField(
-            model_name='player',
-            name='ps_off',
+            model_name="player",
+            name="ps_off",
         ),
         migrations.RemoveField(
-            model_name='player',
-            name='ps_ra9_war',
+            model_name="player",
+            name="ps_ra9_war",
         ),
         migrations.RemoveField(
-            model_name='player',
-            name='ps_stat_origin',
+            model_name="player",
+            name="ps_stat_origin",
         ),
         migrations.RemoveField(
-            model_name='player',
-            name='ps_war',
+            model_name="player",
+            name="ps_war",
         ),
         migrations.RemoveField(
-            model_name='player',
-            name='ps_whip',
+            model_name="player",
+            name="ps_whip",
         ),
         migrations.AddField(
-            model_name='player',
-            name='py_bb_pct',
-            field=models.DecimalField(blank=True, decimal_places=1, max_digits=4, null=True),
+            model_name="player",
+            name="py_bb_pct",
+            field=models.DecimalField(
+                blank=True, decimal_places=1, max_digits=4, null=True
+            ),
         ),
         migrations.AddField(
-            model_name='player',
-            name='py_era',
-            field=models.DecimalField(blank=True, decimal_places=2, max_digits=5, null=True),
+            model_name="player",
+            name="py_era",
+            field=models.DecimalField(
+                blank=True, decimal_places=2, max_digits=5, null=True
+            ),
         ),
         migrations.AddField(
-            model_name='player',
-            name='py_fip',
-            field=models.DecimalField(blank=True, decimal_places=2, max_digits=5, null=True),
+            model_name="player",
+            name="py_fip",
+            field=models.DecimalField(
+                blank=True, decimal_places=2, max_digits=5, null=True
+            ),
         ),
         migrations.AddField(
-            model_name='player',
-            name='py_gb_pct',
-            field=models.DecimalField(blank=True, decimal_places=1, max_digits=4, null=True),
+            model_name="player",
+            name="py_gb_pct",
+            field=models.DecimalField(
+                blank=True, decimal_places=1, max_digits=4, null=True
+            ),
         ),
         migrations.AddField(
-            model_name='player',
-            name='py_hr_fb',
-            field=models.DecimalField(blank=True, decimal_places=1, max_digits=4, null=True),
+            model_name="player",
+            name="py_hr_fb",
+            field=models.DecimalField(
+                blank=True, decimal_places=1, max_digits=4, null=True
+            ),
         ),
         migrations.AddField(
-            model_name='player',
-            name='py_ip',
-            field=models.DecimalField(blank=True, decimal_places=1, max_digits=4, null=True),
+            model_name="player",
+            name="py_ip",
+            field=models.DecimalField(
+                blank=True, decimal_places=1, max_digits=4, null=True
+            ),
         ),
         migrations.AddField(
-            model_name='player',
-            name='py_k_pct',
-            field=models.DecimalField(blank=True, decimal_places=1, max_digits=4, null=True),
+            model_name="player",
+            name="py_k_pct",
+            field=models.DecimalField(
+                blank=True, decimal_places=1, max_digits=4, null=True
+            ),
         ),
         migrations.AddField(
-            model_name='player',
-            name='py_lob_pct',
-            field=models.DecimalField(blank=True, decimal_places=1, max_digits=4, null=True),
+            model_name="player",
+            name="py_lob_pct",
+            field=models.DecimalField(
+                blank=True, decimal_places=1, max_digits=4, null=True
+            ),
         ),
         migrations.AddField(
-            model_name='player',
-            name='py_plate_appearances',
+            model_name="player",
+            name="py_plate_appearances",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='player',
-            name='py_rbi',
+            model_name="player",
+            name="py_rbi",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='player',
-            name='py_runs',
+            model_name="player",
+            name="py_runs",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='player',
-            name='py_sb',
+            model_name="player",
+            name="py_sb",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='player',
-            name='py_siera',
-            field=models.DecimalField(blank=True, decimal_places=2, max_digits=5, null=True),
+            model_name="player",
+            name="py_siera",
+            field=models.DecimalField(
+                blank=True, decimal_places=2, max_digits=5, null=True
+            ),
         ),
         migrations.AddField(
-            model_name='player',
-            name='py_woba',
-            field=models.DecimalField(blank=True, decimal_places=3, max_digits=4, null=True),
+            model_name="player",
+            name="py_woba",
+            field=models.DecimalField(
+                blank=True, decimal_places=3, max_digits=4, null=True
+            ),
         ),
         migrations.AddField(
-            model_name='player',
-            name='py_wrc_plus',
+            model_name="player",
+            name="py_wrc_plus",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='player',
-            name='py_xavg',
-            field=models.DecimalField(blank=True, decimal_places=3, max_digits=5, null=True),
+            model_name="player",
+            name="py_xavg",
+            field=models.DecimalField(
+                blank=True, decimal_places=3, max_digits=5, null=True
+            ),
         ),
         migrations.AddField(
-            model_name='player',
-            name='py_xavg_diff',
-            field=models.DecimalField(blank=True, decimal_places=3, max_digits=5, null=True),
+            model_name="player",
+            name="py_xavg_diff",
+            field=models.DecimalField(
+                blank=True, decimal_places=3, max_digits=5, null=True
+            ),
         ),
         migrations.AddField(
-            model_name='player',
-            name='py_xfip',
-            field=models.DecimalField(blank=True, decimal_places=2, max_digits=5, null=True),
+            model_name="player",
+            name="py_xfip",
+            field=models.DecimalField(
+                blank=True, decimal_places=2, max_digits=5, null=True
+            ),
         ),
         migrations.AddField(
-            model_name='player',
-            name='py_xslg',
-            field=models.DecimalField(blank=True, decimal_places=3, max_digits=5, null=True),
+            model_name="player",
+            name="py_xslg",
+            field=models.DecimalField(
+                blank=True, decimal_places=3, max_digits=5, null=True
+            ),
         ),
         migrations.AddField(
-            model_name='player',
-            name='py_xslg_diff',
-            field=models.DecimalField(blank=True, decimal_places=3, max_digits=5, null=True),
+            model_name="player",
+            name="py_xslg_diff",
+            field=models.DecimalField(
+                blank=True, decimal_places=3, max_digits=5, null=True
+            ),
         ),
         migrations.AddField(
-            model_name='player',
-            name='py_xwoba',
-            field=models.DecimalField(blank=True, decimal_places=3, max_digits=5, null=True),
+            model_name="player",
+            name="py_xwoba",
+            field=models.DecimalField(
+                blank=True, decimal_places=3, max_digits=5, null=True
+            ),
         ),
         migrations.AddField(
-            model_name='player',
-            name='py_xwoba_diff',
-            field=models.DecimalField(blank=True, decimal_places=3, max_digits=5, null=True),
+            model_name="player",
+            name="py_xwoba_diff",
+            field=models.DecimalField(
+                blank=True, decimal_places=3, max_digits=5, null=True
+            ),
         ),
     ]

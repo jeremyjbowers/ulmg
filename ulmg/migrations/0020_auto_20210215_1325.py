@@ -11,6 +11,8 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.RenameField(
-            model_name="player", old_name="eligible_year", new_name="class_year",
+            model_name="player",
+            old_name="eligible_year",
+            new_name="class_year",
         ),
     ]
