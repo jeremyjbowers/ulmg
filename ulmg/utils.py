@@ -752,6 +752,10 @@ def reset_rosters(*args, **options):
         models.Player.objects.filter(is_1h_pos=True).update(is_1h_pos=False)
         models.Player.objects.filter(is_reserve=True).update(is_reserve=False)
 
+        # Unprotect all V and A players prior to the 35-man roster.
+        models.Player.objects.filter(is_owned=True, level__in=["A", "V"]).update(is_protected=False)
+        models.Player.objects.filter(is_owned=True, is_carded=False, level__in=["A", "V"]).update(is_protected=True)
+
 
 def load_career_hit(*args, **options):
 
