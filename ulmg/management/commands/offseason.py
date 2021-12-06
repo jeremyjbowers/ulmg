@@ -16,17 +16,8 @@ from ulmg import models, utils
 class Command(BaseCommand):
 
     def handle(self, *args, **options):
-        utils.reset_rosters()
-
-        # Unprotect all V and A players prior to the 35-man roster.
-        models.Player.objects.filter(is_owned=True, level__in=["A", "V"]).update(
-            is_protected=False
-        )
-        models.Player.objects.filter(
-            is_owned=True, is_carded=False, level__in=["A", "V"]
-        ).update(is_protected=True)
-
         utils.set_carded()
         utils.load_career_hit()
         utils.load_career_pitch()
         utils.set_levels()
+        utils.reset_rosters()
