@@ -826,3 +826,68 @@ def load_career_pitch(*args, **options):
 
             except:
                 pass
+
+
+def set_levels(*args, **options):
+    print("--------- STARTERS B > A ---------")
+    for p in models.Player.objects.filter(level="B", position="P", stats__career__g=21):
+        p.level = "A"
+        print(p)
+        if not options.get("dry_run", None):
+            p.save()
+
+    print("--------- RELIEVERS B > A ---------")
+    for p in models.Player.objects.filter(
+        level="B", position="P", stats__career__g__gte=31, stats__career__gs=0
+    ):
+        p.level = "A"
+        print(p)
+        if not options.get("dry_run", None):
+            p.save()
+    print("--------- SWINGMEN B > A ---------")
+    for p in models.Player.objects.filter(
+        level="B", position="P", stats__career__g__gte=40, stats__career__gs__gte=15
+    ):
+        p.level = "A"
+        print(p)
+        if not options.get("dry_run", None):
+            p.save()
+
+    print("--------- HITTERS B > A ---------")
+    for p in models.Player.objects.filter(level="B", stats__career__pa__gte=300):
+        p.level = "A"
+        print(p)
+        if not options.get("dry_run", None):
+            p.save()
+
+    print("--------- STARTERS A > V ---------")
+    for p in models.Player.objects.filter(level="A", position="P", stats__career__gs__gte=126):
+        p.level = "V"
+        print(p)
+        if not options.get("dry_run", None):
+            p.save()
+
+    print("--------- RELIEVERS A > V ---------")
+    for p in models.Player.objects.filter(
+        level="A", position="P", stats__career__g__gte=201, stats__career__gs=0
+    ):
+        p.level = "V"
+        print(p)
+        if not options.get("dry_run", None):
+            p.save()
+
+    print("--------- SWINGMEN A > V ---------")
+    for p in models.Player.objects.filter(
+        level="A", position="P", stats__career__g__gte=220, stats__career__gs__gte=30
+    ):
+        p.level = "V"
+        print(p)
+        if not options.get("dry_run", None):
+            p.save()
+
+    print("--------- HITTERS A > V ---------")
+    for p in models.Player.objects.filter(level="A", stats__career__pa__gte=2500):
+        p.level = "V"
+        print(p)
+        if not options.get("dry_run", None):
+            p.save()
