@@ -93,4 +93,4 @@ class Command(BaseCommand):
         utils.set_carded()
         utils.load_career_hit()
         utils.load_career_pitch()
-        self.set_levels(dry_run=True)
+        self.set_levels()
