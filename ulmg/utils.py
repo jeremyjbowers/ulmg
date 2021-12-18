@@ -11,6 +11,7 @@ from dateutil.parser import parse
 from django.apps import apps
 from django.db import connection
 from django.db.models import Avg, Sum, Count
+from django.contrib.postgres.search import TrigramSimilarity
 from django.core.management import call_command
 from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
