@@ -772,9 +772,8 @@ class Trade(BaseModel):
         return TradeReceipt.objects.filter(trade=self)
 
     def summary_html(self):
-        r = self.reciepts()
-        t1 = r[0]
-        t2 = r[1]
+        t1 = self.reciepts()[0]
+        t2 = self.reciepts()[1]
 
         return "%s: %s sends %s to %s for %s" % (
             self.date,
@@ -799,9 +798,9 @@ class Trade(BaseModel):
         )
 
     def summary_dict(self):
-        r = self.reciepts()
-        t1 = r[0]
-        t2 = r[1]
+        t1 = self.reciepts()[0]
+        t2 = self.reciepts()[1]
+
         return {
             "date": self.date,
             "t1_abbr": t1.team.abbreviation,
@@ -819,9 +818,8 @@ class Trade(BaseModel):
         }
 
     def summary(self):
-        r = self.reciepts()
-        t1 = r[0]
-        t2 = r[1]
+        t1 = self.reciepts()[0]
+        t2 = self.reciepts()[1]
 
         return "%s: %s sends %s to %s for %s" % (
             self.date,
