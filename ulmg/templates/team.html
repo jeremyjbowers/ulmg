@@ -83,11 +83,10 @@
             <h1 class="title is-3">{{ position.grouper }} ({{ position.list|length }})</h1>
             <div class="tabs is-medium">
                 <ul>
-                    <li class="real-stat-link is-active"><a class="" href="#!">Real stats</a></li>
-                    <li class="strat-link"><a class="" href="#!">Strat cards</a></li>
+                    <li class="real-stat-link is-active"><a class="" href="#!">2021 stats</a></li>
                 </ul>
             </div>
-            <table class="table real-stat-table is-hoverable" data-sortable>
+            <table class="table real-stat-table is-hoverable is-fullwidth" data-sortable>
                 <thead>
                     <tr>
                         <th data-sortable-type="alpha">Name</th>
@@ -116,36 +115,6 @@
                 {% endfor %}
                 </tbody>
             </table>
-            <table class="table is-hoverable strat-table hidden" data-sortable>
-                <thead>
-                    <tr>
-                        <th data-sortable-type="alpha">Name</th>
-                        <th data-sortable-type="numeric">Age</th>
-                        <th data-sortable-type="alpha">Lvl</th>
-                        {% include "includes/hitter_strat_headers.html" %}
-                        {% if own_team %}
-                            {% include "includes/player_protect_headers.html" %}
-                        {% endif %}
-                    </tr>
-                </thead>
-                <tbody>
-                {% for p in position.list %}
-                    <tr class="{% if p.level != "B" and not p.is_protected and not p.covid_protected %}unprotected{% endif %}
-                    {% if p.ls_is_mlb == False and p.ls_plate_appearances > 0 %} minors{% endif %}
-                    {% if p.ls_is_mlb == False and not p.covid_protected %} minors{% endif %}
-                    {% if p.ls_is_mlb == False and p.is_amateur == True %} amateur{% endif %}
-                    ">
-                        {% include "includes/player_name.html" %}
-                        <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
-                        <td data-value="{{ p.level|default_if_none:"Z" }}<">{{ p.level|default_if_none:"" }}</td>
-                        {% include "includes/hitter_strat_cells.html" %}
-                        {% if own_team %}
-                            {% include "includes/player_protect_actions.html" %}
-                        {% endif %}
-                    </tr>
-                {% endfor %}
-                </tbody>
-            </table>
             {% endfor %}
         </div>
     </div>
@@ -155,11 +124,10 @@
             <h1 class="title is-3">P ({{ pitchers|length }})</h1>
             <div class="tabs is-medium">
                 <ul>
-                    <li class="real-stat-link is-active"><a class="" href="#!">Real stats</a></li>
-                    <li class="strat-link"><a class="" href="#!">Strat cards</a></li>
+                    <li class="real-stat-link is-active"><a class="" href="#!">2021 Stats</a></li>
                 </ul>
             </div>
-            <table class="table real-stat-table is-fullwidth" data-sortable>
+            <table class="table real-stat-table is-fullwidth is-hoverable" data-sortable>
                 <thead>
                     <tr>
                         <th data-sortable-type="alpha">Name</th>
@@ -181,36 +149,6 @@
                         <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
                         <td data-value="{{ p.level|default_if_none:"Z" }}<">{{ p.level|default_if_none:"" }}</td>
                         {% include "includes/pitcher_stat_cells.html" %}
-                        {% if own_team %}
-                            {% include "includes/player_protect_actions.html" %}
-                        {% endif %}
-                    </tr>
-                {% endfor %}
-                </tbody>
-            </table>
-            <table class="table strat-table  strat-table hidden" data-sortable>
-                <thead>
-                    <tr>
-                        <th data-sortable-type="alpha">Name</th>
-                        <th data-sortable-type="numeric">Age</th>
-                        <th data-sortable-type="alpha">Lvl</th>
-                        {% include "includes/pitcher_strat_headers.html" %}
-                        {% if own_team %}
-                            {% include "includes/player_protect_headers.html" %}
-                        {% endif %}
-                    </tr>
-                </thead>
-                <tbody>
-                {% for p in pitchers %}
-                <tr class="{% if p.level != "B" and not p.is_protected and not p.covid_protected %}unprotected{% endif %}
-                {% if p.ls_is_mlb == False and p.ls_ip > 0 %} minors{% endif %}
-                {% if p.ls_is_mlb == False and p.is_amateur == True %} amateur{% endif %}
-                {% if p.ls_is_mlb == False and not p.covid_protected %} minors{% endif %}
-                ">
-                {% include "includes/player_name.html" %}
-                        <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
-                        <td data-value="{{ p.level|default_if_none:"Z" }}<">{{ p.level|default_if_none:"" }}</td>
-                        {% include "includes/pitcher_strat_cells.html" %}
                         {% if own_team %}
                             {% include "includes/player_protect_actions.html" %}
                         {% endif %}
