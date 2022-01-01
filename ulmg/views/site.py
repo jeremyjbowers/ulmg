@@ -51,7 +51,7 @@ def index(request):
     season = datetime.today().year
 
     if datetime.today().month < 4:
-        season = datetime.toda().year - 1
+        season = datetime.today().year - 1
 
     hitter_dict = {
         "team__isnull": True,
