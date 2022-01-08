@@ -611,7 +611,7 @@ def get_fg_major_pitcher_season(
 
     print(f"{timestamp}\t{season}\tget_fg_major_pitcher_season")
 
-    url = f"https://www.fangraphs.com/leaders.aspx?pos=all&stats=pit&lg=all&qual=2&type=c,4,5,11,7,8,13,-1,24,19,15,18,36,37,40,43,44,48,51,-1,240,-1,6,332,45,62,122,-1,59,17&season={season}&month=0&season1={season}&ind=0&team=0&rost=0&age=0&filter=&players=0&startdate={season}-01-01&enddate={season}-12-31&sort=8,d&page=1_5000"
+    url = f"https://www.fangraphs.com/leaders.aspx?pos=all&stats=pit&lg=all&qual=2&type=c,4,5,11,7,8,13,-1,24,19,15,18,36,37,40,43,44,48,51,-1,240,-1,6,332,45,62,122,-1,59,17,301,302,303,117,118,119&season={season}&month=0&season1={season}&ind=0&team=0&rost=0&age=0&filter=&players=0&startdate={season}-01-01&enddate={season}-12-31&sort=8,d&page=1_5000"
 
     rows = get_fg_results(url)
 
@@ -653,6 +653,11 @@ def get_fg_major_pitcher_season(
             stats_dict["xfip"] = to_float(h[24].text.replace("%", ""))
             stats_dict["siera"] = to_float(h[25].text.replace("%", ""))
             stats_dict["er"] = to_float(h[27].text.replace("%", ""))
+            stats_dict['k_9+'] = to_int(h[28].text)
+            stats_dict['bb_9+'] = to_int(h[29].text)
+            stats_dict['era-'] = to_int(h[30].text)
+            stats_dict['fip-'] = to_int(h[31].text)
+            stats_dict['xfip-'] = to_int(h[32].text)
 
             obj.set_stats(stats_dict)
             obj.save()
