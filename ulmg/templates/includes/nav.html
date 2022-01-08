@@ -3,7 +3,8 @@
         <a class="navbar-item logo" href="/">
             The ULMG
         </a>
-        <a class="navbar-item" href="https://ulmg.wordpress.com/constitution/" target="_blank">Constitution</a>
+        <!-- <a class="navbar-item" href="https://ulmg.wordpress.com/constitution/" target="_blank">Constitution</a> -->
+        <a class="navbar-item" href="/calendar/" target="_blank">Calendar</a>
         <a class="navbar-item" href="/trades/">Trades</a>
         <div class="navbar-item has-dropdown is-hoverable">
             <a class="navbar-link">Drafts</a>
@@ -11,14 +12,14 @@
                     {% for draft in draftnav %}
                     <a class="navbar-item" href="{{ draft.url }}">{{ draft.title }}</a>
                     {% endfor %}
+                    <a class="navbar-item" href="https://ulmg.wordpress.com/category/draft/" target="_blank">Archived drafts</a>
                 </div>
             </div>
         </div>
-        <a class="navbar-item" href="https://ulmg.wordpress.com/category/draft/" target="_blank">Archived drafts</a>
-        <a class="navbar-item" href="/prospect-rankings/2021/">Prospects</a>
+        <!-- <a class="navbar-item" href="/prospect-rankings/2021/">Prospects</a> -->
         <a class="navbar-item" href="/{% if value %}?value=true{% endif %}">Search</a>
         <div class="navbar-item has-dropdown is-hoverable">
-            <a class="navbar-link">Teams</a>
+            <a class="navbar-link has-text-weight-bold">Teams</a>
                 <div class="navbar-dropdown">
                     {% for team in teamnav %}
                     <a class="navbar-item" href="/teams/{{ team.abbreviation|lower }}/{% if value %}?value=true{% endif %}">{{ team.abbreviation }}</a>
@@ -31,8 +32,8 @@
             <div class="navbar-item">
             {% if user.is_authenticated %}
                 <div class="buttons">
-                    <a class="button is-success is-outlined is-small" href="/my/team/"><i class="fas fa-user-circle"></i>&nbsp;&nbsp;{{ user.username }}</a>
-                    <a class="button is-danger is-small" href="/accounts/logout/">Log out</a>
+                    <a class="button is-success is-outlined is-small" href="/my/team/">My Team</a>
+                    <a class="button is-danger is-small" href="/accounts/logout/">X</a>
                 </div>
             {% else %}
                 <div class="buttons"><a class="button is-info is-small" href="/accounts/login/">Log in</a></div>
