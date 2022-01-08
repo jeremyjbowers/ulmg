@@ -16,6 +16,27 @@ from datetime import datetime
 from ulmg import models, utils
 
 
+def current_calendar(request):
+    context = utils.build_context(request)
+    today = datetime.today()
+    context['season'] = utils.get_ulmg_season(today)
+    context['future'] = models.Occurrence.objects.filter(season=context['season'], date__gte=today).order_by('date')
+    context['past'] = models.Occurrence.objects.filter(season=context['season'], date__lt=today).order_by('-date')
+    context['total'] = models.Occurrence.objects.filter(season=context['season']).count()
+
+    return render(request, "calendar.html", context)
+
+def calendar_by_season(request, year):
+    context = utils.build_context(request)
+    today = datetime.today()
+    context['season'] = year
+    context['future'] = models.Occurrence.objects.filter(season=context['season'], date__gte=today).order_by('date')
+    context['past'] = models.Occurrence.objects.filter(season=context['season'], date__lt=today).order_by('-date')
+    context['total'] = models.Occurrence.objects.filter(season=context['season']).count()
+
+    return render(request, "calendar.html", context)
+
+
 def prospect_ranking_list(request, year):
     context = utils.build_context(request)
     context["year"] = year
@@ -51,7 +72,7 @@ def index(request):
     season = datetime.today().year
 
     if datetime.today().month < 4:
-        season = datetime.toda().year - 1
+        season = datetime.today().year - 1
 
     hitter_dict = {
         "team__isnull": True,

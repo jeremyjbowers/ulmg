@@ -10,11 +10,27 @@ from ulmg.models import (
     WishlistPlayer,
     Owner,
     ProspectRating,
+    Event,
+    Occurrence
 )
 
 admin.site.site_title = "The ULMG"
 admin.site.site_header = "The ULMG: Admin"
 admin.site.index_title = "Administer The ULMG Website"
+
+
+class OccurrenceInline(admin.StackedInline):
+    model = Occurrence
+    exclude = ("active", "season")
+    min_num = 1
+    extra = 0
+
+@admin.register(Event)
+class EventAdmin(admin.ModelAdmin):
+    model = Event
+    list_display = ['title', 'description']
+    search_fields = ['title', 'description']
+    inlines = [OccurrenceInline]
 
 
 @admin.register(ProspectRating)
