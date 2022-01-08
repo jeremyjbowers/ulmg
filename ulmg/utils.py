@@ -23,6 +23,12 @@ import ujson as json
 from ulmg import models
 
 
+def get_ulmg_season(date):
+    if date.month >= 11:
+        return int(date.year) + 1
+    return date.year
+
+
 def get_current_season():
     season = settings.CURRENT_SEASON
     if settings.CURRENT_SEASON_TYPE == "offseason":

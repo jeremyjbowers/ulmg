@@ -10,6 +10,8 @@ from django.dispatch import receiver
 from django.conf import settings
 from nameparser import HumanName
 
+from ulmg import utils
+
 
 class BaseModel(models.Model):
     active = models.BooleanField(default=True)
@@ -758,10 +760,7 @@ class Trade(BaseModel):
         return self.summary()
 
     def set_season(self):
-        if self.date.month >= 11:
-            self.season = int(self.date.year) + 1
-        else:
-            self.season = self.date.year
+        self.season = utils.get_ulmg_season(self.date)
 
     def save(self, *args, **kwargs):
         self.set_season()
@@ -957,10 +956,7 @@ class Transaction(BaseModel):
             self.player_name = self.player.name
 
     def set_season(self):
-        if self.date.month >= 11:
-            self.season = int(self.date.year) + 1
-        else:
-            self.season = self.date.year
+        self.season = utils.get_ulmg_season(self.date)
 
     def save(self, *args, **kwargs):
         self.set_season()
@@ -1015,3 +1011,31 @@ class WishlistPlayer(BaseModel):
     @property
     def owner_name(self):
         return self.wishlist.owner.name
+
+
+class Event(BaseModel):
+    title = models.CharField(max_length=255)
+    description = models.TextField(null=True, blank=True)
+
+    def __unicode__(self):
+        return self.title
+
+class Occurrence(BaseModel):
+    event = models.ForeignKey(Event, on_delete=models.CASCADE)
+    title = models.CharField(max_length=255, blank=True, null=True)
+    season = models.IntegerField()
+    date = models.DateField()
+    time = models.TimeField(blank=True, null=True)
+    chat_link = models.CharField(max_length=255, null=True, blank=True)
+    description = models.TextField(null=True, blank=True)
+
+    def __unicode__(self):
+        return f"{self.date} — {self.event.title}"
+
+    def set_season(self):
+        self.season = utils.get_ulmg_season(self.date)
+
+    def save(self, *args, **kwargs):
+        self.set_season()
+
+        super().save(*args, **kwargs)
