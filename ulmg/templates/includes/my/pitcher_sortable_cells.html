@@ -7,13 +7,9 @@
     <td>{% if p.player.ls_ip > 0 %}{{ p.player.ls_era }}{% endif %}</td>
     <td>{% if p.player.ls_ip > 0 %}{{ p.player.ls_k_9 }}{% endif %}</td>
     <td>{% if p.player.ls_ip > 0 %}{{ p.player.ls_bb_9 }}{% endif %}</td>
-    <!-- <td>{% include "includes/my/tierpicker.html" %}</td> -->
     <td>{% if p.player.ls_ip > 0 %}{{ p.player.ls_fip|default_if_none:"-" }}{% else %}-{% endif %}</td>
-    <td>{% if p.player.ls_ip > 0 %}{{ p.player.ls_xfip|default_if_none:"-" }}{% else %}-{% endif %}</td>
-    
-    {% if not p.player.ls_is_mlb or p.player.ls_ip == 0 %}
-    <td>-</td>
-    {% else %}
-    <td>{% if p.player.ls_ip > 0 %}{{ p.player.ls_siera|default_if_none:"-" }}{% else %}-{% endif %}</td>
-    {% endif %}
+    <td>{% if p.player.ls_ip > 0 %}{{ p.player.ls_xfip|default_if_none:"-" }}{% else %}-{% endif %}</td>    
+    {% if p.player.ls_siera > 0 %}<td>{{ p.player.ls_siera }}</td>{% else %}<td>-</td>{% endif %}
+    <td>{% include "includes/my/tierpicker.html" %}</td>
+
 </tr>
