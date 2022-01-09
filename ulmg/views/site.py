@@ -19,20 +19,33 @@ from ulmg import models, utils
 def current_calendar(request):
     context = utils.build_context(request)
     today = datetime.today()
-    context['season'] = utils.get_ulmg_season(today)
-    context['future'] = models.Occurrence.objects.filter(season=context['season'], date__gte=today).order_by('date', 'time')
-    context['past'] = models.Occurrence.objects.filter(season=context['season'], date__lt=today).order_by('-date', '-time')
-    context['total'] = models.Occurrence.objects.filter(season=context['season']).count()
+    context["season"] = utils.get_ulmg_season(today)
+    context["future"] = models.Occurrence.objects.filter(
+        season=context["season"], date__gte=today
+    ).order_by("date", "time")
+    context["past"] = models.Occurrence.objects.filter(
+        season=context["season"], date__lt=today
+    ).order_by("-date", "-time")
+    context["total"] = models.Occurrence.objects.filter(
+        season=context["season"]
+    ).count()
 
     return render(request, "calendar.html", context)
+
 
 def calendar_by_season(request, year):
     context = utils.build_context(request)
     today = datetime.today()
-    context['season'] = year
-    context['future'] = models.Occurrence.objects.filter(season=context['season'], date__gte=today).order_by('date')
-    context['past'] = models.Occurrence.objects.filter(season=context['season'], date__lt=today).order_by('-date')
-    context['total'] = models.Occurrence.objects.filter(season=context['season']).count()
+    context["season"] = year
+    context["future"] = models.Occurrence.objects.filter(
+        season=context["season"], date__gte=today
+    ).order_by("date")
+    context["past"] = models.Occurrence.objects.filter(
+        season=context["season"], date__lt=today
+    ).order_by("-date")
+    context["total"] = models.Occurrence.objects.filter(
+        season=context["season"]
+    ).count()
 
     return render(request, "calendar.html", context)
 

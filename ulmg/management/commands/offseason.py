@@ -14,7 +14,6 @@ from ulmg import models, utils
 
 
 class Command(BaseCommand):
-
     def handle(self, *args, **options):
         utils.set_carded()
         utils.load_career_hit()

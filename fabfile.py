@@ -15,20 +15,20 @@ env.user = "ubuntu"
 env.forward_agent = True
 env.branch = "main"
 
-env.hosts = ["159.89.241.126"] # old
+env.hosts = ["159.89.241.126"]  # old
 
 cd_string = "cd /home/ubuntu/apps/%(project_name)s; " % env
 work_string = cd_string + "workon %(project_name)s && " % env
 
-env.dbname = os.environ.get('PROD_PGDBNAME')
-env.pgpass = os.environ.get('PROD_PGPASS')
-env.pguser = os.environ.get('PROD_PGUSER')
-env.pghost = os.environ.get('PROD_PGHOST')
-env.pgport = os.environ.get('PROD_PGPORT')
+env.dbname = os.environ.get("PROD_PGDBNAME")
+env.pgpass = os.environ.get("PROD_PGPASS")
+env.pguser = os.environ.get("PROD_PGUSER")
+env.pghost = os.environ.get("PROD_PGHOST")
+env.pgport = os.environ.get("PROD_PGPORT")
 
-env.admindbname = os.environ.get('PROD_ADMIN_PGDBNAME')
-env.adminpguser = os.environ.get('PROD_ADMIN_PGUSER')
-env.adminpgpass = os.environ.get('PROD_ADMIN_PGPASS')
+env.admindbname = os.environ.get("PROD_ADMIN_PGDBNAME")
+env.adminpguser = os.environ.get("PROD_ADMIN_PGUSER")
+env.adminpgpass = os.environ.get("PROD_ADMIN_PGPASS")
 
 # @api.task
 # def development():
@@ -83,16 +83,22 @@ env.adminpgpass = os.environ.get('PROD_ADMIN_PGPASS')
 #     cmd_string = "django-admin " + command
 #     api.run(work_string + cmd_string)
 
+
 @api.task
 def get_dbshell():
-    api.local(f"PGSSLMODE=require PGPASSWORD={env.adminpgpass} psql -U {env.adminpguser} -h {env.pghost} -p {env.pgport} -d {env.admindbname}")
+    api.local(
+        f"PGSSLMODE=require PGPASSWORD={env.adminpgpass} psql -U {env.adminpguser} -h {env.pghost} -p {env.pgport} -d {env.admindbname}"
+    )
+
 
 @api.task
 def get_data():
     # api.run("pg_dump -U ulmg -f /tmp/ulmg.sql -Fp -E UTF8 --inserts ulmg")
     # os.system("rm -rf data/sql/ulmg.sql")
     # api.get(remote_path="/tmp/ulmg.sql", local_path="data/sql/ulmg.sql")
-    api.local(f"PGSSLMODE=require PGPASSWORD={env.pgpass} pg_dump -U {env.pguser} -h {env.pghost} -p {env.pgport} {env.dbname} > data/sql/{env.dbname}.sql")
+    api.local(
+        f"PGSSLMODE=require PGPASSWORD={env.pgpass} pg_dump -U {env.pguser} -h {env.pghost} -p {env.pgport} {env.dbname} > data/sql/{env.dbname}.sql"
+    )
 
 
 @api.task

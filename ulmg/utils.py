@@ -659,11 +659,11 @@ def get_fg_major_pitcher_season(
             stats_dict["xfip"] = to_float(h[24].text.replace("%", ""))
             stats_dict["siera"] = to_float(h[25].text.replace("%", ""))
             stats_dict["er"] = to_float(h[27].text.replace("%", ""))
-            stats_dict['k_9+'] = to_int(h[28].text)
-            stats_dict['bb_9+'] = to_int(h[29].text)
-            stats_dict['era-'] = to_int(h[30].text)
-            stats_dict['fip-'] = to_int(h[31].text)
-            stats_dict['xfip-'] = to_int(h[32].text)
+            stats_dict["k_9+"] = to_int(h[28].text)
+            stats_dict["bb_9+"] = to_int(h[29].text)
+            stats_dict["era-"] = to_int(h[30].text)
+            stats_dict["fip-"] = to_int(h[31].text)
+            stats_dict["xfip-"] = to_int(h[32].text)
 
             obj.set_stats(stats_dict)
             obj.save()
@@ -742,12 +742,15 @@ def get_fg_major_pitcher_season(
 #         set_pitchers(team)
 #         team.save()
 
+
 def set_carded(*args, **options):
     season = get_current_season()
 
     if not options.get("dry_run", None):
         models.Player.objects.all().update(is_carded=False)
-        models.Player.objects.filter(stats__current__year=season, stats__current__type="majors").update(is_carded=True)
+        models.Player.objects.filter(
+            stats__current__year=season, stats__current__type="majors"
+        ).update(is_carded=True)
     else:
         print(models.Player.objects.filter(stats__current__year=season).count())
 
@@ -756,17 +759,19 @@ def reset_rosters(*args, **options):
     if not options.get("dry_run", None):
         models.Player.objects.filter(is_mlb_roster=True).update(is_mlb_roster=False)
         models.Player.objects.filter(is_aaa_roster=True).update(is_aaa_roster=False)
-        models.Player.objects.filter(is_35man_roster=True).update(
-            is_35man_roster=False
-        )
+        models.Player.objects.filter(is_35man_roster=True).update(is_35man_roster=False)
         models.Player.objects.filter(is_1h_c=True).update(is_1h_c=False)
         models.Player.objects.filter(is_1h_p=True).update(is_1h_p=False)
         models.Player.objects.filter(is_1h_pos=True).update(is_1h_pos=False)
         models.Player.objects.filter(is_reserve=True).update(is_reserve=False)
 
         # Unprotect all V and A players prior to the 35-man roster.
-        models.Player.objects.filter(is_owned=True, level__in=["A", "V"]).update(is_protected=False)
-        models.Player.objects.filter(is_owned=True, is_carded=False, level__in=["A", "V"]).update(is_protected=True)
+        models.Player.objects.filter(is_owned=True, level__in=["A", "V"]).update(
+            is_protected=False
+        )
+        models.Player.objects.filter(
+            is_owned=True, is_carded=False, level__in=["A", "V"]
+        ).update(is_protected=True)
 
 
 def load_career_hit(*args, **options):
@@ -782,20 +787,22 @@ def load_career_hit(*args, **options):
         for row in [dict(z) for z in players]:
             try:
                 p = models.Player.objects.get(fg_id=row["playerid"])
-                if not p.stats.get('career', None):
-                    p.stats['career'] = {}
-                    p.stats['career']['pa'] = None
+                if not p.stats.get("career", None):
+                    p.stats["career"] = {}
+                    p.stats["career"]["pa"] = None
 
-                p.stats['career']["year"] = "career"
-                p.stats['career']["type"] = "majors"
-                p.stats['career']["timestamp"] = timestamp
-                p.stats['career']["level"] = "mlb"
-                p.stats['career']["side"] = "pitch"
-                p.stats['career']["script"] = scriptname
-                p.stats['career']["host"] = hostname
-                p.stats['career']["slug"] = f"{ p.stats['career']['year']}_{ p.stats['career']['type']}"
+                p.stats["career"]["year"] = "career"
+                p.stats["career"]["type"] = "majors"
+                p.stats["career"]["timestamp"] = timestamp
+                p.stats["career"]["level"] = "mlb"
+                p.stats["career"]["side"] = "pitch"
+                p.stats["career"]["script"] = scriptname
+                p.stats["career"]["host"] = hostname
+                p.stats["career"][
+                    "slug"
+                ] = f"{ p.stats['career']['year']}_{ p.stats['career']['type']}"
 
-                p.stats['career']['pa'] = int(row['PA'])
+                p.stats["career"]["pa"] = int(row["PA"])
 
                 if not options.get("dry_run", None):
                     p.save()
@@ -817,25 +824,27 @@ def load_career_pitch(*args, **options):
         for row in [dict(z) for z in players]:
             try:
                 p = models.Player.objects.get(fg_id=row["playerid"])
-                if not p.stats.get('career', None):
-                    p.stats['career'] = {}
+                if not p.stats.get("career", None):
+                    p.stats["career"] = {}
 
-                    p.stats['career']['gs'] = None
-                    p.stats['career']['g'] = None
-                    p.stats['career']['ip'] = None
+                    p.stats["career"]["gs"] = None
+                    p.stats["career"]["g"] = None
+                    p.stats["career"]["ip"] = None
 
-                p.stats['career']["year"] = "career"
-                p.stats['career']["type"] = "majors"
-                p.stats['career']["timestamp"] = timestamp
-                p.stats['career']["level"] = "mlb"
-                p.stats['career']["side"] = "pitch"
-                p.stats['career']["script"] = scriptname
-                p.stats['career']["host"] = hostname
-                p.stats['career']["slug"] = f"{ p.stats['career']['year']}_{ p.stats['career']['type']}"
+                p.stats["career"]["year"] = "career"
+                p.stats["career"]["type"] = "majors"
+                p.stats["career"]["timestamp"] = timestamp
+                p.stats["career"]["level"] = "mlb"
+                p.stats["career"]["side"] = "pitch"
+                p.stats["career"]["script"] = scriptname
+                p.stats["career"]["host"] = hostname
+                p.stats["career"][
+                    "slug"
+                ] = f"{ p.stats['career']['year']}_{ p.stats['career']['type']}"
 
-                p.stats['career']['gs'] = int(row["GS"])
-                p.stats['career']['g'] = int(row["G"])
-                p.stats['career']['ip'] = int(row["IP"].split('.')[0])
+                p.stats["career"]["gs"] = int(row["GS"])
+                p.stats["career"]["g"] = int(row["G"])
+                p.stats["career"]["ip"] = int(row["IP"].split(".")[0])
 
                 if not options.get("dry_run", None):
                     p.save()
@@ -877,7 +886,9 @@ def set_levels(*args, **options):
             p.save()
 
     print("--------- STARTERS A > V ---------")
-    for p in models.Player.objects.filter(level="A", position="P", stats__career__gs__gte=126):
+    for p in models.Player.objects.filter(
+        level="A", position="P", stats__career__gs__gte=126
+    ):
         p.level = "V"
         print(p)
         if not options.get("dry_run", None):

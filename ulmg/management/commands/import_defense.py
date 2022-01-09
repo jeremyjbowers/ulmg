@@ -12,8 +12,8 @@ from ulmg import utils
 
 class Command(BaseCommand):
     def is_batter(self, batter_dict):
-        possible_batter = ['B', 'BAT']
-        if batter_dict.get('B/P', None):
+        possible_batter = ["B", "BAT"]
+        if batter_dict.get("B/P", None):
             for b in possible_batter:
                 if batter_dict["B/P"].strip().lower() == b.lower():
                     return True
@@ -84,10 +84,12 @@ class Command(BaseCommand):
     def set_defense(self, year=None, dry_run=False):
         if year:
             with open(f"data/defense/{year}-som-range.csv", "r") as readfile:
-                players = [dict(c) for c in csv.DictReader(readfile) if self.is_batter(c)]
+                players = [
+                    dict(c) for c in csv.DictReader(readfile) if self.is_batter(c)
+                ]
 
                 for player_row in players:
-                    last = player_row['LAST'].split('-')[0]
+                    last = player_row["LAST"].split("-")[0]
                     name_string = f"{player_row['FIRST']} {last}"
                     fuzzy_players = utils.fuzzy_find_player(name_string)
                     if len(fuzzy_players) > 0:
