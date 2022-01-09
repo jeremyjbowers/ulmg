@@ -12,7 +12,7 @@
                 <h3 class="title is-3 has-text-grey">Upcoming events</h3>
                 {% for o in future %}
                     <div class="box">
-                        <h1 class="title is-3">{{ o.date|date:"D, M jS" }}</h1>
+                        <h1 class="title is-3">{{ o.date|date:"D, M jS" }}{% if o.time %} at {{ o.time|date:"P" }} eastern{% endif %}</h1>
 
                         {% if o.title or o.description %}
                         <div class="box has-background-warning-light">
