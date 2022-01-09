@@ -12,11 +12,19 @@ from ulmg.models import (
     ProspectRating,
     Event,
     Occurrence,
+    Venue
 )
 
 admin.site.site_title = "The ULMG"
 admin.site.site_header = "The ULMG: Admin"
 admin.site.index_title = "Administer The ULMG Website"
+
+
+@admin.register(Venue)
+class VenueAdmin(admin.ModelAdmin):
+    model = Venue
+    exclude = []
+    list_display = ["name", 'mlb_team', 'team', 'park_factor']
 
 
 class OccurrenceInline(admin.StackedInline):

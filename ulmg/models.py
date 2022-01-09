@@ -119,6 +119,43 @@ class Team(BaseModel):
         return Player.objects.filter(team=self)
 
 
+class Venue(BaseModel):
+    team = models.ForeignKey(Team, on_delete=models.SET_NULL, null=True, blank=True)
+    name = models.CharField(max_length=255)
+    mlb_team = models.CharField(max_length=255)
+
+    first_year = models.IntegerField(null=True, blank=True)
+    stadium_blurb = models.TextField(null=True, blank=True)
+    clem_venue_img = models.CharField(max_length=255, null=True, blank=True)
+    clem_venue_slug = models.CharField(max_length=255, null=True, blank=True)
+    clem_venue_url = models.CharField(max_length=255, null=True, blank=True)
+
+    mlb_venue_id = models.CharField(max_length=255)
+    mlb_venue_url = models.CharField(max_length=255)
+    park_factor = models.IntegerField(null=True, blank=True)
+    pf_wobacon = models.IntegerField(null=True, blank=True)
+    pf_bacon = models.IntegerField(null=True, blank=True)
+    pf_runs = models.IntegerField(null=True, blank=True)
+    pf_obp = models.IntegerField(null=True, blank=True)
+    pf_h = models.IntegerField(null=True, blank=True)
+    pf_1b = models.IntegerField(null=True, blank=True)
+    pf_2b = models.IntegerField(null=True, blank=True)
+    pf_3b = models.IntegerField(null=True, blank=True)
+    pf_hr = models.IntegerField(null=True, blank=True)
+    pf_bb = models.IntegerField(null=True, blank=True)
+    pf_so = models.IntegerField(null=True, blank=True)
+    pf_years = models.CharField(max_length=255, null=True, blank=True)
+    pf_pa = models.IntegerField(null=True, blank=True)
+
+    def __unicode__(self):
+        if self.team:
+            return f"{self.name} ({self.team.abbreviation})"
+        return self.name
+
+    class Meta:
+        ordering = ['name']
+
+
 class Player(BaseModel):
     """
     Canonical representation of a baseball player.
