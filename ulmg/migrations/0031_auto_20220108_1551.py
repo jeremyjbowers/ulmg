@@ -6,18 +6,18 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('ulmg', '0030_event_occurrence'),
+        ("ulmg", "0030_event_occurrence"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='occurrence',
-            name='title',
+            model_name="occurrence",
+            name="title",
             field=models.CharField(blank=True, max_length=255, null=True),
         ),
         migrations.AlterField(
-            model_name='occurrence',
-            name='chat_link',
+            model_name="occurrence",
+            name="chat_link",
             field=models.CharField(blank=True, max_length=255, null=True),
         ),
     ]

@@ -11,7 +11,7 @@ from ulmg.models import (
     Owner,
     ProspectRating,
     Event,
-    Occurrence
+    Occurrence,
 )
 
 admin.site.site_title = "The ULMG"
@@ -25,11 +25,12 @@ class OccurrenceInline(admin.StackedInline):
     min_num = 1
     extra = 0
 
+
 @admin.register(Event)
 class EventAdmin(admin.ModelAdmin):
     model = Event
-    list_display = ['title', 'description']
-    search_fields = ['title', 'description']
+    list_display = ["title", "description"]
+    search_fields = ["title", "description"]
     inlines = [OccurrenceInline]
 
 

@@ -1020,6 +1020,7 @@ class Event(BaseModel):
     def __unicode__(self):
         return self.title
 
+
 class Occurrence(BaseModel):
     event = models.ForeignKey(Event, on_delete=models.CASCADE)
     title = models.CharField(max_length=255, blank=True, null=True)
