@@ -152,6 +152,28 @@ class Venue(BaseModel):
             return f"{self.name} ({self.team.abbreviation})"
         return self.name
 
+    def similar_parks(self):
+        upper_bound = self.park_factor + 2
+        lower_bound = self.park_factor - 2
+
+        return Venue.objects.filter(park_factor__lte=upper_bound, park_factor__gte=lower_bound).order_by('park_factor')
+
+    def park_type(self):
+
+        if self.park_factor < 95:
+            return "extreme pitcher's"
+
+        if self.park_factor > 105:
+            return "extreme hitter's"
+        
+        if self.park_factor < 97:
+            return "slight pitcher's"
+
+        if self.park_factor > 103:
+            return "slight hitter's"
+
+        return "neutral"
+
     class Meta:
         ordering = ['name']
 

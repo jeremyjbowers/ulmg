@@ -24,6 +24,7 @@ urlpatterns = [
     path("teams/<str:abbreviation>/live/", views.site.team_realtime),
     path("teams/<str:abbreviation>/", views.site.team_detail),
     path("trades/", views.site.trades),
+    path("venues/", views.site.venue_list),
     path("calendar/<int:year>/", views.site.calendar_by_season),
     path("calendar/", views.site.current_calendar),
     path("prospect-rankings/<int:year>/", views.site.prospect_ranking_list),

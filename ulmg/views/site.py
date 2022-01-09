@@ -15,6 +15,12 @@ from datetime import datetime
 
 from ulmg import models, utils
 
+def venue_list(request):
+    context = utils.build_context(request)
+    context['venues'] = models.Venue.objects.all().order_by('-park_factor', 'name')
+
+    return render(request, "venue_list.html", context)
+
 
 def current_calendar(request):
     context = utils.build_context(request)
@@ -142,6 +148,8 @@ def team_detail(request, abbreviation):
     pitchers = team_players.filter(position="P").order_by(
         "-level_order", "-is_carded", "last_name", "first_name"
     )
+
+    context['venue'] = models.Venue.objects.get(team=context['team'])
 
     position_groups = (
         team_players.exclude(position="P")
