@@ -14,7 +14,7 @@ class Command(BaseCommand):
         draft = []
 
         with open("data/2022/ftrax_2022_draft.html", "r") as readfile:
-            soup = BeautifulSoup(readfile.read(), "lxml")
+            soup = BeautifulSoup(readfile.read(), "html.parser")
             rows = soup.select("table.draftGrid tr")[1:]
 
             for rnd, row in enumerate(rows):

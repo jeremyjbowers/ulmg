@@ -28,7 +28,7 @@ class Command(BaseCommand):
             url = f"https://baseballsavant.mlb.com/leaderboard/statcast-park-factors?type=year&year={year}&batSide=&stat=index_wOBA&condition=All&rolling="
 
             r = requests.get(url)
-            soup = BeautifulSoup(r.content, "lxml")
+            soup = BeautifulSoup(r.content, "html.parser")
 
             raw_data = (
                 soup.select("div.article-template")[0]

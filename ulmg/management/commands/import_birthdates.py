@@ -21,7 +21,7 @@ class Command(BaseCommand):
             fg_id__isnull=False, birthdate__isnull=True
         ).exclude(fg_id=""):
             r = requests.get(obj.fg_url)
-            soup = BeautifulSoup(r.text, "lxml")
+            soup = BeautifulSoup(r.text, "html.parser")
             b1 = soup.select("tr.player-info__bio-birthdate td")[0].contents
             b2 = b1[0].split(" (")[0].strip()
             birthdate = dateparser.parse(b2)

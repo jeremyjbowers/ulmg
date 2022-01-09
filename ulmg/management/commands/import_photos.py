@@ -22,7 +22,7 @@ class Command(BaseCommand):
         for p in players:
             if p.bref_url != "":
                 r = requests.get(p.bref_url)
-                soup = BeautifulSoup(r.content, "lxml")
+                soup = BeautifulSoup(r.content, "html.parser")
                 img = soup.select("div#meta div.media-item img")
                 try:
                     image = img[0].attrs["src"]
