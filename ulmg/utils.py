@@ -328,7 +328,7 @@ def get_sheet(sheet_id, sheet_range):
 
 def get_fg_results(url):
     r = requests.get(url, verify=False)
-    soup = BeautifulSoup(r.text, "lxml")
+    soup = BeautifulSoup(r.text, "html.parser")
     return soup.select("#LeaderBoard1_dg1_ctl00 tbody tr")
 
 
