@@ -18,6 +18,15 @@ from ulmg import models, utils
 
 @staff_member_required
 @login_required
+def special_bulk_add_players(request):
+    context = utils.build_context(request)
+
+    return render(request, "special_bulk_add.html", context)
+
+
+
+@staff_member_required
+@login_required
 def player_util(request):
     context = utils.build_context(request)
     context["no_ids"] = (
