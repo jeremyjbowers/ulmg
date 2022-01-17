@@ -15,6 +15,7 @@ from datetime import datetime
 
 from ulmg import models, utils
 
+
 def venue_list(request):
     context = utils.build_context(request)
     context['venues'] = models.Venue.objects.all().order_by('-park_factor', 'name')

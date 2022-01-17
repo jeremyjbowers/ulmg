@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <div class="container">
+        <div class="columns">
+            <div class="column">
+                <div class="field">
+                    <label class="label">Player list</label>
+                    <textarea id="players" name="players" class="textarea"></textarea>
+                </div>
+                <div class="field">
+                    <button id="submit" class="button submit-players">submit</button>
+                </div>
+            </div>
+            <div class="column">
+                <h2 class="title is-4">Created players</h2>
+                <ul id="added_players"></ul>
+            </div>
+            <div class="column">
+                <h2 class="title is-4">Found players</h2>
+                <ul id="found_players"></ul>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extrascript %}
+<script type="text/javascript">
+    $(function(){
+        $found_players = $('#found_players');
+        $created_players = $('#added_players');
+        $button = $("#submit");
+
+        var toggle_button = function() {
+            $button.toggleClass('is-loading');
+        }
+
+        var render_player_row = function(player) {
+            var player_html = "<li><a target='_blank' href='/admin/ulmg/player/" + player['ulmg_id'] + "/change/'>" + player['position'] + " " + player['name'] + "</a></li>";
+
+            if (player['created']){
+                $created_players.append(player_html);
+            } else {
+                $found_players.append(player_html);
+            }
+            
+        }
+
+        var render_players = function(players) {
+            $.each(players, function(idx, p){
+                console.log(p);
+                render_player_row(p);
+            });
+            toggle_button();
+        }
+
+        var submit_player_handler = function(el) {
+
+            el.preventDefault();
+            $el = $(this);
+
+            var player_text = $('#players').val();
+
+            $found_players.html("");
+            $created_players.html("");
+            toggle_button();
+
+            $.ajax({
+                type: "POST",
+                data: {"players": player_text},
+                url: '/api/v1/player/bulk/',
+                success: function(response){
+                    render_players(response['players']);
+                }
+            });
+        }
+
+        $('body').on('click', 'button.submit-players', submit_player_handler);
+    });
+</script>
+
+{% endblock %}
