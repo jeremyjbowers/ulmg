@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 
 {% block content %}
+<div class="section desktop">
+
 
 {% if form.errors %}
 <p>Your username and password didn't match. Please try again.</p>
@@ -45,4 +47,5 @@
 {# Assumes you setup the password_reset view in your URLconf #}
 <p><a href="{% url 'password_reset' %}">Lost password?</a></p>
 
+</div>
 {% endblock %}
