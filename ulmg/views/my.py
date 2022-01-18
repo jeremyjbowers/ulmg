@@ -103,20 +103,20 @@ def my_wishlist(request, list_type):
                         context["op_hitters"].append(p)
         try:
             context["aa_hitters"] = sorted(
-                context["aa_hitters"], key=lambda x: (x.rank)
+                context["aa_hitters"], key=lambda x: (x.tier, x.rank)
             )
         except:
             pass
 
         try:
             context["aa_pitchers"] = sorted(
-                context["aa_pitchers"], key=lambda x: (x.rank)
+                context["aa_pitchers"], key=lambda x: (x.tier, x.rank)
             )
         except:
             pass
 
-        context["op_hitters"] = sorted(context["op_hitters"], key=lambda x: (x.rank))
-        context["op_pitchers"] = sorted(context["op_pitchers"], key=lambda x: (x.rank))
+        context["op_hitters"] = sorted(context["op_hitters"], key=lambda x: (x.tier, x.rank))
+        context["op_pitchers"] = sorted(context["op_pitchers"], key=lambda x: (x.tier, x.rank))
 
     if list_type == "trade":
         for p in models.WishlistPlayer.objects.filter(wishlist=context["wishlist"]):

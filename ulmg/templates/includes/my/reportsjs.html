@@ -38,14 +38,15 @@
             var playerid = $el.parent('div').attr('data-playerid');
             var tier = $el.text();
     
-            $el.parent('div').children('a.tier-selection').removeClass('is-primary').removeClass('is-info').removeClass('is-success').removeClass('is-warning').removeClass('is-danger')
+            $el.parent('div').children('a.tier-selection').removeClass('is-primary').removeClass('is-info').removeClass('is-success').removeClass('is-warning').removeClass('is-danger').removeClass('is-link')
     
             var tier_map = {
-                "1": "is-primary",
-                "2": "is-info",
-                "3": "is-success",
-                "4": "is-warning",
-                "5": "is-danger",            
+                "1": "is-link",
+                "2": "is-primary",
+                "3": "is-warning",
+                "4": "is-info",
+                "5": "is-success",
+                "6": "is-danger"            
             }
     
             $el.addClass(tier_map[tier]);
