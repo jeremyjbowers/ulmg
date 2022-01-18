@@ -1,6 +1,6 @@
 {% load ulmg_tags %}
 <tr class="list-group-item {% if p.player.is_prospect %}{% if not p.player.ls_is_mlb %} minors{% endif %}{% endif %}{% if p.player.ls_is_mlb == False and p.player.is_amateur == True %} amateur{% endif %}" data-playername="{{ p.player.name }}" data-playerid="{{ p.pk }}" data-rank="{{ p.rank }}">
-    <td id="rank-{{ p.pk }}">{% if p.rank == 0 %}-{% else %}{{ p.rank }}{% endif %}</td>
+    <!-- <td id="rank-{{ p.pk }}">{% if p.rank == 0 %}-{% else %}{{ p.rank }}{% endif %}</td> -->
     {% include "includes/my/player_name.html" %}
     <td>{{ p.player.position|default_if_none:"-" }}</td>
     <td>{{ p.player.age|default_if_none:"-" }}</td>
@@ -18,7 +18,7 @@
     <td>{% if p.player.ls_plate_appearances > 0 %}{{ p.player.ls_slg|kill_leading_zero }}{% endif %}</td>
     <td>{% if p.player.ls_plate_appearances > 0 %}{{ p.player.ls_k_pct|default_if_none:"-" }}{% else %}-{% endif %}</td>
     <td>{% if p.player.ls_plate_appearances > 0 %}{{ p.player.ls_bb_pct|default_if_none:"-" }}{% else %}-{% endif %}</td>    
-    {% if p.player.ls_is_mlb %}
+    <!-- {% if p.player.ls_is_mlb %}
     <td>{% if p.player.ls_plate_appearances > 0 %}{{ p.player.ls_xavg|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}</td>
     <td>{% if p.player.ls_plate_appearances > 0 %}{{ p.player.ls_xwoba|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}</td>
     <td>{% if p.player.ls_plate_appearances > 0 %}{{ p.player.ls_xslg|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}</td>
@@ -26,6 +26,6 @@
     <td>-</td>
     <td>-</td>
     <td>-</td>
-    {% endif %}
+    {% endif %} -->
     <td>{% include "includes/my/tierpicker.html" %}</td>
 </tr>
