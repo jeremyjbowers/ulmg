@@ -363,6 +363,31 @@ class Player(BaseModel):
     #
     stats = models.JSONField(null=True, blank=True)
 
+    # STRAT RATINGS
+    # here's the schema for strat ratings
+    # year (current), type (hit/pitch)
+    # pitching and hitting stats are in separate dictionaries.
+    #
+    # Not used yet.
+    #
+    strat_ratings = models.JSONField(null=True, blank=True)
+
+    # current strat stats go here
+    strat_obtb_r = models.IntegerField(blank=True, null=True)
+    strat_h_r = models.IntegerField(blank=True, null=True)
+    strat_ob_r = models.IntegerField(blank=True, null=True)
+    strat_tb_r = models.IntegerField(blank=True, null=True)
+    strat_hr_r = models.IntegerField(blank=True, null=True)
+    strat_bb_r = models.IntegerField(blank=True, null=True)
+    strat_so_r = models.IntegerField(blank=True, null=True)
+    strat_obtb_l = models.IntegerField(blank=True, null=True)
+    strat_h_l = models.IntegerField(blank=True, null=True)
+    strat_ob_l = models.IntegerField(blank=True, null=True)
+    strat_tb_l = models.IntegerField(blank=True, null=True)
+    strat_hr_l = models.IntegerField(blank=True, null=True) 
+    strat_bb_l = models.IntegerField(blank=True, null=True)
+    strat_so_l = models.IntegerField(blank=True, null=True)
+
     # PREVIOUS_YEAR STATS
     py_is_mlb = models.BooleanField(default=False)
     py_hits = models.IntegerField(blank=True, null=True)
