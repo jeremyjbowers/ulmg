@@ -134,6 +134,34 @@ def fuzzy_find_prospectrating(
     return output
 
 
+def strat_find_player(first_initial, last_name, hitter=True, mlb_team_abbr=None, ulmg_id=None):
+    if ulmg_id:
+        return models.Player.objects.filter(id=ulmg_id)[0]
+
+    players = models.Player.objects.filter(is_carded=True)
+
+    if hitter:
+        players = players.exclude(position="P")
+
+    else:
+        players = players.filter(position="P")
+
+    players = players.filter(first_name__startswith=first_initial)
+
+    players = players.annotate(similarity=TrigramSimilarity("last_name", last_name))
+    players = players.filter(similarity__gt=0.5)
+    players = players.order_by("-similarity")
+
+    if len(players) > 1:
+        if mlb_team_abbr:
+            players = players.filter(mlb_team_abbr=mlb_team_abbr)
+
+    if len(players) == 0:
+        return None
+
+    return players[0]
+
+
 def fuzzy_find_player(name_fragment, score=0.7, position=None, mlb_team_abbr=None):
 
     players = models.Player.objects
