@@ -543,6 +543,13 @@ class Player(BaseModel):
 
         self.stats[stats_dict["slug"]] = stats_dict
 
+
+    @property
+    def strat_obtb_tot(self):
+        if self.strat_obtb_l and self.strat_obtb_r:
+            return int((self.strat_obtb_l * 0.30) + (self.strat_obtb_r * 0.70))
+
+
     @property
     def latest_rating(self):
         ratings = ProspectRating.objects.filter(player=self).order_by("-year")
