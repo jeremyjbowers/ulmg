@@ -1,7 +1,7 @@
 {% load ulmg_tags %}
 <td>{{ p.mlb_team_abbr|default_if_none:"-" }}</td>
-<td>{% if p.is_injured %}🚫{% endif %}</td>
-<td>{{ p.role|default_if_none:"" }}</td>
+<!-- <td>{% if p.is_injured %}🚫{% endif %}</td>
+<td>{{ p.role|default_if_none:"" }}</td> -->
 
 <td style="max-width:75px;">{% if p.defense_display %}{{ p.defense_display }}{% else %}{{ p.position }}{% endif %}</td>
 
@@ -37,6 +37,14 @@
 </td>
 <td data-value="{{ p.stats.current.wrc_plus|default_if_none:"-999" }}">
     {% if p.stats.current.plate_appearances > 0 %}{{ p.stats.current.wrc_plus|default_if_none:"-" }}{% else %}-{% endif %}
+</td>
+
+<td data-value="{{ p.strat_obtb_l|default_if_none:"-999" }}">
+    {% if p.strat_obtb_l %}{{ p.strat_obtb_l|default_if_none:"-" }}{% else %}-{% endif %}
+</td>
+
+<td data-value="{{ p.strat_obtb_r|default_if_none:"-999" }}">
+    {% if p.strat_obtb_r %}{{ p.strat_obtb_r|default_if_none:"-" }}{% else %}-{% endif %}
 </td>
 
 <td data-value="{{ p.stats.current.xavg|default_if_none:"-999" }}">
