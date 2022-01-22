@@ -274,6 +274,15 @@ class PlayerAdmin(admin.ModelAdmin):
             },
         ),
         (
+            "Strat",
+            {
+                "classes": ("collapse",),
+                "fields": (
+                    ("strat_obtb_l", "strat_obtb_r"),
+                ),
+            },
+        ),
+        (
             "Advanced",
             {
                 "classes": ("collapse",),
