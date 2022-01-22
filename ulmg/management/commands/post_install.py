@@ -21,4 +21,6 @@ import pytz
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
-        call_command('load_strat_ratings')
+        call_command('migrate')
+        call_command('collectstatic')
+        # call_command('load_strat_ratings')
