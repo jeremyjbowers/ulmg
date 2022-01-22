@@ -42,9 +42,11 @@
 <td data-value="{{ p.strat_obtb_l|default_if_none:"-999" }}">
     {% if p.strat_obtb_l %}{{ p.strat_obtb_l|default_if_none:"-" }}{% else %}-{% endif %}
 </td>
-
 <td data-value="{{ p.strat_obtb_r|default_if_none:"-999" }}">
     {% if p.strat_obtb_r %}{{ p.strat_obtb_r|default_if_none:"-" }}{% else %}-{% endif %}
+</td>
+<td data-value="{{ p.strat_obtb_tot|default_if_none:"-999" }}">
+    {% if p.strat_obtb_tot %}{{ p.strat_obtb_tot|default_if_none:"-" }}{% else %}-{% endif %}
 </td>
 
 <td data-value="{{ p.stats.current.xavg|default_if_none:"-999" }}">
