@@ -329,11 +329,6 @@ class Player(BaseModel):
     # DEFENSE
     defense = ArrayField(models.CharField(max_length=10), blank=True, null=True)
 
-    # POSSIBLY FAKE SOMWORLD STATS
-    raar = models.DecimalField(max_digits=4, decimal_places=2, blank=True, null=True)
-    raal = models.DecimalField(max_digits=4, decimal_places=2, blank=True, null=True)
-    raat = models.DecimalField(max_digits=4, decimal_places=2, blank=True, null=True)
-
     # FROM LIVE ROSTERS
     is_starter = models.BooleanField(default=False)
     is_bench = models.BooleanField(default=False)
