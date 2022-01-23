@@ -10,5 +10,6 @@
     {% endif %}{% endif %}
 
     <a class="has-text-weight-semibold" href="/players/{{ p.id }}/" target="_blank">{{ p.name }}</a></span>
+    <!-- <a class="has-text-weight-semibold" href="/players/{{ p.id }}/" target="_blank">{{ p.name }}</a>{% if p.prospect_rating_avg < 120.0 %} &#128175;{% endif %}</span> -->
     <!-- {% if p.is_prospect and p.notes %}<a class="report-toggle" data-playerid="{{ p.id }}" href="#"><span class="icon has-text-black"><i class="far fa-file-alt"></i></span></a>{% endif %} -->
 </td>
