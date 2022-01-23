@@ -289,6 +289,8 @@ class PlayerAdmin(admin.ModelAdmin):
                 "fields": (
                     "is_carded",
                     "is_owned",
+                    'defense',
+                    'stats'
                 ),
             },
         ),
