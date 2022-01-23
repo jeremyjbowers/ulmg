@@ -29,6 +29,7 @@
             <thead>
             <tr>
                 <th data-sortable-type="alpha">player</th>
+                <th data-sortable-type="alpha">pos</th>
                 <th data-sortable-type="alpha">team</th>
                 <th data-sortable-type="alpha">org</th>
                 <th data-sortable-type="numeric">avg</th>
@@ -46,6 +47,7 @@
             {% for p in top_100 %}
             <tr>
                 {% include "includes/my/player_name.html" %}
+                <td data-value="{{ p.player.position }}">{{ p.player.position }}</td>
                 <td data-value="{% if p.player.team %}{{ p.player.team.abbreviation }}{% else %}zzz{% endif %}">{% if p.player.team %} <a href="/teams/{{ p.player.team.abbreviation }}/">{{ p.player.team.abbreviation }}</a>{% endif %}</td>
                 <td data-value="{{ p.avg|default_if_none:"999" }}">{{ p.player.mlb_team_abbr }}</td>
                 <td data-value="{{ p.avg|default_if_none:"999" }}">{{ p.avg }}</td>
@@ -70,6 +72,7 @@
                 <thead>
                 <tr>
                     <th data-sortable-type="alpha">player</th>
+                    <th data-sortable-type="alpha">pos</th>
                     <th data-sortable-type="alpha">team</th>
                     <th data-sortable-type="numeric">avg</th>
                     <th data-sortable-type="numeric">ba</th>
@@ -86,6 +89,7 @@
                 {% for p in top_draft %}
                 <tr>
                     {% include "includes/my/player_name.html" %}
+                    <td data-value="{{ p.player.position }}">{{ p.player.position }}</td>
                     <td data-value="{% if p.player.team %}{{ p.player.team.abbreviation }}{% else %}zzz{% endif %}">{% if p.player.team %} <a href="/teams/{{ p.player.team.abbreviation }}/">{{ p.player.team.abbreviation }}</a>{% endif %}</td>
                     <td data-value="{{ p.avg|default_if_none:"999" }}">{{ p.avg }}</td>
                     <td data-value="{{ p.ba|default_if_none:"999" }}">{{ p.ba|default_if_none:"-" }}</td>
@@ -109,5 +113,4 @@
 
 {% block extrascript %}
 {% include "includes/my/wishlistjs.html" %}
-{% include "includes/my/reportsjs.html" %}
 {% endblock %}
