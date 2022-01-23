@@ -10,6 +10,11 @@
 <td data-value="{{ p.stats.current.k_9|default_if_none:"-999" }}">{% if p.stats.current.ip > 0 %}{{ p.stats.current.k_9|floatformat:1|default_if_none:"-"  }}{% else %}-{% endif %}</td>
 <td data-value="{{ p.stats.current.bb_9|default_if_none:"999" }}">{% if p.stats.current.ip > 0 %}{{ p.stats.current.bb_9|floatformat:1|default_if_none:"-"  }}{% else %}-{% endif %}</td>
 <td data-value="{{ p.stats.current.hr_9|default_if_none:"999" }}">{% if p.stats.current.ip > 0 %}{{ p.stats.current.hr_9|floatformat:1|default_if_none:"-"  }}{% else %}-{% endif %}</td>
+
+<td data-value="{{ p.strat_p_obtb_l|default_if_none:"999" }}">{% if p.strat_p_obtb_l > 0 %}{{ p.strat_p_obtb_l|default_if_none:"-"  }}{% else %}-{% endif %}</td>
+<td data-value="{{ p.strat_p_obtb_r|default_if_none:"999" }}">{% if p.strat_p_obtb_r > 0 %}{{ p.strat_p_obtb_r|default_if_none:"-"  }}{% else %}-{% endif %}</td>
+<td data-value="{{ p.strat_p_obtb_tot|default_if_none:"999" }}">{% if p.strat_p_obtb_tot > 0 %}{{ p.strat_p_obtb_tot|default_if_none:"-"  }}{% else %}-{% endif %}</td>
+
 <td data-value="{{ p.stats.current.fip|default_if_none:"999" }}">{% if p.stats.current.ip > 0 %}{{ p.stats.current.fip|floatformat:2|default_if_none:"-"  }}{% else %}-{% endif %}</td>
 <td data-value="{{ p.stats.current.xfip|default_if_none:"999" }}">{% if p.stats.current.ip > 0 %}{{ p.stats.current.xfip|floatformat:2|default_if_none:"-"  }}{% else %}-{% endif %}</td>
 <td data-value="{{ p.stats.current.siera|default_if_none:"999" }}">{% if p.stats.current.ip > 0 and p.stats.current.siera %}{{ p.ls_siera|floatformat:2|default_if_none:"-"  }}{% else %}-{% endif %}</td>

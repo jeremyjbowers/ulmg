@@ -388,6 +388,21 @@ class Player(BaseModel):
     strat_bb_l = models.IntegerField(blank=True, null=True)
     strat_so_l = models.IntegerField(blank=True, null=True)
 
+    strat_p_obtb_r = models.IntegerField(blank=True, null=True)
+    strat_p_h_r = models.IntegerField(blank=True, null=True)
+    strat_p_ob_r = models.IntegerField(blank=True, null=True)
+    strat_p_tb_r = models.IntegerField(blank=True, null=True)
+    strat_p_hr_r = models.IntegerField(blank=True, null=True)
+    strat_p_bb_r = models.IntegerField(blank=True, null=True)
+    strat_p_so_r = models.IntegerField(blank=True, null=True)
+    strat_p_obtb_l = models.IntegerField(blank=True, null=True)
+    strat_p_h_l = models.IntegerField(blank=True, null=True)
+    strat_p_ob_l = models.IntegerField(blank=True, null=True)
+    strat_p_tb_l = models.IntegerField(blank=True, null=True)
+    strat_p_hr_l = models.IntegerField(blank=True, null=True) 
+    strat_p_bb_l = models.IntegerField(blank=True, null=True)
+    strat_p_so_l = models.IntegerField(blank=True, null=True)
+
     # PREVIOUS_YEAR STATS
     py_is_mlb = models.BooleanField(default=False)
     py_hits = models.IntegerField(blank=True, null=True)
@@ -543,12 +558,15 @@ class Player(BaseModel):
 
         self.stats[stats_dict["slug"]] = stats_dict
 
+    @property
+    def strat_p_obtb_tot(self):
+        if self.strat_p_obtb_l and self.strat_p_obtb_r:
+            return int((self.strat_p_obtb_l * 0.30) + (self.strat_p_obtb_r * 0.70))
 
     @property
     def strat_obtb_tot(self):
         if self.strat_obtb_l and self.strat_obtb_r:
             return int((self.strat_obtb_l * 0.30) + (self.strat_obtb_r * 0.70))
-
 
     @property
     def latest_rating(self):
