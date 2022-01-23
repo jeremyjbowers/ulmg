@@ -15,86 +15,133 @@ from ulmg import utils
 
 
 class Command(BaseCommand):
-    def int_or_null(self, possible_int):
-        try:
-            return int(possible_int)
-        except:
-            return None
+    # if you have data and want to run this for a previous season, here is how you'd do it.
+    # you'd want to make sure not to grab new data.
+    season = 2022
 
-    def load_top_draft(self):
-        with open("data/2021/top_draft_prospects.csv", "r") as readfile:
-            rows = list(csv.DictReader(readfile))
+    # the sheets where the top 100 and top draft are collated.
+    top_100_filename = f"data/{season}/top_100_prospects.json"
+    top_100_sheet = "1Wb9f6QrGULjg2qs2Bmq6EWVXXKmw-WdYg-loYvGnpFY"
+    top_100_range = "top_100!A:M"
+    top_draft_sheet = "1Wb9f6QrGULjg2qs2Bmq6EWVXXKmw-WdYg-loYvGnpFY"
+    top_draft_filename = f"data/{season}/top_draft_prospects.json"
+    top_draft_range = "top_draft!A:L"
 
-        for row in rows:
-            row = dict(row)
-            p = utils.fuzzy_find_player(row["player"])
-            if len(p) > 0:
-                p = p[0]
-            else:
-                p = None
-
-            if p:
-                p.is_prospect = True
-                p.prospect_rating_avg = Decimal(row["avg"])
-                p.save()
-
-            pr, created = models.ProspectRating.objects.get_or_create(
-                year=2021, player=p, player_name=row["player"]
-            )
-
-            pr.avg = row["avg"]
-            pr.med = row["med"]
-            pr.mlb = self.int_or_null(row["mlb"])
-            pr.ba = self.int_or_null(row["ba"])
-            pr.plive = self.int_or_null(row["plive"])
-            pr.espn = self.int_or_null(row["espn"])
-            pr.law = self.int_or_null(row["law"])
-            pr.p365 = self.int_or_null(row["p365"])
-            pr.fg = self.int_or_null(row["fg"])
-            pr.cbs = self.int_or_null(row["cbs"])
-
-            pr.rank_type = "top-draft"
-
-            pr.save()
-
-    def load_top_100(self):
-        with open("data/2021/top_100_prospects.csv", "r") as readfile:
-            rows = list(csv.DictReader(readfile))
-
-        for row in rows:
-            row = dict(row)
-            p = utils.fuzzy_find_player(row["player"])
-            if len(p) > 0:
-                p = p[0]
-            else:
-                p = None
-
-            if p:
-                p.is_prospect = True
-                p.prospect_rating_avg = Decimal(row["avg"])
-                p.save()
-
-            pr, created = models.ProspectRating.objects.get_or_create(
-                year=2021, player=p, player_name=row["player"]
-            )
-
-            pr.avg = row["avg"]
-            pr.med = row["med"]
-            pr.mlb = self.int_or_null(row["mlb"])
-            pr.ba = self.int_or_null(row["ba"])
-            pr.bp = self.int_or_null(row["bp"])
-            pr.law = self.int_or_null(row["law"])
-            pr.fg = self.int_or_null(row["fg"])
-            pr.espn = self.int_or_null(row["espn"])
-            pr.plive = self.int_or_null(row["plive"])
-            pr.ftrax = self.int_or_null(row["ftrax"])
-
-            pr.rank_type = "top-100"
-
-            pr.save()
+    file_map = {
+        "top-100": top_100_filename,
+        "top-draft": top_draft_filename
+    }
 
     def handle(self, *args, **options):
-        models.ProspectRating.objects.all().delete()
+        # These two commands make the script more or less idempotent.
+        # Generally, I want this sort of thing to:
+        # (a) clean up ahead of what it plans to modify
+        # (b) do the modifications such that it won't create duplicates
+
+        # (1) Remove all previous runs of this script because it should be fresh. Leave previous years.
+        models.ProspectRating.objects.filter(year=self.season).delete()
+
+        # (2) Clear out prospect status. This is distinct from is_minors. We'll set this soon.
         models.Player.objects.update(is_prospect=False)
+
+        # Get data files
+        self.get_top_draft_data()
+        self.get_top_100_data()
+
         self.load_top_100()
         self.load_top_draft()
+
+    def get_top_draft_data(self, fresh=False):
+        """
+        Gets data for draft prospects from a Google sheet.
+        Only grabs it new if fresh=True is set.
+        """
+        if fresh:
+            os.system(f'rm -rf {self.top_draft_filename}')
+
+        if not os.path.isfile(self.top_draft_filename):
+            players = utils.get_sheet(self.top_draft_sheet, self.top_draft_range)
+
+            with open(self.top_draft_filename, 'w') as writefile:
+                writefile.write(json.dumps(players))
+
+    def get_top_100_data(self, fresh=False):
+        """
+        Gets data for top 100 prospects from a Google sheet.
+        Only grabs it new if fresh=True is set.
+        """
+        if fresh:
+            os.system(f'rm -rf {self.top_100_filename}')
+
+        if not os.path.isfile(self.top_100_filename):
+            players = utils.get_sheet(self.top_100_sheet, self.top_100_range)
+
+            with open(self.top_100_filename, 'w') as writefile:
+                writefile.write(json.dumps(players)) 
+
+    def load_top_draft(self, save=True):
+        rank_type = "top-draft"
+        filename = self.file_map[rank_type]
+
+        with open(self.top_draft_filename, "r") as readfile:
+            players = json.loads(readfile.read())
+
+        for row in players:
+            pr, created = self.get_player_and_rating(row, rank_type)
+            pr.avg = row["avg"]
+            pr.med = row["med"]
+            pr.mlb = utils.int_or_none(row["mlb"])
+            pr.ba = utils.int_or_none(row["ba"])
+            pr.plive = utils.int_or_none(row["plive"])
+            pr.espn = utils.int_or_none(row["espn"])
+            pr.law = utils.int_or_none(row["law"])
+            pr.p365 = utils.int_or_none(row["p365"])
+            pr.fg = utils.int_or_none(row["fg"])
+            pr.cbs = utils.int_or_none(row["cbs"])
+
+            if save:
+                pr.save()
+                print(pr)
+
+    def load_top_100(self, save=True):
+        rank_type = "top-100"
+        filename = self.file_map[rank_type]
+
+        with open(filename, "r") as readfile:
+            players = json.loads(readfile.read())
+
+        for row in players:
+            pr, created = self.get_player_and_rating(row, rank_type)
+            pr.avg = row["avg"]
+            pr.med = row["med"]
+            pr.mlb = utils.int_or_none(row["mlb"])
+            pr.ba = utils.int_or_none(row["ba"])
+            pr.bp = utils.int_or_none(row["bp"])
+            pr.law = utils.int_or_none(row["law"])
+            pr.fg = utils.int_or_none(row["fg"])
+            pr.espn = utils.int_or_none(row["espn"])
+            pr.plive = utils.int_or_none(row["plive"])
+            pr.ftrax = utils.int_or_none(row["ftrax"])
+
+            if save:
+                pr.save()
+                print(pr)
+
+    def get_player_and_rating(self, row, rank_type):
+        p = utils.fuzzy_find_player(row["player"])
+        if len(p) > 0:
+            p = p[0]
+        else:
+            p = None
+
+        if p:
+            p.is_prospect = True
+
+            # This is denormalized onto the player.
+            # Everything else is accessible via the associated ProspectRating.
+            p.prospect_rating_avg = Decimal(row["avg"])
+            p.save()
+
+        return models.ProspectRating.objects.get_or_create(
+            year=self.season, player=p, player_name=row["player"], rank_type=rank_type
+        )  
