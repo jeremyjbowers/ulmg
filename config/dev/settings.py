@@ -21,6 +21,7 @@ INSTALLED_APPS = [
     "django.contrib.humanize",
     "django.contrib.staticfiles",
     "ulmg",
+    'prettyjson',
 ]
 
 MIDDLEWARE = [
@@ -90,7 +91,7 @@ LOGIN_URL = "/accounts/login/"
 LOGOUT_REDIRECT_URL = "/"
 
 STATIC_URL = "/static/"
-STATIC_ROOT = "/static/"
+STATIC_ROOT = "static/"
 
 # ULMG SPECIFIC SETTINGS
 MLB_ROSTER_SIZE = 30

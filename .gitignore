@@ -15,3 +15,5 @@ data/rosters/*
 
 app-id.txt
 app.yaml
+
+static/

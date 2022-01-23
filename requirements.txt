@@ -34,4 +34,5 @@ tzlocal==3.0
 ujson==5.1.0
 uritemplate==3.0.1
 urllib3==1.26.7
+django-prettyjson
 dateparser
