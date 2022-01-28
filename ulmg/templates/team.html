@@ -100,11 +100,11 @@
                 </thead>
                 <tbody>
                 {% for p in position.list %}
-                <tr class="{% if p.level != "B" and not p.is_protected and not p.covid_protected %}unprotected{% endif %}
-                {% if p.is_prospect %}{% if not p.ls_is_mlb %} minors{% endif %}{% endif %}
-                {% if p.ls_is_mlb == False and p.is_amateur == True %} amateur{% endif %}
+                <tr class="
+                {% if p.level == "V" and not p.is_protected %}unprotected {% endif %}
+                {% if not p.stats.current.level == "mlb" %}minors {% endif %}
                 ">
-                        {% include "includes/player_name.html" %}
+                    {% include "includes/player_name.html" %}
                         <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
                         <td data-value="{{ p.level|default_if_none:"Z" }}<">{{ p.level|default_if_none:"" }}</td>
                         {% include "includes/hitter_stat_cells.html" %}
@@ -141,9 +141,9 @@
                 </thead>
                 <tbody>
                 {% for p in pitchers %}
-                <tr class="{% if p.level == "V" and not p.is_protected and not p.covid_protected %}unprotected{% endif %}
-                {% if p.is_prospect %}{% if not p.ls_is_mlb %} minors{% endif %}{% endif %}
-                {% if p.ls_is_mlb == False and p.is_amateur == True %} amateur{% endif %}
+                <tr class="
+                {% if p.level == "V" and not p.is_protected %}unprotected {% endif %}
+                {% if not p.stats.current.level == "mlb" %}minors {% endif %}
                 ">
                         {% include "includes/player_name.html" %}
                         <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
