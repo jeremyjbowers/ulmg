@@ -57,7 +57,7 @@
                 </thead>
                 <tbody>
                 {% for p in position.list %}
-                    <tr{% if p.ls_is_mlb == False and p.ls_plate_appearances > 0 %} class="minors"{% endif %}>
+                    <tr{% if not p.stats.current.level == "mlb" %} class="minors"{% endif %}>
                         {% include "includes/player_name.html" %}
                         <td class="left">
                             <a href="/admin/ulmg/player/{{ p.id }}/change/">&#x270E; &Gt;</a>
@@ -91,8 +91,8 @@
                 </thead>
                 <tbody>
                 {% for p in pitchers %}
-                    <tr{% if p.ls_is_mlb == False and p.ls_ip > 0 %} class="minors"{% endif %}>
-                        {% include "includes/player_name.html" %}
+                <tr{% if not p.stats.current.level == "mlb" %} class="minors"{% endif %}>
+                    {% include "includes/player_name.html" %}
                         <td class="left">
                             <a href="/admin/ulmg/player/{{ p.id }}/change/">&#x270E; &Gt;</a>
                             {% if p.bref_url %}<a class="has-text-weight-light" target="_blank" href="{{ p.bref_url }}">BBR &Gt;</a>{% endif %}
