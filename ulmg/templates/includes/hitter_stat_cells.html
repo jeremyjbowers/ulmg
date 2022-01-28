@@ -5,6 +5,10 @@
 
 <td style="max-width:75px;">{% if p.defense_display %}{{ p.defense_display }}{% else %}{{ p.position }}{% endif %}</td>
 
+<td data-value="{{ p.stats.current.level|default_if_none:"-999" }}">
+    {% if p.stats.current.plate_appearances > 0 %}{{ p.stats.current.level }}{% else %}-{% endif %}
+</td>
+
 <td data-value="{{ p.stats.current.plate_appearances|default_if_none:"-999" }}">
     {% if p.stats.current.plate_appearances > 0 %}{{ p.stats.current.plate_appearances|default_if_none:"-" }}{% else %}-{% endif %}
 </td>

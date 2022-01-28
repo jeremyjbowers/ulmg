@@ -1,7 +1,11 @@
 {% load ulmg_tags %}
 <td>{{ p.mlb_team_abbr|default_if_none:"-" }}</td>
-<td>{% if p.is_injured %}🚫{% endif %}</td>
-<td>{{ p.role|default_if_none:"" }}</td>
+<!-- <td>{% if p.is_injured %}🚫{% endif %}</td>
+<td>{{ p.role|default_if_none:"" }}</td> -->
+
+<td data-value="{{ p.stats.current.level|default_if_none:"-999" }}">
+    {% if p.stats.current.ip > 0 %}{{ p.stats.current.level }}{% else %}-{% endif %}
+</td>
 
 <td data-value="{{ p.stats.current.g|default_if_none:"-999" }}">{% if p.stats.current.ip > 0 %}{{ p.stats.current.g|default_if_none:"-" }}{% else %}-{% endif %}</td>
 <td data-value="{{ p.stats.current.gs|default_if_none:"-999" }}">{% if p.stats.current.ip > 0 %}{{ p.stats.current.gs|default_if_none:"-" }}{% else %}-{% endif %}</td>
