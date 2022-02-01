@@ -1,23 +1,10 @@
 {% if roster_tab %}
 <td>
-    {% if p.covid_protected %}
-    <strong style="color: maroon;">** COVID **</strong>
-    {% else %}
-    <!--{% if p.is_35man_roster %}<strong>&check;</strong>{% endif %} -->
-    {% if p.is_mlb_roster %}<strong>MLB</strong>{% endif %}
-    {% if p.is_aaa_roster %}<em>AAA</em>{% endif %}
-    {% if p.is_reserve %}<span style="color: red;">ASR</span>{% endif %}
-    {% if p.is_1h_c %}<span style="color: red;">CAT1</span>{% endif %}
-    {% if p.is_1h_pos %}<span style="color: red;">POS1</span>{% endif %}
-    {% if p.is_1h_p %}<span style="color: red;">PIT1</span>{% endif %}
-    {% if p.is_2h_c %}<span style="color: red;">CAT2</span>{% endif %}
-    {% if p.is_2h_pos %}<span style="color: red;">POS2</span>{% endif %}
-    {% if p.is_2h_p %}<span style="color: red;">PIT2</span>{% endif %}
-    {% endif %}
 </td>
 {% endif %}
 
-{% if roster_tab %}<td style="text-align:right!important;">
+{% if roster_tab %}
+<td style="text-align:right!important;">
     {% if not p.covid_protected %}
     {% if p.is_carded and not p.is_mlb_roster and not p.is_reserve and mlb_roster_count < mlb_roster_size %}{% if not p.is_2h_c and not p.is_2h_pos and not p.is_2h_p %}<a class="button is-small is-outlined is-success player-action" data-playerid="{{ p.id }}" data-action="to_mlb">MLB &uarr;</a>{% endif %}{% endif %}
     {% if p.is_carded and not p.is_aaa_roster and not p.is_reserve %}{% if not p.is_2h_c and not p.is_2h_pos and not p.is_2h_p %}<a class="button is-small is-outlined is-info player-action" data-playerid="{{ p.id }}" data-action="to_aaa">AAA &darr;</a>{% endif %}{% endif %}
@@ -38,11 +25,13 @@
     {% endif %}
 </td>{% endif %}
 
-{% if protect_tab %}<td>
+{% if protect_tab %}
+<td>
     {% if p.is_35man_roster or p.is_reserve or p.is_1h_p or p.is_1h_c or p.is_1h_pos %}<a class="button is-small is-light is-warning player-action" data-playerid="{{ p.id }}" data-action="unprotect">&rarrhk;</a>{% endif %}
 
-    {% if p.is_carded and not p.is_35man_roster and not 35_roster_count == 35 and not p.level == "B" and not p.cannot_be_protected and not p.is_protected %}<a class="button is-small is-success is-outlined player-action" data-playerid="{{ p.id }}" data-action="to_35_man">35</a>{% endif %}
-</td>{% endif %}
+    {% if not p.is_35man_roster and not 35_roster_count == 35 and not p.level == "B" and not p.cannot_be_protected and not p.is_protected %}<a class="button is-small is-success is-outlined player-action" data-playerid="{{ p.id }}" data-action="to_35_man">35</a>{% endif %}
+</td>
+{% endif %}
 
 {% if protect_tab or roster_tab%}<td>
     <a class="button is-small is-danger is-outlined player-drop" data-playerid="{{ p.id }}" data-playername="{{ p.name }}">X</a>
