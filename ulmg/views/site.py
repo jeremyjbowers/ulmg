@@ -142,6 +142,11 @@ def team_detail(request, abbreviation):
     else:
         context["own_team"] = False
 
+    if request.user.is_superuser:
+        context['own_team'] = True
+
+    print(context['own_team'])
+
     team_players = models.Player.objects.filter(team=context["team"])
     hitters = team_players.exclude(position="P").order_by(
         "position", "-level_order", "-is_carded", "last_name", "first_name"

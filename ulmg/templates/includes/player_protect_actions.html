@@ -29,7 +29,7 @@
 <td>
     {% if p.is_35man_roster or p.is_reserve or p.is_1h_p or p.is_1h_c or p.is_1h_pos %}<a class="button is-small is-light is-warning player-action" data-playerid="{{ p.id }}" data-action="unprotect">&rarrhk;</a>{% endif %}
 
-    {% if not p.is_35man_roster and not 35_roster_count == 35 and not p.level == "B" and not p.cannot_be_protected and not p.is_protected %}<a class="button is-small is-success is-outlined player-action" data-playerid="{{ p.id }}" data-action="to_35_man">35</a>{% endif %}
+    {% if not p.is_35man_roster and not 35_roster_count == 35 and not p.level == "B" %}<a class="button is-small is-success is-outlined player-action" data-playerid="{{ p.id }}" data-action="to_35_man">35</a>{% endif %}
 </td>
 {% endif %}
 
