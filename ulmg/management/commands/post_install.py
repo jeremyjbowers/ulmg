@@ -13,7 +13,6 @@ from django.conf import settings
 import requests
 
 from ulmg import models, utils
-import statsapi
 
 import datetime
 import pytz
