@@ -1108,6 +1108,8 @@ class WishlistPlayer(BaseModel):
     wishlist = models.ForeignKey(Wishlist, on_delete=models.CASCADE)
     rank = models.IntegerField(blank=True, null=True)
     tier = models.IntegerField(blank=True, null=True)
+    note = models.TextField(blank=True, null=True)
+    tags = ArrayField(models.CharField(max_length=255), blank=True, null=True)
 
     def __unicode__(self):
         return f"{self.player} [{self.rank}][{self.tier}]"
