@@ -92,7 +92,13 @@ def my_team(request, abbreviation):
     context["num_owned"] = models.Player.objects.filter(team=context["team"]).count()
     context["hitters"] = hitters
     context["pitchers"] = pitchers
-    return render(request, "my/team.html", context)
+
+    if request.user.is_superuser:
+        context['own_team'] = True
+
+    print(context['own_team'])
+
+    return render(request, "team.html", context)
 
 
 @staff_member_required
