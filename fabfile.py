@@ -6,8 +6,6 @@ import uuid
 from fabric import api, operations, contrib
 from fabric.state import env
 
-from ulmg import do
-
 import os
 
 env.project_name = "ulmg"
@@ -107,10 +105,10 @@ def reload():
     api.local("psql ulmg < data/sql/ulmg.sql")
 
 
-@api.task
-def get_app_data():
-    apps = do.base_request(app="apps/63aa819a-ee7c-4cad-8b7b-2f979842e1ad")
-    print(json.dumps(apps, indent=4, sort_keys=True))
+# @api.task
+# def get_app_data():
+#     apps = do.base_request(app="apps/63aa819a-ee7c-4cad-8b7b-2f979842e1ad")
+#     print(json.dumps(apps, indent=4, sort_keys=True))
 
 
 # @api.task
