@@ -47,6 +47,7 @@ urlpatterns = [
     path("my/wishlist/<str:list_type>/<str:abbreviation>/", views.special.my_wishlist),
     path("my/team/<str:abbreviation>/", views.special.my_team),
     path("my/wishlist/<str:list_type>/", views.my.my_wishlist),
+    path("my/wishlist/draft/", views.my.my_draftlist),
     path("my/team/", views.my.my_team),
     path("", views.site.index),
 ]

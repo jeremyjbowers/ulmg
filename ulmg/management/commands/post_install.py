@@ -12,7 +12,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
 import requests
 
-from ulmg import models
+from ulmg import models, utils
 import statsapi
 
 import datetime
@@ -23,4 +23,4 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         call_command('migrate')
         call_command('collectstatic', '--noinput')
-        call_command('load_prospects')
+        utils.set_levels()

@@ -883,7 +883,7 @@ def load_career_pitch(*args, **options):
 
 def set_levels(*args, **options):
     print("--------- STARTERS B > A ---------")
-    for p in models.Player.objects.filter(level="B", position="P", stats__career__g=21):
+    for p in models.Player.objects.filter(level="B", position="P", stats__career__gs__gte=21):
         p.level = "A"
         print(p)
         if not options.get("dry_run", None):
@@ -891,7 +891,7 @@ def set_levels(*args, **options):
 
     print("--------- RELIEVERS B > A ---------")
     for p in models.Player.objects.filter(
-        level="B", position="P", stats__career__g__gte=31, stats__career__gs=0
+        level="B", position="P", stats__career__g__gte=31
     ):
         p.level = "A"
         print(p)
