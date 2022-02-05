@@ -924,7 +924,7 @@ def set_levels(*args, **options):
 
     print("--------- RELIEVERS A > V ---------")
     for p in models.Player.objects.filter(
-        level="A", position="P", stats__career__g__gte=301
+        level="A", position="P", stats__career__g__gte=201
     ):
         p.level = "V"
         print(p)
