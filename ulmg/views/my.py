@@ -18,6 +18,59 @@ from ulmg import models, utils
 
 
 @login_required
+def my_lineup(request):
+    context = utils.build_context(request)
+
+    owner = models.Owner.objects.get(user=request.user)
+
+    team = get_object_or_404(models.Team, owner_obj=context["owner"])
+
+    context["team"] = team
+
+    context['lineup'], created = models.Lineup.objects.get_or_create(team=context['team'], season=utils.get_current_season())
+    context['lineup_slots'] = models.LineupSlot.objects.filter(lineup=context['lineup'])
+
+    team_players = models.Player.objects.filter(team=context["team"])
+
+    hitters = team_players.filter(stats__2021_majors__plate_appearances__gte=0).exclude(position="P").order_by(
+        "position", "-level_order", "-is_carded", "last_name", "first_name"
+    )
+
+    pitchers = team_players.filter(position="P", stats__2021_majors__g__gte=0).order_by(
+        "-level_order", "-is_carded", "last_name", "first_name"
+    )
+
+    context['offense'] = {}
+
+    positions = ["C", "1B", "2B", "3B", "SS", "RF", "CF", "LF", "DH"]
+
+    for h in hitters:
+        if not h.defense:
+            h.defense += ["DH-0-0"]
+
+        for d in h.defense:
+            pos = d.split('-')[0].lower()
+            rating = d.split('-')[2]
+
+            if not context['offense'].get(f"hit_{pos}", None):
+                context['offense'][f"hit_{pos}"] = []
+
+            payload = {
+                "player": h,
+                "position": pos,
+                "rating": rating,
+                "name": h.name,
+                "value": h.strat_obtb_tot,
+                "pa": h.stats['2021_majors']['plate_appearances']
+            }
+
+            context['offense'][f"hit_{pos}"].append(payload)
+            context['offense'][f"hit_{pos}"] = sorted(context['offense'][f"hit_{pos}"], key=lambda x: x['rating'])
+
+    return render(request, "my/lineups.html", context)
+
+
+@login_required
 def my_team(request):
     context = utils.build_context(request)
     # context["team"] = get_object_or_404(models.Team, owner_obj=context["owner"])

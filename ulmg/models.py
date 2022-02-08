@@ -1148,6 +1148,49 @@ class Occurrence(BaseModel):
         super().save(*args, **kwargs)
 
 
+class Lineup(BaseModel):
+    team = models.ForeignKey(Team, on_delete=models.SET_NULL, null=True, blank=True)
+    season = models.IntegerField()
+
+    def lineup_slots(self):
+        return LineupSlot.objects.filter(lineup=self).order_by('position', '')
+
+    # def validate_sp(self):
+    #     acceptable_starts = 162
+    #     slot = self.slot_sp
+
+    #     if sum([s.starts for s in slot.all()]) >= acceptable_starts:
+    #         return True
+    #     return False
+
+    # def validate_rp(self):
+    #     acceptable_relief_innings = 550
+    #     slot = self.slot_rp
+
+    #     if sum([s.rip for s in slot.all()]) >= acceptable_relief_innings:
+    #         return True
+    #     return False
+
+    # def validate_hitter(self, lineup_slot):
+    #     acceptable_pa = 650
+    #     slot = getattr(self, f"slot_{lineup_slot}")
+
+    #     if sum([s.plate_appearances for s in slot.all()]) >= acceptable_pa:
+    #         return True
+    #     return False
+
+    # def validate(self):
+    #     payload = {}
+    #     for h in ['c','1b','2b','3b','ss','lf','rf','cf','dh']:
+    #         slot = getattr(self, f"slot_{h}")
+    #         payload[h] = self.validate_hitter(h)
+        
+    #     payload['slot_sp'] = self.validate_sp(self.slot_sp)
+    #     payload['slot_rp'] = self.validate_rp(self.slot_rp)
+
+    #     return payload
+
+
 class LineupSlot(BaseModel):
     LINEUP_POSITION_CHOICES = (
         ('C', "C"),
@@ -1163,76 +1206,35 @@ class LineupSlot(BaseModel):
         ('RP', "RP")
     )
     position = models.CharField(
-        max_length=255, null=True, choices=PLAYER_POSITION_CHOICES
+        max_length=255, null=True, choices=LINEUP_POSITION_CHOICES
     )
-    player = models.ForeignKey(Player)
+    lineup = models.ForeignKey(Lineup, on_delete=models.CASCADE)
+    player = models.ForeignKey(Player, on_delete=models.CASCADE)
     plate_appearaces = models.IntegerField(blank=True, null=True)
     starts = models.IntegerField(blank=True, null=True)
     innings_pitched = models.IntegerField(blank=True, null=True)
-    strat_obtb_r = models.IntegerField(blank=True, null=True)
-    strat_obtb_l = models.IntegerField(blank=True, null=True)
+    relief_innings_pitched = models.IntegerField(blank=True, null=True)
+    value_r = models.IntegerField(blank=True, null=True)
+    value_l = models.IntegerField(blank=True, null=True)
+    value = models.IntegerField(blank=True, null=True)
+    rating = models.IntegerField(blank=True, null=True)
 
     def __unicode__(self):
         return f"{self.player}, {self.position}"
 
-    @property
-    def rip(self):
-        if self.innings_pitched > 70:
-            return self.innings_pitched * 1.5
-        return self.innings_pitched
+    def set_relief_innings(self):
+        if self.innings_pitched:
+            self.relief_innings_pitched = self.innings_pitched
+            if self.innings_pitched >= 70:
+                self.relief_innings_pitched = self.innings_pitched * 1.5            
 
-    @property
-    def strat_obtb_tot(self):
-        if self.strat_obtb_l and self.strat_obtb_r:
-            return int((self.strat_obtb_l * 0.30) + (self.strat_obtb_r * 0.70))    
+    def set_player_value(self):
+        self.strat_obtb_l = self.player.strat_obtb_l
+        self.strat_obtb_r = self.player.strat_obtb_r
+        self.value = int((self.strat_obtb_l * 0.30) + (self.strat_obtb_r * 0.70)) 
 
+    def save(self, *args, **kwargs):
+        self.set_player_value()
+        self.set_relief_innings()
 
-class Lineup(BaseModel):
-    team = models.ForeignKey(Team, on_delete=models.SET_NULL, null=True, blank=True)
-    season = models.IntegerField()
-    slot_c = models.ManyToManyField(LineupSlot, blank=True, null=True)
-    slot_1b = models.ManyToManyField(LineupSlot, blank=True, null=True)
-    slot_2b = models.ManyToManyField(LineupSlot, blank=True, null=True)
-    slot_3b = models.ManyToManyField(LineupSlot, blank=True, null=True)
-    slot_ss = models.ManyToManyField(LineupSlot, blank=True, null=True)
-    slot_lf = models.ManyToManyField(LineupSlot, blank=True, null=True)
-    slot_cf = models.ManyToManyField(LineupSlot, blank=True, null=True)
-    slot_rf = models.ManyToManyField(LineupSlot, blank=True, null=True)
-    slot_dh = models.ManyToManyField(LineupSlot, blank=True, null=True)
-    slot_sp = models.ManyToManyField(LineupSlot, blank=True, null=True)
-    slot_rp = models.ManyToManyField(LineupSlot, blank=True, null=True)
-
-    def validate_sp(self):
-        acceptable_starts = 162
-        slot = self.slot_sp
-
-        if sum([s.starts for s in slot.all()]) >= acceptable_starts:
-            return True
-        return False
-
-    def validate_rp(self):
-        acceptable_relief_innings = 550
-        slot = self.slot_rp
-
-        if sum([s.rip for s in slot.all()]) >= acceptable_relief_innings:
-            return True
-        return False
-
-    def validate_hitter(self, lineup_slot):
-        acceptable_pa = 650
-        slot = getattr(self, f"slot_{lineup_slot}")
-
-        if sum([s.plate_appearances for s in slot.all()]) >= acceptable_pa:
-            return True
-        return False
-
-    def validate(self):
-        payload = {}
-        for h in ['c','1b','2b','3b','ss','lf','rf','cf','dh']:
-            slot = getattr(self, f"slot_{h}")
-            payload[h] = self.validate_hitter(h)
-        
-        payload['slot_sp'] = self.validate_sp(self.slot_sp)
-        payload['slot_rp'] = self.validate_rp(self.slot_rp)
-
-        return payload
+        super().save(*args, **kwargs)

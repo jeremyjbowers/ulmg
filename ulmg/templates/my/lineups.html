@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="content container">
+    <div class="columns">
+        <div class="column">
+            <div>
+                {% if lineup_slots %}
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>player</th>
+                            <th>pos</th>
+                            <th>rating</th>
+                            <th>pa</th>
+                            <th>value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in lineup_slots %}
+                        <tr>
+                            <td>{{ p.player.name }}</td>
+                            <td>{{ p.position }}</td>
+                            <td>{{ p.rating }}</td>
+                            <td>{{ p.plate_appearances }}</td>
+                            <td>{{ p.value }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% endif %}
+            </div>
+
+            <div>
+                <h1 class="heading is-level-4">C</h1>
+                <select id="select">
+                    <option>-</option>
+                    {% for p in offense.hit_c %}
+                    <option data-playerid="{{ p.player.id }}" data-lineupid="{{ lineup.id }}" data-position="c" data-rating="{{ p.rating }}">[{{ p.rating }}] {{ p.player.name }}, {{ p.player.strat_obtb_tot }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- <div>
+                <h1 class="heading is-level-4">1B</h1>
+                <select>
+                    <option>-</option>
+                    {% for p in offense.hit_1b %}
+                    <option value="{{ p.id }}">[{{ p.rating }}] {{ p.player.name }}, {{ p.player.strat_obtb_tot }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <h1 class="heading is-level-4">2B</h1>
+                <select>
+                    <option>-</option>
+                    {% for p in offense.hit_2b %}
+                    <option value="{{ p.id }}">[{{ p.rating }}] {{ p.player.name }}, {{ p.player.strat_obtb_tot }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <h1 class="heading is-level-4">SS</h1>
+                <select>
+                    <option>-</option>
+                    {% for p in offense.hit_ss %}
+                    <option value="{{ p.id }}">[{{ p.rating }}] {{ p.player.name }}, {{ p.player.strat_obtb_tot }}</option>
+                    {% endfor %}
+                </select>
+            </div> -->
+
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extrascript %}
+<script type="text/javascript">
+    $(function(){
+    
+        var select_player_position = function(el) {
+    
+            el.preventDefault();
+            $el = $(this);
+
+            var sel = $el.children('option:selected')[0]
+
+            $sel = $(sel);
+
+            var playerid = $sel.attr('data-playerid')
+            var lineupid = $sel.attr('data-lineupid')
+            var position = $sel.attr('data-position')
+            var rating = $sel.attr('data-rating')
+
+            var payload = {
+                playerid: playerid,
+                lineupid: lineupid,
+                position: position,
+                rating: rating
+            }
+
+            console.log(payload);
+
+            $.ajax({
+                type: "POST",
+                url: '/api/v1/lineupslot/',
+                data: payload,
+                success: function(response){
+                    window.location.reload();
+                }
+            });
+        }
+    
+        $('select').on('change', select_player_position);
+
+    });
+    </script>
+
+{% endblock %}

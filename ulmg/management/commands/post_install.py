@@ -22,4 +22,4 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         call_command('migrate')
         call_command('collectstatic', '--noinput')
-        utils.set_levels()
+        [models.Lineup.objects.get_or_create(team=team, season=2021) for t in models.Team.objects.all()]
