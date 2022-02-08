@@ -416,6 +416,23 @@ def player_available_midseason(request):
     return render(request, "search.html", context)
 
 
+def player_available_offseason(request):
+    context = utils.build_context(request)
+    context["hitters"] = (
+        models.Player.objects.filter(is_owned=True, is_35man_roster=False, level__in=["A", "V"])
+        .exclude(position="P")
+        .order_by("position", "-level_order", "last_name", "first_name")
+    )
+
+    context["pitchers"] = (
+        models.Player.objects
+        .filter(is_owned=True, is_35man_roster=False, level__in=["A", "V"], position="P")
+        .order_by("-level_order", "last_name", "first_name")
+    )
+
+    return render(request, "search.html", context)
+
+
 def search(request):
     def to_bool(b):
         if b.lower() in ["y", "yes", "t", "true", "on"]:
