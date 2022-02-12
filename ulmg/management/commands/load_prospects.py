@@ -22,7 +22,7 @@ class Command(BaseCommand):
     # the sheets where the top 100 and top draft are collated.
     top_100_filename = f"data/{season}/top_100_prospects.json"
     top_100_sheet = "1Wb9f6QrGULjg2qs2Bmq6EWVXXKmw-WdYg-loYvGnpFY"
-    top_100_range = "top_100!A:M"
+    top_100_range = "top_100!A:N"
     top_draft_sheet = "1Wb9f6QrGULjg2qs2Bmq6EWVXXKmw-WdYg-loYvGnpFY"
     top_draft_filename = f"data/{season}/top_draft_prospects.json"
     top_draft_range = "top_draft!A:L"
@@ -45,8 +45,8 @@ class Command(BaseCommand):
         models.Player.objects.update(is_prospect=False)
 
         # Get data files
-        self.get_top_draft_data()
-        self.get_top_100_data()
+        self.get_top_draft_data(fresh=False)
+        self.get_top_100_data(fresh=False)
 
         self.load_top_100()
         self.load_top_draft()
