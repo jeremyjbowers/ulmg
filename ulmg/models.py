@@ -1111,12 +1111,37 @@ class WishlistPlayer(BaseModel):
     note = models.TextField(blank=True, null=True)
     tags = ArrayField(models.CharField(max_length=255), blank=True, null=True)
 
+    skew = models.DecimalField(max_digits=4, decimal_places=1, blank=True, null=True)
+    med = models.DecimalField(max_digits=4, decimal_places=1, blank=True, null=True)
+    avg = models.DecimalField(max_digits=4, decimal_places=1, blank=True, null=True)
+
+    law = models.IntegerField(blank=True, null=True)
+    ba = models.IntegerField(blank=True, null=True)
+    bp = models.IntegerField(blank=True, null=True)
+    mlb = models.IntegerField(blank=True, null=True)
+    fg = models.IntegerField(blank=True, null=True)
+    p365 = models.IntegerField(blank=True, null=True)
+    plive = models.IntegerField(blank=True, null=True)
+    p1500 = models.IntegerField(blank=True, null=True)
+    ftrax = models.IntegerField(blank=True, null=True)
+    cbs = models.IntegerField(blank=True, null=True)
+    espn = models.IntegerField(blank=True, null=True)
+
     def __unicode__(self):
         return f"{self.player} [{self.rank}][{self.tier}]"
 
     @property
     def owner_name(self):
         return self.wishlist.owner.name
+
+    def save(self, *args, **kwargs):
+        r = ProspectRating.objects.filter(player=self.player, year=2022)
+        if len(r) > 0:
+            r = r[0]
+            for f in ['skew', 'med', 'avg', 'law', 'ba', 'bp', 'mlb', 'fg', 'p365', "p1500", 'ftrax', 'cbs', 'espn', 'plive']:
+                setattr(self, f, getattr(r, f))
+
+        super().save(*args, **kwargs)
 
 
 class Event(BaseModel):

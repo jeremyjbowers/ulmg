@@ -141,8 +141,6 @@ def my_draftlist(request):
 
     context["aa_hitters"] = []
     context["aa_pitchers"] = []
-    context["op_hitters"] = []
-    context["op_pitchers"] = []
 
     for p in models.WishlistPlayer.objects.filter(wishlist=context["wishlist"]):
         if not p.player.is_owned:

@@ -160,3 +160,18 @@ def my_wishlist(request, list_type, abbreviation):
         )
 
     return render(request, "my/wishlist.html", context)
+
+
+@staff_member_required
+@login_required
+def my_wishlist_beta(request, list_type):
+    context = utils.build_context(request)
+
+    context["team"] = get_object_or_404(
+        models.Team, owner_obj=context['owner']
+    )
+    context["wishlist"] = models.Wishlist.objects.get(owner=context["owner"])
+
+    context['players'] = models.WishlistPlayer.objects.filter(wishlist=context["wishlist"], player__is_owned=False, player__level="B").order_by('rank')
+
+    return render(request, "my/wishlist_beta.html", context)

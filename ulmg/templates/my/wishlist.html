@@ -32,6 +32,7 @@
             <li><a href="/my/team/">My Roster{% if num_owned %} ({{ num_owned }}){% endif %}</a></li>
             <li><a href="/teams/{{ team.abbreviation|lower }}/other/">Trades & picks</a></li>
             <li{% if list_type == "draft" %} class="is-active"{% endif %}><a href="/my/wishlist/draft/">My Draft List</a></li>
+            <li><a href="/my/wishlist/draft/beta/">My Draft List <small><em>(b)</em></small></a></li>
             <li{% if list_type == "trade" %} class="is-active"{% endif %}><a href="/my/wishlist/trade/">My Trade List</a></li>
         </ul>
     </div>
@@ -205,12 +206,10 @@
 
 </div>
 
-{% include 'includes/player_modal.html' %}
 {% endblock %}
         
 {% block extrascript %}
 
-{% include "includes/my/reportsjs.html" %}
 {% include "includes/my/wishlistjs.html" %}
 {% include "includes/my/sortablejs.html" %}
 

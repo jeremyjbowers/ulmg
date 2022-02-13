@@ -15,6 +15,8 @@ urlpatterns = [
     path("api/v1/player/<int:playerid>/<str:action>/", views.api.player_action),
     path("api/v1/draft/<str:pickid>/", views.api.draft_action),
     path("api/v1/wishlist/bulk/", views.api.wishlist_bulk_action),
+    path("api/v1/wishlist/tags/delete/<str:playerid>/", views.api.delete_tag_from_wishlistplayer),
+    path("api/v1/wishlist/tags/add/<str:playerid>/", views.api.add_tag_to_wishlistplayer),
     path("api/v1/wishlist/<str:playerid>/", views.api.wishlist_player_action),
     path("api/v1/trade/bulk/", views.api.trade_bulk_action),
     path("api/v1/player/bulk/", views.api.player_bulk_action),
@@ -45,10 +47,10 @@ urlpatterns = [
         "draft/live/<int:year>/<str:season>/<str:draft_type>/", views.site.draft_watch
     ),
     path("draft/<int:year>/<str:season>/<str:draft_type>/", views.site.draft_recap),
+    path("my/wishlist/<str:list_type>/beta/", views.special.my_wishlist_beta),
     path("my/wishlist/<str:list_type>/<str:abbreviation>/", views.special.my_wishlist),
-    path("my/team/<str:abbreviation>/", views.special.my_team),
     path("my/wishlist/<str:list_type>/", views.my.my_wishlist),
-    path("my/wishlist/draft/", views.my.my_draftlist),
+    path("my/team/<str:abbreviation>/", views.special.my_team),
     path("my/team/", views.my.my_team),
     path("", views.site.index),
 ]
