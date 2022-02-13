@@ -9,7 +9,7 @@
     </p>
 
     <p class="control">
-        {% if p.tags %}{% for tag in p.tags %}<span class="tag is-info is-rounded">{{ tag }} <button data-tagname="{{ tag }}" data-playerid="{{ p.player.id }}" class="delete"></button></span> {% endfor %}{% endif %}
+        {% if p.tags %}{% for tag in p.tags %}<span class="tag is-info is-rounded is-light">{{ tag }} <button data-tagname="{{ tag }}" data-playerid="{{ p.player.id }}" class="delete"></button></span> {% endfor %}{% endif %}
     </p>
 
 </div> 
