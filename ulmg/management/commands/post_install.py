@@ -22,6 +22,3 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         call_command('migrate')
         call_command('collectstatic', '--noinput')
-
-        for p in models.WishlistPlayer.objects.all():
-            p.save()
