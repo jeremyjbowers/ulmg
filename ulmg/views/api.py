@@ -81,7 +81,7 @@ def wishlist_bulk_action(request):
     for raw_json_string, _ in request.POST.items():
         players = json.loads(raw_json_string)
         for p in players:
-            models.WishlistPlayer.objects.filter(id=p["playerid"]).update(
+            models.WishlistPlayer.objects.filter(player__id=p["playerid"]).update(
                 rank=p["rank"]
             )
 
@@ -769,3 +769,45 @@ def player_bulk_action(request):
                 payload["players"].append(ply)
 
     return JsonResponse(payload)
+
+
+@csrf_exempt
+def delete_tag_from_wishlistplayer(request, playerid):
+    context = utils.build_context(request)
+    if request.method == "POST":
+        if request.POST.get("tagname", None):
+
+            tagname = request.POST.get("tagname")
+
+            w = models.WishlistPlayer.objects.get(player__id=playerid, wishlist__owner=context['owner'])
+
+            tags = []
+
+            for t in w.tags:
+                if t != tagname:
+                    tags.append(t)
+
+            w.tags = tags
+            w.save()
+
+    return JsonResponse({"message": "ok"})
+
+
+@csrf_exempt
+def add_tag_to_wishlistplayer(request, playerid):
+    context = utils.build_context(request)
+    if request.method == "POST":
+        if request.POST.get("tagname", None):
+
+            tagname = request.POST.get("tagname")
+
+            w = models.WishlistPlayer.objects.get(player__id=playerid, wishlist__owner=context['owner'])
+
+            if not w.tags:
+                w.tags = []
+
+            w.tags.append(tagname)
+
+            w.save()
+
+    return JsonResponse({"message": "ok"})

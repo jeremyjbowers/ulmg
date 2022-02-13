@@ -1,0 +1,220 @@
+{% extends 'base.html' %}
+
+{% load ulmg_tags %}
+
+{% block content %}
+<style>
+    a.action-add-tag:hover { cursor: pointer; }
+</style>
+<div id="team" class="section is-desktop">
+    <div class="tabs is-centered is-boxed is-large">
+        <ul>
+            <li><a href="/my/team/">My Roster{% if num_owned %} ({{ num_owned }}){% endif %}</a></li>
+            <li><a href="/teams/{{ team.abbreviation|lower }}/other/">Trades & picks</a></li>
+            <li{% if list_type == "draft" %} class="is-active"{% endif %}><a href="/my/wishlist/draft/">My Draft List</a></li>
+            <li class="is-active"><a href="/my/wishlist/draft/beta/">My Draft List <small><em>(b)</em></small></a></li>
+            <li{% if list_type == "trade" %} class="is-active"{% endif %}><a href="/my/wishlist/trade/">My Trade List</a></li>
+        </ul>
+    </div>
+
+    <div class="columns">
+        <div class="column">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>player</th>
+                        <!-- <th>rank</th> -->
+                        <th>age</th>
+                        <th>pos</th>
+                        <th>avg</th>
+                        <th>law</th>
+                        <th>plive</th>
+                        <th>ftrax</th>
+                        <th>ba</th>
+                        <th>tot</th>
+                        <!-- <th>note</th> -->
+                        <th>tags</th>
+                    </tr>
+                </thead>
+                <tbody id="players" class="list-group">
+                    {% for p in players %}
+                        <tr data-playername="{{ p.player.name }}" data-playerid="{{ p.player.id }}" class="list-group-item">
+                            <td class="left">{{ p.player.name }}</td>
+                            <!-- <td id="rank-{{ p.pk }}">{% if p.rank == 0 %}-{% else %}{{ p.rank }}{% endif %}</td> -->
+                            <td>{{ p.player.age|default_if_none:"-" }}</td>
+                            <td>{{ p.player.position }}</td>
+                            <td>{{ p.avg|default_if_none:"-" }}</td>
+                            <td>{{ p.law|default_if_none:"-" }}</td>
+                            <td>{{ p.plive|default_if_none:"-" }}</td>
+                            <td>{{ p.ftrax|default_if_none:"-" }}</td>
+                            <td>{{ p.ba|default_if_none:"-" }}</td>
+                            <td>{% if p.player.position == "P" %}{{ p.player.strat_p_obtb_tot|default_if_none:"-" }}{% else %}{{ p.player.strat_obtb_tot|default_if_none:"-" }}{% endif %}</td>
+                            <!-- <td>{% if p.note %}{{ p.note|truncatewords:25 }}{% endif %}</td> -->
+                            <td class="left">{% include "includes/my/tagchooser.html" %}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}
+        
+{% block extrascript %}
+<script src="//SortableJS.github.io/Sortable/Sortable.js"></script>
+
+{% if user.is_authenticated %}
+<script type="text/javascript">
+$(function(){
+
+    var tag_delete_handler = function(el) {
+        $el = $(this);
+        var tagname = $el.attr('data-tagname');
+        var playerid = $el.attr('data-playerid');
+
+        $el.parent('span.tag').remove();
+
+        $.ajax({
+            type: "POST",
+            data: {tagname: tagname},
+            url: '/api/v1/wishlist/tags/delete/' + playerid + '/',
+            success: function(response){
+                client_tag_handler(el);
+            }
+        });
+
+    }
+
+    var client_tag_handler = function(el) {
+        var $el = $(el);
+        console.log($el);
+    }
+
+    var show_tag_input_handler = function(el) {
+
+        el.preventDefault();
+        var $el = $(this);
+
+        var $input = $($el.parent('p').parent('div').children('p.control').children('input'))
+
+        $input.show();
+    }
+
+    var submit_tag_handler = function(el) {
+        var $el = $(el);
+
+        var playerid = $el.attr('data-playerid')
+        var tagname = $el.val();
+
+        $el.hide();
+        $el.val('');
+        $el.parent('p').parent('div').append('<span class="tag is-info is-rounded">'+ tagname +' <button data-tagname="'+ tagname +'" data-playerid="'+ playerid +'" class="delete"></button></span>');
+
+        $.ajax({
+            type: "POST",
+            data: {tagname: tagname},
+            url: '/api/v1/wishlist/tags/add/' + playerid + '/',
+            success: function(response){
+                client_tag_handler(el);
+            }
+        });
+    }
+
+    // $('body').on('click', 'span.action-remove-tag', remove_tag_handler);
+    $('body').on('click', 'span.action-add-tag', show_tag_input_handler);
+    $('body').on('click', 'button.delete', tag_delete_handler);
+
+    $('input.tag-input').keypress(function(event){
+        var keycode = (event.keyCode ? event.keyCode : event.which);
+        var $target = $(event.target);
+        if(keycode == '13'){
+            submit_tag_handler($target);
+        }
+    });
+
+
+});
+</script>
+
+<script type="text/javascript">
+$(function(){
+    const players = document.getElementById('players');
+
+    /*
+    *
+    * function for handling all updates needed for the server
+    * takes in an event and a list of updates for the server
+    * server modifies wishlistplayer to update rank.
+    * idempotent; server does not create new wishlistplayers.
+    *
+    */
+    var update_server = function(evt, update_list) {
+        $.ajax({
+            method: "POST",
+            url: '/api/v1/wishlist/bulk/',
+            data: JSON.stringify(update_list),
+            success: function(response){
+                console.log(response);
+            }
+        });
+    }
+
+    /*
+    *
+    * function for handling all updates needed for the client.
+    * takes in the element of the table where the sortables live.
+    * returns a list of updates for the server.
+    * modifies the data elements on individual sortables.
+    * also modifies HTML on the sortables.
+    *
+    */
+    var update_client = function(el) {
+
+        var $el = $(el);
+
+        // set up a var for the data we'll return
+        var update_list = []
+
+        // loop over the children list items to establish index / rank
+        $el.children('tr.list-group-item').each(function(idx, ply){
+
+            // 1-based indexes, not 0
+            idx = idx+1
+
+            // need a jquery element
+            var $ply = $(ply);
+
+            // grab playerid and name from the element's data attributes
+            var playerid = $ply.attr('data-playerid');
+            var name = $ply.attr('data-playername');
+
+            // update the element's data attribute with the new rank
+            // also update the element's rank HTML on the client
+            $ply.attr('data-rank', idx);
+            $('#rank-' + $ply.attr('data-playerid')).html(idx);
+
+            // push a obj to the update list with id, name and new rank
+            update_list.push({
+                'playerid': playerid,
+                'rank': idx,
+                'name': name
+            });
+        });
+    
+        // return the list of players to update
+        return update_list
+    }
+
+    var update_handler = function(evt, el) {
+        update_list = update_client(el);
+        update_server(evt, update_list);
+    }
+
+    Sortable.create(players, { onEnd: function(evt) { update_handler(evt, players); } });
+});
+</script>
+{% endif %}
+
+{% endblock %}
