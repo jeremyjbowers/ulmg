@@ -5,6 +5,7 @@
 {% block content %}
 <style>
     a.action-add-tag:hover { cursor: pointer; }
+    span.note-control { cursor: pointer }
 </style>
 <div id="team" class="section is-desktop">
     <div class="tabs is-centered is-boxed is-large">
@@ -18,11 +19,22 @@
     </div>
 
     <div class="columns">
-        <div class="column">
+        <div class="column is-2">
+            {% if tags %}
+            <h2 class="title is-4">Filter by tag</h2>
+            <ul>
+                {% for t in tags %}
+                    <li><span class="tag is-info is-light">{{ t }}</span></li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+        </div>
+        <div class="column is-10">
             <table class="table">
                 <thead>
                     <tr>
                         <th>player</th>
+                        <th>note</th>
                         <!-- <th>rank</th> -->
                         <th>age</th>
                         <th>pos</th>
@@ -32,7 +44,6 @@
                         <th>ftrax</th>
                         <th>ba</th>
                         <th>tot</th>
-                        <!-- <th>note</th> -->
                         <th>tags</th>
                     </tr>
                 </thead>
@@ -40,6 +51,7 @@
                     {% for p in players %}
                         <tr data-playername="{{ p.player.name }}" data-playerid="{{ p.player.id }}" class="list-group-item">
                             {% include "includes/my/player_name.html" %}
+                            <td>{% include "includes/my/notechooser.html" %}</td>
                             <!-- <td id="rank-{{ p.pk }}">{% if p.rank == 0 %}-{% else %}{{ p.rank }}{% endif %}</td> -->
                             <td>{{ p.player.age|default_if_none:"-" }}</td>
                             <td>{{ p.player.position }}</td>
@@ -49,7 +61,6 @@
                             <td>{{ p.ftrax|default_if_none:"-" }}</td>
                             <td>{{ p.ba|default_if_none:"-" }}</td>
                             <td>{% if p.player.position == "P" %}{{ p.player.strat_p_obtb_tot|default_if_none:"-" }}{% else %}{{ p.player.strat_obtb_tot|default_if_none:"-" }}{% endif %}</td>
-                            <!-- <td>{% if p.note %}{{ p.note|truncatewords:25 }}{% endif %}</td> -->
                             <td class="left">{% include "includes/my/tagchooser.html" %}</td>
                         </tr>
                     {% endfor %}
@@ -59,7 +70,7 @@
     </div>
 
 </div>
-
+{% include "includes/notes_modal.html" %}
 {% endblock %}
         
 {% block extrascript %}
@@ -110,7 +121,7 @@ $(function(){
 
         $el.hide();
         $el.val('');
-        $el.parent('p').parent('div').append('<span class="tag is-info is-rounded">'+ tagname +' <button data-tagname="'+ tagname +'" data-playerid="'+ playerid +'" class="delete"></button></span>');
+        $el.parent('p').parent('div').append('<span class="tag is-info is-rounded is-small">'+ tagname +' <button data-tagname="'+ tagname +'" data-playerid="'+ playerid +'" class="delete is-small"></button></span>');
 
         $.ajax({
             type: "POST",
@@ -216,6 +227,55 @@ $(function(){
 });
 </script>
 {% include "includes/my/wishlistjs.html" %}
+<script type="text/javascript">
+    $(function(){
+    
+        var persist_note_handler = function(el) {
+            el.preventDefault();
+            $el = $(this);
+
+            var playerid = $el.attr('data-playerid');
+            var note_text =  $('#note-textarea').val()
+
+            $.ajax({
+                type: "POST",
+                data: {note: note_text},
+                url: '/api/v1/wishlist/note/add/' + playerid + '/',
+                success: function(response){
+                    window.location.reload();
+                }
+            });
+
+        }
+
+        var close_modal_handler = function(el) {
+            el.preventDefault();
+            $el = $(this);
+    
+            var modalid = $el.parent('div').toggleClass('is-active');        
+        }
+    
+        var note_modal_handler = function(el) {
+            el.preventDefault();
+            $el = $(this);
+    
+            var playerid = $el.parent('div').attr('data-playerid');
+            var note_text = $el.parent('div').attr('data-note-text');
+            var playername = $el.parent('div').attr('data-playername');
+
+            $('#modal-title').html(playername);
+            $('#note-textarea').val(note_text)
+            $('#modal-notes').toggleClass('is-active');
+            $('#persist-note').attr('data-playerid', playerid);
+            
+        }
+
+        $('body').on('click', '#persist-note', persist_note_handler);
+        $('body').on('click', 'span.note-control', note_modal_handler);
+        $('body').on('click', 'button.modal-close', close_modal_handler);
+        $('body').on('click', 'div.modal-background', close_modal_handler);
+    });
+</script>
 {% endif %}
 
 {% endblock %}
