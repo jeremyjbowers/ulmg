@@ -1,15 +1,11 @@
 <div class="field is-grouped has-addons">
-
     <p class="control">
-        <span style="cursor:pointer;" class="tag is-success is-rounded is-light action-add-tag">+</span>
+        <span style="cursor:pointer;" class="tag is-success is-rounded is-light action-add-tag">+ tag</span>
     </p>
-
     <p class="control">
         <input style="display:none;" class="input is-small tag-input" data-playerid="{{ p.player.id }}" type="text" placeholder="Tag name">
     </p>
-
     <p class="control">
-        {% if p.tags %}{% for tag in p.tags %}<span class="tag is-info is-rounded">{{ tag }} <button data-tagname="{{ tag }}" data-playerid="{{ p.player.id }}" class="delete"></button></span> {% endfor %}{% endif %}
+        {% if p.tags %}{% for tag in p.tags %}<span class="tag is-info is-rounded is-light is-small">{{ tag }} <button data-tagname="{{ tag }}" data-playerid="{{ p.player.id }}" class="delete is-small"></button></span> {% endfor %}{% endif %}
     </p>
-
 </div> 

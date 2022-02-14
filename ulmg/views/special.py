@@ -174,4 +174,13 @@ def my_wishlist_beta(request, list_type):
 
     context['players'] = models.WishlistPlayer.objects.filter(wishlist=context["wishlist"], player__is_owned=False, player__level="B").order_by('rank')
 
+    context['tags'] = set()
+
+    for p in context['players'].values('tags'):
+        if p['tags']:
+            for z in p['tags']:
+                context['tags'].add(z)
+
+    context['tags'] = sorted(list(context['tags']), key=lambda x:x)
+
     return render(request, "my/wishlist_beta.html", context)

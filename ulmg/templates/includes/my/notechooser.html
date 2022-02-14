@@ -1,0 +1,3 @@
+<div data-playerid="{{ p.player.id }}" data-playername="{{ p.player.name }}" data-note-text="{{ p.note|default_if_none:'' }}"> 
+{% if p.note %}<span class="tag is-rounded is-warning note-control">read</span>{% else %}<span class="tag is-rounded is-warning is-light note-control">write</span>{% endif %}
+</div>

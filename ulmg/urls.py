@@ -15,6 +15,7 @@ urlpatterns = [
     path("api/v1/player/<int:playerid>/<str:action>/", views.api.player_action),
     path("api/v1/draft/<str:pickid>/", views.api.draft_action),
     path("api/v1/wishlist/bulk/", views.api.wishlist_bulk_action),
+    path("api/v1/wishlist/note/add/<str:playerid>/", views.api.add_note_to_wishlistplayer),
     path("api/v1/wishlist/tags/delete/<str:playerid>/", views.api.delete_tag_from_wishlistplayer),
     path("api/v1/wishlist/tags/add/<str:playerid>/", views.api.add_tag_to_wishlistplayer),
     path("api/v1/wishlist/<str:playerid>/", views.api.wishlist_player_action),
