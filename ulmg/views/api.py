@@ -811,3 +811,23 @@ def add_tag_to_wishlistplayer(request, playerid):
             w.save()
 
     return JsonResponse({"message": "ok"})
+
+
+@csrf_exempt
+def add_note_to_wishlistplayer(request, playerid):
+    context = {}
+    context['owner'] = None
+    if request.user.is_authenticated:
+        owner = models.Owner.objects.get(user=request.user)
+        context["owner"] = owner
+    
+    if request.method == "POST":
+        if request.POST.get("note", None):
+
+            note = request.POST.get("note")
+
+            w = models.WishlistPlayer.objects.get(player__id=playerid, wishlist__owner=context['owner'])
+            w.note = note
+            w.save()
+
+    return JsonResponse({"message": "ok"})
