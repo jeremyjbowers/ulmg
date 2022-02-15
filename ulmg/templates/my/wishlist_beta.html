@@ -6,6 +6,7 @@
 <style>
     a.action-add-tag:hover { cursor: pointer; }
     span.note-control { cursor: pointer }
+    tr.hide { display: none; }
 </style>
 <div id="team" class="section is-desktop">
     <div class="tabs is-centered is-boxed is-large">
@@ -21,10 +22,11 @@
     <div class="columns">
         <div class="column is-2">
             {% if tags %}
-            <h2 class="title is-4">Filter by tag</h2>
-            <ul>
+            <h2 class="title is-5">Filter by tag</h2>
+            <p class="is-size-7">If you select 2 tags, rows matching either tag will be selected. Reload the page to see new tags added here.</p>
+            <ul style="margin-top:15px">
                 {% for t in tags %}
-                    <li><span class="tag is-info is-light">{{ t }}</span></li>
+                    <li><span class="tag is-info is-light filter" filter-type="tags">{{ t }}</span></li>
                 {% endfor %}
             </ul>
             {% endif %}
@@ -61,7 +63,7 @@
                             <td>{{ p.ftrax|default_if_none:"-" }}</td>
                             <td>{{ p.ba|default_if_none:"-" }}</td>
                             <td>{% if p.player.position == "P" %}{{ p.player.strat_p_obtb_tot|default_if_none:"-" }}{% else %}{{ p.player.strat_obtb_tot|default_if_none:"-" }}{% endif %}</td>
-                            <td class="left">{% include "includes/my/tagchooser.html" %}</td>
+                            <td class="left tag-cell">{% include "includes/my/tagchooser.html" %}</td>
                         </tr>
                     {% endfor %}
                 </tbody>
@@ -75,6 +77,7 @@
         
 {% block extrascript %}
 <script src="//SortableJS.github.io/Sortable/Sortable.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/list.js/1.5.0/list.min.js"></script>
 
 {% if user.is_authenticated %}
 <script type="text/javascript">
@@ -121,7 +124,7 @@ $(function(){
 
         $el.hide();
         $el.val('');
-        $el.parent('p').parent('div').append('<span class="tag is-info is-rounded is-small">'+ tagname +' <button data-tagname="'+ tagname +'" data-playerid="'+ playerid +'" class="delete is-small"></button></span>');
+        $($el.parent('p').parent('div').children('p.control')[2]).append('<span class="tag is-info is-rounded is-small user-tag is-light">'+ tagname +' <button data-tagname="'+ tagname +'" data-playerid="'+ playerid +'" class="delete is-small"></button></span>');
 
         $.ajax({
             type: "POST",
@@ -275,6 +278,59 @@ $(function(){
         $('body').on('click', 'button.modal-close', close_modal_handler);
         $('body').on('click', 'div.modal-background', close_modal_handler);
     });
+</script>
+<script type="text/javascript">
+
+
+    var filter_handler = function(el) {
+        $('#players tr').removeClass('hide');
+
+        el.preventDefault();
+        $el = $(this);
+        $el.toggleClass('is-success');
+
+        var filter_text = []
+
+        $('span.filter.is-success').each(function(idx,el){
+            filter_text.push($(el).text());
+        });
+
+        var rows = $('#players tr')
+
+        rows.each(function(idx, el){
+            var $row = $(el)
+            var match = false
+            var tags = $(el).children('td.tag-cell').children('div').children('p.control').children('span.user-tag')
+
+            $.each(tags, function(idx, el){
+                $.each(filter_text, function(i, tag_text){
+                    if ($(el).text().trim() == tag_text) {
+                        match = true;
+                    }
+                });
+            });
+
+
+            // if (match.length == 0) {
+            //     $row.addClass('hide');
+            // } else {
+            //     if ( ([1, 2, 3].reduce((partialSum, a) => partialSum + a, 0)) === 0) {
+            //         console.log('all match');
+            //     } else {
+            //         $row.addClass('hide');
+            //     }
+            // }
+
+            if (match != true) {
+                $row.addClass('hide')
+            }
+
+            if (filter_text.length == 0) { $('#players tr').removeClass('hide'); }
+        });
+
+    }
+    $('body').on('click', 'span.filter', filter_handler);
+
 </script>
 {% endif %}
 
