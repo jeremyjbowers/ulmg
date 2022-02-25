@@ -22,3 +22,4 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         call_command('migrate')
         call_command('collectstatic', '--noinput')
+        call_command('load_prospects')
