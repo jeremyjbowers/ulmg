@@ -51,6 +51,10 @@ class Command(BaseCommand):
         self.load_top_100()
         self.load_top_draft()
 
+        # denormalize all the wishlist players to get access to scouting data
+        for s in models.WishlistPlayer.objects.all():
+            s.save()
+
     def get_top_draft_data(self, fresh=False):
         """
         Gets data for draft prospects from a Google sheet.
@@ -125,7 +129,7 @@ class Command(BaseCommand):
 
             if save:
                 pr.save()
-                print(pr)
+                print(pr.fg)
 
     def get_player_and_rating(self, row, rank_type):
         p = utils.fuzzy_find_player(row["player"])
