@@ -583,161 +583,36 @@ def player_owned(request):
 
 
 """
-Seiya Suzuki	OF
-Chase DeLauter	OF
-Jacob Gonzalez	IF
-Brock Wilken	IF
-Max Clark	OF
-Walker Jenkins	OF
-Robert Moore	IF
-Enrique Bradfield, Jr.	OF
-Daniel Susac	C
-Gavin Cross	OF
-Jacob Berry	IF
-Drew Bowser	IF
-Peyton Graham	IF
-Peyton Pallette	P
-Yoshinobu Yamamoto	P
-Tanner Witt	P
-Brandon Mayea	OF
-Ethan Salas	C
-Hendry Chivilli	IF
-Fernando Cruz	IF
-Munetaka Murakami	IF
-Christian Little	P
-Mikey Romero	IF
-Cole Young	IF
-Dylan Cupp	IF
-Kevin McGonigle	IF
-Paul Skenes	P
-Patrick Reilly	P
-Will Sanders	P
-Teddy McGraw	P
-Yohandy Morales	IF
-Jaxon Wiggins	P
-Roch Cholowsky	IF
-Tre' Morgan	IF
-Brandon Barreira	P
-Carson Montgomery	P
-Blade Tidwell	P
-Braden Holcomb	IF
-T.J. Nichols	P
-Jackson Baumeister	P
-Caden Grice	IF
-Blake Mitchell	IF
-Kyle Teel	C
-Logan Tanner	C
-Corey Collins	C
-Tommy Troy	IF
-Alejandro Rosario	P
-Brayden Taylor	IF
-Carson Whisenhunt	P
-Landon Sims	P
-Brock Porter	P
-Jace Bohrofen	OF
-Elijah Nunez	OF
-Brock Jones	OF
-Zach Neto	IF
-Chase Davis	OF
-Dylan Beavers	OF
-Ian (JR) Ritchie	P
-Tristan Smith	P
-Nick Griffin	P
-Jackson Holliday	IF
-Noah Schultz	P
-Jackson Ferris	P
-Cayden Wallace	IF
-Eric Brown	IF
-Hayden Dunhurst	C
-Walter Ford	P
-Bryce Hubbart	P
-Hunter Barco	P
-Malcolm Moore	C
-Brady Neal	C
-Cade Doughty	IF
-Henry Williams	P
-Justin Crawford	OF
-Reggie Crawford	P
-Parker Messick	P
-Andrew Dutkanych	P
-Jordan Sprinkle	IF
-Victor Mederos	P
-Jett Williams	IF
-Jared McKenzie	OF
-Josh Kasevich	OF
-Drew Thorpe	P
-Tucker Toman	IF
-AJ Shepard	C
-Gavin Kilen	IF
-Gabriel Hughes	P
-Jalin Flores	IF
-Gavin Guidry	IF
-Brandon Sproat	P
-Sal Stewart	IF
-Christopher Paciolla	IF
-Cade Horton	SP/3B
-Mack Anglin	P
-Jared Jones	C
-Koudai Senga	P
-Jung-hoo Lee	OF
-Roki Sasaki	P
-Nick Martinez	P
-Tomoyuki Sugano	P
-Robert Suarez	P
-Leandro Arias	IF
-Diego Benitez	IF
-Dyan Jorge	OF
-Cesar Prieto	IF
-Jarlin Susana	P
-Enmanuel Bonilla	OF
-Welbyn Francisca	IF
-Alfredo Duno	C
-Jesus Starlyn Caba	IF
-Baek-ho Kang	IF
-Woo-jin An	P
-William, Jr. Bergolla	IF
-Jonathan Mejia	IF
-Ricardo Cabrera	IF
-Yasser Mercedes	OF
-Yordany De Los Santos	IF
-Tony Blanco, Jr.	OF
-Alexis Hernandez	IF
-Abdidas De La Cruz	IF
-Jaison Chourio	OF
-Henry Ramos	OF
-Yuki Matsui	P
-Chang-ki Hong	OF
-Jo-Hsi Hsu	P
-Carter Stewart	P
-Kota Tatsu	P
-Chihiro Sumida	P
-Cheng-Jui Sung	OF
-Jin-uk Kim	P
-Luis Danys Morales	P
-Yilber Herrera	IF
-Masataka Yoshida	OF
-Yendry Rojas	IF
-Freili Encarnacion	IF
-Nelson Rada	OF
-Luis Meza	C
-Juan Olmos	C
-Yuya Yanagi	P
-Raidel Martinez	P
-Thyago Vieira	P
-Tatsuya Imai	P
-An-Ko Lin	OF
-Si-Hwan Roh	IF
-Min-ho Lee	P
-Kenta Bright	OF
-Teruaki Sato	OF
-Ren Mukunoki	P
-Tzu-Hao Lin	IF
-Kenta Kozono	P
-Sung-bum Na	DH
-Kungkuan Giljegiljaw	C
-Shao-Ching Chiang	P
-Vladi Miguel Guerrero	IF
-Won-bin Cho	OF
+Konnor Griffin  OF
+Samuel Cozart   P
+Dean Moss   OF
+Carter Smith    IF
+Jacob Kendall   IF
+Luis Ayden Almeyda  IF
+John Lash   P
+Xavier Neyens   IF
+Cam Caminiti    OF
+Sean Gamble IF
+Derek Curiel    OF
+Chase Mobley    Paul
+Cade Arrambide  C
+Bryce Rainer    IF
+Theodore Gillen IF
+Michael Mullinax    OF
+Jackson Sanders P
+Jack Frankel    P
+George Wolkow   IF
+Andre Modugno   IF
+Deion Cole  IF
+Rouselle Shepard    IF
+Quentin Young   IF
+Grady Emerson   IF
+Kevin Roberts Jr    IF
+Grant Mehrhoff  P
+Alex Harrington IF
+Beau Peterson   C
+Ryan Harwood    IF
+Andrew Costello C
 """
 
 @csrf_exempt
@@ -750,23 +625,31 @@ def player_bulk_action(request):
             player_list = request.POST.get("players").split('\n')
 
             for p in player_list:
-                player = p.split('\t')
-                name = player[0]
-                position = player[1]
-                ply = {"name": name, "position": position, "ulmg_id": None, "created": False}
 
-                plyrz = utils.fuzzy_find_player(name)
+                if "\t" in p:
+                    player = p.split('\t')
 
-                if len(plyrz) == 1:
-                    ply['ulmg_id'] = plyrz[0].id
+                elif "," in p:
+                    player = p.split(',')
 
-                elif len(plyrz) == 0:
-                    p = models.Player(name=name, level="B", is_prospect=True, is_amateur=True, position=position)
-                    p.save()
-                    ply['ulmg_id'] = p.id
-                    ply['created'] = True
+                if len(player) > 1:
 
-                payload["players"].append(ply)
+                    name = player[0]
+                    position = player[1]
+                    ply = {"name": name, "position": position, "ulmg_id": None, "created": False}
+
+                    plyrz = utils.fuzzy_find_player(name)
+
+                    if len(plyrz) == 1:
+                        ply['ulmg_id'] = plyrz[0].id
+
+                    elif len(plyrz) == 0:
+                        p = models.Player(name=name, level="B", is_prospect=True, is_amateur=True, position=position)
+                        p.save()
+                        ply['ulmg_id'] = p.id
+                        ply['created'] = True
+
+                    payload["players"].append(ply)
 
     return JsonResponse(payload)
 
