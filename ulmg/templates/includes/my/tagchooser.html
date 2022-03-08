@@ -6,6 +6,6 @@
         <input style="display:none;" class="input is-small tag-input" data-playerid="{{ p.player.id }}" type="text" placeholder="Tag name">
     </p>
     <p class="control">
-        {% if p.tags %}{% for tag in p.tags %}<span class="tag is-info is-rounded is-light is-small user-tag">{{ tag }} <button data-tagname="{{ tag }}" data-playerid="{{ p.player.id }}" class="delete is-small"></button></span> {% endfor %}{% endif %}
+        {% if p.tags %}{% for tag in p.tags|dictsort:0 %}<span class="tag is-info is-rounded is-light is-small user-tag">{{ tag }} <button data-tagname="{{ tag }}" data-playerid="{{ p.player.id }}" class="delete is-small"></button></span> {% endfor %}{% endif %}
     </p>
 </div> 
