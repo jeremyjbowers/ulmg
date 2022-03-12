@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block extrahead %}
+<meta http-equiv="refresh" content="15" />
+{% endblock %}
+
+{% block content %}
+<div class="content section is-desktop is-fullwidth">
+    <div class="columns">
+        <div class="column">
+            <h1 class="title is-3">Baseball America's Best Available</h1>
+            <table class="table is-fullwidth" data-sortable>
+                <tr>
+                    <th data-sortable-type="numeric">rank</th>
+                    <th>player</th>
+                    <th data-sortable-type="numeric">age</th>
+                    <th>position</th>
+                    <th data-sortable-type="alpha">organization</th>
+                    <th data-sortable-type="numeric">prospect rank</th>
+                </tr>
+                {% for h in top %}
+                <tr>
+                    <td data-value="{{ h.rank|default_if_none:'-999' }}">{{ h.rank }}</td>
+                    <td class="left"><a href="/players/{{ h.player_id }}/">{{ h.player }}</a></td>
+                    <td data-value="{{ h.age|default_if_none:'-999' }}">{{ h.age }}</td>
+                    <td>{{ h.position }}</td>
+                    <td data-value="{{ h.organization|default_if_none:'ZZZZZZ' }}">{{ h.organization|default_if_none:"-" }}</td>
+                    <td data-value="{{ h.prospect_rank|default_if_none:'-999' }}">{{ h.prospect_rank|default_if_none:"-" }}</td>
+                </tr>
+                {% endfor %}
+            </table>    
+        </div>
+    </div>
+    <div class="columns">
+        <div class="column">
+            {% regroup hitters by ulmg_position as position_hitters%}
+            {% for position in position_hitters %}
+            <h1 class="title is-4">{{ position.grouper }} ({{ position.list|length }})</h1>
+            <table class="table is-fullwidth" data-sortable>
+                <tr>
+                    <th data-sortable-type="numeric">rank</th>
+                    <th>player</th>
+                    <th data-sortable-type="numeric">age</th>
+                    <th>position</th>
+                    <th data-sortable-type="alpha">organization</th>
+                    <th data-sortable-type="numeric">prospect rank</th>
+                </tr>
+                {% for h in position.list %}
+                <tr>
+                    <td data-value="{{ h.rank|default_if_none:'-999' }}">{{ h.rank }}</td>
+                    <td class="left"><a href="/players/{{ h.player_id }}/">{{ h.player }}</a></td>
+                    <td data-value="{{ h.age|default_if_none:'-999' }}">{{ h.age }}</td>
+                    <td>{{ h.position }}</td>
+                    <td data-value="{{ h.organization|default_if_none:'ZZZZZZ' }}">{{ h.organization|default_if_none:"-" }}</td>
+                    <td data-value="{{ h.prospect_rank|default_if_none:'-999' }}">{{ h.prospect_rank|default_if_none:"-" }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+            {% endfor %}
+        </div>
+        <div class="column">
+            {% regroup pitchers by ulmg_position as position_pitchers%}
+            {% for position in position_pitchers %}
+            <h1 class="title is-4">{{ position.grouper }} ({{ position.list|length }})</h1>
+            <table class="table is-fullwidth" data-sortable>
+                <tr>
+                    <th data-sortable-type="numeric">rank</th>
+                    <th>player</th>
+                    <th data-sortable-type="numeric">age</th>
+                    <th>position</th>
+                    <th data-sortable-type="alpha">organization</th>
+                    <th data-sortable-type="numeric">prospect rank</th>
+                </tr>
+                {% for h in position.list %}
+                <tr>
+                    <td data-value="{{ h.rank|default_if_none:'-999' }}">{{ h.rank }}</td>
+                    <td class="left"><a href="/players/{{ h.player_id }}/">{{ h.player }}</a></td>
+                    <td data-value="{{ h.age|default_if_none:'-999' }}">{{ h.age }}</td>
+                    <td>{{ h.position }}</td>
+                    <td data-value="{{ h.organization|default_if_none:'ZZZZZZ' }}">{{ h.organization|default_if_none:"-" }}</td>
+                    <td data-value="{{ h.prospect_rank|default_if_none:'-999' }}">{{ h.prospect_rank|default_if_none:"-" }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+            {% endfor %}
+        </div>
+</div>
+{% endblock %}

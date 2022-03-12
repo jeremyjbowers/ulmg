@@ -32,6 +32,7 @@ urlpatterns = [
     path("calendar/<int:year>/", views.site.calendar_by_season),
     path("calendar/", views.site.current_calendar),
     path("prospect-rankings/<int:year>/", views.site.prospect_ranking_list),
+    path("best-available/<int:year>/", views.site.best_available),
     path("special/players/", views.special.player_util),
     path("special/trades/", views.special.trade_util),
     path("special/players/bulk/", views.special.special_bulk_add_players),
