@@ -113,7 +113,7 @@
                 <tr>
                         {% include "includes/player_name.html" %}
                         <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
-                        <td data-value="{{ p.level|default_if_none:"Z" }}<">{{ p.level|default_if_none:"" }}</td>
+                        <td data-value="{{ p.level|default_if_none:"Z" }}">{{ p.level|default_if_none:"" }}</td>
                         {% include "includes/hitter_stat_cells.html" %}
                     </tr>
                 {% endfor %}
