@@ -16,54 +16,7 @@
         {% endif %}
         <br/><a href="/teams/{{ team.abbreviation }}/csv/{% if value %}?value=true{% endif %}">Download team roster &dtrif;</a>
     </p>
-
-        <div class="columns">
-            <div class="column is-one-half">
-                <p class="title is-4 has-text-weight-bold">{{ venue.name }}</p>
-                <p>The {{ team.city }} {{ team.nickname }} play their home games at <strong>{{ venue.name }}</strong>. With a park factor of <strong>{{ venue.park_factor }}</strong>, {{ venue.name }} is a <strong>{{ venue.park_type }}</strong> park.</p>
-                    <h5 class="title is-5">Similar parks</h5>
-                    <table class="table">
-                        <tr>
-                            <th>Name</th>
-                            <th>MLB Team</th>
-                            <th>ULMG Team</th>
-                            <th>Park Factor</th>
-                            <th>Runs</th>
-                            <th>Hits</th>
-                            <th>2B</th>
-                            <th>3B</th>
-                            <th>HR</th>
-                            <!-- <th>wOBACON</th>
-                            <th>wBACON</th> -->
-                        </tr>
-                        {% for v in venue.similar_parks  %}
-                        <tr>
-                            <td class="left{% if v.mlb_venue_id == venue.mlb_venue_id %} has-text-weight-bold{% endif %}">{{ v.name }}</td>
-                            <td class="left{% if v.mlb_venue_id == venue.mlb_venue_id %} has-text-weight-bold{% endif %}">{{ v.mlb_team }}</td>
-                            <td{% if v.mlb_venue_id == venue.mlb_venue_id %} class="has-text-weight-bold"{% endif %}>
-                                {% if v.team %}
-                                    {% if v.mlb_venue_id != venue.mlb_venue_id %}
-                                        <a href="/teams/{{ v.team }}/">{{ v.team }}</a>
-                                    {% else %}
-                                        {{ v.team }}
-                                    {% endif %}
-                                {% else %}
-                                    -
-                                {% endif %}
-                            </td>
-                            <td{% if v.mlb_venue_id == venue.mlb_venue_id %} class="has-text-weight-bold"{% endif %}>{{ v.park_factor }}</td>
-                            <td{% if v.mlb_venue_id == venue.mlb_venue_id %} class="has-text-weight-bold"{% endif %}>{{ v.pf_runs }}</td>
-                            <td{% if v.mlb_venue_id == venue.mlb_venue_id %} class="has-text-weight-bold"{% endif %}>{{ v.pf_h }}</td>
-                            <td{% if v.mlb_venue_id == venue.mlb_venue_id %} class="has-text-weight-bold"{% endif %}>{{ v.pf_2b }}</td>
-                            <td{% if v.mlb_venue_id == venue.mlb_venue_id %} class="has-text-weight-bold"{% endif %}>{{ v.pf_3b }}</td>
-                            <td{% if v.mlb_venue_id == venue.mlb_venue_id %} class="has-text-weight-bold"{% endif %}>{{ v.pf_hr }}</td>
-                            <!-- <td{% if v.mlb_venue_id == venue.mlb_venue_id %} class="has-text-weight-bold"{% endif %}>{{ v.pf_wobacon }}</td>
-                            <td{% if v.mlb_venue_id == venue.mlb_venue_id %} class="has-text-weight-bold"{% endif %}>{{ v.pf_bacon }}</td> -->
-                        </tr>
-                        {% endfor %}
-                    </table>
-            </div>
-        </div>
+    <p>The {{ team.city }} {{ team.nickname }} play their home games at <strong>{{ venue.name }}</strong>. With a park factor of <strong>{{ venue.park_factor }}</strong>, {{ venue.name }} is a <strong>{{ venue.park_type }}</strong> park.</p>
 
 </div>
 <style>

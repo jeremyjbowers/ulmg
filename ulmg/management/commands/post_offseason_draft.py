@@ -31,4 +31,4 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         self.reset_rosters()
-        self.set_carded()
+        # self.set_carded()
