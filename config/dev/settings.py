@@ -102,7 +102,7 @@ TEAM_LIVE_TAB = False
 
 TEAM_SEASON_HALF = "1h"
 CURRENT_SEASON = 2022
-CURRENT_SEASON_TYPE = "offseason"
+CURRENT_SEASON_TYPE = "midseason"
 
 ROSTER_TEAM_IDS = [
     ("1", "LAA", "Los Angeles Angels"),
