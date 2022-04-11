@@ -35,7 +35,7 @@ more-itertools==8.4.0
 nameparser==1.0.5
 oauthlib==3.1.0
 packaging==20.4
-paramiko==2.7.1
+paramiko==2.10.1
 parso==0.8.1
 pathspec==0.8.0
 pexpect==4.8.0
