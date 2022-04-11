@@ -1,3 +1,14 @@
 #!/bin/bash
-# SEASON IS OVER STOP GETTING NEW STUFF
-# cd /home/ubuntu/apps/ulmg; sudo su -c "source ~/.bashrc && workon ulmg && django-admin live_update" ubuntu
+
+while [ 1 ]; 
+do
+    # start time
+    date +"%H:%M:%S"
+
+    time django_admin live_update
+
+    # end time
+    date +"%H:%M:%S"
+
+    sleep 600
+done
