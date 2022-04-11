@@ -63,10 +63,7 @@ def to_float(might_float, default=None):
     except:
         pass
 
-    if default:
-        return default
-
-    return None
+    return default
 
 
 def reset_player_stats(id_type=None, player_ids=None):
@@ -421,8 +418,8 @@ def get_fg_minor_season(season=None, timestamp=None, scriptname=None, hostname=N
                     stats_dict["wrc_plus"] = to_int(player["wRC+"])
                     stats_dict["plate_appearances"] = to_int(player["PA"])
                     stats_dict["iso"] = to_float(player["ISO"])
-                    stats_dict["k_pct"] = to_float(player["K%"]) * 100.0
-                    stats_dict["bb_pct"] = to_float(player["BB%"]) * 100.0
+                    stats_dict["k_pct"] = to_float(player["K%"], default=0.0) * 100.0
+                    stats_dict["bb_pct"] = to_float(player["BB%"], default=0.0) * 100.0
                     stats_dict["woba"] = to_float(player["wOBA"])
 
                 if k == "pit":
@@ -437,8 +434,8 @@ def get_fg_minor_season(season=None, timestamp=None, scriptname=None, hostname=N
                     stats_dict["k_9"] = to_float(player["K/9"])
                     stats_dict["bb_9"] = to_float(player["BB/9"])
                     stats_dict["hr_9"] = to_float(player["HR/9"])
-                    stats_dict["lob_pct"] = to_float(player["LOB%"]) * 100.0
-                    stats_dict["gb_pct"] = to_float(player["GB%"]) * 100.0
+                    stats_dict["lob_pct"] = to_float(player["LOB%"], default=0.0) * 100.0
+                    stats_dict["gb_pct"] = to_float(player["GB%"], default=0.0) * 100.0
                     stats_dict["hr_fb"] = to_float(player["HR/FB"])
                     stats_dict["era"] = to_float(player["ERA"])
                     stats_dict["fip"] = to_float(player["FIP"])
