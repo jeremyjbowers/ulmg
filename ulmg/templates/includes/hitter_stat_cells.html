@@ -24,12 +24,12 @@
 <td data-value="{{ p.stats.current.hr|default_if_none:"-999" }}">
     {% if p.stats.current.plate_appearances > 0 %}{{ p.stats.current.hr|default_if_none:"-" }}{% else %}-{% endif %}
 </td>
-<!-- <td data-value="{{ p.stats.current.runs|default_if_none:"-999" }}">
+<td data-value="{{ p.stats.current.runs|default_if_none:"-999" }}">
     {% if p.stats.current.plate_appearances > 0 %}{{ p.stats.current.runs|default_if_none:"-" }}{% else %}-{% endif %}
 </td>
 <td data-value="{{ p.stats.current.rbi|default_if_none:"-999" }}">
     {% if p.stats.current.plate_appearances > 0 %}{{ p.stats.current.rbi|default_if_none:"-" }}{% else %}-{% endif %}
-</td> -->
+</td>
 <td data-value="{{ p.stats.current.sb|default_if_none:"-999" }}">
     {% if p.stats.current.plate_appearances > 0 %}{{ p.stats.current.sb|default_if_none:"-" }}{% else %}-{% endif %}
 </td>
@@ -42,7 +42,7 @@
 <td data-value="{{ p.stats.current.wrc_plus|default_if_none:"-999" }}">
     {% if p.stats.current.plate_appearances > 0 %}{{ p.stats.current.wrc_plus|default_if_none:"-" }}{% else %}-{% endif %}
 </td>
-<td data-value="{{ p.strat_obtb_l|default_if_none:"-999" }}">
+<!-- <td data-value="{{ p.strat_obtb_l|default_if_none:"-999" }}">
     {% if p.strat_obtb_l %}{{ p.strat_obtb_l|default_if_none:"-" }}{% else %}-{% endif %}
 </td>
 <td data-value="{{ p.strat_obtb_r|default_if_none:"-999" }}">
@@ -50,7 +50,7 @@
 </td>
 <td data-value="{{ p.strat_obtb_tot|default_if_none:"-999" }}">
     {% if p.strat_obtb_tot %}{{ p.strat_obtb_tot|default_if_none:"-" }}{% else %}-{% endif %}
-</td>
+</td> -->
 <td data-value="{{ p.stats.current.xavg|default_if_none:"-999" }}">
     {% if p.stats.current.plate_appearances > 0 and p.stats.current.xavg %}{{ p.stats.current.xavg|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
 </td>
