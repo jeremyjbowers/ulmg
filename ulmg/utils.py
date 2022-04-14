@@ -474,15 +474,99 @@ def import_players_from_rosters():
 
             for player in roster:
 
-                if player.get("minormasterid", None) and player.get("playerid1", None):
+                obj = None
 
+                fg_id = None
+
+                if player.get('playerid'):
+                    fg_id = player['playerid']
+                
+                if player.get('playerid1') and not fg_id:
+                    fg_id = player['playerid1']
+
+                if player.get('playerid2') and not fg_id:
+                    fg_id = player['playerid2']
+
+                if player.get('oPlayerId') and not fg_id:
+                    fg_id = player['oPlayerId']
+
+                # player has an fg_id but missing other IDs
+                if fg_id:
+                    obj = models.Player.objects.filter(fg_id=fg_id)
+
+                    if len(obj) == 1:
+                        obj = obj[0]
+
+                        if player.get('mlbamid', None):
+                            obj.mlbam_id = player['mlbamid']
+
+                        obj.save()
+
+                        continue
+
+                # player has a minormasterid in the fg_id and needs updating
+                if player.get("minormasterid", None) and fg_id:
+                    obj = models.Player.objects.filter(fg_id=player["minormasterid"])
+
+                    if len(obj) == 1:
+                        obj = obj[0]
+
+                        obj.fg_id = fg_id
+
+                        if player.get('mlbamid', None):
+                            obj.mlbam_id = player['mlbamid']
+
+                        obj.save()
+
+                        continue
+
+                # player has no fg_id, but we found one with a name match
+                pos = normalize_pos(player['position'])
+                obj = fuzzy_find_player(player['player'], score=0.7)
+                if len(obj) == 1:
+                    obj = obj[0]
+
+                    if player.get('minormasterid'):
+                        obj.fg_id = player['minormasterid']
+
+                    if fg_id:
+                        obj.fg_id = fg_id
+
+                    if player.get('mlbamid'):
+                            obj.mlbam_id = player['mlbamid']
+                    
+                    obj.save()
+
+                # we cannot find this name in our db
+                elif len(obj) == 0:
+                    age = None
                     try:
-                        models.Player.objects.get(fg_id=player["minormasterid"]).update(
-                            fg_id=player["playerid1"]
-                        )
-
+                        age = int(player['age'].split('.')[0])
                     except:
                         pass
+
+                    obj = models.Player(name=player['player'], position=pos, level="B", raw_age=age, mlb_team_abbr=team_abbrev)
+
+                    if player.get('minormasterid'):
+                        obj.fg_id = player['minormasterid']
+
+                    if fg_id:
+                        obj.fg_id = fg_id
+
+                    if player.get('mlbamid'):
+                            obj.mlbam_id = player['mlbamid']
+
+                    if not obj.fg_id:
+                        pass
+                        # print(f'~ {obj}')
+
+                    else:
+                        print(f'+ {obj}')
+                        obj.save()
+
+                # there are two or more players with this name
+                elif len(obj) > 1:
+                    print(f'2x {obj}')
 
 
 def parse_roster_info():
