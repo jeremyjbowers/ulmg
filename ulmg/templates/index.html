@@ -99,7 +99,7 @@
             {% regroup hitters by position as position_players %}
             {% for position in position_players %}
             <h1 class="title is-3">{{ position.grouper }} ({{ position.list|length }})</h1>
-            <table class="table real-stat-table" data-sortable>
+            <table class="table real-stat-table is-fullwidth" data-sortable>
                 <thead>
                     <tr>
                         <th data-sortable-type="alpha">Name</th>
@@ -126,7 +126,7 @@
     <div class="columns">
         <div class="column">
             <h1 class="title is-3">P ({{ pitchers|length }})</h1>
-            <table class="table real-stat-table" data-sortable>
+            <table class="table real-stat-table is-fullwidth" data-sortable>
                 <thead>
                     <tr>
                         <th data-sortable-type="alpha">Name</th>
