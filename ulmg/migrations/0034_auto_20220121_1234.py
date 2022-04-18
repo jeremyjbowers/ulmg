@@ -6,17 +6,17 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('ulmg', '0033_auto_20220109_1409'),
+        ("ulmg", "0033_auto_20220109_1409"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='venue',
-            options={'ordering': ['name']},
+            name="venue",
+            options={"ordering": ["name"]},
         ),
         migrations.AddField(
-            model_name='player',
-            name='strat_ratings',
+            model_name="player",
+            name="strat_ratings",
             field=models.JSONField(blank=True, null=True),
         ),
     ]

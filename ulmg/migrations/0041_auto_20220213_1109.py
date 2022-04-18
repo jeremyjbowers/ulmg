@@ -6,78 +6,84 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('ulmg', '0040_auto_20220129_1640'),
+        ("ulmg", "0040_auto_20220129_1640"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='wishlistplayer',
-            name='avg',
-            field=models.DecimalField(blank=True, decimal_places=1, max_digits=4, null=True),
+            model_name="wishlistplayer",
+            name="avg",
+            field=models.DecimalField(
+                blank=True, decimal_places=1, max_digits=4, null=True
+            ),
         ),
         migrations.AddField(
-            model_name='wishlistplayer',
-            name='ba',
+            model_name="wishlistplayer",
+            name="ba",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='wishlistplayer',
-            name='bp',
+            model_name="wishlistplayer",
+            name="bp",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='wishlistplayer',
-            name='cbs',
+            model_name="wishlistplayer",
+            name="cbs",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='wishlistplayer',
-            name='espn',
+            model_name="wishlistplayer",
+            name="espn",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='wishlistplayer',
-            name='fg',
+            model_name="wishlistplayer",
+            name="fg",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='wishlistplayer',
-            name='ftrax',
+            model_name="wishlistplayer",
+            name="ftrax",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='wishlistplayer',
-            name='law',
+            model_name="wishlistplayer",
+            name="law",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='wishlistplayer',
-            name='med',
-            field=models.DecimalField(blank=True, decimal_places=1, max_digits=4, null=True),
+            model_name="wishlistplayer",
+            name="med",
+            field=models.DecimalField(
+                blank=True, decimal_places=1, max_digits=4, null=True
+            ),
         ),
         migrations.AddField(
-            model_name='wishlistplayer',
-            name='mlb',
+            model_name="wishlistplayer",
+            name="mlb",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='wishlistplayer',
-            name='p1500',
+            model_name="wishlistplayer",
+            name="p1500",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='wishlistplayer',
-            name='p365',
+            model_name="wishlistplayer",
+            name="p365",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='wishlistplayer',
-            name='plive',
+            model_name="wishlistplayer",
+            name="plive",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='wishlistplayer',
-            name='skew',
-            field=models.DecimalField(blank=True, decimal_places=1, max_digits=4, null=True),
+            model_name="wishlistplayer",
+            name="skew",
+            field=models.DecimalField(
+                blank=True, decimal_places=1, max_digits=4, null=True
+            ),
         ),
     ]

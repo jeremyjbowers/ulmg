@@ -7,6 +7,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("accounts/", include("django.contrib.auth.urls")),
     path("api/v1/player/scouting-report/<int:playerid>/", views.api.scouting_report),
+    path("api/v1/wishlist/players/", views.api.get_wishlist_players),
     path("api/v1/player/", views.api.player_list),
     path(
         "api/v1/draft/live/<int:year>/<str:season>/<str:draft_type>/",
@@ -15,9 +16,16 @@ urlpatterns = [
     path("api/v1/player/<int:playerid>/<str:action>/", views.api.player_action),
     path("api/v1/draft/<str:pickid>/", views.api.draft_action),
     path("api/v1/wishlist/bulk/", views.api.wishlist_bulk_action),
-    path("api/v1/wishlist/note/add/<str:playerid>/", views.api.add_note_to_wishlistplayer),
-    path("api/v1/wishlist/tags/delete/<str:playerid>/", views.api.delete_tag_from_wishlistplayer),
-    path("api/v1/wishlist/tags/add/<str:playerid>/", views.api.add_tag_to_wishlistplayer),
+    path(
+        "api/v1/wishlist/note/add/<str:playerid>/", views.api.add_note_to_wishlistplayer
+    ),
+    path(
+        "api/v1/wishlist/tags/delete/<str:playerid>/",
+        views.api.delete_tag_from_wishlistplayer,
+    ),
+    path(
+        "api/v1/wishlist/tags/add/<str:playerid>/", views.api.add_tag_to_wishlistplayer
+    ),
     path("api/v1/wishlist/<str:playerid>/", views.api.wishlist_player_action),
     path("api/v1/trade/bulk/", views.api.trade_bulk_action),
     path("api/v1/player/bulk/", views.api.player_bulk_action),

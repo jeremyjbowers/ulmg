@@ -6,38 +6,38 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('ulmg', '0035_auto_20220121_1254'),
+        ("ulmg", "0035_auto_20220121_1254"),
     ]
 
     operations = [
         migrations.RenameField(
-            model_name='player',
-            old_name='strat_hit_l',
-            new_name='strat_bb_l',
+            model_name="player",
+            old_name="strat_hit_l",
+            new_name="strat_bb_l",
         ),
         migrations.RenameField(
-            model_name='player',
-            old_name='strat_hit_r',
-            new_name='strat_bb_r',
+            model_name="player",
+            old_name="strat_hit_r",
+            new_name="strat_bb_r",
         ),
         migrations.AddField(
-            model_name='player',
-            name='strat_h_l',
+            model_name="player",
+            name="strat_h_l",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='player',
-            name='strat_h_r',
+            model_name="player",
+            name="strat_h_r",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='player',
-            name='strat_k_l',
+            model_name="player",
+            name="strat_k_l",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='player',
-            name='strat_k_r',
+            model_name="player",
+            name="strat_k_r",
             field=models.IntegerField(blank=True, null=True),
         ),
     ]

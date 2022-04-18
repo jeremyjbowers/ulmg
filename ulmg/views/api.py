@@ -16,6 +16,41 @@ from ulmg import models, utils
 
 @login_required
 @csrf_exempt
+def get_wishlist_players(request):
+    owner = models.Owner.objects.get(user=request.user)
+    w = models.Wishlist.objects.filter(owner=owner)
+    wishlist = None
+    wishlist_players = []
+    if len(w) > 0:
+        wishlist = w[0]
+    if wishlist:
+        for p in models.WishlistPlayer.objects.filter(wishlist=wishlist):
+            player_dict = {
+                "player": p.player.name,
+                "id": p.player.id,
+                "level": p.player.level,
+                "position": p.player.position,
+                "age": p.player.age,
+                "url": f"/players/{ p.player.id }/",
+                "mlb_team": p.player.mlb_team_abbr,
+                "team": None,
+                "stats": None,
+            }
+
+            if p.player.team:
+                player_dict["team"] = p.player.team.abbreviation
+
+            if p.player.stats:
+                if p.player.stats["current"]["year"] == 2022:
+                    player_dict["stats"] = p.player.stats["current"]
+
+            wishlist_players.append(player_dict)
+
+    return JsonResponse({"players": wishlist_players})
+
+
+@login_required
+@csrf_exempt
 def trade_bulk_action(request):
     try:
         for raw_json_string, _ in request.POST.items():
@@ -615,6 +650,7 @@ Ryan Harwood    IF
 Andrew Costello C
 """
 
+
 @csrf_exempt
 def player_bulk_action(request):
     payload = {"players": []}
@@ -622,32 +658,43 @@ def player_bulk_action(request):
     if request.method == "POST":
         if request.POST.get("players", None):
 
-            player_list = request.POST.get("players").split('\n')
+            player_list = request.POST.get("players").split("\n")
 
             for p in player_list:
 
                 if "\t" in p:
-                    player = p.split('\t')
+                    player = p.split("\t")
 
                 elif "," in p:
-                    player = p.split(',')
+                    player = p.split(",")
 
                 if len(player) > 1:
 
                     name = player[0]
                     position = player[1]
-                    ply = {"name": name, "position": position, "ulmg_id": None, "created": False}
+                    ply = {
+                        "name": name,
+                        "position": position,
+                        "ulmg_id": None,
+                        "created": False,
+                    }
 
                     plyrz = utils.fuzzy_find_player(name)
 
                     if len(plyrz) == 1:
-                        ply['ulmg_id'] = plyrz[0].id
+                        ply["ulmg_id"] = plyrz[0].id
 
                     elif len(plyrz) == 0:
-                        p = models.Player(name=name, level="B", is_prospect=True, is_amateur=True, position=position)
+                        p = models.Player(
+                            name=name,
+                            level="B",
+                            is_prospect=True,
+                            is_amateur=True,
+                            position=position,
+                        )
                         p.save()
-                        ply['ulmg_id'] = p.id
-                        ply['created'] = True
+                        ply["ulmg_id"] = p.id
+                        ply["created"] = True
 
                     payload["players"].append(ply)
 
@@ -662,7 +709,9 @@ def delete_tag_from_wishlistplayer(request, playerid):
 
             tagname = request.POST.get("tagname")
 
-            w = models.WishlistPlayer.objects.get(player__id=playerid, wishlist__owner=context['owner'])
+            w = models.WishlistPlayer.objects.get(
+                player__id=playerid, wishlist__owner=context["owner"]
+            )
 
             tags = []
 
@@ -684,7 +733,9 @@ def add_tag_to_wishlistplayer(request, playerid):
 
             tagname = request.POST.get("tagname")
 
-            w = models.WishlistPlayer.objects.get(player__id=playerid, wishlist__owner=context['owner'])
+            w = models.WishlistPlayer.objects.get(
+                player__id=playerid, wishlist__owner=context["owner"]
+            )
 
             if not w.tags:
                 w.tags = []
@@ -699,17 +750,19 @@ def add_tag_to_wishlistplayer(request, playerid):
 @csrf_exempt
 def add_note_to_wishlistplayer(request, playerid):
     context = {}
-    context['owner'] = None
+    context["owner"] = None
     if request.user.is_authenticated:
         owner = models.Owner.objects.get(user=request.user)
         context["owner"] = owner
-    
+
     if request.method == "POST":
         if request.POST.get("note", None):
 
             note = request.POST.get("note")
 
-            w = models.WishlistPlayer.objects.get(player__id=playerid, wishlist__owner=context['owner'])
+            w = models.WishlistPlayer.objects.get(
+                player__id=playerid, wishlist__owner=context["owner"]
+            )
             w.note = note
             w.save()
 

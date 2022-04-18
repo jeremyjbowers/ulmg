@@ -24,7 +24,6 @@ def special_bulk_add_players(request):
     return render(request, "special_bulk_add.html", context)
 
 
-
 @staff_member_required
 @login_required
 def player_util(request):
@@ -94,9 +93,9 @@ def my_team(request, abbreviation):
     context["pitchers"] = pitchers
 
     if request.user.is_superuser:
-        context['own_team'] = True
+        context["own_team"] = True
 
-    print(context['own_team'])
+    print(context["own_team"])
 
     return render(request, "team.html", context)
 
@@ -167,20 +166,20 @@ def my_wishlist(request, list_type, abbreviation):
 def my_wishlist_beta(request, list_type):
     context = utils.build_context(request)
 
-    context["team"] = get_object_or_404(
-        models.Team, owner_obj=context['owner']
-    )
+    context["team"] = get_object_or_404(models.Team, owner_obj=context["owner"])
     context["wishlist"] = models.Wishlist.objects.get(owner=context["owner"])
 
-    context['players'] = models.WishlistPlayer.objects.filter(wishlist=context["wishlist"], player__is_owned=False, player__level="B").order_by('rank')
+    context["players"] = models.WishlistPlayer.objects.filter(
+        wishlist=context["wishlist"], player__is_owned=False, player__level="B"
+    ).order_by("rank")
 
-    context['tags'] = set()
+    context["tags"] = set()
 
-    for p in context['players'].values('tags'):
-        if p['tags']:
-            for z in p['tags']:
-                context['tags'].add(z)
+    for p in context["players"].values("tags"):
+        if p["tags"]:
+            for z in p["tags"]:
+                context["tags"].add(z)
 
-    context['tags'] = sorted(list(context['tags']), key=lambda x:x)
+    context["tags"] = sorted(list(context["tags"]), key=lambda x: x)
 
     return render(request, "my/wishlist_beta.html", context)

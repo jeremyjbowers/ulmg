@@ -156,7 +156,9 @@ class Venue(BaseModel):
         upper_bound = self.park_factor + 2
         lower_bound = self.park_factor - 2
 
-        return Venue.objects.filter(park_factor__lte=upper_bound, park_factor__gte=lower_bound).order_by('park_factor')
+        return Venue.objects.filter(
+            park_factor__lte=upper_bound, park_factor__gte=lower_bound
+        ).order_by("park_factor")
 
     def park_type(self):
 
@@ -165,7 +167,7 @@ class Venue(BaseModel):
 
         if self.park_factor > 105:
             return "extreme hitter's"
-        
+
         if self.park_factor < 97:
             return "slight pitcher's"
 
@@ -175,7 +177,7 @@ class Venue(BaseModel):
         return "neutral"
 
     class Meta:
-        ordering = ['name']
+        ordering = ["name"]
 
 
 class Player(BaseModel):
@@ -379,7 +381,7 @@ class Player(BaseModel):
     strat_h_l = models.IntegerField(blank=True, null=True)
     strat_ob_l = models.IntegerField(blank=True, null=True)
     strat_tb_l = models.IntegerField(blank=True, null=True)
-    strat_hr_l = models.IntegerField(blank=True, null=True) 
+    strat_hr_l = models.IntegerField(blank=True, null=True)
     strat_bb_l = models.IntegerField(blank=True, null=True)
     strat_so_l = models.IntegerField(blank=True, null=True)
 
@@ -394,7 +396,7 @@ class Player(BaseModel):
     strat_p_h_l = models.IntegerField(blank=True, null=True)
     strat_p_ob_l = models.IntegerField(blank=True, null=True)
     strat_p_tb_l = models.IntegerField(blank=True, null=True)
-    strat_p_hr_l = models.IntegerField(blank=True, null=True) 
+    strat_p_hr_l = models.IntegerField(blank=True, null=True)
     strat_p_bb_l = models.IntegerField(blank=True, null=True)
     strat_p_so_l = models.IntegerField(blank=True, null=True)
 
@@ -1138,7 +1140,22 @@ class WishlistPlayer(BaseModel):
         r = ProspectRating.objects.filter(player=self.player, year=2022)
         if len(r) > 0:
             r = r[0]
-            for f in ['skew', 'med', 'avg', 'law', 'ba', 'bp', 'mlb', 'fg', 'p365', "p1500", 'ftrax', 'cbs', 'espn', 'plive']:
+            for f in [
+                "skew",
+                "med",
+                "avg",
+                "law",
+                "ba",
+                "bp",
+                "mlb",
+                "fg",
+                "p365",
+                "p1500",
+                "ftrax",
+                "cbs",
+                "espn",
+                "plive",
+            ]:
                 setattr(self, f, getattr(r, f))
 
         super().save(*args, **kwargs)

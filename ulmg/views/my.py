@@ -115,8 +115,12 @@ def my_wishlist(request, list_type):
         except:
             pass
 
-        context["op_hitters"] = sorted(context["op_hitters"], key=lambda x: (x.tier, x.rank))
-        context["op_pitchers"] = sorted(context["op_pitchers"], key=lambda x: (x.tier, x.rank))
+        context["op_hitters"] = sorted(
+            context["op_hitters"], key=lambda x: (x.tier, x.rank)
+        )
+        context["op_pitchers"] = sorted(
+            context["op_pitchers"], key=lambda x: (x.tier, x.rank)
+        )
 
     if list_type == "trade":
         for p in models.WishlistPlayer.objects.filter(wishlist=context["wishlist"]):
@@ -168,7 +172,11 @@ def my_draftlist(request):
     except:
         pass
 
-    context["op_hitters"] = sorted(context["op_hitters"], key=lambda x: (x.tier, x.rank))
-    context["op_pitchers"] = sorted(context["op_pitchers"], key=lambda x: (x.tier, x.rank))
+    context["op_hitters"] = sorted(
+        context["op_hitters"], key=lambda x: (x.tier, x.rank)
+    )
+    context["op_pitchers"] = sorted(
+        context["op_pitchers"], key=lambda x: (x.tier, x.rank)
+    )
 
     return render(request, "my/draft_prep.html", context)

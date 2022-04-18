@@ -131,7 +131,9 @@ def fuzzy_find_prospectrating(
     return output
 
 
-def strat_find_player(first_initial, last_name, hitter=True, mlb_team_abbr=None, ulmg_id=None):
+def strat_find_player(
+    first_initial, last_name, hitter=True, mlb_team_abbr=None, ulmg_id=None
+):
     if ulmg_id:
         return models.Player.objects.filter(id=ulmg_id)[0]
 
@@ -221,16 +223,8 @@ def build_context(request):
     context["teamnav"] = models.Team.objects.all().values("abbreviation")
     context["draftnav"] = settings.DRAFTS
     context["mlb_roster_size"] = settings.MLB_ROSTER_SIZE
-
-    # for showing stats
-    context["advanced"] = False
-    if request.GET.get("adv", None):
-        context["advanced"] = True
-
     context["roster_tab"] = settings.TEAM_ROSTER_TAB
-
     context["protect_tab"] = settings.TEAM_PROTECT_TAB
-
     context["live_tab"] = settings.TEAM_LIVE_TAB
 
     # for search
@@ -241,20 +235,11 @@ def build_context(request):
         ["%s=%s" % (k, v[-1]) for k, v in queries_without_page.items()]
     )
 
-    # wishlist
-    # context["wishlist"] = None
+    # add the owner to the page
     context["owner"] = None
-    # context["wishlist_players"] = []
     if request.user.is_authenticated:
         owner = models.Owner.objects.get(user=request.user)
         context["owner"] = owner
-    #     w = models.Wishlist.objects.filter(owner=owner)
-    #     if len(w) > 0:
-    #         context["wishlist"] = w[0]
-    #     context["wishlist_players"] = [
-    #         p.player.id
-    #         for p in models.WishlistPlayer.objects.filter(wishlist=context["wishlist"])
-    #     ]
 
     return context
 
@@ -434,7 +419,9 @@ def get_fg_minor_season(season=None, timestamp=None, scriptname=None, hostname=N
                     stats_dict["k_9"] = to_float(player["K/9"])
                     stats_dict["bb_9"] = to_float(player["BB/9"])
                     stats_dict["hr_9"] = to_float(player["HR/9"])
-                    stats_dict["lob_pct"] = to_float(player["LOB%"], default=0.0) * 100.0
+                    stats_dict["lob_pct"] = (
+                        to_float(player["LOB%"], default=0.0) * 100.0
+                    )
                     stats_dict["gb_pct"] = to_float(player["GB%"], default=0.0) * 100.0
                     stats_dict["hr_fb"] = to_float(player["HR/FB"])
                     stats_dict["era"] = to_float(player["ERA"])
@@ -478,17 +465,17 @@ def import_players_from_rosters():
 
                 fg_id = None
 
-                if player.get('playerid'):
-                    fg_id = player['playerid']
-                
-                if player.get('playerid1') and not fg_id:
-                    fg_id = player['playerid1']
+                if player.get("playerid"):
+                    fg_id = player["playerid"]
 
-                if player.get('playerid2') and not fg_id:
-                    fg_id = player['playerid2']
+                if player.get("playerid1") and not fg_id:
+                    fg_id = player["playerid1"]
 
-                if player.get('oPlayerId') and not fg_id:
-                    fg_id = player['oPlayerId']
+                if player.get("playerid2") and not fg_id:
+                    fg_id = player["playerid2"]
+
+                if player.get("oPlayerId") and not fg_id:
+                    fg_id = player["oPlayerId"]
 
                 # player has an fg_id but missing other IDs
                 if fg_id:
@@ -497,8 +484,8 @@ def import_players_from_rosters():
                     if len(obj) == 1:
                         obj = obj[0]
 
-                        if player.get('mlbamid', None):
-                            obj.mlbam_id = player['mlbamid']
+                        if player.get("mlbamid", None):
+                            obj.mlbam_id = player["mlbamid"]
 
                         obj.save()
 
@@ -513,60 +500,66 @@ def import_players_from_rosters():
 
                         obj.fg_id = fg_id
 
-                        if player.get('mlbamid', None):
-                            obj.mlbam_id = player['mlbamid']
+                        if player.get("mlbamid", None):
+                            obj.mlbam_id = player["mlbamid"]
 
                         obj.save()
 
                         continue
 
                 # player has no fg_id, but we found one with a name match
-                pos = normalize_pos(player['position'])
-                obj = fuzzy_find_player(player['player'], score=0.7)
+                pos = normalize_pos(player["position"])
+                obj = fuzzy_find_player(player["player"], score=0.7)
                 if len(obj) == 1:
                     obj = obj[0]
 
-                    if player.get('minormasterid'):
-                        obj.fg_id = player['minormasterid']
+                    if player.get("minormasterid"):
+                        obj.fg_id = player["minormasterid"]
 
                     if fg_id:
                         obj.fg_id = fg_id
 
-                    if player.get('mlbamid'):
-                            obj.mlbam_id = player['mlbamid']
-                    
+                    if player.get("mlbamid"):
+                        obj.mlbam_id = player["mlbamid"]
+
                     obj.save()
 
                 # we cannot find this name in our db
                 elif len(obj) == 0:
                     age = None
                     try:
-                        age = int(player['age'].split('.')[0])
+                        age = int(player["age"].split(".")[0])
                     except:
                         pass
 
-                    obj = models.Player(name=player['player'], position=pos, level="B", raw_age=age, mlb_team_abbr=team_abbrev)
+                    obj = models.Player(
+                        name=player["player"],
+                        position=pos,
+                        level="B",
+                        raw_age=age,
+                        mlb_team_abbr=team_abbrev,
+                    )
 
-                    if player.get('minormasterid'):
-                        obj.fg_id = player['minormasterid']
+                    if player.get("minormasterid"):
+                        obj.fg_id = player["minormasterid"]
 
                     if fg_id:
                         obj.fg_id = fg_id
 
-                    if player.get('mlbamid'):
-                            obj.mlbam_id = player['mlbamid']
+                    if player.get("mlbamid"):
+                        obj.mlbam_id = player["mlbamid"]
 
                     if not obj.fg_id:
                         pass
                         # print(f'~ {obj}')
 
                     else:
-                        print(f'+ {obj}')
+                        print(f"+ {obj}")
                         obj.save()
 
                 # there are two or more players with this name
                 elif len(obj) > 1:
-                    print(f'2x {obj}')
+                    print(f"2x {obj}")
 
 
 def parse_roster_info():
@@ -965,7 +958,9 @@ def load_career_pitch(*args, **options):
 
 def set_levels(*args, **options):
     print("--------- STARTERS B > A ---------")
-    for p in models.Player.objects.filter(level="B", position="P", stats__career__gs__gte=21):
+    for p in models.Player.objects.filter(
+        level="B", position="P", stats__career__gs__gte=21
+    ):
         p.level = "A"
         print(p)
         if not options.get("dry_run", None):

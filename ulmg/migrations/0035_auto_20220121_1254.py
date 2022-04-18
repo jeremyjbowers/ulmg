@@ -6,58 +6,58 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('ulmg', '0034_auto_20220121_1234'),
+        ("ulmg", "0034_auto_20220121_1234"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='player',
-            name='strat_hit_l',
+            model_name="player",
+            name="strat_hit_l",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='player',
-            name='strat_hit_r',
+            model_name="player",
+            name="strat_hit_r",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='player',
-            name='strat_hr_l',
+            model_name="player",
+            name="strat_hr_l",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='player',
-            name='strat_hr_r',
+            model_name="player",
+            name="strat_hr_r",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='player',
-            name='strat_ob_l',
+            model_name="player",
+            name="strat_ob_l",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='player',
-            name='strat_ob_r',
+            model_name="player",
+            name="strat_ob_r",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='player',
-            name='strat_obtb_l',
+            model_name="player",
+            name="strat_obtb_l",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='player',
-            name='strat_obtb_r',
+            model_name="player",
+            name="strat_obtb_r",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='player',
-            name='strat_tb_l',
+            model_name="player",
+            name="strat_tb_l",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='player',
-            name='strat_tb_r',
+            model_name="player",
+            name="strat_tb_r",
             field=models.IntegerField(blank=True, null=True),
         ),
     ]
