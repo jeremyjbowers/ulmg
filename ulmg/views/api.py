@@ -24,7 +24,9 @@ def get_wishlist_players(request):
     if len(w) > 0:
         wishlist = w[0]
     if wishlist:
-        for p in models.WishlistPlayer.objects.filter(wishlist=wishlist):
+        for p in models.WishlistPlayer.objects.filter(wishlist=wishlist).order_by(
+            "-player__team", "player__last_name"
+        ):
             player_dict = {
                 "player": p.player.name,
                 "id": p.player.id,
