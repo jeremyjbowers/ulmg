@@ -6,6 +6,20 @@ $(function(){
         $el.toggleClass('action-remove-wishlist')
         $el.toggleClass('has-text-success')
         $el.toggleClass('action-add-wishlist')
+        $el.toggleClass('has-text-grey')
+    }
+
+    var load_wishlist = function() {
+        $.ajax({
+            type: "GET",
+            url: '/api/v1/wishlist/players/',
+            success: function(response){
+                $.each(response.players, function(idx, player){
+                    var el = $('#player-' + player.id);
+                    toggle_classes(el);
+                });
+            }
+        });
     }
 
     var add_wishlist_handler = function(el) {
@@ -42,6 +56,7 @@ $(function(){
 
     $('body').on('click', 'span.action-remove-wishlist', remove_wishlist_handler);
     $('body').on('click', 'span.action-add-wishlist', add_wishlist_handler);
+    load_wishlist();
 });
 </script>
 {% endif %}

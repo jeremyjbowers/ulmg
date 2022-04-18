@@ -129,15 +129,22 @@ def wishlist_bulk_action(request):
 @csrf_exempt
 def wishlist_player_action(request, playerid):
     context = utils.build_context(request)
+    wishlist = None
+    wl = models.Wishlist.objects.filter(owner=context['owner'])
+    if len(wl) > 0:
+        wishlist = wl[0]
+
     w = utils.update_wishlist(
         playerid,
-        context["wishlist"],
+        wishlist,
         request.GET.get("rank", None),
         request.GET.get("tier", None),
         remove=utils.str_to_bool(request.GET.get("remove")),
     )
+
     if w:
         return JsonResponse({"success": True, "player": w})
+
     return JsonResponse({"success": False, "player": w})
 
 
