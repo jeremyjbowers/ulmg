@@ -172,9 +172,9 @@
 {% endblock %}
 
 {% block extrascript %}
-{% if not own_team %}
-    {% include "includes/my/wishlistjs.html" %}
-{% endif %}
+
+{% include "includes/my/wishlistjs.html" %}
+
 {% if own_team %}
     {% if protect_tab or roster_tab%}
     <script type="text/javascript">
