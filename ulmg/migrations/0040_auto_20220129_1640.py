@@ -7,18 +7,23 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('ulmg', '0039_auto_20220123_1254'),
+        ("ulmg", "0039_auto_20220123_1254"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='wishlistplayer',
-            name='note',
+            model_name="wishlistplayer",
+            name="note",
             field=models.TextField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='wishlistplayer',
-            name='tags',
-            field=django.contrib.postgres.fields.ArrayField(base_field=models.CharField(max_length=255), blank=True, null=True, size=None),
+            model_name="wishlistplayer",
+            name="tags",
+            field=django.contrib.postgres.fields.ArrayField(
+                base_field=models.CharField(max_length=255),
+                blank=True,
+                null=True,
+                size=None,
+            ),
         ),
     ]

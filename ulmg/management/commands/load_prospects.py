@@ -27,10 +27,7 @@ class Command(BaseCommand):
     top_draft_filename = f"data/{season}/top_draft_prospects.json"
     top_draft_range = "top_draft!A:L"
 
-    file_map = {
-        "top-100": top_100_filename,
-        "top-draft": top_draft_filename
-    }
+    file_map = {"top-100": top_100_filename, "top-draft": top_draft_filename}
 
     def handle(self, *args, **options):
         # These two commands make the script more or less idempotent.
@@ -61,12 +58,12 @@ class Command(BaseCommand):
         Only grabs it new if fresh=True is set.
         """
         if fresh:
-            os.system(f'rm -rf {self.top_draft_filename}')
+            os.system(f"rm -rf {self.top_draft_filename}")
 
         if not os.path.isfile(self.top_draft_filename):
             players = utils.get_sheet(self.top_draft_sheet, self.top_draft_range)
 
-            with open(self.top_draft_filename, 'w') as writefile:
+            with open(self.top_draft_filename, "w") as writefile:
                 writefile.write(json.dumps(players))
 
     def get_top_100_data(self, fresh=False):
@@ -75,13 +72,13 @@ class Command(BaseCommand):
         Only grabs it new if fresh=True is set.
         """
         if fresh:
-            os.system(f'rm -rf {self.top_100_filename}')
+            os.system(f"rm -rf {self.top_100_filename}")
 
         if not os.path.isfile(self.top_100_filename):
             players = utils.get_sheet(self.top_100_sheet, self.top_100_range)
 
-            with open(self.top_100_filename, 'w') as writefile:
-                writefile.write(json.dumps(players)) 
+            with open(self.top_100_filename, "w") as writefile:
+                writefile.write(json.dumps(players))
 
     def load_top_draft(self, save=True):
         rank_type = "top-draft"
@@ -148,4 +145,4 @@ class Command(BaseCommand):
 
         return models.ProspectRating.objects.get_or_create(
             year=self.season, player=p, player_name=row["player"], rank_type=rank_type
-        )  
+        )

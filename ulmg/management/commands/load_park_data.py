@@ -24,32 +24,31 @@ class Command(BaseCommand):
         venues = glob.glob(f"data/parks/{season}/*.json")
 
         for venue_path in venues:
-            with open(venue_path, 'r') as readfile:
+            with open(venue_path, "r") as readfile:
                 venue_dict = json.loads(readfile.read())
 
                 defaults = {
-                    "mlb_venue_url": venue_dict['venue_url'].replace('\/', '/'),
-                    "park_factor": venue_dict['index_woba'],
-                    "pf_wobacon": venue_dict['index_xwobacon'],
-                    "pf_bacon": venue_dict['index_bacon'],
-                    "pf_runs": venue_dict['index_runs'],
-                    "pf_obp": venue_dict['index_obp'],
-                    "pf_h": venue_dict['index_hits'],
-                    "pf_1b": venue_dict['index_1b'],
-                    "pf_2b": venue_dict['index_2b'],
-                    "pf_3b": venue_dict['index_3b'],
-                    "pf_hr": venue_dict['index_hr'],
-                    "pf_bb": venue_dict['index_bb'],
-                    "pf_so": venue_dict['index_so'],
-                    "pf_years": venue_dict['year_range'],
-                    "pf_pa": venue_dict['n_pa'],
-                    "name": venue_dict['venue_name'],
-                    "mlb_team": venue_dict['name_display_club']
+                    "mlb_venue_url": venue_dict["venue_url"].replace("\/", "/"),
+                    "park_factor": venue_dict["index_woba"],
+                    "pf_wobacon": venue_dict["index_xwobacon"],
+                    "pf_bacon": venue_dict["index_bacon"],
+                    "pf_runs": venue_dict["index_runs"],
+                    "pf_obp": venue_dict["index_obp"],
+                    "pf_h": venue_dict["index_hits"],
+                    "pf_1b": venue_dict["index_1b"],
+                    "pf_2b": venue_dict["index_2b"],
+                    "pf_3b": venue_dict["index_3b"],
+                    "pf_hr": venue_dict["index_hr"],
+                    "pf_bb": venue_dict["index_bb"],
+                    "pf_so": venue_dict["index_so"],
+                    "pf_years": venue_dict["year_range"],
+                    "pf_pa": venue_dict["n_pa"],
+                    "name": venue_dict["venue_name"],
+                    "mlb_team": venue_dict["name_display_club"],
                 }
 
                 obj, created = models.Venue.objects.update_or_create(
-                    mlb_venue_id=venue_dict['venue_id'],
-                    defaults=defaults
+                    mlb_venue_id=venue_dict["venue_id"], defaults=defaults
                 )
 
                 print(obj, created)

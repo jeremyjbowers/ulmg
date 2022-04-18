@@ -6,34 +6,34 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('ulmg', '0032_venue'),
+        ("ulmg", "0032_venue"),
     ]
 
     operations = [
         migrations.RenameField(
-            model_name='venue',
-            old_name='stadium_img',
-            new_name='clem_venue_img',
+            model_name="venue",
+            old_name="stadium_img",
+            new_name="clem_venue_img",
         ),
         migrations.AddField(
-            model_name='venue',
-            name='clem_venue_slug',
+            model_name="venue",
+            name="clem_venue_slug",
             field=models.CharField(blank=True, max_length=255, null=True),
         ),
         migrations.AddField(
-            model_name='venue',
-            name='clem_venue_url',
+            model_name="venue",
+            name="clem_venue_url",
             field=models.CharField(blank=True, max_length=255, null=True),
         ),
         migrations.AddField(
-            model_name='venue',
-            name='mlb_venue_id',
+            model_name="venue",
+            name="mlb_venue_id",
             field=models.CharField(default=None, max_length=255),
             preserve_default=False,
         ),
         migrations.AddField(
-            model_name='venue',
-            name='mlb_venue_url',
+            model_name="venue",
+            name="mlb_venue_url",
             field=models.CharField(default=None, max_length=255),
             preserve_default=False,
         ),

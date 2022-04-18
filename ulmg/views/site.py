@@ -18,27 +18,35 @@ from ulmg import models, utils
 
 def best_available(request, year):
     context = utils.build_context(request)
-    context['hitters'] = []
-    context['pitchers'] = []
+    context["hitters"] = []
+    context["pitchers"] = []
     all_players = []
 
-    with open(f'data/{year}/best_available.json', 'r') as readfile:
-        all_players = [p for idx,p in enumerate(json.loads(readfile.read())) if int(p['rank']) < 1001]
+    with open(f"data/{year}/best_available.json", "r") as readfile:
+        all_players = [
+            p
+            for idx, p in enumerate(json.loads(readfile.read()))
+            if int(p["rank"]) < 1001
+        ]
 
-    context['top'] = [p for p in sorted(all_players,key=lambda x:int(x['rank']))][:15]
-    
-    position_players = [p for p in sorted(all_players,key=lambda x:(x['ulmg_position'], int(x['rank'])))]
+    context["top"] = [p for p in sorted(all_players, key=lambda x: int(x["rank"]))][:15]
+
+    position_players = [
+        p
+        for p in sorted(all_players, key=lambda x: (x["ulmg_position"], int(x["rank"])))
+    ]
     for p in position_players:
-        if "P" not in p['position']:
-            context['hitters'].append(p)
+        if "P" not in p["position"]:
+            context["hitters"].append(p)
         else:
-            context['pitchers'].append(p)
-    
-    return render(request, 'best_available.html', context)
+            context["pitchers"].append(p)
+
+    return render(request, "best_available.html", context)
+
 
 def venue_list(request):
     context = utils.build_context(request)
-    context['venues'] = models.Venue.objects.all().order_by('-park_factor', 'name')
+    context["venues"] = models.Venue.objects.all().order_by("-park_factor", "name")
 
     return render(request, "venue_list.html", context)
 
@@ -163,9 +171,9 @@ def team_detail(request, abbreviation):
         context["own_team"] = False
 
     if request.user.is_superuser:
-        context['own_team'] = True
+        context["own_team"] = True
 
-    print(context['own_team'])
+    print(context["own_team"])
 
     team_players = models.Player.objects.filter(team=context["team"])
     hitters = team_players.exclude(position="P").order_by(
@@ -175,7 +183,7 @@ def team_detail(request, abbreviation):
         "-level_order", "-is_carded", "last_name", "first_name"
     )
 
-    context['venue'] = models.Venue.objects.get(team=context['team'])
+    context["venue"] = models.Venue.objects.get(team=context["team"])
 
     position_groups = (
         team_players.exclude(position="P")
@@ -439,16 +447,16 @@ def player_available_midseason(request):
 def player_available_offseason(request):
     context = utils.build_context(request)
     context["hitters"] = (
-        models.Player.objects.filter(is_owned=True, is_35man_roster=False, level__in=["A", "V"])
+        models.Player.objects.filter(
+            is_owned=True, is_35man_roster=False, level__in=["A", "V"]
+        )
         .exclude(position="P")
         .order_by("position", "-level_order", "last_name", "first_name")
     )
 
-    context["pitchers"] = (
-        models.Player.objects
-        .filter(is_owned=True, is_35man_roster=False, level__in=["A", "V"], position="P")
-        .order_by("-level_order", "last_name", "first_name")
-    )
+    context["pitchers"] = models.Player.objects.filter(
+        is_owned=True, is_35man_roster=False, level__in=["A", "V"], position="P"
+    ).order_by("-level_order", "last_name", "first_name")
 
     return render(request, "search.html", context)
 

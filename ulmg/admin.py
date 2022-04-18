@@ -16,7 +16,7 @@ from ulmg.models import (
     ProspectRating,
     Event,
     Occurrence,
-    Venue
+    Venue,
 )
 
 admin.site.site_title = "The ULMG"
@@ -25,24 +25,21 @@ admin.site.index_title = "Administer The ULMG Website"
 
 
 class PlayerJsonForm(forms.ModelForm):
-  class Meta:
-    model = Player
-    fields = '__all__'
-    widgets = {
-      'stats': PrettyJSONWidget(),
-      'defense': PrettyJSONWidget()
-    }
+    class Meta:
+        model = Player
+        fields = "__all__"
+        widgets = {"stats": PrettyJSONWidget(), "defense": PrettyJSONWidget()}
 
 
 class JsonAdmin(admin.ModelAdmin):
-  form = PlayerJsonForm
+    form = PlayerJsonForm
 
 
 @admin.register(Venue)
 class VenueAdmin(admin.ModelAdmin):
     model = Venue
     exclude = []
-    list_display = ["name", 'mlb_team', 'team', 'park_factor']
+    list_display = ["name", "mlb_team", "team", "park_factor"]
 
 
 class OccurrenceInline(admin.StackedInline):
@@ -295,21 +292,14 @@ class PlayerAdmin(JsonAdmin):
             "Strat",
             {
                 "classes": ("collapse",),
-                "fields": (
-                    ("strat_obtb_l", "strat_obtb_r"),
-                ),
+                "fields": (("strat_obtb_l", "strat_obtb_r"),),
             },
         ),
         (
             "Advanced",
             {
                 "classes": ("collapse",),
-                "fields": (
-                    "is_carded",
-                    "is_owned",
-                    'defense',
-                    'stats'
-                ),
+                "fields": ("is_carded", "is_owned", "defense", "stats"),
             },
         ),
     )

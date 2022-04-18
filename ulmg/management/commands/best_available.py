@@ -15,14 +15,14 @@ class Command(BaseCommand):
             payload = []
             players = csv.DictReader(readfile)
             for p in players:
-                obj = utils.fuzzy_find_player(p['player'])
+                obj = utils.fuzzy_find_player(p["player"])
                 if len(obj) == 1:
                     obj = obj[0]
                     if not obj.is_owned:
-                        p['player_id'] = obj.id
-                        p['ulmg_position'] = obj.position
-                        p['ulmg_level'] = obj.level
+                        p["player_id"] = obj.id
+                        p["ulmg_position"] = obj.position
+                        p["ulmg_level"] = obj.level
                         payload.append(p)
 
-            with open('data/2022/best_available.json', 'w') as writefile:
+            with open("data/2022/best_available.json", "w") as writefile:
                 writefile.write(json.dumps(payload))
