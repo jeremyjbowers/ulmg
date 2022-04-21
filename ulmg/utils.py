@@ -373,9 +373,8 @@ def get_fg_minor_season(season=None, timestamp=None, scriptname=None, hostname=N
             fg_id = player["playerids"]
             name = player["PlayerName"]
             p = models.Player.objects.filter(fg_id=fg_id)
-            count = models.Player.objects.filter(fg_id=fg_id, ls_is_mlb=False).count()
 
-            if count == 1:
+            if len(p) == 1:
                 obj = p[0]
 
                 stats_dict = {}
