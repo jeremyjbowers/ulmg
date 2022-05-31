@@ -132,41 +132,44 @@ class Command(BaseCommand):
             }
 
             for line in box_file.split('\n'):
-                # Get teams, game date
-                # this is usually like the 1st or second line in the file.
-                # we could get teams further down but this makes matching easier
-                if "BOXSCORE:" in line:
-                    line = line.replace('[1]BOXSCORE: ', '')
-                    away_team = line.split(' At ')[0].replace(f'{year} ', '').strip()
-                    home_team = line.split(' At ')[1].replace(f'{year} ', '').strip()
-                    date_string = None 
+                try:
+                    # Get teams, game date
+                    # this is usually like the 1st or second line in the file.
+                    # we could get teams further down but this makes matching easier
+                    if "BOXSCORE:" in line:
+                        line = line.replace('[1]BOXSCORE: ', '')
+                        away_team = line.split(' At ')[0].replace(f'{year} ', '').strip()
+                        home_team = line.split(' At ')[1].replace(f'{year} ', '').strip()
+                        date_string = None 
 
-                    away_team_mascot = away_team.split(' ')[-1].strip()
+                        away_team_mascot = away_team.split(' ')[-1].strip()
 
-                    regex = r"[\s]{2,}([0-9]{1,}/[[0-9]{1,2}/[0-9]{4})"
-                    matches = re.finditer(regex, home_team, re.MULTILINE)
-                    for match in matches:
-                        for group in match.groups():
-                            date_string = group.strip()
+                        regex = r"[\s]{2,}([0-9]{1,}/[[0-9]{1,2}/[0-9]{4})"
+                        matches = re.finditer(regex, home_team, re.MULTILINE)
+                        for match in matches:
+                            for group in match.groups():
+                                date_string = group.strip()
 
-                        home_team = home_team.replace(date_string, '').strip()
-                        home_team_mascot = home_team.split(' ')[-1].strip()
+                            home_team = home_team.replace(date_string, '').strip()
+                            home_team_mascot = home_team.split(' ')[-1].strip()
 
-                        game_data['game_date'] = date_string
-                        game_data['home_team'] = home_team
-                        game_data['away_team'] = away_team
-                        game_data['home_team_mascot'] = home_team_mascot
-                        game_data['away_team_mascot'] = away_team_mascot
+                            game_data['game_date'] = date_string
+                            game_data['home_team'] = home_team
+                            game_data['away_team'] = away_team
+                            game_data['home_team_mascot'] = home_team_mascot
+                            game_data['away_team_mascot'] = away_team_mascot
 
-                # Get line score
-                # Give score to the correct team
-                if "-" and "." in line:
-                    line_mascot = line.split('.')[0].strip()
-                    if line_mascot == game_data['home_team_mascot']:
-                        game_data['home_team_score'] = int(line.split('-')[1].strip().split(' ')[0].strip())
-                    
-                    if line_mascot == game_data['away_team_mascot']:
-                        game_data['away_team_score'] = int(line.split('-')[1].strip().split(' ')[0].strip())
+                    # Get line score
+                    # Give score to the correct team
+                    if "-" and "." in line:
+                        line_mascot = line.split('.')[0].strip()
+                        if line_mascot == game_data['home_team_mascot']:
+                            game_data['home_team_score'] = int(line.split('-')[1].strip().split(' ')[0].strip())
+                        
+                        if line_mascot == game_data['away_team_mascot']:
+                            game_data['away_team_score'] = int(line.split('-')[1].strip().split(' ')[0].strip())
+                except:
+                    pass
 
             # Determine the winner
             if game_data['home_team_score'] and game_data['away_team_score']:
