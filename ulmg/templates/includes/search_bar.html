@@ -40,6 +40,16 @@
                         </div>
                     </div>
                     <div class="column">
+                        <p class="has-text-weight-bold">Midseason</p>
+                        <div class="select">
+                            <select name="midseason">
+                                <option></option>
+                                <option value="yes"{% if midseason == "yes" %} selected{% endif %}>yes</option>
+                                <option value="no"{% if midseason == "no" %} selected{% endif %}>no</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="column">
                         <p class="has-text-weight-bold">Prospect</p>
                         <div class="select">
                             <select name="prospect">
@@ -84,7 +94,6 @@
                             </select>
                         </div>
                     </div>
-                    <div class="column"></div>
                     <div class="column"></div>
                     <div class="column"></div>
                     <div class="column"></div>

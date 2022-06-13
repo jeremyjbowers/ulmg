@@ -493,6 +493,16 @@ def search(request):
 
             context["protected"] = protected
 
+    if request.GET.get("midseason", None):
+        midseason = request.GET['midseason']
+        if midseason.lower() != "":
+            if to_bool(midseason) == True:
+                query = query.filter(
+                    Q(stats__2021_majors__plate_appearances__gte=5)
+                    | Q(stats__2021_majors__g__gte=2)
+                ).exclude(is_owned=True)
+            context["midseason"] = midseason
+
     if request.GET.get("name", None):
         name = request.GET["name"]
         query = query.filter(name__icontains=name)
