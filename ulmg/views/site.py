@@ -494,7 +494,7 @@ def search(request):
             context["protected"] = protected
 
     if request.GET.get("midseason", None):
-        midseason = request.GET['midseason']
+        midseason = request.GET["midseason"]
         if midseason.lower() != "":
             if to_bool(midseason) == True:
                 query = query.filter(

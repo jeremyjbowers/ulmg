@@ -91,32 +91,37 @@ walks.
 class Command(BaseCommand):
     def handle(self, *args, **options):
         year = utils.get_current_season()
-        bucket = 'static-theulmg'
-        prefix = f'strat-data/{year}/'  
+        bucket = "static-theulmg"
+        prefix = f"strat-data/{year}/"
 
         session = boto3.session.Session()
-        client = session.client('s3',
-                        region_name='nyc3',
-                        endpoint_url='https://nyc3.digitaloceanspaces.com',
-                        aws_access_key_id=os.environ.get('DO_ACCESS_KEY_ID', None),
-                        aws_secret_access_key=os.environ.get('DO_SECRET_ACCESS_KEY', None))
-
+        client = session.client(
+            "s3",
+            region_name="nyc3",
+            endpoint_url="https://nyc3.digitaloceanspaces.com",
+            aws_access_key_id=os.environ.get("DO_ACCESS_KEY_ID", None),
+            aws_secret_access_key=os.environ.get("DO_SECRET_ACCESS_KEY", None),
+        )
 
         def get_all_s3_objects(s3, **base_kwargs):
             continuation_token = None
             while True:
                 list_kwargs = dict(MaxKeys=1000, **base_kwargs)
                 if continuation_token:
-                    list_kwargs['ContinuationToken'] = continuation_token
+                    list_kwargs["ContinuationToken"] = continuation_token
 
                 response = s3.list_objects_v2(**list_kwargs)
-                yield from response.get('Contents', [])
+                yield from response.get("Contents", [])
 
-                if not response.get('IsTruncated'):  # At the end of the list?
+                if not response.get("IsTruncated"):  # At the end of the list?
                     break
-                continuation_token = response.get('NextContinuationToken')
+                continuation_token = response.get("NextContinuationToken")
 
-        box_score_keys = [k['Key'] for k in get_all_s3_objects(client, Bucket=bucket, Prefix=prefix) if ".prt" and "BOX" in k['Key']]
+        box_score_keys = [
+            k["Key"]
+            for k in get_all_s3_objects(client, Bucket=bucket, Prefix=prefix)
+            if ".prt" and "BOX" in k["Key"]
+        ]
 
         def parse_box_file(box_file):
             game_data = {
@@ -128,21 +133,25 @@ class Command(BaseCommand):
                 "home_team_score": None,
                 "away_team_score": None,
                 "winning_team": None,
-                "player_stats": []
+                "player_stats": [],
             }
 
-            for line in box_file.split('\n'):
+            for line in box_file.split("\n"):
                 try:
                     # Get teams, game date
                     # this is usually like the 1st or second line in the file.
                     # we could get teams further down but this makes matching easier
                     if "BOXSCORE:" in line:
-                        line = line.replace('[1]BOXSCORE: ', '')
-                        away_team = line.split(' At ')[0].replace(f'{year} ', '').strip()
-                        home_team = line.split(' At ')[1].replace(f'{year} ', '').strip()
-                        date_string = None 
+                        line = line.replace("[1]BOXSCORE: ", "")
+                        away_team = (
+                            line.split(" At ")[0].replace(f"{year} ", "").strip()
+                        )
+                        home_team = (
+                            line.split(" At ")[1].replace(f"{year} ", "").strip()
+                        )
+                        date_string = None
 
-                        away_team_mascot = away_team.split(' ')[-1].strip()
+                        away_team_mascot = away_team.split(" ")[-1].strip()
 
                         regex = r"[\s]{2,}([0-9]{1,}/[[0-9]{1,2}/[0-9]{4})"
                         matches = re.finditer(regex, home_team, re.MULTILINE)
@@ -150,38 +159,42 @@ class Command(BaseCommand):
                             for group in match.groups():
                                 date_string = group.strip()
 
-                            home_team = home_team.replace(date_string, '').strip()
-                            home_team_mascot = home_team.split(' ')[-1].strip()
+                            home_team = home_team.replace(date_string, "").strip()
+                            home_team_mascot = home_team.split(" ")[-1].strip()
 
-                            game_data['game_date'] = date_string
-                            game_data['home_team'] = home_team
-                            game_data['away_team'] = away_team
-                            game_data['home_team_mascot'] = home_team_mascot
-                            game_data['away_team_mascot'] = away_team_mascot
+                            game_data["game_date"] = date_string
+                            game_data["home_team"] = home_team
+                            game_data["away_team"] = away_team
+                            game_data["home_team_mascot"] = home_team_mascot
+                            game_data["away_team_mascot"] = away_team_mascot
 
                     # Get line score
                     # Give score to the correct team
                     if "-" and "." in line:
-                        line_mascot = line.split('.')[0].strip()
-                        if line_mascot == game_data['home_team_mascot']:
-                            game_data['home_team_score'] = int(line.split('-')[1].strip().split(' ')[0].strip())
-                        
-                        if line_mascot == game_data['away_team_mascot']:
-                            game_data['away_team_score'] = int(line.split('-')[1].strip().split(' ')[0].strip())
+                        line_mascot = line.split(".")[0].strip()
+                        if line_mascot == game_data["home_team_mascot"]:
+                            game_data["home_team_score"] = int(
+                                line.split("-")[1].strip().split(" ")[0].strip()
+                            )
+
+                        if line_mascot == game_data["away_team_mascot"]:
+                            game_data["away_team_score"] = int(
+                                line.split("-")[1].strip().split(" ")[0].strip()
+                            )
                 except:
                     pass
 
             # Determine the winner
-            if game_data['home_team_score'] and game_data['away_team_score']:
-                if game_data['home_team_score'] > game_data['away_team_score']:
-                    game_data['winning_team'] = game_data['home_team']
+            if game_data["home_team_score"] and game_data["away_team_score"]:
+                if game_data["home_team_score"] > game_data["away_team_score"]:
+                    game_data["winning_team"] = game_data["home_team"]
 
-                if game_data['away_team_score'] > game_data['home_team_score']:
-                    game_data['winning_team'] = game_data['away_team']
-            
+                if game_data["away_team_score"] > game_data["home_team_score"]:
+                    game_data["winning_team"] = game_data["away_team"]
+
             return game_data
 
         for k in box_score_keys:
             file_data = client.get_object(Bucket=bucket, Key=k)
-            game_data = parse_box_file(file_data['Body'].read().decode())
+            game_data = parse_box_file(file_data["Body"].read().decode())
             print(game_data)
