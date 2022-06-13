@@ -130,7 +130,7 @@ def wishlist_bulk_action(request):
 def wishlist_player_action(request, playerid):
     context = utils.build_context(request)
     wishlist = None
-    wl = models.Wishlist.objects.filter(owner=context['owner'])
+    wl = models.Wishlist.objects.filter(owner=context["owner"])
     if len(wl) > 0:
         wishlist = wl[0]
 
