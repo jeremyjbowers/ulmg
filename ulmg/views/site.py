@@ -500,7 +500,7 @@ def search(request):
                 query = query.filter(
                     Q(stats__2021_majors__plate_appearances__gte=5)
                     | Q(stats__2021_majors__g__gte=2)
-                ).exclude(is_owned=True)
+                )
             context["midseason"] = midseason
 
     if request.GET.get("name", None):
@@ -516,6 +516,24 @@ def search(request):
         elif position.lower() == "h":
             query = query.exclude(position="P")
             context["position"] = position
+
+    if request.GET.get('pa_cutoff', None):
+        pa_cutoff = int(request.GET['pa_cutoff'])
+        if pa_cutoff:
+            query = query.filter(stats__2022_majors__plate_appearances__gte=pa_cutoff)
+            context['pa_cutoff'] = f"{pa_cutoff}"
+
+    if request.GET.get('ip_cutoff', None):
+        ip_cutoff = int(request.GET['ip_cutoff'])
+        if ip_cutoff:
+            query = query.filter(stats__2022_majors__ip__gte=ip_cutoff)
+            context['ip_cutoff'] = f"{ip_cutoff}"
+
+    if request.GET.get('gs_cutoff', None):
+        gs_cutoff = int(request.GET['gs_cutoff'])
+        if gs_cutoff:
+            query = query.filter(stats__2022_majors__gs__gte=gs_cutoff)
+            context['gs_cutoff'] = f"{gs_cutoff}"
 
     if request.GET.get("level", None):
         level = request.GET["level"]
