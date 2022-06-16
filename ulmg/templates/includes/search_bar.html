@@ -19,16 +19,6 @@
                             </select>
                         </div>
                     </div>
-                    <!-- <div class="column">
-                        <p class="has-text-weight-bold">Protected</p>
-                        <div class="select">
-                            <select name="protected">
-                                <option></option>
-                                <option value="yes"{% if protected == "yes" %} selected{% endif %}>yes</option>
-                                <option value="no"{% if protected == "no" %} selected{% endif %}>no</option>
-                            </select>
-                        </div>
-                    </div> -->
                     <div class="column">
                         <p class="has-text-weight-bold">Carded</p>
                         <div class="select">
@@ -36,6 +26,54 @@
                                 <option></option>
                                 <option value="yes"{% if carded == "yes" %} selected{% endif %}>yes</option>
                                 <option value="no"{% if carded == "no" %} selected{% endif %}>no</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="column">
+                        <p class="has-text-weight-bold">PA Cutoff</p>
+                        <div class="select">
+                            <select name="pa_cutoff">
+                                <option></option>
+                                <option value="550"{% if pa_cutoff == "550" %} selected{% endif %}>550</option>
+                                <option value="500"{% if pa_cutoff == "500" %} selected{% endif %}>500</option>
+                                <option value="450"{% if pa_cutoff == "450" %} selected{% endif %}>450</option>
+                                <option value="400"{% if pa_cutoff == "400" %} selected{% endif %}>400</option>
+                                <option value="350"{% if pa_cutoff == "350" %} selected{% endif %}>350</option>
+                                <option value="300"{% if pa_cutoff == "300" %} selected{% endif %}>300</option>
+                                <option value="250"{% if pa_cutoff == "250" %} selected{% endif %}>250</option>
+                                <option value="200"{% if pa_cutoff == "200" %} selected{% endif %}>200</option>
+                                <option value="150"{% if pa_cutoff == "150" %} selected{% endif %}>150</option>
+                                <option value="100"{% if pa_cutoff == "100" %} selected{% endif %}>100</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="column">
+                        <p class="has-text-weight-bold">IP Cutoff</p>
+                        <div class="select">
+                            <select name="ip_cutoff">
+                                <option></option>
+                                <option value="200"{% if ip_cutoff == "200" %} selected{% endif %}>200</option>
+                                <option value="175"{% if ip_cutoff == "175" %} selected{% endif %}>175</option>
+                                <option value="150"{% if ip_cutoff == "150" %} selected{% endif %}>150</option>
+                                <option value="100"{% if ip_cutoff == "100" %} selected{% endif %}>100</option>
+                                <option value="75"{% if ip_cutoff == "75" %} selected{% endif %}>75</option>
+                                <option value="50"{% if ip_cutoff == "50" %} selected{% endif %}>50</option>
+                                <option value="25"{% if ip_cutoff == "25" %} selected{% endif %}>25</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="column">
+                        <p class="has-text-weight-bold">GS Cutoff</p>
+                        <div class="select">
+                            <select name="gs_cutoff">
+                                <option></option>
+
+                                <option value="30"{% if gs_cutoff == "30" %} selected{% endif %}>30</option>
+                                <option value="25"{% if gs_cutoff == "25" %} selected{% endif %}>25</option>
+                                <option value="20"{% if gs_cutoff == "20" %} selected{% endif %}>20</option>
+                                <option value="15"{% if gs_cutoff == "15" %} selected{% endif %}>15</option>
+                                <option value="10"{% if gs_cutoff == "10" %} selected{% endif %}>10</option>
+                                <option value="5"{% if gs_cutoff == "5" %} selected{% endif %}>5</option>
                             </select>
                         </div>
                     </div>
@@ -73,16 +111,6 @@
                             </select>
                         </div>
                     </div>
-                    <!-- <div class="column">
-                        <p class="has-text-weight-bold">Reliever</p>
-                        <div class="select">
-                            <select name="reliever">
-                                <option></option>
-                                <option value="yes"{% if reliever == "yes" %} selected{% endif %}>yes</option>
-                                <option value="no"{% if reliever == "no" %} selected{% endif %}>no</option>
-                            </select>
-                        </div>
-                    </div> -->
                     <div class="column">
                         <p class="has-text-weight-bold">Level</p>
                         <div class="select">
@@ -94,8 +122,6 @@
                             </select>
                         </div>
                     </div>
-                    <div class="column"></div>
-                    <div class="column"></div>
                     <div class="column"></div>
                     <div class="column"></div>
                 </div>
