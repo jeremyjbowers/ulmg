@@ -185,16 +185,28 @@ class Command(BaseCommand):
                     pass
 
             # Determine the winner
+<<<<<<< Updated upstream
             if game_data["home_team_score"] and game_data["away_team_score"]:
                 if game_data["home_team_score"] > game_data["away_team_score"]:
                     game_data["winning_team"] = game_data["home_team"]
 
                 if game_data["away_team_score"] > game_data["home_team_score"]:
                     game_data["winning_team"] = game_data["away_team"]
+=======
+            if game_data['home_team_score'] != None and game_data['away_team_score'] != None:
+                if game_data['home_team_score'] > game_data['away_team_score']:
+                    game_data['winning_team'] = game_data['home_team']
+>>>>>>> Stashed changes
 
             return game_data
 
         for k in box_score_keys:
             file_data = client.get_object(Bucket=bucket, Key=k)
+<<<<<<< Updated upstream
             game_data = parse_box_file(file_data["Body"].read().decode())
             print(game_data)
+=======
+            game_data = parse_box_file(file_data['Body'].read().decode())
+
+            print(game_data['winning_team'])
+>>>>>>> Stashed changes
