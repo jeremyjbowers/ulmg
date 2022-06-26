@@ -80,7 +80,7 @@ def my_wishlist(request, list_type):
     context = utils.build_context(request)
     context["team"] = get_object_or_404(models.Team, owner_obj=context["owner"])
     context["list_type"] = list_type
-
+    context['wishlist'] = models.Wishlist.objects.get(owner=context['owner'])
     context["aa_hitters"] = []
     context["aa_pitchers"] = []
     context["op_hitters"] = []
@@ -142,6 +142,7 @@ def my_wishlist(request, list_type):
 def my_draftlist(request):
     context = utils.build_context(request)
     context["team"] = get_object_or_404(models.Team, owner_obj=context["owner"])
+    context['wishlist'] = models.Wishlist.objects.get(owner=context['owner'])
 
     context["aa_hitters"] = []
     context["aa_pitchers"] = []
