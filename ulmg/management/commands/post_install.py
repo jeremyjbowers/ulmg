@@ -22,4 +22,6 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         call_command("migrate")
         call_command("collectstatic", "--noinput")
-        # call_command('generate_draft_picks','2023','offseason')
+        # call_command('generate_draft_picks','2022','midseason')
+        call_command('generate_draft_order', '2022', 'midseason', "aa", "data/ulmg/2022-midseason-aa-order.txt")
+        call_command('generate_draft_order', '2022', 'midseason', "open", "data/ulmg/2022-midseason-open-order.txt")
