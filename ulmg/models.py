@@ -889,7 +889,7 @@ class Trade(BaseModel):
                     "%s <a href='/players/%s/'>%s</a>" % (p.position, p.id, p.name)
                     for p in t2.players.all()
                 ]
-                + [f"{p.slug}" for p in t2.picks.all()]
+                + [f"{p.year} {p.season } {p.slug}" for p in t2.picks.all()]
             ),
             "<a href='/teams/%s/'>%s</a>"
             % (t2.team.abbreviation.lower(), t2.team.abbreviation),
