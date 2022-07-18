@@ -512,16 +512,17 @@ def import_players_from_rosters():
                 if len(obj) == 1:
                     obj = obj[0]
 
-                    if player.get("minormasterid"):
-                        obj.fg_id = player["minormasterid"]
+                    if not obj.fg_id:
+                        if player.get("minormasterid"):
+                            obj.fg_id = player["minormasterid"]
 
-                    if fg_id:
-                        obj.fg_id = fg_id
+                        if fg_id:
+                            obj.fg_id = fg_id
 
-                    if player.get("mlbamid"):
-                        obj.mlbam_id = player["mlbamid"]
+                        if player.get("mlbamid"):
+                            obj.mlbam_id = player["mlbamid"]
 
-                    obj.save()
+                        obj.save()
 
                 # we cannot find this name in our db
                 elif len(obj) == 0:
