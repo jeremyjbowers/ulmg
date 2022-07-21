@@ -62,7 +62,7 @@
                         <th>Position</th>
                         <th class="has-text-right">Players (all)</th>
                         <th class="has-text-right">PA (carded)</th>
-                        <th class="has-text-right">PA (2021 MLB)</th>
+                        <th class="has-text-right">PA (2022 MLB)</th>
                     </thead>
                     <tbody>
                         {% for position in combined_pa %}
@@ -82,11 +82,6 @@
             {% regroup hitters by position as position_players %}
             {% for position in position_players %}
             <h1 class="title is-3">{{ position.grouper }} ({{ position.list|length }})</h1>
-            <div class="tabs is-medium">
-                <ul>
-                    <li class="real-stat-link is-active"><a class="" href="#!">2021 stats</a></li>
-                </ul>
-            </div>
             <table class="table real-stat-table is-hoverable is-fullwidth" data-sortable>
                 <thead>
                     <tr>
@@ -123,11 +118,6 @@
     <div class="columns">
         <div class="column">
             <h1 class="title is-3">P ({{ pitchers|length }})</h1>
-            <div class="tabs is-medium">
-                <ul>
-                    <li class="real-stat-link is-active"><a class="" href="#!">2021 Stats</a></li>
-                </ul>
-            </div>
             <table class="table real-stat-table is-fullwidth is-hoverable" data-sortable>
                 <thead>
                     <tr>
