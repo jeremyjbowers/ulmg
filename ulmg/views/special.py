@@ -107,7 +107,7 @@ def my_wishlist(request, list_type, abbreviation):
     context["team"] = get_object_or_404(
         models.Team, abbreviation__icontains=abbreviation
     )
-    context["owner"] = models.Team.owner
+    context["owner"] = context['team'].owner_obj
     context["wishlist"] = models.Wishlist.objects.get(owner=context["owner"])
 
     context["list_type"] = list_type
@@ -121,6 +121,10 @@ def my_wishlist(request, list_type, abbreviation):
 
     if list_type == "draft":
         for p in models.WishlistPlayer.objects.filter(wishlist=context["wishlist"]):
+            if not p.tier:
+                p.tier = 6
+            if not p.rank:
+                p.rank = 999
             if not p.player.is_owned:
                 if p.player.level == "B":
                     if p.player.position == "P":
@@ -132,6 +136,9 @@ def my_wishlist(request, list_type, abbreviation):
                         context["op_pitchers"].append(p)
                     else:
                         context["op_hitters"].append(p)
+
+        print(context['op_pitchers'])
+
         context["aa_hitters"] = sorted(
             context["aa_hitters"], key=lambda x: (x.tier, x.rank)
         )
