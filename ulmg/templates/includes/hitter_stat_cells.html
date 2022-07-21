@@ -60,3 +60,18 @@
 <td data-value="{% if p.stats.current.year == 2022 %}{{ p.stats.current.xslg|default_if_none:"-999" }}{% else %}-999{% endif %}">
     {% if p.stats.current.plate_appearances > 0 and p.stats.current.year == 2022 and p.stats.current.xslg %}{{ p.stats.current.xslg|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
 </td>
+
+<td>|</td>
+
+<td data-value="{% if p.stats.current.year == 2022 %}{{ p.stats.2021_majors.plate_appearances|default_if_none:"-999" }}{% else %}-999{% endif %}">
+    {% if p.stats.2021_majors.plate_appearances > 0 and p.stats.current.year == 2022 and p.stats.2021_majors.plate_appearances %}{{ p.stats.2021_majors.plate_appearances|default_if_none:"-" }}{% else %}-{% endif %}
+</td>
+<td data-value="{% if p.stats.current.year == 2022 %}{{ p.stats.2021_majors.avg|default_if_none:"-999" }}{% else %}-999{% endif %}">
+    {% if p.stats.2021_majors.plate_appearances > 0 and p.stats.current.year == 2022 and p.stats.2021_majors.avg %}{{ p.stats.2021_majors.avg|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
+</td>
+<td data-value="{% if p.stats.current.year == 2022 %}{{ p.stats.2021_majors.obp|default_if_none:"-999" }}{% else %}-999{% endif %}">
+    {% if p.stats.2021_majors.plate_appearances > 0 and p.stats.current.year == 2022 and p.stats.2021_majors.obp %}{{ p.stats.2021_majors.obp|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
+</td>
+<td data-value="{% if p.stats.current.year == 2022 %}{{ p.stats.2021_majors.slg|default_if_none:"-999" }}{% else %}-999{% endif %}">
+    {% if p.stats.2021_majors.plate_appearances > 0 and p.stats.current.year == 2022 and p.stats.2021_majors.slg %}{{ p.stats.2021_majors.slg|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
+</td>
