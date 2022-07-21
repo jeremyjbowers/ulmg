@@ -168,7 +168,6 @@ def my_wishlist(request, list_type, abbreviation):
     return render(request, "my/wishlist.html", context)
 
 
-@staff_member_required
 @login_required
 def my_wishlist_beta(request, list_type):
     context = utils.build_context(request)
