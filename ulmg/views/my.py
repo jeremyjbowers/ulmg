@@ -90,6 +90,11 @@ def my_wishlist(request, list_type):
 
     if list_type == "draft":
         for p in models.WishlistPlayer.objects.filter(wishlist=context["wishlist"]):
+            if not p.tier:
+                p.tier = 6
+            if not p.rank:
+                p.rank = 999
+
             if not p.player.is_owned:
                 if p.player.level == "B":
                     if p.player.position == "P":
