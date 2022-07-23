@@ -173,8 +173,6 @@ def team_detail(request, abbreviation):
     if request.user.is_superuser:
         context["own_team"] = True
 
-    print(context["own_team"])
-
     team_players = models.Player.objects.filter(team=context["team"])
     hitters = team_players.exclude(position="P").order_by(
         "position", "-level_order", "-is_carded", "last_name", "first_name"
@@ -402,7 +400,7 @@ def player_available_midseason(request):
     context = utils.build_context(request)
     context["hitters"] = (
         models.Player.objects.filter(
-            Q(level="V", team__isnull=True, ls_plate_appearances__gte=1, ls_is_mlb=True)
+            Q(team__isnull=True, stats__2021_majors__plate_appearances__gte=1)
             | Q(
                 level="V",
                 is_owned=True,
@@ -411,19 +409,13 @@ def player_available_midseason(request):
                 is_1h_pos=False,
                 is_reserve=False,
             )
-            | Q(
-                level__in=["A", "B"],
-                team__isnull=True,
-                ls_plate_appearances__gte=1,
-                ls_is_mlb=True,
-            )
         )
         .exclude(position="P")
         .order_by("position", "-level_order", "last_name", "first_name")
     )
 
     context["pitchers"] = models.Player.objects.filter(
-        Q(level="V", team__isnull=True, ls_ip__gte=1, position="P", ls_is_mlb=True)
+        Q(team__isnull=True, stats__2021_majors__ip__gte=1, position="P")
         | Q(
             level="V",
             position="P",
@@ -431,13 +423,6 @@ def player_available_midseason(request):
             is_mlb_roster=False,
             is_1h_p=False,
             is_reserve=False,
-        )
-        | Q(
-            level__in=["A", "B"],
-            team__isnull=True,
-            ls_ip__gte=1,
-            position="P",
-            ls_is_mlb=True,
         )
     ).order_by("-level_order", "last_name", "first_name")
 
