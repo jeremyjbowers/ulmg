@@ -22,11 +22,11 @@
 <td data-value="{% if p.stats.current.year == 2022 %}{{ p.stats.current.fip|default_if_none:"999" }}{% else %}999{% endif %}">{% if p.stats.current.ip > 0 and p.stats.current.year == 2022 %}{{ p.stats.current.fip|floatformat:2|default_if_none:"-"  }}{% else %}-{% endif %}</td>
 <td data-value="{% if p.stats.current.year == 2022 %}{{ p.stats.current.xfip|default_if_none:"999" }}{% else %}999{% endif %}">{% if p.stats.current.ip > 0 and p.stats.current.year == 2022 %}{{ p.stats.current.xfip|floatformat:2|default_if_none:"-"  }}{% else %}-{% endif %}</td>
 <td data-value="{% if p.stats.current.year == 2022 %}{{ p.stats.current.siera|default_if_none:"999" }}{% else %}999{% endif %}">{% if p.stats.current.ip > 0 and p.stats.current.year == 2022 and p.stats.current.siera %}{{ p.stats.current.siera|floatformat:2|default_if_none:"-"  }}{% else %}-{% endif %}</td>
-
+<!-- 
 <td>|</td>
 
 <td data-value="{% if p.stats.current.year == 2022 %}{{ p.stats.2021_majors.gs|default_if_none:"-999" }}{% else %}-999{% endif %}">{% if p.stats.2021_majors.ip > 0 %}{{ p.stats.2021_majors.gs|default_if_none:"-" }}{% else %}-{% endif %}</td>
 <td data-value="{% if p.stats.current.year == 2022 %}{{ p.stats.2021_majors.ip|default_if_none:"-999" }}{% else %}-999{% endif %}">{% if p.stats.2021_majors.ip > 0 %}{{ p.stats.2021_majors.ip|default_if_none:"-" }}{% else %}-{% endif %}</td>
 <td data-value="{% if p.stats.current.year == 2022 %}{{ p.stats.2021_majors.era|default_if_none:"999" }}{% else %}999{% endif %}">{% if p.stats.2021_majors.ip > 0 %}{{ p.stats.2021_majors.era|floatformat:2|default_if_none:"-"  }}{% else %}-{% endif %}</td>
 <td data-value="{% if p.stats.current.year == 2022 %}{{ p.stats.2021_majors.k_9|default_if_none:"-999" }}{% else %}-999{% endif %}">{% if p.stats.2021_majors.ip > 0 %}{{ p.stats.2021_majors.k_9|floatformat:1|default_if_none:"-"  }}{% else %}-{% endif %}</td>
-<td data-value="{% if p.stats.current.year == 2022 %}{{ p.stats.2021_majors.bb_9|default_if_none:"999" }}{% else %}999{% endif %}">{% if p.stats.2021_majors.ip > 0 %}{{ p.stats.2021_majors.bb_9|floatformat:1|default_if_none:"-"  }}{% else %}-{% endif %}</td>
+<td data-value="{% if p.stats.current.year == 2022 %}{{ p.stats.2021_majors.bb_9|default_if_none:"999" }}{% else %}999{% endif %}">{% if p.stats.2021_majors.ip > 0 %}{{ p.stats.2021_majors.bb_9|floatformat:1|default_if_none:"-"  }}{% else %}-{% endif %}</td> -->
