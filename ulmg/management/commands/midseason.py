@@ -16,11 +16,9 @@ from ulmg import models
 class Command(BaseCommand):
     def handle(self, *args, **options):
         # DO NOT RUN THIS UNTIL AFTER THE DRAFT IS OVER
+        models.Player.objects.filter(is_2h_draft=True).update(is_2h_draft=False)
         models.Player.objects.filter(is_mlb_roster=True).update(is_mlb_roster=False)
         models.Player.objects.filter(is_aaa_roster=True).update(is_aaa_roster=False)
-        models.Player.objects.filter(cannot_be_protected=True).update(
-            cannot_be_protected=False
-        )
         models.Player.objects.filter(is_1h_c=True).update(
             is_mlb_roster=True, is_protected=True
         )
