@@ -868,6 +868,11 @@ def reset_rosters(*args, **options):
         models.Player.objects.filter(is_1h_pos=True).update(is_1h_pos=False)
         models.Player.objects.filter(is_reserve=True).update(is_reserve=False)
 
+        models.Player.objects.filter(is_2h_c=True).update(is_2h_c=False)
+        models.Player.objects.filter(is_2h_p=True).update(is_2h_p=False)
+        models.Player.objects.filter(is_2h_pos=True).update(is_2h_pos=False)
+        models.Player.objects.filter(is_2h_draft=True).update(is_2h_draft=False)
+
         # Unprotect all V and A players prior to the 35-man roster.
         models.Player.objects.filter(is_owned=True, level__in=["A", "V"]).update(
             is_protected=False
