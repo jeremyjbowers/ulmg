@@ -878,6 +878,9 @@ def reset_rosters(*args, **options):
 
 
 def load_career_hit(*args, **options):
+    """
+    https://www.fangraphs.com/leaders.aspx?pos=all&stats=bat&lg=all&qual=250&type=8&season=2022&month=0&season1=2000&ind=0&team=0&rost=0&age=&filter=&players=0&startdate=&enddate=&page=1_5000
+    """
 
     hostname = get_hostname()
     scriptname = get_scriptname()
@@ -915,6 +918,9 @@ def load_career_hit(*args, **options):
 
 
 def load_career_pitch(*args, **options):
+    """
+    https://www.fangraphs.com/leaders.aspx?pos=all&stats=pit&lg=all&qual=30&type=8&season=2022&month=0&season1=2000&ind=0&team=0&rost=0&age=0&filter=&players=0&startdate=&enddate=&page=1_5000
+    """
 
     hostname = get_hostname()
     scriptname = get_scriptname()
