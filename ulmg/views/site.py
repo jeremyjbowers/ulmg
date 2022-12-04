@@ -181,7 +181,7 @@ def team_detail(request, abbreviation):
         "-level_order", "-is_carded", "last_name", "first_name"
     )
 
-    context["venue"] = models.Venue.objects.get(team=context["team"])
+    # context["venue"] = models.Venue.objects.get(team=context["team"])
 
     position_groups = (
         team_players.exclude(position="P")
