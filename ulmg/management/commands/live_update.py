@@ -38,14 +38,14 @@ class Command(BaseCommand):
         print(f"Parsing roster info")
         utils.parse_roster_info()
 
-        # print(f"Get minor season data")
-        # utils.get_fg_minor_season(**script_info)
+        print(f"Get minor season data")
+        utils.get_fg_minor_season(**script_info)
 
-        print(f"Get MLB hitters")
-        utils.get_fg_major_hitter_season(**script_info)
+        # print(f"Get MLB hitters")
+        # utils.get_fg_major_hitter_season(**script_info)
 
-        print(f"Get MLB pitchers")
-        utils.get_fg_major_pitcher_season(**script_info)
+        # print(f"Get MLB pitchers")
+        # utils.get_fg_major_pitcher_season(**script_info)
 
         # print(f'Aggregate team stats')
         # utils.aggregate_team_stats_season(**script_info)
