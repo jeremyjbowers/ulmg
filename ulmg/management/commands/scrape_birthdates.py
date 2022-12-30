@@ -16,6 +16,8 @@ warnings.filterwarnings("ignore")
 class Command(BaseCommand):
 
     def handle(self, *args, **options):
-        no_birthdate_players = models.Player.objects.filter(fg_id__isnull=False, birthdate__isnull=True)
-        for p in no_birthdate_players:
+        # no_birthdate_players = models.Player.objects.filter(fg_id__isnull=False, birthdate__isnull=True)
+        suspect_birthdate_players = models.Player.objects.filter(birthdate_qa=False, birthdate__day=1).order_by("-birthdate")
+
+        for p in suspect_birthdate_players:
             utils.get_fg_birthdate(p)
