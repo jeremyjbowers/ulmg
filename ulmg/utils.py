@@ -19,8 +19,27 @@ from googleapiclient.discovery import build
 from google.oauth2 import service_account
 import requests
 import ujson as json
+import time
 
 from ulmg import models
+
+
+def get_fg_birthdate(player):
+    if player.fg_id and not player.birthdate:
+        player_url = f"https://www.fangraphs.com/statss.aspx?playerid={player.fg_id}"
+        r = requests.get(player_url)
+        soup = BeautifulSoup(r.content)
+        date_cell = soup.select('tr.player-info__bio-birthdate td')[0].text
+
+        try:
+            player.birthdate = parse(date_cell.split('(')[0].strip())
+            player.save()
+            print(player.name, player.birthdate, player_url)
+        
+        except:
+            print(player.name, player_url, date_cell.split('(')[0].strip())
+
+        time.sleep(1.5)
 
 
 def get_ulmg_season(date):
