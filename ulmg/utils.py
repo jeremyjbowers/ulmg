@@ -29,9 +29,9 @@ def get_fg_birthdate(player):
         player_url = f"https://www.fangraphs.com/statss.aspx?playerid={player.fg_id}"
         r = requests.get(player_url)
         soup = BeautifulSoup(r.content)
-        date_cell = soup.select('tr.player-info__bio-birthdate td')[0].text
-
+        
         try:
+            date_cell = soup.select('tr.player-info__bio-birthdate td')[0].text
             player.birthdate = parse(date_cell.split('(')[0].strip())
             player.save()
             print(player.name, player.birthdate, player_url)
