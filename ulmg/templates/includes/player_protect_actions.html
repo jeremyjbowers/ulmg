@@ -7,7 +7,7 @@
     {% if p.is_mlb_roster %}<span class="tag is-success">MLB</span>{% endif %}
     {% if p.is_aaa_roster %}<span class="tag is-info">AAA</span>{% endif %}
     {% if p.is_2h_draft %}<span class="tag">2H</span>{% endif %}
-    {% if p.is_35man_roster %}<span class="tag is_success">35-man</span>{% endif %}
+    {% if p.is_35man_roster %}<span class="tag is_success">40-man</span>{% endif %}
 </td>
 {% endif %}
 
@@ -32,7 +32,7 @@
 <td>
     {% if p.is_35man_roster or p.is_reserve or p.is_1h_p or p.is_1h_c or p.is_1h_pos %}<a class="button is-small is-light is-warning player-action" data-playerid="{{ p.id }}" data-action="unprotect">&rarrhk;</a>{% endif %}
 
-    {% if not p.is_35man_roster and not 35_roster_count == 35 and not p.level == "B" %}<a class="button is-small is-success is-outlined player-action" data-playerid="{{ p.id }}" data-action="to_35_man">35</a>{% endif %}
+    {% if not p.is_35man_roster and not 35_roster_count == 40 and not p.level == "B" %}<a class="button is-small is-success is-outlined player-action" data-playerid="{{ p.id }}" data-action="to_35_man">40</a>{% endif %}
 </td>
 {% endif %}
 
