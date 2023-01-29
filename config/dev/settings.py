@@ -93,15 +93,6 @@ LOGOUT_REDIRECT_URL = "/"
 STATIC_URL = "/static/"
 STATIC_ROOT = "static/"
 
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
-        'LOCATION': 'ulmg_cache_table',
-    }
-}
-
-CACHE_DEFAULT = 60*15
-
 # ULMG SPECIFIC SETTINGS
 MLB_ROSTER_SIZE = 30
 PROTECT_ROSTER_SIZE = 40
