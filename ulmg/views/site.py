@@ -9,6 +9,8 @@ from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.http import JsonResponse
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
+from django.core.cache import cache
+from django.views.decorators.cache import cache_page
 
 import ujson as json
 from datetime import datetime
@@ -112,7 +114,7 @@ def prospect_ranking_list(request, year):
     )
     return render(request, "prospect_ranking_list.html", context)
 
-
+@cache_page(settings.CACHE_DEFAULT)
 def index(request):
     context = utils.build_context(request)
     context["teams"] = models.Team.objects.all()
@@ -156,6 +158,7 @@ def player(request, playerid):
     return render(request, "player_detail.html", context)
 
 
+@cache_page(settings.CACHE_DEFAULT)
 def team_detail(request, abbreviation):
     context = utils.build_context(request)
     context["team"] = get_object_or_404(
@@ -180,8 +183,6 @@ def team_detail(request, abbreviation):
     pitchers = team_players.filter(position="P").order_by(
         "-level_order", "-is_carded", "last_name", "first_name"
     )
-
-    # context["venue"] = models.Venue.objects.get(team=context["team"])
 
     position_groups = (
         team_players.exclude(position="P")
@@ -240,33 +241,7 @@ def team_detail(request, abbreviation):
     return render(request, "team.html", context)
 
 
-def team_realtime(request, abbreviation):
-    context = utils.build_context(request)
-    context["team"] = get_object_or_404(
-        models.Team, abbreviation__icontains=abbreviation
-    )
-    team_players = models.Player.objects.filter(team=context["team"])
-    hitters = team_players.exclude(position="P").order_by(
-        "position", "-level_order", "-is_carded", "last_name", "first_name"
-    )
-    pitchers = team_players.filter(position="P").order_by(
-        "-level_order", "-is_carded", "last_name", "first_name"
-    )
-    context["35_roster_count"] = team_players.filter(is_35man_roster=True).count()
-    context["mlb_roster_count"] = team_players.filter(
-        is_mlb_roster=True, is_aaa_roster=False, is_reserve=False
-    ).count()
-    context["level_distribution"] = (
-        team_players.order_by("level_order")
-        .values("level_order")
-        .annotate(Count("level_order"))
-    )
-    context["num_owned"] = models.Player.objects.filter(team=context["team"]).count()
-    context["hitters"] = hitters
-    context["pitchers"] = pitchers
-    return render(request, "team_realtime.html", context)
-
-
+@cache_page(settings.CACHE_DEFAULT)
 def team_other(request, abbreviation):
     context = utils.build_context(request)
     team = get_object_or_404(models.Team, abbreviation__icontains=abbreviation)
@@ -296,7 +271,7 @@ def team_other(request, abbreviation):
     )
     return render(request, "team_other.html", context)
 
-
+@cache_page(settings.CACHE_DEFAULT)
 def trades(request):
     context = utils.build_context(request)
     context["archived_trades"] = models.TradeSummary.objects.all()
