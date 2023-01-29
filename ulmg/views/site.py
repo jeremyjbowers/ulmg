@@ -114,7 +114,6 @@ def prospect_ranking_list(request, year):
     )
     return render(request, "prospect_ranking_list.html", context)
 
-@cache_page(settings.CACHE_DEFAULT)
 def index(request):
     context = utils.build_context(request)
     context["teams"] = models.Team.objects.all()
@@ -158,7 +157,6 @@ def player(request, playerid):
     return render(request, "player_detail.html", context)
 
 
-@cache_page(settings.CACHE_DEFAULT)
 def team_detail(request, abbreviation):
     context = utils.build_context(request)
     context["team"] = get_object_or_404(
@@ -271,7 +269,6 @@ def team_other(request, abbreviation):
     )
     return render(request, "team_other.html", context)
 
-@cache_page(settings.CACHE_DEFAULT)
 def trades(request):
     context = utils.build_context(request)
     context["archived_trades"] = models.TradeSummary.objects.all()
