@@ -9,8 +9,6 @@ from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.http import JsonResponse
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
-from django.core.cache import cache
-from django.views.decorators.cache import cache_page
 
 import ujson as json
 from datetime import datetime
@@ -239,7 +237,6 @@ def team_detail(request, abbreviation):
     return render(request, "team.html", context)
 
 
-@cache_page(settings.CACHE_DEFAULT)
 def team_other(request, abbreviation):
     context = utils.build_context(request)
     team = get_object_or_404(models.Team, abbreviation__icontains=abbreviation)
