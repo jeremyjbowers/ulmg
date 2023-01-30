@@ -622,7 +622,7 @@ class Player(BaseModel):
         }
 
         if self.team:
-            self.payload["team"] = self.team.to_api_obj()
+            payload["team"] = self.team.to_api_obj()
 
         return payload
 
@@ -801,6 +801,33 @@ class DraftPick(BaseModel):
     def __unicode__(self):
         return "%s %s %s (%s)" % (self.year, self.season, self.slug, self.team)
 
+    def to_api_obj(self):
+        payload = {}
+        payload['draft_type'] = self.draft_type
+        payload['draft_round'] = self.draft_round
+        payload['year'] = self.year
+        payload['pick_number'] = self.pick_number
+        payload['overall_pick_number'] = self.overall_pick_number
+        payload['season'] = self.season
+        payload['slug'] = self.slug
+        payload['team_name'] = self.team_name
+        payload['player_name'] = self.player_name
+        payload['skipped'] = self.skipped
+        payload['original_team'] = None
+        payload['team'] = None
+        payload['player'] = None
+
+        if self.original_team:
+            payload['original_team'] = self.original_team.to_api_obj()
+
+        if self.team:
+            payload['team'] = self.team.to_api_obj()
+
+        if self.player:
+            payload['player'] = self.player.to_api_obj()
+
+        return payload
+
     def slugify(self):
         if self.draft_type == "aa":
             dt = "AA"
@@ -907,7 +934,7 @@ class Trade(BaseModel):
         t2 = self.reciepts()[1]
 
         return {
-            "date": self.date,
+            "date": f"{self.date.year}-{self.date.month}-{self.date.day}",
             "t1_abbr": t1.team.abbreviation,
             "t1_players": [
                 {"pos": p.position, "name": p.name, "id": p.id}

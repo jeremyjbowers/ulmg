@@ -17,3 +17,5 @@ app-id.txt
 app.yaml
 
 static/
+public/*
+!public/.gitkeep
