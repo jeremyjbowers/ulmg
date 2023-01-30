@@ -90,8 +90,18 @@ LOGIN_REDIRECT_URL = "/"
 LOGIN_URL = "/accounts/login/"
 LOGOUT_REDIRECT_URL = "/"
 
+# STATICFILES
 STATIC_URL = "/static/"
 STATIC_ROOT = "static/"
+
+AWS_S3_REGION_NAME = "nyc3"
+AWS_S3_ENDPOINT_URL = f"https://{AWS_S3_REGION_NAME}.digitaloceanspaces.com"
+AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID", None)
+AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY", None)
+AWS_DEFAULT_ACL = "public-read"
+AWS_STORAGE_BUCKET_NAME = "static-theulmg"
+AWS_S3_CUSTOM_DOMAIN = "static-theulmg.nyc3.cdn.digitaloceanspaces.com"
+AWS_LOCATION = "static"
 
 # ULMG SPECIFIC SETTINGS
 MLB_ROSTER_SIZE = 30
