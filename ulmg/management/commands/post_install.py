@@ -22,6 +22,11 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         call_command("migrate")
         call_command("collectstatic", "--noinput")
+
+        m = models.WishlistPlayer.objects.all()
+        for z in m:
+            z.save()
+
         # call_command('generate_draft_picks','2022','midseason')
         # call_command('generate_draft_picks','2023','midseason')
         # call_command('generate_draft_order', '2023', 'offseason', "aa", "data/ulmg/2023-offseason-aa-order.txt")
