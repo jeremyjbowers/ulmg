@@ -300,28 +300,6 @@ class Player(BaseModel):
     cannot_be_protected = models.BooleanField(default=False)
     covid_protected = models.BooleanField(default=False)
 
-    # REALTIME STATS
-    rt_ab = models.IntegerField(blank=True, null=True)
-    rt_r = models.IntegerField(blank=True, null=True)
-    rt_h = models.IntegerField(blank=True, null=True)
-    rt_doubles = models.IntegerField(blank=True, null=True)
-    rt_triples = models.IntegerField(blank=True, null=True)
-    rt_hr = models.IntegerField(blank=True, null=True)
-    rt_rbi = models.IntegerField(blank=True, null=True)
-    rt_sb = models.IntegerField(blank=True, null=True)
-    rt_bb = models.IntegerField(blank=True, null=True)
-    rt_k = models.IntegerField(blank=True, null=True)
-
-    rt_ip = models.CharField(max_length=255, blank=True, null=True)
-    rt_ph = models.IntegerField(blank=True, null=True)
-    rt_pr = models.IntegerField(blank=True, null=True)
-    rt_er = models.IntegerField(blank=True, null=True)
-    rt_pbb = models.IntegerField(blank=True, null=True)
-    rt_pk = models.IntegerField(blank=True, null=True)
-    rt_phr = models.IntegerField(blank=True, null=True)
-    rt_p = models.IntegerField(blank=True, null=True)
-    rt_s = models.IntegerField(blank=True, null=True)
-
     # CAREER STATS (for level)
     cs_pa = models.IntegerField(blank=True, null=True)
     cs_gp = models.IntegerField(blank=True, null=True)
@@ -368,175 +346,6 @@ class Player(BaseModel):
     # Not used yet.
     #
     strat_ratings = models.JSONField(null=True, blank=True)
-
-    # current strat stats go here
-    strat_obtb_r = models.IntegerField(blank=True, null=True)
-    strat_h_r = models.IntegerField(blank=True, null=True)
-    strat_ob_r = models.IntegerField(blank=True, null=True)
-    strat_tb_r = models.IntegerField(blank=True, null=True)
-    strat_hr_r = models.IntegerField(blank=True, null=True)
-    strat_bb_r = models.IntegerField(blank=True, null=True)
-    strat_so_r = models.IntegerField(blank=True, null=True)
-    strat_obtb_l = models.IntegerField(blank=True, null=True)
-    strat_h_l = models.IntegerField(blank=True, null=True)
-    strat_ob_l = models.IntegerField(blank=True, null=True)
-    strat_tb_l = models.IntegerField(blank=True, null=True)
-    strat_hr_l = models.IntegerField(blank=True, null=True)
-    strat_bb_l = models.IntegerField(blank=True, null=True)
-    strat_so_l = models.IntegerField(blank=True, null=True)
-
-    strat_p_obtb_r = models.IntegerField(blank=True, null=True)
-    strat_p_h_r = models.IntegerField(blank=True, null=True)
-    strat_p_ob_r = models.IntegerField(blank=True, null=True)
-    strat_p_tb_r = models.IntegerField(blank=True, null=True)
-    strat_p_hr_r = models.IntegerField(blank=True, null=True)
-    strat_p_bb_r = models.IntegerField(blank=True, null=True)
-    strat_p_so_r = models.IntegerField(blank=True, null=True)
-    strat_p_obtb_l = models.IntegerField(blank=True, null=True)
-    strat_p_h_l = models.IntegerField(blank=True, null=True)
-    strat_p_ob_l = models.IntegerField(blank=True, null=True)
-    strat_p_tb_l = models.IntegerField(blank=True, null=True)
-    strat_p_hr_l = models.IntegerField(blank=True, null=True)
-    strat_p_bb_l = models.IntegerField(blank=True, null=True)
-    strat_p_so_l = models.IntegerField(blank=True, null=True)
-
-    # PREVIOUS_YEAR STATS
-    py_is_mlb = models.BooleanField(default=False)
-    py_hits = models.IntegerField(blank=True, null=True)
-    py_2b = models.IntegerField(blank=True, null=True)
-    py_3b = models.IntegerField(blank=True, null=True)
-    py_ab = models.IntegerField(blank=True, null=True)
-    py_hr = models.IntegerField(blank=True, null=True)
-    py_sb = models.IntegerField(blank=True, null=True)
-    py_runs = models.IntegerField(blank=True, null=True)
-    py_rbi = models.IntegerField(blank=True, null=True)
-    py_k = models.IntegerField(blank=True, null=True)
-    py_bb = models.IntegerField(blank=True, null=True)
-    py_avg = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
-    py_obp = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
-    py_slg = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
-    py_babip = models.DecimalField(
-        max_digits=4, decimal_places=3, blank=True, null=True
-    )
-    py_wrc_plus = models.IntegerField(blank=True, null=True)
-    py_plate_appearances = models.IntegerField(blank=True, null=True)
-    py_iso = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
-    py_k_pct = models.DecimalField(
-        max_digits=4, decimal_places=1, blank=True, null=True
-    )
-    py_bb_pct = models.DecimalField(
-        max_digits=4, decimal_places=1, blank=True, null=True
-    )
-    py_woba = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
-    py_g = models.IntegerField(blank=True, null=True)
-    py_gs = models.IntegerField(blank=True, null=True)
-    py_ip = models.DecimalField(max_digits=4, decimal_places=1, blank=True, null=True)
-    py_pk = models.IntegerField(blank=True, null=True)
-    py_pbb = models.IntegerField(blank=True, null=True)
-    py_ha = models.IntegerField(blank=True, null=True)
-    py_hra = models.IntegerField(blank=True, null=True)
-    py_er = models.IntegerField(blank=True, null=True)
-    py_k_9 = models.DecimalField(max_digits=4, decimal_places=2, blank=True, null=True)
-    py_bb_9 = models.DecimalField(max_digits=4, decimal_places=2, blank=True, null=True)
-    py_hr_9 = models.DecimalField(max_digits=4, decimal_places=2, blank=True, null=True)
-    py_lob_pct = models.DecimalField(
-        max_digits=4, decimal_places=1, blank=True, null=True
-    )
-    py_gb_pct = models.DecimalField(
-        max_digits=4, decimal_places=1, blank=True, null=True
-    )
-    py_hr_fb = models.DecimalField(
-        max_digits=4, decimal_places=1, blank=True, null=True
-    )
-    py_era = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
-    py_fip = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
-    py_xfip = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
-    py_siera = models.DecimalField(
-        max_digits=5, decimal_places=2, blank=True, null=True
-    )
-    py_xavg = models.DecimalField(max_digits=5, decimal_places=3, blank=True, null=True)
-    py_xwoba = models.DecimalField(
-        max_digits=5, decimal_places=3, blank=True, null=True
-    )
-    py_xslg = models.DecimalField(max_digits=5, decimal_places=3, blank=True, null=True)
-    py_xavg_diff = models.DecimalField(
-        max_digits=5, decimal_places=3, blank=True, null=True
-    )
-    py_xwoba_diff = models.DecimalField(
-        max_digits=5, decimal_places=3, blank=True, null=True
-    )
-    py_xslg_diff = models.DecimalField(
-        max_digits=5, decimal_places=3, blank=True, null=True
-    )
-
-    # LIVE STATS
-    ls_is_mlb = models.BooleanField(default=False)
-    ls_hits = models.IntegerField(blank=True, null=True)
-    ls_2b = models.IntegerField(blank=True, null=True)
-    ls_3b = models.IntegerField(blank=True, null=True)
-    ls_ab = models.IntegerField(blank=True, null=True)
-    ls_hr = models.IntegerField(blank=True, null=True)
-    ls_sb = models.IntegerField(blank=True, null=True)
-    ls_runs = models.IntegerField(blank=True, null=True)
-    ls_rbi = models.IntegerField(blank=True, null=True)
-    ls_k = models.IntegerField(blank=True, null=True)
-    ls_bb = models.IntegerField(blank=True, null=True)
-    ls_avg = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
-    ls_obp = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
-    ls_slg = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
-    ls_babip = models.DecimalField(
-        max_digits=4, decimal_places=3, blank=True, null=True
-    )
-    ls_wrc_plus = models.IntegerField(blank=True, null=True)
-    ls_plate_appearances = models.IntegerField(blank=True, null=True)
-    ls_iso = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
-    ls_k_pct = models.DecimalField(
-        max_digits=4, decimal_places=1, blank=True, null=True
-    )
-    ls_bb_pct = models.DecimalField(
-        max_digits=4, decimal_places=1, blank=True, null=True
-    )
-    ls_woba = models.DecimalField(max_digits=4, decimal_places=3, blank=True, null=True)
-    ls_g = models.IntegerField(blank=True, null=True)
-    ls_gs = models.IntegerField(blank=True, null=True)
-    ls_ip = models.DecimalField(max_digits=4, decimal_places=1, blank=True, null=True)
-    ls_pk = models.IntegerField(blank=True, null=True)
-    ls_pbb = models.IntegerField(blank=True, null=True)
-    ls_ha = models.IntegerField(blank=True, null=True)
-    ls_hra = models.IntegerField(blank=True, null=True)
-    ls_er = models.IntegerField(blank=True, null=True)
-    ls_k_9 = models.DecimalField(max_digits=4, decimal_places=2, blank=True, null=True)
-    ls_bb_9 = models.DecimalField(max_digits=4, decimal_places=2, blank=True, null=True)
-    ls_hr_9 = models.DecimalField(max_digits=4, decimal_places=2, blank=True, null=True)
-    ls_lob_pct = models.DecimalField(
-        max_digits=4, decimal_places=1, blank=True, null=True
-    )
-    ls_gb_pct = models.DecimalField(
-        max_digits=4, decimal_places=1, blank=True, null=True
-    )
-    ls_hr_fb = models.DecimalField(
-        max_digits=4, decimal_places=1, blank=True, null=True
-    )
-    ls_era = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
-    ls_fip = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
-    ls_xfip = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
-    ls_siera = models.DecimalField(
-        max_digits=5, decimal_places=2, blank=True, null=True
-    )
-    ls_xavg = models.DecimalField(max_digits=5, decimal_places=3, blank=True, null=True)
-    ls_xwoba = models.DecimalField(
-        max_digits=5, decimal_places=3, blank=True, null=True
-    )
-    ls_xslg = models.DecimalField(max_digits=5, decimal_places=3, blank=True, null=True)
-    ls_xavg_diff = models.DecimalField(
-        max_digits=5, decimal_places=3, blank=True, null=True
-    )
-    ls_xwoba_diff = models.DecimalField(
-        max_digits=5, decimal_places=3, blank=True, null=True
-    )
-    ls_xslg_diff = models.DecimalField(
-        max_digits=5, decimal_places=3, blank=True, null=True
-    )
 
     class Meta:
         ordering = ["last_name", "first_name", "level", "position"]
@@ -1140,21 +949,7 @@ class WishlistPlayer(BaseModel):
     note = models.TextField(blank=True, null=True)
     tags = ArrayField(models.CharField(max_length=255), blank=True, null=True)
 
-    skew = models.DecimalField(max_digits=4, decimal_places=1, blank=True, null=True)
-    med = models.DecimalField(max_digits=4, decimal_places=1, blank=True, null=True)
-    avg = models.DecimalField(max_digits=4, decimal_places=1, blank=True, null=True)
-
-    law = models.IntegerField(blank=True, null=True)
-    ba = models.IntegerField(blank=True, null=True)
-    bp = models.IntegerField(blank=True, null=True)
-    mlb = models.IntegerField(blank=True, null=True)
-    fg = models.IntegerField(blank=True, null=True)
-    p365 = models.IntegerField(blank=True, null=True)
-    plive = models.IntegerField(blank=True, null=True)
-    p1500 = models.IntegerField(blank=True, null=True)
-    ftrax = models.IntegerField(blank=True, null=True)
-    cbs = models.IntegerField(blank=True, null=True)
-    espn = models.IntegerField(blank=True, null=True)
+    stats = models.JSONField(null=True, blank=True)
 
     def __unicode__(self):
         return f"{self.player} [{self.rank}][{self.tier}]"
@@ -1164,26 +959,7 @@ class WishlistPlayer(BaseModel):
         return self.wishlist.owner.name
 
     def save(self, *args, **kwargs):
-        r = ProspectRating.objects.filter(player=self.player, year=2022)
-        if len(r) > 0:
-            r = r[0]
-            for f in [
-                "skew",
-                "med",
-                "avg",
-                "law",
-                "ba",
-                "bp",
-                "mlb",
-                "fg",
-                "p365",
-                "p1500",
-                "ftrax",
-                "cbs",
-                "espn",
-                "plive",
-            ]:
-                setattr(self, f, getattr(r, f))
+        self.stats = self.player.stats
 
         super().save(*args, **kwargs)
 

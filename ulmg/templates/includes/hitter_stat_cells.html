@@ -1,7 +1,5 @@
 {% load ulmg_tags %}
 <td>{{ p.mlb_team_abbr|default_if_none:"-" }}</td>
-<!-- <td>{% if p.is_injured %}🚫{% endif %}</td>
-<td>{{ p.role|default_if_none:"" }}</td> -->
 
 <td style="max-width:75px;">{% if p.defense_display %}{{ p.defense_display }}{% else %}{{ p.position }}{% endif %}</td>
 
@@ -42,15 +40,6 @@
 <td data-value="{% if p.stats.current.year == 2022 %}{{ p.stats.current.wrc_plus|default_if_none:"-999" }}{% else %}-999{% endif %}">
     {% if p.stats.current.plate_appearances > 0 and p.stats.current.year == 2022 %}{{ p.stats.current.wrc_plus|default_if_none:"-" }}{% else %}-{% endif %}
 </td>
-<!-- <td data-value="{% if p.stats.current.year == 2022 %}{{ p.strat_obtb_l|default_if_none:"-999" }}{% else %}-999{% endif %}">
-    {% if p.strat_obtb_l %}{{ p.strat_obtb_l|default_if_none:"-" }}{% else %}-{% endif %}
-</td>
-<td data-value="{% if p.stats.current.year == 2022 %}{{ p.strat_obtb_r|default_if_none:"-999" }}{% else %}-999{% endif %}">
-    {% if p.strat_obtb_r %}{{ p.strat_obtb_r|default_if_none:"-" }}{% else %}-{% endif %}
-</td>
-<td data-value="{% if p.stats.current.year == 2022 %}{{ p.strat_obtb_tot|default_if_none:"-999" }}{% else %}-999{% endif %}">
-    {% if p.strat_obtb_tot %}{{ p.strat_obtb_tot|default_if_none:"-" }}{% else %}-{% endif %}
-</td> -->
 <td data-value="{% if p.stats.current.year == 2022 %}{{ p.stats.current.xavg|default_if_none:"-999" }}{% else %}-999{% endif %}">
     {% if p.stats.current.plate_appearances > 0 and p.stats.current.year == 2022 and p.stats.current.xavg %}{{ p.stats.current.xavg|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
 </td>
@@ -60,21 +49,3 @@
 <td data-value="{% if p.stats.current.year == 2022 %}{{ p.stats.current.xslg|default_if_none:"-999" }}{% else %}-999{% endif %}">
     {% if p.stats.current.plate_appearances > 0 and p.stats.current.year == 2022 and p.stats.current.xslg %}{{ p.stats.current.xslg|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
 </td>
-<!-- 
-<td>|</td>
-
-<td data-value="{{ p.stats.2021_majors.plate_appearances|default_if_none:"-999" }}">
-    {% if p.stats.2021_majors.plate_appearances > 0 and p.stats.2021_majors.plate_appearances %}{{ p.stats.2021_majors.plate_appearances|default_if_none:"-" }}{% else %}-{% endif %}
-</td>
-<td data-value="{{ p.stats.2021_majors.avg|default_if_none:"-999" }}">
-    {% if p.stats.2021_majors.plate_appearances > 0 and p.stats.2021_majors.avg %}{{ p.stats.2021_majors.avg|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
-</td>
-<td data-value="{{ p.stats.2021_majors.obp|default_if_none:"-999" }}">
-    {% if p.stats.2021_majors.plate_appearances > 0 and p.stats.2021_majors.obp %}{{ p.stats.2021_majors.obp|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
-</td>
-<td data-value="{{ p.stats.2021_majors.slg|default_if_none:"-999" }}">
-    {% if p.stats.2021_majors.plate_appearances > 0 and p.stats.2021_majors.slg %}{{ p.stats.2021_majors.slg|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
-</td>
-<td data-value="{{ p.stats.2021_majors.wrc_plus|default_if_none:"-999" }}">
-    {% if p.stats.2021_majors.plate_appearances > 0 and p.stats.2021_majors.wrc_plus %}{{ p.stats.2021_majors.wrc_plus|default_if_none:"-" }}{% else %}-{% endif %}
-</td> -->

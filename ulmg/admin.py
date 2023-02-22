@@ -209,7 +209,7 @@ class PlayerAdmin(JsonAdmin):
         "team",
         "level",
         "position",
-        "ls_is_mlb",
+        "is_mlb40man",
     ]
     list_editable = []
     readonly_fields = ["name", "age"]
@@ -267,7 +267,7 @@ class PlayerAdmin(JsonAdmin):
                 "classes": ("collapse",),
                 "fields": (
                     ("is_starter", "is_bench", "is_player_pool"),
-                    ("is_injured", "ls_is_mlb"),
+                    ("is_injured"),
                     "injury_description",
                     ("role",),
                     ("is_mlb40man", "is_bullpen"),
