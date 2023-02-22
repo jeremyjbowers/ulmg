@@ -180,47 +180,6 @@ def team_detail(request, abbreviation):
         "-level_order", "-is_carded", "last_name", "first_name"
     )
 
-    position_groups = (
-        team_players.exclude(position="P")
-        .order_by("position")
-        .values("position")
-        .annotate(Count("position"))
-    )
-
-    carded_pa = (
-        team_players.exclude(position="P")
-        .filter(is_carded=True)
-        .order_by("position")
-        .values("position")
-        .annotate(Sum("py_plate_appearances"))
-    )
-    carded_positions = [x["position"] for x in carded_pa]
-
-    current_pa = (
-        team_players.exclude(position="P")
-        .filter(ls_is_mlb=True)
-        .order_by("position")
-        .values("position")
-        .annotate(Sum("ls_plate_appearances"))
-    )
-    current_positions = [x["position"] for x in current_pa]
-
-    for pos in position_groups:
-        pos["carded_pa"] = (
-            carded_pa[carded_positions.index(pos["position"])][
-                "py_plate_appearances__sum"
-            ]
-            if pos["position"] in carded_positions
-            else 0
-        )
-        pos["current_pa"] = (
-            current_pa[current_positions.index(pos["position"])][
-                "ls_plate_appearances__sum"
-            ]
-            if pos["position"] in current_positions
-            else 0
-        )
-
     context["35_roster_count"] = team_players.filter(is_35man_roster=True).count()
     context["mlb_roster_count"] = team_players.filter(
         is_mlb_roster=True, is_aaa_roster=False, is_reserve=False
@@ -233,7 +192,6 @@ def team_detail(request, abbreviation):
     context["num_owned"] = models.Player.objects.filter(team=context["team"]).count()
     context["hitters"] = hitters
     context["pitchers"] = pitchers
-    context["combined_pa"] = position_groups
     return render(request, "team.html", context)
 
 

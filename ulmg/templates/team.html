@@ -39,43 +39,23 @@
                 </tbody>
             </table>
         </div>
-            <div class="column is-3 is-fullwidth-mobile">
-                <table class="table is-fullwidth">
-                    <thead>
-                        <th>Position</th><th>Players</th>
-                    </thead>
-                    <tbody>
-                        <tr class="">
-                            <td class="pr-1 has-text-left">Hitters</td>
-                            <td class="is-size-6 has-text-weight-semibold has-text-right">{{ hitters|length }}</td>
-                        </tr>
-                        <tr class="">
-                            <td class="pr-1 has-text-left">Pitchers</td>
-                            <td class="is-size-6 has-text-weight-semibold has-text-right">{{ pitchers|length }}</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-            <div class="column is-3 is-fullwidth-mobile">
-                <table class="table is-fullwidth">
-                    <thead>
-                        <th>Position</th>
-                        <th class="has-text-right">Players (all)</th>
-                        <th class="has-text-right">PA (carded)</th>
-                        <th class="has-text-right">PA (2022 MLB)</th>
-                    </thead>
-                    <tbody>
-                        {% for position in combined_pa %}
-                        <tr class="">
-                            <td class="pr-1 has-text-left">{{position.position}}</td>
-                            <td class="is-size-6 has-text-weight-semibold has-text-right">{{position.position__count}}</td>
-                            <td class="is-size-6 has-text-weight-semibold has-text-right">{{ position.carded_pa|commafy }}</td>
-                            <td class="is-size-6 has-text-weight-semibold has-text-right">{{position.current_pa|commafy}}</td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+        <div class="column is-3 is-fullwidth-mobile">
+            <table class="table is-fullwidth">
+                <thead>
+                    <th>Position</th><th>Players</th>
+                </thead>
+                <tbody>
+                    <tr class="">
+                        <td class="pr-1 has-text-left">Hitters</td>
+                        <td class="is-size-6 has-text-weight-semibold has-text-right">{{ hitters|length }}</td>
+                    </tr>
+                    <tr class="">
+                        <td class="pr-1 has-text-left">Pitchers</td>
+                        <td class="is-size-6 has-text-weight-semibold has-text-right">{{ pitchers|length }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
     </div>
     <div class="columns is-centered mw-large">
         <div class="column">

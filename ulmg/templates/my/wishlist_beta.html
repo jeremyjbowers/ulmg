@@ -38,18 +38,12 @@
                     <tr>
                         <!-- <th>rank</th> -->
                         <th>player</th>
-                        <th>note</th>
                         <th>age</th>
                         <th>pos</th>
-                        <th>obtb_tot</th>
-                        <th>avg</th>
-                        <th>law</th>
-                        <th>pl</th>
-                        <th>ftx</th>
-                        <th>fg</th>
-                        <th>bp</th>
-                        <th>ba</th>
-                        <th>espn</th>
+                        <th>lvl</th>
+                        <th>wRC+</th>
+                        <th>xFIP</th>
+                        <th></th>
                         <th>tags</th>
                     </tr>
                 </thead>
@@ -58,18 +52,16 @@
                         <tr data-playername="{{ p.player.name }}" data-playerid="{{ p.player.id }}" class="list-group-item">
                             <!-- <td id="rank-{{ p.pk }}">{% if p.rank == 0 %}-{% else %}{{ p.rank }}{% endif %}</td> -->
                             {% include "includes/my/player_name.html" %}
-                            <td>{% include "includes/my/notechooser.html" %}</td>
                             <td>{{ p.player.age|default_if_none:"-" }}</td>
-                            <td style="border-right:2px solid #eee;">{{ p.player.position }}</td>
-                            <td>{% if p.player.position == "P" %}{{ p.player.strat_p_obtb_tot|default_if_none:"-" }}{% else %}{{ p.player.strat_obtb_tot|default_if_none:"-" }}{% endif %}</td>
-                            <td class="has-background-info-light">{{ p.avg|floatformat:"0"|default_if_none:"-" }}</td>
-                            <td>{{ p.law|default_if_none:"-" }}</td>
-                            <td>{{ p.plive|default_if_none:"-" }}</td>
-                            <td>{{ p.ftrax|default_if_none:"-" }}</td>
-                            <td>{{ p.fg|default_if_none:"-" }}</td>
-                            <td>{{ p.bp|default_if_none:"-" }}</td>
-                            <td>{{ p.ba|default_if_none:"-" }}</td>
-                            <td>{{ p.espn|default_if_none:"-" }}</td>
+                            <td>{{ p.player.position }}</td>
+                            <td>
+                                {% if p.stats.current.year == 2022 %}{{ p.stats.current.level }}{% else %}-{% endif %}
+                            </td>
+                            <td>
+                                {% if p.stats.current.plate_appearances > 0 and p.stats.current.year == 2022 %}{{ p.stats.current.wrc_plus|default_if_none:"-" }}{% else %}-{% endif %}
+                            </td>
+                            <td>{% if p.stats.current.ip > 0 and p.stats.current.year == 2022 %}{{ p.stats.current.xfip|floatformat:2|default_if_none:"-"  }}{% else %}-{% endif %}</td>
+                            <td>{% include "includes/my/notechooser.html" %}</td>
                             <td class="left tag-cell">{% include "includes/my/tagchooser.html" %}</td>
                         </tr>
                     {% endfor %}
