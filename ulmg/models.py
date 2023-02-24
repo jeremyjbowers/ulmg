@@ -262,6 +262,8 @@ class Player(BaseModel):
     fg_id = models.CharField(max_length=255, blank=True, null=True)
     fantrax_id = models.CharField(max_length=255, blank=True, null=True)
 
+    mlbam_checked = models.BooleanField(default=False)
+
     # LINKS TO THE WEB
     ba_url = models.CharField(max_length=255, blank=True, null=True)
     bref_url = models.CharField(max_length=255, blank=True, null=True)
