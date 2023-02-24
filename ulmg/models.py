@@ -367,14 +367,22 @@ class Player(BaseModel):
         self.stats[stats_dict["slug"]] = stats_dict
 
     @property
-    def strat_p_obtb_tot(self):
-        if self.strat_p_obtb_l and self.strat_p_obtb_r:
-            return int((self.strat_p_obtb_l * 0.30) + (self.strat_p_obtb_r * 0.70))
+    def mlb_image_url(self):
+        if self.mlbam_id:
+            return f"https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:67:current.png/w_213,q_auto:best/v1/people/{self.mlbam_id}/headshot/67/current"
+        return None
 
     @property
-    def strat_obtb_tot(self):
-        if self.strat_obtb_l and self.strat_obtb_r:
-            return int((self.strat_obtb_l * 0.30) + (self.strat_obtb_r * 0.70))
+    def mlb_url(self):
+        if self.mlbam_id:
+            return f"https://www.mlb.com/player/{self.mlbam_id}/"
+        return None
+
+    @property
+    def mlb_api_url(self):
+        if self.mlbam_id:
+            return f"https://statsapi.mlb.com/api/v1/people/{self.mlbam_id }"
+        return None
 
     @property
     def latest_rating(self):

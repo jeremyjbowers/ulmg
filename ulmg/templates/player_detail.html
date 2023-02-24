@@ -7,7 +7,7 @@
     <div class="column is-three-quarters">
         <div class="box">
             <article class="media">
-                {% if p.bref_img %}<div class="media-left"><figure class="image"><img src="{{ p.bref_img }}" alt="Image"></figure></div>{% endif %}
+                {% if p.mlb_image_url %}<div class="media-left"><figure class="image"><img src="{{ p.mlb_image_url }}" alt="Image"></figure></div>{% endif %}
                 <div class="media-content">
                     <div class="content">
                         <h3>{% if p.team %}<a href="/teams/{{ p.team.abbreviation|lower }}/">{{ p.team }}</a>{% else %}Unowned{% endif %}</h3>
