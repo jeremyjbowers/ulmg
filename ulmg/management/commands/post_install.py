@@ -23,10 +23,6 @@ class Command(BaseCommand):
         call_command("migrate")
         call_command("collectstatic", "--noinput")
 
-        m = models.WishlistPlayer.objects.all()
-        for z in m:
-            z.save()
-
         # call_command('generate_draft_picks','2022','midseason')
         # call_command('generate_draft_picks','2023','midseason')
         # call_command('generate_draft_order', '2023', 'offseason', "aa", "data/ulmg/2023-offseason-aa-order.txt")
@@ -35,3 +31,4 @@ class Command(BaseCommand):
         # call_command('import_defense', '2022')
         # call_command('live_update')
         # call_command('scrape_birthdates')
+        call_command('load_mlb')
