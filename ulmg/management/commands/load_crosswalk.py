@@ -41,3 +41,6 @@ class Command(BaseCommand):
 
                 except models.Player.MultipleObjectsReturned:
                     print(models.Player.objects.filter(fg_id=p['fg_id']))
+
+                except models.Player.DoesNotExist:
+                    pass
