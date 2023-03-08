@@ -31,4 +31,4 @@ class Command(BaseCommand):
         # call_command('import_defense', '2022')
         # call_command('live_update')
         # call_command('scrape_birthdates')
-        call_command('load_crosswalk')
+        # call_command('load_crosswalk')
