@@ -14,9 +14,6 @@ from ulmg import models
 
 
 class Command(BaseCommand):
-    def set_carded(self, *args, **optionals):
-        print(".... setting carded status")
-
     def reset_rosters(self):
         print(".... resetting rosters")
         models.Player.objects.filter(is_mlb_roster=True).update(is_mlb_roster=False)
@@ -28,7 +25,7 @@ class Command(BaseCommand):
         models.Player.objects.filter(is_2h_p=True).update(is_2h_p=False)
         models.Player.objects.filter(is_2h_pos=True).update(is_2h_pos=False)
         models.Player.objects.filter(is_reserve=True).update(is_reserve=False)
+        models.Player.objects.filter(is_35man_roster=True).update(is_35man_roster=False)
 
     def handle(self, *args, **options):
         self.reset_rosters()
-        # self.set_carded()
