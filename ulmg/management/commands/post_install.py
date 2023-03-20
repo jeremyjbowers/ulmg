@@ -23,8 +23,8 @@ class Command(BaseCommand):
         call_command("migrate")
         call_command("collectstatic", "--noinput")
 
-        call_command('generate_draft_picks','2024','offseason')
-        call_command('generate_draft_picks','2024','midseason')
+        # call_command('generate_draft_picks','2024','offseason')
+        # call_command('generate_draft_picks','2024','midseason')
         # call_command('generate_draft_order', '2023', 'offseason', "aa", "data/ulmg/2023-offseason-aa-order.txt")
         # call_command('generate_draft_order', '2023', 'offseason', "open", "data/ulmg/2023-offseason-open-order.txt")
         # call_command('offseason')
