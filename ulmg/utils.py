@@ -606,8 +606,18 @@ def parse_roster_info():
                             pass
 
                     if p:
+                        p.is_injured = False
+                        p.is_mlb = False
+                        p.is_ls_mlb = False
+                        p.role = None
+                        p.is_starter = False
+                        p.is_bench = False
+                        p.injury_description = None
+                        p.is_mlb_40man = False
+
                         if player.get("mlevel", None):
                             p.role = player["mlevel"]
+                        
                         elif player.get("role", None):
                             if player["role"] != "":
                                 p.role = player["role"]
@@ -616,14 +626,6 @@ def parse_roster_info():
                             p.ls_is_mlb = True
                             p.is_mlb = True
 
-                        if "pp" in player["type"]:
-                            p.is_player_pool = True
-
-                        if player["type"] == "mlb-tx-pp":
-                            p.is_player_pool = True
-
-                        if player["type"] == "mlb-tx-pt":
-                            p.is_player_pool = True
 
                         if player["type"] == "mlb-bp":
                             p.is_bullpen = True
