@@ -5,6 +5,8 @@
     {% if p.stats.current.ip > 0 and p.stats.current.year == 2023 %}{{ p.stats.current.level }}{% else %}-{% endif %}
 </td>
 
+<td>{% if p.is_injured %}<span class="icon has-text-danger"><i class="fa fa-ambulance" aria-hidden="true"></i></span>{% endif %}</td>
+
 <td data-value="{% if p.stats.current.year == 2023 %}{{ p.stats.current.g|default_if_none:"-999" }}{% else %}-999{% endif %}">{% if p.stats.current.ip > 0 and p.stats.current.year == 2023 %}{{ p.stats.current.g|default_if_none:"-" }}{% else %}-{% endif %}</td>
 <td data-value="{% if p.stats.current.year == 2023 %}{{ p.stats.current.gs|default_if_none:"-999" }}{% else %}-999{% endif %}">{% if p.stats.current.ip > 0 and p.stats.current.year == 2023 %}{{ p.stats.current.gs|default_if_none:"-" }}{% else %}-{% endif %}</td>
 <td data-value="{% if p.stats.current.year == 2023 %}{{ p.stats.current.ip|default_if_none:"-999" }}{% else %}-999{% endif %}">{% if p.stats.current.ip > 0 and p.stats.current.year == 2023 %}{{ p.stats.current.ip|default_if_none:"-" }}{% else %}-{% endif %}</td>
