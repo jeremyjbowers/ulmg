@@ -432,19 +432,19 @@ def search(request):
     if request.GET.get('pa_cutoff', None):
         pa_cutoff = int(request.GET['pa_cutoff'])
         if pa_cutoff:
-            query = query.filter(stats__current__plate_appearances__gte=pa_cutoff)
+            query = query.filter(stats__2023_majors__plate_appearances__gte=pa_cutoff)
             context['pa_cutoff'] = f"{pa_cutoff}"
 
     if request.GET.get('ip_cutoff', None):
         ip_cutoff = int(request.GET['ip_cutoff'])
         if ip_cutoff:
-            query = query.filter(stats__current__ip__gte=ip_cutoff)
+            query = query.filter(stats__2023_majors__ip__gte=ip_cutoff)
             context['ip_cutoff'] = f"{ip_cutoff}"
 
     if request.GET.get('gs_cutoff', None):
         gs_cutoff = int(request.GET['gs_cutoff'])
         if gs_cutoff:
-            query = query.filter(stats__current__gs__gte=gs_cutoff)
+            query = query.filter(stats__2023_majors__gs__gte=gs_cutoff)
             context['gs_cutoff'] = f"{gs_cutoff}"
 
     if request.GET.get("level", None):
