@@ -24,12 +24,12 @@
 <td data-value="{% if p.stats.current.year == 2023 %}{{ p.stats.current.hr|default_if_none:"-999" }}{% else %}-999{% endif %}">
     {% if p.stats.current.plate_appearances > 0 and p.stats.current.year == 2023 %}{{ p.stats.current.hr|default_if_none:"-" }}{% else %}-{% endif %}
 </td>
-<td data-value="{% if p.stats.current.year == 2023 %}{{ p.stats.current.runs|default_if_none:"-999" }}{% else %}-999{% endif %}">
+<!-- <td data-value="{% if p.stats.current.year == 2023 %}{{ p.stats.current.runs|default_if_none:"-999" }}{% else %}-999{% endif %}">
     {% if p.stats.current.plate_appearances > 0 and p.stats.current.year == 2023 %}{{ p.stats.current.runs|default_if_none:"-" }}{% else %}-{% endif %}
 </td>
 <td data-value="{% if p.stats.current.year == 2023 %}{{ p.stats.current.rbi|default_if_none:"-999" }}{% else %}-999{% endif %}">
     {% if p.stats.current.plate_appearances > 0 and p.stats.current.year == 2023 %}{{ p.stats.current.rbi|default_if_none:"-" }}{% else %}-{% endif %}
-</td>
+</td> -->
 <td data-value="{% if p.stats.current.year == 2023 %}{{ p.stats.current.sb|default_if_none:"-999" }}{% else %}-999{% endif %}">
     {% if p.stats.current.plate_appearances > 0 and p.stats.current.year == 2023 %}{{ p.stats.current.sb|default_if_none:"-" }}{% else %}-{% endif %}
 </td>
@@ -50,4 +50,21 @@
 </td>
 <td data-value="{% if p.stats.current.year == 2023 %}{{ p.stats.current.xslg|default_if_none:"-999" }}{% else %}-999{% endif %}">
     {% if p.stats.current.plate_appearances > 0 and p.stats.current.year == 2023 and p.stats.current.xslg %}{{ p.stats.current.xslg|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
+</td>
+<!-- previous year -->
+<td></td>
+<td data-value="{{ p.stats.2022_majors.plate_appearances|default_if_none:"-999" }}">
+    {% if p.stats.2022_majors.plate_appearances > 0 %}{{ p.stats.2022_majors.plate_appearances|default_if_none:"-" }}{% else %}-{% endif %}
+</td>
+<td data-value="{{ p.stats.2022_majors.avg|default_if_none:"-999" }}">
+    {% if p.stats.2022_majors.plate_appearances > 0 %}{{ p.stats.2022_majors.avg|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
+</td>
+<td data-value="{{ p.stats.2022_majors.obp|default_if_none:"-999" }}">
+    {% if p.stats.2022_majors.plate_appearances > 0 %}{{ p.stats.2022_majors.obp|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
+</td>
+<td data-value="{{ p.stats.2022_majors.slg|default_if_none:"-999" }}">
+    {% if p.stats.2022_majors.plate_appearances > 0 %}{{ p.stats.2022_majors.slg|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
+</td>
+<td data-value="{{ p.stats.2022_majors.wrc_plus|default_if_none:"-999" }}">
+    {% if p.stats.2022_majors.plate_appearances > 0 %}{{ p.stats.2022_majors.wrc_plus|default_if_none:"-" }}{% else %}-{% endif %}
 </td>
