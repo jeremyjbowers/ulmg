@@ -7,20 +7,20 @@
     <td>{{ p.player.position|default_if_none:"-" }}</td>
     <td>{{ p.player.age|default_if_none:"-" }}</td>
     <td>{% if p.player.mlb_team_abbr %}{{ p.player.mlb_team_abbr|default_if_none:"-" }}{% else %}-{% endif %}</td>
-    
+    <td>{% if p.player.stats.current.ip > 0 and p.player.stats.current.year == 2023 %}{{ p.player.stats.current.level }}{% else %}-{% endif %}</td>
     <td>
-        {% if p.stats.current.plate_appearances > 0 and p.stats.current.year == 2022 %}{{ p.stats.current.plate_appearances|default_if_none:"-" }}{% else %}-{% endif %}
+        {% if p.player.stats.current.plate_appearances > 0 and p.player.stats.current.year == 2023 %}{{ p.player.stats.current.plate_appearances|default_if_none:"-" }}{% else %}-{% endif %}
     </td>
     <td>
-        {% if p.stats.current.plate_appearances > 0 and p.stats.current.year == 2022 %}{{ p.stats.current.avg|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}/{% if p.stats.current.plate_appearances > 0 and p.stats.current.year == 2022 %}{{ p.stats.current.obp|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}/{% if p.stats.current.plate_appearances > 0 and p.stats.current.year == 2022 %}{{ p.stats.current.slg|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
+        {% if p.player.stats.current.plate_appearances > 0 and p.player.stats.current.year == 2023 %}{{ p.player.stats.current.avg|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}/{% if p.player.stats.current.plate_appearances > 0 and p.player.stats.current.year == 2023 %}{{ p.player.stats.current.obp|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}/{% if p.player.stats.current.plate_appearances > 0 and p.player.stats.current.year == 2023 %}{{ p.player.stats.current.slg|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
     </td>
     <td>
-        {% if p.stats.current.plate_appearances > 0 and p.stats.current.year == 2022 %}{{ p.stats.current.k_pct|floatformat:1|default_if_none:"-" }}{% else %}-{% endif %}
+        {% if p.player.stats.current.plate_appearances > 0 and p.player.stats.current.year == 2023 %}{{ p.player.stats.current.k_pct|floatformat:1|default_if_none:"-" }}{% else %}-{% endif %}
     </td><td>
-        {% if p.stats.current.plate_appearances > 0 and p.stats.current.year == 2022 %}{{ p.stats.current.bb_pct|floatformat:1|default_if_none:"-" }}{% else %}-{% endif %}
+        {% if p.player.stats.current.plate_appearances > 0 and p.player.stats.current.year == 2023 %}{{ p.player.stats.current.bb_pct|floatformat:1|default_if_none:"-" }}{% else %}-{% endif %}
     </td>
     <td>
-        {% if p.stats.current.plate_appearances > 0 and p.stats.current.year == 2022 %}{{ p.stats.current.wrc_plus|default_if_none:"-" }}{% else %}-{% endif %}
+        {% if p.player.stats.current.plate_appearances > 0 and p.player.stats.current.year == 2023 %}{{ p.player.stats.current.wrc_plus|default_if_none:"-" }}{% else %}-{% endif %}
     </td>
 
     <td>{% include "includes/my/tierpicker.html" %}</td>

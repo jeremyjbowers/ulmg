@@ -49,18 +49,18 @@
                 </thead>
                 <tbody id="players" class="list-group">
                     {% for p in players %}
-                        <tr data-playername="{{ p.player.name }}" data-playerid="{{ p.player.id }}" class="list-group-item">
+                        <tr data-playername="{{ p.player.name }}" data-playerid="{{ p.player.id }}" class="list-group-item{% if not p.player.stats.current.level == "mlb" %} minors {% endif %}">
                             <!-- <td id="rank-{{ p.pk }}">{% if p.rank == 0 %}-{% else %}{{ p.rank }}{% endif %}</td> -->
                             {% include "includes/my/player_name.html" %}
                             <td>{{ p.player.age|default_if_none:"-" }}</td>
                             <td>{{ p.player.position }}</td>
                             <td>
-                                {% if p.stats.current.year == 2022 %}{{ p.stats.current.level }}{% else %}-{% endif %}
+                                {% if p.player.stats.current.year == 2023 %}{{ p.player.stats.current.level }}{% else %}-{% endif %}
                             </td>
                             <td>
-                                {% if p.stats.current.plate_appearances > 0 and p.stats.current.year == 2022 %}{{ p.stats.current.wrc_plus|default_if_none:"-" }}{% else %}-{% endif %}
+                                {% if p.player.stats.current.plate_appearances > 0 and p.player.stats.current.year == 2023 %}{{ p.player.stats.current.wrc_plus|default_if_none:"-" }}{% else %}-{% endif %}
                             </td>
-                            <td>{% if p.stats.current.ip > 0 and p.stats.current.year == 2022 %}{{ p.stats.current.xfip|floatformat:2|default_if_none:"-"  }}{% else %}-{% endif %}</td>
+                            <td>{% if p.player.stats.current.ip > 0 and p.player.stats.current.year == 2023 %}{{ p.player.stats.current.xfip|floatformat:2|default_if_none:"-"  }}{% else %}-{% endif %}</td>
                             <td>{% include "includes/my/notechooser.html" %}</td>
                             <td class="left tag-cell">{% include "includes/my/tagchooser.html" %}</td>
                         </tr>
