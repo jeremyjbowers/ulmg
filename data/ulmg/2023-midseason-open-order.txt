@@ -1,0 +1,16 @@
+DET
+WCH
+PIT|+
+ADK|-
+CIN
+AKS
+KCB
+LNG
+ATL|+
+CHI|-
+LOU|+
+CAR|-
+NYH|+
+ABQ|-
+PEN|+
+CLE|-
