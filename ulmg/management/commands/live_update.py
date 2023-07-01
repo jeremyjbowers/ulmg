@@ -32,8 +32,8 @@ class Command(BaseCommand):
         print(f"Getting roster files")
         utils.get_fg_roster_files()
 
-        # print(f"Importing players from rosters")
-        # utils.import_players_from_rosters()
+        print(f"Importing players from rosters")
+        utils.import_players_from_rosters()
 
         print(f"Parsing roster info")
         utils.parse_roster_info()
