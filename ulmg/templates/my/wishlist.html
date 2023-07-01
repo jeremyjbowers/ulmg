@@ -13,6 +13,14 @@
         font-size:32px;
         font-weight:bold;
     }
+    td.prev-year {
+        background-color: #eee;
+    }
+    h1 small {
+        font-weight: normal;
+        color: #777;
+        font-size: 0.75em;
+    }
 </style>
 
 <nav class="level is-mobile">
@@ -51,46 +59,55 @@
                 <thead>
                     <tr>
                         <th>Name</th>
-                        <th>Age</th>
+                        <th>ULMG</th>
+                        <th>Org</th>
                         <th>Pos</th>
-                        <th>MLB</th>
-                        <th>Team</th>
+                        <th data-sortable-type="alpha">Lev</th>
+                        <th data-sortable-type="numeric">PA</th>
+                        <th data-sortable-type="numeric">A/O/S</th>
+                        <th data-sortable-type="numeric">wRC+</th>
                         <th>PA</th>
-                        <th>AVG</th>
-                        <th>OBP</th>
-                        <th>SLG</th>
-                        <th>K%</th>
-                        <th>BB%</th>
-                        <th>xA</th>
-                        <th>xO</th>
-                        <th>xS</th>
+                        <th>A/O/S</th>
+                        <th>wRC+</th>
                     </tr>
                 </thead>
                 <tbody>
                 {% for p in hitters %}
-                <tr class="{% if p.player.is_prospect %}{% if not p.player.ls_is_mlb %} minors{% endif %}{% endif %}{% if p.player.ls_is_mlb == False and p.player.is_amateur == True %} amateur{% endif %}">
+                <tr class="{% if p.player.is_prospect %}{% if not p.player.stats.current.is_mlb %} minors{% endif %}{% endif %}{% if p.player.stats.current.is_mlb == False and p.player.is_amateur == True %} amateur{% endif %}">
                 {% include "includes/my/player_name.html" %}
-                        <td>{{ p.player.age|default_if_none:"-" }}</td>
-                        <td>{% if p.player.defense %}{{ p.player.defense_display }}{% else %}{{ p.player.position }}{% endif %}</td>
-                        <td>{{ p.player.mlb_team_abbr|default_if_none:"-" }}</td>
-                        <td><a href="/teams/{{ p.player.team.abbrev|lower }}/">{{ p.player.team }}</a></td>
-                        <td>{% if p.player.ls_plate_appearances > 0 %}{{ p.player.ls_plate_appearances|default_if_none:"-"  }}{% else %}-{% endif %}</td>
-                        <td>{% if p.player.ls_plate_appearances > 0 %}{{ p.player.ls_avg|kill_leading_zero|default_if_none:"-"  }}{% else %}-{% endif %}</td>
-                        <td>{% if p.player.ls_plate_appearances > 0 %}{{ p.player.ls_obp|kill_leading_zero|default_if_none:"-"  }}{% else %}-{% endif %}</td>
-                        <td>{% if p.player.ls_plate_appearances > 0 %}{{ p.player.ls_slg|kill_leading_zero|default_if_none:"-"  }}{% else %}-{% endif %}</td>
-                        <td>{% if p.player.ls_plate_appearances > 0 %}{{ p.player.ls_k_pct|default_if_none:"-" }}{% else %}-{% endif %}</td>
-                        <td>{% if p.player.ls_plate_appearances > 0 %}{{ p.player.ls_bb_pct|default_if_none:"-" }}{% else %}-{% endif %}</td>
-                        
-                        {% if p.player.ls_is_mlb %}
-                        <td>{% if p.player.ls_plate_appearances > 0 %}{{ p.player.ls_xavg|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}</td>
-                        <td>{% if p.player.ls_plate_appearances > 0 %}{{ p.player.ls_xwoba|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}</td>
-                        <td>{% if p.player.ls_plate_appearances > 0 %}{{ p.player.ls_xslg|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}</td>
-                        {% else %}
-                        <td>-</td>
-                        <td>-</td>
-                        <td>-</td>
-                        {% endif %}
-                    </tr>
+                <td><a href="/teams/{{ p.player.team.abbreviation|lower }}/">{{ p.player.team }}</a></td>
+                <td>{{ p.player.mlb_team_abbr|default_if_none:"-" }}</td>
+                
+                <td style="max-width:75px;">{% if p.player.defense_display %}{{ p.player.defense_display }}{% else %}{{ p.player.position }}{% endif %}</td>
+                
+                <td data-value="{% if p.player.stats.current.year == 2023 %}{{ p.player.stats.current.level|default_if_none:"-999" }}{% else %}-999{% endif %}">
+                    {% if p.player.stats.current.plate_appearances > 0 and p.player.stats.current.year == 2023 %}{{ p.player.stats.current.level }}{% else %}-{% endif %}
+                </td>
+                
+                <td data-value="{% if p.player.stats.current.year == 2023 %}{{ p.player.stats.current.plate_appearances|default_if_none:"-999" }}{% else %}-999{% endif %}">
+                    {% if p.player.stats.current.plate_appearances > 0 and p.player.stats.current.year == 2023 %}{{ p.player.stats.current.plate_appearances|default_if_none:"-" }}{% else %}-{% endif %}
+                </td>
+                <td data-value="{% if p.player.stats.current.year == 2023 %}{{ p.player.stats.current.avg|default_if_none:"-999" }}{% else %}-999{% endif %}">
+                    {% if p.player.stats.current.plate_appearances > 0 and p.player.stats.current.year == 2023 %}{{ p.player.stats.current.avg|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}/
+                    {% if p.player.stats.current.plate_appearances > 0 and p.player.stats.current.year == 2023 %}{{ p.player.stats.current.obp|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}/
+                    {% if p.player.stats.current.plate_appearances > 0 and p.player.stats.current.year == 2023 %}{{ p.player.stats.current.slg|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
+                </td>
+                <td data-value="{% if p.player.stats.current.year == 2023 %}{{ p.player.stats.current.wrc_plus|default_if_none:"-999" }}{% else %}-999{% endif %}">
+                    {% if p.player.stats.current.plate_appearances > 0 and p.player.stats.current.year == 2023 %}{{ p.player.stats.current.wrc_plus|default_if_none:"-" }}{% else %}-{% endif %}
+                </td>
+                <!-- previous year -->
+                <td class="prev-year" data-value="{{ p.player.stats.2022_majors.plate_appearances|default_if_none:"-999" }}">
+                    {% if p.player.stats.2022_majors.plate_appearances > 0 %}{{ p.player.stats.2022_majors.plate_appearances|default_if_none:"-" }}{% else %}-{% endif %}
+                </td>
+                <td class="prev-year" data-value="{{ p.player.stats.2022_majors.avg|default_if_none:"-999" }}">
+                    {% if p.player.stats.2022_majors.plate_appearances > 0 %}{{ p.player.stats.2022_majors.avg|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}/
+                    {% if p.player.stats.2022_majors.plate_appearances > 0 %}{{ p.player.stats.2022_majors.obp|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}/
+                    {% if p.player.stats.2022_majors.plate_appearances > 0 %}{{ p.player.stats.2022_majors.slg|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
+                </td>
+                <td class="prev-year" data-value="{{ p.player.stats.2022_majors.wrc_plus|default_if_none:"-999" }}">
+                    {% if p.player.stats.2022_majors.plate_appearances > 0 %}{{ p.player.stats.2022_majors.wrc_plus|default_if_none:"-" }}{% else %}-{% endif %}
+                </td>
+                </tr>
                 {% endfor %}
                 </tbody>
             </table>
@@ -101,37 +118,46 @@
                 <thead>
                     <tr>
                         <th>Name</th>
-                        <th>Age</th>
-                        <th>MLB</th>
-                        <th>Team</th>
+                        <th>ULMG</th>
+                        <th>Org</th>
+                        <th>Lev</th>
+                        <th>GS</th>
                         <th>IP</th>
                         <th>ERA</th>
                         <th>K/9</th>
                         <th>BB/9</th>
-                        <th>FIP</th>
                         <th>xFIP</th>
                         <th>SIERA</th>
+                        <th>GS</th>
+                        <th>IP</th>
+                        <th>ERA</th>
+                        <th>K/9</th>
+                        <th>BB/9</th>
                     </tr>
                 </thead>
                 <tbody>
                 {% for p in pitchers %}
-                <tr class="{% if p.player.is_prospect %}{% if not p.player.ls_is_mlb %} minors{% endif %}{% endif %}{% if p.player.ls_is_mlb == False and p.player.is_amateur == True %} amateur{% endif %}">
+                <tr class="{% if p.player.is_prospect %}{% if not p.player.stats.current.is_mlb %} minors{% endif %}{% endif %}{% if p.player.stats.current.is_mlb == False and p.player.is_amateur == True %} amateur{% endif %}">
                 {% include "includes/my/player_name.html" %}
-                        <td>{{ p.player.age|default_if_none:"-" }}</td>
-                        <td>{{ p.player.mlb_team_abbr|default_if_none:"-" }}</td>
-                        <td><a href="/teams/{{ p.player.team.abbrev|lower }}/">{{ p.player.team }}</a></td>
-                        <td>{% if p.player.ls_ip > 0 %}{{ p.player.ls_ip }}{% endif %}</td>
-                        <td>{% if p.player.ls_ip > 0 %}{{ p.player.ls_era }}{% endif %}</td>
-                        <td>{% if p.player.ls_ip > 0 %}{{ p.player.ls_k_9 }}{% endif %}</td>
-                        <td>{% if p.player.ls_ip > 0 %}{{ p.player.ls_bb_9 }}{% endif %}</td>
-                        <td>{% if p.player.ls_ip > 0 %}{{ p.player.ls_fip|default_if_none:"-" }}{% else %}-{% endif %}</td>
-                        <td>{% if p.player.ls_ip > 0 %}{{ p.player.ls_xfip|default_if_none:"-" }}{% else %}-{% endif %}</td>
-                        
-                        {% if not p.player.ls_is_mlb or p.player.ls_ip == 0 %}
-                        <td>-</td>
-                        {% else %}
-                        <td>{% if p.player.ls_ip > 0 %}{{ p.player.ls_siera|default_if_none:"-" }}{% else %}-{% endif %}</td>
-                        {% endif %}
+                <td><a href="/teams/{{ p.player.team.abbreviation|lower }}/">{{ p.player.team }}</a></td>
+                <td>{{ p.player.mlb_team_abbr|default_if_none:"-" }}</td>
+
+                <td data-value="{% if p.player.stats.current.year == 2023 %}{{ p.player.stats.current.level|default_if_none:"-999" }}{% else %}-999{% endif %}">
+                    {% if p.player.stats.current.ip > 0 and p.player.stats.current.year == 2023 %}{{ p.player.stats.current.level }}{% else %}-{% endif %}
+                </td>
+                                
+                <td data-value="{% if p.player.stats.current.ip > 0 and p.player.stats.current.year == 2023 %}{{ p.player.stats.current.gs|default_if_none:"-999" }}{% else %}-999{% endif %}">{% if p.player.stats.current.ip > 0 and p.player.stats.current.year == 2023 %}{{ p.player.stats.current.gs|default_if_none:"-" }}{% else %}-{% endif %}</td>
+                <td data-value="{% if p.player.stats.current.ip > 0 and p.player.stats.current.year == 2023 %}{{ p.player.stats.current.ip|default_if_none:"-999" }}{% else %}-999{% endif %}">{% if p.player.stats.current.ip > 0 and p.player.stats.current.year == 2023 %}{{ p.player.stats.current.ip|default_if_none:"-" }}{% else %}-{% endif %}</td>
+                <td data-value="{% if p.player.stats.current.ip > 0 and p.player.stats.current.year == 2023 %}{{ p.player.stats.current.era|default_if_none:"999" }}{% else %}999{% endif %}">{% if p.player.stats.current.ip > 0 and p.player.stats.current.year == 2023 %}{{ p.player.stats.current.era|floatformat:2|default_if_none:"-"  }}{% else %}-{% endif %}</td>
+                <td data-value="{% if p.player.stats.current.ip > 0 and p.player.stats.current.year == 2023 %}{{ p.player.stats.current.k_9|default_if_none:"-999" }}{% else %}-999{% endif %}">{% if p.player.stats.current.ip > 0 and p.player.stats.current.year == 2023 %}{{ p.player.stats.current.k_9|floatformat:1|default_if_none:"-"  }}{% else %}-{% endif %}</td>
+                <td data-value="{% if p.player.stats.current.ip > 0 and p.player.stats.current.year == 2023 %}{{ p.player.stats.current.bb_9|default_if_none:"999" }}{% else %}999{% endif %}">{% if p.player.stats.current.ip > 0 and p.player.stats.current.year == 2023 %}{{ p.player.stats.current.bb_9|floatformat:1|default_if_none:"-"  }}{% else %}-{% endif %}</td>
+                <td data-value="{% if p.player.stats.current.ip > 0 and p.player.stats.current.year == 2023 %}{{ p.player.stats.current.xfip|default_if_none:"999" }}{% else %}999{% endif %}">{% if p.player.stats.current.ip > 0 and p.player.stats.current.year == 2023 %}{{ p.player.stats.current.xfip|floatformat:2|default_if_none:"-"  }}{% else %}-{% endif %}</td>
+                <td data-value="{% if p.player.stats.current.ip > 0 and p.player.stats.current.year == 2023 %}{{ p.player.stats.current.siera|default_if_none:"999" }}{% else %}999{% endif %}">{% if p.player.stats.current.ip > 0 and p.player.stats.current.year == 2023 and p.player.stats.current.siera %}{{ p.player.stats.current.siera|floatformat:2|default_if_none:"-"  }}{% else %}-{% endif %}</td>
+                <td class="prev-year" data-value="{{ p.player.stats.2022_majors.gs|default_if_none:"-999" }}">{% if p.player.stats.2022_majors.ip > 0 %}{{ p.player.stats.2022_majors.gs|default_if_none:"-" }}{% else %}-{% endif %}</td>
+                <td class="prev-year" data-value="{{ p.player.stats.2022_majors.ip|default_if_none:"-999" }}">{% if p.player.stats.2022_majors.ip > 0 %}{{ p.player.stats.2022_majors.ip|default_if_none:"-" }}{% else %}-{% endif %}</td>
+                <td class="prev-year" data-value="{{ p.player.stats.2022_majors.era|default_if_none:"999" }}">{% if p.player.stats.2022_majors.ip > 0 %}{{ p.player.stats.2022_majors.era|floatformat:2|default_if_none:"-"  }}{% else %}-{% endif %}</td>
+                <td class="prev-year" data-value="{{ p.player.stats.2022_majors.k_9|default_if_none:"-999" }}">{% if p.player.stats.2022_majors.ip > 0 %}{{ p.player.stats.2022_majors.k_9|floatformat:1|default_if_none:"-"  }}{% else %}-{% endif %}</td>
+                <td class="prev-year" data-value="{{ p.player.stats.2022_majors.bb_9|default_if_none:"999" }}">{% if p.player.stats.2022_majors.ip > 0 %}{{ p.player.stats.2022_majors.bb_9|floatformat:1|default_if_none:"-"  }}{% else %}-{% endif %}</td>
                     </tr>
                 {% endfor %}
                 </tbody>
@@ -143,7 +169,7 @@
     {% if aa_hitters or aa_pitchers %}
     <div class="columns">
         <div class="column">
-            <h1 class="title is-2">AA draft</h1>
+            <h1 class="title is-2">AA draft <small>with 2023 stats</small></h1>
         </div>
     </div>
     <div class="columns">
@@ -175,7 +201,7 @@
     {% if op_hitters or op_pitchers %}
     <div class="columns">
         <div class="column">
-            <h1 class="title is-2">Open draft</h1>
+            <h1 class="title is-2">Open draft <small>with 2023 stats</small></h1>
         </div>
     </div>
     <div class="columns">
