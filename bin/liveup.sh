@@ -10,5 +10,5 @@ do
     # end time
     date +"%H:%M:%S"
 
-    sleep 600
+    sleep 3600
 done
