@@ -25,8 +25,8 @@ class Command(BaseCommand):
 
         # call_command('generate_draft_picks','2024','offseason')
         # call_command('generate_draft_picks','2024','midseason')
-        call_command('generate_draft_order', '2023', 'midseason', "aa", "data/ulmg/2023-midseason-aa-order.txt")
-        call_command('generate_draft_order', '2023', 'midseason', "open", "data/ulmg/2023-midseason-open-order.txt")
+        # call_command('generate_draft_order', '2023', 'midseason', "aa", "data/ulmg/2023-midseason-aa-order.txt")
+        # call_command('generate_draft_order', '2023', 'midseason', "open", "data/ulmg/2023-midseason-open-order.txt")
         # call_command('offseason')
         # call_command('import_defense', '2022')
         # call_command('live_update')
