@@ -74,6 +74,67 @@ def my_team(request):
     team = get_object_or_404(models.Team, owner_obj=context["owner"])
     return redirect(f"/teams/{ team.abbreviation }/")
 
+@login_required
+def my_midseason(request):
+    context = utils.build_context(request)
+    context["team"] = get_object_or_404(models.Team, owner_obj=context["owner"])
+    context['wishlist'] = models.Wishlist.objects.get(owner=context['owner'])
+    context["aa_hitters"] = []
+    context["aa_pitchers"] = []
+    context["op_hitters"] = []
+    context["op_pitchers"] = []
+
+    for p in models.WishlistPlayer.objects.filter(wishlist=context["wishlist"]):
+        if not p.tier:
+            p.tier = 6
+        if not p.rank:
+            p.rank = 999
+
+        if not p.player.is_owned:
+            if p.player.stats:
+                if p.player.stats.get('2022_majors', None):
+                    if p.player.position == "P":
+                        context['op_pitchers'].append(p)
+
+                    else:
+                        context['op_hitters'].append(p)
+
+                else:
+                    if p.player.level == "B":
+                        if p.player.position == "P":
+                            context["aa_pitchers"].append(p)
+                        else:
+                            context["aa_hitters"].append(p)
+            else:
+                if p.player.level == "B":
+                    if p.player.position == "P":
+                        context["aa_pitchers"].append(p)
+                    else:
+                        context["aa_hitters"].append(p)                  
+
+        try:
+            context["aa_hitters"] = sorted(
+                context["aa_hitters"], key=lambda x: (x.tier, x.rank)
+            )
+        except:
+            pass
+
+        try:
+            context["aa_pitchers"] = sorted(
+                context["aa_pitchers"], key=lambda x: (x.tier, x.rank)
+            )
+        except:
+            pass
+
+        context["op_hitters"] = sorted(
+            context["op_hitters"], key=lambda x: (x.tier, x.rank)
+        )
+        context["op_pitchers"] = sorted(
+            context["op_pitchers"], key=lambda x: (x.tier, x.rank)
+        )
+
+    return render(request, "my/midseason.html", context)
+
 
 @login_required
 def my_wishlist(request, list_type):
