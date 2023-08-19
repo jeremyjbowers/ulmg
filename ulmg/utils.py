@@ -709,8 +709,8 @@ def get_fg_major_hitter_season(
             stats_dict["xslg"] = to_float(row['xSLG'])
             stats_dict["babip"] = to_float(row['BABIP'])
             stats_dict["iso"] = to_float(row['ISO'])
-            stats_dict["k_pct"] = to_float(row['K%'])
-            stats_dict["bb_pct"] = to_float(row['BB%'])
+            stats_dict["k_pct"] = to_float(row['K%']) * 100
+            stats_dict["bb_pct"] = to_float(row['BB%']) * 100
             stats_dict["xwoba"] = to_float(row['xwOBA'])
 
             obj.set_stats(stats_dict)
