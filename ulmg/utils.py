@@ -361,12 +361,6 @@ def get_sheet(sheet_id, sheet_range):
     return []
 
 
-def get_fg_results(url):
-    r = requests.get(url, verify=False)
-    soup = BeautifulSoup(r.text, "html.parser")
-    return soup.select("#LeaderBoard1_dg1_ctl00 tbody tr")
-
-
 def get_fg_minor_season(season=None, timestamp=None, scriptname=None, hostname=None):
 
     if not hostname:
@@ -674,12 +668,11 @@ def get_fg_major_hitter_season(
 
     print(f"{timestamp}\t{season}\tget_fg_major_hitter_season")
 
-    url = f"https://www.fangraphs.com/leaders.aspx?pos=all&stats=bat&lg=all&qual=0&type=c,6,-1,312,305,309,306,307,308,310,311,-1,23,315,-1,38,316,-1,50,317,7,8,9,10,11,12,13,14,21,23,34,35,37,38,39,40,41,50,52,57,58,61,62,5&season={season}&month=0&season1={season}&ind=0&team=0&rost=0&age=0&filter=&players=0&startdate={season}-01-01&enddate={season}-12-31&sort=3,d&page=1_5000"
+    url = f"https://www.fangraphs.com/api/leaders/major-league/data?age=0&pos=all&stats=bat&lg=all&qual=0&season={season}&season1={season}&startdate={season}-01-01&enddate={season}-12-31&month=0&team=0&pageitems=5000&pagenum=1&ind=0&rost=0&players=0&type=c%2C6%2C-1%2C312%2C305%2C309%2C306%2C307%2C308%2C310%2C311%2C-1%2C23%2C315%2C-1%2C38%2C316%2C-1%2C50%2C317%2C7%2C8%2C9%2C10%2C11%2C12%2C13%2C14%2C21%2C23%2C34%2C35%2C37%2C38%2C39%2C40%2C41%2C50%2C52%2C57%2C58%2C61%2C62%2C5&sortdir=desc&sortstat=Events"
 
-    rows = get_fg_results(url)
+    rows = requests.get(url).json()['data']
 
     for row in rows:
-        h = row.select("td")
         stats_dict = {}
 
         stats_dict["year"] = season
@@ -692,35 +685,36 @@ def get_fg_major_hitter_season(
         stats_dict["slug"] = f"{stats_dict['year']}_{stats_dict['type']}"
 
         obj = models.Player.objects.filter(
-            fg_id=h[1].select("a")[0].attrs["href"].split("playerid=")[1].split("&")[0]
+            fg_id=row['playerid']
         )
 
         if obj.count() > 0:
             obj = obj[0]
 
-            stats_dict["hits"] = to_int(h[18].text)
-            stats_dict["2b"] = to_int(h[20].text)
-            stats_dict["3b"] = to_int(h[21].text)
-            stats_dict["hr"] = to_int(h[22].text)
-            stats_dict["sb"] = to_int(h[26].text)
-            stats_dict["runs"] = to_int(h[23].text)
-            stats_dict["rbi"] = to_int(h[24].text)
-            stats_dict["wrc_plus"] = to_int(h[39].text)
-            stats_dict["plate_appearances"] = to_int(h[3].text)
-            stats_dict["ab"] = to_int(h[41].text)
+            stats_dict["hits"] = to_int(row['H'])
+            stats_dict["2b"] = to_int(row['2B'])
+            stats_dict["3b"] = to_int(row['3B'])
+            stats_dict["hr"] = to_int(row['HR'])
+            stats_dict["sb"] = to_int(row['SB'])
+            stats_dict["runs"] = to_int(row['R'])
+            stats_dict["rbi"] = to_int(row['RBI'])
+            stats_dict["wrc_plus"] = to_int(row['wRC+'])
+            stats_dict["plate_appearances"] = to_int(row['PA'])
+            stats_dict["ab"] = to_int(row['AB'])
 
-            stats_dict["avg"] = to_float(h[12].text)
-            stats_dict["xavg"] = to_float(h[13].text)
-            stats_dict["obp"] = to_float(h[30].text)
-            stats_dict["slg"] = to_float(h[14].text)
-            stats_dict["xslg"] = to_float(h[15].text)
-            stats_dict["babip"] = to_float(h[34].text)
-            stats_dict["iso"] = to_float(h[33].text)
-            stats_dict["k_pct"] = to_float(h[29].text.replace("%", ""))
-            stats_dict["bb_pct"] = to_float(h[28].text.replace("%", ""))
-            stats_dict["xwoba"] = to_float(h[17].text)
+            stats_dict["avg"] = to_float(row['AVG'])
+            stats_dict["xavg"] = to_float(row['xAVG'])
+            stats_dict["obp"] = to_float(row['OBP'])
+            stats_dict["slg"] = to_float(row['SLG'])
+            stats_dict["xslg"] = to_float(row['xSLG'])
+            stats_dict["babip"] = to_float(row['BABIP'])
+            stats_dict["iso"] = to_float(row['ISO'])
+            stats_dict["k_pct"] = to_float(row['K%']) * 100
+            stats_dict["bb_pct"] = to_float(row['BB%']) * 100
+            stats_dict["xwoba"] = to_float(row['xwOBA'])
 
             obj.set_stats(stats_dict)
+            obj.mlbam_id = row['xMLBAMID']
             obj.save()
 
             current_dict = stats_dict.copy()
@@ -748,12 +742,11 @@ def get_fg_major_pitcher_season(
 
     print(f"{timestamp}\t{season}\tget_fg_major_pitcher_season")
 
-    url = f"https://www.fangraphs.com/leaders.aspx?pos=all&stats=pit&lg=all&qual=2&type=c,4,5,11,7,8,13,-1,24,19,15,18,36,37,40,43,44,48,51,-1,240,-1,6,332,45,62,122,-1,59,17,301,302,303,117,118,119&season={season}&month=0&season1={season}&ind=0&team=0&rost=0&age=0&filter=&players=0&startdate={season}-01-01&enddate={season}-12-31&sort=8,d&page=1_5000"
+    url = f"https://www.fangraphs.com/api/leaders/major-league/data?age=0&pos=all&stats=pit&lg=all&qual=2&season={season}&season1={season}&startdate={season}-01-01&enddate={season}-12-31&month=0&team=0&pageitems=5000&pagenum=1&ind=0&rost=0&players=0&type=c%2C4%2C5%2C11%2C7%2C8%2C13%2C-1%2C24%2C19%2C15%2C18%2C36%2C37%2C40%2C43%2C44%2C48%2C51%2C-1%2C240%2C-1%2C6%2C332%2C45%2C62%2C122%2C-1%2C59%2C17%2C301%2C302%2C303%2C117%2C118%2C119&sortdir=desc&sortstat=SO"
 
-    rows = get_fg_results(url)
+    rows = requests.get(url).json()['data']
 
     for row in rows:
-        h = row.select("td")
         stats_dict = {}
 
         stats_dict["year"] = season
@@ -766,37 +759,42 @@ def get_fg_major_pitcher_season(
         stats_dict["slug"] = f"{stats_dict['year']}_{stats_dict['type']}"
 
         obj = models.Player.objects.filter(
-            fg_id=h[1].select("a")[0].attrs["href"].split("playerid=")[1].split("&")[0]
+            fg_id=row['playerid']
         )
 
         if obj.count() > 0:
             obj = obj[0]
 
-            stats_dict["g"] = to_int(h[6].text)
-            stats_dict["gs"] = to_int(h[7].text)
-            stats_dict["k"] = to_int(h[9].text)
-            stats_dict["bb"] = to_int(h[10].text)
-            stats_dict["ha"] = to_int(h[11].text)
-            stats_dict["hra"] = to_int(h[12].text)
-            stats_dict["ip"] = to_float(h[8].text.replace("%", ""))
-            stats_dict["k_9"] = to_float(h[13].text.replace("%", ""))
-            stats_dict["bb_9"] = to_float(h[14].text.replace("%", ""))
-            stats_dict["hr_9"] = to_float(h[15].text.replace("%", ""))
-            stats_dict["lob_pct"] = to_float(h[17].text.replace("%", ""))
-            stats_dict["gb_pct"] = to_float(h[18].text.replace("%", ""))
-            stats_dict["hr_fb"] = to_float(h[19].text.replace("%", ""))
-            stats_dict["era"] = to_float(h[21].text.replace("%", ""))
-            stats_dict["fip"] = to_float(h[23].text.replace("%", ""))
-            stats_dict["xfip"] = to_float(h[24].text.replace("%", ""))
-            stats_dict["siera"] = to_float(h[25].text.replace("%", ""))
-            stats_dict["er"] = to_float(h[27].text.replace("%", ""))
-            stats_dict["k_9+"] = to_int(h[28].text)
-            stats_dict["bb_9+"] = to_int(h[29].text)
-            stats_dict["era-"] = to_int(h[30].text)
-            stats_dict["fip-"] = to_int(h[31].text)
-            stats_dict["xfip-"] = to_int(h[32].text)
+            stats_dict["g"] = to_int(row['G'])
+            stats_dict["gs"] = to_int(row['GS'])
+            stats_dict["k"] = to_int(row['SO'])
+            stats_dict["bb"] = to_int(row['BB'])
+            stats_dict["ha"] = to_int(row['H'])
+            stats_dict["hra"] = to_int(row['HR'])
+            stats_dict["ip"] = to_float(row['IP'])
+            stats_dict["k_9"] = to_float(row['K/9'])
+            stats_dict["bb_9"] = to_float(row['BB/9'])
+            stats_dict["hr_9"] = to_float(row['HR/9'])
+            stats_dict["lob_pct"] = to_float(row['LOB%'])
+            stats_dict["gb_pct"] = to_float(row['GB%'])
+            stats_dict["hr_fb"] = to_float(row['HR/FB'])
+            stats_dict["era"] = to_float(row['ERA'])
+            stats_dict["fip"] = to_float(row['FIP'])
+            stats_dict["xfip"] = to_float(row['xFIP'])
+            stats_dict["siera"] = to_float(row['SIERA'])
+            stats_dict['xERA'] = to_float(row['xERA'])
+            stats_dict['sp_stuff'] = to_float(row['sp_stuff'])
+            stats_dict['sp_location'] = to_float(row['sp_location'])
+            stats_dict['sp_pitching'] = to_float(row['sp_pitching'])
+            stats_dict["er"] = to_float(row['ER'])
+            stats_dict["k_9+"] = to_int(row['K/9+'])
+            stats_dict["bb_9+"] = to_int(row['BB/9+'])
+            stats_dict["era-"] = to_int(row['ERA-'])
+            stats_dict["fip-"] = to_int(row['FIP-'])
+            stats_dict["xfip-"] = to_int(row['xFIP-'])
 
             obj.set_stats(stats_dict)
+            obj.mlbam_id = row['xMLBAMID']
             obj.save()
 
             current_dict = stats_dict.copy()
