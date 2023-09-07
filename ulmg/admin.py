@@ -203,6 +203,10 @@ class PlayerAdmin(JsonAdmin):
         "is_owned",
         "team",
         "level",
+        'mlbam_id',
+        'fg_id',
+        'baseballcube_id',
+        'perfectgame_id'
     ]
     list_filter = [
         "is_owned",
@@ -211,9 +215,9 @@ class PlayerAdmin(JsonAdmin):
         "position",
         "is_mlb40man",
     ]
-    list_editable = []
+    list_editable = ['mlbam_id','fg_id','baseballcube_id','perfectgame_id']
     readonly_fields = ["name", "age"]
-    search_fields = ["name"]
+    search_fields = ["name", 'mlbam_id', 'fg_id', 'baseballcube_id', 'perfectgame_id']
     autocomplete_fields = ["team"]
     fieldsets = (
         (
