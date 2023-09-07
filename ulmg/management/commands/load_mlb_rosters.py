@@ -17,6 +17,35 @@ class Command(BaseCommand):
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36 Edg/115.0.1901.203",
     }
 
+    def fix_fg_dupes(self):
+        d1 = (
+            models.Player.objects.exclude(fg_id__isnull=True).values('fg_id')
+            .annotate(count=Count('id'))
+            .values('fg_id')
+            .order_by()
+            .filter(count__gt=1)
+        )
+
+        print(f"initial duplicates: {d1.count()}")
+        for d in d1:
+            print(d)
+            objs = models.Player.objects.filter(fg_id=d['fg_id'])
+            for o in objs:
+                if not o.team:
+                    o.delete()
+
+        d2 = (
+            models.Player.objects.exclude(fg_id__isnull=True).values('fg_id')
+            .annotate(count=Count('id'))
+            .values('fg_id')
+            .order_by()
+            .filter(count__gt=1)
+        ) 
+
+        print(f"remaining duplicates: {d2.count()}")
+        for d in d2:
+            print(d)
+
     def fix_mlbam_dupes(self):
         d1 = (
             models.Player.objects.exclude(mlbam_id__isnull=True).values('mlbam_id')
@@ -222,6 +251,7 @@ class Command(BaseCommand):
         self.DSL_URL = "https://www.milb.com/dominican-summer"
 
         self.fix_mlbam_dupes()
+        self.fix_fg_dupes()
         self.get_cpx_rosters()
         self.get_milb_rosters()
         self.get_mlb_rosters()
