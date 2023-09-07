@@ -386,6 +386,22 @@ def match_ids_from_rosters():
 
                 obj = None
                 fg_id = None
+                mlbam_id = None
+
+
+                # mlbam has a lot of different ID fields
+                # let's try to get one
+                if player.get('mlbamid'):
+                    mlbam_id = player['mlbamid']
+
+                if player.get('mlbamid1') and not mlbam_id:
+                    mlbam_id = player['mlbamid1']
+
+                if player.get('mlbamid2') and not mlbam_id:
+                    mlbam_id = player['mlbamid2']
+
+                if player.get('minorbamid') and not mlbam_id:
+                    mlbam_id = player['minorbamid']
 
                 # fg has a lot of different ID fields
                 # let's try and get one
@@ -409,7 +425,6 @@ def match_ids_from_rosters():
                 if player.get("minormasterid", None) and fg_id:
                     obj = models.Player.objects.filter(fg_id=player["minormasterid"])
 
-
                     # only do this for players whose fg_id is now different from their minormasterid
                     if player["minormasterid"] != fg_id:
                         if len(obj) == 1:
@@ -420,7 +435,7 @@ def match_ids_from_rosters():
 
                 # player has an fg_id but no mlbam_id yet
                 # we occasionally will have players who have been loaded via fg but no mlbam_id
-                if player.get("mlbamid", None) and fg_id:
+                if mlbam_id and fg_id:
                     obj = models.Player.objects.filter(fg_id=fg_id)
 
                     if len(obj) == 1:
@@ -428,7 +443,7 @@ def match_ids_from_rosters():
 
                         # only do this for players missing an mlbam_id
                         if not obj.mlbam_id:
-                            obj.mlbam_id = player['mlbamid']
+                            obj.mlbam_id = mlbam_id
                             obj.save()
                             print(f"mlbam_id {obj}")
 
@@ -437,8 +452,8 @@ def match_ids_from_rosters():
                 # since we load players from MLB.com rosters
                 # we will occasionally have debutees show up with mlbam_ids but no fg_id
                 # this lets us get stats for them from fg
-                if player.get("mlbamid", None) and fg_id:
-                    obj = models.Player.objects.filter(mlbam_id=player['mlbamid'])
+                if mlbam_id and fg_id:
+                    obj = models.Player.objects.filter(mlbam_id=mlbam_id)
 
                     if len(obj) == 1:
                         obj = obj[0]
