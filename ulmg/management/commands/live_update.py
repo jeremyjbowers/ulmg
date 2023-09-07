@@ -32,8 +32,8 @@ class Command(BaseCommand):
         print(f"Getting roster files")
         utils.get_fg_roster_files()
 
-        print(f"Importing players from rosters")
-        utils.import_players_from_rosters()
+        print(f"Matching IDs from rosters")
+        utils.match_ids_from_rosters()
 
         print(f"Parsing roster info")
         utils.parse_roster_info()
@@ -46,6 +46,9 @@ class Command(BaseCommand):
 
         print(f"Get MLB pitchers")
         utils.get_fg_major_pitcher_season(**script_info)
+
+        print(f"Load MLB rosters")
+        call_command('load_mlb_rosters')
 
         # print(f'Aggregate team stats')
         # utils.aggregate_team_stats_season(**script_info)

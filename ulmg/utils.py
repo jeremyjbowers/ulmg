@@ -361,6 +361,162 @@ def get_sheet(sheet_id, sheet_range):
     return []
 
 
+def get_fg_roster_files():
+    teams = settings.ROSTER_TEAM_IDS
+
+    for team_id, team_abbrev, team_name in teams:
+
+        url = f"https://cdn.fangraphs.com/api/depth-charts/roster?teamid={team_id}"
+        roster = requests.get(url, verify=False).json()
+
+        with open(f"data/rosters/{team_abbrev}_roster.json", "w") as writefile:
+            writefile.write(json.dumps(roster))
+
+
+def match_ids_from_rosters():
+    teams = settings.ROSTER_TEAM_IDS
+
+    for team_id, team_abbrev, team_name in teams:
+
+        with open(f"data/rosters/{team_abbrev}_roster.json", "r") as readfile:
+
+            roster = json.loads(readfile.read())
+
+            for player in roster:
+
+                obj = None
+                fg_id = None
+
+                # fg has a lot of different ID fields
+                # let's try and get one
+                if player.get("playerid"):
+                    fg_id = player["playerid"]
+
+                if player.get("playerid1") and not fg_id:
+                    fg_id = player["playerid1"]
+
+                if player.get("playerid2") and not fg_id:
+                    fg_id = player["playerid2"]
+
+                if player.get("oPlayerId") and not fg_id:
+                    fg_id = player["oPlayerId"]
+
+
+                # player has a minormasterid in the fg_id and needs updating
+                # a player's initial fg_id is a minormaster id like sa12345
+                # but once they get to the majors, they get a new id like 987654
+                # so we need a way to catch these changes and update the old fg_id
+                if player.get("minormasterid", None) and fg_id:
+                    obj = models.Player.objects.filter(fg_id=player["minormasterid"])
+
+
+                    # only do this for players whose fg_id is now different from their minormasterid
+                    if player["minormasterid"] != fg_id:
+                        if len(obj) == 1:
+                            obj = obj[0]
+                            obj.fg_id = fg_id
+                            obj.save()
+                            print(f"minormasterid {obj}")
+
+                # player has an fg_id but no mlbam_id yet
+                # we occasionally will have players who have been loaded via fg but no mlbam_id
+                if player.get("mlbamid", None) and fg_id:
+                    obj = models.Player.objects.filter(fg_id=fg_id)
+
+                    if len(obj) == 1:
+                        obj = obj[0]
+
+                        # only do this for players missing an mlbam_id
+                        if not obj.mlbam_id:
+                            obj.mlbam_id = player['mlbamid']
+                            obj.save()
+                            print(f"mlbam_id {obj}")
+
+
+                # player has an mlbamid but no fg_id yet
+                # since we load players from MLB.com rosters
+                # we will occasionally have debutees show up with mlbam_ids but no fg_id
+                # this lets us get stats for them from fg
+                if player.get("mlbamid", None) and fg_id:
+                    obj = models.Player.objects.filter(mlbam_id=player['mlbamid'])
+
+                    if len(obj) == 1:
+                        obj = obj[0]
+
+                        # only do this for players missing an fg_id
+                        if not obj.fg_id:
+                            obj.fg_id = fg_id
+                            obj.save()
+                            print(f"fg_id {obj}")
+
+
+def parse_roster_info():
+    teams = settings.ROSTER_TEAM_IDS
+    for team_id, team_abbrev, team_name in teams:
+        with open(f"data/rosters/{team_abbrev}_roster.json", "r") as readfile:
+            roster = json.loads(readfile.read())
+            for player in roster:
+                p = None
+                try:
+                    try:
+                        p = models.Player.objects.get(fg_id=player["playerid1"])
+                    except:
+                        try:
+                            p = models.Player.objects.get(fg_id=player["minormasterid"])
+                        except:
+                            pass
+
+                    if p:
+                        p.is_injured = False
+                        p.is_mlb = False
+                        p.is_ls_mlb = False
+                        p.role = None
+                        p.is_starter = False
+                        p.is_bench = False
+                        p.injury_description = None
+                        p.is_mlb_40man = False
+
+                        if player.get("mlevel", None):
+                            p.role = player["mlevel"]
+                        
+                        elif player.get("role", None):
+                            if player["role"] != "":
+                                p.role = player["role"]
+
+                        if p.role == "MLB":
+                            p.ls_is_mlb = True
+                            p.is_mlb = True
+
+
+                        if player["type"] == "mlb-bp":
+                            p.is_bullpen = True
+
+                        if player["type"] == "mlb-sp":
+                            p.is_starter = True
+
+                        if player["type"] == "mlb-bn":
+                            p.is_bench = True
+
+                        if player["type"] == "mlb-sl":
+                            p.is_starter = True
+
+                        if "il" in player["type"]:
+                            p.is_injured = True
+
+                        p.injury_description = player.get("injurynotes", None)
+                        p.mlbam_id = player.get("mlbamid1", None)
+                        p.mlb_team = team_name
+                        p.mlb_team_abbr = team_abbrev
+
+                        if player["roster40"] == "Y":
+                            p.is_mlb40man = True
+
+                        p.save()
+
+                except Exception as e:
+                    prto_int(f"error loading {player['player']}: {e}")
+
+
 def get_fg_minor_season(season=None, timestamp=None, scriptname=None, hostname=None):
 
     if not hostname:
@@ -457,202 +613,7 @@ def get_fg_minor_season(season=None, timestamp=None, scriptname=None, hostname=N
                 obj.save()
 
 
-def get_fg_roster_files():
-    teams = settings.ROSTER_TEAM_IDS
-
-    for team_id, team_abbrev, team_name in teams:
-
-        url = f"https://cdn.fangraphs.com/api/depth-charts/roster?teamid={team_id}"
-        roster = requests.get(url, verify=False).json()
-
-        with open(f"data/rosters/{team_abbrev}_roster.json", "w") as writefile:
-            writefile.write(json.dumps(roster))
-
-
-def import_players_from_rosters():
-    teams = settings.ROSTER_TEAM_IDS
-
-    for team_id, team_abbrev, team_name in teams:
-
-        with open(f"data/rosters/{team_abbrev}_roster.json", "r") as readfile:
-
-            roster = json.loads(readfile.read())
-
-            for player in roster:
-
-                obj = None
-
-                fg_id = None
-
-                if player.get("playerid"):
-                    fg_id = player["playerid"]
-
-                if player.get("playerid1") and not fg_id:
-                    fg_id = player["playerid1"]
-
-                if player.get("playerid2") and not fg_id:
-                    fg_id = player["playerid2"]
-
-                if player.get("oPlayerId") and not fg_id:
-                    fg_id = player["oPlayerId"]
-
-                # player has an fg_id but missing other IDs
-                if fg_id:
-                    obj = models.Player.objects.filter(fg_id=fg_id)
-
-                    if len(obj) == 1:
-                        obj = obj[0]
-
-                        if player.get("mlbamid", None):
-                            obj.mlbam_id = player["mlbamid"]
-
-                        obj.save()
-
-                        continue
-
-                # player has a minormasterid in the fg_id and needs updating
-                if player.get("minormasterid", None) and fg_id:
-                    obj = models.Player.objects.filter(fg_id=player["minormasterid"])
-
-                    if len(obj) == 1:
-                        obj = obj[0]
-
-                        obj.fg_id = fg_id
-
-                        if player.get("mlbamid", None):
-                            obj.mlbam_id = player["mlbamid"]
-
-                        obj.save()
-
-                        continue
-
-                # player has no fg_id, but we found one with a name match
-                pos = normalize_pos(player["position"])
-                obj = fuzzy_find_player(player["player"], score=0.7)
-                if len(obj) == 1:
-                    obj = obj[0]
-
-                    if not obj.fg_id:
-                        if player.get("minormasterid"):
-                            obj.fg_id = player["minormasterid"]
-
-                        if fg_id:
-                            obj.fg_id = fg_id
-
-                        if player.get("mlbamid"):
-                            obj.mlbam_id = player["mlbamid"]
-
-                        obj.save()
-
-                # we cannot find this name in our db
-                elif len(obj) == 0:
-                    age = None
-                    try:
-                        age = int(player["age"].split(".")[0])
-                    except:
-                        pass
-
-                    obj = models.Player(
-                        name=player["player"],
-                        position=pos,
-                        level="B",
-                        raw_age=age,
-                        mlb_team_abbr=team_abbrev,
-                    )
-
-                    if player.get("minormasterid"):
-                        obj.fg_id = player["minormasterid"]
-
-                    if fg_id:
-                        obj.fg_id = fg_id
-
-                    if player.get("mlbamid"):
-                        obj.mlbam_id = player["mlbamid"]
-
-                    if not obj.fg_id:
-                        pass
-                        # print(f'~ {obj}')
-
-                    else:
-                        print(f"+ {obj}")
-                        obj.save()
-
-                # there are two or more players with this name
-                elif len(obj) > 1:
-                    print(f"2x {obj}")
-
-
-def parse_roster_info():
-
-    teams = settings.ROSTER_TEAM_IDS
-    for team_id, team_abbrev, team_name in teams:
-        with open(f"data/rosters/{team_abbrev}_roster.json", "r") as readfile:
-            roster = json.loads(readfile.read())
-            for player in roster:
-                p = None
-                try:
-                    try:
-                        p = models.Player.objects.get(fg_id=player["playerid1"])
-                    except:
-                        try:
-                            p = models.Player.objects.get(fg_id=player["minormasterid"])
-                        except:
-                            pass
-
-                    if p:
-                        p.is_injured = False
-                        p.is_mlb = False
-                        p.is_ls_mlb = False
-                        p.role = None
-                        p.is_starter = False
-                        p.is_bench = False
-                        p.injury_description = None
-                        p.is_mlb_40man = False
-
-                        if player.get("mlevel", None):
-                            p.role = player["mlevel"]
-                        
-                        elif player.get("role", None):
-                            if player["role"] != "":
-                                p.role = player["role"]
-
-                        if p.role == "MLB":
-                            p.ls_is_mlb = True
-                            p.is_mlb = True
-
-
-                        if player["type"] == "mlb-bp":
-                            p.is_bullpen = True
-
-                        if player["type"] == "mlb-sp":
-                            p.is_starter = True
-
-                        if player["type"] == "mlb-bn":
-                            p.is_bench = True
-
-                        if player["type"] == "mlb-sl":
-                            p.is_starter = True
-
-                        if "il" in player["type"]:
-                            p.is_injured = True
-
-                        p.injury_description = player.get("injurynotes", None)
-                        p.mlbam_id = player.get("mlbamid1", None)
-                        p.mlb_team = team_name
-                        p.mlb_team_abbr = team_abbrev
-
-                        if player["roster40"] == "Y":
-                            p.is_mlb40man = True
-
-                        p.save()
-
-                except Exception as e:
-                    prto_int(f"error loading {player['player']}: {e}")
-
-
-def get_fg_major_hitter_season(
-    season=None, timestamp=None, scriptname=None, hostname=None
-):
+def get_fg_major_hitter_season(season=None, timestamp=None, scriptname=None, hostname=None):
 
     if not hostname:
         hostname = get_hostname()
@@ -709,8 +670,8 @@ def get_fg_major_hitter_season(
             stats_dict["xslg"] = to_float(row['xSLG'])
             stats_dict["babip"] = to_float(row['BABIP'])
             stats_dict["iso"] = to_float(row['ISO'])
-            stats_dict["k_pct"] = to_float(row['K%']) * 100
-            stats_dict["bb_pct"] = to_float(row['BB%']) * 100
+            stats_dict["k_pct"] = to_float(row['K%'])
+            stats_dict["bb_pct"] = to_float(row['BB%'])
             stats_dict["xwoba"] = to_float(row['xwOBA'])
 
             obj.set_stats(stats_dict)
@@ -724,9 +685,7 @@ def get_fg_major_hitter_season(
             obj.save()
 
 
-def get_fg_major_pitcher_season(
-    season=None, timestamp=None, scriptname=None, hostname=None
-):
+def get_fg_major_pitcher_season(season=None, timestamp=None, scriptname=None, hostname=None):
 
     if not hostname:
         hostname = get_hostname()

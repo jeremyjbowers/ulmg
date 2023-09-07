@@ -222,11 +222,11 @@ class PlayerAdmin(JsonAdmin):
                 "fields": (
                     "name",
                     ("first_name", "last_name"),
-                    ("birthdate", "birthdate_qa", "raw_age"),
+                    ("birthdate", "raw_age"),
                     "position",
                     "level",
                     "team",
-                    ("mlb_team", "mlb_team_abbr"),
+                    ("mlb_org"),
                 ),
             },
         ),
@@ -234,11 +234,8 @@ class PlayerAdmin(JsonAdmin):
             "External",
             {
                 "fields": (
-                    ("fg_id", "fg_url"),
-                    ("bref_id", "bref_url"),
-                    ("ba_id", "ba_url"),
-                    "mlbam_id",
-                    ("mlb_dotcom", "mlb_dotcom_url"),
+                    ("fg_id", "mlbam_id",),
+                    ("baseballcube_id", "perfectgame_id")
                 )
             },
         ),

@@ -261,6 +261,8 @@ class Player(BaseModel):
     bref_id = models.CharField(max_length=255, blank=True, null=True)
     fg_id = models.CharField(max_length=255, blank=True, null=True)
     fantrax_id = models.CharField(max_length=255, blank=True, null=True)
+    baseballcube_id = models.CharField(max_length=255, blank=True, null=True)
+    perfectgame_id = models.CharField(max_length=255, blank=True, null=True)
 
     mlbam_checked = models.BooleanField(default=False)
 
@@ -284,12 +286,12 @@ class Player(BaseModel):
         max_length=255, blank=True, null=True, choices=OTHER_PRO_LEAGUES
     )
 
-    # ROSTERS
+    # ULMG ROSTERS
     is_mlb_roster = models.BooleanField(default=False)
     is_aaa_roster = models.BooleanField(default=False)
     is_35man_roster = models.BooleanField(default=False)
 
-    # PROTECTION
+    # ULMG PROTECTION
     is_reserve = models.BooleanField(default=False)
     is_1h_p = models.BooleanField(default=False)
     is_1h_c = models.BooleanField(default=False)
@@ -318,8 +320,9 @@ class Player(BaseModel):
     is_injured = models.BooleanField(default=False)
     injury_description = models.CharField(max_length=255, null=True, blank=True)
     role = models.CharField(max_length=255, null=True, blank=True)
-    mlb_team = models.CharField(max_length=255, null=True, blank=True)
-    mlb_team_abbr = models.CharField(max_length=255, null=True, blank=True)
+    roster_status = models.CharField(max_length=255, null=True, blank=True)
+    mlb_org = models.CharField(max_length=255, null=True, blank=True)
+    mlb_org_abbr = models.CharField(max_length=255, null=True, blank=True)
     is_mlb40man = models.BooleanField(default=False)
     is_bullpen = models.BooleanField(default=False)
 
