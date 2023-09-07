@@ -150,6 +150,49 @@ ROSTER_TEAM_IDS = [
     ("30", "SFG", "San Francisco Giants"),
 ]
 
+MLB_URL_TO_ORG_NAME = {
+    "orioles": "BAL",
+    "whitesox": "CWS",
+    "astros": "HOU",
+    "redsox": "BOS",
+    "guardians": "CLE",
+    "indians": "CLE",
+    "angels": "LAA",
+    "athletics": "OAK",
+    "yankees": "NYY",
+    "tigers": "DET",
+    "rays": "TB",
+    "royals": "KC",
+    "mariners": "SEA",
+    "bluejays": "TOR",
+    "twins": "MIN",
+    "rangers": "TEX",
+    "braves": "ATL",
+    "cubs": "CHC",
+    "dbacks": "AZ",
+    "marlins": "MIA",
+    "reds": "CIN",
+    "rockies": "COL",
+    "mets": "NYM",
+    "brewers": "MIL",
+    "dodgers": "LAD",
+    "phillies": "PHI",
+    "pirates": "PIT",
+    "padres": "SD",
+    "nationals": "WSH",
+    "cardinals": "STL",
+    "giants": "SF"
+}
+
+LEVELS = [
+    (16,"R"),
+    (14,"A"),
+    (13,"A+"),
+    (12,'AA'),
+    (11,"AAA"),
+    (1,"MLB"),
+]
+
 CSV_COLUMNS = [
     "last_name",
     "first_name",
