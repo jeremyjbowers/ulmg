@@ -129,7 +129,7 @@ def send_email(from_email=None, to_emails=[], text=None, subject=None):
 
 
 def fuzzy_find_prospectrating(
-    name_fragment, score=0.7, position=None, mlb_team_abbr=None
+    name_fragment, score=0.7, position=None, mlb_org=None
 ):
 
     output = []
@@ -139,8 +139,8 @@ def fuzzy_find_prospectrating(
     if position:
         players = players.filter(position=position)
 
-    if mlb_team_abbr:
-        players = players.filter(mlb_team_abbr=mlb_team_abbr)
+    if mlb_org:
+        players = players.filter(mlb_org=mlb_org)
 
     players = players.annotate(similarity=TrigramSimilarity("name", name_fragment))
     players = players.filter(similarity__gt=score)
@@ -157,7 +157,7 @@ def fuzzy_find_prospectrating(
 
 
 def strat_find_player(
-    first_initial, last_name, hitter=True, mlb_team_abbr=None, ulmg_id=None
+    first_initial, last_name, hitter=True, mlb_org=None, ulmg_id=None
 ):
     if ulmg_id:
         return models.Player.objects.filter(id=ulmg_id)[0]
@@ -177,8 +177,8 @@ def strat_find_player(
     players = players.order_by("-similarity")
 
     if len(players) > 1:
-        if mlb_team_abbr:
-            players = players.filter(mlb_team_abbr=mlb_team_abbr)
+        if mlb_org:
+            players = players.filter(mlb_org=mlb_org)
 
     if len(players) == 0:
         return None
@@ -186,15 +186,15 @@ def strat_find_player(
     return players[0]
 
 
-def fuzzy_find_player(name_fragment, score=0.7, position=None, mlb_team_abbr=None):
+def fuzzy_find_player(name_fragment, score=0.7, position=None, mlb_org=None):
 
     players = models.Player.objects
 
     if position:
         players = players.filter(position=position)
 
-    if mlb_team_abbr:
-        players = players.filter(mlb_team_abbr=mlb_team_abbr)
+    if mlb_org:
+        players = players.filter(mlb_org=mlb_org)
 
     players = players.annotate(similarity=TrigramSimilarity("name", name_fragment))
     players = players.filter(similarity__gt=score)
@@ -521,7 +521,7 @@ def parse_roster_info():
                         p.injury_description = player.get("injurynotes", None)
                         p.mlbam_id = player.get("mlbamid1", None)
                         p.mlb_team = team_name
-                        p.mlb_team_abbr = team_abbrev
+                        p.mlb_org = team_abbrev
 
                         if player["roster40"] == "Y":
                             p.is_mlb40man = True

@@ -76,8 +76,8 @@ class Command(BaseCommand):
         except Exception as e:
             print(f"{e}\n{p}")
 
-        obj.mlb_team = self.team_lookup[p["Org"]]
-        obj.mlb_team_abbr = p["Org"]
+        obj.mlb_org = self.team_lookup[p["Org"]]
+        obj.mlb_org_abbr = p["Org"]
         obj.save()
 
     def handle(self, *args, **options):

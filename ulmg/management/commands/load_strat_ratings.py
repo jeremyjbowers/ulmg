@@ -31,7 +31,7 @@ class Command(BaseCommand):
         first = name_frag[1].strip().replace("*", "").replace("+", "")
 
         return utils.strat_find_player(
-            first, last, hitter=hitter, mlb_team_abbr=player["tm"]
+            first, last, hitter=hitter, mlb_org=player["tm"]
         )
 
     def load_hitters(self, save=True):

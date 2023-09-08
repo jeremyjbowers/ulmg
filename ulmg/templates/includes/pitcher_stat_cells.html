@@ -1,5 +1,5 @@
 {% load ulmg_tags %}
-<td>{{ p.mlb_team_abbr|default_if_none:"-" }}</td>
+<td>{{ p.mlb_org|default_if_none:"-" }}</td>
 
 <td data-value="{% if p.stats.current.year == 2023 %}{{ p.stats.current.level|default_if_none:"-999" }}{% else %}-999{% endif %}">
     {% if p.stats.current.ip > 0 and p.stats.current.year == 2023 %}{{ p.stats.current.level }}{% else %}-{% endif %}

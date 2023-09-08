@@ -49,7 +49,7 @@
                 {% include "includes/my/player_name.html" %}
                 <td data-value="{{ p.player.position }}">{{ p.player.position }}</td>
                 <td data-value="{% if p.player.team %}{{ p.player.team.abbreviation }}{% else %}zzz{% endif %}">{% if p.player.team %} <a href="/teams/{{ p.player.team.abbreviation }}/">{{ p.player.team.abbreviation }}</a>{% endif %}</td>
-                <td data-value="{{ p.avg|default_if_none:"999" }}">{{ p.player.mlb_team_abbr }}</td>
+                <td data-value="{{ p.avg|default_if_none:"999" }}">{{ p.player.mlb_org }}</td>
                 <td data-value="{{ p.avg|default_if_none:"999" }}">{{ p.avg }}</td>
                 <td data-value="{{ p.ba|default_if_none:"999" }}">{{ p.ba|default_if_none:"-" }}</td>
                 <td data-value="{{ p.bp|default_if_none:"999" }}">{{ p.bp|default_if_none:"-" }}</td>

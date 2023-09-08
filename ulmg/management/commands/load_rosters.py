@@ -324,8 +324,8 @@ class Command(BaseCommand):
         is_injured = models.BooleanField(default=False)
         injury_description = models.CharField(max_length=255, null=True)
         role = models.CharField(max_length=255, null=True)
-        mlb_team = models.CharField(max_length=255, null=True)
-        mlb_team_abbr = models.CharField(max_length=255, null=True)
+        mlb_org = models.CharField(max_length=255, null=True)
+        mlb_org_abbr = models.CharField(max_length=255, null=True)
         """
 
         models.Player.objects.update(
@@ -337,8 +337,8 @@ class Command(BaseCommand):
             is_bullpen=False,
             injury_description="",
             role="",
-            mlb_team="",
-            mlb_team_abbr="",
+            mlb_org="",
+            mlb_org_abbr="",
         )
 
         teams = settings.ROSTER_TEAM_IDS
@@ -387,8 +387,8 @@ class Command(BaseCommand):
 
                             p.injury_description = player.get("injurynotes", None)
                             p.mlbam_id = player.get("mlbamid1", None)
-                            p.mlb_team = team_name
-                            p.mlb_team_abbr = team_abbrev
+                            p.mlb_org = team_name
+                            p.mlb_org_abbr = team_abbrev
 
                             if player["roster40"] == "Y":
                                 p.is_mlb40man = True
