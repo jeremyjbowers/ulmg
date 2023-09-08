@@ -6,7 +6,7 @@
     {% include "includes/my/player_name.html" %}
     <td>{{ p.player.position|default_if_none:"-" }}</td>
     <td>{{ p.player.age|default_if_none:"-" }}</td>
-    <td>{% if p.player.mlb_team_abbr %}{{ p.player.mlb_team_abbr|default_if_none:"-" }}{% else %}-{% endif %}</td>
+    <td>{% if p.player.mlb_org %}{{ p.player.mlb_org|default_if_none:"-" }}{% else %}-{% endif %}</td>
     <td>{% if p.player.stats.current.plate_appearances > 0 and p.player.stats.current.year == 2023 %}{{ p.player.stats.current.level }}{% else %}-{% endif %}</td>
     <td>
         {% if p.player.stats.current.plate_appearances > 0 and p.player.stats.current.year == 2023 %}{{ p.player.stats.current.plate_appearances|default_if_none:"-" }}{% else %}-{% endif %}

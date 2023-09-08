@@ -1,4 +1,4 @@
-<td>{{ p.mlb_team_abbr|default_if_none:"-" }}</td>
+<td>{{ p.mlb_org|default_if_none:"-" }}</td>
 <td>{% if p.is_injured %}🚫{% endif %}</td>
 <td>
     {{ p.role }}

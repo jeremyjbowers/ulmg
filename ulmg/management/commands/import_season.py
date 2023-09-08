@@ -31,8 +31,8 @@ class Command(BaseCommand):
         obj.position = utils.normalize_pos(p["Pos"])
         obj.is_mlb = True
         obj.is_carded = True
-        obj.mlb_team = self.team_lookup[p["Team"]]
-        obj.mlb_team_abbr = p["Team"]
+        obj.mlb_org = self.team_lookup[p["Team"]]
+        obj.mlb_org_abbr = p["Team"]
         obj.save()
 
     def handle(self, *args, **options):

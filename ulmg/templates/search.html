@@ -65,7 +65,7 @@
                             {% if p.fg_url %}<a class="has-text-weight-light" target="_blank" href="{{ p.fg_url }}">FG &Gt;</a>{% endif %}
                             {% if p.mlbam_id %}<a class="has-text-weight-light" target="_blank" href="https://baseballsavant.mlb.com/savant-player/{{ p.mlbam_id }}">MLB &Gt;</a>{% endif %}
                         </td> -->
-                        <td>{% if p.mlb_team_abbr %}{{ p.mlb_team_abbr|default_if_none:"-" }}{% else %}-{% endif %}</td>
+                        <td>{% if p.mlb_org %}{{ p.mlb_org|default_if_none:"-" }}{% else %}-{% endif %}</td>
                         <td data-value="{{ p.team|default_if_none:"" }}">{% if p.team %}<a href="/teams/{{ p.team.abbreviation }}/">{% endif %}{{ p.team|default_if_none:"-" }}{% if p.team %}</a>{% endif %}</td>
                         <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
                         <td data-value="{{ p.level|default_if_none:"Z" }}<">{{ p.level|default_if_none:"" }}</td>
@@ -99,7 +99,7 @@
                             {% if p.fg_url %}<a class="has-text-weight-light" target="_blank" href="{{ p.fg_url }}">FG &Gt;</a>{% endif %}
                             {% if p.mlbam_id %}<a class="has-text-weight-light" target="_blank" href="https://baseballsavant.mlb.com/savant-player/{{ p.mlbam_id }}">MLB &Gt;</a>{% endif %}
                         </td> -->
-                        <td>{% if p.mlb_team_abbr %}{{ p.mlb_team_abbr|default_if_none:"-" }}{% else %}-{% endif %}</td>
+                        <td>{% if p.mlb_org %}{{ p.mlb_org|default_if_none:"-" }}{% else %}-{% endif %}</td>
                         <td data-value="{{ p.team|default_if_none:"" }}">{% if p.team %}<a href="/teams/{{ p.team.abbreviation }}/">{% endif %}{{ p.team|default_if_none:"-" }}{% if p.team %}</a>{% endif %}</td>
                         <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
                         <td data-value="{{ p.level|default_if_none:"Z" }}<">{{ p.level|default_if_none:"" }}</td>

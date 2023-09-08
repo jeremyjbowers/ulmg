@@ -52,8 +52,8 @@ class Command(BaseCommand):
                     p = results[0]
                     obj.mlbam_id = p['id']
                     obj.birthdate = p['birthDate']
-                    obj.mlb_team = p['currentTeam']['name']
-                    obj.mlb_team_abbr = p['currentTeam']['abbreviation']
+                    obj.mlb_org = p['currentTeam']['name']
+                    obj.mlb_org_abbr = p['currentTeam']['abbreviation']
                     print(f"++ {obj}")
                 else:
                     print(f"   {obj}")

@@ -76,7 +76,7 @@
                 <tr class="{% if p.player.is_prospect %}{% if not p.player.stats.current.is_mlb %} minors{% endif %}{% endif %}{% if p.player.stats.current.is_mlb == False and p.player.is_amateur == True %} amateur{% endif %}">
                 {% include "includes/my/player_name.html" %}
                 <td><a href="/teams/{{ p.player.team.abbreviation|lower }}/">{{ p.player.team }}</a></td>
-                <td>{{ p.player.mlb_team_abbr|default_if_none:"-" }}</td>
+                <td>{{ p.player.mlb_org|default_if_none:"-" }}</td>
                 
                 <td style="max-width:75px;">{% if p.player.defense_display %}{{ p.player.defense_display }}{% else %}{{ p.player.position }}{% endif %}</td>
                 
