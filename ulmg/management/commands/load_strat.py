@@ -253,9 +253,9 @@ class Command(BaseCommand):
 
             # If there's two players with this score, try to narrow by team.
             if len(obj) > 1:
-                mlb_team_abbr = self.team_lookup.get(row["TM"], None)
+                mlb_org = self.team_lookup.get(row["TM"], None)
                 obj = utils.fuzzy_find_player(
-                    f"{row['FIRST']} {row['LAST']}", mlb_team_abbr=mlb_team_abbr
+                    f"{row['FIRST']} {row['LAST']}", mlb_org=mlb_org
                 )
 
                 # If we got a match with the team, save and continue.
@@ -297,9 +297,9 @@ class Command(BaseCommand):
 
             # If there's two players with this score, try to narrow by team.
             if len(obj) > 1:
-                mlb_team_abbr = self.team_lookup.get(row["TM"], None)
+                mlb_org = self.team_lookup.get(row["TM"], None)
                 obj = utils.fuzzy_find_player(
-                    f"{row['FIRST']} {row['LAST']}", mlb_team_abbr=mlb_team_abbr
+                    f"{row['FIRST']} {row['LAST']}", mlb_org=mlb_org
                 )
 
                 # If we got a match with the team, save and continue.
