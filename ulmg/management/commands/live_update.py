@@ -41,21 +41,20 @@ class Command(BaseCommand):
 
         # use roster files to update players who have fg_ids with mlb_ids
         print('LIVE: Crosswalk FGIDs to MLBIDs')
-        call_command('live_crosswalk_fgids_to_mlbids')
-
+        call_command('live_crosswalk_ids')
         call_command('fix_dupes')
 
         # # use mlb depth charts to create new players
         # print('LIVE: Load players from MLB depth charts')
-        # call_command('live_load_players_from_mlb_depthcharts')
+        call_command('live_load_players_from_mlb_depthcharts')
 
         # # use mlb depth charts to update player status
         # print('LIVE: Update status from MLB depth charts')
-        # call_command('live_update_status_from_mlb_depthcharts')
+        call_command('live_update_status_from_mlb_depthcharts')
 
         # # use roster files to update players who have mlb_ids with fg_ids
         # print('LIVE: Crosswalk MLBIDs to FGIDs')
-        # call_command('live_crosswalk_mlbids_to_fgids')
+        call_command('live_crosswalk_ids')
 
         # # use roster files to update all player status
         # print('LIVE: Update status from FG rosters')
