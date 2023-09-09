@@ -17,38 +17,50 @@ from ulmg import models, utils
 
 
 class Command(BaseCommand):
+    def add_arguments(self, parser):
+        parser.add_argument("--cached", action="store_true", help="Use cached data instead of downloading new data")
+
     def handle(self, *args, **options):
         requests.packages.urllib3.disable_warnings()
 
         season = utils.get_current_season()
 
-        script_info = {
-            "season": season,
-            "timestamp": utils.generate_timestamp(),
-            "hostname": utils.get_hostname(),
-            "scriptname": utils.get_scriptname(),
-        }
+        if not options['cached']:
 
-        print(f"Getting roster files")
-        utils.get_fg_roster_files()
+            # download roster files
+            print('LIVE: Download FG rosters')
+            call_command('live_download_fg_rosters')
 
-        print(f"Matching IDs from rosters")
-        utils.match_ids_from_rosters()
+            # download mlb depth charts
+            print('LIVE: Download MLB depth charts')
+            call_command('live_download_mlb_depthcharts')
 
-        print(f"Parsing roster info")
-        utils.parse_roster_info()
+            # download fg stats
+            print('LIVE: Download FG stats')
+            call_command('live_download_fg_stats')
 
-        print(f"Get minor season data")
-        utils.get_fg_minor_season(**script_info)
+        # use roster files to update players who have fg_ids with mlb_ids
+        print('LIVE: Crosswalk FGIDs to MLBIDs')
+        call_command('live_crosswalk_fgids_to_mlbids')
 
-        print(f"Get MLB hitters")
-        utils.get_fg_major_hitter_season(**script_info)
+        call_command('fix_dupes')
 
-        print(f"Get MLB pitchers")
-        utils.get_fg_major_pitcher_season(**script_info)
+        # # use mlb depth charts to create new players
+        # print('LIVE: Load players from MLB depth charts')
+        # call_command('live_load_players_from_mlb_depthcharts')
 
-        print(f"Load MLB rosters")
-        call_command('load_mlb_rosters')
+        # # use mlb depth charts to update player status
+        # print('LIVE: Update status from MLB depth charts')
+        # call_command('live_update_status_from_mlb_depthcharts')
 
-        # print(f'Aggregate team stats')
-        # utils.aggregate_team_stats_season(**script_info)
+        # # use roster files to update players who have mlb_ids with fg_ids
+        # print('LIVE: Crosswalk MLBIDs to FGIDs')
+        # call_command('live_crosswalk_mlbids_to_fgids')
+
+        # # use roster files to update all player status
+        # print('LIVE: Update status from FG rosters')
+        # call_command('live_update_status_from_fg_rosters')
+
+        # # use fg stats to update all player stats
+        # print('LIVE: Update stats from FG stats')
+        # call_command('live_update_stats_from_fg_stats')

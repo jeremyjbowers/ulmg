@@ -4,9 +4,9 @@ from django.db.models import Count
 
 import requests
 from bs4 import BeautifulSoup
+import ujson as json
 
 from ulmg import models, utils
-
 
 class Command(BaseCommand):
     headers = {
@@ -17,64 +17,11 @@ class Command(BaseCommand):
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36 Edg/115.0.1901.203",
     }
 
-    def fix_fg_dupes(self):
-        d1 = (
-            models.Player.objects.exclude(fg_id__isnull=True).values('fg_id')
-            .annotate(count=Count('id'))
-            .values('fg_id')
-            .order_by()
-            .filter(count__gt=1)
-        )
+    payload = []
 
-        print(f"initial duplicates: {d1.count()}")
-        for d in d1:
-            print(d)
-            objs = models.Player.objects.filter(fg_id=d['fg_id'])
-            for o in objs:
-                if not o.team:
-                    o.delete()
-
-        d2 = (
-            models.Player.objects.exclude(fg_id__isnull=True).values('fg_id')
-            .annotate(count=Count('id'))
-            .values('fg_id')
-            .order_by()
-            .filter(count__gt=1)
-        ) 
-
-        print(f"remaining duplicates: {d2.count()}")
-        for d in d2:
-            print(d)
-
-    def fix_mlbam_dupes(self):
-        d1 = (
-            models.Player.objects.exclude(mlbam_id__isnull=True).values('mlbam_id')
-            .annotate(count=Count('id'))
-            .values('mlbam_id')
-            .order_by()
-            .filter(count__gt=1)
-        )
-
-        print(f"initial duplicates: {d1.count()}")
-        for d in d1:
-            print(d)
-            objs = models.Player.objects.filter(mlbam_id=d['mlbam_id'])
-            for o in objs:
-                if not o.team:
-                    o.delete()
-
-        d2 = (
-            models.Player.objects.exclude(mlbam_id__isnull=True).values('mlbam_id')
-            .annotate(count=Count('id'))
-            .values('mlbam_id')
-            .order_by()
-            .filter(count__gt=1)
-        ) 
-
-        print(f"remaining duplicates: {d2.count()}")
-        for d in d2:
-            print(d)
-
+    def write_rosters_file(self):
+        with open('data/rosters/all_mlb_rosters.json', 'w') as writefile:
+            writefile.write(json.dumps(self.payload))
 
     def get_cpx_rosters(self):
         roster_urls = []
@@ -119,18 +66,7 @@ class Command(BaseCommand):
                         pass
                         
                     if player_dict:
-                        try:
-                            obj = models.Player.objects.get(mlbam_id=player_dict['mlbam_id'])
-                        
-                        except models.Player.DoesNotExist:
-                            obj = models.Player()
-                        
-                        if obj:
-                            for k,v in player_dict.items():
-                                setattr(obj, k, v)
-
-                            obj.save()
-                            print(obj)
+                        self.payload.append(player_dict)
 
     def get_milb_rosters(self):
         r = requests.get(self.MILB_AFFILIATE_URL, headers=self.headers)
@@ -179,18 +115,7 @@ class Command(BaseCommand):
                         pass
                         
                     if player_dict:
-                        try:
-                            obj = models.Player.objects.get(mlbam_id=player_dict['mlbam_id'])
-                        
-                        except models.Player.DoesNotExist:
-                            obj = models.Player()
-                        
-                        if obj:
-                            for k,v in player_dict.items():
-                                setattr(obj, k, v)
-
-                            obj.save()
-                            print(obj)
+                        self.payload.append(player_dict)
 
     def get_mlb_rosters(self):
         r = requests.get(self.MLB_DEPTH_URL)
@@ -229,18 +154,7 @@ class Command(BaseCommand):
                     player_dict['mlb_org'] = org
                         
                     if player_dict:
-                        try:
-                            obj = models.Player.objects.get(mlbam_id=player_dict['mlbam_id'])
-                        
-                        except models.Player.DoesNotExist:
-                            obj = models.Player()
-                        
-                        if obj:
-                            for k,v in player_dict.items():
-                                setattr(obj, k, v)
-
-                            obj.save()
-                            print(obj)
+                        self.payload.append(player_dict)
 
     def handle(self, *args, **options):
 
@@ -250,8 +164,7 @@ class Command(BaseCommand):
         self.AZL_URL = "https://www.milb.com/arizona-complex"
         self.DSL_URL = "https://www.milb.com/dominican-summer"
 
-        self.fix_mlbam_dupes()
-        self.fix_fg_dupes()
         self.get_cpx_rosters()
         self.get_milb_rosters()
         self.get_mlb_rosters()
+        self.write_rosters_file()

@@ -7,7 +7,7 @@ htmlcov/*
 
 data/rosters/*
 !data/rosters/.gitkeep
-
+data/*/fg_*.json
 .DS_Store
 
 *.env
