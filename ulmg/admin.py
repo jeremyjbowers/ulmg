@@ -270,7 +270,7 @@ class PlayerAdmin(JsonAdmin):
                     ("is_starter", "is_bench", "is_player_pool"),
                     ("is_injured"),
                     "injury_description",
-                    ("role",),
+                    ("role", "role_type", "roster_status"),
                     ("is_mlb40man", "is_bullpen"),
                 ),
             },

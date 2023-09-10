@@ -78,7 +78,7 @@
                 {% for p in position.list %}
                 <tr class="
                 {% if p.level == "V" and not p.is_protected %}unprotected {% endif %}
-                {% if not p.stats.current.level == "mlb" %}minors {% endif %}
+                {% if p.roster_status %}{{ p.roster_status|lower|default_if_none:"non-mlb" }} {% else %}non-mlb {% endif %}
                 ">
                     {% include "includes/player_name.html" %}
                         <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
@@ -114,7 +114,7 @@
                 {% for p in pitchers %}
                 <tr class="
                 {% if p.level == "V" and not p.is_protected %}unprotected {% endif %}
-                {% if not p.stats.current.level == "mlb" %}minors {% endif %}
+                {% if p.roster_status %}{{ p.roster_status|lower|default_if_none:"non-mlb" }} {% else %}non-mlb {% endif %}
                 ">
                         {% include "includes/player_name.html" %}
                         <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>

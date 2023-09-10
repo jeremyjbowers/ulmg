@@ -36,44 +36,44 @@ class Command(BaseCommand):
                     # mlbam has a lot of different ID fields
                     # let's try to get one
                     if player.get('mlbamid'):
-                        mlbam_id = str(player['mlbamid'])
+                        mlbam_id = str(player['mlbamid']).strip()
                         if mlbam_id.strip() == "":
                             mlbam_id = None
 
                     if player.get('mlbamid1') and not mlbam_id:
-                        mlbam_id = str(player['mlbamid1'])
+                        mlbam_id = str(player['mlbamid1']).strip()
                         if mlbam_id.strip() == "":
                             mlbam_id = None
 
                     if player.get('mlbamid2') and not mlbam_id:
-                        mlbam_id = str(player['mlbamid2'])
+                        mlbam_id = str(player['mlbamid2']).strip()
                         if mlbam_id.strip() == "":
                             mlbam_id = None
 
                     if player.get('minorbamid') and not mlbam_id:
-                        mlbam_id = str(player['minorbamid'])
+                        mlbam_id = str(player['minorbamid']).strip()
                         if mlbam_id.strip() == "":
                             mlbam_id = None
 
                     # fg has a lot of different ID fields
                     # let's try and get one
                     if player.get("playerid"):
-                        fg_id = str(player["playerid"])
+                        fg_id = str(player["playerid"]).strip()
                         if fg_id.strip() == "":
                             fg_id = None
 
                     if player.get("playerid1") and not fg_id:
-                        fg_id = str(player["playerid1"])
+                        fg_id = str(player["playerid1"]).strip()
                         if fg_id.strip() == "":
                             fg_id = None
 
                     if player.get("playerid2") and not fg_id:
-                        fg_id = str(player["playerid2"])
+                        fg_id = str(player["playerid2"]).strip()
                         if fg_id.strip() == "":
                             fg_id = None
 
                     if player.get("oPlayerId") and not fg_id:
-                        fg_id = str(player["oPlayerId"])
+                        fg_id = str(player["oPlayerId"]).strip()
                         if fg_id.strip() == "":
                             fg_id = None
 

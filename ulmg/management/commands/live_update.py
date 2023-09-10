@@ -25,6 +25,8 @@ class Command(BaseCommand):
 
         season = utils.get_current_season()
 
+        call_command('reset_stats')
+
         if not options['cached']:
 
             # download roster files
@@ -46,20 +48,20 @@ class Command(BaseCommand):
 
         # # use mlb depth charts to create new players
         # print('LIVE: Load players from MLB depth charts')
-        call_command('live_load_players_from_mlb_depthcharts')
+        # call_command('live_load_players_from_mlb_depthcharts')
 
-        # # use mlb depth charts to update player status
-        # print('LIVE: Update status from MLB depth charts')
+        # use mlb depth charts to update player status
+        print('LIVE: Update status from MLB depth charts')
         call_command('live_update_status_from_mlb_depthcharts')
 
-        # # use roster files to update players who have mlb_ids with fg_ids
-        # print('LIVE: Crosswalk MLBIDs to FGIDs')
+        # use roster files to update players who have mlb_ids with fg_ids
+        print('LIVE: Crosswalk MLBIDs to FGIDs')
         call_command('live_crosswalk_ids')
 
-        # # use roster files to update all player status
-        # print('LIVE: Update status from FG rosters')
-        # call_command('live_update_status_from_fg_rosters')
+        # use roster files to update all player status
+        print('LIVE: Update status from FG rosters')
+        call_command('live_update_status_from_fg_rosters')
 
-        # # use fg stats to update all player stats
-        # print('LIVE: Update stats from FG stats')
-        # call_command('live_update_stats_from_fg_stats')
+        # use fg stats to update all player stats
+        print('LIVE: Update stats from FG stats')
+        call_command('live_update_stats_from_fg_stats')

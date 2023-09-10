@@ -27,21 +27,21 @@ class Command(BaseCommand):
         roster_urls = []
         for league_url in [self.FCL_URL, self.AZL_URL, self.DSL_URL]:
             r = requests.get(league_url, headers=self.headers)
-            soup = BeautifulSoup(r.content, 'html.parser')
+            soup = BeautifulSoup(r.content, 'html5lib')
             for a in soup.select('a'):
                 if a.get('href', None):
                     if '/roster' in a.attrs['href']:
                         roster_urls.append(a.attrs['href'])
 
         for url in roster_urls:
+            print(f"{url}")
             tr = requests.get(url, headers=self.headers)
 
             if tr.status_code == 200:
-                ts = BeautifulSoup(tr.content, 'html.parser')
+                ts = BeautifulSoup(tr.content, 'html5lib')
                 player_rows = ts.select('div.players tr')
 
                 for row in player_rows:
-                    obj = None
                     player_dict = None
 
                     cells = row.select('td')
@@ -70,7 +70,7 @@ class Command(BaseCommand):
 
     def get_milb_rosters(self):
         r = requests.get(self.MILB_AFFILIATE_URL, headers=self.headers)
-        soup = BeautifulSoup(r.content, 'html.parser')
+        soup = BeautifulSoup(r.content, 'html5lib')
         team_urls = [a.attrs['href'] for a in soup.select('a.p-forge-logo--link') if "www" in a.attrs['href']]
         for url in team_urls:
 
@@ -83,15 +83,14 @@ class Command(BaseCommand):
             print(f"{url}/roster")
 
             tr = requests.get(f"{url}/roster", headers=self.headers)
-
             if tr.status_code == 200:
-                ts = BeautifulSoup(tr.content, 'html.parser')
+                ts = BeautifulSoup(tr.content, 'html5lib')
                 org = ts.select('button.tabs__filter-buttons--button')[2].text.split(' Transactions')[0].strip()
 
                 player_rows = ts.select('div.players tr')
+
                 for row in player_rows:
                     player_dict = None
-                    obj = None
 
                     cells = row.select('td')
                     try:
@@ -119,22 +118,22 @@ class Command(BaseCommand):
 
     def get_mlb_rosters(self):
         r = requests.get(self.MLB_DEPTH_URL)
-        soup = BeautifulSoup(r.content, 'html.parser')
+        soup = BeautifulSoup(r.content, 'html5lib')
 
         team_urls = [a.attrs['href'] for a in soup.select('a') if "roster" in a.attrs['href'] and "www" in a.attrs['href']]
 
         for url in team_urls:
+            print(f"{url}")
             tr = requests.get(url.replace('depth-chart', '40-man'), headers=self.headers)
 
             if tr.status_code == 200:
-                ts = BeautifulSoup(tr.content, 'html.parser')
+                ts = BeautifulSoup(tr.content, 'html5lib')
 
                 org = settings.MLB_URL_TO_ORG_NAME.get(url.split('mlb.com/')[1].split('/roster')[0].strip(), None)
 
                 player_rows = ts.select('div.players tbody tr')
                 for row in player_rows:
                     player_dict = None
-                    obj = None
 
                     cells = row.select('td')
 

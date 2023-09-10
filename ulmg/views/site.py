@@ -129,7 +129,7 @@ def index(request):
     pitcher_dict = {
         "team__isnull": True,
         f"stats__{season}_majors__g__gte": 1,
-        "position": "P",
+        "position__icontains": "P",
     }
 
     context["hitters"] = (
@@ -176,7 +176,7 @@ def team_detail(request, abbreviation):
     hitters = team_players.exclude(position="P").order_by(
         "position", "-level_order", "-is_carded", "last_name", "first_name"
     )
-    pitchers = team_players.filter(position="P").order_by(
+    pitchers = team_players.filter(position__icontains="P").order_by(
         "-level_order", "-is_carded", "last_name", "first_name"
     )
 
@@ -342,7 +342,7 @@ def player_available_midseason(request):
     )
 
     context["pitchers"] = models.Player.objects.filter(
-        Q(team__isnull=True, stats__2022_majors__ip__gte=1, position="P")
+        Q(team__isnull=True, stats__2022_majors__ip__gte=1, position__icontains="P")
         | Q(
             level="V",
             position="P",
@@ -367,7 +367,7 @@ def player_available_offseason(request):
     )
 
     context["pitchers"] = models.Player.objects.filter(
-        is_owned=True, is_35man_roster=False, level__in=["A", "V"], position="P"
+        is_owned=True, is_35man_roster=False, level__in=["A", "V"], position__icontains="P"
     ).order_by("-level_order", "last_name", "first_name")
 
     return render(request, "search.html", context)
@@ -504,5 +504,5 @@ def search(request):
     query = query.order_by("position", "-level_order", "last_name")
 
     context["hitters"] = query.exclude(position="P")
-    context["pitchers"] = query.filter(position="P")
+    context["pitchers"] = query.filter(position__icontains="P")
     return render(request, "search.html", context)

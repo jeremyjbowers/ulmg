@@ -9,7 +9,7 @@ from ulmg import models, utils
 class Command(BaseCommand):
 
     def handle(self, *args, **options):
-
+        models.Player.objects.all().update(roster_status=None, mlb_org=None)
         with open('data/rosters/all_mlb_rosters.json', 'r') as readfile:
             players = json.loads(readfile.read())
 
