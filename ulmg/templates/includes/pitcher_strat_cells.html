@@ -1,7 +1,0 @@
-{% load ulmg_tags %}
-<td data-value="{{ p.py_gs|default_if_none:"-999" }}" style="background-color: #eee;">{% if p.py_ip > 0 %}{{ p.py_gs|default_if_none:"-" }}{% else %}-{% endif %}</td>
-<td data-value="{{ p.py_ip|default_if_none:"-999" }}" style="background-color: #eee;">{% if p.py_ip > 0 %}{{ p.py_ip|default_if_none:"-" }}{% else %}-{% endif %}</td>
-<td data-value="{{ p.py_era|default_if_none:"999" }}" style="background-color: #eee;">{% if p.py_ip > 0 %}{{ p.py_era|default_if_none:"-" }}{% else %}-{% endif %}</td>
-<td data-value="{{ p.py_k_9|default_if_none:"-999" }}" style="background-color: #eee;">{% if p.py_ip > 0 %}{{ p.py_k_9|default_if_none:"-" }}{% else %}-{% endif %}</td>
-<td data-value="{{ p.py_bb_9|default_if_none:"999" }}" style="background-color: #eee;">{% if p.py_ip > 0 %}{{ p.py_bb_9|default_if_none:"-" }}{% else %}-{% endif %}</td>
-<td data-value="{{ p.py_hr_9|default_if_none:"999" }}" style="background-color: #eee;">{% if p.py_ip > 0 %}{{ p.py_hr_9|default_if_none:"-" }}{% else %}-{% endif %}</td>

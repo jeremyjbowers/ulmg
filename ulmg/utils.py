@@ -95,10 +95,10 @@ def reset_player_stats(id_type=None, player_ids=None):
     if id_type and player_ids:
         lookup = f"{id_type}__in"
         keyword = player_ids
-        models.Player.objects.filter(**{lookup: keyword}).update(stats=None)
+        models.Player.objects.filter(**{lookup: keyword}).update(stats={})
 
     else:
-        models.Player.objects.filter(stats__isnull=False).update(stats=None)
+        models.Player.objects.filter(stats__isnull=False).update(stats={})
 
 
 def get_scriptname():

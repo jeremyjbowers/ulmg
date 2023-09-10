@@ -42,10 +42,6 @@ def get_wishlist_players(request):
             if p.player.team:
                 player_dict["team"] = p.player.team.abbreviation
 
-            if p.player.stats:
-                if p.player.stats["current"]["year"] == 2022:
-                    player_dict["stats"] = p.player.stats["current"]
-
             wishlist_players.append(player_dict)
 
     return JsonResponse({"players": wishlist_players})

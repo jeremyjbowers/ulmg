@@ -320,26 +320,15 @@ class Player(BaseModel):
     is_injured = models.BooleanField(default=False)
     injury_description = models.CharField(max_length=255, null=True, blank=True)
     role = models.CharField(max_length=255, null=True, blank=True)
+    role_type = models.CharField(max_length=255, null=True, blank=True)
     roster_status = models.CharField(max_length=255, null=True, blank=True)
     mlb_org = models.CharField(max_length=255, null=True, blank=True)
-    mlb_org_abbr = models.CharField(max_length=255, null=True, blank=True)
     is_mlb40man = models.BooleanField(default=False)
     is_bullpen = models.BooleanField(default=False)
+    is_mlb = models.BooleanField(default=False)
 
     # STATS
     # Here's the schema for a stats dictionary
-    # required keys: year, level, type, timestamp
-    # YEAR — the season these stats accrued in, or "career"
-    # LEVEL - the levels these stats cover, e.g., A/AA or AA/AAA or MLB
-    # TYPE — the type of stats, e.g., majors, minors
-    # note: we combine all minor league stats in a single record
-    # but we do not combine major leage WITH minor league.
-    # this is because major league stats are used for the game
-    # but minor / other pro league stats are not.
-    # TIMESTAMP - a UNIX timestamp of when this record was created
-    #
-    # Any actual stats keys are fine following these.
-    # Pitching and hitting stats can be in the same dictionary.
     #
     stats = models.JSONField(null=True, blank=True)
 
@@ -368,6 +357,42 @@ class Player(BaseModel):
             self.stats = {}
 
         self.stats[stats_dict["slug"]] = stats_dict
+
+    def pit_stats(self):
+        payload = None
+        has_mlb = False
+        weak_mlb = False
+
+        if self.stats:
+            for year_side_level, stats in self.stats.items():
+                if stats['side'] == "pitch":
+                    if stats['level'] == "mlb":
+                        if stats['ip'] < 1:
+                            weak_mlb = True
+                        payload = stats
+                        has_mlb = True
+                    else:
+                        if not has_mlb or weak_mlb:
+                            payload = stats
+        return payload
+
+    def hit_stats(self):
+        payload = {}
+        has_mlb = False
+        weak_mlb = False
+
+        if self.stats:
+            for year_side_level, stats in self.stats.items():
+                if stats['side'] == "hit":
+                    if stats['level'] == "mlb":
+                        if stats['plate_appearances'] < 5:
+                            weak_mlb = True
+                        payload = stats
+                        has_mlb = True
+                    else:
+                        if not has_mlb or weak_mlb:
+                            payload = stats
+        return payload
 
     @property
     def mlb_image_url(self):
@@ -409,18 +434,10 @@ class Player(BaseModel):
             "age": self.age,
             "bref_img": self.bref_img,
             "ids": {
-                "ba_id": self.ba_id,
                 "mlbam_id": self.mlbam_id,
-                "mlb_dotcom": self.mlb_dotcom,
-                "bp_id": self.bp_id,
-                "bref_id": self.bref_id,
                 "fg_id": self.fg_id,
-                "fantrax_id": self.fantrax_id,
-                "ba_url": self.ba_url,
-                "bref_url": self.bref_url,
                 "fg_url": self.fg_url,
                 "mlb_dotcom_url": self.mlb_dotcom_url,
-                "fantrax_url": self.fantrax_url,
             },
             "notes": self.notes,
             "is_owned": self.is_owned,
@@ -449,16 +466,7 @@ class Player(BaseModel):
         return payload
 
     def to_dict(self):
-        return {
-            "name": self.name,
-            "position": self.position,
-            "level": self.level,
-            "age": self.age,
-            "carded": self.is_carded,
-            "amateur": self.is_amateur,
-            "bref_url": self.bref_url,
-            # "team": self.team.abbreviation
-        }
+        return self.to_api_obj()
 
     def defense_display(self):
         if self.defense:
@@ -540,7 +548,6 @@ class Player(BaseModel):
             self.is_owned = True
 
     def set_protected(self):
-
         # Set protections
         if (
             self.is_reserve
