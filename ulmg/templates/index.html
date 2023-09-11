@@ -126,6 +126,156 @@
         </div>
     </div>
 
+    <h1 id="players-unowned" class="title is-1">Best Available By Category <small>with live 2023 stats</small></h1>
+
+    <div class="columns">
+        <div class="column">
+            <h1 class="title is-3">Most Home Runs</h1>
+            <table class="table real-stat-table is-fullwidth" data-sortable>
+                <thead>
+                    <tr>
+                        <th data-sortable-type="alpha">Name</th>
+                        <th data-sortable-type="numeric">Age</th>
+                        <th data-sortable-type="alpha">Lvl</th>
+                        <th>HR</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for p in hitter_hr %}
+                <tr class="{% if p.roster_status %}{{ p.roster_status|lower|default_if_none:"non-mlb" }} {% else %}non-mlb {% endif %}">
+                        {% include "includes/player_name.html" %}
+                        <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
+                        <td data-value="{{ p.level|default_if_none:"Z" }}">{{ p.level|default_if_none:"" }}</td>
+                        <td>{{ p.hit_stats.hr }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="column">
+            <h1 class="title is-3">Most Steals</h1>
+            <table class="table real-stat-table is-fullwidth" data-sortable>
+                <thead>
+                    <tr>
+                        <th data-sortable-type="alpha">Name</th>
+                        <th data-sortable-type="numeric">Age</th>
+                        <th data-sortable-type="alpha">Lvl</th>
+                        <th>SB</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for p in hitter_sb %}
+                <tr class="{% if p.roster_status %}{{ p.roster_status|lower|default_if_none:"non-mlb" }} {% else %}non-mlb {% endif %}">
+                        {% include "includes/player_name.html" %}
+                        <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
+                        <td data-value="{{ p.level|default_if_none:"Z" }}">{{ p.level|default_if_none:"" }}</td>
+                        <td>{{ p.hit_stats.sb }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="column">
+            <h1 class="title is-3">Best Average</h1>
+            <table class="table real-stat-table is-fullwidth" data-sortable>
+                <thead>
+                    <tr>
+                        <th data-sortable-type="alpha">Name</th>
+                        <th data-sortable-type="numeric">Age</th>
+                        <th data-sortable-type="alpha">Lvl</th>
+                        <th>PA</th>
+                        <th>AVG</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for p in hitter_avg %}
+                <tr class="{% if p.roster_status %}{{ p.roster_status|lower|default_if_none:"non-mlb" }} {% else %}non-mlb {% endif %}">
+                        {% include "includes/player_name.html" %}
+                        <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
+                        <td data-value="{{ p.level|default_if_none:"Z" }}">{{ p.level|default_if_none:"" }}</td>
+                        <td>{{ p.hit_stats.plate_appearances }}</td>
+                        <td>{{ p.hit_stats.avg|floatformat:"3"|kill_leading_zero }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="columns">
+        <div class="column">
+            <h1 class="title is-3">Most Innings</h1>
+            <table class="table real-stat-table is-fullwidth" data-sortable>
+                <thead>
+                    <tr>
+                        <th data-sortable-type="alpha">Name</th>
+                        <th data-sortable-type="numeric">Age</th>
+                        <th data-sortable-type="alpha">Lvl</th>
+                        <th>IP</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for p in pitcher_innings %}
+                <tr class="{% if p.roster_status %}{{ p.roster_status|lower|default_if_none:"non-mlb" }} {% else %}non-mlb {% endif %}">
+                        {% include "includes/player_name.html" %}
+                        <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
+                        <td data-value="{{ p.level|default_if_none:"Z" }}">{{ p.level|default_if_none:"" }}</td>
+                        <td>{{ p.pit_stats.ip }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="column">
+            <h1 class="title is-3">Most Starts</h1>
+            <table class="table real-stat-table is-fullwidth" data-sortable>
+                <thead>
+                    <tr>
+                        <th data-sortable-type="alpha">Name</th>
+                        <th data-sortable-type="numeric">Age</th>
+                        <th data-sortable-type="alpha">Lvl</th>
+                        <th>GS</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for p in pitcher_starts %}
+                <tr class="{% if p.roster_status %}{{ p.roster_status|lower|default_if_none:"non-mlb" }} {% else %}non-mlb {% endif %}">
+                        {% include "includes/player_name.html" %}
+                        <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
+                        <td data-value="{{ p.level|default_if_none:"Z" }}">{{ p.level|default_if_none:"" }}</td>
+                        <td>{{ p.pit_stats.gs }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="column">
+            <h1 class="title is-3">Best Earned Run Average</h1>
+            <table class="table real-stat-table is-fullwidth" data-sortable>
+                <thead>
+                    <tr>
+                        <th data-sortable-type="alpha">Name</th>
+                        <th data-sortable-type="numeric">Age</th>
+                        <th data-sortable-type="alpha">Lvl</th>
+                        <th>IP</th>
+                        <th>ERA</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for p in pitcher_era %}
+                <tr class="{% if p.roster_status %}{{ p.roster_status|lower|default_if_none:"non-mlb" }} {% else %}non-mlb {% endif %}">
+                        {% include "includes/player_name.html" %}
+                        <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
+                        <td data-value="{{ p.level|default_if_none:"Z" }}">{{ p.level|default_if_none:"" }}</td>
+                        <td>{{ p.pit_stats.ip }}</td>
+                        <td>{{ p.pit_stats.era|floatformat:"2" }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
     <h1 id="players-unowned" class="title is-1">Unowned Players <small>with live 2023 stats</small></h1>
 
     <div class="columns">
@@ -144,7 +294,7 @@
                 </thead>
                 <tbody>
                 {% for p in position.list %}
-                <tr>
+                <tr class="{% if p.roster_status %}{{ p.roster_status|lower|default_if_none:"non-mlb" }} {% else %}non-mlb {% endif %}">
                         {% include "includes/player_name.html" %}
                         <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
                         <td data-value="{{ p.level|default_if_none:"Z" }}">{{ p.level|default_if_none:"" }}</td>
@@ -171,7 +321,7 @@
                 </thead>
                 <tbody>
                 {% for p in pitchers %}
-                    <tr>
+                    <tr class="{% if p.roster_status %}{{ p.roster_status|lower|default_if_none:"non-mlb" }} {% else %}non-mlb {% endif %}">
                         {% include "includes/player_name.html" %}
                         <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
                         <td data-value="{{ p.level|default_if_none:"Z" }}<">{{ p.level|default_if_none:"" }}</td>
