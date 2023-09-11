@@ -12,6 +12,7 @@ from django.core.management import call_command
 from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
 import requests
+import urllib3
 
 from ulmg import models, utils
 
@@ -22,10 +23,9 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         requests.packages.urllib3.disable_warnings()
+        urllib3.disable_warnings()
 
         season = utils.get_current_season()
-
-        call_command('reset_stats')
 
         if not options['cached']:
 
