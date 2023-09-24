@@ -9,6 +9,10 @@
     {% if p.role_type %}{{ p.role_type|default_if_none:"-" }}{% else %}-{% endif %}
 </td>
 
+<td data-value="{% if p.pit_stats.level != "" %}{{ p.pit_stats.level|default_if_none:"-" }}{% else %}-{% endif %}">
+    {% if p.pit_stats %}{% if p.pit_stats.level != "" %}{{ p.pit_stats.level|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
+</td>
+
 <td data-value="{% if p.pit_stats.ip > 0 and p.pit_stats.year == 2023 %}{{ p.pit_stats.g|default_if_none:"-999" }}{% else %}-999{% endif %}">{% if p.pit_stats.ip > 0 and p.pit_stats.year == 2023 %}{{ p.pit_stats.g|default_if_none:"-" }}{% else %}-{% endif %}</td>
 <td data-value="{% if p.pit_stats.ip > 0 and p.pit_stats.year == 2023 %}{{ p.pit_stats.gs|default_if_none:"-999" }}{% else %}-999{% endif %}">{% if p.pit_stats.ip > 0 and p.pit_stats.year == 2023 %}{{ p.pit_stats.gs|default_if_none:"-" }}{% else %}-{% endif %}</td>
 <td data-value="{% if p.pit_stats.ip > 0 and p.pit_stats.year == 2023 %}{{ p.pit_stats.ip|default_if_none:"-999" }}{% else %}-999{% endif %}">{% if p.pit_stats.ip > 0 and p.pit_stats.year == 2023 %}{{ p.pit_stats.ip|default_if_none:"-" }}{% else %}-{% endif %}</td>

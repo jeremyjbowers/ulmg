@@ -7,8 +7,16 @@
     {% if p.roster_status != "" %}{{ p.roster_status|default_if_none:"-" }}{% else %}-{% endif %}
 </td>
 
-<td data-value="{% if p.role_type %}{{ p.role_type|default_if_none:"-" }}{% else %}-{% endif %}">
+<!-- <td data-value="{% if p.role_type %}{{ p.role_type|default_if_none:"-" }}{% else %}-{% endif %}">
     {% if p.role_type %}{{ p.role_type|default_if_none:"-" }}{% else %}-{% endif %}
+</td> -->
+
+<!-- <td data-value="{% if p.role != "" %}{{ p.role|default_if_none:"-" }}{% else %}-{% endif %}">
+    {% if p.role != "" %}{{ p.role|default_if_none:"-" }}{% else %}-{% endif %}
+</td> -->
+
+<td data-value="{% if p.hit_stats.level != "" %}{{ p.hit_stats.level|default_if_none:"-" }}{% else %}-{% endif %}">
+    {% if p.hit_stats %}{% if p.hit_stats.level != "" %}{{ p.hit_stats.level|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
 </td>
 
 <td data-value="{% if p.hit_stats.year == 2023 %}{{ p.hit_stats.plate_appearances|default_if_none:"-999" }}{% else %}-999{% endif %}">
