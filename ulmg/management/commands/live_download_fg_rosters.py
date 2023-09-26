@@ -24,7 +24,7 @@ class Command(BaseCommand):
         teams = settings.ROSTER_TEAM_IDS
 
         for team_id, team_abbrev, team_name in teams:
-            url = f"https://cdn.fangraphs.com/api/depth-charts/roster?teamid={team_id}"
+            url = f"https://www.fangraphs.com/api/depth-charts/roster?teamid={team_id}"
 
             r = requests.get(url, verify=False)
             print(r.status_code, url)
