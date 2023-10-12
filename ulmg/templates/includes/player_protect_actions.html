@@ -1,14 +1,14 @@
 {% if roster_tab or protect_tab %}
-<td>
+<!-- <td>
     {% if p.is_reserve %}<span class="tag is-warning">ASR</span>{% endif %}
     {% if p.is_1h_pos %}<span class="tag is-warning">HIT</span>{% endif %}
     {% if p.is_1h_c %}<span class="tag is-warning">C</span>{% endif %}
     {% if p.is_1h_p %}<span class="tag is-warning">P</span>{% endif %}
     {% if p.is_mlb_roster %}<span class="tag is-success">MLB</span>{% endif %}
     {% if p.is_aaa_roster %}<span class="tag is-info">AAA</span>{% endif %}
-    <!-- {% if p.is_1h_draft %}<span class="tag">2H</span>{% endif %} -->
-    <!-- {% if p.is_35man_roster %}<span class="tag is_success">40-man</span>{% endif %} -->
-</td>
+    {% if p.is_1h_draft %}<span class="tag">2H</span>{% endif %}
+    {% if p.is_35man_roster %}<span class="tag is_success">40-man</span>{% endif %}
+</td> -->
 {% endif %}
 
 {% if roster_tab %}
@@ -29,14 +29,15 @@
 </td>{% endif %}
 
 {% if protect_tab %}
-<td>
+<!-- <td>
     {% if p.is_35man_roster or p.is_reserve or p.is_1h_p or p.is_1h_c or p.is_1h_pos %}<a class="button is-small is-light is-warning player-action" data-playerid="{{ p.id }}" data-action="unprotect">&rarrhk;</a>{% endif %}
-
     {% if not p.is_35man_roster and not 35_roster_count == 40 and not p.level == "B" %}<a class="button is-small is-success is-outlined player-action" data-playerid="{{ p.id }}" data-action="to_35_man">40</a>{% endif %}
-</td>
+</td> -->
 {% endif %}
 
 {% if protect_tab or roster_tab%}<td>
+    <a class="button is-small is-warning {% if not p.is_trade_block %}is-light {% endif %}player-action" data-playerid="{{ p.id }}" data-action="trade_block">&uarr;</a>
+</td><td>
     <!-- {% if p.is_carded %}<a class="button is-small is-outlined player-action" data-playerid="{{ p.id }}" data-action="unprotect">CLR ⟲</a>{% endif %} -->
     <a class="button is-small is-danger is-outlined player-drop" data-playerid="{{ p.id }}" data-playername="{{ p.name }}">X</a>
 </td>{% endif %}

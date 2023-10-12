@@ -5,6 +5,7 @@
         </a>
         <a class="navbar-item" href="https://gist.github.com/jeremyjbowers/20706acd49d0ceb678fdfd855e554dd0" target="_blank">Constitution</a>
         <a class="navbar-item" href="/calendar/" target="_blank">Events</a>
+        <a class="navbar-item" href="/players/trade-block/" target="_blank">Trade Block</a>
         <a class="navbar-item" href="/trades/">Trades</a>
         <div class="navbar-item has-dropdown is-hoverable">
             <a class="navbar-link">Drafts</a>
@@ -33,7 +34,10 @@
             <div class="navbar-item">
             {% if user.is_authenticated %}
                 <div class="buttons">
-                    <a class="button is-success is-outlined is-small" href="/my/team/">My Team</a>
+                    {% if user.is_staff %}
+                    <a class="button is-info is-small" href="/admin/">Admin</a>
+                    {% endif %}
+                    <a class="button is-success is-small" href="/my/team/">My Team</a>
                     <a class="button is-danger is-small" href="/accounts/logout/">X</a>
                 </div>
             {% else %}

@@ -291,7 +291,7 @@ class Player(BaseModel):
     is_aaa_roster = models.BooleanField(default=False)
     is_35man_roster = models.BooleanField(default=False)
 
-    # ULMG PROTECTION
+    # ULMG STATUS
     is_reserve = models.BooleanField(default=False)
     is_1h_p = models.BooleanField(default=False)
     is_1h_c = models.BooleanField(default=False)
@@ -303,6 +303,7 @@ class Player(BaseModel):
     is_protected = models.BooleanField(default=False)
     cannot_be_protected = models.BooleanField(default=False)
     covid_protected = models.BooleanField(default=False)
+    is_trade_block = models.BooleanField(default=False)
 
     # CAREER STATS (for level)
     cs_pa = models.IntegerField(blank=True, null=True)
