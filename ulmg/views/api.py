@@ -147,9 +147,18 @@ def wishlist_player_action(request, playerid):
 @login_required
 @csrf_exempt
 def player_action(request, playerid, action):
+    p = get_object_or_404(models.Player, id=playerid)
+
+    if action == "trade_block":
+        if p.is_trade_block:
+            p.is_trade_block = False
+        else:
+            p.is_trade_block = True
+        p.save()
+
+        return HttpResponse("ok")
 
     if action == "to_35_man":
-        p = get_object_or_404(models.Player, id=playerid)
         p.is_reserve = False
         p.is_1h_c = False
         p.is_1h_p = False
@@ -157,11 +166,9 @@ def player_action(request, playerid, action):
         p.is_35man_roster = True
         p.is_protected = True
         p.save()
-        print(p, p.is_protected)
         return HttpResponse("ok")
 
     if action == "unprotect":
-        p = get_object_or_404(models.Player, id=playerid)
         p.is_reserve = False
         p.is_1h_c = False
         p.is_1h_p = False
@@ -177,7 +184,6 @@ def player_action(request, playerid, action):
         return HttpResponse("ok")
 
     if action == "is_reserve":
-        p = get_object_or_404(models.Player, id=playerid)
         old = models.Player.objects.filter(team=p.team, is_reserve=True).update(
             is_reserve=False
         )
@@ -193,7 +199,6 @@ def player_action(request, playerid, action):
         return HttpResponse("ok")
 
     # if action == "is_2h_p":
-    #     p = get_object_or_404(models.Player, id=playerid)
     #     old = models.Player.objects.filter(team=p.team, is_2h_p=True).update(
     #         is_2h_p=False
     #     )
@@ -208,7 +213,6 @@ def player_action(request, playerid, action):
     #     return HttpResponse("ok")
 
     # if action == "is_2h_c":
-    #     p = get_object_or_404(models.Player, id=playerid)
     #     old = models.Player.objects.filter(team=p.team, is_2h_c=True).update(
     #         is_2h_c=False
     #     )
@@ -223,7 +227,6 @@ def player_action(request, playerid, action):
     #     return HttpResponse("ok")
 
     # if action == "is_2h_pos":
-    #     p = get_object_or_404(models.Player, id=playerid)
     #     old = models.Player.objects.filter(team=p.team, is_2h_pos=True).update(
     #         is_2h_pos=False
     #     )
@@ -238,7 +241,6 @@ def player_action(request, playerid, action):
     #     return HttpResponse("ok")
 
     if action == "is_1h_p":
-        p = get_object_or_404(models.Player, id=playerid)
         old = models.Player.objects.filter(team=p.team, is_1h_p=True).update(
             is_1h_p=False
         )
@@ -254,7 +256,6 @@ def player_action(request, playerid, action):
         return HttpResponse("ok")
 
     if action == "is_1h_c":
-        p = get_object_or_404(models.Player, id=playerid)
         old = models.Player.objects.filter(team=p.team, is_1h_c=True).update(
             is_1h_c=False
         )
@@ -270,7 +271,6 @@ def player_action(request, playerid, action):
         return HttpResponse("ok")
 
     if action == "is_1h_pos":
-        p = get_object_or_404(models.Player, id=playerid)
         old = models.Player.objects.filter(team=p.team, is_1h_pos=True).update(
             is_1h_pos=False
         )
@@ -286,7 +286,6 @@ def player_action(request, playerid, action):
         return HttpResponse("ok")
 
     if action == "to_mlb":
-        p = get_object_or_404(models.Player, id=playerid)
         p.is_mlb_roster = True
         p.is_aaa_roster = False
         p.is_reserve = False
@@ -301,7 +300,6 @@ def player_action(request, playerid, action):
         return HttpResponse("ok")
 
     if action == "to_aaa":
-        p = get_object_or_404(models.Player, id=playerid)
         p.is_mlb_roster = False
         p.is_aaa_roster = True
         p.is_reserve = False
@@ -316,7 +314,6 @@ def player_action(request, playerid, action):
         return HttpResponse("ok")
 
     if action == "off_roster":
-        p = get_object_or_404(models.Player, id=playerid)
         p.is_mlb_roster = False
         p.is_aaa_roster = False
         p.is_reserve = False
@@ -331,7 +328,6 @@ def player_action(request, playerid, action):
         return HttpResponse("ok")
 
     if action == "drop":
-        p = get_object_or_404(models.Player, id=playerid)
         p.is_mlb_roster = False
         p.is_aaa_roster = False
         p.team = None

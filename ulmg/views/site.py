@@ -16,6 +16,14 @@ from datetime import datetime
 from ulmg import models, utils
 
 
+def trade_block(request):
+    context = utils.build_context(request)
+    context['hitters'] = models.Player.objects.filter(team__isnull=False, is_trade_block=True).exclude(position="P").order_by('position')
+    context['pitchers'] = models.Player.objects.filter(team__isnull=False, is_trade_block=True, position__icontains="P")
+
+    return render(request, "trade_block.html", context)
+
+
 def best_available(request, year):
     context = utils.build_context(request)
     context["hitters"] = []

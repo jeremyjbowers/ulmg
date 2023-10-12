@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% load ulmg_tags %}
+
+
+{% block content %}
+<style type="text/css" media="screen">
+    ul.charts {
+      margin: 0;
+      padding: 0;
+    }
+    ul.charts li {
+      font-size: 18px;
+      line-height: 28px;
+      margin: 0;
+      padding: 0;
+      list-style-type: none;
+      border-bottom: 1px solid #fff;
+    }
+   ul.charts li span {
+      background-color: #a9d2f2;
+      display: block;
+      color: #125a95;
+      font-weight: bold;
+      padding: 0 0 0 5px;
+      white-space: nowrap;
+    }
+    ul.charts li span:hover {
+      background-color: #ccc;
+      display: block;
+      color: #333;
+      font-weight: bold;
+      padding: 0 0 0 5px;
+      white-space: nowrap;
+    }
+    table td, table a, table th {
+        font-size: 13px;
+    }
+    table[data-sortable] th, table[data-sortable] td {
+        padding: 5px;
+    }
+    table tbody tr.minors td {
+        background-color: #f2f8eb;
+    }
+    .is-1 small {
+        color: #777;
+        font-weight: normal;
+        font-size: 30px;
+    }
+</style>
+<div class="section is-desktop">
+    <div class="columns">
+        <div class="column">
+            {% include "includes/search_bar.html" %}
+        </div>
+    </div>
+
+<h1 id="players-unowned" class="title is-1">Trade block <small>with 2023 stats</small></h1>
+
+{% if hitters %}
+<div class="columns">
+    <div class="column">
+        {% regroup hitters by position as position_players %}
+        {% for position in position_players %}
+        <h1 class="title is-3">{{ position.grouper }} ({{ position.list|length }})</h1>
+        <table class="table real-stat-table is-fullwidth" data-sortable>
+            <thead>
+                <tr>
+                    <th data-sortable-type="alpha">Name</th>
+                    <th data-sortable-type="numeric">Age</th>
+                    <th data-sortable-type="alpha">Lvl</th>
+                    <th>ULMG</th>
+                    {% include "includes/hitter_stat_headers.html" %}
+                </tr>
+            </thead>
+            <tbody>
+            {% for p in position.list %}
+            <tr class="{% if p.roster_status %}{{ p.roster_status|lower|default_if_none:"non-mlb" }} {% else %}non-mlb {% endif %}">
+                    {% include "includes/player_name.html" %}
+                    <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.level|default_if_none:"Z" }}">{{ p.level|default_if_none:"" }}</td>
+                    <td data-value="{{ p.team|default_if_none:"" }}">{% if p.team %}<a href="/teams/{{ p.team.abbreviation }}/">{% endif %}{{ p.team|default_if_none:"-" }}{% if p.team %}</a>{% endif %}</td>
+                    {% include "includes/hitter_stat_cells.html" %}
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% endfor %}
+    </div>
+</div>{% endif %}
+
+{% if pitchers %}
+<div class="columns">
+    <div class="column">
+        <h1 class="title is-3">P ({{ pitchers|length }})</h1>
+        <table class="table real-stat-table is-fullwidth" data-sortable>
+            <thead>
+                <tr>
+                    <th data-sortable-type="alpha">Name</th>
+                    <th data-sortable-type="numeric">Age</th>
+                    <th data-sortable-type="alpha">Lvl</th>
+                    <th>ULMG</th>
+                    {% include "includes/pitcher_stat_headers.html" %}
+                </tr>
+            </thead>
+            <tbody>
+            {% for p in pitchers %}
+                <tr class="{% if p.roster_status %}{{ p.roster_status|lower|default_if_none:"non-mlb" }} {% else %}non-mlb {% endif %}">
+                    {% include "includes/player_name.html" %}
+                    <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
+                    <td data-value="{{ p.level|default_if_none:"Z" }}<">{{ p.level|default_if_none:"" }}</td>
+                    <td data-value="{{ p.team|default_if_none:"" }}">{% if p.team %}<a href="/teams/{{ p.team.abbreviation }}/">{% endif %}{{ p.team|default_if_none:"-" }}{% if p.team %}</a>{% endif %}</td>
+                    {% include "includes/pitcher_stat_cells.html" %}
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+</div>
+{% endif %}
+{% endblock %}

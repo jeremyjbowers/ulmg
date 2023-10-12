@@ -3,9 +3,9 @@
 
 <td style="max-width:75px;">{% if p.defense_display %}{{ p.defense_display }}{% else %}{{ p.position }}{% endif %}</td>
 
-<td data-value="{% if p.roster_status != "" %}{{ p.roster_status|default_if_none:"-" }}{% else %}-{% endif %}">
+<!-- <td data-value="{% if p.roster_status != "" %}{{ p.roster_status|default_if_none:"-" }}{% else %}-{% endif %}">
     {% if p.roster_status != "" %}{{ p.roster_status|default_if_none:"-" }}{% else %}-{% endif %}
-</td>
+</td> -->
 
 <!-- <td data-value="{% if p.role_type %}{{ p.role_type|default_if_none:"-" }}{% else %}-{% endif %}">
     {% if p.role_type %}{{ p.role_type|default_if_none:"-" }}{% else %}-{% endif %}
