@@ -20,7 +20,10 @@ class Command(BaseCommand):
         if not options.get("dry_run", None):
             models.Player.objects.all().update(is_carded=False)
             models.Player.objects.filter(
-                stats__current__year=season, stats__current__type="majors"
+                stats__2023_majors_hit__isnull=False
+            ).update(is_carded=True)
+            models.Player.objects.filter(
+                stats__2023_majors_pitch__isnull=False
             ).update(is_carded=True)
         else:
             print(models.Player.objects.filter(stats__current__year=season).count())
@@ -52,7 +55,7 @@ class Command(BaseCommand):
 
     def load_career_hit(self, *args, **options):
         """
-        https://www.fangraphs.com/leaders.aspx?pos=all&stats=bat&lg=all&qual=250&type=8&season=2022&month=0&season1=2000&ind=0&team=0&rost=0&age=&filter=&players=0&startdate=&enddate=&page=1_5000
+        https://www.fangraphs.com/leaders-legacy.aspx?pos=all&stats=bat&lg=all&qual=250&type=8&season=2023&month=0&season1=2000&ind=0&team=0&rost=0&age=&filter=&players=0&startdate=&enddate=&page=1_5000
         """
 
         hostname = utils.get_hostname()
@@ -92,7 +95,7 @@ class Command(BaseCommand):
 
     def load_career_pitch(self, *args, **options):
         """
-        https://www.fangraphs.com/leaders.aspx?pos=all&stats=pit&lg=all&qual=30&type=8&season=2022&month=0&season1=2000&ind=0&team=0&rost=0&age=0&filter=&players=0&startdate=&enddate=&page=1_5000
+        https://www.fangraphs.com/leaders-legacy.aspx?pos=all&stats=pit&lg=all&qual=30&type=8&season=2023&month=0&season1=2000&ind=0&team=0&rost=0&age=0&filter=&players=0&startdate=&enddate=&page=1_5000
         """
 
         hostname = utils.get_hostname()
@@ -207,8 +210,8 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         self.set_carded()
-        # self.load_career_hit()
-        # self.load_career_pitch()
+        self.load_career_hit()
+        self.load_career_pitch()
         self.set_levels()
         self.reset_rosters()
 
