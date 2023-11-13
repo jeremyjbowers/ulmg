@@ -29,10 +29,10 @@
 </td>{% endif %}
 
 {% if protect_tab %}
-<!-- <td>
-    {% if p.is_35man_roster or p.is_reserve or p.is_1h_p or p.is_1h_c or p.is_1h_pos %}<a class="button is-small is-light is-warning player-action" data-playerid="{{ p.id }}" data-action="unprotect">&rarrhk;</a>{% endif %}
+<td>
+    {% if p.is_35man_roster or p.is_reserve or p.is_1h_p or p.is_1h_c or p.is_1h_pos %}<a class="button is-small is-success player-action" data-playerid="{{ p.id }}" data-action="unprotect">40</a>{% endif %}
     {% if not p.is_35man_roster and not 35_roster_count == 40 and not p.level == "B" %}<a class="button is-small is-success is-outlined player-action" data-playerid="{{ p.id }}" data-action="to_35_man">40</a>{% endif %}
-</td> -->
+</td>
 {% endif %}
 
 {% if protect_tab or roster_tab%}<td>
