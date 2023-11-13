@@ -24,8 +24,8 @@ class Command(BaseCommand):
         call_command("collectstatic", "--noinput")
 
 
-        call_command('generate_draft_order', '2024', 'offseason', "aa", "data/ulmg/2024-offseason-aa-order.txt")
-        call_command('generate_draft_order', '2024', 'offseason', "open", "data/ulmg/2024-offseason-open-order.txt")
+        call_command('draft_generate_order', '2024', 'offseason', "aa", "data/ulmg/2024-offseason-aa-order.txt")
+        call_command('draft_generate_order', '2024', 'offseason', "open", "data/ulmg/2024-offseason-open-order.txt")
         call_command('offseason')
         # call_command('import_defense', '2022')
         # call_command('scrape_birthdates')
