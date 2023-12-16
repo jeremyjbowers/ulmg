@@ -25,7 +25,7 @@ class Command(BaseCommand):
         # call_command('draft_generate_order', '2024', 'offseason', "aa", "data/ulmg/2024-offseason-aa-order.txt")
         # call_command('draft_generate_order', '2024', 'offseason', "open", "data/ulmg/2024-offseason-open-order.txt")
         # call_command('offseason')
-        call_command('import_defense', '2023')
+        call_command('strat_import_defense', '2023')
         # call_command('scrape_birthdates')
         # call_command('post_offseason_draft')
         # call_command('generate_draft_picks','2024','offseason')
