@@ -17,6 +17,7 @@ $(function(){
     *
     */
     var update_server = function(evt, update_list) {
+        console.log(update_list);
         $.ajax({
             method: "POST",
             url: '/api/v1/wishlist/bulk/',

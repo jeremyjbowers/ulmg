@@ -20,62 +20,11 @@ from ulmg import models, utils
 @login_required
 def my_team(request):
     context = utils.build_context(request)
-    # context["team"] = get_object_or_404(models.Team, owner_obj=context["owner"])
-    # team_players = models.Player.objects.filter(team=context["team"])
-    # hitters = team_players.exclude(position="P").order_by(
-    #     "position", "-level_order", "-is_carded", "last_name", "first_name"
-    # )
-    # pitchers = team_players.filter(position="P").order_by(
-    #     "-level_order", "-is_carded", "last_name", "first_name"
-    # )
-
-    # position_groups = (
-    #     team_players.exclude(position="P")
-    #         .order_by('position')
-    #         .values('position')
-    #         .annotate(Count('position'))
-    # )
-
-    # carded_pa = (
-    #     team_players.exclude(position="P").filter(is_carded=True)
-    #         .order_by('position')
-    #         .values('position')
-    #         .annotate(Sum('py_plate_appearances'))
-    # )
-    # carded_positions = [x['position'] for x in carded_pa]
-
-    # current_pa = (
-    #     team_players.exclude(position="P").filter(ls_is_mlb=True)
-    #         .order_by('position')
-    #         .values('position')
-    #         .annotate(Sum('ls_plate_appearances'))
-    # )
-
-    # current_positions = [x['position'] for x in current_pa]
-
-    # for pos in position_groups:
-    #     pos['carded_pa'] = carded_pa[carded_positions.index(pos['position'])]['py_plate_appearances__sum']
-    #     pos['current_pa'] = current_pa[current_positions.index(pos['position'])]['ls_plate_appearances__sum']
-
-    # context["35_roster_count"] = team_players.filter(is_35man_roster=True).count()
-    # context["mlb_roster_count"] = team_players.filter(
-    #     is_mlb_roster=True, is_aaa_roster=False, is_reserve=False
-    # ).count()
-    # context["level_distribution"] = (
-    #     team_players.order_by("level_order")
-    #     .values("level_order")
-    #     .annotate(Count("level_order"))
-    # )
-    # context["num_owned"] = models.Player.objects.filter(team=context["team"]).count()
-    # context["hitters"] = hitters
-    # context["pitchers"] = pitchers
-    # context["combined_pa"] = position_groups
-    # return render(request, "my/team.html", context)
     team = get_object_or_404(models.Team, owner_obj=context["owner"])
     return redirect(f"/teams/{ team.abbreviation }/")
 
 @login_required
-def my_midseason(request):
+def my_draft_prep(request):
     context = utils.build_context(request)
     context["team"] = get_object_or_404(models.Team, owner_obj=context["owner"])
     context['wishlist'] = models.Wishlist.objects.get(owner=context['owner'])
@@ -91,26 +40,18 @@ def my_midseason(request):
             p.rank = 999
 
         if not p.player.is_owned:
-            if p.player.stats:
-                if p.player.stats.get('2022_majors', None):
-                    if p.player.position == "P":
-                        context['op_pitchers'].append(p)
-
-                    else:
-                        context['op_hitters'].append(p)
+            if p.player.level in ["A", "V"]:
+                if p.player.position == "P":
+                    context['op_pitchers'].append(p)
 
                 else:
-                    if p.player.level == "B":
-                        if p.player.position == "P":
-                            context["aa_pitchers"].append(p)
-                        else:
-                            context["aa_hitters"].append(p)
-            else:
-                if p.player.level == "B":
-                    if p.player.position == "P":
-                        context["aa_pitchers"].append(p)
-                    else:
-                        context["aa_hitters"].append(p)                  
+                    context['op_hitters'].append(p)
+
+            if p.player.level == "B":
+                if p.player.position == "P":
+                    context["aa_pitchers"].append(p)
+                else:
+                    context["aa_hitters"].append(p)                  
 
         try:
             context["aa_hitters"] = sorted(
@@ -133,7 +74,7 @@ def my_midseason(request):
             context["op_pitchers"], key=lambda x: (x.tier, x.rank)
         )
 
-    return render(request, "my/midseason.html", context)
+    return render(request, "my/draft_prep.html", context)
 
 
 @login_required
