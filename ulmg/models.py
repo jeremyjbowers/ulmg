@@ -350,6 +350,11 @@ class Player(BaseModel):
             return "%s (%s)" % (self.name, self.get_team().abbreviation)
         return self.name
 
+    def is_mlb(self):
+        if self.stats['level'] == "mlb":
+            return True
+        return False
+
     def set_stats(self, stats_dict):
         if not self.stats:
             self.stats = {}
