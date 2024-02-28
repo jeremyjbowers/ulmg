@@ -1,8 +1,4 @@
 from django.contrib import admin
-from django import forms
-from django.contrib.postgres.fields import JSONField
-
-from prettyjson import PrettyJSONWidget
 
 from ulmg.models import (
     Team,
@@ -22,17 +18,6 @@ from ulmg.models import (
 admin.site.site_title = "The ULMG"
 admin.site.site_header = "The ULMG: Admin"
 admin.site.index_title = "Administer The ULMG Website"
-
-
-class PlayerJsonForm(forms.ModelForm):
-    class Meta:
-        model = Player
-        fields = "__all__"
-        widgets = {"stats": PrettyJSONWidget(), "defense": PrettyJSONWidget()}
-
-
-class JsonAdmin(admin.ModelAdmin):
-    form = PlayerJsonForm
 
 
 @admin.register(Venue)
@@ -195,7 +180,7 @@ class TeamAdmin(admin.ModelAdmin):
 
 
 @admin.register(Player)
-class PlayerAdmin(JsonAdmin):
+class PlayerAdmin(admin.ModelAdmin):
     model = Player
     list_display = [
         "last_name",

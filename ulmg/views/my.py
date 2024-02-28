@@ -146,7 +146,7 @@ def my_wishlist(request, list_type):
 
 
 @login_required
-def my_draftlist(request):
+def my_wishlist_beta(request):
     context = utils.build_context(request)
     context["team"] = get_object_or_404(models.Team, owner_obj=context["owner"])
     context['wishlist'] = models.Wishlist.objects.get(owner=context['owner'])

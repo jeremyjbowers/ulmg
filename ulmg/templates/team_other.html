@@ -9,8 +9,8 @@
             <li><a href="/teams/{{ team.abbreviation|lower }}/">Roster{% if num_owned %} ({{ num_owned }}){% endif %}</a></li>
             <li class="is-active"><a href="#">Trades & picks</a></li>
             {% if own_team %}
-            <li><a href="/my/offseason/draft/">My Offseason Draft</a></li>
-            <!-- <li><a href="/my/wishlist/draft/beta/">My Draft List <span style="margin:0 0 0 10px;" class="tag is-rounded is-danger is-light">beta</span></a></li> -->
+            <li><a href="/my/offseason/draft/">My Draft List</a></li>
+            <li><a href="/my/wishlist/draft/beta/">My Draft List <span style="margin:0 0 0 10px;" class="tag is-rounded is-danger is-light">beta</span></a></li>
             <li><a href="/my/wishlist/trade/">My Trade List</a></li>
             {% endif %}
         </ul>

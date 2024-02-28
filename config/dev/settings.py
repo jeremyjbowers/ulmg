@@ -21,7 +21,6 @@ INSTALLED_APPS = [
     "django.contrib.humanize",
     "django.contrib.staticfiles",
     "ulmg",
-    "prettyjson",
 ]
 
 MIDDLEWARE = [
