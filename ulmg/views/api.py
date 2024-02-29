@@ -691,7 +691,7 @@ def player_bulk_action(request):
                             level="B",
                             is_prospect=True,
                             is_amateur=True,
-                            position=position,
+                            position=position
                         )
                         p.save()
                         ply["ulmg_id"] = p.id
