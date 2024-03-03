@@ -40,6 +40,7 @@
                         <th>player</th>
                         <th>age</th>
                         <th>pos</th>
+                        <th>team</th>
                         <th>lvl</th>
                         <th>wRC+</th>
                         <th>xFIP</th>
@@ -54,8 +55,13 @@
                             {% include "includes/my/player_name.html" %}
                             <td>{{ p.player.age|default_if_none:"-" }}</td>
                             <td>{{ p.player.position }}</td>
+                            <td>{{ p.player.mlb_org|default_if_none:"-" }}</td>
                             <td>
-                                {% if p.player.hit_stats %}{% if p.player.hit_stats.level != "" %}{{ p.player.hit_stats.level|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
+                                {% if p.player.hit_stats %}
+                                    {{ p.player.hit_stats.level|default_if_none:"-" }}
+                                {% else %}
+                                    {{ p.player.pit_stats.level|default_if_none:"-" }}
+                                {% endif %}
                             </td>
                             <td>
                                 {% if p.player.hit_stats %}{% if p.player.hit_stats.wrc_plus != "" %}{{ p.player.hit_stats.wrc_plus|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
