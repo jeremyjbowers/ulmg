@@ -373,10 +373,11 @@ class Player(BaseModel):
             for year_side_level, stats in self.stats.items():
                 if stats['side'] == "pitch":
                     if stats['level'] == "mlb":
-                        if stats['ip'] < 1:
-                            weak_mlb = True
-                        payload = stats
-                        has_mlb = True
+                        if stats.get('ip'):
+                            if stats['ip'] < 1:
+                                weak_mlb = True
+                            payload = stats
+                            has_mlb = True
                     else:
                         if not has_mlb or weak_mlb:
                             payload = stats
@@ -391,10 +392,11 @@ class Player(BaseModel):
             for year_side_level, stats in self.stats.items():
                 if stats['side'] == "hit":
                     if stats['level'] == "mlb":
-                        if stats['plate_appearances'] < 5:
-                            weak_mlb = True
-                        payload = stats
-                        has_mlb = True
+                        if stats.get('plate_appearances'):
+                            if stats['plate_appearances'] < 5:
+                                weak_mlb = True
+                            payload = stats
+                            has_mlb = True
                     else:
                         if not has_mlb or weak_mlb:
                             payload = stats
