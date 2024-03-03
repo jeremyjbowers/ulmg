@@ -972,6 +972,7 @@ class WishlistPlayer(BaseModel):
     wishlist = models.ForeignKey(Wishlist, on_delete=models.CASCADE)
     rank = models.IntegerField(blank=True, null=True)
     tier = models.IntegerField(blank=True, null=True)
+    future_value = models.IntegerField(blank=True, null=True)
     note = models.TextField(blank=True, null=True)
     tags = ArrayField(models.CharField(max_length=255), blank=True, null=True)
 
