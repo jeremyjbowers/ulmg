@@ -35,9 +35,11 @@
 </td>
 {% endif %}
 
-{% if protect_tab or roster_tab%}<td>
+{% if protect_tab or roster_tab%}
+<!-- <td>
     <a class="button is-small is-warning {% if not p.is_trade_block %}is-light {% endif %}player-action" data-playerid="{{ p.id }}" data-action="trade_block">&uarr;</a>
-</td><td>
+</td> -->
+<td>
     <!-- {% if p.is_carded %}<a class="button is-small is-outlined player-action" data-playerid="{{ p.id }}" data-action="unprotect">CLR ⟲</a>{% endif %} -->
     <a class="button is-small is-danger is-outlined player-drop" data-playerid="{{ p.id }}" data-playername="{{ p.name }}">X</a>
 </td>{% endif %}
