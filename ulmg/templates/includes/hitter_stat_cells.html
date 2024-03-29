@@ -19,39 +19,39 @@
     {% if p.hit_stats %}{% if p.hit_stats.level != "" %}{{ p.hit_stats.level|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
 </td>
 
-<td data-value="{% if p.hit_stats.year == 2023 %}{{ p.hit_stats.plate_appearances|default_if_none:"-999" }}{% else %}-999{% endif %}">
-    {% if p.hit_stats.plate_appearances > 0 and p.hit_stats.year == 2023 %}{{ p.hit_stats.plate_appearances|default_if_none:"-" }}{% else %}-{% endif %}
+<td data-value="{% if p.hit_stats.year == 2024 %}{{ p.hit_stats.plate_appearances|default_if_none:"-999" }}{% else %}-999{% endif %}">
+    {% if p.hit_stats.plate_appearances > 0 and p.hit_stats.year == 2024 %}{{ p.hit_stats.plate_appearances|default_if_none:"-" }}{% else %}-{% endif %}
 </td>
-<td data-value="{% if p.hit_stats.year == 2023 %}{{ p.hit_stats.avg|default_if_none:"-999" }}{% else %}-999{% endif %}">
-    {% if p.hit_stats.plate_appearances > 0 and p.hit_stats.year == 2023 %}{{ p.hit_stats.avg|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
+<td data-value="{% if p.hit_stats.year == 2024 %}{{ p.hit_stats.avg|default_if_none:"-999" }}{% else %}-999{% endif %}">
+    {% if p.hit_stats.plate_appearances > 0 and p.hit_stats.year == 2024 %}{{ p.hit_stats.avg|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
 </td>
-<td data-value="{% if p.hit_stats.year == 2023 %}{{ p.hit_stats.obp|default_if_none:"-999" }}{% else %}-999{% endif %}">
-    {% if p.hit_stats.plate_appearances > 0 and p.hit_stats.year == 2023 %}{{ p.hit_stats.obp|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
+<td data-value="{% if p.hit_stats.year == 2024 %}{{ p.hit_stats.obp|default_if_none:"-999" }}{% else %}-999{% endif %}">
+    {% if p.hit_stats.plate_appearances > 0 and p.hit_stats.year == 2024 %}{{ p.hit_stats.obp|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
 </td>
-<td data-value="{% if p.hit_stats.year == 2023 %}{{ p.hit_stats.slg|default_if_none:"-999" }}{% else %}-999{% endif %}">
-    {% if p.hit_stats.plate_appearances > 0 and p.hit_stats.year == 2023 %}{{ p.hit_stats.slg|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
+<td data-value="{% if p.hit_stats.year == 2024 %}{{ p.hit_stats.slg|default_if_none:"-999" }}{% else %}-999{% endif %}">
+    {% if p.hit_stats.plate_appearances > 0 and p.hit_stats.year == 2024 %}{{ p.hit_stats.slg|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
 </td>
-<td data-value="{% if p.hit_stats.year == 2023 %}{{ p.hit_stats.hr|default_if_none:"-999" }}{% else %}-999{% endif %}">
-    {% if p.hit_stats.plate_appearances > 0 and p.hit_stats.year == 2023 %}{{ p.hit_stats.hr|default_if_none:"-" }}{% else %}-{% endif %}
+<td data-value="{% if p.hit_stats.year == 2024 %}{{ p.hit_stats.hr|default_if_none:"-999" }}{% else %}-999{% endif %}">
+    {% if p.hit_stats.plate_appearances > 0 and p.hit_stats.year == 2024 %}{{ p.hit_stats.hr|default_if_none:"-" }}{% else %}-{% endif %}
 </td>
-<td data-value="{% if p.hit_stats.year == 2023 %}{{ p.hit_stats.sb|default_if_none:"-999" }}{% else %}-999{% endif %}">
-    {% if p.hit_stats.plate_appearances > 0 and p.hit_stats.year == 2023 %}{{ p.hit_stats.sb|default_if_none:"-" }}{% else %}-{% endif %}
+<td data-value="{% if p.hit_stats.year == 2024 %}{{ p.hit_stats.sb|default_if_none:"-999" }}{% else %}-999{% endif %}">
+    {% if p.hit_stats.plate_appearances > 0 and p.hit_stats.year == 2024 %}{{ p.hit_stats.sb|default_if_none:"-" }}{% else %}-{% endif %}
 </td>
-<td data-value="{% if p.hit_stats.year == 2023 %}{{ p.hit_stats.k_pct|default_if_none:"-999" }}{% else %}-999{% endif %}">
-    {% if p.hit_stats.plate_appearances > 0 and p.hit_stats.year == 2023 %}{{ p.hit_stats.k_pct|floatformat:1|default_if_none:"-" }}{% else %}-{% endif %}
+<td data-value="{% if p.hit_stats.year == 2024 %}{{ p.hit_stats.k_pct|default_if_none:"-999" }}{% else %}-999{% endif %}">
+    {% if p.hit_stats.plate_appearances > 0 and p.hit_stats.year == 2024 %}{{ p.hit_stats.k_pct|floatformat:1|default_if_none:"-" }}{% else %}-{% endif %}
 </td>
-<td data-value="{% if p.hit_stats.year == 2023 %}{{ p.hit_stats.bb_pct|default_if_none:"-999" }}{% else %}-999{% endif %}">
-    {% if p.hit_stats.plate_appearances > 0 and p.hit_stats.year == 2023 %}{{ p.hit_stats.bb_pct|floatformat:1|default_if_none:"-" }}{% else %}-{% endif %}
+<td data-value="{% if p.hit_stats.year == 2024 %}{{ p.hit_stats.bb_pct|default_if_none:"-999" }}{% else %}-999{% endif %}">
+    {% if p.hit_stats.plate_appearances > 0 and p.hit_stats.year == 2024 %}{{ p.hit_stats.bb_pct|floatformat:1|default_if_none:"-" }}{% else %}-{% endif %}
 </td>
-<td data-value="{% if p.hit_stats.year == 2023 %}{{ p.hit_stats.wrc_plus|default_if_none:"-999" }}{% else %}-999{% endif %}">
-    {% if p.hit_stats.plate_appearances > 0 and p.hit_stats.year == 2023 %}{{ p.hit_stats.wrc_plus|default_if_none:"-" }}{% else %}-{% endif %}
+<td data-value="{% if p.hit_stats.year == 2024 %}{{ p.hit_stats.wrc_plus|default_if_none:"-999" }}{% else %}-999{% endif %}">
+    {% if p.hit_stats.plate_appearances > 0 and p.hit_stats.year == 2024 %}{{ p.hit_stats.wrc_plus|default_if_none:"-" }}{% else %}-{% endif %}
 </td>
-<td data-value="{% if p.hit_stats.year == 2023 %}{{ p.hit_stats.xavg|default_if_none:"-999" }}{% else %}-999{% endif %}">
-    {% if p.hit_stats.plate_appearances > 0 and p.hit_stats.year == 2023 and p.hit_stats.xavg %}{{ p.hit_stats.xavg|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
+<td data-value="{% if p.hit_stats.year == 2024 %}{{ p.hit_stats.xavg|default_if_none:"-999" }}{% else %}-999{% endif %}">
+    {% if p.hit_stats.plate_appearances > 0 and p.hit_stats.year == 2024 and p.hit_stats.xavg %}{{ p.hit_stats.xavg|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
 </td>
-<td data-value="{% if p.hit_stats.year == 2023 %}{{ p.hit_stats.xwoba|default_if_none:"-999" }}{% else %}-999{% endif %}">
-    {% if p.hit_stats.plate_appearances > 0 and p.hit_stats.year == 2023 and p.hit_stats.xwoba %}{{ p.hit_stats.xwoba|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
+<td data-value="{% if p.hit_stats.year == 2024 %}{{ p.hit_stats.xwoba|default_if_none:"-999" }}{% else %}-999{% endif %}">
+    {% if p.hit_stats.plate_appearances > 0 and p.hit_stats.year == 2024 and p.hit_stats.xwoba %}{{ p.hit_stats.xwoba|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
 </td>
-<td data-value="{% if p.hit_stats.year == 2023 %}{{ p.hit_stats.xslg|default_if_none:"-999" }}{% else %}-999{% endif %}">
-    {% if p.hit_stats.plate_appearances > 0 and p.hit_stats.year == 2023 and p.hit_stats.xslg %}{{ p.hit_stats.xslg|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
+<td data-value="{% if p.hit_stats.year == 2024 %}{{ p.hit_stats.xslg|default_if_none:"-999" }}{% else %}-999{% endif %}">
+    {% if p.hit_stats.plate_appearances > 0 and p.hit_stats.year == 2024 and p.hit_stats.xslg %}{{ p.hit_stats.xslg|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
 </td>

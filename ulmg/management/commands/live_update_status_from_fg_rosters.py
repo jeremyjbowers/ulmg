@@ -21,7 +21,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         teams = settings.ROSTER_TEAM_IDS
 
-        models.Player.objects.all().update(role_type=None, is_injured=False, is_mlb=False, role=None, is_starter=False, is_bench=False, injury_description=None, is_mlb40man=False)
+        models.Player.objects.all().update(role_type=None, is_injured=False, role=None, is_starter=False, is_bench=False, injury_description=None, is_mlb40man=False)
 
         for team_id, team_abbrev, team_name in teams:
             with open(f"data/rosters/{team_abbrev}_roster.json", "r") as readfile:
@@ -93,7 +93,6 @@ class Command(BaseCommand):
 
                     if obj:
                         obj.is_injured = False
-                        obj.is_mlb = False
                         obj.role = None
                         obj.is_starter = False
                         obj.is_bench = False
@@ -109,7 +108,7 @@ class Command(BaseCommand):
                                 obj.role = player["role"]
 
                         if obj.role == "MLB":
-                            obj.is_mlb = True
+                            obj.is_mlb40man = True
 
                         if player.get('type', None):
                             if player["type"] == "mlb-bp":
@@ -126,29 +125,26 @@ class Command(BaseCommand):
 
                             obj.role_type = player['type']
 
-                            if "il" in player["type"]:
-                                obj.is_injured = True
+                            # if "il" in player["type"]:
+                            #     obj.is_injured = True
 
-                            if "sp" in player['type']:
-                                obj.role_type = "SP"
+                            # if "sp" in player['type']:
+                            #     obj.role_type = "SP"
 
-                            if "sl" in player['type']:
-                                obj.role_type = "ST"
+                            # if "rp" in player['type']:
+                            #     obj.role_type = "RP"
 
-                            if "rp" in player['type']:
-                                obj.role_type = "RP"
+                            # if "bp" in player['type']:
+                            #     obj.role_type = "RP"
 
-                            if "bp" in player['type']:
-                                obj.role_type = "RP"
+                            # if "pp" in player['type']:
+                            #     obj.role_type = "PP"
 
-                            if "pp" in player['type']:
-                                obj.role_type = "PP"
+                            # if "bn" in player['type']:
+                            #     obj.role_type = "BN"
 
-                            if "bn" in player['type']:
-                                obj.role_type = "BN"
-
-                            if "il" in player['type']:
-                                obj.role_type = "IL"
+                            # if "il" in player['type']:
+                            #     obj.role_type = "IL"
 
                         obj.injury_description = player.get("injurynotes", None)
 
