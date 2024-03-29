@@ -311,7 +311,7 @@ def normalize_pos(pos):
 
     # Die if we cannot get a position.
     # This will likely fail to save, as positions are required?
-    return None
+    return "DH"
 
 
 # covered
