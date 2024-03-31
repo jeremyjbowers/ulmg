@@ -1,16 +1,3 @@
-{% if roster_tab or protect_tab %}
-<td>
-    {% if p.is_reserve %}<span class="tag is-warning">ASR</span>{% endif %}
-    {% if p.is_1h_pos %}<span class="tag is-warning">HIT</span>{% endif %}
-    {% if p.is_1h_c %}<span class="tag is-warning">C</span>{% endif %}
-    {% if p.is_1h_p %}<span class="tag is-warning">P</span>{% endif %}
-    {% if p.is_mlb_roster %}<span class="tag is-success">MLB</span>{% endif %}
-    {% if p.is_aaa_roster %}<span class="tag is-info">AAA</span>{% endif %}
-    {% if p.is_1h_draft %}<span class="tag">2H</span>{% endif %}
-    {% if p.is_35man_roster %}<span class="tag is_success">40-man</span>{% endif %}
-</td>
-{% endif %}
-
 {% if roster_tab %}
 <td style="text-align:right!important;">
     {% if not p.is_1h_draft %}{% if p.is_carded and not p.is_mlb_roster and not p.is_reserve and mlb_roster_count < mlb_roster_size %}{% if not p.is_1h_c and not p.is_1h_pos and not p.is_1h_p %}<a class="button is-small is-outlined is-success player-action" data-playerid="{{ p.id }}" data-action="to_mlb">MLB &uarr;</a>{% endif %}{% endif %}{% endif %}

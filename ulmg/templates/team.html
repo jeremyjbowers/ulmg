@@ -67,7 +67,8 @@
                     <tr>
                         <th data-sortable-type="alpha">Name</th>
                         <th data-sortable-type="numeric">Age</th>
-                        <th data-sortable-type="alpha">Lvl</th>
+                        <th data-sortable-type="alpha">LVL</th>
+                        <th>Roster</th>
                         {% include "includes/hitter_stat_headers.html" %}
                         {% if own_team %}
                             {% include "includes/player_protect_headers.html" %}
@@ -83,6 +84,16 @@
                     {% include "includes/player_name.html" %}
                         <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
                         <td data-value="{{ p.level|default_if_none:"Z" }}<">{{ p.level|default_if_none:"" }}</td>
+                        <td>
+                            {% if p.is_reserve %}<span class="tag is-warning">ASR</span>{% endif %}
+                            {% if p.is_1h_pos %}<span class="tag is-warning">HIT</span>{% endif %}
+                            {% if p.is_1h_c %}<span class="tag is-warning">C</span>{% endif %}
+                            {% if p.is_1h_p %}<span class="tag is-warning">P</span>{% endif %}
+                            {% if p.is_35man_roster %}<span>40-man</span>{% endif %}
+                            {% if p.is_mlb_roster %}<span><strong>MLB</strong></span>{% endif %}
+                            {% if p.is_aaa_roster %}<span>AAA</span>{% endif %}
+                            {% if p.is_1h_draft %}<span>2H</span>{% endif %}
+                        </td>
                         {% include "includes/hitter_stat_cells.html" %}
                         {% if own_team %}
                             {% include "includes/player_protect_actions.html" %}
@@ -103,7 +114,8 @@
                     <tr>
                         <th data-sortable-type="alpha">Name</th>
                         <th data-sortable-type="numeric">Age</th>
-                        <th data-sortable-type="alpha">Lvl</th>
+                        <th data-sortable-type="alpha">LVL</th>
+                        <th>Roster</th>
                         {% include "includes/pitcher_stat_headers.html" %}
                         {% if own_team %}
                             {% include "includes/player_protect_headers.html" %}
@@ -119,6 +131,16 @@
                         {% include "includes/player_name.html" %}
                         <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
                         <td data-value="{{ p.level|default_if_none:"Z" }}<">{{ p.level|default_if_none:"" }}</td>
+                        <td>
+                            {% if p.is_reserve %}<span class="tag is-warning">ASR</span>{% endif %}
+                            {% if p.is_1h_pos %}<span class="tag is-warning">HIT</span>{% endif %}
+                            {% if p.is_1h_c %}<span class="tag is-warning">C</span>{% endif %}
+                            {% if p.is_1h_p %}<span class="tag is-warning">P</span>{% endif %}
+                            {% if p.is_mlb_roster %}<span><strong>MLB</strong></span>{% endif %}
+                            {% if p.is_aaa_roster %}<span>AAA</span>{% endif %}
+                            {% if p.is_1h_draft %}<span class="tag">2H</span>{% endif %}
+                            {% if p.is_35man_roster %}<span>40-man</span>{% endif %}
+                        </td>
                         {% include "includes/pitcher_stat_cells.html" %}
                         {% if own_team %}
                             {% include "includes/player_protect_actions.html" %}
