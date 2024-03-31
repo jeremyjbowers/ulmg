@@ -1,7 +1,3 @@
-{% if protect_tab or roster_tab %}
-<th>Status</th>
-{% endif %}
-
 {% if roster_tab %}
 <th>Roster</th>
 {% endif %}
@@ -10,4 +6,4 @@
     <th>Protect</th>
     <!-- <th style="text-align:right!important;">Trade block</th> -->
     <th style="text-align:right!important;">Drop</th>
-    {% endif %}
+{% endif %}
