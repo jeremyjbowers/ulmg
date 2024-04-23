@@ -14,8 +14,19 @@ from ulmg import models, utils
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
-        # no_birthdates = models.Player.objects.filter(birthdate__inull=True)
-        players = models.Player.objects.filter(Q(position__isnull=True)|Q(birthdate__isnull=True)|Q(mlb_org__isnull=True))
+        """
+        Looks to update position, birthdate and mlb_org
+        Lots of players won't have an mlb_org because they're retired
+        or because they're amateurs, so this script won't ever fully complete
+        """
+
+        players = models.Player.objects\
+            .exclude(mlbam_id__isnull=True)\
+            .filter(
+                Q(position__isnull=True)|
+                Q(birthdate__isnull=True)|
+                Q(mlb_org__isnull=True)
+            )
 
         for p in players:
             if p.mlb_api_url:
