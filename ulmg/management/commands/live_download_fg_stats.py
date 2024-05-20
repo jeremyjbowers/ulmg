@@ -38,7 +38,7 @@ class Command(BaseCommand):
         players = {"bat": [], "pit": []}
 
         for k, v in players.items():
-            url = f"https://www.fangraphs.com/api/leaders/minor-league/data?pos=all&level=0&lg=2,4,5,6,7,8,9,10,11,14,12,13,15,16,17,18,30,32,33&stats={k}&qual=0&type=0&team=&season={self.season}&seasonEnd={self.season}&org=&ind=0&splitTeam=false"
+            url = f"https://www.fangraphs.com/api/leaders/minor-league/data?pos=all&level=0&lg=2,4,5,6,7,8,9,10,11,14,12,13,15,16,17,18,30,32&stats={k}&qual=0&type=0&team=&season={self.season}&seasonEnd={self.season}&org=&ind=0&splitTeam=false"
             r = requests.get(url, verify=False)
             players[k] += r.json()
 
