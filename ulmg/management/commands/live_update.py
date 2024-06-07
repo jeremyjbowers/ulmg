@@ -29,7 +29,7 @@ class Command(BaseCommand):
 
         if not options['cached']:
 
-            # download roster files
+            # # download roster files
             print('LIVE: Download FG rosters')
             call_command('live_download_fg_rosters')
 

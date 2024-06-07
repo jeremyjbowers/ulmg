@@ -96,8 +96,9 @@ class Command(BaseCommand):
             for k,v in player_dict.items():
                 setattr(obj, k, v)
 
-            obj.save()
             print(obj)
+            obj.save()
+            # print(obj)
 
     def fix_bad_player_ids(self):
         bad_ids = models.Player.objects.filter(mlbam_id__icontains="/")
