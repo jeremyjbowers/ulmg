@@ -33,6 +33,8 @@ class Command(BaseCommand):
             print('LIVE: Download FG rosters')
             call_command('live_download_fg_rosters')
 
+            call_command('fix_dupes')
+
             # download mlb depth charts
             print('LIVE: Download MLB depth charts')
             call_command('live_download_mlb_depthcharts')
