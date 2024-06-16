@@ -53,8 +53,8 @@ class Command(BaseCommand):
         aa_teams = [self.parse_players(t) for t in team_list if t['sport']['id'] == 12]
         high_a_teams = [self.parse_players(t) for t in team_list if t['sport']['id'] == 13]
         a_teams = [self.parse_players(t) for t in team_list if t['sport']['id'] == 14]
-        ss_a_teams =  [self.parse_players(t) for t in team_list if t['sport']['id'] == 15]
-        rookie_teams = [self.parse_players(t) for t in team_list if t['sport']['id'] == 16]            
+        # ss_a_teams =  [self.parse_players(t) for t in team_list if t['sport']['id'] == 15]
+        # rookie_teams = [self.parse_players(t) for t in team_list if t['sport']['id'] == 16]            
 
     def parse_players(self, t):
         roster_link = f"https://statsapi.mlb.com/api/v1/teams/{t['id']}/roster/40Man"
