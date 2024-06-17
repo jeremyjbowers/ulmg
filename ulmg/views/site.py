@@ -343,7 +343,7 @@ def player_available_midseason(request):
     context = utils.build_context(request)
     context["hitters"] = (
         models.Player.objects.filter(
-            Q(team__isnull=True, stats__2022_majors__plate_appearances__gte=1)
+            Q(team__isnull=True, stats__2023_majors_hit__plate_appearances__gte=1)
             | Q(
                 level="V",
                 is_owned=True,
@@ -358,7 +358,7 @@ def player_available_midseason(request):
     )
 
     context["pitchers"] = models.Player.objects.filter(
-        Q(team__isnull=True, stats__2022_majors__ip__gte=1, position__icontains="P")
+        Q(team__isnull=True, stats__2023_majors_pitch__ip__gte=1, position__icontains="P")
         | Q(
             level="V",
             position="P",
@@ -426,8 +426,8 @@ def search(request):
         if midseason.lower() != "":
             if to_bool(midseason) == True:
                 query = query.filter(
-                    Q(stats__2022_majors__plate_appearances__gte=5)
-                    | Q(stats__2022_majors__g__gte=2)
+                    Q(stats__2023_majors_hit__plate_appearances__gte=1)
+                    | Q(stats__2023_majors_pit__g__gte=1)
                 )
             context["midseason"] = midseason
 
@@ -448,19 +448,19 @@ def search(request):
     if request.GET.get('pa_cutoff', None):
         pa_cutoff = int(request.GET['pa_cutoff'])
         if pa_cutoff:
-            query = query.filter(stats__2023_majors__plate_appearances__gte=pa_cutoff)
+            query = query.filter(stats__2024_majors_hit__plate_appearances__gte=pa_cutoff)
             context['pa_cutoff'] = f"{pa_cutoff}"
 
     if request.GET.get('ip_cutoff', None):
         ip_cutoff = int(request.GET['ip_cutoff'])
         if ip_cutoff:
-            query = query.filter(stats__2023_majors__ip__gte=ip_cutoff)
+            query = query.filter(stats__2024_majors_pitch__ip__gte=ip_cutoff)
             context['ip_cutoff'] = f"{ip_cutoff}"
 
     if request.GET.get('gs_cutoff', None):
         gs_cutoff = int(request.GET['gs_cutoff'])
         if gs_cutoff:
-            query = query.filter(stats__2023_majors__gs__gte=gs_cutoff)
+            query = query.filter(stats__2024_majors_pitch__gs__gte=gs_cutoff)
             context['gs_cutoff'] = f"{gs_cutoff}"
 
     if request.GET.get("level", None):
