@@ -51,17 +51,19 @@
                         <th data-sortable-type="alpha">Team</th>
                         <th data-sortable-type="numeric">Age</th>
                         <th data-sortable-type="alpha">Lvl</th>
+                        <th data-sortable-type="alpha">Status</th>
                         {% include "includes/hitter_stat_headers.html" %}
                     </tr>
                 </thead>
                 <tbody>
                 {% for p in position.list %}
-                    <tr{% if not p.stats.current.level == "mlb" %} class="minors"{% endif %}>
-                        {% include "includes/player_name.html" %}
+                    <tr class="{% if p.roster_status %}{{ p.roster_status|lower|default_if_none:"non-mlb" }} {% else %}non-mlb {% endif %}">
+                         {% include "includes/player_name.html" %}
                         <td>{% if p.mlb_org %}{{ p.mlb_org|default_if_none:"-" }}{% else %}-{% endif %}</td>
                         <td data-value="{{ p.team|default_if_none:"" }}">{% if p.team %}<a href="/teams/{{ p.team.abbreviation }}/">{% endif %}{{ p.team|default_if_none:"-" }}{% if p.team %}</a>{% endif %}</td>
                         <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
                         <td data-value="{{ p.level|default_if_none:"Z" }}<">{{ p.level|default_if_none:"" }}</td>
+                        <td data-value="{{ p.roster_status|default_if_none:"Z" }}<">{{ p.roster_status|default_if_none:"" }}</td>
                         {% include "includes/hitter_stat_cells.html" %}
                     </tr>
                 {% endfor %}
@@ -78,17 +80,19 @@
                         <th data-sortable-type="alpha">Team</th>
                         <th data-sortable-type="numeric">Age</th>
                         <th data-sortable-type="alpha">Lvl</th>
+                        <th data-sortable-type="alpha">Status</th>
                         {% include "includes/pitcher_stat_headers.html" %}
                     </tr>
                 </thead>
                 <tbody>
                 {% for p in pitchers %}
-                <tr{% if not p.stats.current.level == "mlb" %} class="minors"{% endif %}>
-                    {% include "includes/player_name.html" %}
+                    <tr class="{% if p.roster_status %}{{ p.roster_status|lower|default_if_none:"non-mlb" }} {% else %}non-mlb {% endif %}">
+                        {% include "includes/player_name.html" %}
                         <td>{% if p.mlb_org %}{{ p.mlb_org|default_if_none:"-" }}{% else %}-{% endif %}</td>
                         <td data-value="{{ p.team|default_if_none:"" }}">{% if p.team %}<a href="/teams/{{ p.team.abbreviation }}/">{% endif %}{{ p.team|default_if_none:"-" }}{% if p.team %}</a>{% endif %}</td>
                         <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
                         <td data-value="{{ p.level|default_if_none:"Z" }}<">{{ p.level|default_if_none:"" }}</td>
+                        <td data-value="{{ p.roster_status|default_if_none:"Z" }}<">{{ p.roster_status|default_if_none:"" }}</td>
                         {% include "includes/pitcher_stat_cells.html" %}
                     </tr>
                 {% endfor %}
