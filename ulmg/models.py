@@ -580,11 +580,15 @@ class Player(BaseModel):
             return self.team.abbreviation
         return None
 
+    def set_position(self):
+        self.position = utils.normalize_pos(self.position)
+
     def save(self, *args, **kwargs):
         """
         Some light housekeeping.
         """
         self.set_name()
+        self.set_position()
         self.set_ids()
         self.set_fg_url()
         self.set_level_order()
