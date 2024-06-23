@@ -3,7 +3,7 @@
 {% load ulmg_tags %}
 
 {% block content %}
-{% include "includes/my/team_topper.html" %}
+{% include "includes/team_topper.html" %}
 
 <style>
     p.player.level-heading {
@@ -23,56 +23,15 @@
     }
 </style>
 
-<nav class="level is-mobile">
-    {% for level in level_distribution %}
-    <div class="level-item has-text-centered">
-        <div>
-        <p class="level-heading heading">{% if level.level_order == 0 %}B-LEVEL{% elif level.level_order == 5 %}A-LEVEL{% else %}VETERAN{% endif %}</p>
-        <p class="level-title title">{{ level.level_order__count }}</p>
-        </div>
-    </div>
-    {% endfor %}
-</nav>
-
 <div id="team" class="section is-desktop">
     <div class="tabs is-centered is-boxed is-large">
         <ul>
             <li><a href="/my/team/">My Roster{% if num_owned %} ({{ num_owned }}){% endif %}</a></li>
             <li><a href="/teams/{{ team.abbreviation|lower }}/other/">Trades & picks</a></li>
-            <li class="is-active"><a href="/my/offseason/draft/">My Draft List</a></li>
-            <li><a href="/my/wishlist/draft/beta/">My Draft List <span style="margin:0 0 0 10px;" class="tag is-rounded is-danger is-light">beta</span></a></li>
-            <li><a href="/my/wishlist/trade/">My Trade List</a></li>
+            <li class="is-active"><a href="/my/midseason/draft/">My Midseason Draft</a></li>
+            <!-- <li><a href="/my/wishlist/draft/beta/">My Draft List <span style="margin:0 0 0 10px;" class="tag is-rounded is-danger is-light">beta</span></a></li>
+            <li><a href="/my/wishlist/trade/">My Trade List</a></li> -->
         </ul>
-    </div>
-
-    <div class="columns">
-        <div class="column">
-            <h1 class="title is-2">AA draft <small>with 2024 stats</small></h1>
-        </div>
-    </div>
-    <div class="columns">
-        <div class="column">
-            <h1 class="title is-3">Hitters ({{ aa_hitters|length }})</h1>
-            <table class="table is-fullwidth is-hoverable">
-                {% include "includes/my/hitter_sortable_headers.html" %}
-                <tbody id="aa-hitters" class="list-group">
-                {% for p in aa_hitters %}
-                    {% include "includes/my/hitter_sortable_cells.html" %}
-                {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        <div class="column">
-            <h1 class="title is-3">Pitchers ({{ aa_pitchers|length }})</h1>
-            <table class="table is-fullwidth">
-                {% include "includes/my/pitcher_sortable_headers.html" %}
-                <tbody id="aa-pitchers" class="list-group">
-                {% for p in aa_pitchers %}
-                    {% include "includes/my/pitcher_sortable_cells.html" %}
-                {% endfor %}
-                </tbody>
-            </table>
-        </div>
     </div>
 
     <div class="columns">
@@ -98,6 +57,36 @@
                 {% include "includes/my/pitcher_sortable_headers.html" %}
                 <tbody id="op-pitchers" class="list-group">
                 {% for p in op_pitchers %}
+                    {% include "includes/my/pitcher_sortable_cells.html" %}
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="columns">
+        <div class="column">
+            <h1 class="title is-2">AA draft <small>with 2024 stats</small></h1>
+        </div>
+    </div>
+    <div class="columns">
+        <div class="column">
+            <h1 class="title is-3">Hitters ({{ aa_hitters|length }})</h1>
+            <table class="table is-fullwidth is-hoverable">
+                {% include "includes/my/hitter_sortable_headers.html" %}
+                <tbody id="aa-hitters" class="list-group">
+                {% for p in aa_hitters %}
+                    {% include "includes/my/hitter_sortable_cells.html" %}
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="column">
+            <h1 class="title is-3">Pitchers ({{ aa_pitchers|length }})</h1>
+            <table class="table is-fullwidth">
+                {% include "includes/my/pitcher_sortable_headers.html" %}
+                <tbody id="aa-pitchers" class="list-group">
+                {% for p in aa_pitchers %}
                     {% include "includes/my/pitcher_sortable_cells.html" %}
                 {% endfor %}
                 </tbody>
