@@ -30,5 +30,5 @@ class Command(BaseCommand):
         # call_command('post_offseason_draft')
         # call_command('generate_draft_picks','2024','offseason')
         # call_command('generate_draft_picks','2024','midseason')
-        call_command('midseason')
+        # call_command('midseason')
         # call_command('live_update')
