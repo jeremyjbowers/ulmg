@@ -205,9 +205,38 @@ def my_midseason_draft(request):
     else:
         context["own_team"] = False
 
-    context['op_hitters'] = models.WishlistPlayer.objects.exclude(player__position="P").filter(wishlist=context["wishlist"], player__is_owned=False, player__stats__2023_majors_hit__plate_appearances__gte=1)
+    context["op_hitters"] = models.WishlistPlayer.objects\
+    .filter(wishlist=context["wishlist"])\
+    .exclude(player__position="P")\
+    .filter(
+        Q(player__team__isnull=True, player__stats__2023_majors_hit__plate_appearances__gte=1)
+        | Q(
+            player__level="V",
+            player__is_owned=True,
+            player__is_mlb_roster=False,
+            player__is_1h_c=False,
+            player__is_1h_pos=False,
+            player__is_reserve=False,
+        )
+    )
 
-    context['op_pitchers'] = models.WishlistPlayer.objects.filter(player__position="P", wishlist=context["wishlist"], player__is_owned=False, player__stats__2023_majors_pitch__g__gte=1)
+    context["op_pitchers"] = models.WishlistPlayer.objects\
+    .filter(wishlist=context["wishlist"])\
+    .filter(
+        Q(player__team__isnull=True, player__stats__2023_majors_pitch__ip__gte=1, player__position__icontains="P")
+        | Q(
+            player__level="V",
+            player__position="P",
+            player__is_owned=True,
+            player__is_mlb_roster=False,
+            player__is_1h_p=False,
+            player__is_reserve=False,
+        )
+    )
+
+    # context['op_hitters'] = models.WishlistPlayer.objects.exclude(player__position="P").filter(wishlist=context["wishlist"], player__is_owned=False, player__stats__2023_majors_hit__plate_appearances__gte=1)
+
+    # context['op_pitchers'] = models.WishlistPlayer.objects.filter(player__position="P", wishlist=context["wishlist"], player__is_owned=False, player__stats__2023_majors_pitch__g__gte=1)
 
     context['aa_hitters'] = models.WishlistPlayer.objects.exclude(player__position="P").filter(wishlist=context["wishlist"], player__is_owned=False, player__is_carded=False, player__level="B")
 
