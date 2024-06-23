@@ -188,3 +188,43 @@ def my_wishlist_beta(request):
     )
 
     return render(request, "my/draft_prep.html", context)
+
+@login_required
+def my_midseason_draft(request):
+    context = utils.build_context(request)
+    context["team"] = get_object_or_404(models.Team, owner_obj=context["owner"])
+    context['wishlist'] = models.Wishlist.objects.get(owner=context['owner'])
+    context["num_owned"] = models.Player.objects.filter(team=context["team"]).count()
+
+    if request.user.is_authenticated:
+        owner = models.Owner.objects.get(user=request.user)
+        if owner.team() == context["team"]:
+            context["own_team"] = True
+        else:
+            context["own_team"] = False
+    else:
+        context["own_team"] = False
+
+    context['op_hitters'] = models.WishlistPlayer.objects.exclude(player__position="P").filter(wishlist=context["wishlist"], player__is_owned=False, player__stats__2023_majors_hit__plate_appearances__gte=1)
+
+    context['op_pitchers'] = models.WishlistPlayer.objects.filter(player__position="P", wishlist=context["wishlist"], player__is_owned=False, player__stats__2023_majors_pitch__g__gte=1)
+
+    context['aa_hitters'] = models.WishlistPlayer.objects.exclude(player__position="P").filter(wishlist=context["wishlist"], player__is_owned=False, player__is_carded=False, player__level="B")
+
+    context['aa_pitchers'] = models.WishlistPlayer.objects.filter(player__position="P", wishlist=context["wishlist"], player__is_owned=False, player__is_carded=False, player__level="B")
+
+    context["op_hitters"] = sorted(
+        context["op_hitters"], key=lambda x: (x.tier, x.rank)
+    )
+    context["op_pitchers"] = sorted(
+        context["op_pitchers"], key=lambda x: (x.tier, x.rank)
+    )
+
+    context["aa_hitters"] = sorted(
+        context["aa_hitters"], key=lambda x: (x.tier, x.rank)
+    )
+    context["aa_pitchers"] = sorted(
+        context["aa_pitchers"], key=lambda x: (x.tier, x.rank)
+    )
+
+    return render(request, "my/midseason_draft_prep.html", context)

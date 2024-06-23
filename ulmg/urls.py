@@ -58,6 +58,7 @@ urlpatterns = [
     ),
     path("draft/<int:year>/<str:season>/<str:draft_type>/", views.site.draft_recap),
     path("my/offseason/draft/", views.my.my_draft_prep),
+    path("my/midseason/draft/", views.my.my_midseason_draft),
     path("my/wishlist/<str:list_type>/beta/", views.special.my_wishlist_beta),
     path("my/wishlist/<str:list_type>/<str:abbreviation>/", views.special.my_wishlist),
     path("my/wishlist/<str:list_type>/", views.my.my_wishlist),
