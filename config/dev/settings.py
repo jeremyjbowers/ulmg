@@ -213,6 +213,8 @@ CSV_COLUMNS = [
 ]
 
 DRAFTS = [
+    {"title": "2024 Midseason AA", "url": "/draft/2024/midseason/aa/"},
+    {"title": "2024 Midseason Open", "url": "/draft/2024/midseason/open/"},
     {"title": "2024 Offseason AA", "url": "/draft/2024/offseason/aa/"},
     {"title": "2024 Offseason Open", "url": "/draft/2024/offseason/open/"},
     {"title": "2023 Midseason AA", "url": "/draft/2023/midseason/aa/"},
