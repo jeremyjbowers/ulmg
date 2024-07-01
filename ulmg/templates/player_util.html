@@ -3,7 +3,7 @@
 {% block content %}
 <div class="columns section is-desktop">
     <div class="column">
-        <h2 class="title is-4">No IDs</h2>
+        <h2 class="title is-4">No IDs ({{ no_ids|length }})</h2>
         <table class="table">
             <thead>
                 <tr>
@@ -24,7 +24,7 @@
         </table>
     </div>
     <div class="column">
-        <h2 class="title is-4">No birthdate</h2>
+        <h2 class="title is-4">No birthdate {{ no_birthdates|length }}</h2>
         <table class="table">
             <thead>
                 <tr>
@@ -45,7 +45,7 @@
         </table>
     </div>
     <div class="column">
-        <h2 class="title is-4">Suspect birthdate</h2>
+        <h2 class="title is-4">Suspect birthdate {{ suspect_birthdates|length }}</h2>
         <table class="table">
             <thead>
                 <tr>

@@ -24,9 +24,13 @@ class Command(BaseCommand):
             .exclude(mlbam_id__isnull=True)\
             .filter(
                 Q(position__isnull=True)|
-                Q(birthdate__isnull=True)|
-                Q(mlb_org__isnull=True)
+                Q(birthdate__isnull=True)
             )
+            # .filter(
+            #     Q(position__isnull=True)|
+            #     Q(birthdate__isnull=True)|
+            #     Q(mlb_org__isnull=True)
+            # )
 
         for p in players:
             if p.mlb_api_url:

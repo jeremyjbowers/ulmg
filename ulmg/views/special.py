@@ -30,7 +30,7 @@ def player_util(request):
     context = utils.build_context(request)
     context["no_ids"] = (
         models.Player.objects.filter(
-            fg_id__isnull=True, bref_id__isnull=True, mlb_dotcom__isnull=True
+            fg_id__isnull=True, bref_id__isnull=True, mlbam_id__isnull=True
         )
         .filter(is_amateur=False)
         .order_by("-created")
