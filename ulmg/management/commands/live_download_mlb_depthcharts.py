@@ -61,7 +61,10 @@ class Command(BaseCommand):
         tr = requests.get(roster_link).json()
 
         if t['sport']['id'] != 1:
-            mlb_team = self.mlb_lookup[str(t['parentOrgId'])]
+            try:
+                mlb_team = self.mlb_lookup[str(t['parentOrgId'])]
+            except:
+                pass
         
         else:
             mlb_team = t['abbreviation']
