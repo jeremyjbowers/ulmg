@@ -8,7 +8,7 @@ from config.dev.settings import *
 
 WSGI_APPLICATION = "config.do_app_platform.app.application"
 
-SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", get_random_secret_key())
+SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "8b78cd4a-85a1-4d48-b419-f2b4b62e2bc3")
 
 DEBUG = True
 
