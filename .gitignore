@@ -14,8 +14,8 @@ data/*/fg_*.json
 *.env.*
 
 app-id.txt
-app.yaml
-app.yml
+*app*.yaml
+*app*.yml
 
 static/
 public/*
