@@ -232,9 +232,7 @@ def team_other(request, abbreviation):
         .annotate(Count("level_order"))
     )
     context["num_owned"] = models.Player.objects.filter(team=team).count()
-    context["trades"] = models.TradeReceipt.objects.filter(
-        team=team, trade__isnull=False
-    ).order_by("-trade__date")
+    context["trades"] = models.Trade.objects.filter(teams=team).order_by("-date")
     context["picks"] = models.DraftPick.objects.filter(team=team).order_by(
         "-year", "season", "draft_type", "draft_round", "pick_number"
     )

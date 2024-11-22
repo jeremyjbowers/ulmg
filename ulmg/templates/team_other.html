@@ -19,24 +19,54 @@
 
     <div class="columns">
         <div class="column">
-            {% regroup trades by trade.season as year_trades %}
+            {% regroup trades by season as year_trades %}
             {% for year in year_trades %}
             <h1 class="title is-2">{{ year.grouper }} trades ({{ year.list|length }})</h1>
             <div class="content">
                 <table class="table">
                     <tr>
-                        <th>Date</th>
+                        <th>Trade</th>
                         <th>Team</th>
-                        <th>Received</th>
+                        <th>Recieved</th>
                         <th>Sent</th>
                     </tr>
                     {% for t in year.list %}
                     <tr>
-                        <td style="text-align:left!important;">{{ t.trade.date }}</td>
-                        <td>{% for r in t.trade.reciepts %}{% if r.team != t.team %}<a href="/teams/{{ r.team.abbreviation|lower }}/other/">{{ r.team }}</a>{% endif %}{% endfor %}</td>
-                        <td style="text-align:left!important;">{{ t.summary_html|safe }}</td>
-                        <td style="text-align:left!important;">{% for r in t.trade.reciepts %}{% if r.team != t.team %}{{ r.summary_html|safe }}{% endif %}{% endfor %}</td>
-                    </tr>
+                        <td>{{ t.date.month }}/{{ t.date.day }}</td>
+                        {% if t.trade_cache.t1_abbr == team.abbreviation %}
+                            <td><a href="/teams/{{ t.trade_cache.t2_abbr|lower }}/">{{ t.trade_cache.t2_abbr }}</a></td>
+                            <td class="left">
+                            {% for p in t.trade_cache.t2_players %}
+                                <a href="/players/{{ p.id }}/">{{p.pos }} {{ p.name }}</a>{% if not forloop.last %}, {% else %}{% if t.trade_cache.t2_picks %}, {% endif %}{% endif %}
+                            {% endfor %}{% for p in t.trade_cache.t2_picks %}
+                                {{ p }}{% if not forloop.last %}, {% endif %}
+                            {% endfor %}
+                            </td>
+                            <td class="left">
+                            {% for p in t.trade_cache.t1_players %}
+                                <a href="/players/{{ p.id }}/">{{p.pos }} {{ p.name }}</a>{% if not forloop.last %}, {% else %}{% if t.trade_cache.t1_picks %}, {% endif %}{% endif %}
+                            {% endfor %}{% for p in t.trade_cache.t1_picks %}
+                                {{ p }}{% if not forloop.last %}, {% endif %}
+                            {% endfor %}
+                            </td>
+                        {% else %}
+                            <td><a href="/teams/{{ t.trade_cache.t1_abbr|lower }}/">{{ t.trade_cache.t1_abbr }}</a></td>
+                            <td class="left">
+                                {% for p in t.trade_cache.t1_players %}
+                                    <a href="/players/{{ p.id }}/">{{p.pos }} {{ p.name }}</a>{% if not forloop.last %}, {% else %}{% if t.trade_cache.t1_picks %}, {% endif %}{% endif %}
+                                {% endfor %}{% for p in t.trade_cache.t1_picks %}
+                                    {{ p }}{% if not forloop.last %}, {% endif %}
+                                {% endfor %}
+                                </td>
+                                <td class="left">
+                                {% for p in t.trade_cache.t2_players %}
+                                    <a href="/players/{{ p.id }}/">{{p.pos }} {{ p.name }}</a>{% if not forloop.last %}, {% else %}{% if t.trade_cache.t2_picks %}, {% endif %}{% endif %}
+                                {% endfor %}{% for p in t.trade_cache.t2_picks %}
+                                    {{ p }}{% if not forloop.last %}, {% endif %}
+                                {% endfor %}
+                                </td>
+                        {% endif %}
+                        </tr>
                     {% endfor %}
                 </table>
             </div>

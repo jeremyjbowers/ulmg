@@ -50,62 +50,65 @@ def get_wishlist_players(request):
 @login_required
 @csrf_exempt
 def trade_bulk_action(request):
-    try:
-        for raw_json_string, _ in request.POST.items():
-            trade_payload = json.loads(raw_json_string)
+    for raw_json_string, _ in request.POST.items():
+        trade_payload = json.loads(raw_json_string)
 
-            trade = models.Trade.objects.create(date=datetime.datetime.today())
+        trade = models.Trade.objects.create(date=datetime.datetime.today())
 
-            team_1 = models.Team.objects.get(
-                abbreviation__icontains=trade_payload[0]["team"]
-            )
-            players_1 = [
-                models.Player.objects.get(id=f.split("player-")[1])
-                for f in trade_payload[1]["receipt"]
-                if "player-" in f
-            ]
-            picks_1 = [
-                models.DraftPick.objects.get(id=f.split("pick-")[1])
-                for f in trade_payload[1]["receipt"]
-                if "pick-" in f
-            ]
+        team_1 = models.Team.objects.get(
+            abbreviation__icontains=trade_payload[0]["team"]
+        )
+        players_1 = [
+            models.Player.objects.get(id=f.split("player-")[1])
+            for f in trade_payload[1]["receipt"]
+            if "player-" in f
+        ]
+        picks_1 = [
+            models.DraftPick.objects.get(id=f.split("pick-")[1])
+            for f in trade_payload[1]["receipt"]
+            if "pick-" in f
+        ]
 
-            team_2 = models.Team.objects.get(
-                abbreviation__icontains=trade_payload[1]["team"]
-            )
-            players_2 = [
-                models.Player.objects.get(id=f.split("player-")[1])
-                for f in trade_payload[0]["receipt"]
-                if "player-" in f
-            ]
-            picks_2 = [
-                models.DraftPick.objects.get(id=f.split("pick-")[1])
-                for f in trade_payload[0]["receipt"]
-                if "pick-" in f
-            ]
+        team_2 = models.Team.objects.get(
+            abbreviation__icontains=trade_payload[1]["team"]
+        )
+        players_2 = [
+            models.Player.objects.get(id=f.split("player-")[1])
+            for f in trade_payload[0]["receipt"]
+            if "player-" in f
+        ]
+        picks_2 = [
+            models.DraftPick.objects.get(id=f.split("pick-")[1])
+            for f in trade_payload[0]["receipt"]
+            if "pick-" in f
+        ]
 
-            tr_1 = models.TradeReceipt.objects.create(trade=trade, team=team_1)
-            for p in players_1:
-                tr_1.players.add(p)
+        tr_1 = models.TradeReceipt.objects.create(trade=trade, team=team_1)
+        for p in players_1:
+            tr_1.players.add(p)
 
-            for p in picks_1:
-                tr_1.picks.add(p)
+        for p in picks_1:
+            tr_1.picks.add(p)
 
-            tr_1.save()
+        tr_1.save()
 
-            tr_2 = models.TradeReceipt.objects.create(trade=trade, team=team_2)
-            for p in players_2:
-                tr_2.players.add(p)
+        tr_2 = models.TradeReceipt.objects.create(trade=trade, team=team_2)
+        for p in players_2:
+            tr_2.players.add(p)
 
-            for p in picks_2:
-                tr_2.picks.add(p)
+        for p in picks_2:
+            tr_2.picks.add(p)
 
-            tr_2.save()
+        tr_2.save()
 
-        return JsonResponse({"success": True})
+        trade.set_trade_summary()
+        trade.set_teams()
+        trade.save()
 
-    except Exception as e:
-        return JsonResponse({"success": False, "error": f"{e}"})
+    return JsonResponse({"success": True})
+
+    # except Exception as e:
+    #     return JsonResponse({"success": False, "error": f"{e}"})
 
 
 @login_required
