@@ -729,6 +729,9 @@ class Trade(BaseModel):
 
     date = models.DateField()
     season = models.IntegerField(blank=True, null=True)
+    trade_summary = models.TextField(blank=True, null=True)
+    trade_cache = models.JSONField(blank=True, null=True)
+    teams = models.ManyToManyField(Team, blank=True)
 
     def __unicode__(self):
         return self.summary()
@@ -736,9 +739,25 @@ class Trade(BaseModel):
     def set_season(self):
         self.season = utils.get_ulmg_season(self.date)
 
+    def set_teams(self):
+        if self.reciepts():
+            for r in self.reciepts():
+                self.teams.add(r.team)
+
+    def set_trade_summary(self):
+        if self.reciepts():
+            cache = {}
+
+            t1 = self.reciepts()[0]
+            t2 = self.reciepts()[1]
+
+            cache[t1.team.abbreviation.lower()] = t1
+            cache[t2.team.abbreviation.lower()] = t2
+
+            self.trade_cache = self.summary_dict()
+
     def save(self, *args, **kwargs):
         self.set_season()
-
         super().save(*args, **kwargs)
 
     def reciepts(self):
@@ -748,7 +767,7 @@ class Trade(BaseModel):
         t1 = self.reciepts()[0]
         t2 = self.reciepts()[1]
 
-        return "%s: %s sends %s to %s for %s" % (
+        return "<td>%s</td><td style='text-align: left;'>%s</td><td>%s</td><td style='text-align: left;'>%s</td><td>%s</td>" % (
             self.date,
             "<a href='/teams/%s/'>%s</a>"
             % (t1.team.abbreviation.lower(), t1.team.abbreviation),
@@ -835,6 +854,13 @@ class TradeReceipt(BaseModel):
             ]
             + [f"{p.slug}" for p in self.picks.all()]
         )
+
+    @staticmethod
+    def set_team(sender, instance, action, reverse, model, pk_set, **kwargs):
+        team = instance.team
+        trade = instance.trade
+        trade.teams.add(team)
+        trade.save()
 
     @staticmethod
     def trade_pick(sender, instance, action, reverse, model, pk_set, **kwargs):
