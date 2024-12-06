@@ -1,42 +1,45 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="section is-desktop columns">
+<div class="section is-desktop">
+
+<h1 class="title is-1">All trades</h1>
+
+<div class="columns">
     <div class="column">
-        {% if trades|length > 0 %}
-            <h1 class="title is-2">Trades</h1>
-            {% regroup trades by season as trade_season %}
-            {% for season in trade_season %}
-            <h2 class="title is-4"><span class="has-text-weight-bold has-text-grey">{{ season.grouper }}</span> <span class="has-text-weight-semibold">all trades</span></h2>
-            <div class="content">
-            <ul>
-            {% for trade in season.list %}
-            <li>{{ trade.summary_html|safe }}</li>
-            {% endfor %}</ul>
-            </div>
-
-            {% endfor %}
-        {% endif %}
-
-        <h1 class="title is-2">Archived trades</h1>
-        {% regroup archived_trades by season as archived_trade_season %}
-        {% for season in archived_trade_season %}
-        
-        {% regroup season.list by trade_type as type_of_trade %}
-        {% for type in type_of_trade %}
-        
-        <h2 class="title is-4"><span class="has-text-weight-bold has-text-grey">{{ season.grouper }}</span> <span class="has-text-weight-semibold">{{ type.grouper }}</span></h2>
-        
+        {% regroup trades by season as year_trades %}
+        {% for year in year_trades %}
+        <h1 class="title is-2">{{ year.grouper }} trades ({{ year.list|length }})</h1>
         <div class="content">
-        <ul>
-        {% for trade in type.list %}
-        <li>{{ trade.summary }}</li>
-        {% endfor %}</ul>
+            <table class="table">
+                <tr>
+                    <th>date</th>
+                    <th>Receives</th>
+                    <th>Receives</th>
+                </tr>
+                {% for t in year.list %}
+                <tr>
+                    <td>{{ t.date.month }}/{{ t.date.day }}</td>
+                        <td class="left"><a href="/teams/{{ t.trade_cache.t2_abbr|lower }}/">{{ t.trade_cache.t2_abbr }}</a> recieves 
+                        {% for p in t.trade_cache.t1_players %}
+                            <a href="/players/{{ p.id }}/">{{p.pos }} {{ p.name }}</a>{% if not forloop.last %}, {% else %}{% if t.trade_cache.t1_picks %}, {% endif %}{% endif %}
+                        {% endfor %}{% for p in t.trade_cache.t1_picks %}
+                            {{ p }}{% if not forloop.last %}, {% endif %}
+                        {% endfor %}
+                        </td>
+                        <td class="left"><a href="/teams/{{ t.trade_cache.t1_abbr|lower }}/">{{ t.trade_cache.t1_abbr }}</a> recieves 
+                        {% for p in t.trade_cache.t2_players %}
+                            <a href="/players/{{ p.id }}/">{{p.pos }} {{ p.name }}</a>{% if not forloop.last %}, {% else %}{% if t.trade_cache.t2_picks %}, {% endif %}{% endif %}
+                        {% endfor %}{% for p in t.trade_cache.t2_picks %}
+                            {{ p }}{% if not forloop.last %}, {% endif %}
+                        {% endfor %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </table>
         </div>
-
         {% endfor %}
-        {% endfor %}
-
     </div>
+</div>
 </div>
 {% endblock %}
