@@ -80,20 +80,20 @@
                 
                 <td style="max-width:75px;">{% if p.player.defense_display %}{{ p.player.defense_display }}{% else %}{{ p.player.position }}{% endif %}</td>
                 
-                <td data-value="{% if p.player.stats.current.year == 2023 %}{{ p.player.stats.current.level|default_if_none:"-999" }}{% else %}-999{% endif %}">
-                    {% if p.player.stats.current.plate_appearances > 0 and p.player.stats.current.year == 2023 %}{{ p.player.stats.current.level }}{% else %}-{% endif %}
+                <td data-value="{% if p.player.stats.current.year == 2024 %}{{ p.player.stats.current.level|default_if_none:"-999" }}{% else %}-999{% endif %}">
+                    {% if p.player.stats.current.plate_appearances > 0 and p.player.stats.current.year == 2024 %}{{ p.player.stats.current.level }}{% else %}-{% endif %}
                 </td>
                 
-                <td data-value="{% if p.player.stats.current.year == 2023 %}{{ p.player.stats.current.plate_appearances|default_if_none:"-999" }}{% else %}-999{% endif %}">
-                    {% if p.player.stats.current.plate_appearances > 0 and p.player.stats.current.year == 2023 %}{{ p.player.stats.current.plate_appearances|default_if_none:"-" }}{% else %}-{% endif %}
+                <td data-value="{% if p.player.stats.current.year == 2024 %}{{ p.player.stats.current.plate_appearances|default_if_none:"-999" }}{% else %}-999{% endif %}">
+                    {% if p.player.stats.current.plate_appearances > 0 and p.player.stats.current.year == 2024 %}{{ p.player.stats.current.plate_appearances|default_if_none:"-" }}{% else %}-{% endif %}
                 </td>
-                <td data-value="{% if p.player.stats.current.year == 2023 %}{{ p.player.stats.current.avg|default_if_none:"-999" }}{% else %}-999{% endif %}">
-                    {% if p.player.stats.current.plate_appearances > 0 and p.player.stats.current.year == 2023 %}{{ p.player.stats.current.avg|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}/
-                    {% if p.player.stats.current.plate_appearances > 0 and p.player.stats.current.year == 2023 %}{{ p.player.stats.current.obp|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}/
-                    {% if p.player.stats.current.plate_appearances > 0 and p.player.stats.current.year == 2023 %}{{ p.player.stats.current.slg|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
+                <td data-value="{% if p.player.stats.current.year == 2024 %}{{ p.player.stats.current.avg|default_if_none:"-999" }}{% else %}-999{% endif %}">
+                    {% if p.player.stats.current.plate_appearances > 0 and p.player.stats.current.year == 2024 %}{{ p.player.stats.current.avg|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}/
+                    {% if p.player.stats.current.plate_appearances > 0 and p.player.stats.current.year == 2024 %}{{ p.player.stats.current.obp|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}/
+                    {% if p.player.stats.current.plate_appearances > 0 and p.player.stats.current.year == 2024 %}{{ p.player.stats.current.slg|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
                 </td>
-                <td data-value="{% if p.player.stats.current.year == 2023 %}{{ p.player.stats.current.wrc_plus|default_if_none:"-999" }}{% else %}-999{% endif %}">
-                    {% if p.player.stats.current.plate_appearances > 0 and p.player.stats.current.year == 2023 %}{{ p.player.stats.current.wrc_plus|default_if_none:"-" }}{% else %}-{% endif %}
+                <td data-value="{% if p.player.stats.current.year == 2024 %}{{ p.player.stats.current.wrc_plus|default_if_none:"-999" }}{% else %}-999{% endif %}">
+                    {% if p.player.stats.current.plate_appearances > 0 and p.player.stats.current.year == 2024 %}{{ p.player.stats.current.wrc_plus|default_if_none:"-" }}{% else %}-{% endif %}
                 </td>
                 <!-- previous year -->
                 <td class="prev-year" data-value="{{ p.player.stats.2022_majors.plate_appearances|default_if_none:"-999" }}">
@@ -142,17 +142,17 @@
                 <td><a href="/teams/{{ p.player.team.abbreviation|lower }}/">{{ p.player.team }}</a></td>
                 <td>{{ p.player.mlb_org|default_if_none:"-" }}</td>
 
-                <td data-value="{% if p.player.stats.current.year == 2023 %}{{ p.player.stats.current.level|default_if_none:"-999" }}{% else %}-999{% endif %}">
-                    {% if p.player.stats.current.ip > 0 and p.player.stats.current.year == 2023 %}{{ p.player.stats.current.level }}{% else %}-{% endif %}
+                <td data-value="{% if p.player.stats.current.year == 2024 %}{{ p.player.stats.current.level|default_if_none:"-999" }}{% else %}-999{% endif %}">
+                    {% if p.player.stats.current.ip > 0 and p.player.stats.current.year == 2024 %}{{ p.player.stats.current.level }}{% else %}-{% endif %}
                 </td>
                                 
-                <td data-value="{% if p.player.stats.current.ip > 0 and p.player.stats.current.year == 2023 %}{{ p.player.stats.current.gs|default_if_none:"-999" }}{% else %}-999{% endif %}">{% if p.player.stats.current.ip > 0 and p.player.stats.current.year == 2023 %}{{ p.player.stats.current.gs|default_if_none:"-" }}{% else %}-{% endif %}</td>
-                <td data-value="{% if p.player.stats.current.ip > 0 and p.player.stats.current.year == 2023 %}{{ p.player.stats.current.ip|default_if_none:"-999" }}{% else %}-999{% endif %}">{% if p.player.stats.current.ip > 0 and p.player.stats.current.year == 2023 %}{{ p.player.stats.current.ip|default_if_none:"-" }}{% else %}-{% endif %}</td>
-                <td data-value="{% if p.player.stats.current.ip > 0 and p.player.stats.current.year == 2023 %}{{ p.player.stats.current.era|default_if_none:"999" }}{% else %}999{% endif %}">{% if p.player.stats.current.ip > 0 and p.player.stats.current.year == 2023 %}{{ p.player.stats.current.era|floatformat:2|default_if_none:"-"  }}{% else %}-{% endif %}</td>
-                <td data-value="{% if p.player.stats.current.ip > 0 and p.player.stats.current.year == 2023 %}{{ p.player.stats.current.k_9|default_if_none:"-999" }}{% else %}-999{% endif %}">{% if p.player.stats.current.ip > 0 and p.player.stats.current.year == 2023 %}{{ p.player.stats.current.k_9|floatformat:1|default_if_none:"-"  }}{% else %}-{% endif %}</td>
-                <td data-value="{% if p.player.stats.current.ip > 0 and p.player.stats.current.year == 2023 %}{{ p.player.stats.current.bb_9|default_if_none:"999" }}{% else %}999{% endif %}">{% if p.player.stats.current.ip > 0 and p.player.stats.current.year == 2023 %}{{ p.player.stats.current.bb_9|floatformat:1|default_if_none:"-"  }}{% else %}-{% endif %}</td>
-                <td data-value="{% if p.player.stats.current.ip > 0 and p.player.stats.current.year == 2023 %}{{ p.player.stats.current.xfip|default_if_none:"999" }}{% else %}999{% endif %}">{% if p.player.stats.current.ip > 0 and p.player.stats.current.year == 2023 %}{{ p.player.stats.current.xfip|floatformat:2|default_if_none:"-"  }}{% else %}-{% endif %}</td>
-                <td data-value="{% if p.player.stats.current.ip > 0 and p.player.stats.current.year == 2023 %}{{ p.player.stats.current.siera|default_if_none:"999" }}{% else %}999{% endif %}">{% if p.player.stats.current.ip > 0 and p.player.stats.current.year == 2023 and p.player.stats.current.siera %}{{ p.player.stats.current.siera|floatformat:2|default_if_none:"-"  }}{% else %}-{% endif %}</td>
+                <td data-value="{% if p.player.stats.current.ip > 0 and p.player.stats.current.year == 2024 %}{{ p.player.stats.current.gs|default_if_none:"-999" }}{% else %}-999{% endif %}">{% if p.player.stats.current.ip > 0 and p.player.stats.current.year == 2024 %}{{ p.player.stats.current.gs|default_if_none:"-" }}{% else %}-{% endif %}</td>
+                <td data-value="{% if p.player.stats.current.ip > 0 and p.player.stats.current.year == 2024 %}{{ p.player.stats.current.ip|default_if_none:"-999" }}{% else %}-999{% endif %}">{% if p.player.stats.current.ip > 0 and p.player.stats.current.year == 2024 %}{{ p.player.stats.current.ip|default_if_none:"-" }}{% else %}-{% endif %}</td>
+                <td data-value="{% if p.player.stats.current.ip > 0 and p.player.stats.current.year == 2024 %}{{ p.player.stats.current.era|default_if_none:"999" }}{% else %}999{% endif %}">{% if p.player.stats.current.ip > 0 and p.player.stats.current.year == 2024 %}{{ p.player.stats.current.era|floatformat:2|default_if_none:"-"  }}{% else %}-{% endif %}</td>
+                <td data-value="{% if p.player.stats.current.ip > 0 and p.player.stats.current.year == 2024 %}{{ p.player.stats.current.k_9|default_if_none:"-999" }}{% else %}-999{% endif %}">{% if p.player.stats.current.ip > 0 and p.player.stats.current.year == 2024 %}{{ p.player.stats.current.k_9|floatformat:1|default_if_none:"-"  }}{% else %}-{% endif %}</td>
+                <td data-value="{% if p.player.stats.current.ip > 0 and p.player.stats.current.year == 2024 %}{{ p.player.stats.current.bb_9|default_if_none:"999" }}{% else %}999{% endif %}">{% if p.player.stats.current.ip > 0 and p.player.stats.current.year == 2024 %}{{ p.player.stats.current.bb_9|floatformat:1|default_if_none:"-"  }}{% else %}-{% endif %}</td>
+                <td data-value="{% if p.player.stats.current.ip > 0 and p.player.stats.current.year == 2024 %}{{ p.player.stats.current.xfip|default_if_none:"999" }}{% else %}999{% endif %}">{% if p.player.stats.current.ip > 0 and p.player.stats.current.year == 2024 %}{{ p.player.stats.current.xfip|floatformat:2|default_if_none:"-"  }}{% else %}-{% endif %}</td>
+                <td data-value="{% if p.player.stats.current.ip > 0 and p.player.stats.current.year == 2024 %}{{ p.player.stats.current.siera|default_if_none:"999" }}{% else %}999{% endif %}">{% if p.player.stats.current.ip > 0 and p.player.stats.current.year == 2024 and p.player.stats.current.siera %}{{ p.player.stats.current.siera|floatformat:2|default_if_none:"-"  }}{% else %}-{% endif %}</td>
                 <td class="prev-year" data-value="{{ p.player.stats.2022_majors.gs|default_if_none:"-999" }}">{% if p.player.stats.2022_majors.ip > 0 %}{{ p.player.stats.2022_majors.gs|default_if_none:"-" }}{% else %}-{% endif %}</td>
                 <td class="prev-year" data-value="{{ p.player.stats.2022_majors.ip|default_if_none:"-999" }}">{% if p.player.stats.2022_majors.ip > 0 %}{{ p.player.stats.2022_majors.ip|default_if_none:"-" }}{% else %}-{% endif %}</td>
                 <td class="prev-year" data-value="{{ p.player.stats.2022_majors.era|default_if_none:"999" }}">{% if p.player.stats.2022_majors.ip > 0 %}{{ p.player.stats.2022_majors.era|floatformat:2|default_if_none:"-"  }}{% else %}-{% endif %}</td>
@@ -169,7 +169,7 @@
     {% if aa_hitters or aa_pitchers %}
     <div class="columns">
         <div class="column">
-            <h1 class="title is-2">AA draft <small>with 2023 stats</small></h1>
+            <h1 class="title is-2">AA draft <small>with 2024 stats</small></h1>
         </div>
     </div>
     <div class="columns">
@@ -201,7 +201,7 @@
     {% if op_hitters or op_pitchers %}
     <div class="columns">
         <div class="column">
-            <h1 class="title is-2">Open draft <small>with 2023 stats</small></h1>
+            <h1 class="title is-2">Open draft <small>with 2024 stats</small></h1>
         </div>
     </div>
     <div class="columns">

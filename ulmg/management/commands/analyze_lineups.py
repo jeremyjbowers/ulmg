@@ -13,7 +13,7 @@ class Command(BaseCommand):
             wrc_buckets = {
                 "greater than 130": {
                     "filter": {
-                        "stats__2023_majors_hit__wrc_plus__gte": 130 
+                        "stats__2024_majors_hit__wrc_plus__gte": 130 
                     },
                     "plate_appearances": 0,
                     "positions": set([]),
@@ -22,7 +22,7 @@ class Command(BaseCommand):
                 },
                 "greater than 120": {
                     "filter": {
-                        "stats__2023_majors_hit__wrc_plus__gte": 120 
+                        "stats__2024_majors_hit__wrc_plus__gte": 120 
                     },
                     "plate_appearances": 0,
                     "positions": set([]),
@@ -31,7 +31,7 @@ class Command(BaseCommand):
                 },
                 "greater than 110": {
                     "filter": {
-                        "stats__2023_majors_hit__wrc_plus__gte": 110 
+                        "stats__2024_majors_hit__wrc_plus__gte": 110 
                     },
                     "plate_appearances": 0,
                     "positions": set([]),
@@ -40,7 +40,7 @@ class Command(BaseCommand):
                 },
                 "greater than 100": {
                     "filter": {
-                        "stats__2023_majors_hit__wrc_plus__gte": 100 
+                        "stats__2024_majors_hit__wrc_plus__gte": 100 
                     },
                     "plate_appearances": 0,
                     "positions": set([]),
@@ -49,7 +49,7 @@ class Command(BaseCommand):
                 },
                 # "greater than 90": {
                 #     "filter": {
-                #         "stats__2023_majors_hit__wrc_plus__gte": 90 
+                #         "stats__2024_majors_hit__wrc_plus__gte": 90 
                 #     },
                 #     "plate_appearances": 0,
                 #     "positions": set([]),
@@ -58,7 +58,7 @@ class Command(BaseCommand):
                 # },
                 # "below 90": {
                 #     "filter": {
-                #         "stats__2023_majors_hit__wrc_plus__lt": 90 
+                #         "stats__2024_majors_hit__wrc_plus__lt": 90 
                 #     },
                 #     "plate_appearances": 0,
                 #     "positions": set([]),
@@ -66,12 +66,12 @@ class Command(BaseCommand):
                 #     "num_players": 0
                 # },
             }
-            team_players = models.Player.objects.filter(team=team).filter(stats__2023_majors_hit__plate_appearances__gte=5)
+            team_players = models.Player.objects.filter(team=team).filter(stats__2024_majors_hit__plate_appearances__gte=5)
 
             for bucket,data in wrc_buckets.items():
                 bucket_players = team_players.filter(**data['filter'])
                 for player in bucket_players:
-                    data['plate_appearances'] += player.stats['2023_majors_hit']['plate_appearances']
+                    data['plate_appearances'] += player.stats['2024_majors_hit']['plate_appearances']
                     data['positions'].add(player.position)
                     # for pos in player.defense:
                     #     data['positions'].add(pos.split('-')[0])
