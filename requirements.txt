@@ -30,6 +30,7 @@ google-auth==2.27.0
 google-auth-httplib2==0.1.0
 googleapis-common-protos==1.62.0
 gunicorn==22.0.0
+h11==0.14.0
 html5lib==1.1
 httplib2==0.19.1
 idna==3.7
@@ -79,5 +80,6 @@ tzlocal==3.0
 ujson==5.9.0
 uritemplate==3.0.1
 urllib3==1.26.18
+uvicorn==0.34.0
 wcwidth==0.2.6
 webencodings==0.5.1
