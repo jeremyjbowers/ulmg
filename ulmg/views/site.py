@@ -125,9 +125,8 @@ def index(request):
     context["teams"] = models.Team.objects.all()
 
     season = datetime.today().year
-
-    # if datetime.today().month < 4:
-    #     season = datetime.today().year - 1
+    if datetime.today().month < 4:
+        season = datetime.today().year - 1
 
     hitter_dict = {
         "team__isnull": True,
