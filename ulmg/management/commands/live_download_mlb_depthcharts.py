@@ -97,6 +97,7 @@ class Command(BaseCommand):
                 
                 except models.Player.DoesNotExist:
                     obj = models.Player()
+                    obj.level = "B"
                 
                 for k,v in player_dict.items():
                     setattr(obj, k, v)
