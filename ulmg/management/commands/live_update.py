@@ -54,5 +54,5 @@ class Command(BaseCommand):
         call_command('live_update_status_from_fg_rosters')
 
         # use fg stats to update all player stats
-        print('LIVE: Update stats from FG stats')
-        call_command('live_update_stats_from_fg_stats')
+        # print('LIVE: Update stats from FG stats')
+        # call_command('live_update_stats_from_fg_stats')
