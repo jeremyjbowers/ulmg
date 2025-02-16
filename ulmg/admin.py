@@ -88,7 +88,7 @@ class WishlistAdmin(admin.ModelAdmin):
 class WishlistPlayer(admin.ModelAdmin):
     model = WishlistPlayer
     autocomplete_fields = ["player"]
-    list_display = ["player", "owner_name", "rank", "tier", 'player__level', 'player_type', 'player_level', 'player_school', 'player_year', 'player_fv']
+    list_display = ["player", "owner_name", "rank", 'player_type', 'player_level', 'player_school', 'player_year', 'player_fv']
     list_filter = ["wishlist", 'player__level', 'tier', 'player__is_owned', 'player_type', 'player_level', 'player_year', 'player_fv']
     list_editable = ['player_type', 'player_level', 'player_school', 'player_year', 'player_fv']
 
