@@ -87,6 +87,7 @@ class WishlistAdmin(admin.ModelAdmin):
 @admin.register(WishlistPlayer)
 class WishlistPlayer(admin.ModelAdmin):
     model = WishlistPlayer
+    autocomplete_fields = ["player"]
     list_display = ["player", "owner_name", "rank", "tier"]
     list_filter = ["wishlist"]
 
