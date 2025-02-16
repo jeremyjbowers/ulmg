@@ -106,12 +106,8 @@ class Command(BaseCommand):
 
     def fix_bad_player_ids(self):
         bad_ids = models.Player.objects.filter(mlbam_id__icontains="/")
-        print(bad_ids.count())
-
         bad_ids.delete()
-
         bad_ids = models.Player.objects.filter(mlbam_id__icontains="/")
-        print(bad_ids.count())
 
     def handle(self, *args, **options):
         self.fix_bad_player_ids()

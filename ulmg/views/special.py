@@ -175,9 +175,6 @@ def my_wishlist_beta(request, list_type):
     context["team"] = get_object_or_404(models.Team, owner_obj=context["owner"])
     context["wishlist"] = models.Wishlist.objects.get(owner=context["owner"])
 
-    # context["team"] = get_object_or_404(models.Team, abbreviation="PIT")
-    # context["wishlist"] = models.Wishlist.objects.get(id=13)
-
     context["players"] = models.WishlistPlayer.objects.filter(
         wishlist=context["wishlist"], player__is_owned=False, player__level="B"
     ).order_by("rank")
