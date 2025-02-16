@@ -1036,9 +1036,9 @@ class WishlistPlayer(BaseModel):
     future_value = models.IntegerField(blank=True, null=True)
     note = models.TextField(blank=True, null=True)
     tags = ArrayField(models.CharField(max_length=255), blank=True, null=True)
-    player_type = models.CharField(max_length=255, choices=PLAYER_TYPE_CHOICES, null=True)
+    player_type = models.CharField(max_length=255, choices=PLAYER_TYPE_CHOICES, blank=True, null=True)
     player_school = models.CharField(max_length=255, blank=True, null=True)
-    player_level = models.CharField(max_length=255, choices=PLAYER_LEVEL_CHOICES, null=True)
+    player_level = models.CharField(max_length=255, choices=PLAYER_LEVEL_CHOICES, blank=True, null=True)
     player_year = models.IntegerField(blank=True, null=True)
     player_fv = models.IntegerField(blank=True, null=True)
 
