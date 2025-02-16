@@ -8,14 +8,16 @@
     span.note-control { cursor: pointer }
     tr.hide { display: none; }
     span.filter { cursor:pointer; }
+    tbody.list-group tr:nth-child(16n) td {border-bottom:3px solid; border-color: #555; }
+    tbody.list-group tr:nth-child(n+81) td {background-color: #eee; border-bottom: none;}
 </style>
 <div id="team" class="section is-desktop">
     <div class="tabs is-centered is-boxed is-large">
         <ul>
             <li><a href="/my/team/">My Roster{% if num_owned %} ({{ num_owned }}){% endif %}</a></li>
             <li><a href="/teams/{{ team.abbreviation|lower }}/other/">Trades & picks</a></li>
-            <li><a href="/my/offseason/draft/">My Draft List</a></li>
-            <li class="is-active"><a href="/my/wishlist/draft/beta/">My Draft List <span style="margin:0 0 0 10px;" class="tag is-rounded is-danger is-light">beta</span></a></li>
+            <li><a href="/my/offseason/draft/">Draft</a></li>
+            <li class="is-active"><a href="/my/wishlist/draft/beta/">AA Draft <span style="margin:0 0 0 10px;" class="tag is-rounded is-danger is-light">beta</span></a></li>
             <!-- <li><a href="/my/wishlist/trade/">My Trade List</a></li> -->
         </ul>
     </div>
@@ -36,7 +38,7 @@
             <table class="table is-hoverable is-fullwidth">
                 <thead>
                     <tr>
-                        <!-- <th>rank</th> -->
+                        <th>rank</th>
                         <th>player</th>
                         <th>age</th>
                         <th>pos</th>
@@ -51,7 +53,7 @@
                 <tbody id="players" class="list-group">
                     {% for p in players %}
                         <tr data-playername="{{ p.player.name }}" data-playerid="{{ p.player.id }}" class="list-group-item{% if not p.player.is_mlb == "mlb" %} minors {% endif %}">
-                            <!-- <td id="rank-{{ p.pk }}">{% if p.rank == 0 %}-{% else %}{{ p.rank }}{% endif %}</td> -->
+                            <td id="rank-{{ p.pk }}"><span>{% if p.rank == 0 %}-{% else %}{{ p.rank }}{% endif %}</span></td>
                             {% include "includes/my/player_name.html" %}
                             <td>{{ p.player.age|default_if_none:"-" }}</td>
                             <td>{{ p.player.position }}</td>
@@ -206,6 +208,8 @@ $(function(){
 
             // need a jquery element
             var $ply = $(ply);
+            var plyspan = $ply.find('span')[0];
+            var $plyspan = $(plyspan);
 
             // grab playerid and name from the element's data attributes
             var playerid = $ply.attr('data-playerid');
@@ -214,6 +218,7 @@ $(function(){
             // update the element's data attribute with the new rank
             // also update the element's rank HTML on the client
             $ply.attr('data-rank', idx);
+            $plyspan.html(idx);
             $('#rank-' + $ply.attr('data-playerid')).html(idx);
 
             // push a obj to the update list with id, name and new rank

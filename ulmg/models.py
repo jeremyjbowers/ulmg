@@ -1000,6 +1000,35 @@ class Wishlist(BaseModel):
 
 
 class WishlistPlayer(BaseModel):
+    """
+    Denormalized player record for wishlists
+    """
+    COL_LVL = "COL"
+    HS_LVL = "HS"
+    MLB_LVL = "MLB"
+    MINOR_LVL = "MINORS"
+    NPB_LVL = "NPB"
+    KBO_LVL = "KBO"
+    INTAM_LVL = "INT-AM"
+    PLAYER_LEVEL_CHOICES = (
+        (COL_LVL, "col"),
+        (HS_LVL, "hs"),
+        (MLB_LVL, "mlb"),
+        (MINOR_LVL, "minors"),
+        (NPB_LVL, "npb"),
+        (KBO_LVL, "kbo"),
+        (INTAM_LVL, "int-am"),
+    )
+
+    PRO_TYPE = "PRO"
+    AM_TYPE = "AM"
+    INT_TYPE = "INT"
+    PLAYER_TYPE_CHOICES = (
+        (PRO_TYPE, "pro"),
+        (AM_TYPE, "am"),
+        (INT_TYPE, "int"),
+    )
+
     player = models.ForeignKey(Player, on_delete=models.CASCADE)
     wishlist = models.ForeignKey(Wishlist, on_delete=models.CASCADE)
     rank = models.IntegerField(blank=True, null=True)
@@ -1007,6 +1036,11 @@ class WishlistPlayer(BaseModel):
     future_value = models.IntegerField(blank=True, null=True)
     note = models.TextField(blank=True, null=True)
     tags = ArrayField(models.CharField(max_length=255), blank=True, null=True)
+    player_type = models.CharField(max_length=255, choices=PLAYER_TYPE_CHOICES, null=True)
+    player_school = models.CharField(max_length=255, blank=True, null=True)
+    player_level = models.CharField(max_length=255, choices=PLAYER_LEVEL_CHOICES, null=True)
+    player_year = models.IntegerField(blank=True, null=True)
+    player_fv = models.IntegerField(blank=True, null=True)
 
     stats = models.JSONField(null=True, blank=True)
 
