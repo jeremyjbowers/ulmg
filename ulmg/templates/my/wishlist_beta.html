@@ -3,21 +3,24 @@
 {% load ulmg_tags %}
 
 {% block content %}
-<style>
+<style type="text/css">
     a.action-add-tag:hover { cursor: pointer; }
     span.note-control { cursor: pointer }
     tr.hide { display: none; }
     span.filter { cursor:pointer; }
+    tbody.list-group tr td {background-color: white;}
     tbody.list-group tr:nth-child(16n) td {border-bottom:3px solid; border-color: #555; }
     tbody.list-group tr:nth-child(n+81) td {background-color: #eee; border-bottom: none;}
+    {% for pick in my_aa_picks %}tbody.list-group tr:nth-child({{ pick.overall_pick_number }}) td {font-weight: bold; background-color: #ffffcc; border-bottom: none; }{% endfor %}
+    {% for pick in all_aa_picks %}tbody.list-group tr:nth-child({{ pick.overall_pick_number }}) td:nth-child(1) > span.pickowner:before {text-align: left; content: " — {{ pick.team__abbreviation }} "; }{% endfor %}
 </style>
 <div id="team" class="section is-desktop">
     <div class="tabs is-centered is-boxed is-large">
         <ul>
             <li><a href="/my/team/">My Roster{% if num_owned %} ({{ num_owned }}){% endif %}</a></li>
             <li><a href="/teams/{{ team.abbreviation|lower }}/other/">Trades & picks</a></li>
-            <li><a href="/my/offseason/draft/">Draft</a></li>
-            <li class="is-active"><a href="/my/wishlist/draft/beta/">AA Draft <span style="margin:0 0 0 10px;" class="tag is-rounded is-danger is-light">beta</span></a></li>
+            <li><a href="/my/offseason/draft/">Open Draft</a></li>
+            <li class="is-active"><a href="/my/wishlist/draft/beta/">AA Draft</a></li>
             <!-- <li><a href="/my/wishlist/trade/">My Trade List</a></li> -->
         </ul>
     </div>
@@ -46,14 +49,17 @@
                         <th>lvl</th>
                         <th>wRC+</th>
                         <th>xFIP</th>
-                        <th></th>
+                        <!-- <th></th> -->
                         <th>tags</th>
                     </tr>
                 </thead>
                 <tbody id="players" class="list-group">
                     {% for p in players %}
                         <tr data-playername="{{ p.player.name }}" data-playerid="{{ p.player.id }}" class="list-group-item{% if not p.player.is_mlb == "mlb" %} minors {% endif %}">
-                            <td id="rank-{{ p.pk }}"><span>{% if p.rank == 0 %}-{% else %}{{ p.rank }}{% endif %}</span></td>
+                            <td id="rank-{{ p.pk }}">
+                                <span>{% if p.rank == 0 %}-{% else %}{{ p.rank }}{% endif %}</span>
+                                <span class="pickowner"></span>
+                            </td>
                             {% include "includes/my/player_name.html" %}
                             <td>{{ p.player.age|default_if_none:"-" }}</td>
                             <td>{{ p.player.position }}</td>
@@ -71,7 +77,7 @@
                             <td>
                                 {% if p.player.pit_stats %}{% if p.player.pit_stats.xfip %}{{ p.player.pit_stats.xfip|floatformat:2|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
                             </td>
-                            <td>{% include "includes/my/notechooser.html" %}</td>
+                            <!-- <td>{% include "includes/my/notechooser.html" %}</td> -->
                             <td class="left tag-cell">{% include "includes/my/tagchooser.html" %}</td>
                         </tr>
                     {% endfor %}
