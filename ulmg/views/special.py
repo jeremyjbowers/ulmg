@@ -190,5 +190,6 @@ def my_wishlist_beta(request, list_type):
                 context["tags"].add(z)
 
     context["tags"] = sorted(list(context["tags"]), key=lambda x: x)
+    context["num_owned"] = models.Player.objects.filter(team=context["team"]).count()
 
     return render(request, "my/wishlist_beta.html", context)

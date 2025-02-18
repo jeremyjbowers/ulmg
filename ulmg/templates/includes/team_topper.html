@@ -4,18 +4,12 @@
         {{ team.city }} {{ team.nickname }}
     </p>
     {% if team.championships != "" %}<p class="title is-6 has-text-weight-light champs">{% for c in team.championships %}🏆 {{ c }}{% if forloop.last %}{% else %}, {% endif %}{% endfor %}</p>{% else %}<br/>{% endif %}
-    <p class="subtitle is-4"><span>{{ team.division }} division</span></p>
-    <p class="subtitle is-5 has-text-weight-regular has-text-grey">
+    <p class="subtitle is-4"><span>{{ team.division }} division</span>{% if team.owner_obj %} &mdash; {{ team.owner_obj.name }}{% endif %}</p>
+    <!-- <p class="subtitle is-5 has-text-weight-regular has-text-grey">
         Owner:
-        {% if team.owner_obj %}
-            {{ team.owner_obj.name }}
-            {% if not own_team %}<br><a href="mailto:{{ team.owner_obj.email }}">Send owner email &#x2709;</a>
-            {% endif %}
-        {% else %}
-            &mdash;
-        {% endif %}
+
         <br/><a href="/teams/{{ team.abbreviation }}/csv/{% if value %}?value=true{% endif %}">Download team roster &dtrif;</a>
-    </p>
+    </p> -->
 </div>
 <style>
     p.level-heading {
