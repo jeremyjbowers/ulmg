@@ -26,53 +26,26 @@ def my_team(request):
 @login_required
 def my_draft_prep(request):
     context = utils.build_context(request)
+
     context["team"] = get_object_or_404(models.Team, owner_obj=context["owner"])
-    context['wishlist'] = models.Wishlist.objects.get(owner=context['owner'])
-    context["aa_hitters"] = []
-    context["aa_pitchers"] = []
-    context["op_hitters"] = []
-    context["op_pitchers"] = []
+    context["wishlist"] = models.Wishlist.objects.get(owner=context["owner"])
 
-    for p in models.WishlistPlayer.objects.filter(wishlist=context["wishlist"]):
-        if not p.tier:
-            p.tier = 6
-        if not p.rank:
-            p.rank = 999
+    context['my_open_picks'] = models.DraftPick.objects.filter(team=context['team'], year=2025, season="offseason", draft_type="aa")
+    context['all_open_picks'] = models.DraftPick.objects.filter(year=2025, season="offseason", draft_type="aa").values('overall_pick_number', 'team__abbreviation')
+ 
+    context["players"] = models.WishlistPlayer.objects.filter(
+        wishlist=context["wishlist"], player__is_owned=False, player__level__in=["A","V"]
+    ).order_by("rank")
 
-        if not p.player.is_owned:
-            if p.player.level in ["A", "V"]:
-                if p.player.position == "P":
-                    context['op_pitchers'].append(p)
+    context["tags"] = set()
 
-                else:
-                    context['op_hitters'].append(p)
+    for p in context["players"].values("tags"):
+        if p["tags"]:
+            for z in p["tags"]:
+                context["tags"].add(z)
 
-            if p.player.level == "B":
-                if p.player.position == "P":
-                    context["aa_pitchers"].append(p)
-                else:
-                    context["aa_hitters"].append(p)                  
-
-        try:
-            context["aa_hitters"] = sorted(
-                context["aa_hitters"], key=lambda x: (x.tier, x.rank)
-            )
-        except:
-            pass
-
-        try:
-            context["aa_pitchers"] = sorted(
-                context["aa_pitchers"], key=lambda x: (x.tier, x.rank)
-            )
-        except:
-            pass
-
-        context["op_hitters"] = sorted(
-            context["op_hitters"], key=lambda x: (x.tier, x.rank)
-        )
-        context["op_pitchers"] = sorted(
-            context["op_pitchers"], key=lambda x: (x.tier, x.rank)
-        )
+    context["tags"] = sorted(list(context["tags"]), key=lambda x: x)
+    context["num_owned"] = models.Player.objects.filter(team=context["team"]).count()
 
     return render(request, "my/draft_prep.html", context)
 

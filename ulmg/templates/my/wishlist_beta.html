@@ -3,6 +3,8 @@
 {% load ulmg_tags %}
 
 {% block content %}
+{% include 'includes/team_topper.html' %}
+
 <style type="text/css">
     a.action-add-tag:hover { cursor: pointer; }
     span.note-control { cursor: pointer }
@@ -11,16 +13,30 @@
     tbody.list-group tr td {background-color: white;}
     tbody.list-group tr:nth-child(16n) td {border-bottom:3px solid; border-color: #555; }
     tbody.list-group tr:nth-child(n+81) td {background-color: #eee; border-bottom: none;}
+
+    /*
+    tbody.list-group tr:nth-child(16) td:nth-child(1) > span.round:before { content: "Round 1"; }
+    tbody.list-group tr:nth-child(16) td:nth-child(1) > span.round { position: absolute; margin: 2px 0 0 -58px; display: block; text-align: center; padding: 3px 5px; background-color: #555; color: #fff; font-weight: bold;}
+    tbody.list-group tr:nth-child(32) td:nth-child(1) > span.round:before { content: "Round 2"; }
+    tbody.list-group tr:nth-child(32) td:nth-child(1) > span.round { position: absolute; margin: 2px 0 0 -58px; display: block; text-align: center; padding: 3px 5px; background-color: #555; color: #fff; font-weight: bold;}
+    tbody.list-group tr:nth-child(48) td:nth-child(1) > span.round:before { content: "Round 3"; }
+    tbody.list-group tr:nth-child(48) td:nth-child(1) > span.round { position: absolute; margin: 2px 0 0 -58px; display: block; text-align: center; padding: 3px 5px; background-color: #555; color: #fff; font-weight: bold;}
+    tbody.list-group tr:nth-child(64) td:nth-child(1) > span.round:before { content: "Round 4";}
+    tbody.list-group tr:nth-child(64) td:nth-child(1) > span.round { position: absolute; margin: 2px 0 0 -58px; display: block; text-align: center; padding: 3px 5px; background-color: #555; color: #fff; font-weight: bold;}
+    tbody.list-group tr:nth-child(80) td:nth-child(1) > span.round:before { content: "Round 5";}
+    tbody.list-group tr:nth-child(80) td:nth-child(1) > span.round { position: absolute; margin: 2px 0 0 -58px; display: block; text-align: center; padding: 3px 5px; background-color: #555; color: #fff; font-weight: bold;}
+    */
+
     {% for pick in my_aa_picks %}tbody.list-group tr:nth-child({{ pick.overall_pick_number }}) td {font-weight: bold; background-color: #ffffcc; border-bottom: none; }{% endfor %}
     {% for pick in all_aa_picks %}tbody.list-group tr:nth-child({{ pick.overall_pick_number }}) td:nth-child(1) > span.pickowner:before {text-align: left; content: " — {{ pick.team__abbreviation }} "; }{% endfor %}
 </style>
 <div id="team" class="section is-desktop">
     <div class="tabs is-centered is-boxed is-large">
         <ul>
-            <li><a href="/my/team/">My Roster{% if num_owned %} ({{ num_owned }}){% endif %}</a></li>
+            <li><a href="/my/team/">Roster{% if num_owned %} ({{ num_owned }}){% endif %}</a></li>
             <li><a href="/teams/{{ team.abbreviation|lower }}/other/">Trades & picks</a></li>
-            <li><a href="/my/offseason/draft/">Open Draft</a></li>
             <li class="is-active"><a href="/my/wishlist/draft/beta/">AA Draft</a></li>
+            <li><a href="/my/offseason/draft/">Open Draft</a></li>
             <!-- <li><a href="/my/wishlist/trade/">My Trade List</a></li> -->
         </ul>
     </div>
