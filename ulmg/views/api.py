@@ -114,10 +114,16 @@ def trade_bulk_action(request):
 @login_required
 @csrf_exempt
 def wishlist_bulk_action(request):
+    context = utils.build_context(request)
+    wishlist = None
+    wl = models.Wishlist.objects.filter(owner=context["owner"])
+    if len(wl) > 0:
+        wishlist = wl[0]
+
     for raw_json_string, _ in request.POST.items():
         players = json.loads(raw_json_string)
         for p in players:
-            models.WishlistPlayer.objects.filter(player__id=p["playerid"]).update(
+            models.WishlistPlayer.objects.filter(wishlist=wishlist, player__id=p["playerid"]).update(
                 rank=p["rank"]
             )
 
