@@ -64,7 +64,7 @@
                         <th>team</th>
                         <th>lvl</th>
                         <th>wRC+</th>
-                        <th>xFIP</th>
+                        <th>fip</th>
                         <!-- <th></th> -->
                         <th>tags</th>
                     </tr>
@@ -91,7 +91,7 @@
                                 {% if p.player.hit_stats %}{% if p.player.hit_stats.wrc_plus %}{{ p.player.hit_stats.wrc_plus|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
                             </td>
                             <td>
-                                {% if p.player.pit_stats %}{% if p.player.pit_stats.xfip %}{{ p.player.pit_stats.xfip|floatformat:2|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
+                                {% if p.player.pit_stats %}{% if p.player.pit_stats.fip %}{{ p.player.pit_stats.fip|floatformat:2|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
                             </td>
                             <!-- <td>{% include "includes/my/notechooser.html" %}</td> -->
                             <td class="left tag-cell">{% include "includes/my/tagchooser.html" %}</td>

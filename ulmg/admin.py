@@ -192,8 +192,7 @@ class PlayerAdmin(admin.ModelAdmin):
         "level",
         'mlbam_id',
         'fg_id',
-        'baseballcube_id',
-        'perfectgame_id'
+        'birthdate'
     ]
     list_filter = [
         "is_owned",
@@ -202,9 +201,9 @@ class PlayerAdmin(admin.ModelAdmin):
         "position",
         "is_mlb40man",
     ]
-    list_editable = ['mlbam_id','fg_id','baseballcube_id','perfectgame_id']
+    list_editable = ['mlbam_id','fg_id', 'birthdate']
     readonly_fields = ["name", "age"]
-    search_fields = ["name", 'mlbam_id', 'fg_id', 'baseballcube_id', 'perfectgame_id']
+    search_fields = ["name", 'mlbam_id', 'fg_id', 'birthdate']
     autocomplete_fields = ["team"]
     fieldsets = (
         (
@@ -226,7 +225,6 @@ class PlayerAdmin(admin.ModelAdmin):
             {
                 "fields": (
                     ("fg_id", "mlbam_id",),
-                    ("baseballcube_id", "perfectgame_id")
                 )
             },
         ),
