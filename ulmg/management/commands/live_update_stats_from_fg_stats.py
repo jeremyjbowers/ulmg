@@ -241,6 +241,8 @@ class Command(BaseCommand):
                             stats_dict["fip"] = utils.to_float(player["FIP"])
 
                         obj.set_stats(stats_dict)
+                        if player['xMLBAMID']:
+                            obj.mlbam_id = player['xMLBAMID']
                         obj.save()
 
 
