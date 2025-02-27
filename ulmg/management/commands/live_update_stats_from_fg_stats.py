@@ -189,12 +189,29 @@ class Command(BaseCommand):
 
                 for player in rows:
                     fg_id = player["UPID"]
+                    mlbam_id = player['xMLBAMID']
                     name = player["PlayerName"]
-                    p = models.Player.objects.filter(fg_id=fg_id)
 
-                    if len(p) == 1:
-                        obj = p[0]
+                    obj = None
 
+                    try:
+                        obj = models.Player.objects.get(fg_id=fg_id)
+                        if mlbam_id:
+                            obj.mlbam_id = mlbam_id
+
+                    except:
+                        pass
+
+                    if not obj:
+                        if mlbam_id:
+                            try:
+                                obj = models.Player.get(mlbam_id=mlbam_id)
+                                if fg_id:
+                                    obj.fg_id = fg_id
+                            except:
+                                pass
+
+                    if obj:
                         stats_dict = {}
                         stats_dict['side'] = side
                         stats_dict["type"] = "amateur"
@@ -241,8 +258,6 @@ class Command(BaseCommand):
                             stats_dict["fip"] = utils.to_float(player["FIP"])
 
                         obj.set_stats(stats_dict)
-                        if player['xMLBAMID']:
-                            obj.mlbam_id = player['xMLBAMID']
                         obj.save()
 
 
