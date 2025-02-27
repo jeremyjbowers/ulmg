@@ -405,7 +405,7 @@ class Player(BaseModel):
     @property
     def mlb_image_url(self):
         if self.mlbam_id:
-            return f"https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:67:current.png/w_213,q_auto:best/v1/people/{self.mlbam_id}/headshot/67/current"
+            return f"https://img.mlbstatic.com/mlb-photos/image/upload/w_213,d_people:generic:headshot:silo:current.png,q_auto:best,f_auto/v1/people/{self.mlbam_id}/headshot/silo/current"
         return None
 
     @property
