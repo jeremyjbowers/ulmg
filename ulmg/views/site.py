@@ -271,7 +271,7 @@ def draft_admin(request, year, season, draft_type):
             # 35-man roster is a form of protection for offseason drafts?
             for p in models.Player.objects.filter(
                 is_owned=True,
-                level="V",
+                level__in=["V","A"],
                 team__isnull=False,
                 is_mlb_roster=False,
                 is_1h_c=False,
