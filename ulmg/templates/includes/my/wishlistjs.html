@@ -31,7 +31,7 @@ $(function(){
 
         $.ajax({
             type: "GET",
-            url: '/api/v1/wishlist/' + playerid + '/?rank=0&tier=6',
+            url: '/api/v1/wishlist/' + playerid + '/?rank=999&tier=6',
             success: function(response){
                 toggle_classes($el)
             }
