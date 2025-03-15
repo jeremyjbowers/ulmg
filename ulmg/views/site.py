@@ -253,9 +253,9 @@ def draft_admin(request, year, season, draft_type):
     if draft_type == "aa":
         context["players"] = json.dumps(
             [
-                "%(name)s (%(position)s)" % p
+                "%(position)s %(name)s %(mlb_org)s %(mlbam_id)s" % p
                 for p in models.Player.objects.filter(is_owned=False, level="B").values(
-                    "name", "position"
+                    "name", "position", 'mlbam_id', 'mlb_org'
                 )
             ]
         )
@@ -263,9 +263,9 @@ def draft_admin(request, year, season, draft_type):
     if draft_type == "open":
         players = []
         for p in models.Player.objects.filter(is_owned=False).values(
-            "name", "position"
+            "name", "position", 'mlbam_id', 'mlb_org'
         ):
-            players.append("%(name)s (%(position)s)" % p)
+            players.append("%(position)s %(name)s %(mlb_org)s %(mlbam_id)s" % p)
 
         if season == "offseason":
             # 35-man roster is a form of protection for offseason drafts?
@@ -279,8 +279,8 @@ def draft_admin(request, year, season, draft_type):
                 is_1h_pos=False,
                 is_35man_roster=False,
                 is_reserve=False,
-            ).values("name", "position"):
-                players.append("%(name)s (%(position)s)" % p)
+            ).values("name", "position", 'mlbam_id', 'mlb_org'):
+                players.append("%(position)s %(name)s %(mlb_org)s %(mlbam_id)s" % p)
 
         if season == "midseason":
             # have to have been previously protected.
@@ -293,8 +293,8 @@ def draft_admin(request, year, season, draft_type):
                 is_1h_p=False,
                 is_1h_pos=False,
                 is_reserve=False,
-            ).values("name", "position"):
-                players.append("%(name)s (%(position)s)" % p)
+            ).values("name", "position", 'mlbam_id', 'mlb_org'):
+                players.append("%(position)s %(name)s %(mlb_org)s %(mlbam_id)s" % p)
 
         context["players"] = json.dumps(players)
 
