@@ -27,7 +27,7 @@ class Command(BaseCommand):
         # call_command('offseason')
         # call_command('strat_import_defense', '2024')
         # call_command('scrape_birthdates')
-        call_command('post_offseason_draft')
+        # call_command('post_offseason_draft')
         # call_command('generate_draft_picks','2024','offseason')
         # call_command('generate_draft_picks','2024','midseason')
         # call_command('midseason')
