@@ -57,12 +57,8 @@ urlpatterns = [
         "draft/live/<int:year>/<str:season>/<str:draft_type>/", views.site.draft_watch
     ),
     path("draft/<int:year>/<str:season>/<str:draft_type>/", views.site.draft_recap),
-    path("my/offseason/draft/", views.my.my_draft_prep),
-    path("my/midseason/draft/", views.my.my_midseason_draft),
-    path("my/wishlist/<str:list_type>/beta/", views.special.my_wishlist_beta),
-    path("my/wishlist/<str:list_type>/<str:abbreviation>/", views.special.my_wishlist),
-    path("my/wishlist/<str:list_type>/", views.my.my_wishlist),
-    path("my/team/<str:abbreviation>/", views.special.my_team),
-    path("my/team/", views.my.my_team),
+    path("my/<str:list_type>/draft/", views.my.my_draft_prep),
+    path("my/<str:list_type>/draft/", views.my.my_draft_prep),
+    path("my/wishlist/draft/beta/", views.my.my_wishlist_beta),
     path("", views.site.index),
 ]

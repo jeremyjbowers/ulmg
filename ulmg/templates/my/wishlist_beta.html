@@ -27,17 +27,16 @@
     tbody.list-group tr:nth-child(80) td:nth-child(1) > span.round { position: absolute; margin: 2px 0 0 -58px; display: block; text-align: center; padding: 3px 5px; background-color: #555; color: #fff; font-weight: bold;}
     */
 
-    {% for pick in my_aa_picks %}tbody.list-group tr:nth-child({{ pick.overall_pick_number }}) td {font-weight: bold; background-color: #ffffcc; border-bottom: none; }{% endfor %}
-    {% for pick in all_aa_picks %}tbody.list-group tr:nth-child({{ pick.overall_pick_number }}) td:nth-child(1) > span.pickowner:before {text-align: left; content: " — {{ pick.team__abbreviation }} "; }{% endfor %}
+    {% for pick in my_picks %}tbody.list-group tr:nth-child({{ pick.overall_pick_number }}) td {font-weight: bold; background-color: #ffffcc; border-bottom: none; }{% endfor %}
+    {% for pick in all_picks %}tbody.list-group tr:nth-child({{ pick.overall_pick_number }}) td:nth-child(1) > span.pickowner:before {text-align: left; content: " — {{ pick.team__abbreviation }} "; }{% endfor %}
 </style>
 <div id="team" class="section is-desktop">
     <div class="tabs is-centered is-boxed is-large">
         <ul>
-            <li><a href="/my/team/">Roster{% if num_owned %} ({{ num_owned }}){% endif %}</a></li>
+            <li><a href="/teams/{{ team.abbreviation|lower }}/">Roster{% if num_owned %} ({{ num_owned }}){% endif %}</a></li>
             <li><a href="/teams/{{ team.abbreviation|lower }}/other/">Trades & picks</a></li>
-            <li class="is-active"><a href="/my/wishlist/draft/beta/">AA Draft</a></li>
-            <li><a href="/my/offseason/draft/">Open Draft</a></li>
-            <!-- <li><a href="/my/wishlist/trade/">My Trade List</a></li> -->
+            <li {% if draft_type == "aa" %}class="is-active"{% endif %}><a href="/my/wishlist/draft/beta/">AA Draft</a></li>
+            <li {% if draft_type == "open" %}class="is-active"{% endif %}><a href="/my/offseason/draft/">Open Draft</a></li>
         </ul>
     </div>
 
