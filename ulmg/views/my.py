@@ -74,7 +74,7 @@ def my_draft_prep(request, list_type):
 
     if list_type == "midseason":
         context["players"] = models.WishlistPlayer.objects.filter(
-            wishlist=context["wishlist"], player__is_owned=False, player__level__in=["A","V"], player__is_carded=True
+            wishlist=context["wishlist"], player__is_owned=False, player__is_carded=True
         ).order_by("rank") 
 
     context["tags"] = set()
