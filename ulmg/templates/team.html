@@ -79,6 +79,7 @@
                 <tr class="
                 {% if p.level == "V" and not p.is_protected %}unprotected {% endif %}
                 {% if p.roster_status %}{{ p.roster_status|lower|default_if_none:"non-mlb" }} {% else %}non-mlb {% endif %}
+                {% if p.role_type %}{{ p.role_type|lower|default_if_none:""}} {% endif %}
                 ">
                     {% include "includes/player_name.html" %}
                         <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
@@ -126,6 +127,7 @@
                 <tr class="
                 {% if p.level == "V" and not p.is_protected %}unprotected {% endif %}
                 {% if p.roster_status %}{{ p.roster_status|lower|default_if_none:"non-mlb" }} {% else %}non-mlb {% endif %}
+                {% if p.role_type %}{{ p.role_type|lower|default_if_none:""}} {% endif %}
                 ">
                         {% include "includes/player_name.html" %}
                         <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>

@@ -1,13 +1,13 @@
 {% load ulmg_tags %}
 <td>{% if p.mlb_org %}{{ p.mlb_org|default_if_none:"-" }}{% else %}-{% endif %}</td>
-<!-- 
+
 <td data-value="{% if p.roster_status %}{{ p.roster_status|default_if_none:"-" }}{% else %}-{% endif %}">
     {% if p.roster_status %}{{ p.roster_status|default_if_none:"-" }}{% else %}-{% endif %}
 </td>
 
 <td data-value="{% if p.role_type %}{{ p.role_type|default_if_none:"-" }}{% else %}-{% endif %}">
     {% if p.role_type %}{{ p.role_type|default_if_none:"-" }}{% else %}-{% endif %}
-</td> -->
+</td>
 
 <td data-value="{% if p.pit_stats.level != "" %}{{ p.pit_stats.level|default_if_none:"-" }}{% else %}-{% endif %}">
     {% if p.pit_stats %}{% if p.pit_stats.level != "" %}{{ p.pit_stats.level|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
