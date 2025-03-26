@@ -47,8 +47,23 @@ class Command(BaseCommand):
                 with open(f'data/{self.season}/fg_milb_{k}.json', 'w') as writefile:
                     writefile.write(json.dumps(v))
 
+    def get_fg_college_season(self):
+        headers = {"accept": "application/json"}
+        players = {"bat": [], "pit": []}
+
+        for k, v in players.items():
+            url = f"https://www.fangraphs.com/api/leaders/college/data?position=&type=0&stats={k}&qual=y&seasonstart={self.season}&seasonend={self.season}&team=0&players=0&conference=0&pageitems=2000000000"
+            r = requests.get(url, verify=False)
+            players[k] += r.json().get('data')
+
+        for k, v in players.items():
+                with open(f'data/{self.season}/fg_college_{k}.json', 'w') as writefile:
+                    writefile.write(json.dumps(v))
+
+
     def handle(self, *args, **options):
         self.season = options.get("season", None)
         self.get_fg_major_hitter_season()
         self.get_fg_major_pitcher_season()
         self.get_fg_minor_season()
+        self.get_fg_college_season()

@@ -183,9 +183,87 @@ class Command(BaseCommand):
                         obj.set_stats(stats_dict)
                         obj.save()
 
+    def set_college_season(self):
+        for side in ['bat', 'pit']:
+            with open(f'data/{self.season}/fg_college_{side}.json', 'r') as readfile:
+                rows = json.loads(readfile.read())
+
+                for player in rows:
+                    fg_id = player["UPID"]
+                    mlbam_id = player['xMLBAMID']
+                    name = player["PlayerName"]
+
+                    obj = None
+
+                    try:
+                        obj = models.Player.objects.get(fg_id=fg_id)
+                        if mlbam_id:
+                            obj.mlbam_id = mlbam_id
+
+                    except:
+                        pass
+
+                    if not obj:
+                        if mlbam_id:
+                            try:
+                                obj = models.Player.get(mlbam_id=mlbam_id)
+                                if fg_id:
+                                    obj.fg_id = fg_id
+                            except:
+                                pass
+
+                    if obj:
+                        stats_dict = {}
+                        stats_dict['side'] = side
+                        stats_dict["type"] = "amateur"
+                        stats_dict["level"] = "NCAA"
+                        stats_dict["year"] = self.season
+                        stats_dict["slug"] = f"{stats_dict['year']}_{stats_dict['type']}_{stats_dict['side']}"
+
+                        if side == "bat":
+                            stats_dict["side"] = "hit"
+                            stats_dict["hits"] = utils.to_int(player["H"])
+                            stats_dict["2b"] = utils.to_int(player["2B"])
+                            stats_dict["3b"] = utils.to_int(player["3B"])
+                            stats_dict["hr"] = utils.to_int(player["HR"])
+                            stats_dict["sb"] = utils.to_int(player["SB"])
+                            stats_dict["runs"] = utils.to_int(player["R"])
+                            stats_dict["rbi"] = utils.to_int(player["RBI"])
+                            stats_dict["avg"] = utils.to_float(player["AVG"])
+                            stats_dict["obp"] = utils.to_float(player["OBP"])
+                            stats_dict["slg"] = utils.to_float(player["SLG"])
+                            stats_dict["babip"] = utils.to_float(player["BABIP"])
+                            stats_dict["wrc_plus"] = utils.to_int(player["wRC+"])
+                            stats_dict["plate_appearances"] = utils.to_int(player["PA"])
+                            stats_dict["iso"] = utils.to_float(player["ISO"])
+                            stats_dict["k_pct"] = utils.to_float(player["K%"], default=0.0) * 100.0
+                            stats_dict["bb_pct"] = utils.to_float(player["BB%"], default=0.0) * 100.0
+                            stats_dict["woba"] = utils.to_float(player["wOBA"])
+
+                        if side == "pit":
+                            stats_dict["side"] = "pitch"
+                            stats_dict["g"] = utils.to_int(player["G"])
+                            stats_dict["gs"] = utils.to_int(player["GS"])
+                            stats_dict["k"] = utils.to_int(player["SO"])
+                            stats_dict["bb"] = utils.to_int(player["BB"])
+                            stats_dict["ha"] = utils.to_int(player["H"])
+                            stats_dict["hra"] = utils.to_int(player["HR"])
+                            stats_dict["ip"] = utils.to_float(player["IP"])
+                            stats_dict["k_9"] = utils.to_float(player["K/9"])
+                            stats_dict["bb_9"] = utils.to_float(player["BB/9"])
+                            stats_dict["hr_9"] = utils.to_float(player["HR/9"])
+                            stats_dict["lob_pct"] = (
+                                utils.to_float(player["LOB%"], default=0.0) * 100.0
+                            )
+                            stats_dict["era"] = utils.to_float(player["ERA"])
+                            stats_dict["fip"] = utils.to_float(player["FIP"])
+
+                        obj.set_stats(stats_dict)
+                        obj.save()
 
     def handle(self, *args, **options):
         self.season = options.get("season", None)
+        self.set_college_season()
         self.set_minor_season()
         self.set_mlb_hitter_season()
         self.set_mlb_pitcher_season()

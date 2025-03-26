@@ -364,43 +364,42 @@ class Player(BaseModel):
 
         self.stats[stats_dict["slug"]] = stats_dict
 
+
     def pit_stats(self):
-        payload = None
-        has_mlb = False
-        weak_mlb = False
+        payload = []
 
         if self.stats:
             for year_side_level, stats in self.stats.items():
                 if stats['side'] == "pitch":
-                    if stats['level'] == "mlb":
-                        if stats.get('ip'):
-                            if stats['ip'] < 1:
-                                weak_mlb = True
-                            payload = stats
-                            has_mlb = True
-                    else:
-                        if not has_mlb or weak_mlb:
-                            payload = stats
+                    if stats['g'] >= 1:
+                        payload.append(stats)
+
+        payload = sorted(payload, key=lambda x: (int(x['year']), utils.get_level_order(x['level'])), reverse=True)
+
         return payload
 
     def hit_stats(self):
-        payload = {}
-        has_mlb = False
-        weak_mlb = False
+        payload = []
 
         if self.stats:
             for year_side_level, stats in self.stats.items():
                 if stats['side'] == "hit":
-                    if stats['level'] == "mlb":
-                        if stats.get('plate_appearances'):
-                            if stats['plate_appearances'] < 5:
-                                weak_mlb = True
-                            payload = stats
-                            has_mlb = True
-                    else:
-                        if not has_mlb or weak_mlb:
-                            payload = stats
+                    if stats['plate_appearances'] >= 1:
+                        payload.append(stats)
+
+        payload = sorted(payload, key=lambda x: (int(x['year']), utils.get_level_order(x['level'])), reverse=True)
+
         return payload
+
+    def latest_hit_stats(self):
+        if len(self.hit_stats()) > 0:
+            return self.hit_stats()[0]
+        return None
+
+    def latest_pit_stats(self):
+        if len(self.pit_stats()) > 0:
+            return self.pit_stats()[0]
+        return None
 
     @property
     def mlb_image_url(self):
@@ -1046,6 +1045,42 @@ class WishlistPlayer(BaseModel):
 
     def __unicode__(self):
         return f"{self.player} [{self.rank}][{self.tier}]"
+
+    def pit_stats(self):
+        payload = []
+
+        if self.stats:
+            for year_side_level, stats in self.stats.items():
+                if stats['side'] == "pitch":
+                    if stats['g'] >= 1:
+                        payload.append(stats)
+
+        payload = sorted(payload, key=lambda x: (int(x['year']), utils.get_level_order(x['level'])), reverse=True)
+
+        return payload
+
+    def hit_stats(self):
+        payload = []
+
+        if self.stats:
+            for year_side_level, stats in self.stats.items():
+                if stats['side'] == "hit":
+                    if stats['plate_appearances'] >= 1:
+                        payload.append(stats)
+
+        payload = sorted(payload, key=lambda x: (int(x['year']), utils.get_level_order(x['level'])), reverse=True)
+
+        return payload
+
+    def latest_hit_stats(self):
+        if len(self.hit_stats()) > 0:
+            return self.hit_stats()[0]
+        return None
+
+    def latest_pit_stats(self):
+        if len(self.pit_stats()) > 0:
+            return self.pit_stats()[0]
+        return None
 
     @property
     def owner_name(self):

@@ -24,6 +24,41 @@ import time
 from ulmg import models
 
 
+def get_level_order(level):
+    """
+    figure out how to sort stats from various levels against each other
+    """
+    level = level.lower()
+    if level == "mlb":
+        return 99
+    
+    if level == "aaa":
+        return 98
+
+    if level == "aa":
+        return 50
+
+    if level == 'a+':
+        return 45
+
+    if level == "a":
+        return 40
+
+    if level == "cpx":
+        return 35
+
+    if level == "dsl":
+        return 30
+
+    if level == "ncaa":
+        return 25
+
+    if level in ['npb', 'kbo']:
+        return 98
+    
+    return 0
+
+
 def get_fg_birthdate(player):
     if player.fg_id:
         player_url = f"https://www.fangraphs.com/statss.aspx?playerid={player.fg_id}"
