@@ -153,7 +153,7 @@
                         {% include "includes/player_name.html" %}
                         <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
                         <td data-value="{{ p.level|default_if_none:"Z" }}">{{ p.level|default_if_none:"" }}</td>
-                        <td>{{ p.hit_stats.hr }}</td>
+                        <td>{{ p.latest_hit_stats.hr }}</td>
                     </tr>
                 {% endfor %}
                 </tbody>
@@ -176,7 +176,7 @@
                         {% include "includes/player_name.html" %}
                         <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
                         <td data-value="{{ p.level|default_if_none:"Z" }}">{{ p.level|default_if_none:"" }}</td>
-                        <td>{{ p.hit_stats.sb }}</td>
+                        <td>{{ p.latest_hit_stats.sb }}</td>
                     </tr>
                 {% endfor %}
                 </tbody>
@@ -200,8 +200,8 @@
                         {% include "includes/player_name.html" %}
                         <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
                         <td data-value="{{ p.level|default_if_none:"Z" }}">{{ p.level|default_if_none:"" }}</td>
-                        <td>{{ p.hit_stats.plate_appearances }}</td>
-                        <td>{{ p.hit_stats.avg|floatformat:"3"|kill_leading_zero }}</td>
+                        <td>{{ p.latest_hit_stats.plate_appearances }}</td>
+                        <td>{{ p.latest_hit_stats.avg|floatformat:"3"|kill_leading_zero }}</td>
                     </tr>
                 {% endfor %}
                 </tbody>
@@ -227,7 +227,7 @@
                         {% include "includes/player_name.html" %}
                         <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
                         <td data-value="{{ p.level|default_if_none:"Z" }}">{{ p.level|default_if_none:"" }}</td>
-                        <td>{{ p.pit_stats.ip }}</td>
+                        <td>{{ p.latest_pit_stats.ip }}</td>
                     </tr>
                 {% endfor %}
                 </tbody>
@@ -250,7 +250,7 @@
                         {% include "includes/player_name.html" %}
                         <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
                         <td data-value="{{ p.level|default_if_none:"Z" }}">{{ p.level|default_if_none:"" }}</td>
-                        <td>{{ p.pit_stats.gs }}</td>
+                        <td>{{ p.latest_pit_stats.gs }}</td>
                     </tr>
                 {% endfor %}
                 </tbody>
@@ -274,8 +274,8 @@
                         {% include "includes/player_name.html" %}
                         <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
                         <td data-value="{{ p.level|default_if_none:"Z" }}">{{ p.level|default_if_none:"" }}</td>
-                        <td>{{ p.pit_stats.ip }}</td>
-                        <td>{{ p.pit_stats.era|floatformat:"2" }}</td>
+                        <td>{{ p.latest_pit_stats.ip }}</td>
+                        <td>{{ p.latest_pit_stats.era|floatformat:"2" }}</td>
                     </tr>
                 {% endfor %}
                 </tbody>

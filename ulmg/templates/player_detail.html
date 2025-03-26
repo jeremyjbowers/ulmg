@@ -1,154 +1,119 @@
 {% extends "base.html" %}
-
 {% load ulmg_tags %}
 
 {% block content %}
-<div class="columns section is-desktop">
-    <div class="column is-three-quarters">
-        <div class="box">
-            <article class="media">
-                {% if p.mlb_image_url %}<div class="media-left"><figure class="image"><img src="{{ p.mlb_image_url }}" alt="Image"></figure></div>{% endif %}
-                <div class="media-content">
-                    <div class="content">
-                        <h3>{% if p.team %}<a href="/teams/{{ p.team.abbreviation|lower }}/">{{ p.team }}</a>{% else %}Unowned{% endif %}</h3>
-                        <h1 class="is-title is-level-1">{{ p.name }}, {{ p.position }}</h1>
-                        <p>
-                            <strong><a href="/admin/ulmg/player/{{ p.id }}/change/">Edit player &#x270E;</a></strong><br/>
-                            {% if p.bref_url %}
-                            <a class="has-text-weight-light" target="_blank" href="{{ p.bref_url }}">Baseball Reference &rarr;</a>
-                            {% endif %}
-                            {% if p.fg_url %}
-                            <a class="has-text-weight-light" target="_blank" href="{{ p.fg_url }}">FanGraphs &rarr;</a>
-                            {% endif %}
-                            {% if p.mlbam_id %}
-                            <a class="has-text-weight-light" target="_blank" href="https://baseballsavant.mlb.com/savant-player/{{ p.mlbam_id }}">MLB &rarr;</a>
-                            {% endif %}
-                        </p>
-
-                        {% if p.notes %}
-                        <h5 class="title is-5">Scouting report</h5>
-                        <p class="notes">
-                            {{ p.notes }}
-                        </p>
-                        {% endif %}
-                    </div>
+<div class="container">
+<div class="content">
+<div class="columns">
+    <div class="column">
+        <div class="card">
+            <div class="card-content">
+            <div class="media">
+                <div class="media-left">
+                    <img src="{{ p.mlb_image_url }}" alt="{{ p.name }}">
                 </div>
-            </article>
-            <article class="media">
                 <div class="media-content">
-                    <div class="content">
-                        {% if p.position != "P" %}
-                        <table class="table is-fullwidth is-hoverable">
-                            <thead>
-                                <tr>
-                                    <th>Age</th>
-                                    <th>Lvl</th>
-                                    {% include "includes/hitter_stat_headers.html" %}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr class="
-                                {% if p.ls_is_mlb == False and p.ls_plate_appearances > 0 %} minors{% endif %}
-                                {% if p.ls_is_mlb == False %} minors{% endif %}
-                                {% if p.ls_is_mlb == False and p.is_amateur == True %} amateur{% endif %}
-                                ">
-                                    <td>{{ p.age|default_if_none:"-" }}</td>
-                                    <td>{{ p.level|default_if_none:"" }}</td>
-                                    {% include "includes/hitter_stat_cells.html" %}
-                                </tr>
-                            </tbody>
-                        </table>
-                        {% else %}
-
-                        <table class="table is-fullwidth is-hoverable" data-sortable>
-                            <thead>
-                                <tr>
-                                    <th data-sortable-type="alpha">Name</th>
-                                    <th data-sortable-type="numeric">Age</th>
-                                    <th data-sortable-type="alpha">Lvl</th>
-                                    <!-- <th data-sortable-type="numeric">Card?</th> -->
-                
-                                    {% include "includes/pitcher_stat_headers.html" %}
-
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr class="
-                                {% if p.ls_is_mlb == False and p.ls_plate_appearances > 0 %} minors{% endif %}
-                                {% if p.ls_is_mlb == False %} minors{% endif %}
-                                {% if p.ls_is_mlb == False and p.is_amateur == True %} amateur{% endif %}
-                                ">
-                                        <td data-value="{{ p.name }}" style="text-align: left!important;">
-                                            <a class="has-text-weight-semibold" href="/players/{{ p.id }}/" target="_blank">{{ p.name }}</a>
-                                            {% if p.is_prospect %}<span class="icon-text"><span class="icon has-text-success"><i class="fab fa-product-hunt"></i></span><span>{{ p.prospect_rating_avg }}</span></span>{% endif %}
-                                        </td>
-                                        <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
-                                        <td data-value="{{ p.level|default_if_none:"Z" }}<">{{ p.level|default_if_none:"" }}</td>
-                                        <!-- <td data-value="{% if p.is_carded %}1{% else %}0{% endif %}">{% if p.is_carded %}<span class="green">&checkmark;</span>{% else %}<span class="red">&cross;</span>{% endif %}</td> -->
-                    
-                                        {% include "includes/pitcher_stat_cells.html" %}
-                                </tr>
-                            </tbody>
-                        </table>
-                        {% endif %}
-                        <div class="container">
-                            {% if trades %}
-                            <div class="column">
-                                <h2 class="is-header-2">Trade summary</h2>
-                                <table class="table is-fullwidth">
-                                    <tr>
-                                        <th>Date</th>
-                                        <th>Gets</th>
-                                        <th></th>
-                                        <th>Gets</th>
-                                        <th></th>
-                                    </tr>
-                                {% for trade in trades %}
-                                    <tr>
-                                        <td class="left">{{ trade.trade.summary_dict.date }}</td>
-                                        <td class="left"><a href="/teams/{{ trade.trade.summary_dict.t1_abbr }}/">{{ trade.trade.summary_dict.t1_abbr }}</a></td>
-                                        <td class="left">{% for p in trade.trade.summary_dict.t2_players %}{% if not forloop.first %}, {% endif %}<a href="/players/{{ p.id }}/">{{ p.pos }} {{ p.name }}</a>{% endfor %}{% if trade.trade.summary_dict.t2_picks and trade.trade.summary_dict.t2_players %}, {% for p in trade.trade.summary_dict.t2_picks %}{{ p }}{% endfor %}{% endif %}</td>
-                                        <td class="left"><a href="/teams/{{ trade.trade.summary_dict.t2_abbr }}/">{{ trade.trade.summary_dict.t2_abbr }}</a></td>
-                                        <td class="left">{% for p in trade.trade.summary_dict.t1_players %}{% if not forloop.first %}, {% endif %}<a href="/players/{{ p.id }}/">{{ p.pos }} {{ p.name }}</a>{% endfor %}{% if trade.trade.summary_dict.t1_picks and trade.trade.summary_dict.t1_players %}, {% for p in trade.trade.summary_dict.t1_picks %}{{ p }}{% endfor %}{% endif %}</td>
-                                    </tr>
-                                {% endfor %}
-                                </table>
-                            </div>
-                            {% endif %}
-                            {% if drafted %}
-                            <div class="column">
-                                <h2 class="is-header-2">Draft summary</h2>
-                                <table class="table is-fullwidth">
-                                    <tr>
-                                        <th>Year</th>
-                                        <th>Season</th>
-                                        <th>Type</th>
-                                        <th>Original team</th>
-                                        <th>Drafting team</th>
-                                        <th>Round</th>
-                                        <th>Pick</th>
-                                        <th>Overall</th>
-                                    </tr>
-                                    {% for pick in drafted %}
-                                    <tr>
-                                        <td>{{ pick.year }}</td>
-                                        <td>{{ pick.season }}</td>
-                                        <td>{{ pick.draft_type }}</td>
-                                        <td>{{ pick.original_team }}</td>
-                                        <td>{{ pick.team }}</td>
-                                        <td>{{ pick.draft_round }}</td>
-                                        <td>{{ pick.pick_number }}</td>
-                                        <td>{{ pick.overall_pick_number }}</td>
-                                    </tr>
-                                    {% endfor %}
-                                </table>
-                            </div>
-                            {% endif %}
-                        </div>
-                    </div>
+                    <p class="title is-2">{{ p.position|default_if_none:"" }} {{ p.name }}</p>
+                    <p class="subtitle">
+                        Team: <strong>{% if p.team %}<a href="/teams/{{ p.team|lower }}/">{{ p.team }}</a>{% else %}Unowned{% endif %}</strong><br/>
+                        Level: <strong>{{ p.level }}</strong>
+                    </p>
+                    {% if p.hit_stats %}
+                    <h2>Hitting</h2>
+                    <table class="stat-table table">
+                    <thead>
+                        <tr>
+                        <th>year</th>
+                        <th>lvl</th>
+                        <th>pa</th>
+                        <th>wrc+</th>
+                        <th>hr</th>
+                        <th>sb</th>
+                        <th>bb%</th>
+                        <th>k%</th>
+                        <th>avg</th>
+                        <th>obp</th>
+                        <th>slg</th>
+                        <th>iso</th>
+                        <th>xavg</th>
+                        <th>xwoba</th>
+                        <th>xslg</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for stat in p.hit_stats %}
+                    <tr{% if stat.level|upper == "MLB" %} class="majors"{% endif %}>
+                    <td>{{ stat.year }}</td>
+                    <td>{{ stat.level|upper }}</td>
+                    <td>{{ stat.plate_appearances }}</td>
+                    <td>{{ stat.wrc_plus|floatformat:0 }}</td>
+                    <td>{{ stat.hr }}</td>
+                    <td>{{ stat.sb }}</td>
+                    <td>{{ stat.bb_pct|floatformat:1 }}</td>
+                    <td>{{ stat.k_pct|floatformat:1 }}</td>
+                    <td>{{ stat.avg|floatformat:3|kill_leading_zero }}</td>
+                    <td>{{ stat.obp|floatformat:3|kill_leading_zero }}</td>
+                    <td>{{ stat.slg|floatformat:3|kill_leading_zero }}</td>
+                    <td>{{ stat.iso|floatformat:3|kill_leading_zero }}</td>
+                    <td>{% if stat.xavg %}{{ stat.xavg|floatformat:3|kill_leading_zero }}{% else %}-{% endif %}</td>
+                    <td>{% if stat.xwoba %}{{ stat.xwoba|floatformat:3|kill_leading_zero }}{% else %}-{% endif %}</td>
+                    <td>{% if stat.xslg %}{{ stat.xslg|floatformat:3|kill_leading_zero }}{% else %}-{% endif %}</td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                    </table>
+                    {% endif %}
+                    {% if p.pit_stats %}
+                    <h2>Pitching</h2>
+                    <table class="stat-table">
+                    <thead>
+                        <tr>
+                        <th>year</th>
+                        <th>lvl</th>
+                        <th>g</th>
+                        <th>gs</th>
+                        <th>ip</th>
+                        <th>k/9</th>
+                        <th>bb9</th>
+                        <th>era</th>
+                        <th>xera</th>
+                        <th>fip</th>
+                        <th>xfip</th>
+                        <th>siera</th>
+                        <th>stuff+</th>
+                        <th>loc+</th>
+                        <th>pitch+</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for stat in p.pit_stats %}
+                    <tr{% if stat.level|upper == "MLB" %} class="majors"{% endif %}>
+                    <td>{{ stat.year }}</td>
+                    <td>{{ stat.level|upper }}</td>
+                    <td>{{ stat.g }}</td>
+                    <td>{{ stat.gs }}</td>
+                    <td>{{ stat.ip }}</td>
+                    <td>{{ stat.k_9|floatformat:1|default_if_none:"-" }}</td>
+                    <td>{{ stat.bb_9|floatformat:1|default_if_none:"-" }}</td>
+                    <td>{{ stat.era|floatformat:2|default_if_none:"-" }}</td>
+                    <td>{% if stat.xERA %}{{ stat.xERA|floatformat:2|default_if_none:"-" }}{% else %}-{% endif %}</td>
+                    <td>{{ stat.fip|floatformat:2|default_if_none:"-" }}</td>
+                    <td>{{ stat.xfip|floatformat:2|default_if_none:"-" }}</td>
+                    <td>{% if stat.siera %}{{ stat.siera|floatformat:2|default_if_none:"-" }}{% else %}-{% endif %}</td>
+                    <td>{% if stat.sp_stuff %}{{ stat.sp_stuff|floatformat:1|default_if_none:"-" }}{% else %}-{% endif %}</td>
+                    <td>{% if stat.sp_location %}{{ stat.sp_location|floatformat:1|default_if_none:"-" }}{% else %}-{% endif %}</td>
+                    <td>{% if stat.sp_pitching %}{{ stat.sp_pitching|floatformat:1|default_if_none:"-" }}{% else %}-{% endif %}</td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                    </table>
+                    {% endif %}
                 </div>
-            </article>
+            </div>
+            </div>
         </div>
-    </div>
+</div>
+</div>
+</div>
 </div>
 {% endblock %}
