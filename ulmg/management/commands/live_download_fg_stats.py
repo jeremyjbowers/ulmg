@@ -62,8 +62,36 @@ class Command(BaseCommand):
                 with open(f'data/{self.season}/fg_college_{k}.json', 'w') as writefile:
                     writefile.write(json.dumps(v))
 
+    def get_fg_npb_season(self):
+        headers = {"accept": "application/json"}
+        players = {"bat": [], "pit": []}
+
+        for k, v in players.items():
+            url = f"https://www.fangraphs.com/api/leaders/international/npb/data?lg=&pos=all&qual=0&stats={k}&type=1&seasonstart={self.season}&seasonend={self.season}&team=0&season={self.season}&org=&ind=0&pageitems=2000000000"
+            r = requests.get(url, verify=False)
+            players[k] += r.json().get('data')
+
+        for k, v in players.items():
+                with open(f'data/{self.season}/fg_npb_{k}.json', 'w') as writefile:
+                    writefile.write(json.dumps(v))
+
+    def get_fg_kbo_season(self):
+        headers = {"accept": "application/json"}
+        players = {"bat": [], "pit": []}
+
+        for k, v in players.items():
+            url = f"https://www.fangraphs.com/api/leaders/international/npb/data?lg=&pos=all&qual=0&stats={k}&type=1&seasonstart={self.season}&seasonend={self.season}&team=0&season={self.season}&org=&ind=0&pageitems=2000000000"
+            r = requests.get(url, verify=False)
+            players[k] += r.json().get('data')
+
+        for k, v in players.items():
+                with open(f'data/{self.season}/fg_kbo_{k}.json', 'w') as writefile:
+                    writefile.write(json.dumps(v))
+
     def handle(self, *args, **options):
         self.get_fg_major_hitter_season()
         self.get_fg_major_pitcher_season()
         self.get_fg_minor_season()
         self.get_fg_college_season()
+        self.get_fg_npb_season()
+        self.get_fg_kbo_season()
