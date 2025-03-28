@@ -80,17 +80,21 @@
                             <td>{{ p.player.position }}</td>
                             <td>{{ p.player.mlb_org|default_if_none:"-" }}</td>
                             <td>
-                                {% if p.player.hit_stats %}
-                                    {{ p.player.hit_stats.level|default_if_none:"-" }}
+                                {% if p.latest_hit_stats %}
+                                    {{ p.latest_hit_stats.level|default_if_none:"-" }}
                                 {% else %}
-                                    {{ p.player.pit_stats.level|default_if_none:"-" }}
+                                    {% if p.latest_pit_stats %}
+                                        {{ p.latest_pit_stats.level|default_if_none:"-" }}
+                                    {% else %}
+                                    -
+                                    {% endif %}
                                 {% endif %}
                             </td>
                             <td>
-                                {% if p.player.hit_stats %}{% if p.player.hit_stats.wrc_plus %}{{ p.player.hit_stats.wrc_plus|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
+                                {% if p.latest_hit_stats %}{% if p.latest_hit_stats.wrc_plus %}{{ p.latest_hit_stats.wrc_plus|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
                             </td>
                             <td>
-                                {% if p.player.pit_stats %}{% if p.player.pit_stats.fip %}{{ p.player.pit_stats.fip|floatformat:2|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
+                                {% if p.latest_pit_stats %}{% if p.latest_pit_stats.fip %}{{ p.latest_pit_stats.fip|floatformat:2|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
                             </td>
                             <!-- <td>{% include "includes/my/notechooser.html" %}</td> -->
                             <td class="left tag-cell">{% include "includes/my/tagchooser.html" %}</td>

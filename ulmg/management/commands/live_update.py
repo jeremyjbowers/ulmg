@@ -56,3 +56,6 @@ class Command(BaseCommand):
         # use fg stats to update all player stats
         print('LIVE: Update stats from FG stats')
         call_command('live_update_stats_from_fg_stats')
+
+        # because stats are denormalized into wishlist players, save them
+        [a.save() for a in models.WishlistPlayer.objects.all()]
