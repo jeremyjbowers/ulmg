@@ -124,9 +124,7 @@ def index(request):
     context = utils.build_context(request)
     context["teams"] = models.Team.objects.all()
 
-    season = datetime.today().year
-    if datetime.today().month < 4:
-        season = datetime.today().year - 1
+    season = 2025
 
     hitter_dict = {
         "team__isnull": True,
@@ -151,11 +149,11 @@ def index(request):
 
     context['hitter_hr'] = models.Player.objects.filter(**hitter_dict).order_by(f"-stats__{season}_majors_hit__hr")[:15]
     context['hitter_sb'] = models.Player.objects.filter(**hitter_dict).order_by(f"-stats__{season}_majors_hit__sb")[:15]
-    context['hitter_avg'] = models.Player.objects.filter(stats__2024_majors_hit__plate_appearances__gte=50, team__isnull=True).order_by(f"-stats__{season}_majors_hit__avg")[:15]
+    context['hitter_avg'] = models.Player.objects.filter(stats__2025_majors_hit__plate_appearances__gte=50, team__isnull=True).order_by(f"-stats__{season}_majors_hit__avg")[:15]
 
     context['pitcher_innings'] = models.Player.objects.filter(**pitcher_dict).order_by(f"-stats__{season}_majors_pitch__ip")[:15]
     context['pitcher_starts'] = models.Player.objects.filter(**pitcher_dict).order_by(f"-stats__{season}_majors_pitch__gs")[:15]
-    context['pitcher_era'] = models.Player.objects.filter(stats__2024_majors_pitch__ip__gte=20, team__isnull=True).order_by(f"stats__{season}_majors_pitch__era")[:15]
+    context['pitcher_era'] = models.Player.objects.filter(stats__2025_majors_pitch__ip__gte=20, team__isnull=True).order_by(f"stats__{season}_majors_pitch__era")[:15]
 
     return render(request, "index.html", context)
 
