@@ -90,9 +90,9 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         self.season = options.get("season", None)
-        # self.get_fg_major_hitter_season()
-        # self.get_fg_major_pitcher_season()
-        # self.get_fg_minor_season()
-        # self.get_fg_college_season()
+        self.get_fg_major_hitter_season()
+        self.get_fg_major_pitcher_season()
+        self.get_fg_minor_season()
+        self.get_fg_college_season()
         self.get_fg_npb_season()
         self.get_fg_kbo_season()

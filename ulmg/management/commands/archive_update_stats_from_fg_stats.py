@@ -397,10 +397,10 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         self.season = options.get("season", None)
-        # self.set_college_season()
-        # self.set_minor_season()
+        self.set_college_season()
+        self.set_minor_season()
         self.set_kbo_season()
         self.set_npb_season()
-        # self.set_mlb_hitter_season()
-        # self.set_mlb_pitcher_season()
+        self.set_mlb_hitter_season()
+        self.set_mlb_pitcher_season()
 
