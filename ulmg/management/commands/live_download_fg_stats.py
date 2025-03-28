@@ -80,7 +80,7 @@ class Command(BaseCommand):
         players = {"bat": [], "pit": []}
 
         for k, v in players.items():
-            url = f"https://www.fangraphs.com/api/leaders/international/npb/data?lg=&pos=all&qual=0&stats={k}&type=1&seasonstart={self.season}&seasonend={self.season}&team=0&season={self.season}&org=&ind=0&pageitems=2000000000"
+            url = f"https://www.fangraphs.com/api/leaders/international/kbo/data?lg=&pos=all&qual=0&stats={k}&type=1&seasonstart={self.season}&seasonend={self.season}&team=0&season={self.season}&org=&ind=0&pageitems=2000000000"
             r = requests.get(url, verify=False)
             players[k] += r.json()
 
