@@ -9,6 +9,7 @@
     {% if not p.is_1h_draft %}{% if p.position == "C" and p.level == "V" and not p.is_1h_c and not p.is_reserve and not p.is_1h_c %}<a class="button is-warning is-light is-small is-link player-action" data-playerid="{{ p.id }}" data-action="is_1h_c">C</a>{% endif %}{% endif %}
     {% if not p.is_1h_draft %}{% if p.position != "P" and p.position != "C" and p.level == "V" and not p.is_1h_pos and not p.is_reserve and not p.is_1h_pos %}<a class="button is-warning is-light is-small is-link player-action" data-playerid="{{ p.id }}" data-action="is_1h_pos">H</a>{% endif %}{% endif %}
     {% if p.level == "V" and not p.is_1h_p and not p.is_1h_pos and not p.is_1h_c and not p.is_reserve %}<a class="button is-primary is-light is-success is-small is-link player-action" data-playerid="{{ p.id }}" data-action="is_reserve">ASR</a>{% endif %}
+    {% if p.is_1h_p or p.is_1h_c or p.is_1h_pos or p.is_reserve %}<a class="button is-small player-action is-outlined" data-playerid="{{ p.id }}" data-action="unprotect">CLR ⟲</a>{% endif %}
 
     <!-- SECOND HALF PROTECTIONS -->
 
