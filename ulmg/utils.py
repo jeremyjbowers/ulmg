@@ -301,6 +301,10 @@ def build_context(request):
         owner = models.Owner.objects.get(user=request.user)
         context["owner"] = owner
 
+    context['my_team'] = None
+    if context['owner']:
+        context['my_team'] = models.Team.objects.get(owner_obj=context['owner'])
+
     return context
 
 

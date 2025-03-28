@@ -37,7 +37,7 @@
                     {% if user.is_staff %}
                     <a class="button is-info is-small" href="/admin/">Admin</a>
                     {% endif %}
-                    <a class="button is-success is-small" href="/my/team/">My Team</a>
+                    <a class="button is-success is-small" href="/teams/{{ my_team.abbreviation|lower }}/">My Team</a>
                     <a class="button is-danger is-small" href="/accounts/logout/">X</a>
                 </div>
             {% else %}
