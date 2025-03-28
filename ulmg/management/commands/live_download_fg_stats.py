@@ -69,7 +69,7 @@ class Command(BaseCommand):
         for k, v in players.items():
             url = f"https://www.fangraphs.com/api/leaders/international/npb/data?lg=&pos=all&qual=0&stats={k}&type=1&seasonstart={self.season}&seasonend={self.season}&team=0&season={self.season}&org=&ind=0&pageitems=2000000000"
             r = requests.get(url, verify=False)
-            players[k] += r.json().get('data')
+            players[k] += r.json()
 
         for k, v in players.items():
                 with open(f'data/{self.season}/fg_npb_{k}.json', 'w') as writefile:
@@ -82,7 +82,7 @@ class Command(BaseCommand):
         for k, v in players.items():
             url = f"https://www.fangraphs.com/api/leaders/international/npb/data?lg=&pos=all&qual=0&stats={k}&type=1&seasonstart={self.season}&seasonend={self.season}&team=0&season={self.season}&org=&ind=0&pageitems=2000000000"
             r = requests.get(url, verify=False)
-            players[k] += r.json().get('data')
+            players[k] += r.json()
 
         for k, v in players.items():
                 with open(f'data/{self.season}/fg_kbo_{k}.json', 'w') as writefile:
