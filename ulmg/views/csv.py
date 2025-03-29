@@ -15,7 +15,7 @@ from ulmg import models, utils
 
 def all_csv(request):
     team_players = (
-        models.Player.objects.filter(is_owned=True)
+        models.Player.objects.filter(is_owned=True, is_carded=True)
         .order_by(
             "team",
             "-is_35man_roster",
