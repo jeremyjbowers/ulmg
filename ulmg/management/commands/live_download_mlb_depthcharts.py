@@ -94,15 +94,15 @@ class Command(BaseCommand):
 
                 try:
                     obj = models.Player.objects.get(mlbam_id=player_dict['mlbam_id'])
-                
-                except models.Player.DoesNotExist:
-                    obj = models.Player()
-                    obj.level = "B"
-                
-                for k,v in player_dict.items():
-                    setattr(obj, k, v)
 
-                obj.save()
+                    for k,v in player_dict.items():
+                        setattr(obj, k, v)
+
+                    obj.save()
+
+                except models.Player.DoesNotExist:
+                    # we're not creating new players from the MLB just yet
+                    pass
 
     def fix_bad_player_ids(self):
         bad_ids = models.Player.objects.filter(mlbam_id__icontains="/")

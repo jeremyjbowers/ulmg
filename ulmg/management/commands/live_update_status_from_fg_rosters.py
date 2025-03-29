@@ -89,67 +89,78 @@ class Command(BaseCommand):
                             pass
 
                     if not obj:
-                        print(player)
+                        # time to create a new player
+                        """
+                        {'teamid': 30, 'loaddate': '2025-03-29T00:35:30', 'type': 'off-sp', 'role': 'A', 'position': 'SP', 'jnum': '', 'player': 'Cade Vernon', 'notes': '', 'handed': 'R', 'age': '23.2', 'acquired': "Drafted 10th Rd '24", 'options': "Dec'27", 'servicetime': '', 'signyear': '2024', 'signround': '10', 'signpick': '298', 'retrodate': '', 'injurynotes': '', 'injurydate': '', 'mlbamid': 827293, 'age1': '23.2', 'jnum1': '', 'roster40': 'N', 'bats': 'S', 'throws': 'R', 'position1': 'SP', 'platoon': '', 'draftyear': '2024', 'draftround': '10', 'draftpick': '298', 'school': 'Murray State', 'originalteam': 'SF', 'servicetime1': '', 'projectedlevel': '#N/A', 'acquired1': "Drafted 10th Rd '24", 'country': 'USA', 'acquiredcode': 'HG', 'options1': "Dec'27", 'eta': '', 'isNRI': 0, 'isCV19': 0, 'isAFL': 0, 'mlbauto': 3044462, 'minorbamid': 827293, 'minormasterid': 'sa3044462', 'csid': 'vernoca42', 'mlbamid2': 827293, 'acquiredrecent': 0, 'oPlayerId': 'sa3044462', 'dbTeam': 'SFG', 'playerNameDisplay': 'Cade Vernon', 'playerNameRoute': 'Cade Vernon'}
+                        """
+                        obj = models.Player()
+                        obj.level = "B"
+                        obj.name = player['player']
+                        obj.position = utils.normalize_pos(player['position'])
+                        obj.mlb_org = team_abbrev
+                        obj.fg_id = fg_id
+                        obj.mlbam_id = mlbam_id
+                        obj.raw_age = player['age'].split('.')[0]
+                        print(f"+++ {obj}")
 
-                    if obj:
-                        obj.is_injured = False
-                        obj.role = None
-                        obj.is_starter = False
-                        obj.is_bench = False
-                        obj.injury_description = None
-                        obj.is_mlb40man = False
-                        obj.role_type = None
+                    obj.is_injured = False
+                    obj.role = None
+                    obj.is_starter = False
+                    obj.is_bench = False
+                    obj.injury_description = None
+                    obj.is_mlb40man = False
+                    obj.role_type = None
 
-                        if player.get("mlevel", None):
-                            obj.role = player["mlevel"]
-                        
-                        elif player.get("role", None):
-                            if player["role"].strip() != "":
-                                obj.role = player["role"]
+                    if player.get("mlevel", None):
+                        obj.role = player["mlevel"]
+                    
+                    elif player.get("role", None):
+                        if player["role"].strip() != "":
+                            obj.role = player["role"]
 
-                        if obj.role == "MLB":
+                    if obj.role == "MLB":
+                        obj.is_mlb40man = True
+
+                    if player.get('type', None):
+                        if player["type"] == "mlb-bp":
+                            obj.is_bullpen = True
+
+                        if player["type"] == "mlb-sp":
+                            obj.is_starter = True
+
+                        if player["type"] == "mlb-bn":
+                            obj.is_bench = True
+
+                        if player["type"] == "mlb-sl":
+                            obj.is_starter = True
+
+                        obj.role_type = player['type']
+
+                        # if "il" in player["type"]:
+                        #     obj.is_injured = True
+
+                        # if "sp" in player['type']:
+                        #     obj.role_type = "SP"
+
+                        # if "rp" in player['type']:
+                        #     obj.role_type = "RP"
+
+                        # if "bp" in player['type']:
+                        #     obj.role_type = "RP"
+
+                        # if "pp" in player['type']:
+                        #     obj.role_type = "PP"
+
+                        # if "bn" in player['type']:
+                        #     obj.role_type = "BN"
+
+                        # if "il" in player['type']:
+                        #     obj.role_type = "IL"
+
+                    obj.injury_description = player.get("injurynotes", None)
+
+                    if player.get('roster40', None):
+                        if player["roster40"] == "Y":
                             obj.is_mlb40man = True
 
-                        if player.get('type', None):
-                            if player["type"] == "mlb-bp":
-                                obj.is_bullpen = True
-
-                            if player["type"] == "mlb-sp":
-                                obj.is_starter = True
-
-                            if player["type"] == "mlb-bn":
-                                obj.is_bench = True
-
-                            if player["type"] == "mlb-sl":
-                                obj.is_starter = True
-
-                            obj.role_type = player['type']
-
-                            # if "il" in player["type"]:
-                            #     obj.is_injured = True
-
-                            # if "sp" in player['type']:
-                            #     obj.role_type = "SP"
-
-                            # if "rp" in player['type']:
-                            #     obj.role_type = "RP"
-
-                            # if "bp" in player['type']:
-                            #     obj.role_type = "RP"
-
-                            # if "pp" in player['type']:
-                            #     obj.role_type = "PP"
-
-                            # if "bn" in player['type']:
-                            #     obj.role_type = "BN"
-
-                            # if "il" in player['type']:
-                            #     obj.role_type = "IL"
-
-                        obj.injury_description = player.get("injurynotes", None)
-
-                        if player.get('roster40', None):
-                            if player["roster40"] == "Y":
-                                obj.is_mlb40man = True
-
-                        obj.save()
+                    obj.save()
