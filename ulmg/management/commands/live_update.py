@@ -37,6 +37,7 @@ class Command(BaseCommand):
             call_command('fix_dupes')
 
             # download mlb depth charts
+            # this also sets status in realtime but doesn't create players
             print('LIVE: Download MLB depth charts')
             call_command('live_download_mlb_depthcharts')
 
@@ -50,6 +51,7 @@ class Command(BaseCommand):
         call_command('fix_dupes')
 
         # use roster files to update all player status
+        # creates new players from FG with appropriate IDs
         print('LIVE: Update status from FG rosters')
         call_command('live_update_status_from_fg_rosters')
 
