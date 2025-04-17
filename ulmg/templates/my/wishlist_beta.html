@@ -13,7 +13,7 @@
     tbody.list-group tr td {background-color: white;}
     tbody.list-group tr:nth-child(16n) td {border-bottom:3px solid; border-color: #555; }
     tbody.list-group tr:nth-child(n+81) td {background-color: #eee; border-bottom: none;}
-
+    tbody.list-group tr.minors td { background-color: #F4FEEF; }
     /*
     tbody.list-group tr:nth-child(16) td:nth-child(1) > span.round:before { content: "Round 1"; }
     tbody.list-group tr:nth-child(16) td:nth-child(1) > span.round { position: absolute; margin: 2px 0 0 -58px; display: block; text-align: center; padding: 3px 5px; background-color: #555; color: #fff; font-weight: bold;}
@@ -36,7 +36,7 @@
             <li><a href="/teams/{{ team.abbreviation|lower }}/">Roster{% if num_owned %} ({{ num_owned }}){% endif %}</a></li>
             <li><a href="/teams/{{ team.abbreviation|lower }}/other/">Trades & picks</a></li>
             <li {% if draft_type == "aa" %}class="is-active"{% endif %}><a href="/my/wishlist/draft/beta/">AA Draft</a></li>
-            <li {% if draft_type == "open" %}class="is-active"{% endif %}><a href="/my/offseason/draft/">Open Draft</a></li>
+            <li {% if draft_type == "open" %}class="is-active"{% endif %}><a href="/my/midseason/draft/">Open Draft</a></li>
         </ul>
     </div>
 
@@ -59,8 +59,10 @@
                         <th>rank</th>
                         <th>player</th>
                         <th>age</th>
+                        <th>level</th>
                         <th>pos</th>
                         <th>team</th>
+                        <th>yr</th>
                         <th>lvl</th>
                         <th>wRC+</th>
                         <th>fip</th>
@@ -70,17 +72,33 @@
                 </thead>
                 <tbody id="players" class="list-group">
                     {% for p in players %}
-                        <tr data-playername="{{ p.player.name }}" data-playerid="{{ p.player.id }}" class="list-group-item{% if not p.player.is_mlb == "mlb" %} minors {% endif %}">
+                        <tr data-playername="{{ p.player.name }}" data-playerid="{{ p.player.id }}"
+                        class="list-group-item 
+                        {% if p.player.roster_status %}{{ p.player.roster_status|lower|default_if_none:"non-mlb" }} {% else %}non-mlb {% endif %}
+                        {% if p.player.role_type %}{{ p.player.role_type|lower|default_if_none:""}} {% endif %}
+                        ">
                             <td id="rank-{{ p.pk }}">
                                 <span>{% if p.rank == 0 %}-{% else %}{{ p.rank }}{% endif %}</span>
                                 <span class="pickowner"></span>
                             </td>
                             {% include "includes/my/player_name.html" %}
                             <td>{{ p.player.age|default_if_none:"-" }}</td>
+                            <td>{{ p.player.level }}</td>
                             <td>{{ p.player.position }}</td>
                             <td>{{ p.player.mlb_org|default_if_none:"-" }}</td>
                             <td>
-                                {% if p.latest_hit_stats %}
+                                {% if p.player.position != "P" %}
+                                    {{ p.latest_hit_stats.year }}
+                                {% else %}
+                                    {% if p.latest_pit_stats %}
+                                        {{ p.latest_pit_stats.year }}
+                                    {% else %}
+                                    -
+                                    {% endif %}
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if p.player.position != "P" %}
                                     {{ p.latest_hit_stats.level|default_if_none:"-" }}
                                 {% else %}
                                     {% if p.latest_pit_stats %}
@@ -91,10 +109,10 @@
                                 {% endif %}
                             </td>
                             <td>
-                                {% if p.latest_hit_stats %}{% if p.latest_hit_stats.wrc_plus %}{{ p.latest_hit_stats.wrc_plus|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
+                                {% if p.latest_hit_stats and p.player.position != "P" %}{% if p.latest_hit_stats.wrc_plus %}{{ p.latest_hit_stats.wrc_plus|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
                             </td>
                             <td>
-                                {% if p.latest_pit_stats %}{% if p.latest_pit_stats.fip %}{{ p.latest_pit_stats.fip|floatformat:2|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
+                                {% if p.latest_pit_stats and p.player.position == "P" %}{% if p.latest_pit_stats.fip %}{{ p.latest_pit_stats.fip|floatformat:2|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
                             </td>
                             <!-- <td>{% include "includes/my/notechooser.html" %}</td> -->
                             <td class="left tag-cell">{% include "includes/my/tagchooser.html" %}</td>
