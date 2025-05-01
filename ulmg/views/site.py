@@ -9,6 +9,7 @@ from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.http import JsonResponse
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
+from django.db.models import Q
 
 import ujson as json
 from datetime import datetime
@@ -391,93 +392,48 @@ def search(request):
         return False
 
     context = utils.build_context(request)
+    context['minors'] = False
 
-    query = models.Player.objects.all()
+    query = models.PlayerStatSeason.objects.all()
 
-    if request.GET.get("protected", None):
-        protected = request.GET["protected"]
-        if protected.lower() != "":
-            if to_bool(protected) == False:
-                query = query.filter(
-                    Q(is_1h_c=False),
-                    Q(is_1h_p=False),
-                    Q(is_1h_pos=False),
-                    Q(is_35man_roster=False),
-                    Q(is_reserve=False),
-                ).exclude(level="B")
-            else:
-                query = query.filter(
-                    Q(is_1h_c=True)
-                    | Q(is_1h_p=True)
-                    | Q(is_1h_pos=True)
-                    | Q(is_35man_roster=True)
-                    | Q(is_reserve=True)
-                )
-
-            context["protected"] = protected
-
-    # midseason requires the previous year's stats
-    if request.GET.get("midseason", None):
-        midseason = request.GET["midseason"]
-        if midseason.lower() != "":
-            if to_bool(midseason) == True:
-                query = query.filter(
-                    Q(stats__2024_majors_hit__plate_appearances__gte=1)
-                    | Q(stats__2024_majors_pit__g__gte=1)
-                )
-            context["midseason"] = midseason
+    search_season = 2025
+    search_level = "majors"
+    search_side = None
+    search_stat = None
+    search_compare = None
 
     if request.GET.get("name", None):
         name = request.GET["name"]
-        query = query.filter(name__icontains=name)
+        query = query.filter(player__name__icontains=name)
         context["name"] = name
 
     if request.GET.get("position", None):
         position = request.GET["position"]
         if position.lower() not in ["", "h"]:
-            query = query.filter(position__icontains=position)
+            query = query.filter(player__position__icontains=position)
             context["position"] = position
         elif position.lower() == "h":
-            query = query.exclude(position="P")
+            query = query.exclude(player__position="P")
             context["position"] = position
 
-    if request.GET.get('pa_cutoff', None):
-        pa_cutoff = int(request.GET['pa_cutoff'])
-        if pa_cutoff:
-            query = query.filter(stats__2025_majors_hit__plate_appearances__gte=pa_cutoff)
-            context['pa_cutoff'] = f"{pa_cutoff}"
+    if request.GET.get("season", None):
+        season = request.GET['season']
+        if season:
+            search_season = int(season)
+            context['season'] = f"{search_season}"
 
-    if request.GET.get('ip_cutoff', None):
-        ip_cutoff = int(request.GET['ip_cutoff'])
-        if ip_cutoff:
-            query = query.filter(stats__2025_majors_pitch__ip__gte=ip_cutoff)
-            context['ip_cutoff'] = f"{ip_cutoff}"
-
-    if request.GET.get('gs_cutoff', None):
-        gs_cutoff = int(request.GET['gs_cutoff'])
-        if gs_cutoff:
-            query = query.filter(stats__2025_majors_pitch__gs__gte=gs_cutoff)
-            context['gs_cutoff'] = f"{gs_cutoff}"
+    if request.GET.get("minors", None):
+        minors = request.GET['minors'].strip()
+        if minors:
+            if minors == "yes":
+                search_level = "minors"
+                context['minors'] = minors
 
     if request.GET.get("level", None):
         level = request.GET["level"]
         if level.lower() != "":
             query = query.filter(level=level)
             context["level"] = level
-
-    if request.GET.get("reliever", None):
-        reliever = request.GET["reliever"]
-        if reliever.lower() != "":
-            query = query.filter(is_relief_eligible=to_bool(reliever))
-            if to_bool(reliever) == False:
-                query = query.filter(starts__isnull=False).exclude(starts=0)
-            context["reliever"] = reliever
-
-    if request.GET.get("prospect", None):
-        prospect = request.GET["prospect"]
-        if prospect.lower() != "":
-            query = query.filter(is_prospect=to_bool(prospect))
-            context["prospect"] = prospect
 
     if request.GET.get("owned", None):
         owned = request.GET["owned"]
@@ -491,13 +447,49 @@ def search(request):
             query = query.filter(is_carded=to_bool(carded))
             context["carded"] = carded
 
-    if request.GET.get("amateur", None):
-        amateur = request.GET["amateur"]
-        if amateur.lower() != "":
-            query = query.filter(is_amateur=to_bool(amateur))
-            context["amateur"] = amateur
-
+    if minors == "yes":
+        query = query.filter(Q(stats__has_key=f"{search_season}_minors_bat") | Q(stats__has_key=f"{search_season}_minors_pitch"))
+    else:
+        query = query.filter(Q(stats__has_key=f"{search_season}_majors_hit") | Q(stats__has_key=f"{search_season}_majors_pitch"))
     query = query.order_by("level", "last_name")
+
+    # search_kwarg_string = f"stats__{search_season}_{search_level}_{search_side}__{search_stat}__{search_compare}"
+
+    # if request.GET.get('pa_cutoff', None):
+    #     pa_cutoff = int(request.GET['pa_cutoff'])
+    #     if pa_cutoff:
+    #         search_side = "hit"
+    #         search_stat = "plate_appearances"
+    #         search_compare = "gte"
+    #         cutoff_kwargs = {
+    #             search_kwarg_string: pa_cutoff
+    #         }
+    #         query = query.filter(**cutoff_kwargs)
+    #         context['pa_cutoff'] = f"{pa_cutoff}"
+
+    # if request.GET.get('ip_cutoff', None):
+    #     ip_cutoff = int(request.GET['ip_cutoff'])
+    #     if ip_cutoff:
+    #         search_side = "pitch"
+    #         search_stat = "ip"
+    #         search_compare = "gte"
+    #         cutoff_kwargs = {
+    #             search_kwarg_string: ip_cutoff
+    #         }
+    #         query = query.filter(**cutoff_kwargs)
+    #         context['ip_cutoff'] = f"{ip_cutoff}"
+
+    # if request.GET.get('gs_cutoff', None):
+    #     gs_cutoff = int(request.GET['gs_cutoff'])
+    #     if gs_cutoff:
+    #         search_side = "pitch"
+    #         search_stat = "gs"
+    #         search_compare = "gte"
+    #         cutoff_kwargs = {
+    #             search_kwarg_string: gs_cutoff
+    #         }
+    #         query = query.filter(**cutoff_kwargs)
+    #         context['gs_cutoff'] = f"{gs_cutoff}"
 
     if request.GET.get("csv", None):
         c = request.GET["csv"]
