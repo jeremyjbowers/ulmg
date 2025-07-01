@@ -31,14 +31,23 @@
         </div>
 
         <div class="navbar-end">
+            {% if user.is_authenticated and user.is_staff %}
+            <div class="navbar-item has-dropdown is-hoverable">
+                <a class="navbar-link">Admin</a>
+                    <div class="navbar-dropdown ">
+                        <a class="navbar-item" href="/admin/">Admin</a>
+                        <a class="navbar-item" href="/special/players/">Player utilities</a>
+                        <a class="navbar-item" href="/special/trades/">Trade utilities</a>
+                        <a class="navbar-item" href="/special/players/bulk/">Bulk add players</a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
             <div class="navbar-item">
             {% if user.is_authenticated %}
                 <div class="buttons">
-                    {% if user.is_staff %}
-                    <a class="button is-info is-small" href="/admin/">Admin</a>
-                    {% endif %}
                     <a class="button is-success is-small" href="/teams/{{ my_team.abbreviation|lower }}/">My Team</a>
-                    <a class="button is-danger is-small" href="/accounts/logout/">X</a>
+                    <a class="button is-danger is-small" href="/accounts/logout/">Log out</a>
                 </div>
             {% else %}
                 <div class="buttons"><a class="button is-info is-small" href="/accounts/login/">Log in</a></div>
