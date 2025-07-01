@@ -402,9 +402,29 @@ def draft_action(request, pickid):
         draftpick.save()
 
     if name:
+        # Handle old format with parentheses: "Name (extra info)"
         if "(" in name:
             name = name.split("(")[0].strip()
-        ps = models.Player.objects.filter(name=name)
+            ps = models.Player.objects.filter(name=name)
+        elif "|" in name:
+            # Handle new format with pk: "POS Name [TEAM] [MLBAM_ID] | PK"
+            # Extract the pk from the end of the string
+            try:
+                pk = int(name.split("|")[-1].strip())
+                ps = models.Player.objects.filter(pk=pk)
+            except (ValueError, TypeError, IndexError):
+                # If pk parsing fails, fall back to name parsing
+                display_name = name.split("|")[0].strip()
+                name_parts = display_name.split()
+                if len(name_parts) >= 2:
+                    # Extract just the name part (skip position)
+                    player_name = " ".join(name_parts[1:])
+                    ps = models.Player.objects.filter(name__icontains=player_name)
+                else:
+                    ps = []
+        else:
+            # Fallback for any other format - try name search
+            ps = models.Player.objects.filter(name__icontains=name)
         if len(ps) == 1:
             draftpick.player = ps[0]
             draftpick.player.team = draftpick.team

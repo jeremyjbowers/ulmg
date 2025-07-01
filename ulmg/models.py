@@ -364,41 +364,16 @@ class Player(BaseModel):
 
         self.stats[stats_dict["slug"]] = stats_dict
 
-
-    def pit_stats(self):
-        payload = []
-
-        if self.stats:
-            for year_side_level, stats in self.stats.items():
-                if stats['side'] == "pitch":
-                    if stats['g'] >= 1:
-                        payload.append(stats)
-
-        payload = sorted(payload, key=lambda x: (int(x['year']), utils.get_level_order(x['level'])), reverse=True)
-
-        return payload
-
-    def hit_stats(self):
-        payload = []
-
-        if self.stats:
-            for year_side_level, stats in self.stats.items():
-                if stats['side'] == "hit":
-                    if stats['plate_appearances'] >= 1:
-                        payload.append(stats)
-
-        payload = sorted(payload, key=lambda x: (int(x['year']), utils.get_level_order(x['level'])), reverse=True)
-
-        return payload
-
     def latest_hit_stats(self):
-        if len(self.hit_stats()) > 0:
-            return self.hit_stats()[0]
+        stats = PlayerStatSeason.objects.filter(player=self).first()
+        if stats:
+            return stats.hit_stats
         return None
 
     def latest_pit_stats(self):
-        if len(self.pit_stats()) > 0:
-            return self.pit_stats()[0]
+        stats = PlayerStatSeason.objects.filter(player=self).first()
+        if stats:
+            return stats.pitch_stats
         return None
 
     @property
@@ -596,6 +571,48 @@ class Player(BaseModel):
 
         super().save(*args, **kwargs)
 
+class PlayerStatSeason(BaseModel):
+    player = models.ForeignKey(Player, on_delete=models.SET_NULL, blank=True, null=True)
+    season = models.IntegerField(blank=True, null=True)
+    CLASSIFICATION_CHOICES = (
+        ("1-majors", "1-majors"),
+        ("2-minors", "2-minors"),
+        ("3-npb", "3-npb"),
+        ("4-kbo", "4-kbo"),
+        ("5-ncaa", "5-ncaa"),
+    )
+    classification = models.CharField(max_length=255, choices=CLASSIFICATION_CHOICES, null=True)
+    level = models.CharField(max_length=255, blank=True, null=True)
+    hit_stats = models.JSONField(null=True, blank=True)
+    pitch_stats = models.JSONField(null=True, blank=True)
+    minors = models.BooleanField(default=False)
+    carded = models.BooleanField(default=False)
+    owned = models.BooleanField(default=False)
+
+    def __unicode__(self):
+        return f"{self.player} @ {self.season} @ {self.classification}"
+
+    class Meta:
+        ordering = ['season', 'classification']
+        indexes = [
+            # Single field indexes for common filters
+            models.Index(fields=['season']),  # Most common filter
+            models.Index(fields=['minors']),  # Majors vs minors filtering
+            models.Index(fields=['owned']),   # Ownership filtering
+            models.Index(fields=['carded']),  # Carded status filtering
+            
+            # Composite indexes for common combinations
+            models.Index(fields=['season', 'minors']),  # Season + league level
+            models.Index(fields=['season', 'owned']),   # Season + ownership
+            models.Index(fields=['season', 'minors', 'owned']),  # Three-way common combo
+            models.Index(fields=['player', 'season']),  # Player's seasons lookup
+            
+            # Search optimization indexes
+            models.Index(fields=['minors', 'owned', 'carded']),  # Filter combinations
+            models.Index(fields=['season', 'classification']),   # Already in ordering, but explicit
+            models.Index(fields=['classification']),  # Individual classification filtering
+            models.Index(fields=['level']),  # Individual level filtering (AAA, AA, etc.)
+        ]
 
 class DraftPick(BaseModel):
     AA_TYPE = "aa"

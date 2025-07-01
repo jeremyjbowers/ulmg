@@ -58,7 +58,7 @@
     </div>
     <div class="columns is-centered mw-large">
         <div class="column">
-            {% regroup hitters by position as position_players %}
+            {% regroup hitters by player.position as position_players %}
             {% for position in position_players %}
             <h1 class="title is-3">{{ position.grouper }} ({{ position.list|length }})</h1>
             <table class="table real-stat-table is-hoverable is-fullwidth" data-sortable>
@@ -77,22 +77,22 @@
                 <tbody>
                 {% for p in position.list %}
                 <tr class="
-                {% if p.level == "V" and not p.is_protected %}unprotected {% endif %}
-                {% if p.roster_status %}{{ p.roster_status|lower|default_if_none:"non-mlb" }} {% else %}non-mlb {% endif %}
-                {% if p.role_type %}{{ p.role_type|lower|default_if_none:""}} {% endif %}
+                {% if p.player.level == "V" and not p.player.is_protected %}unprotected {% endif %}
+                {% if p.player.roster_status %}{{ p.player.roster_status|lower|default_if_none:"non-mlb" }} {% else %}non-mlb {% endif %}
+                {% if p.player.role_type %}{{ p.player.role_type|lower|default_if_none:""}} {% endif %}
                 ">
                     {% include "includes/player_name.html" %}
-                        <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
-                        <td data-value="{{ p.level|default_if_none:"Z" }}<">{{ p.level|default_if_none:"" }}</td>
+                        <td data-value="{{ p.player.age|default_if_none:"-999" }}">{{ p.player.age|default_if_none:"-" }}</td>
+                        <td data-value="{{ p.player.level|default_if_none:"Z" }}<">{{ p.player.level|default_if_none:"" }}</td>
                         <td>
-                            {% if p.is_reserve %}<span class="tag is-warning">ASR</span>{% endif %}
-                            {% if p.is_1h_pos %}<span class="tag is-warning">HIT</span>{% endif %}
-                            {% if p.is_1h_c %}<span class="tag is-warning">C</span>{% endif %}
-                            {% if p.is_1h_p %}<span class="tag is-warning">P</span>{% endif %}
-                            {% if p.is_35man_roster %}<span>40-man</span>{% endif %}
-                            {% if p.is_mlb_roster %}<span><strong>MLB</strong></span>{% endif %}
-                            {% if p.is_aaa_roster %}<span>AAA</span>{% endif %}
-                            {% if p.is_2h_draft %}<span>2H</span>{% endif %}
+                            {% if p.player.is_reserve %}<span class="tag is-warning">ASR</span>{% endif %}
+                            {% if p.player.is_1h_pos %}<span class="tag is-warning">HIT</span>{% endif %}
+                            {% if p.player.is_1h_c %}<span class="tag is-warning">C</span>{% endif %}
+                            {% if p.player.is_1h_p %}<span class="tag is-warning">P</span>{% endif %}
+                            {% if p.player.is_35man_roster %}<span>40-man</span>{% endif %}
+                            {% if p.player.is_mlb_roster %}<span><strong>MLB</strong></span>{% endif %}
+                            {% if p.player.is_aaa_roster %}<span>AAA</span>{% endif %}
+                            {% if p.player.is_2h_draft %}<span>2H</span>{% endif %}
                         </td>
                         {% include "includes/hitter_stat_cells.html" %}
                         {% if own_team %}
@@ -125,22 +125,22 @@
                 <tbody>
                 {% for p in pitchers %}
                 <tr class="
-                {% if p.level == "V" and not p.is_protected %}unprotected {% endif %}
-                {% if p.roster_status %}{{ p.roster_status|lower|default_if_none:"non-mlb" }} {% else %}non-mlb {% endif %}
-                {% if p.role_type %}{{ p.role_type|lower|default_if_none:""}} {% endif %}
+                {% if p.player.level == "V" and not p.player.is_protected %}unprotected {% endif %}
+                {% if p.player.roster_status %}{{ p.player.roster_status|lower|default_if_none:"non-mlb" }} {% else %}non-mlb {% endif %}
+                {% if p.player.role_type %}{{ p.player.role_type|lower|default_if_none:""}} {% endif %}
                 ">
                         {% include "includes/player_name.html" %}
-                        <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
-                        <td data-value="{{ p.level|default_if_none:"Z" }}<">{{ p.level|default_if_none:"" }}</td>
+                        <td data-value="{{ p.player.age|default_if_none:"-999" }}">{{ p.player.age|default_if_none:"-" }}</td>
+                        <td data-value="{{ p.player.level|default_if_none:"Z" }}<">{{ p.player.level|default_if_none:"" }}</td>
                         <td>
-                            {% if p.is_reserve %}<span class="tag is-warning">ASR</span>{% endif %}
-                            {% if p.is_1h_pos %}<span class="tag is-warning">HIT</span>{% endif %}
-                            {% if p.is_1h_c %}<span class="tag is-warning">C</span>{% endif %}
-                            {% if p.is_1h_p %}<span class="tag is-warning">P</span>{% endif %}
-                            {% if p.is_mlb_roster %}<span><strong>MLB</strong></span>{% endif %}
-                            {% if p.is_aaa_roster %}<span>AAA</span>{% endif %}
-                            {% if p.is_2h_draft %}<span class="tag">2H</span>{% endif %}
-                            {% if p.is_35man_roster %}<span>40-man</span>{% endif %}
+                            {% if p.player.is_reserve %}<span class="tag is-warning">ASR</span>{% endif %}
+                            {% if p.player.is_1h_pos %}<span class="tag is-warning">HIT</span>{% endif %}
+                            {% if p.player.is_1h_c %}<span class="tag is-warning">C</span>{% endif %}
+                            {% if p.player.is_1h_p %}<span class="tag is-warning">P</span>{% endif %}
+                            {% if p.player.is_mlb_roster %}<span><strong>MLB</strong></span>{% endif %}
+                            {% if p.player.is_aaa_roster %}<span>AAA</span>{% endif %}
+                            {% if p.player.is_2h_draft %}<span class="tag">2H</span>{% endif %}
+                            {% if p.player.is_35man_roster %}<span>40-man</span>{% endif %}
                         </td>
                         {% include "includes/pitcher_stat_cells.html" %}
                         {% if own_team %}

@@ -13,12 +13,19 @@ from ulmg.models import (
     Event,
     Occurrence,
     Venue,
+    PlayerStatSeason,
 )
 
 admin.site.site_title = "The ULMG"
 admin.site.site_header = "The ULMG: Admin"
 admin.site.index_title = "Administer The ULMG Website"
 
+@admin.register(PlayerStatSeason)
+class PlayerStatSeasonAdmin(admin.ModelAdmin):
+    model = PlayerStatSeason
+    list_display = ["player", "season", "classification", "level"]
+    list_filter = ["season", "classification", "level"]
+    search_fields = ["player__name", "season", "classification", "level"]
 
 @admin.register(Venue)
 class VenueAdmin(admin.ModelAdmin):

@@ -1,121 +1,250 @@
 <div class="section">
-    <form action="/players/search/">
-        <div class="field">
-            <div class="control">
-                <input style="width: 60%;" name="name" class="input is-large" type="text" placeholder="Search by name; blank returns all players" {% if name %}value="{{ name }}"{% endif %}>
-                <input type="submit" class="button is-large is-dark"></button>
+    <!-- Toggle tabs -->
+    <div class="tabs is-centered is-boxed">
+        <ul>
+            <li class="search-tab{% if '/search/filter/' not in request.get_full_path %} is-active{% endif %}" data-tab="name">
+                <a>
+                    <span class="icon is-small"><i class="fas fa-search"></i></span>
+                    <span>Search by Name</span>
+                </a>
+            </li>
+            <li class="search-tab{% if '/search/filter/' in request.get_full_path %} is-active{% endif %}" data-tab="filter">
+                <a>
+                    <span class="icon is-small"><i class="fas fa-filter"></i></span>
+                    <span>Filter Players</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Search by name form -->
+    <div id="search-name" class="search-content{% if '/search/filter/' in request.get_full_path %} is-hidden{% endif %}">
+        <form action="/search/name/">
+            <div class="field has-addons">
+                <p class="control is-expanded">
+                    <input name="name" class="input is-large" type="text" placeholder="Search by name; blank returns all players" {% if name %}value="{{ name }}"{% endif %}>
+                </p>
+                <p class="control">
+                    <input type="submit" class="button is-large is-dark" value="Search">
+                </p>
             </div>
-        </div>
-        <div class="field">
-            <div class="control">
-                <div style=""class="columns">
-                    <div class="column">
-                        <p class="has-text-weight-bold">Owned</p>
-                        <div class="select">
-                            <select name="owned">
-                                <option></option>
-                                <option value="yes"{% if owned == "yes" %} selected{% endif %}>yes</option>
-                                <option value="no"{% if owned == "no" %} selected{% endif %}>no</option>
-                            </select>
+            {% if value %}<input name="value" type="hidden" value="true">{% endif %}
+        </form>
+    </div>
+
+    <!-- Filter players form -->
+    <div id="search-filter" class="search-content{% if '/search/filter/' not in request.get_full_path %} is-hidden{% endif %}">
+        <form action="/search/filter/">
+            <div class="box">
+                <div class="columns is-multiline">
+                    <!-- Row 1: Basic filters -->
+                    <div class="column is-6">
+                        <div class="field">
+                            <label class="label">ULMG level</label>
+                            <div class="control">
+                                <div class="select is-fullwidth">
+                                    <select name="level">
+                                        <option value="">All Levels</option>
+                                        <option value="V"{% if level == "V" %} selected{% endif %}>V</option>
+                                        <option value="A"{% if level == "A" %} selected{% endif %}>A</option>
+                                        <option value="B"{% if level == "B" %} selected{% endif %}>B</option>
+                                    </select>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div class="column">
-                        <p class="has-text-weight-bold">Carded</p>
-                        <div class="select">
-                            <select name="carded">
-                                <option></option>
-                                <option value="yes"{% if carded == "yes" %} selected{% endif %}>yes</option>
-                                <option value="no"{% if carded == "no" %} selected{% endif %}>no</option>
-                            </select>
+                    
+                    <div class="column is-6">
+                        <div class="field">
+                            <label class="label">Position</label>
+                            <div class="control">
+                                <div class="select is-fullwidth">
+                                    <select name="position">
+                                        <option value="">All Positions</option>
+                                        <option value="P"{% if position == "P" %} selected{% endif %}>Pitcher</option>
+                                        <option value="H"{% if position == "H" %} selected{% endif %}>Hitter</option>
+                                        <option value="C"{% if position == "C" %} selected{% endif %}>Catcher</option>
+                                        <option value="IF"{% if position == "IF" %} selected{% endif %}>Infield</option>
+                                        <option value="OF"{% if position == "OF" %} selected{% endif %}>Outfield</option>
+                                    </select>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div class="column">
-                        <p class="has-text-weight-bold">min PA</p>
-                        <div class="select">
-                            <select name="pa_cutoff">
-                                <option></option>
-                                <option value="550"{% if pa_cutoff == "550" %} selected{% endif %}>550</option>
-                                <option value="500"{% if pa_cutoff == "500" %} selected{% endif %}>500</option>
-                                <option value="450"{% if pa_cutoff == "450" %} selected{% endif %}>450</option>
-                                <option value="400"{% if pa_cutoff == "400" %} selected{% endif %}>400</option>
-                                <option value="350"{% if pa_cutoff == "350" %} selected{% endif %}>350</option>
-                                <option value="300"{% if pa_cutoff == "300" %} selected{% endif %}>300</option>
-                                <option value="250"{% if pa_cutoff == "250" %} selected{% endif %}>250</option>
-                                <option value="200"{% if pa_cutoff == "200" %} selected{% endif %}>200</option>
-                                <option value="150"{% if pa_cutoff == "150" %} selected{% endif %}>150</option>
-                                <option value="100"{% if pa_cutoff == "100" %} selected{% endif %}>100</option>
-                                <option value="50"{% if pa_cutoff == "50" %} selected{% endif %}>50</option>
-                            </select>
+
+                    <!-- Row 2: Ownership filters -->
+                    <div class="column is-4">
+                        <div class="field">
+                            <label class="label">Carded?</label>
+                            <div class="control">
+                                <div class="select is-fullwidth">
+                                    <select name="carded">
+                                        <option value="">All</option>
+                                        <option value="yes"{% if carded == "yes" %} selected{% endif %}>Yes</option>
+                                        <option value="no"{% if carded == "no" %} selected{% endif %}>No</option>
+                                    </select>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div class="column">
-                        <p class="has-text-weight-bold">min IP</p>
-                        <div class="select">
-                            <select name="ip_cutoff">
-                                <option></option>
-                                <option value="150"{% if ip_cutoff == "150" %} selected{% endif %}>150</option>
-                                <option value="125"{% if ip_cutoff == "125" %} selected{% endif %}>125</option>
-                                <option value="100"{% if ip_cutoff == "100" %} selected{% endif %}>100</option>
-                                <option value="70"{% if ip_cutoff == "70" %} selected{% endif %}>70</option>
-                                <option value="60"{% if ip_cutoff == "60" %} selected{% endif %}>60</option>
-                                <option value="25"{% if ip_cutoff == "25" %} selected{% endif %}>25</option>
-                            </select>
+                    
+                    <div class="column is-4">
+                        <div class="field">
+                            <label class="label">Owned?</label>
+                            <div class="control">
+                                <div class="select is-fullwidth">
+                                    <select name="owned">
+                                        <option value="">All</option>
+                                        <option value="yes"{% if owned == "yes" %} selected{% endif %}>Yes</option>
+                                        <option value="no"{% if owned == "no" %} selected{% endif %}>No</option>
+                                    </select>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div class="column">
-                        <p class="has-text-weight-bold">min GS</p>
-                        <div class="select">
-                            <select name="gs_cutoff">
-                                <option></option>
-                                <option value="25"{% if gs_cutoff == "25" %} selected{% endif %}>25</option>
-                                <option value="20"{% if gs_cutoff == "20" %} selected{% endif %}>20</option>
-                                <option value="15"{% if gs_cutoff == "15" %} selected{% endif %}>15</option>
-                                <option value="10"{% if gs_cutoff == "10" %} selected{% endif %}>10</option>
-                                <option value="5"{% if gs_cutoff == "5" %} selected{% endif %}>5</option>
-                            </select>
+                    
+                    <div class="column is-4">
+                        <div class="field">
+                            <label class="label">Classification</label>
+                            <div class="control">
+                                <div class="select is-fullwidth">
+                                    <select name="classification">
+                                        <option value="">All Classifications</option>
+                                        <option value="1-majors"{% if classification == "1-majors" %} selected{% endif %}>MLB Majors</option>
+                                        <option value="2-minors"{% if classification == "2-minors" %} selected{% endif %}>Minors</option>
+                                        <option value="3-npb"{% if classification == "3-npb" %} selected{% endif %}>NPB (Japan)</option>
+                                        <option value="4-kbo"{% if classification == "4-kbo" %} selected{% endif %}>KBO (Korea)</option>
+                                        <option value="5-ncaa"{% if classification == "5-ncaa" %} selected{% endif %}>NCAA (College)</option>
+                                    </select>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div class="column">
-                        <p class="has-text-weight-bold">Midseason?</p>
-                        <div class="select">
-                            <select name="midseason">
-                                <option></option>
-                                <option value="yes"{% if midseason == "yes" %} selected{% endif %}>yes</option>
-                                <option value="no"{% if midseason == "no" %} selected{% endif %}>no</option>
-                            </select>
+
+                    <!-- Row 3: Season and stat cutoffs -->
+                    <div class="column is-3">
+                        <div class="field">
+                            <label class="label">Season</label>
+                            <div class="control">
+                                <div class="select is-fullwidth">
+                                    <select name="season">
+                                        <option value="2025"{% if season == "2025" or not season %} selected{% endif %}>2025</option>
+                                        <option value="2024"{% if season == "2024" %} selected{% endif %}>2024</option>
+                                        <option value="2023"{% if season == "2023" %} selected{% endif %}>2023</option>
+                                        <option value="2022"{% if season == "2022" %} selected{% endif %}>2022</option>
+                                        <option value="2021"{% if season == "2021" %} selected{% endif %}>2021</option>
+                                        <option value="2020"{% if season == "2020" %} selected{% endif %}>2020</option>
+                                        <option value="2019"{% if season == "2019" %} selected{% endif %}>2019</option>
+                                        <option value="2018"{% if season == "2018" %} selected{% endif %}>2018</option>
+                                        <option value="2017"{% if season == "2017" %} selected{% endif %}>2017</option>
+                                    </select>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div class="column">
-                        <p class="has-text-weight-bold">Position</p>
-                        <div class="select">
-                            <select name="position">
-                                <option></option>
-                                <option value="P"{% if position == "P" %} selected{% endif %}>P</option>
-                                <option value="H"{% if position == "H" %} selected{% endif %}>HIT</option>
-                                <option value="C"{% if position == "C" %} selected{% endif %}>C</option>
-                                <option value="IF"{% if position == "IF" %} selected{% endif %}>IF</option>
-                                <option value="IF-OF"{% if position == "IF-OF" %} selected{% endif %}>IF-OF</option>
-                                <option value="OF"{% if position == "OF" %} selected{% endif %}>OF</option>
-                            </select>
+                    
+                    <div class="column is-3">
+                        <div class="field">
+                            <label class="label">Minimum plate appearances</label>
+                            <div class="control">
+                                <div class="select is-fullwidth">
+                                    <select name="pa_cutoff">
+                                        <option value="">No minimum</option>
+                                        <option value="550"{% if pa_cutoff == "550" %} selected{% endif %}>550</option>
+                                        <option value="500"{% if pa_cutoff == "500" %} selected{% endif %}>500</option>
+                                        <option value="450"{% if pa_cutoff == "450" %} selected{% endif %}>450</option>
+                                        <option value="400"{% if pa_cutoff == "400" %} selected{% endif %}>400</option>
+                                        <option value="350"{% if pa_cutoff == "350" %} selected{% endif %}>350</option>
+                                        <option value="300"{% if pa_cutoff == "300" %} selected{% endif %}>300</option>
+                                        <option value="250"{% if pa_cutoff == "250" %} selected{% endif %}>250</option>
+                                        <option value="200"{% if pa_cutoff == "200" %} selected{% endif %}>200</option>
+                                        <option value="150"{% if pa_cutoff == "150" %} selected{% endif %}>150</option>
+                                        <option value="100"{% if pa_cutoff == "100" %} selected{% endif %}>100</option>
+                                        <option value="50"{% if pa_cutoff == "50" %} selected{% endif %}>50</option>
+                                    </select>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div class="column">
-                        <p class="has-text-weight-bold">Level</p>
-                        <div class="select">
-                            <select name="level">
-                                <option></option>
-                                <option value="V"{% if level == "V" %} selected{% endif %}>V</option>
-                                <option value="A"{% if level == "A" %} selected{% endif %}>A</option>
-                                <option value="B"{% if level == "B" %} selected{% endif %}>B</option>
-                            </select>
+                    
+                    <div class="column is-3">
+                        <div class="field">
+                            <label class="label">Minimum innings pitched</label>
+                            <div class="control">
+                                <div class="select is-fullwidth">
+                                    <select name="ip_cutoff">
+                                        <option value="">No minimum</option>
+                                        <option value="150"{% if ip_cutoff == "150" %} selected{% endif %}>150</option>
+                                        <option value="125"{% if ip_cutoff == "125" %} selected{% endif %}>125</option>
+                                        <option value="100"{% if ip_cutoff == "100" %} selected{% endif %}>100</option>
+                                        <option value="70"{% if ip_cutoff == "70" %} selected{% endif %}>70</option>
+                                        <option value="60"{% if ip_cutoff == "60" %} selected{% endif %}>60</option>
+                                        <option value="25"{% if ip_cutoff == "25" %} selected{% endif %}>25</option>
+                                    </select>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div class="column"></div>
-                    <div class="column"></div>
-                    <div class="column"></div>
+                    
+                    <div class="column is-3">
+                        <div class="field">
+                            <label class="label">Minimum starts</label>
+                            <div class="control">
+                                <div class="select is-fullwidth">
+                                    <select name="gs_cutoff">
+                                        <option value="">No minimum</option>
+                                        <option value="30"{% if gs_cutoff == "30" %} selected{% endif %}>30</option>
+                                        <option value="25"{% if gs_cutoff == "25" %} selected{% endif %}>25</option>
+                                        <option value="20"{% if gs_cutoff == "20" %} selected{% endif %}>20</option>
+                                        <option value="15"{% if gs_cutoff == "15" %} selected{% endif %}>15</option>
+                                        <option value="10"{% if gs_cutoff == "10" %} selected{% endif %}>10</option>
+                                        <option value="5"{% if gs_cutoff == "5" %} selected{% endif %}>5</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Submit button for filters -->
+                <div class="field">
+                    <div class="control">
+                        <button type="submit" class="button is-dark is-fullwidth">
+                            <span class="icon"><i class="fas fa-filter"></i></span>
+                            <span>Apply Filters</span>
+                        </button>
+                    </div>
                 </div>
             </div>
-        </div>
-        {% if value %}<input name="value" type="text" value="true" hidden="true">{% endif %}
-    </form>
+            {% if value %}<input name="value" type="hidden" value="true">{% endif %}
+        </form>
+    </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const tabs = document.querySelectorAll('.search-tab');
+    const contents = document.querySelectorAll('.search-content');
+    
+    // Initial state is handled by Django template based on URL
+    // No need to set default active tab here
+    
+    tabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            const tabType = this.getAttribute('data-tab');
+            
+            // Remove active class from all tabs
+            tabs.forEach(t => t.classList.remove('is-active'));
+            
+            // Add active class to clicked tab
+            this.classList.add('is-active');
+            
+            // Hide all content sections
+            contents.forEach(content => content.classList.add('is-hidden'));
+            
+            // Show the selected content section
+            document.getElementById('search-' + tabType).classList.remove('is-hidden');
+        });
+    });
+});
+</script>

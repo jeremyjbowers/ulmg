@@ -9,6 +9,7 @@ from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.http import JsonResponse
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
+from django.db.models import Q
 
 import ujson as json
 from datetime import datetime
@@ -126,34 +127,49 @@ def index(request):
 
     season = 2025
 
-    hitter_dict = {
-        "team__isnull": True,
-        f"stats__{season}_majors_hit__plate_appearances__gte": 1,
-    }
-
-    pitcher_dict = {
-        "team__isnull": True,
-        f"stats__{season}_majors_pitch__g__gte": 1,
-        "position__icontains": "P",
-    }
-
-    context["hitters"] = (
-        models.Player.objects.filter(**hitter_dict)
-        .exclude(position="P")
-        .order_by("position", "-level_order", "last_name", "first_name")
+    # Get PlayerStatSeason objects for unowned 2025 MLB major league players
+    base_stats = models.PlayerStatSeason.objects.select_related('player').filter(
+        season=season,
+        classification="1-majors",  # MLB major league only (excludes NPB, KBO, NCAA, minors)
+        owned=False    # Unowned only
     )
 
-    context["pitchers"] = models.Player.objects.filter(**pitcher_dict).order_by(
-        "-level_order", "last_name", "first_name"
+    # Split into hitters and pitchers by position
+    hitter_stats = base_stats.exclude(player__position="P").order_by(
+        "player__position", "-player__level_order", "player__last_name", "player__first_name"
+    )
+    
+    pitcher_stats = base_stats.filter(player__position__icontains="P").order_by(
+        "-player__level_order", "player__last_name", "player__first_name"
     )
 
-    context['hitter_hr'] = models.Player.objects.filter(**hitter_dict).order_by(f"-stats__{season}_majors_hit__hr")[:15]
-    context['hitter_sb'] = models.Player.objects.filter(**hitter_dict).order_by(f"-stats__{season}_majors_hit__sb")[:15]
-    context['hitter_avg'] = models.Player.objects.filter(stats__2025_majors_hit__plate_appearances__gte=50, team__isnull=True).order_by(f"-stats__{season}_majors_hit__avg")[:15]
+    context["hitters"] = hitter_stats
+    context["pitchers"] = pitcher_stats
 
-    context['pitcher_innings'] = models.Player.objects.filter(**pitcher_dict).order_by(f"-stats__{season}_majors_pitch__ip")[:15]
-    context['pitcher_starts'] = models.Player.objects.filter(**pitcher_dict).order_by(f"-stats__{season}_majors_pitch__gs")[:15]
-    context['pitcher_era'] = models.Player.objects.filter(stats__2025_majors_pitch__ip__gte=20, team__isnull=True).order_by(f"stats__{season}_majors_pitch__era")[:15]
+    # Leaderboards using PlayerStatSeason objects directly
+    context['hitter_hr'] = hitter_stats.filter(
+        hit_stats__hr__gte=5
+    ).order_by('-hit_stats__hr')[:10]
+    
+    context['hitter_sb'] = hitter_stats.filter(
+        hit_stats__sb__gte=5
+    ).order_by('-hit_stats__sb')[:10]
+    
+    context['hitter_avg'] = hitter_stats.filter(
+        hit_stats__plate_appearances__gte=50
+    ).order_by('-hit_stats__avg')[:10]
+    
+    context['pitcher_innings'] = pitcher_stats.filter(
+        pitch_stats__ip__gte=10
+    ).order_by('-pitch_stats__ip')[:10]
+    
+    context['pitcher_starts'] = pitcher_stats.filter(
+        pitch_stats__gs__gte=1
+    ).order_by('-pitch_stats__gs')[:10]
+    
+    context['pitcher_era'] = pitcher_stats.filter(
+        pitch_stats__ip__gte=20
+    ).order_by('pitch_stats__era')[:10]
 
     return render(request, "index.html", context)
 
@@ -185,14 +201,8 @@ def team_detail(request, abbreviation):
     if request.user.is_superuser:
         context["own_team"] = True
 
+    # Get team players for roster counts and distribution (still need Player objects for this)
     team_players = models.Player.objects.filter(team=context["team"])
-    hitters = team_players.exclude(position="P").order_by(
-        "position", "-level_order", "-is_carded", "last_name", "first_name"
-    )
-    pitchers = team_players.filter(position__icontains="P").order_by(
-        "-level_order", "-is_carded", "last_name", "first_name"
-    )
-
     context["35_roster_count"] = team_players.filter(is_35man_roster=True).count()
     context["mlb_roster_count"] = team_players.filter(
         is_mlb_roster=True, is_aaa_roster=False, is_reserve=False
@@ -202,7 +212,25 @@ def team_detail(request, abbreviation):
         .values("level_order")
         .annotate(Count("level_order"))
     )
-    context["num_owned"] = models.Player.objects.filter(team=context["team"]).count()
+    context["num_owned"] = team_players.count()
+
+    # Use PlayerStatSeason for displaying roster with current season stats (2025)
+    current_season = 2025
+    team_stat_seasons = models.PlayerStatSeason.objects.filter(
+        player__team=context["team"], 
+        season=current_season
+    ).select_related('player')
+    
+    # Split into hitters and pitchers using PlayerStatSeason objects
+    hitters = team_stat_seasons.exclude(player__position="P").order_by(
+        "player__position", "-player__level_order", "-player__is_carded", 
+        "player__last_name", "player__first_name"
+    )
+    pitchers = team_stat_seasons.filter(player__position__icontains="P").order_by(
+        "-player__level_order", "-player__is_carded", 
+        "player__last_name", "player__first_name"
+    )
+
     context["hitters"] = hitters
     context["pitchers"] = pitchers
     return render(request, "team.html", context)
@@ -248,12 +276,33 @@ def draft_admin(request, year, season, draft_type):
         year=year, season=season, draft_type=draft_type
     )
 
+    def format_player_for_autocomplete(p):
+        """Format player data for autocomplete display, handling None values gracefully."""
+        mlb_org = p.get('mlb_org')
+        mlbam_id = p.get('mlbam_id')
+        
+        # Base format: "POS Name"
+        display = f"{p['position']} {p['name']}"
+        
+        # Add team info if available
+        if mlb_org:
+            display += f" {mlb_org}"
+        
+        # Add MLB ID if available for additional context
+        if mlbam_id:
+            display += f" {mlbam_id}"
+        
+        # Always add the Django pk at the end for reliable lookup (hidden from user)
+        display += f" | {p['id']}"
+        
+        return display
+
     if draft_type == "aa":
         context["players"] = json.dumps(
             [
-                "%(position)s %(name)s %(mlb_org)s %(mlbam_id)s" % p
+                format_player_for_autocomplete(p)
                 for p in models.Player.objects.filter(is_owned=False, level="B").values(
-                    "name", "position", 'mlbam_id', 'mlb_org'
+                    "id", "name", "position", 'mlbam_id', 'mlb_org'
                 )
             ]
         )
@@ -261,9 +310,9 @@ def draft_admin(request, year, season, draft_type):
     if draft_type == "open":
         players = []
         for p in models.Player.objects.filter(is_owned=False).values(
-            "name", "position", 'mlbam_id', 'mlb_org'
+            "id", "name", "position", 'mlbam_id', 'mlb_org'
         ):
-            players.append("%(position)s %(name)s %(mlb_org)s %(mlbam_id)s" % p)
+            players.append(format_player_for_autocomplete(p))
 
         if season == "offseason":
             # 35-man roster is a form of protection for offseason drafts?
@@ -277,8 +326,8 @@ def draft_admin(request, year, season, draft_type):
                 is_1h_pos=False,
                 is_35man_roster=False,
                 is_reserve=False,
-            ).values("name", "position", 'mlbam_id', 'mlb_org'):
-                players.append("%(position)s %(name)s %(mlb_org)s %(mlbam_id)s" % p)
+            ).values("id", "name", "position", 'mlbam_id', 'mlb_org'):
+                players.append(format_player_for_autocomplete(p))
 
         if season == "midseason":
             # have to have been previously protected.
@@ -291,8 +340,8 @@ def draft_admin(request, year, season, draft_type):
                 is_1h_p=False,
                 is_1h_pos=False,
                 is_reserve=False,
-            ).values("name", "position", 'mlbam_id', 'mlb_org'):
-                players.append("%(position)s %(name)s %(mlb_org)s %(mlbam_id)s" % p)
+            ).values("id", "name", "position", 'mlbam_id', 'mlb_org'):
+                players.append(format_player_for_autocomplete(p))
 
         context["players"] = json.dumps(players)
 
@@ -384,137 +433,138 @@ def player_available_offseason(request):
     return render(request, "search.html", context)
 
 
-def search(request):
+def search_by_name(request):
+    """
+    Search for players by name only.
+    Uses PlayerStatSeason objects for consistent performance with filter search.
+    """
+    context = utils.build_context(request)
+    
+    # Start with PlayerStatSeason for current season (2025) with player relationship
+    current_season = 2025
+    query = models.PlayerStatSeason.objects.filter(season=current_season).select_related('player')
+    
+    # Handle name search through player relationship
+    if request.GET.get("name", None):
+        name = request.GET["name"].strip()
+        if name:
+            query = query.filter(player__name__icontains=name)
+            context["name"] = name
+    
+    # Split into hitters and pitchers for the template, order by player fields
+    context["hitters"] = query.exclude(player__position="P").order_by("player__position", "-player__level_order", "player__last_name", "player__first_name")
+    context["pitchers"] = query.filter(player__position__icontains="P").order_by("-player__level_order", "player__last_name", "player__first_name")
+    
+    return render(request, "search.html", context)
+
+
+def filter_players(request):
+    """
+    Filter players by various criteria (level, position, ownership status, stats, etc.).
+    Uses PlayerStatSeason queries with indexes for optimal performance.
+    """
     def to_bool(b):
-        if b.lower() in ["y", "yes", "t", "true", "on"]:
+        if b and b.lower() in ["y", "yes", "t", "true", "on"]:
             return True
         return False
 
     context = utils.build_context(request)
-
-    query = models.Player.objects.all()
-
-    if request.GET.get("protected", None):
-        protected = request.GET["protected"]
-        if protected.lower() != "":
-            if to_bool(protected) == False:
-                query = query.filter(
-                    Q(is_1h_c=False),
-                    Q(is_1h_p=False),
-                    Q(is_1h_pos=False),
-                    Q(is_35man_roster=False),
-                    Q(is_reserve=False),
-                ).exclude(level="B")
-            else:
-                query = query.filter(
-                    Q(is_1h_c=True)
-                    | Q(is_1h_p=True)
-                    | Q(is_1h_pos=True)
-                    | Q(is_35man_roster=True)
-                    | Q(is_reserve=True)
-                )
-
-            context["protected"] = protected
-
-    # midseason requires the previous year's stats
-    if request.GET.get("midseason", None):
-        midseason = request.GET["midseason"]
-        if midseason.lower() != "":
-            if to_bool(midseason) == True:
-                query = query.filter(
-                    Q(stats__2024_majors_hit__plate_appearances__gte=1)
-                    | Q(stats__2024_majors_pit__g__gte=1)
-                )
-            context["midseason"] = midseason
-
-    if request.GET.get("name", None):
-        name = request.GET["name"]
-        query = query.filter(name__icontains=name)
-        context["name"] = name
-
-    if request.GET.get("position", None):
-        position = request.GET["position"]
-        if position.lower() not in ["", "h"]:
-            query = query.filter(position__icontains=position)
-            context["position"] = position
-        elif position.lower() == "h":
-            query = query.exclude(position="P")
-            context["position"] = position
-
+    
+    # Start with PlayerStatSeason for indexed filtering, then get players
+    stat_season_query = models.PlayerStatSeason.objects.select_related('player')
+    
+    # Default season for filtering
+    search_season = 2025
+    
+    # Handle season selection first (most selective filter)
+    if request.GET.get("season", None):
+        season = request.GET['season'].strip()
+        if season:
+            try:
+                search_season = int(season)
+                context['season'] = f"{search_season}"
+            except ValueError:
+                pass  # Invalid year, use default
+    
+    # Filter by season (uses index)
+    stat_season_query = stat_season_query.filter(season=search_season)
+    
+    # Handle classification filter (uses classification index)
+    if request.GET.get("classification", None):
+        classification = request.GET["classification"].strip()
+        if classification:
+            stat_season_query = stat_season_query.filter(classification=classification)
+            context['classification'] = classification
+    
+    # Handle ownership filters (uses indexed fields)
+    if request.GET.get("owned", None):
+        owned = request.GET["owned"].strip()
+        if owned:
+            stat_season_query = stat_season_query.filter(owned=to_bool(owned))
+            context["owned"] = owned
+    
+    if request.GET.get("carded", None):
+        carded = request.GET["carded"].strip()
+        if carded:
+            stat_season_query = stat_season_query.filter(carded=to_bool(carded))
+            context["carded"] = carded
+    
+    # Handle level filter (uses level index)
+    if request.GET.get("level", None):
+        level = request.GET["level"].strip()
+        if level:
+            stat_season_query = stat_season_query.filter(player__level=level)
+            context["level"] = level
+    
+    # Handle stat cutoffs using JSON field lookups
     if request.GET.get('pa_cutoff', None):
-        pa_cutoff = int(request.GET['pa_cutoff'])
+        pa_cutoff = request.GET['pa_cutoff'].strip()
         if pa_cutoff:
-            query = query.filter(stats__2025_majors_hit__plate_appearances__gte=pa_cutoff)
-            context['pa_cutoff'] = f"{pa_cutoff}"
+            try:
+                pa_cutoff = int(pa_cutoff)
+                stat_season_query = stat_season_query.filter(hit_stats__plate_appearances__gte=pa_cutoff)
+                context['pa_cutoff'] = f"{pa_cutoff}"
+            except ValueError:
+                pass  # Invalid integer, skip filter
 
     if request.GET.get('ip_cutoff', None):
-        ip_cutoff = int(request.GET['ip_cutoff'])
+        ip_cutoff = request.GET['ip_cutoff'].strip()
         if ip_cutoff:
-            query = query.filter(stats__2025_majors_pitch__ip__gte=ip_cutoff)
-            context['ip_cutoff'] = f"{ip_cutoff}"
+            try:
+                ip_cutoff = int(ip_cutoff)
+                stat_season_query = stat_season_query.filter(pitch_stats__ip__gte=ip_cutoff)
+                context['ip_cutoff'] = f"{ip_cutoff}"
+            except ValueError:
+                pass  # Invalid integer, skip filter
 
     if request.GET.get('gs_cutoff', None):
-        gs_cutoff = int(request.GET['gs_cutoff'])
+        gs_cutoff = request.GET['gs_cutoff'].strip()
         if gs_cutoff:
-            query = query.filter(stats__2025_majors_pitch__gs__gte=gs_cutoff)
-            context['gs_cutoff'] = f"{gs_cutoff}"
-
-    if request.GET.get("level", None):
-        level = request.GET["level"]
-        if level.lower() != "":
-            query = query.filter(level=level)
-            context["level"] = level
-
-    if request.GET.get("reliever", None):
-        reliever = request.GET["reliever"]
-        if reliever.lower() != "":
-            query = query.filter(is_relief_eligible=to_bool(reliever))
-            if to_bool(reliever) == False:
-                query = query.filter(starts__isnull=False).exclude(starts=0)
-            context["reliever"] = reliever
-
-    if request.GET.get("prospect", None):
-        prospect = request.GET["prospect"]
-        if prospect.lower() != "":
-            query = query.filter(is_prospect=to_bool(prospect))
-            context["prospect"] = prospect
-
-    if request.GET.get("owned", None):
-        owned = request.GET["owned"]
-        if owned.lower() != "":
-            query = query.filter(is_owned=to_bool(owned))
-            context["owned"] = owned
-
-    if request.GET.get("carded", None):
-        carded = request.GET["carded"]
-        if carded.lower() != "":
-            query = query.filter(is_carded=to_bool(carded))
-            context["carded"] = carded
-
-    if request.GET.get("amateur", None):
-        amateur = request.GET["amateur"]
-        if amateur.lower() != "":
-            query = query.filter(is_amateur=to_bool(amateur))
-            context["amateur"] = amateur
-
-    query = query.order_by("level", "last_name")
-
-    if request.GET.get("csv", None):
-        c = request.GET["csv"]
-        if c.lower() in ["y", "yes", "t", "true"]:
-            query = query.values(*settings.CSV_COLUMNS)
-            response = HttpResponse(content_type="text/csv")
-            response["Content-Disposition"] = 'attachment; filename="search-%s.csv"' % (
-                datetime.datetime.now().isoformat().split(".")[0]
-            )
-            writer = csv.DictWriter(response, fieldnames=settings.CSV_COLUMNS)
-            writer.writeheader()
-            for p in query:
-                writer.writerow(p)
-            return response
-
-    query = query.order_by("position", "-level_order", "last_name")
-
-    context["hitters"] = query.exclude(position="P")
-    context["pitchers"] = query.filter(position__icontains="P")
+            try:
+                gs_cutoff = int(gs_cutoff)
+                stat_season_query = stat_season_query.filter(pitch_stats__gs__gte=gs_cutoff)
+                context['gs_cutoff'] = f"{gs_cutoff}"
+            except ValueError:
+                pass  # Invalid integer, skip filter
+    
+    # Handle position filter on the PlayerStatSeason query
+    if request.GET.get("position", None):
+        position = request.GET["position"].strip()
+        if position:
+            if position.lower() == "h":
+                stat_season_query = stat_season_query.exclude(player__position="P")
+            elif position.lower() == "p":
+                stat_season_query = stat_season_query.filter(player__position__icontains="P")
+            else:
+                stat_season_query = stat_season_query.filter(player__position__icontains=position)
+            context["position"] = position
+    
+    # Apply ordering and split into hitters and pitchers for the template
+    # Order by player fields through the relationship
+    stat_seasons = stat_season_query.order_by("player__position", "-player__level_order", "player__last_name", "player__first_name")
+    context["hitters"] = stat_seasons.exclude(player__position="P")
+    context["pitchers"] = stat_seasons.filter(player__position__icontains="P")
+    
     return render(request, "search.html", context)
+
+
