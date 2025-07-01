@@ -12,11 +12,32 @@ from django.conf import settings
 
 from ulmg import models
 
+try:
+    from tqdm import tqdm
+    HAS_TQDM = True
+except ImportError:
+    HAS_TQDM = False
+
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
         players = models.Player.objects.filter(stats__isnull=False)
-        for p in players:
+        total_players = players.count()
+        
+        self.stdout.write(f"Migrating stats for {total_players} players...")
+        
+        if not HAS_TQDM:
+            self.stdout.write("For a better progress experience, install tqdm: pip install tqdm")
+        
+        if HAS_TQDM:
+            # Use tqdm progress bar if available
+            players_iter = tqdm(players, desc="Migrating player stats", unit="players")
+        else:
+            # Fallback to simple counter
+            players_iter = players
+            processed = 0
+        
+        for p in players_iter:
             for sd in p.stats.items():
                 slug = sd[0]
                 stats_dict = sd[1]
@@ -46,37 +67,55 @@ class Command(BaseCommand):
                 """
 
                 def standardize_classification(classification, level):
-                    if classification == "majors":
+                    # Normalize for case-insensitive comparisons
+                    classification_lower = classification.lower() if classification else ""
+                    level_lower = level.lower() if level else ""
+                    
+                    # Check for MLB/majors
+                    if classification_lower in ["majors", "mlb"] or level_lower in ["majors", "mlb"]:
                         return "1-majors"
 
-                    if classification == "mlb":
-                        return "1-majors"
+                    # Check for NCAA/college FIRST (before minors check to avoid "a" in "ncaa" collision)
+                    college_indicators = ["ncaa", "college", "juco", "junior college", "d1", "d2", "d3"]
+                    if (classification_lower in college_indicators or 
+                        any(indicator in level_lower for indicator in college_indicators)):
+                        return "5-ncaa"
 
-                    if level == "majors":
-                        return "1-majors"
-
-                    if level == "mlb":
-                        return "1-majors"
-
-                    if classification == "minors":
+                    # Check for minors - more comprehensive check
+                    if classification_lower == "minors":
+                        return "2-minors"
+                    
+                    # Use more precise minors level matching to avoid false positives
+                    minors_levels = ["dsl", "cpx", "r", "a+", "aa", "aaa"]  # removed bare "a" 
+                    for minors_level in minors_levels:
+                        if minors_level in level_lower:
+                            return "2-minors"
+                    
+                    # Special case for bare "a" to avoid matching "ncaa", "atlanta", etc.
+                    if level_lower == "a" or level_lower.startswith("a ") or level_lower.endswith(" a"):
                         return "2-minors"
 
-                    for minors_level in ["DSL", "CPX", "R", "A", "A+", "AA", "AAA"]:
-                        if minors_level in level:
-                            return "2-minors"
-
-                    if level == "NPB":
+                    # Check for international leagues
+                    if level_lower == "npb":
                         return "3-npb"
 
-                    if level == "KBO":
+                    if level_lower == "kbo":
                         return "4-kbo"
-
-                    if level == "NCAA":
-                        return "5-ncaa"
 
                     return None
 
-                pss, created = models.PlayerStatSeason.objects.get_or_create(player=p, season=season, classification=standardize_classification(classification, stats_dict['level']), level=stats_dict['level'])
+                standardized_classification = standardize_classification(classification, stats_dict['level'])
+                pss, created = models.PlayerStatSeason.objects.get_or_create(
+                    player=p, 
+                    season=season, 
+                    classification=standardized_classification, 
+                    level=stats_dict['level']
+                )
+
+                # Set the new boolean fields
+                pss.minors = standardized_classification == "2-minors"
+                pss.carded = p.is_carded
+                pss.owned = p.is_owned
 
                 if side == "hit":
                     pss.hit_stats = stats_dict
@@ -85,3 +124,11 @@ class Command(BaseCommand):
                     pss.pitch_stats = stats_dict
 
                 pss.save()
+            
+            # Progress reporting for fallback case (no tqdm)
+            if not HAS_TQDM:
+                processed += 1
+                if processed % 1000 == 0 or processed == total_players:
+                    self.stdout.write(f"Processed {processed}/{total_players} players ({processed/total_players*100:.1f}%)")
+        
+        self.stdout.write(self.style.SUCCESS(f"Successfully migrated stats for {total_players} players!"))
