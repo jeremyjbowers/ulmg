@@ -33,12 +33,14 @@
         <div class="navbar-end">
             {% if user.is_authenticated and user.is_staff %}
             <div class="navbar-item has-dropdown is-hoverable">
-                <a class="navbar-link">Admin</a>
+                <a class="navbar-link">Utilities</a>
                     <div class="navbar-dropdown ">
-                        <a class="navbar-item" href="/admin/">Admin</a>
-                        <a class="navbar-item" href="/special/players/">Player utilities</a>
-                        <a class="navbar-item" href="/special/trades/">Trade utilities</a>
-                        <a class="navbar-item" href="/special/players/bulk/">Bulk add players</a>
+                        <a class="navbar-item" href="/special/trades/">Trades: Process</a>
+                        <a class="navbar-item" href="/draft/live/2025/midseason/open/edit/">Draft: Open</a>
+                        <a class="navbar-item" href="/draft/live/2025/midseason/aa/edit/">Draft: AA</a>
+                        <a class="navbar-item" href="/special/players/">Players: Utilities</a>
+                        <a class="navbar-item" href="/special/players/bulk/">Players: Bulk add</a>
+                        <a class="navbar-item" href="/admin/"><strong>Django admin</strong></a>
                     </div>
                 </div>
             </div>
