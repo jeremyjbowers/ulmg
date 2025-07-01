@@ -8,7 +8,7 @@
 
 <div class="columns section is-desktop is-fullwidth">
         <div class="column">
-            {% if hitters %}{% regroup hitters by position as position_players %}
+            {% if hitters %}{% regroup hitters by player.position as position_players %}
 
             <nav id="nav" class="level">
                 {% for position in position_players %}
@@ -57,13 +57,13 @@
                 </thead>
                 <tbody>
                 {% for p in position.list %}
-                    <tr class="{% if p.roster_status %}{{ p.roster_status|lower|default_if_none:"non-mlb" }} {% else %}non-mlb {% endif %}">
+                    <tr class="{% if p.player %}{% if p.player.roster_status %}{{ p.player.roster_status|lower|default_if_none:"non-mlb" }} {% else %}non-mlb {% endif %}{% else %}{% if p.roster_status %}{{ p.roster_status|lower|default_if_none:"non-mlb" }} {% else %}non-mlb {% endif %}{% endif %}">
                          {% include "includes/player_name.html" %}
-                        <td>{% if p.mlb_org %}{{ p.mlb_org|default_if_none:"-" }}{% else %}-{% endif %}</td>
-                        <td data-value="{{ p.team|default_if_none:"" }}">{% if p.team %}<a href="/teams/{{ p.team.abbreviation }}/">{% endif %}{{ p.team|default_if_none:"-" }}{% if p.team %}</a>{% endif %}</td>
-                        <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
-                        <td data-value="{{ p.level|default_if_none:"Z" }}<">{{ p.level|default_if_none:"" }}</td>
-                        <td data-value="{{ p.roster_status|default_if_none:"Z" }}<">{{ p.roster_status|default_if_none:"" }}</td>
+                        <td>{% if p.player %}{% if p.player.mlb_org %}{{ p.player.mlb_org|default_if_none:"-" }}{% else %}-{% endif %}{% else %}{% if p.mlb_org %}{{ p.mlb_org|default_if_none:"-" }}{% else %}-{% endif %}{% endif %}</td>
+                        <td data-value="{% if p.player %}{{ p.player.team|default_if_none:"" }}{% else %}{{ p.team|default_if_none:"" }}{% endif %}">{% if p.player %}{% if p.player.team %}<a href="/teams/{{ p.player.team.abbreviation }}/">{% endif %}{{ p.player.team|default_if_none:"-" }}{% if p.player.team %}</a>{% endif %}{% else %}{% if p.team %}<a href="/teams/{{ p.team.abbreviation }}/">{% endif %}{{ p.team|default_if_none:"-" }}{% if p.team %}</a>{% endif %}{% endif %}</td>
+                        <td data-value="{% if p.player %}{{ p.player.age|default_if_none:"-999" }}{% else %}{{ p.age|default_if_none:"-999" }}{% endif %}">{% if p.player %}{{ p.player.age|default_if_none:"-" }}{% else %}{{ p.age|default_if_none:"-" }}{% endif %}</td>
+                        <td data-value="{% if p.player %}{{ p.player.level|default_if_none:"Z" }}{% else %}{{ p.level|default_if_none:"Z" }}{% endif %}">{% if p.player %}{{ p.player.level|default_if_none:"" }}{% else %}{{ p.level|default_if_none:"" }}{% endif %}</td>
+                        <td data-value="{% if p.player %}{{ p.player.roster_status|default_if_none:"Z" }}{% else %}{{ p.roster_status|default_if_none:"Z" }}{% endif %}">{% if p.player %}{{ p.player.roster_status|default_if_none:"" }}{% else %}{{ p.roster_status|default_if_none:"" }}{% endif %}</td>
                         {% include "includes/hitter_stat_cells.html" %}
                     </tr>
                 {% endfor %}
@@ -86,13 +86,13 @@
                 </thead>
                 <tbody>
                 {% for p in pitchers %}
-                    <tr class="{% if p.roster_status %}{{ p.roster_status|lower|default_if_none:"non-mlb" }} {% else %}non-mlb {% endif %}">
+                    <tr class="{% if p.player %}{% if p.player.roster_status %}{{ p.player.roster_status|lower|default_if_none:"non-mlb" }} {% else %}non-mlb {% endif %}{% else %}{% if p.roster_status %}{{ p.roster_status|lower|default_if_none:"non-mlb" }} {% else %}non-mlb {% endif %}{% endif %}">
                         {% include "includes/player_name.html" %}
-                        <td>{% if p.mlb_org %}{{ p.mlb_org|default_if_none:"-" }}{% else %}-{% endif %}</td>
-                        <td data-value="{{ p.team|default_if_none:"" }}">{% if p.team %}<a href="/teams/{{ p.team.abbreviation }}/">{% endif %}{{ p.team|default_if_none:"-" }}{% if p.team %}</a>{% endif %}</td>
-                        <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
-                        <td data-value="{{ p.level|default_if_none:"Z" }}<">{{ p.level|default_if_none:"" }}</td>
-                        <td data-value="{{ p.roster_status|default_if_none:"Z" }}<">{{ p.roster_status|default_if_none:"" }}</td>
+                        <td>{% if p.player %}{% if p.player.mlb_org %}{{ p.player.mlb_org|default_if_none:"-" }}{% else %}-{% endif %}{% else %}{% if p.mlb_org %}{{ p.mlb_org|default_if_none:"-" }}{% else %}-{% endif %}{% endif %}</td>
+                        <td data-value="{% if p.player %}{{ p.player.team|default_if_none:"" }}{% else %}{{ p.team|default_if_none:"" }}{% endif %}">{% if p.player %}{% if p.player.team %}<a href="/teams/{{ p.player.team.abbreviation }}/">{% endif %}{{ p.player.team|default_if_none:"-" }}{% if p.player.team %}</a>{% endif %}{% else %}{% if p.team %}<a href="/teams/{{ p.team.abbreviation }}/">{% endif %}{{ p.team|default_if_none:"-" }}{% if p.team %}</a>{% endif %}{% endif %}</td>
+                        <td data-value="{% if p.player %}{{ p.player.age|default_if_none:"-999" }}{% else %}{{ p.age|default_if_none:"-999" }}{% endif %}">{% if p.player %}{{ p.player.age|default_if_none:"-" }}{% else %}{{ p.age|default_if_none:"-" }}{% endif %}</td>
+                        <td data-value="{% if p.player %}{{ p.player.level|default_if_none:"Z" }}{% else %}{{ p.level|default_if_none:"Z" }}{% endif %}">{% if p.player %}{{ p.player.level|default_if_none:"" }}{% else %}{{ p.level|default_if_none:"" }}{% endif %}</td>
+                        <td data-value="{% if p.player %}{{ p.player.roster_status|default_if_none:"Z" }}{% else %}{{ p.roster_status|default_if_none:"Z" }}{% endif %}">{% if p.player %}{{ p.player.roster_status|default_if_none:"" }}{% else %}{{ p.roster_status|default_if_none:"" }}{% endif %}</td>
                         {% include "includes/pitcher_stat_cells.html" %}
                     </tr>
                 {% endfor %}

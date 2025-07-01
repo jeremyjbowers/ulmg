@@ -365,10 +365,16 @@ class Player(BaseModel):
         self.stats[stats_dict["slug"]] = stats_dict
 
     def latest_hit_stats(self):
-        return PlayerStatSeason.objects.filter(player=self)[0].hit_stats
+        stats = PlayerStatSeason.objects.filter(player=self).first()
+        if stats:
+            return stats.hit_stats
+        return None
 
     def latest_pit_stats(self):
-        return PlayerStatSeason.objects.filter(player=self)[0].pitch_stats
+        stats = PlayerStatSeason.objects.filter(player=self).first()
+        if stats:
+            return stats.pitch_stats
+        return None
 
     @property
     def mlb_image_url(self):
@@ -579,12 +585,34 @@ class PlayerStatSeason(BaseModel):
     level = models.CharField(max_length=255, blank=True, null=True)
     hit_stats = models.JSONField(null=True, blank=True)
     pitch_stats = models.JSONField(null=True, blank=True)
+    minors = models.BooleanField(default=False)
+    carded = models.BooleanField(default=False)
+    owned = models.BooleanField(default=False)
 
     def __unicode__(self):
         return f"{self.player} @ {self.season} @ {self.classification}"
 
     class Meta:
         ordering = ['season', 'classification']
+        indexes = [
+            # Single field indexes for common filters
+            models.Index(fields=['season']),  # Most common filter
+            models.Index(fields=['minors']),  # Majors vs minors filtering
+            models.Index(fields=['owned']),   # Ownership filtering
+            models.Index(fields=['carded']),  # Carded status filtering
+            
+            # Composite indexes for common combinations
+            models.Index(fields=['season', 'minors']),  # Season + league level
+            models.Index(fields=['season', 'owned']),   # Season + ownership
+            models.Index(fields=['season', 'minors', 'owned']),  # Three-way common combo
+            models.Index(fields=['player', 'season']),  # Player's seasons lookup
+            
+            # Search optimization indexes
+            models.Index(fields=['minors', 'owned', 'carded']),  # Filter combinations
+            models.Index(fields=['season', 'classification']),   # Already in ordering, but explicit
+            models.Index(fields=['classification']),  # Individual classification filtering
+            models.Index(fields=['level']),  # Individual level filtering (AAA, AA, etc.)
+        ]
 
 class DraftPick(BaseModel):
     AA_TYPE = "aa"
