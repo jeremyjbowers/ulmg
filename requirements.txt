@@ -41,7 +41,7 @@ requests==2.32.4
 requests-toolbelt==1.0.0
 rsa==4.9.1
 s3transfer==0.13.0
-setuptools==77.0.3
+setuptools>=78.1.1
 six==1.17.0
 soupsieve==2.7
 sqlparse==0.5.3
