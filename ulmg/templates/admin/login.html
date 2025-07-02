@@ -1,0 +1,138 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block extrahead %}{{ block.super }}
+<script src="{% static 'admin/js/vendor/jquery/jquery.js' %}"></script>
+<style>
+  /* Override admin styles to match site theme */
+  body {
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace !important;
+    font-size: 0.875rem !important;
+    line-height: 1.25 !important;
+  }
+  
+  #content-main {
+    max-width: 28rem;
+    margin: 2rem auto;
+    padding: 1rem;
+  }
+  
+  .form-row {
+    margin-bottom: 1rem;
+  }
+  
+  .form-row label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: bold;
+    margin-bottom: 0.25rem;
+  }
+  
+  .vTextField {
+    width: 100%;
+    border: 1px solid #d1d5db;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
+  }
+  
+  .submit-row input {
+    width: 100%;
+    background-color: #000;
+    color: #fff;
+    padding: 0.25rem 0.75rem;
+    font-size: 0.875rem;
+    text-decoration: underline;
+    border: none;
+    cursor: pointer;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
+  }
+  
+  .submit-row input:hover {
+    background-color: #374151;
+  }
+  
+  .messagelist {
+    border: 1px solid #d1d5db;
+    padding: 0.75rem;
+    margin-bottom: 1rem;
+    background-color: #f9fafb;
+  }
+  
+  .messagelist .info {
+    font-size: 0.875rem;
+    margin: 0;
+  }
+  
+  h1 {
+    font-size: 1.125rem;
+    font-weight: bold;
+    margin-bottom: 1rem;
+  }
+</style>
+{% endblock %}
+
+{% block bodyclass %}{{ block.super }} login{% endblock %}
+
+{% block nav-global %}{% endblock %}
+
+{% block content %}
+<div id="content-main">
+  <h1>Admin Login</h1>
+  
+  <div style="border: 1px solid #d1d5db; padding: 0.75rem; margin-bottom: 1rem; background-color: #f9fafb;">
+    <p style="font-size: 0.875rem; margin: 0;">Enter your email address and we'll send you a magic link to access the admin panel.</p>
+  </div>
+
+  <form id="login-form" method="post">
+    {% csrf_token %}
+    <div class="form-row">
+      <label for="id_email" class="required">Email address:</label>
+      <input type="email" name="email" id="id_email" class="vTextField" required>
+    </div>
+    
+    <div class="submit-row">
+      <input type="submit" value="Send Magic Link" class="default">
+    </div>
+  </form>
+
+  <div id="message" style="margin-top: 20px; display: none;">
+    <div class="messagelist">
+      <div class="info" id="message-text"></div>
+    </div>
+  </div>
+
+  <script>
+    $(document).ready(function() {
+      $('#login-form').on('submit', function(e) {
+        e.preventDefault();
+        
+        var email = $('#id_email').val();
+        if (!email) {
+          alert('Please enter your email address.');
+          return;
+        }
+        
+        $.ajax({
+          url: '/admin/magic-login/',
+          method: 'POST',
+          data: {
+            'email': email,
+            'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
+          },
+          success: function(response) {
+            $('#message-text').text(response.message || 'Magic link sent! Check your email.');
+            $('#message').show();
+            $('#login-form').hide();
+          },
+          error: function(xhr) {
+            var response = JSON.parse(xhr.responseText);
+            $('#message-text').text(response.error || 'An error occurred. Please try again.');
+            $('#message').show();
+          }
+        });
+      });
+    });
+  </script>
+</div>
+{% endblock %} 

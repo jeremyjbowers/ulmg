@@ -101,6 +101,7 @@ class Command(BaseCommand):
                     stats_dict["gb_pct"] = utils.to_float(row["GB%"], default=0.0) * 100.0
                     stats_dict["hr_fb"] = utils.to_float(row['HR/FB'])
                     stats_dict["era"] = utils.to_float(row['ERA'])
+                    stats_dict["whip"] = utils.to_float(row['WHIP'])
                     stats_dict["fip"] = utils.to_float(row['FIP'])
                     stats_dict["xfip"] = utils.to_float(row['xFIP'])
                     stats_dict["siera"] = utils.to_float(row['SIERA'])
@@ -176,6 +177,7 @@ class Command(BaseCommand):
                             stats_dict["gb_pct"] = utils.to_float(player["GB%"], default=0.0) * 100.0
                             stats_dict["hr_fb"] = utils.to_float(player["HR/FB"])
                             stats_dict["era"] = utils.to_float(player["ERA"])
+                            stats_dict["whip"] = utils.to_float(player["WHIP"])
                             stats_dict["fip"] = utils.to_float(player["FIP"])
                             stats_dict["xfip"] = utils.to_float(player["xFIP"])
 
@@ -255,7 +257,9 @@ class Command(BaseCommand):
                                 utils.to_float(player["LOB%"], default=0.0) * 100.0
                             )
                             stats_dict["era"] = utils.to_float(player["ERA"])
+                            stats_dict["whip"] = utils.to_float(player["WHIP"])
                             stats_dict["fip"] = utils.to_float(player["FIP"])
+                            stats_dict["xfip"] = utils.to_float(player["xFIP"])
 
                         obj.set_stats(stats_dict)
                         obj.save()
@@ -321,7 +325,9 @@ class Command(BaseCommand):
                                 utils.to_float(player["LOB%"], default=0.0) * 100.0
                             )
                             stats_dict["era"] = utils.to_float(player["ERA"])
+                            stats_dict["whip"] = utils.to_float(player["WHIP"])
                             stats_dict["fip"] = utils.to_float(player["FIP"])
+                            stats_dict["xfip"] = utils.to_float(player["xFIP"])
 
                         obj.set_stats(stats_dict)
                         obj.save()
@@ -387,7 +393,9 @@ class Command(BaseCommand):
                                 utils.to_float(player["LOB%"], default=0.0) * 100.0
                             )
                             stats_dict["era"] = utils.to_float(player["ERA"])
+                            stats_dict["whip"] = utils.to_float(player["WHIP"])
                             stats_dict["fip"] = utils.to_float(player["FIP"])
+                            stats_dict["xfip"] = utils.to_float(player["xFIP"])
 
                         obj.set_stats(stats_dict)
                         obj.save()

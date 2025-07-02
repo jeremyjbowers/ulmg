@@ -1,11 +1,21 @@
 from django.contrib import admin
 from django.urls import include, path
+from django.contrib.auth import views as auth_views
 
 from ulmg import views
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("accounts/", include("django.contrib.auth.urls")),
+    
+    # Magic link authentication URLs
+    path("accounts/login/", views.auth.magic_login_request, name="login"),
+    path("accounts/magic-verify/<str:token>/", views.auth.magic_login_verify, name="magic_login_verify"),
+    path("admin/magic-login/", views.auth.admin_magic_login_request, name="admin_magic_login_request"),
+    path("admin/magic-verify/<str:token>/", views.auth.admin_magic_login_verify, name="admin_magic_login_verify"),
+    
+    # Keep logout functionality - allow GET requests for simplicity
+    path("accounts/logout/", auth_views.LogoutView.as_view(http_method_names=['get', 'post']), name="logout"),
+    
     path("api/v1/player/scouting-report/<int:playerid>/", views.api.scouting_report),
     path("api/v1/wishlist/players/", views.api.get_wishlist_players),
     path("api/v1/player/", views.api.player_list),

@@ -90,7 +90,13 @@
 {% if transactions %}
 <div class="mb-6">
     <h2 class="text-lg font-bold mb-2 border-b border-gray-300 pb-1">Transaction History</h2>
-    <table class="w-full text-xs border-collapse">
+    <table class="w-full text-xs border-collapse table-fixed">
+        <colgroup>
+            <col class="w-16">  <!-- Year column -->
+            <col class="w-16">  <!-- Type column -->
+            <col class="w-32">  <!-- Description column -->
+            <col>               <!-- Details column - takes remaining space -->
+        </colgroup>
         <thead>
             <tr class="border-b border-gray-300">
                 <th class="text-center py-1">Year</th>
@@ -104,8 +110,8 @@
             <tr class="border-b border-gray-100">
                 <td class="text-center py-1 font-bold">{{ transaction.year|default_if_none:"—" }}</td>
                 <td class="text-center py-1">{{ transaction.type|title }}</td>
-                <td class="py-1">{{ transaction.description }}</td>
-                <td class="py-1 text-gray-600">{{ transaction.details }}</td>
+                <td class="py-1 break-words">{{ transaction.description }}</td>
+                <td class="py-1 text-gray-600 break-words hyphens-auto" style="word-wrap: break-word; word-break: break-word;">{{ transaction.details }}</td>
             </tr>
             {% endfor %}
         </tbody>

@@ -1,4 +1,9 @@
 from django.contrib import admin
+from django.contrib.admin import ModelAdmin
+from django.contrib.admin.widgets import FilteredSelectMultiple
+from django.contrib.auth.models import User
+from django.forms import ModelForm, DateField
+from django.forms.widgets import SelectDateWidget
 
 from ulmg.models import (
     Team,
@@ -14,6 +19,9 @@ from ulmg.models import (
     Occurrence,
     Venue,
     PlayerStatSeason,
+    MagicLinkToken,
+    TradeSummary,
+    Transaction,
 )
 
 admin.site.site_title = "The ULMG"
@@ -289,3 +297,12 @@ class PlayerAdmin(admin.ModelAdmin):
             },
         ),
     )
+
+
+@admin.register(MagicLinkToken)
+class MagicLinkTokenAdmin(admin.ModelAdmin):
+    model = MagicLinkToken
+    list_display = ["user", "token", "expires_at", "used", "active", "created"]
+    list_filter = ["used", "active", "expires_at"]
+    readonly_fields = ["token", "created", "last_modified"]
+    search_fields = ["user__email", "user__username"]

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-md mx-auto">
+  <h1 class="text-lg font-bold mb-4">Logged Out</h1>
+
+  <div class="border border-gray-300 p-3 mb-4 bg-green-50 text-green-800">
+    <p class="text-sm">You have been successfully logged out.</p>
+  </div>
+
+  <div class="border border-gray-300 p-3 mb-4 bg-gray-50">
+    <p class="text-sm">Thanks for using ULMG. You can close this window or navigate to another page.</p>
+  </div>
+
+  <div class="space-y-2">
+    <a 
+      href="/" 
+      class="block w-full bg-black text-white px-3 py-1 text-sm underline hover:bg-gray-800 text-center"
+    >
+      Return to Home
+    </a>
+    
+    <a 
+      href="{% url 'login' %}" 
+      class="block w-full border border-gray-300 px-3 py-1 text-sm underline hover:bg-gray-50 text-center"
+    >
+      Login Again
+    </a>
+  </div>
+</div>
+{% endblock %} 

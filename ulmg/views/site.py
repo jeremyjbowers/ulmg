@@ -113,7 +113,7 @@ def player(request, playerid):
             'year': trade.trade.date.year if trade.trade.date else None,
             'description': f"Traded to {trade.team.abbreviation}",
             'team': trade.team,
-            'details': trade.trade.trade_summary or "Trade details not available"
+            'details': trade.trade.summary() if trade.trade else "Trade details not available"
         })
     
     # Add drafts
@@ -167,7 +167,7 @@ def team_detail(request, abbreviation):
     if request.user.is_superuser:
         context["own_team"] = True
 
-    # Get team players for roster counts and distribution (still need Player objects for this)
+    # Get team players for roster counts and distribution
     team_players = models.Player.objects.filter(team=context["team"])
     context["35_roster_count"] = team_players.filter(is_35man_roster=True).count()
     context["mlb_roster_count"] = team_players.filter(
@@ -180,39 +180,15 @@ def team_detail(request, abbreviation):
     )
     context["num_owned"] = team_players.count()
 
-    # Use PlayerStatSeason for displaying roster with current season stats (2025)
-    # Get all stat seasons for the team, then deduplicate by player (keeping best classification)
-    current_season = 2025
-    all_team_stat_seasons = models.PlayerStatSeason.objects.filter(
-        player__team=context["team"], 
-        season=current_season
-    ).select_related('player').order_by('classification')
-    
-    # Deduplicate by player, keeping the best classification (lowest number)
-    seen_players = set()
-    unique_stat_seasons = []
-    for stat_season in all_team_stat_seasons:
-        if stat_season.player.id not in seen_players:
-            unique_stat_seasons.append(stat_season)
-            seen_players.add(stat_season.player.id)
-    
+    # Query for players directly instead of PlayerStatSeason objects
     # Split into hitters and pitchers, then sort as desired
-    hitters = [s for s in unique_stat_seasons if s.player.position != "P"]
-    hitters.sort(key=lambda s: (
-        s.player.position, 
-        -s.player.level_order, 
-        -s.player.is_carded, 
-        s.player.last_name, 
-        s.player.first_name
-    ))
+    hitters = team_players.exclude(position="P").order_by(
+        "position", "-level_order", "-is_carded", "last_name", "first_name"
+    )
     
-    pitchers = [s for s in unique_stat_seasons if "P" in s.player.position]
-    pitchers.sort(key=lambda s: (
-        -s.player.level_order,
-        -s.player.is_carded,
-        s.player.last_name,
-        s.player.first_name
-    ))
+    pitchers = team_players.filter(position__icontains="P").order_by(
+        "-level_order", "-is_carded", "last_name", "first_name"
+    )
 
     context["hitters"] = hitters
     context["pitchers"] = pitchers

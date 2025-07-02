@@ -1,5 +1,6 @@
 import datetime
 import os
+import secrets
 
 from dateutil.relativedelta import *
 from django.contrib.auth.models import User
@@ -8,6 +9,7 @@ from django.contrib.postgres.fields import JSONField, ArrayField
 from django.db.models.signals import post_save, m2m_changed
 from django.dispatch import receiver
 from django.conf import settings
+from django.utils import timezone
 from nameparser import HumanName
 
 from ulmg import utils
@@ -37,6 +39,60 @@ class Owner(BaseModel):
 
     def team(self):
         return Team.objects.get(owner_obj=self)
+
+
+class MagicLinkToken(BaseModel):
+    """
+    Stores magic link tokens for passwordless authentication.
+    Tokens are valid for 60 days.
+    """
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    token = models.CharField(max_length=255, unique=True)
+    expires_at = models.DateTimeField()
+    used = models.BooleanField(default=False)
+    
+    def __unicode__(self):
+        return f"Magic link for {self.user.email} (expires {self.expires_at})"
+    
+    @classmethod
+    def create_for_user(cls, user):
+        """Create a new magic link token for a user"""
+        # Deactivate any existing unused tokens for this user
+        cls.objects.filter(user=user, used=False).update(active=False)
+        
+        # Create new token
+        token = secrets.token_urlsafe(32)
+        expires_at = timezone.now() + datetime.timedelta(days=60)
+        
+        return cls.objects.create(
+            user=user,
+            token=token,
+            expires_at=expires_at
+        )
+    
+    @classmethod
+    def authenticate(cls, token):
+        """Authenticate a user with a magic link token"""
+        try:
+            magic_link = cls.objects.get(
+                token=token,
+                active=True,
+                used=False,
+                expires_at__gt=timezone.now()
+            )
+            magic_link.used = True
+            magic_link.save()
+            return magic_link.user
+        except cls.DoesNotExist:
+            return None
+    
+    def is_valid(self):
+        """Check if token is still valid"""
+        return (
+            self.active and 
+            not self.used and 
+            self.expires_at > timezone.now()
+        )
 
 
 class Team(BaseModel):
@@ -467,7 +523,7 @@ class Player(BaseModel):
     @property
     def age(self):
         if self.birthdate:
-            now = datetime.datetime.utcnow().date()
+            now = timezone.now().date()
             return relativedelta(now, self.birthdate).years
         elif self.raw_age:
             return self.raw_age
@@ -548,6 +604,16 @@ class Player(BaseModel):
 
         if self.cannot_be_protected:
             self.is_protected = False
+
+    def get_best_stat_season(self):
+        """
+        Get the best PlayerStatSeason for this player, sorted by newest season 
+        and highest classification (1-majors is highest, 5-ncaa is lowest).
+        Returns None if no stat seasons exist.
+        """
+        return PlayerStatSeason.objects.filter(
+            player=self
+        ).order_by('-season', 'classification').first()
 
     def team_display(self):
         if self.team:
