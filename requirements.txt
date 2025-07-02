@@ -6,6 +6,7 @@ cachetools==5.5.2
 certifi==2025.6.15
 charset-normalizer==3.4.2
 click==8.2.1
+cloudscraper==1.2.71
 dateparser==1.2.2
 distlib==0.3.9
 dj-database-url==3.0.0
@@ -37,6 +38,7 @@ python-dateutil==2.9.0.post0
 pytz==2025.2
 regex==2024.11.6
 requests==2.32.4
+requests-toolbelt==1.0.0
 rsa==4.9.1
 s3transfer==0.13.0
 setuptools==77.0.3

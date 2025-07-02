@@ -29,6 +29,7 @@ urlpatterns = [
     path("api/v1/wishlist/<str:playerid>/", views.api.wishlist_player_action),
     path("api/v1/trade/bulk/", views.api.trade_bulk_action),
     path("api/v1/player/bulk/", views.api.player_bulk_action),
+    path("api/v1/player/autocomplete/", views.api.player_autocomplete),
     path("api/v1/detail/player/", views.api.player_detail),
     path("teams/csv/", views.csv.all_csv),
     path("teams/<str:abbreviation>/csv/", views.csv.team_csv),

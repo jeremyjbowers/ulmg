@@ -797,3 +797,41 @@ def add_note_to_wishlistplayer(request, playerid):
             w.save()
 
     return JsonResponse({"message": "ok"})
+
+
+@csrf_exempt
+def player_autocomplete(request):
+    """
+    API endpoint for player name autocomplete in navbar search
+    Returns JSON list of players matching the search query
+    """
+    if request.method == "GET":
+        query = request.GET.get("q", "").strip()
+        
+        if not query or len(query) < 2:
+            return JsonResponse({"players": []})
+        
+        # Search for players by name, limit to 10 results for performance
+        players = models.Player.objects.filter(
+            name__icontains=query
+        ).select_related('team').order_by(
+            'last_name', 'first_name'
+        )[:10]
+        
+        # Format results for autocomplete dropdown
+        results = []
+        for player in players:
+            result = {
+                "id": player.id,
+                "name": player.name,
+                "position": player.position,
+                "level": player.level,
+                "team": player.team.abbreviation if player.team else "FA",
+                "url": f"/players/{player.id}/",
+                "display": f"{player.name} ({player.position}) - {player.team.abbreviation if player.team else 'FA'}"
+            }
+            results.append(result)
+        
+        return JsonResponse({"players": results})
+    
+    return JsonResponse({"players": []})

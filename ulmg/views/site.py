@@ -177,10 +177,61 @@ def index(request):
 def player(request, playerid):
     context = utils.build_context(request)
     context["p"] = models.Player.objects.get(id=playerid)
-    context["trades"] = models.TradeReceipt.objects.filter(
+    
+    # Get transaction history - trades and drafts
+    trades = models.TradeReceipt.objects.filter(
         players__id=playerid
-    ).order_by("-trade__date")
-    context["drafted"] = models.DraftPick.objects.filter(player__id=playerid)
+    ).select_related('trade', 'team').order_by("-trade__date")
+    
+    draft_picks = models.DraftPick.objects.filter(
+        player__id=playerid
+    ).select_related('team').order_by("-year", "-season")
+    
+    # Combine transactions into a single chronological list
+    transactions = []
+    
+    # Add trades
+    for trade in trades:
+        transactions.append({
+            'type': 'trade',
+            'date': trade.trade.date,
+            'year': trade.trade.date.year if trade.trade.date else None,
+            'description': f"Traded to {trade.team.abbreviation}",
+            'team': trade.team,
+            'details': trade.trade.trade_summary or "Trade details not available"
+        })
+    
+    # Add drafts
+    for pick in draft_picks:
+        transactions.append({
+            'type': 'draft',
+            'date': None,  # Draft picks don't have specific dates
+            'year': int(pick.year) if pick.year else None,
+            'description': f"Drafted by {pick.team.abbreviation}" if pick.team else "Drafted",
+            'team': pick.team,
+            'details': f"{pick.season.title()} {pick.draft_type.upper()} Draft - Round {pick.draft_round}, Pick {pick.pick_number}" if pick.draft_round and pick.pick_number else f"{pick.season.title()} {pick.draft_type.upper()} Draft"
+        })
+    
+    # Sort by year (most recent first), then by type (trades before drafts for same year)
+    transactions.sort(key=lambda x: (x['year'] or 0, x['type'] == 'draft'), reverse=True)
+    context["transactions"] = transactions
+    
+    # Get all PlayerStatSeason records for this player, sorted by year desc, then classification
+    player_stats = models.PlayerStatSeason.objects.filter(
+        player_id=playerid
+    ).order_by('-season', 'classification')
+    
+    # Split into hitters and pitchers based on player position
+    player = context["p"]
+    if player.position == "P":
+        # Pitcher - only show pitching stats
+        context["pitcher_stats"] = player_stats.filter(pitch_stats__isnull=False)
+        context["hitter_stats"] = None
+    else:
+        # Hitter - only show hitting stats  
+        context["hitter_stats"] = player_stats.filter(hit_stats__isnull=False)
+        context["pitcher_stats"] = None
+    
     return render(request, "player_detail.html", context)
 
 

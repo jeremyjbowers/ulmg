@@ -30,6 +30,26 @@
             </div>
         </div>
 
+        <!-- Player Search in Navbar -->
+        <div class="navbar-item">
+            <div class="dropdown" id="search-dropdown">
+                <div class="dropdown-trigger">
+                    <div class="field">
+                        <div class="control has-icons-left">
+                            <input class="input" type="text" id="player-search" placeholder="find a player" autocomplete="off">
+                            <span class="icon is-small is-left">
+                                <i class="fas fa-search"></i>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div class="dropdown-menu" id="dropdown-menu" role="menu">
+                    <div class="dropdown-content" id="search-results">
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="navbar-end">
             {% if user.is_authenticated and user.is_staff %}
             <div class="navbar-item has-dropdown is-hoverable">
@@ -59,3 +79,528 @@
 
     </div>
 </nav>
+
+<style>
+/* Custom styles for player search */
+#player-search {
+    width: 200px;
+}
+
+#search-dropdown .dropdown-menu {
+    min-width: 300px;
+    max-height: 300px;
+    overflow-y: auto;
+    /* Standard Bulma dropdown styling */
+    background-color: white;
+    border-radius: 4px;
+    box-shadow: 0 0.5em 1em -0.125em rgba(10,10,10,.1), 0 0px 0 1px rgba(10,10,10,.02);
+    padding-top: 4px;
+    padding-bottom: 4px;
+}
+
+.search-result-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    border-bottom: 1px solid #f5f5f5;
+    white-space: normal;
+    color: #4a4a4a;
+    display: block;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    position: relative;
+}
+
+.search-result-item:hover,
+.search-result-item.is-active {
+    background-color: #f5f5f5;
+    color: #363636;
+}
+
+.search-result-item:last-child {
+    border-bottom: none;
+}
+
+.search-result-name {
+    font-weight: 600;
+    color: #363636;
+}
+
+.search-result-details {
+    font-size: 0.75rem;
+    color: #7a7a7a;
+    margin-top: 2px;
+}
+
+/* No results styling */
+#search-dropdown .dropdown-item:not(.search-result-item) {
+    color: #7a7a7a;
+    font-style: italic;
+    padding: 12px;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('player-search');
+    const searchDropdown = document.getElementById('search-dropdown');
+    const searchResults = document.getElementById('search-results');
+    let searchTimeout;
+
+    searchInput.addEventListener('input', function() {
+        const query = this.value.trim();
+        
+        // Clear previous timeout
+        clearTimeout(searchTimeout);
+        
+        if (query.length < 2) {
+            hideDropdown();
+            return;
+        }
+        
+        // Debounce search requests
+        searchTimeout = setTimeout(() => {
+            performSearch(query);
+        }, 300);
+    });
+
+    searchInput.addEventListener('focus', function() {
+        if (this.value.trim().length >= 2) {
+            showDropdown();
+        }
+    });
+
+    // Hide dropdown when clicking outside
+    document.addEventListener('click', function(event) {
+        if (!searchDropdown.contains(event.target)) {
+            hideDropdown();
+        }
+    });
+
+    // Handle keyboard navigation
+    searchInput.addEventListener('keydown', function(event) {
+        const items = searchResults.querySelectorAll('.search-result-item');
+        const currentActive = searchResults.querySelector('.search-result-item.is-active');
+        
+        if (event.key === 'ArrowDown') {
+            event.preventDefault();
+            if (currentActive) {
+                currentActive.classList.remove('is-active');
+                const next = currentActive.nextElementSibling;
+                if (next) {
+                    next.classList.add('is-active');
+                } else {
+                    items[0]?.classList.add('is-active');
+                }
+            } else {
+                items[0]?.classList.add('is-active');
+            }
+        } else if (event.key === 'ArrowUp') {
+            event.preventDefault();
+            if (currentActive) {
+                currentActive.classList.remove('is-active');
+                const prev = currentActive.previousElementSibling;
+                if (prev) {
+                    prev.classList.add('is-active');
+                } else {
+                    items[items.length - 1]?.classList.add('is-active');
+                }
+            } else {
+                items[items.length - 1]?.classList.add('is-active');
+            }
+        } else if (event.key === 'Enter') {
+            event.preventDefault();
+            if (currentActive) {
+                currentActive.click();
+            }
+        } else if (event.key === 'Escape') {
+            hideDropdown();
+            searchInput.blur();
+        }
+    });
+
+    function performSearch(query) {
+        console.log('Searching for:', query); // Debug log
+        fetch(`/api/v1/player/autocomplete/?q=${encodeURIComponent(query)}`)
+            .then(response => {
+                console.log('Response status:', response.status); // Debug log
+                return response.json();
+            })
+            .then(data => {
+                console.log('API response:', data); // Debug log
+                displayResults(data.players);
+            })
+            .catch(error => {
+                console.error('Search error:', error);
+                hideDropdown();
+            });
+    }
+
+    function displayResults(players) {
+        console.log('Displaying results:', players); // Debug log
+        searchResults.innerHTML = '';
+        
+        if (players.length === 0) {
+            searchResults.innerHTML = '<div class="dropdown-item">No players found</div>';
+            showDropdown();
+            return;
+        }
+        
+        players.forEach(player => {
+            const item = document.createElement('div');
+            item.className = 'dropdown-item search-result-item';
+            item.innerHTML = `
+                <div class="search-result-name">${player.name}</div>
+                <div class="search-result-details">${player.position} • ${player.level} • ${player.team}</div>
+            `;
+            
+            item.addEventListener('click', function() {
+                window.location.href = player.url;
+            });
+            
+            item.addEventListener('mouseenter', function() {
+                // Remove active class from all items
+                searchResults.querySelectorAll('.search-result-item').forEach(i => i.classList.remove('is-active'));
+                // Add active class to hovered item
+                this.classList.add('is-active');
+            });
+            
+            searchResults.appendChild(item);
+        });
+        
+        showDropdown();
+    }
+
+    function showDropdown() {
+        console.log('Showing dropdown'); // Debug log
+        searchDropdown.classList.add('is-active');
+    }
+
+    function hideDropdown() {
+        console.log('Hiding dropdown'); // Debug log
+        searchDropdown.classList.remove('is-active');
+        // Clear active states
+        searchResults.querySelectorAll('.search-result-item').forEach(item => {
+            item.classList.remove('is-active');
+        });
+    }
+});
+</script>
+
+<!-- Filter Dropdown Below Navigation -->
+<div id="filter-dropdown" class="filter-dropdown-container">
+    <div class="filter-dropdown-trigger">
+        <a href="#" id="filter-dropdown-toggle" class="filter-toggle-link" aria-expanded="false" aria-controls="filter-dropdown-content">
+            <span>Filter players</span>
+            <span class="icon">
+                <i class="fas fa-chevron-down" id="filter-dropdown-icon"></i>
+            </span>
+        </a>
+    </div>
+    
+    <!-- Collapsible filter content -->
+    <div id="filter-dropdown-content" class="filter-dropdown-content is-hidden">
+        <div class="box">
+            <form action="/search/filter/">
+                <div class="columns is-multiline">
+                    <!-- Row 1: Basic filters -->
+                    <div class="column is-6">
+                        <div class="field">
+                            <label class="label">ULMG level</label>
+                            <div class="control">
+                                <div class="select is-fullwidth">
+                                    <select name="level">
+                                        <option value="">All Levels</option>
+                                        <option value="V"{% if level == "V" %} selected{% endif %}>V</option>
+                                        <option value="A"{% if level == "A" %} selected{% endif %}>A</option>
+                                        <option value="B"{% if level == "B" %} selected{% endif %}>B</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="column is-6">
+                        <div class="field">
+                            <label class="label">Position</label>
+                            <div class="control">
+                                <div class="select is-fullwidth">
+                                    <select name="position">
+                                        <option value="">All Positions</option>
+                                        <option value="P"{% if position == "P" %} selected{% endif %}>Pitcher</option>
+                                        <option value="H"{% if position == "H" %} selected{% endif %}>Hitter</option>
+                                        <option value="C"{% if position == "C" %} selected{% endif %}>Catcher</option>
+                                        <option value="IF"{% if position == "IF" %} selected{% endif %}>Infield</option>
+                                        <option value="OF"{% if position == "OF" %} selected{% endif %}>Outfield</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Row 2: Ownership filters -->
+                    <div class="column is-4">
+                        <div class="field">
+                            <label class="label">Carded?</label>
+                            <div class="control">
+                                <div class="select is-fullwidth">
+                                    <select name="carded">
+                                        <option value="">All</option>
+                                        <option value="yes"{% if carded == "yes" %} selected{% endif %}>Yes</option>
+                                        <option value="no"{% if carded == "no" %} selected{% endif %}>No</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="column is-4">
+                        <div class="field">
+                            <label class="label">Owned?</label>
+                            <div class="control">
+                                <div class="select is-fullwidth">
+                                    <select name="owned">
+                                        <option value="">All</option>
+                                        <option value="yes"{% if owned == "yes" %} selected{% endif %}>Yes</option>
+                                        <option value="no"{% if owned == "no" %} selected{% endif %}>No</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="column is-4">
+                        <div class="field">
+                            <label class="label">Classification</label>
+                            <div class="control">
+                                <div class="select is-fullwidth">
+                                    <select name="classification">
+                                        <option value="">All Classifications</option>
+                                        <option value="1-majors"{% if classification == "1-majors" %} selected{% endif %}>MLB Majors</option>
+                                        <option value="2-minors"{% if classification == "2-minors" %} selected{% endif %}>Minors</option>
+                                        <option value="3-npb"{% if classification == "3-npb" %} selected{% endif %}>NPB (Japan)</option>
+                                        <option value="4-kbo"{% if classification == "4-kbo" %} selected{% endif %}>KBO (Korea)</option>
+                                        <option value="5-ncaa"{% if classification == "5-ncaa" %} selected{% endif %}>NCAA (College)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Row 3: Season and stat cutoffs -->
+                    <div class="column is-3">
+                        <div class="field">
+                            <label class="label">Season</label>
+                            <div class="control">
+                                <div class="select is-fullwidth">
+                                    <select name="season">
+                                        <option value="2025"{% if season == "2025" or not season %} selected{% endif %}>2025</option>
+                                        <option value="2024"{% if season == "2024" %} selected{% endif %}>2024</option>
+                                        <option value="2023"{% if season == "2023" %} selected{% endif %}>2023</option>
+                                        <option value="2022"{% if season == "2022" %} selected{% endif %}>2022</option>
+                                        <option value="2021"{% if season == "2021" %} selected{% endif %}>2021</option>
+                                        <option value="2020"{% if season == "2020" %} selected{% endif %}>2020</option>
+                                        <option value="2019"{% if season == "2019" %} selected{% endif %}>2019</option>
+                                        <option value="2018"{% if season == "2018" %} selected{% endif %}>2018</option>
+                                        <option value="2017"{% if season == "2017" %} selected{% endif %}>2017</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="column is-3">
+                        <div class="field">
+                            <label class="label">Minimum plate appearances</label>
+                            <div class="control">
+                                <div class="select is-fullwidth">
+                                    <select name="pa_cutoff">
+                                        <option value="">No minimum</option>
+                                        <option value="550"{% if pa_cutoff == "550" %} selected{% endif %}>550</option>
+                                        <option value="500"{% if pa_cutoff == "500" %} selected{% endif %}>500</option>
+                                        <option value="450"{% if pa_cutoff == "450" %} selected{% endif %}>450</option>
+                                        <option value="400"{% if pa_cutoff == "400" %} selected{% endif %}>400</option>
+                                        <option value="350"{% if pa_cutoff == "350" %} selected{% endif %}>350</option>
+                                        <option value="300"{% if pa_cutoff == "300" %} selected{% endif %}>300</option>
+                                        <option value="250"{% if pa_cutoff == "250" %} selected{% endif %}>250</option>
+                                        <option value="200"{% if pa_cutoff == "200" %} selected{% endif %}>200</option>
+                                        <option value="150"{% if pa_cutoff == "150" %} selected{% endif %}>150</option>
+                                        <option value="100"{% if pa_cutoff == "100" %} selected{% endif %}>100</option>
+                                        <option value="50"{% if pa_cutoff == "50" %} selected{% endif %}>50</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="column is-3">
+                        <div class="field">
+                            <label class="label">Minimum innings pitched</label>
+                            <div class="control">
+                                <div class="select is-fullwidth">
+                                    <select name="ip_cutoff">
+                                        <option value="">No minimum</option>
+                                        <option value="150"{% if ip_cutoff == "150" %} selected{% endif %}>150</option>
+                                        <option value="125"{% if ip_cutoff == "125" %} selected{% endif %}>125</option>
+                                        <option value="100"{% if ip_cutoff == "100" %} selected{% endif %}>100</option>
+                                        <option value="70"{% if ip_cutoff == "70" %} selected{% endif %}>70</option>
+                                        <option value="60"{% if ip_cutoff == "60" %} selected{% endif %}>60</option>
+                                        <option value="25"{% if ip_cutoff == "25" %} selected{% endif %}>25</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="column is-3">
+                        <div class="field">
+                            <label class="label">Minimum starts</label>
+                            <div class="control">
+                                <div class="select is-fullwidth">
+                                    <select name="gs_cutoff">
+                                        <option value="">No minimum</option>
+                                        <option value="30"{% if gs_cutoff == "30" %} selected{% endif %}>30</option>
+                                        <option value="25"{% if gs_cutoff == "25" %} selected{% endif %}>25</option>
+                                        <option value="20"{% if gs_cutoff == "20" %} selected{% endif %}>20</option>
+                                        <option value="15"{% if gs_cutoff == "15" %} selected{% endif %}>15</option>
+                                        <option value="10"{% if gs_cutoff == "10" %} selected{% endif %}>10</option>
+                                        <option value="5"{% if gs_cutoff == "5" %} selected{% endif %}>5</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Submit button for filters -->
+                <div class="field">
+                    <div class="control">
+                        <button type="submit" class="button is-info">
+                            <span class="icon">
+                                <i class="fas fa-search"></i>
+                            </span>
+                            <span>Apply Filters</span>
+                        </button>
+                        <a href="/search/" class="button is-light ml-2">Clear Filters</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Filter dropdown container */
+.filter-dropdown-container {
+    position: sticky;
+    top: 0;
+    z-index: 15;
+    background-color: white;
+    border-bottom: 1px solid #f0f0f0;
+    padding: 0.25rem 0;
+    margin-bottom: 0;
+}
+
+/* Filter dropdown trigger */
+.filter-dropdown-trigger {
+    text-align: center;
+}
+
+.filter-toggle-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #666;
+    text-decoration: none;
+    font-size: 0.875rem;
+    font-weight: 500;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.filter-toggle-link:hover {
+    color: #3273dc;
+    background-color: #f8f9fa;
+    text-decoration: none;
+}
+
+/* Filter dropdown content */
+.filter-dropdown-content {
+    background-color: white;
+    border: 1px solid #e9ecef;
+    border-top: none;
+    border-radius: 0 0 6px 6px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    overflow: hidden;
+    transition: all 0.3s ease;
+    transform: translateY(-10px);
+    opacity: 0;
+}
+
+.filter-dropdown-content.is-active {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+.filter-dropdown-content .box {
+    margin: 0;
+    border-radius: 0;
+    box-shadow: none;
+    border: none;
+}
+
+/* Dropdown icon rotation */
+#filter-dropdown-icon {
+    transition: transform 0.3s ease;
+}
+
+#filter-dropdown-icon.is-rotated {
+    transform: rotate(180deg);
+}
+
+/* Smooth height animation */
+.filter-dropdown-content {
+    max-height: 0;
+    transition: max-height 0.3s ease-out, opacity 0.3s ease-out, transform 0.3s ease-out;
+}
+
+.filter-dropdown-content.is-active {
+    max-height: 800px;
+}
+
+/* Ensure content pushes down properly */
+.filter-dropdown-container + * {
+    transition: margin-top 0.3s ease;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const toggleButton = document.getElementById('filter-dropdown-toggle');
+    const dropdownContent = document.getElementById('filter-dropdown-content');
+    const dropdownIcon = document.getElementById('filter-dropdown-icon');
+    
+    if (toggleButton && dropdownContent && dropdownIcon) {
+        toggleButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            const isExpanded = toggleButton.getAttribute('aria-expanded') === 'true';
+            
+            if (isExpanded) {
+                // Close dropdown
+                dropdownContent.classList.remove('is-active');
+                dropdownContent.classList.add('is-hidden');
+                dropdownIcon.classList.remove('is-rotated');
+                toggleButton.setAttribute('aria-expanded', 'false');
+            } else {
+                // Open dropdown
+                dropdownContent.classList.remove('is-hidden');
+                // Force reflow before adding active class for smooth animation
+                dropdownContent.offsetHeight;
+                dropdownContent.classList.add('is-active');
+                dropdownIcon.classList.add('is-rotated');
+                toggleButton.setAttribute('aria-expanded', 'true');
+            }
+        });
+    }
+});
+</script>

@@ -4,8 +4,6 @@
 
 {% block content %}
 
-{% include "includes/search_bar.html" %}
-
 <div class="columns section is-desktop is-fullwidth">
         <div class="column">
             {% if hitters %}{% regroup hitters by player.position as position_players %}
