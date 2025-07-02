@@ -2,19 +2,19 @@
     {% if user.is_authenticated %}
         {% if p.player %}
             {% if p.player.team.owner_obj.user != user %}
-                <span id="player-{{ p.player.id }}" class="icon eye action-add-wishlist has-text-grey" data-playerid="{{ p.player.id }}"><i class="fas fa-eye"></i></span>
+                <span id="player-{{ p.player.id }}" class="action-add-wishlist text-gray-400 cursor-pointer mr-1 px-1 py-1 text-sm hover:bg-yellow-100" data-playerid="{{ p.player.id }}">☆</span>
             {% endif %}
         {% else %}
             {% if p.team.owner_obj.user != user %}
-                <span id="player-{{ p.id }}" class="icon eye action-add-wishlist has-text-grey" data-playerid="{{ p.id }}"><i class="fas fa-eye"></i></span>
+                <span id="player-{{ p.id }}" class="action-add-wishlist text-gray-400 cursor-pointer mr-1 px-1 py-1 text-sm hover:bg-yellow-100" data-playerid="{{ p.id }}">☆</span>
             {% endif %}
         {% endif %}
     {% endif %}
 
     {% if p.player %}
-        <a class="has-text-weight-semibold" href="/players/{{ p.player.id }}/" target="_blank">{{ p.player.name }}</a>
+        <a class="underline" href="/players/{{ p.player.id }}/" target="_blank">{{ p.player.name }}</a>
     {% else %}
-        <a class="has-text-weight-semibold" href="/players/{{ p.id }}/" target="_blank">{{ p.name }}</a>
+        <a class="underline" href="/players/{{ p.id }}/" target="_blank">{{ p.name }}</a>
     {% endif %}
     <!-- <a class="has-text-weight-semibold" href="/players/{{ p.id }}/" target="_blank">{{ p.name }}</a>{% if p.prospect_rating_avg < 120.0 %} &#128175;{% endif %}</span> -->
     <!-- {% if p.is_prospect and p.notes %}<a class="report-toggle" data-playerid="{{ p.id }}" href="#"><span class="icon has-text-black"><i class="far fa-file-alt"></i></span></a>{% endif %} -->

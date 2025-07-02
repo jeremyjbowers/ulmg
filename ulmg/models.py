@@ -809,6 +809,28 @@ class Trade(BaseModel):
         t1 = self.reciepts()[0]
         t2 = self.reciepts()[1]
 
+        def format_pick_for_cache(pick):
+            """Format pick with full details for cache"""
+            pick_data = {
+                'id': pick.id,
+                'team_abbr': pick.original_team.abbreviation if pick.original_team else '',
+                'year': pick.year,
+                'season': pick.season,
+                'draft_type': pick.draft_type,
+                'round': pick.draft_round,
+                'slug': pick.slug or '',
+                'player': None
+            }
+            
+            if pick.player:
+                pick_data['player'] = {
+                    'id': pick.player.id,
+                    'name': pick.player.name,
+                    'position': pick.player.position
+                }
+            
+            return pick_data
+
         return {
             "date": f"{self.date.year}-{self.date.month}-{self.date.day}",
             "t1_abbr": t1.team.abbreviation,
@@ -816,13 +838,13 @@ class Trade(BaseModel):
                 {"pos": p.position, "name": p.name, "id": p.id}
                 for p in t2.players.all()
             ],
-            "t1_picks": [f"{p.slug}" for p in t2.picks.all()],
+            "t1_picks": [format_pick_for_cache(p) for p in t2.picks.all()],
             "t2_abbr": t2.team.abbreviation,
             "t2_players": [
                 {"pos": p.position, "name": p.name, "id": p.id}
                 for p in t1.players.all()
             ],
-            "t2_picks": [f"{p.slug}" for p in t1.picks.all()],
+            "t2_picks": [format_pick_for_cache(p) for p in t1.picks.all()],
         }
 
     def summary(self):

@@ -1,51 +1,68 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="section desktop">
+<div class="max-w-md mx-auto mt-8">
+  <h1 class="text-2xl font-bold mb-6">Login</h1>
 
+  {% if form.errors %}
+  <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
+    <p>Your username and password didn't match. Please try again.</p>
+  </div>
+  {% endif %}
 
-{% if form.errors %}
-<p>Your username and password didn't match. Please try again.</p>
-{% endif %}
-
-{% if next %}
+  {% if next %}
     {% if user.is_authenticated %}
-    <p>Your account doesn't have access to this page. To proceed,
-    please login with an account that has access.</p>
+    <div class="bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded mb-4">
+      <p>Your account doesn't have access to this page. To proceed, please login with an account that has access.</p>
+    </div>
     {% else %}
-    <p>Please login to see this page.</p>
+    <div class="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded mb-4">
+      <p>Please login to see this page.</p>
+    </div>
     {% endif %}
-{% endif %}
-<div class="columns">
-<div class="column is-narrow">
-    <form method="post" action="{% url 'login' %}">
+  {% endif %}
+
+  <form method="post" action="{% url 'login' %}" class="space-y-4">
     {% csrf_token %}
-    <div class="field">
-        <label class="label">Username</label>
-        <p class="control has-icons-left has-icons-right">
-          <input class="input" type="text" placeholder="Username" name="username">
-          <span class="icon is-small is-left">
-            <i class="fas fa-user"></i>
-          </span>
-        </p>
-      </div>
-      <div class="field">
-        <label class="label">Password</label>
-        <p class="control has-icons-left">
-          <input class="input" type="password" placeholder="Password" name="password">
-          <span class="icon is-small is-left">
-            <i class="fas fa-lock"></i>
-          </span>
-        </p>
-      </div>
-      <input class="button" type="submit" value="Login">
-      <input type="hidden" name="next" value="{{ next }}">
-    </form>
-</div>
-</div>
+    
+    <div>
+      <label for="username" class="block text-sm font-medium text-gray-700 mb-1">Username</label>
+      <input 
+        type="text" 
+        name="username" 
+        id="username"
+        placeholder="Username" 
+        required
+        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+      >
+    </div>
+    
+    <div>
+      <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+      <input 
+        type="password" 
+        name="password" 
+        id="password"
+        placeholder="Password" 
+        required
+        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+      >
+    </div>
+    
+    <button 
+      type="submit" 
+      class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+    >
+      Login
+    </button>
+    
+    <input type="hidden" name="next" value="{{ next }}">
+  </form>
 
-{# Assumes you setup the password_reset view in your URLconf #}
-<p><a href="{% url 'password_reset' %}">Lost password?</a></p>
-
+  <div class="mt-6 text-center">
+    <a href="{% url 'password_reset' %}" class="text-blue-600 hover:text-blue-800 underline">
+      Lost password?
+    </a>
+  </div>
 </div>
 {% endblock %}

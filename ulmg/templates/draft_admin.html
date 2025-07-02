@@ -1,61 +1,100 @@
 {% extends "base.html" %}
 
+{% block extrahead %}
+<style>
+/* Awesomplete autocomplete styling */
+.awesomplete {
+    position: relative;
+}
+
+.awesomplete > ul {
+    min-width: 300px;
+    max-width: 500px;
+    border: 1px solid #d1d5db;
+    border-top: none;
+    background: white;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    font-size: 14px;
+}
+
+.awesomplete > ul > li {
+    padding: 8px 12px;
+    border-bottom: 1px solid #f3f4f6;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.awesomplete > ul > li:hover,
+.awesomplete > ul > li[aria-selected="true"] {
+    background-color: #fef3c7;
+}
+
+.awesomplete > ul > li:last-child {
+    border-bottom: none;
+}
+
+.awesomplete mark {
+    background: #fbbf24;
+    font-weight: bold;
+}
+
+/* Wide autocomplete input */
+.autocomplete {
+    min-width: 500px;
+}
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="columns section is-desktop">
-    <div class="column">
-            <h1 class="is-title is-size-1 has-text-weight-bold">{{ year }} {{ season }} {{ draft_type }} draft</h1>
-            <br/>
-            <br/>
-            {% for pick in picks %}
-            <div class="box{% if pick.skipped %} skipped{% endif %}" id="pick-{{ pick.id }}" style="width:800px;">
-                <article class="media">
-                    <div class="media-content">
-                    <div class="content">
-                        <p>
-                        <span class="is-size-6">
-                            {% if pick.player or pick.player_name %}{% else %}{% if not pick.skipped %}<span><a class="skip-action has-text-danger" data-pickid="{{ pick.id }}" data-pick-input="pick-input-{{ pick.id }}">&#10006; skip</a></span>
-                            &nbsp; &nbsp;{% endif %}{% endif %}
-                            {% if pick.original_team != pick.team %}(via <strong>{{ pick.original_team }}</strong>){% endif %}
-                            <a href="#pick-{{ pick.id }}">
-                                Round <strong>{{ pick.draft_round }}</strong>, pick <strong>{{ pick.pick_number }}</strong>
-                            </a>                            
-                        </span>
-                        <h1 class="is-title is-size-2">
-                            {{ pick.team }} 
-                            <span class="is-size-4"><a href="/admin/ulmg/draftpick/{{ pick.id }}/change/">&#x270E;</a></span>
-                        </h1>
-                        {% if pick.player or pick.player_name %}
-                            <h1>
-                                {% if pick.player %}{{ pick.player.position }}{% endif %} {{ pick.player_name }}
-                                {% if not pick.player and pick.player_name %}
-                                    <span class="is-size-6" ><a href="/admin/ulmg/draftpick/{{ pick.id }}/change/">link player</a></span>
-                                {% else %}
-                                    <a class="button is-danger undraft-action" data-pickid="{{ pick.id }}" data-playerid="{{ pick.player.id }}">x</a>
-                                {% endif %}
-                            </h1>
-                        {% else %}
-                        {% if not pick.skipped %}
-                        <div class="field has-addons">
-                            <div class="control" style="width:80%;">
-                                <input id="pick-input-{{ pick.id }}" class="input is-large autocomplete" type="text" placeholder="Type a player's name, e.g., Hank Aaron">
-                            </div>
-                            <div class="control">
-                                <a class="button is-success is-large draft-action" data-pickid="{{ pick.id }}" data-pick-input="pick-input-{{ pick.id }}">Draft</a>
-                            </div>
-                        </div>
-                        {% else %}
-                        <div>
-                            <p><strong>{{ pick.team }}</strong> has decided to skip this pick.</p>
-                        </div>
-                        {% endif %}
-                        {% endif %}
-                    </p>
-                    </div>
-                    </div>
-                </article>
+<div class="max-w-4xl mx-auto py-4">
+    <h1 class="text-2xl font-bold mb-6 border-b border-gray-300 pb-2">{{ year }} {{ season }} {{ draft_type }} draft</h1>
+    
+    {% for pick in picks %}
+    <div class="border border-gray-300 p-4 mb-4{% if pick.skipped %} bg-gray-50{% endif %}" id="pick-{{ pick.id }}">
+        <div class="mb-2">
+            <span class="text-xs text-gray-600">
+                {% if pick.player or pick.player_name %}{% else %}{% if not pick.skipped %}<a class="skip-action text-red-600 underline cursor-pointer" data-pickid="{{ pick.id }}" data-pick-input="pick-input-{{ pick.id }}">✗ skip</a> &nbsp; &nbsp;{% endif %}{% endif %}
+                {% if pick.original_team != pick.team %}(via <strong>{{ pick.original_team }}</strong>){% endif %}
+                <a href="#pick-{{ pick.id }}" class="underline">
+                    Round <strong>{{ pick.draft_round }}</strong>, pick <strong>{{ pick.pick_number }}</strong>
+                </a>                            
+            </span>
+        </div>
+        
+        <h2 class="text-xl font-bold mb-2">
+            {{ pick.team }} 
+            <a href="/admin/ulmg/draftpick/{{ pick.id }}/change/" class="text-sm text-blue-600 underline">✎ edit</a>
+        </h2>
+        
+        {% if pick.player or pick.player_name %}
+            <div class="text-lg">
+                {% if pick.player %}{{ pick.player.position }}{% endif %} {{ pick.player_name }}
+                {% if not pick.player and pick.player_name %}
+                    <a href="/admin/ulmg/draftpick/{{ pick.id }}/change/" class="text-sm text-blue-600 underline ml-2">link player</a>
+                {% else %}
+                    <button class="undraft-action text-red-600 underline cursor-pointer ml-2" data-pickid="{{ pick.id }}" data-playerid="{{ pick.player.id }}">✗ remove</button>
+                {% endif %}
             </div>
-        {% endfor %}
+        {% else %}
+            {% if not pick.skipped %}
+            <div class="mt-2">
+                <div class="flex gap-2">
+                    <input id="pick-input-{{ pick.id }}" class="autocomplete flex-1 border border-gray-300 px-3 py-2 text-sm" type="text">
+                    <button class="draft-action bg-green-600 text-white px-4 py-2 text-sm underline cursor-pointer" data-pickid="{{ pick.id }}" data-pick-input="pick-input-{{ pick.id }}">Draft</button>
+                </div>
+                <div class="text-xs text-gray-500 mt-1">Type 2 or more characters for results</div>
+            </div>
+            {% else %}
+            <div class="text-gray-600 italic">
+                <strong>{{ pick.team }}</strong> has decided to skip this pick.
+            </div>
+            {% endif %}
+        {% endif %}
     </div>
+    {% endfor %}
 </div>
 {% endblock %}
 
@@ -66,16 +105,14 @@ $(function(){
 
     Awesomplete.$$("input.autocomplete").forEach(function (input) {
         new Awesomplete(input, { 
-            list: {{ players|safe }},
+            list: {{ players|safe }}
         });
     });
 
     var skip_click_handler = function(el) {
-
         el.preventDefault();
-        $el = $(this);
-
-        var pickid = $el.attr('data-pickid')
+        var $el = $(this);
+        var pickid = $el.attr('data-pickid');
 
         $.ajax({
             type: "GET",
@@ -85,15 +122,13 @@ $(function(){
                 window.location.reload();
             }
         });
-    }
+    };
 
     var undraft_click_handler = function(el) {
-
         el.preventDefault();
-        $el = $(this);
-
-        var playerid = $el.attr('data-playerid')
-        var pickid = $el.attr('data-pickid')
+        var $el = $(this);
+        var playerid = $el.attr('data-playerid');
+        var pickid = $el.attr('data-pickid');
 
         $.ajax({
             type: "GET",
@@ -103,15 +138,13 @@ $(function(){
                 window.location.reload();
             }
         });
-    }
+    };
 
     var draft_click_handler = function(el) {
-
         el.preventDefault();
-        $el = $(this);
-
+        var $el = $(this);
         var playername = $('#' + $el.attr('data-pick-input')).val();
-        var pickid = $el.attr('data-pickid')
+        var pickid = $el.attr('data-pickid');
 
         $.ajax({
             type: "GET",
@@ -121,11 +154,11 @@ $(function(){
                 window.location.reload();
             }
         });
-    }
+    };
 
     $('body').on('click', 'a.skip-action', skip_click_handler);
-    $('body').on('click', 'a.draft-action', draft_click_handler);
-    $('body').on('click', 'a.undraft-action', undraft_click_handler);
+    $('body').on('click', 'button.draft-action', draft_click_handler);
+    $('body').on('click', 'button.undraft-action', undraft_click_handler);
 });
 </script>
 {% endblock %}

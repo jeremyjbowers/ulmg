@@ -13,6 +13,10 @@ urlpatterns = [
         "api/v1/draft/live/<int:year>/<str:season>/<str:draft_type>/",
         views.api.draft_api,
     ),
+    path(
+        "api/v1/draft/watch/<int:year>/<str:season>/<str:draft_type>/",
+        views.api.draft_watch_status,
+    ),
     path("api/v1/player/<int:playerid>/<str:action>/", views.api.player_action),
     path("api/v1/draft/<str:pickid>/", views.api.draft_action),
     path("api/v1/wishlist/bulk/", views.api.wishlist_bulk_action),
@@ -36,11 +40,7 @@ urlpatterns = [
     path("teams/<str:abbreviation>/other/", views.site.team_other),
     path("teams/<str:abbreviation>/", views.site.team_detail),
     path("trades/", views.site.trades),
-    path("venues/", views.site.venue_list),
-    path("calendar/<int:year>/", views.site.calendar_by_season),
-    path("calendar/", views.site.current_calendar),
-    path("prospect-rankings/<int:year>/", views.site.prospect_ranking_list),
-    path("best-available/<int:year>/", views.site.best_available),
+
     path("special/players/", views.special.player_util),
     path("special/trades/", views.special.trade_util),
     path("special/players/bulk/", views.special.special_bulk_add_players),

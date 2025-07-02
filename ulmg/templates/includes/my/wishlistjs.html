@@ -4,9 +4,18 @@ $(function(){
 
     var toggle_classes = function($el) {
         $el.toggleClass('action-remove-wishlist')
-        $el.toggleClass('has-text-success')
+        $el.toggleClass('text-yellow-600')
         $el.toggleClass('action-add-wishlist')
-        $el.toggleClass('has-text-grey')
+        $el.toggleClass('text-gray-400')
+    }
+
+    var toggle_symbol = function($el) {
+        var currentText = $el.text();
+        if (currentText === '☆') {
+            $el.text('★');
+        } else {
+            $el.text('☆');
+        }
     }
 
     var load_wishlist = function() {
@@ -17,6 +26,7 @@ $(function(){
                 $.each(response.players, function(idx, player){
                     var el = $('#player-' + player.id);
                     toggle_classes(el);
+                    toggle_symbol(el);
                 });
             }
         });
@@ -34,6 +44,7 @@ $(function(){
             url: '/api/v1/wishlist/' + playerid + '/?rank=999&tier=6',
             success: function(response){
                 toggle_classes($el)
+                toggle_symbol($el)
             }
         });
     }
@@ -50,6 +61,7 @@ $(function(){
             url: '/api/v1/wishlist/' + playerid + '/?remove=true',
             success: function(response){
                 toggle_classes($el)
+                toggle_symbol($el)
             }
         });
     }

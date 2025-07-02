@@ -4,101 +4,149 @@
 
 {% block content %}
 
-<div class="columns section is-desktop is-fullwidth">
-        <div class="column">
-            {% if hitters %}{% regroup hitters by player.position as position_players %}
+{% if hitters %}{% regroup hitters by player.position as position_players %}
 
-            <nav id="nav" class="level">
-                {% for position in position_players %}
-                <div class="level-item has-text-centered">
-                    <div>
-                        <p class="heading">{{ position.list|length }}</p>
-                        <p class="title"><a href="#pos-{{ position.grouper }}">{{ position.grouper }}</a></p>
-                    </div>
-                </div>
-                {% endfor %}
-                {% if pitchers %}
-                <div class="level-item has-text-centered">
-                    <div>
-                        <p class="heading">{{ pitchers|length }}</p>
-                        <p class="title"><a href="#pos-P">P</a></p>
-                    </div>
-                </div>
-                {% endif %}
-            </nav>
-            {% elif pitchers %}
-            <nav id="nav" class="level">
-                <div class="level-item has-text-centered">
-                    <div>
-                        <p class="heading">{{ pitchers|length }}</p>
-                        <p class="title"><a href="#pos-P">P</a></p>
-                    </div>
-                </div>
-            </nav>
-            {% else %}
-            <p>Could not find any players that matched your search.</p>
-            {% endif %}
-
-            {% for position in position_players %}
-            <h1 id="pos-{{ position.grouper }}" class="title is-3">{{ position.grouper }} ({{ position.list|length }}) <a href="#nav">&uparrow;</a></h1>
-            <table class="table is-fullwidth" data-sortable>
-                <thead>
-                    <tr>
-                        <th data-sortable-type="alpha">Name</th>
-                        <th>MLB</th>
-                        <th data-sortable-type="alpha">Team</th>
-                        <th data-sortable-type="numeric">Age</th>
-                        <th data-sortable-type="alpha">Lvl</th>
-                        <th data-sortable-type="alpha">Status</th>
-                        {% include "includes/hitter_stat_headers.html" %}
-                    </tr>
-                </thead>
-                <tbody>
-                {% for p in position.list %}
-                    <tr class="{% if p.player %}{% if p.player.roster_status %}{{ p.player.roster_status|lower|default_if_none:"non-mlb" }} {% else %}non-mlb {% endif %}{% else %}{% if p.roster_status %}{{ p.roster_status|lower|default_if_none:"non-mlb" }} {% else %}non-mlb {% endif %}{% endif %}">
-                         {% include "includes/player_name.html" %}
-                        <td>{% if p.player %}{% if p.player.mlb_org %}{{ p.player.mlb_org|default_if_none:"-" }}{% else %}-{% endif %}{% else %}{% if p.mlb_org %}{{ p.mlb_org|default_if_none:"-" }}{% else %}-{% endif %}{% endif %}</td>
-                        <td data-value="{% if p.player %}{{ p.player.team|default_if_none:"" }}{% else %}{{ p.team|default_if_none:"" }}{% endif %}">{% if p.player %}{% if p.player.team %}<a href="/teams/{{ p.player.team.abbreviation }}/">{% endif %}{{ p.player.team|default_if_none:"-" }}{% if p.player.team %}</a>{% endif %}{% else %}{% if p.team %}<a href="/teams/{{ p.team.abbreviation }}/">{% endif %}{{ p.team|default_if_none:"-" }}{% if p.team %}</a>{% endif %}{% endif %}</td>
-                        <td data-value="{% if p.player %}{{ p.player.age|default_if_none:"-999" }}{% else %}{{ p.age|default_if_none:"-999" }}{% endif %}">{% if p.player %}{{ p.player.age|default_if_none:"-" }}{% else %}{{ p.age|default_if_none:"-" }}{% endif %}</td>
-                        <td data-value="{% if p.player %}{{ p.player.level|default_if_none:"Z" }}{% else %}{{ p.level|default_if_none:"Z" }}{% endif %}">{% if p.player %}{{ p.player.level|default_if_none:"" }}{% else %}{{ p.level|default_if_none:"" }}{% endif %}</td>
-                        <td data-value="{% if p.player %}{{ p.player.roster_status|default_if_none:"Z" }}{% else %}{{ p.roster_status|default_if_none:"Z" }}{% endif %}">{% if p.player %}{{ p.player.roster_status|default_if_none:"" }}{% else %}{{ p.roster_status|default_if_none:"" }}{% endif %}</td>
-                        {% include "includes/hitter_stat_cells.html" %}
-                    </tr>
-                {% endfor %}
-                </tbody>
-            </table>
-            {% endfor %}
-
-            {% if pitchers %}<h1 id="pos-P" class="title is-3">P ({{ pitchers|length }}) <a href="#nav">&uparrow;</a></h1>
-            <table class="table is-fullwidth" data-sortable>
-                <thead>
-                    <tr>
-                        <th data-sortable-type="alpha">Name</th>
-                        <th>MLB</th>
-                        <th data-sortable-type="alpha">Team</th>
-                        <th data-sortable-type="numeric">Age</th>
-                        <th data-sortable-type="alpha">Lvl</th>
-                        <th data-sortable-type="alpha">Status</th>
-                        {% include "includes/pitcher_stat_headers.html" %}
-                    </tr>
-                </thead>
-                <tbody>
-                {% for p in pitchers %}
-                    <tr class="{% if p.player %}{% if p.player.roster_status %}{{ p.player.roster_status|lower|default_if_none:"non-mlb" }} {% else %}non-mlb {% endif %}{% else %}{% if p.roster_status %}{{ p.roster_status|lower|default_if_none:"non-mlb" }} {% else %}non-mlb {% endif %}{% endif %}">
-                        {% include "includes/player_name.html" %}
-                        <td>{% if p.player %}{% if p.player.mlb_org %}{{ p.player.mlb_org|default_if_none:"-" }}{% else %}-{% endif %}{% else %}{% if p.mlb_org %}{{ p.mlb_org|default_if_none:"-" }}{% else %}-{% endif %}{% endif %}</td>
-                        <td data-value="{% if p.player %}{{ p.player.team|default_if_none:"" }}{% else %}{{ p.team|default_if_none:"" }}{% endif %}">{% if p.player %}{% if p.player.team %}<a href="/teams/{{ p.player.team.abbreviation }}/">{% endif %}{{ p.player.team|default_if_none:"-" }}{% if p.player.team %}</a>{% endif %}{% else %}{% if p.team %}<a href="/teams/{{ p.team.abbreviation }}/">{% endif %}{{ p.team|default_if_none:"-" }}{% if p.team %}</a>{% endif %}{% endif %}</td>
-                        <td data-value="{% if p.player %}{{ p.player.age|default_if_none:"-999" }}{% else %}{{ p.age|default_if_none:"-999" }}{% endif %}">{% if p.player %}{{ p.player.age|default_if_none:"-" }}{% else %}{{ p.age|default_if_none:"-" }}{% endif %}</td>
-                        <td data-value="{% if p.player %}{{ p.player.level|default_if_none:"Z" }}{% else %}{{ p.level|default_if_none:"Z" }}{% endif %}">{% if p.player %}{{ p.player.level|default_if_none:"" }}{% else %}{{ p.level|default_if_none:"" }}{% endif %}</td>
-                        <td data-value="{% if p.player %}{{ p.player.roster_status|default_if_none:"Z" }}{% else %}{{ p.roster_status|default_if_none:"Z" }}{% endif %}">{% if p.player %}{{ p.player.roster_status|default_if_none:"" }}{% else %}{{ p.roster_status|default_if_none:"" }}{% endif %}</td>
-                        {% include "includes/pitcher_stat_cells.html" %}
-                    </tr>
-                {% endfor %}
-                </tbody>
-            </table>{% endif %}
-        </div>
+<!-- Position navigation -->
+<div class="mb-4 text-xs">
+    <span class="font-bold">Jump to:</span>
+    {% for position in position_players %}
+    <a href="#pos-{{ position.grouper }}" class="underline ml-2">{{ position.grouper }} ({{ position.list|length }})</a>
+    {% endfor %}
+    {% if pitchers %}
+    <a href="#pos-P" class="underline ml-2">P ({{ pitchers|length }})</a>
+    {% endif %}
 </div>
-    {% include 'includes/player_modal.html' %}
+
+{% elif pitchers %}
+<div class="mb-4 text-xs">
+    <span class="font-bold">Jump to:</span>
+    <a href="#pos-P" class="underline ml-2">P ({{ pitchers|length }})</a>
+</div>
+{% else %}
+<p>Could not find any players that matched your search.</p>
+{% endif %}
+
+<!-- Position groups for hitters -->
+{% for position in position_players %}
+<div class="mb-8">
+    <h2 id="pos-{{ position.grouper }}" class="text-lg font-bold mb-2 border-b border-gray-300 pb-1">
+        {{ position.grouper }} ({{ position.list|length }}) 
+        <a href="#top" class="text-xs font-normal underline ml-2">↑ top</a>
+    </h2>
+    
+    <table class="w-full text-xs border-collapse" data-sortable>
+        <thead>
+            <tr class="border-b border-gray-300">
+                <th class="text-left py-1 sortable" data-sortable-type="alpha">Name</th>
+                <th class="text-center py-1 sortable">MLB</th>
+                <th class="text-center py-1 sortable" data-sortable-type="alpha">Team</th>
+                <th class="text-center py-1 sortable" data-sortable-type="numeric">Age</th>
+                <th class="text-center py-1 sortable" data-sortable-type="alpha">Lvl</th>
+                <th class="text-center py-1 sortable" data-sortable-type="alpha">Status</th>
+                {% include "includes/hitter_stat_headers.html" %}
+            </tr>
+        </thead>
+        <tbody>
+        {% for p in position.list %}
+        <tr class="{% if p.player %}{% if p.player.roster_status %}{{ p.player.roster_status|lower|default_if_none:"non-mlb" }} {% else %}non-mlb {% endif %}{% else %}{% if p.roster_status %}{{ p.roster_status|lower|default_if_none:"non-mlb" }} {% else %}non-mlb {% endif %}{% endif %}border-b border-gray-100">
+            <td class="py-1">
+                {% if user.is_authenticated %}
+                    {% if p.player %}
+                        {% if p.player.team.owner_obj.user != user %}
+                            <span id="player-{{ p.player.id }}" class="action-add-wishlist text-gray-400 cursor-pointer mr-1 px-1 py-1 text-sm hover:bg-yellow-100" data-playerid="{{ p.player.id }}">☆</span>
+                        {% endif %}
+                    {% else %}
+                        {% if p.team.owner_obj.user != user %}
+                            <span id="player-{{ p.id }}" class="action-add-wishlist text-gray-400 cursor-pointer mr-1 px-1 py-1 text-sm hover:bg-yellow-100" data-playerid="{{ p.id }}">☆</span>
+                        {% endif %}
+                    {% endif %}
+                {% endif %}
+                {% if p.player %}
+                <a href="/players/{{ p.player.id }}/" class="underline">{{ p.player.name }}</a>
+                {% else %}
+                <a href="/players/{{ p.id }}/" class="underline">{{ p.name }}</a>
+                {% endif %}
+            </td>
+            <td class="text-center py-1">{% if p.player %}{% if p.player.mlb_org %}{{ p.player.mlb_org|default_if_none:"-" }}{% else %}-{% endif %}{% else %}{% if p.mlb_org %}{{ p.mlb_org|default_if_none:"-" }}{% else %}-{% endif %}{% endif %}</td>
+            <td class="text-center py-1">
+                {% if p.player %}
+                    {% if p.player.team %}<a href="/teams/{{ p.player.team.abbreviation }}/" class="underline">{{ p.player.team|default_if_none:"-" }}</a>{% else %}-{% endif %}
+                {% else %}
+                    {% if p.team %}<a href="/teams/{{ p.team.abbreviation }}/" class="underline">{{ p.team|default_if_none:"-" }}</a>{% else %}-{% endif %}
+                {% endif %}
+            </td>
+            <td class="text-center py-1">{% if p.player %}{{ p.player.age|default_if_none:"-" }}{% else %}{{ p.age|default_if_none:"-" }}{% endif %}</td>
+            <td class="text-center py-1">{% if p.player %}{{ p.player.level|default_if_none:"" }}{% else %}{{ p.level|default_if_none:"" }}{% endif %}</td>
+            <td class="text-center py-1">{% if p.player %}{{ p.player.roster_status|default_if_none:"" }}{% else %}{{ p.roster_status|default_if_none:"" }}{% endif %}</td>
+            {% include "includes/hitter_stat_cells.html" %}
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endfor %}
+
+<!-- Pitchers section -->
+{% if pitchers %}
+<div class="mb-8">
+    <h2 id="pos-P" class="text-lg font-bold mb-2 border-b border-gray-300 pb-1">
+        P ({{ pitchers|length }}) 
+        <a href="#top" class="text-xs font-normal underline ml-2">↑ top</a>
+    </h2>
+    
+    <table class="w-full text-xs border-collapse" data-sortable>
+        <thead>
+            <tr class="border-b border-gray-300">
+                <th class="text-left py-1 sortable" data-sortable-type="alpha">Name</th>
+                <th class="text-center py-1 sortable">MLB</th>
+                <th class="text-center py-1 sortable" data-sortable-type="alpha">Team</th>
+                <th class="text-center py-1 sortable" data-sortable-type="numeric">Age</th>
+                <th class="text-center py-1 sortable" data-sortable-type="alpha">Lvl</th>
+                <th class="text-center py-1 sortable" data-sortable-type="alpha">Status</th>
+                {% include "includes/pitcher_stat_headers.html" %}
+            </tr>
+        </thead>
+        <tbody>
+        {% for p in pitchers %}
+        <tr class="{% if p.player %}{% if p.player.roster_status %}{{ p.player.roster_status|lower|default_if_none:"non-mlb" }} {% else %}non-mlb {% endif %}{% else %}{% if p.roster_status %}{{ p.roster_status|lower|default_if_none:"non-mlb" }} {% else %}non-mlb {% endif %}{% endif %}border-b border-gray-100">
+            <td class="py-1">
+                {% if user.is_authenticated %}
+                    {% if p.player %}
+                        {% if p.player.team.owner_obj.user != user %}
+                            <span id="player-{{ p.player.id }}" class="action-add-wishlist text-gray-400 cursor-pointer mr-1 px-1 py-1 text-sm hover:bg-yellow-100" data-playerid="{{ p.player.id }}">☆</span>
+                        {% endif %}
+                    {% else %}
+                        {% if p.team.owner_obj.user != user %}
+                            <span id="player-{{ p.id }}" class="action-add-wishlist text-gray-400 cursor-pointer mr-1 px-1 py-1 text-sm hover:bg-yellow-100" data-playerid="{{ p.id }}">☆</span>
+                        {% endif %}
+                    {% endif %}
+                {% endif %}
+                {% if p.player %}
+                <a href="/players/{{ p.player.id }}/" class="underline">{{ p.player.name }}</a>
+                {% else %}
+                <a href="/players/{{ p.id }}/" class="underline">{{ p.name }}</a>
+                {% endif %}
+            </td>
+            <td class="text-center py-1">{% if p.player %}{% if p.player.mlb_org %}{{ p.player.mlb_org|default_if_none:"-" }}{% else %}-{% endif %}{% else %}{% if p.mlb_org %}{{ p.mlb_org|default_if_none:"-" }}{% else %}-{% endif %}{% endif %}</td>
+            <td class="text-center py-1">
+                {% if p.player %}
+                    {% if p.player.team %}<a href="/teams/{{ p.player.team.abbreviation }}/" class="underline">{{ p.player.team|default_if_none:"-" }}</a>{% else %}-{% endif %}
+                {% else %}
+                    {% if p.team %}<a href="/teams/{{ p.team.abbreviation }}/" class="underline">{{ p.team|default_if_none:"-" }}</a>{% else %}-{% endif %}
+                {% endif %}
+            </td>
+            <td class="text-center py-1">{% if p.player %}{{ p.player.age|default_if_none:"-" }}{% else %}{{ p.age|default_if_none:"-" }}{% endif %}</td>
+            <td class="text-center py-1">{% if p.player %}{{ p.player.level|default_if_none:"" }}{% else %}{{ p.level|default_if_none:"" }}{% endif %}</td>
+            <td class="text-center py-1">{% if p.player %}{{ p.player.roster_status|default_if_none:"" }}{% else %}{{ p.roster_status|default_if_none:"" }}{% endif %}</td>
+            {% include "includes/pitcher_stat_cells.html" %}
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{% include 'includes/player_modal.html' %}
 {% endblock %}
 
 {% block extrascript %}

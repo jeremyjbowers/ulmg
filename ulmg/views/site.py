@@ -25,101 +25,16 @@ def trade_block(request):
     return render(request, "trade_block.html", context)
 
 
-def best_available(request, year):
-    context = utils.build_context(request)
-    context["hitters"] = []
-    context["pitchers"] = []
-    all_players = []
-
-    with open(f"data/{year}/best_available.json", "r") as readfile:
-        all_players = [
-            p
-            for idx, p in enumerate(json.loads(readfile.read()))
-            if int(p["rank"]) < 1001
-        ]
-
-    context["top"] = [p for p in sorted(all_players, key=lambda x: int(x["rank"]))][:15]
-
-    position_players = [
-        p
-        for p in sorted(all_players, key=lambda x: (x["ulmg_position"], int(x["rank"])))
-    ]
-    for p in position_players:
-        if "P" not in p["position"]:
-            context["hitters"].append(p)
-        else:
-            context["pitchers"].append(p)
-
-    return render(request, "best_available.html", context)
 
 
-def venue_list(request):
-    context = utils.build_context(request)
-    context["venues"] = models.Venue.objects.all().order_by("-park_factor", "name")
-
-    return render(request, "venue_list.html", context)
 
 
-def current_calendar(request):
-    context = utils.build_context(request)
-    today = datetime.today()
-    context["season"] = utils.get_ulmg_season(today)
-    context["future"] = models.Occurrence.objects.filter(
-        season=context["season"], date__gte=today
-    ).order_by("date", "time")
-    context["past"] = models.Occurrence.objects.filter(
-        season=context["season"], date__lt=today
-    ).order_by("-date", "-time")
-    context["total"] = models.Occurrence.objects.filter(
-        season=context["season"]
-    ).count()
-
-    return render(request, "calendar.html", context)
 
 
-def calendar_by_season(request, year):
-    context = utils.build_context(request)
-    today = datetime.today()
-    context["season"] = year
-    context["future"] = models.Occurrence.objects.filter(
-        season=context["season"], date__gte=today
-    ).order_by("date")
-    context["past"] = models.Occurrence.objects.filter(
-        season=context["season"], date__lt=today
-    ).order_by("-date")
-    context["total"] = models.Occurrence.objects.filter(
-        season=context["season"]
-    ).count()
-
-    return render(request, "calendar.html", context)
 
 
-def prospect_ranking_list(request, year):
-    context = utils.build_context(request)
-    context["year"] = year
-    context["top_100"] = models.ProspectRating.objects.filter(
-        year=year, rank_type="top-100"
-    ).order_by("avg")
-    context["top_draft"] = models.ProspectRating.objects.filter(
-        year=year, rank_type="top-draft"
-    ).order_by("avg")
-    team_score_dict = {a.abbreviation: 0 for a in models.Team.objects.all()}
-    for ranking_type, max_points in [
-        (context["top_100"], 300),
-        (context["top_draft"], 100),
-    ]:
-        for r in ranking_type:
-            if r.player:
-                if r.player.team:
-                    score = int(max_points / float(r.avg))
-                    team_score_dict[r.player.team.abbreviation] += score
 
-    context["team_scores"] = sorted(
-        [{"team": k, "score": v} for k, v in team_score_dict.items()],
-        key=lambda x: x["score"],
-        reverse=True,
-    )
-    return render(request, "prospect_ranking_list.html", context)
+
 
 def index(request):
     context = utils.build_context(request)
@@ -266,21 +181,38 @@ def team_detail(request, abbreviation):
     context["num_owned"] = team_players.count()
 
     # Use PlayerStatSeason for displaying roster with current season stats (2025)
+    # Get all stat seasons for the team, then deduplicate by player (keeping best classification)
     current_season = 2025
-    team_stat_seasons = models.PlayerStatSeason.objects.filter(
+    all_team_stat_seasons = models.PlayerStatSeason.objects.filter(
         player__team=context["team"], 
         season=current_season
-    ).select_related('player')
+    ).select_related('player').order_by('classification')
     
-    # Split into hitters and pitchers using PlayerStatSeason objects
-    hitters = team_stat_seasons.exclude(player__position="P").order_by(
-        "player__position", "-player__level_order", "-player__is_carded", 
-        "player__last_name", "player__first_name"
-    )
-    pitchers = team_stat_seasons.filter(player__position__icontains="P").order_by(
-        "-player__level_order", "-player__is_carded", 
-        "player__last_name", "player__first_name"
-    )
+    # Deduplicate by player, keeping the best classification (lowest number)
+    seen_players = set()
+    unique_stat_seasons = []
+    for stat_season in all_team_stat_seasons:
+        if stat_season.player.id not in seen_players:
+            unique_stat_seasons.append(stat_season)
+            seen_players.add(stat_season.player.id)
+    
+    # Split into hitters and pitchers, then sort as desired
+    hitters = [s for s in unique_stat_seasons if s.player.position != "P"]
+    hitters.sort(key=lambda s: (
+        s.player.position, 
+        -s.player.level_order, 
+        -s.player.is_carded, 
+        s.player.last_name, 
+        s.player.first_name
+    ))
+    
+    pitchers = [s for s in unique_stat_seasons if "P" in s.player.position]
+    pitchers.sort(key=lambda s: (
+        -s.player.level_order,
+        -s.player.is_carded,
+        s.player.last_name,
+        s.player.first_name
+    ))
 
     context["hitters"] = hitters
     context["pitchers"] = pitchers
@@ -464,6 +396,9 @@ def player_available_midseason(request):
         )
     ).order_by("-level_order", "last_name", "first_name")
 
+    # Filters hidden by default for midseason available players
+    context["show_filters_by_default"] = False
+
     return render(request, "search.html", context)
 
 
@@ -480,6 +415,9 @@ def player_available_offseason(request):
     context["pitchers"] = models.Player.objects.filter(
         is_owned=True, is_35man_roster=False, level__in=["A", "V"], position__icontains="P"
     ).order_by("-level_order", "last_name", "first_name")
+
+    # Filters hidden by default for offseason available players
+    context["show_filters_by_default"] = False
 
     return render(request, "search.html", context)
 
@@ -505,6 +443,9 @@ def search_by_name(request):
     # Split into hitters and pitchers for the template, order by player fields
     context["hitters"] = query.exclude(player__position="P").order_by("player__position", "-player__level_order", "player__last_name", "player__first_name")
     context["pitchers"] = query.filter(player__position__icontains="P").order_by("-player__level_order", "player__last_name", "player__first_name")
+    
+    # Filters hidden by default for simple name search
+    context["show_filters_by_default"] = False
     
     return render(request, "search.html", context)
 
@@ -615,6 +556,9 @@ def filter_players(request):
     stat_seasons = stat_season_query.order_by("player__position", "-player__level_order", "player__last_name", "player__first_name")
     context["hitters"] = stat_seasons.exclude(player__position="P")
     context["pitchers"] = stat_seasons.filter(player__position__icontains="P")
+    
+    # Filters visible by default for advanced filtering
+    context["show_filters_by_default"] = True
     
     return render(request, "search.html", context)
 

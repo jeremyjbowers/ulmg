@@ -1,96 +1,130 @@
 {% extends "base.html" %}
 
-{% block content %}
+{% block extrahead %}
 <style>
-    div.player-container button.button {
+    .player-option {
         display: none;
     }
-    div.player-container button.visible {
-        display: flex;
+    .player-option.visible {
+        display: block;
     }
-    div.player-container {
-        margin: 5px 0;
-        padding: 5px 0;
+    .player-option.selected {
+        background-color: #fef3c7; /* pale yellow */
+        font-weight: bold;
     }
-    div.player-container button.button {
-        margin: 2px;
-    }
-    div.bottom-attached {
+    .trade-submit-bar {
         position: fixed;
-        width:100%;
-        bottom:0;
-        left:0;
-        right:0;
+        width: 100%;
+        bottom: 0;
+        left: 0;
+        right: 0;
         padding: 10px;
-        z-index:999;
+        z-index: 999;
         background-color: #fff;
+        border-top: 1px solid #d1d5db;
     }
     body {
-        padding-bottom: 50px;
+        padding-bottom: 60px;
     }
 </style>
+{% endblock %}
 
-<div class="bottom-attached">
-    <button class="button is-large submit is-primary" id="trade-submit">Submit</button>
-    <div id="success-message" class="notification is-primary" style="display:none;">Successful trade! Reloading form ...</div>
+{% block content %}
+<div class="trade-submit-bar">
+    <button class="px-4 py-2 bg-gray-600 text-white hover:bg-gray-700 submit" id="trade-submit">Submit Trade</button>
+    <div id="success-message" class="text-green-600 font-bold mt-2" style="display:none;">Trade submitted successfully! Reloading...</div>
 </div>
-<div class="section is-desktop columns">
-    <div class="column player-selector">
-        <h1 class="title is-3">Team 1</h1>
-        <div class="select">
-            <select id="team-1-select">
-                <option value="">Select team</option>
-                {% for t in teamnav %}
-                <option value="{{ t.abbreviation|lower }}">{{ t.abbreviation }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="player-container container" id="player-1-select">
-            <div class="columns">
-                <div class="column">
-                    {% for p in hitters %}
-                        <button id="player-{{ p.id }}" class="is-small is-fullwidth button team-{{ p.team.abbreviation|lower }}">{{ p.name }} {{ p.position }}</button>
+
+<div class="max-w-6xl mx-auto py-4">
+    <h1 class="text-2xl font-bold mb-6 border-b border-gray-300 pb-2">Trade Builder</h1>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <!-- Team 1 -->
+        <div class="player-selector">
+            <h2 class="text-lg font-bold mb-4">Team 1</h2>
+            <div class="mb-4">
+                <select id="team-1-select" class="border border-gray-300 px-2 py-1">
+                    <option value="">Select team</option>
+                    {% for t in teamnav %}
+                    <option value="{{ t.abbreviation|lower }}">{{ t.abbreviation }}</option>
                     {% endfor %}
-                </div>
-                <div class="column">
-                    {% for p in pitchers %}
-                        <button id="player-{{ p.id }}" class="is-small is-fullwidth button team-{{ p.team.abbreviation|lower }}">{{ p.name }} {{ p.position }}</button>
-                    {% endfor %}
-                </div>
-                <div class="column">
-                    {% for p in picks %}
-                        <button id="pick-{{ p.id }}" class="is-small is-fullwidth button team-{{ p.team.abbreviation|lower }}">{{ p.year }} {{ p.season }} {{ p.slug }}</button>
-                    {% endfor %}                    
+                </select>
+            </div>
+            
+            <div id="player-1-select">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 text-sm">
+                    <div>
+                        <h3 class="font-bold mb-2 border-b border-gray-300 pb-1">Hitters</h3>
+                        {% for p in hitters %}
+                            <div class="player-option team-{{ p.team.abbreviation|lower }} cursor-pointer hover:bg-gray-100 px-2 py-1 border-b border-gray-100" 
+                                 data-id="player-{{ p.id }}" data-type="player">
+                                {{ p.position }} {{ p.name }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <div>
+                        <h3 class="font-bold mb-2 border-b border-gray-300 pb-1">Pitchers</h3>
+                        {% for p in pitchers %}
+                            <div class="player-option team-{{ p.team.abbreviation|lower }} cursor-pointer hover:bg-gray-100 px-2 py-1 border-b border-gray-100" 
+                                 data-id="player-{{ p.id }}" data-type="player">
+                                {{ p.position }} {{ p.name }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <div>
+                        <h3 class="font-bold mb-2 border-b border-gray-300 pb-1">Draft Picks</h3>
+                        {% for p in picks %}
+                            <div class="player-option team-{{ p.team.abbreviation|lower }} cursor-pointer hover:bg-gray-100 px-2 py-1 border-b border-gray-100" 
+                                 data-id="pick-{{ p.id }}" data-type="pick">
+                                {{ p.year }} {{ p.season }} {{ p.slug }}
+                            </div>
+                        {% endfor %}
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-    <div class="column player-selector">
-        <h1 class="title is-3">Team 2</h1>
-        <div class="select">
-            <select id="team-2-select">
-                <option value="">Select team</option>
-                {% for t in teamnav %}
-                <option value="{{ t.abbreviation|lower }}">{{ t.abbreviation }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="player-container container" id="player-2-select">
-            <div class="columns">
-                <div class="column">
-                    {% for p in hitters %}
-                        <button id="player-{{ p.id }}" class="is-small is-fullwidth button team-{{ p.team.abbreviation|lower }}">{{ p.name }} {{ p.position }}</button>
+        
+        <!-- Team 2 -->
+        <div class="player-selector">
+            <h2 class="text-lg font-bold mb-4">Team 2</h2>
+            <div class="mb-4">
+                <select id="team-2-select" class="border border-gray-300 px-2 py-1">
+                    <option value="">Select team</option>
+                    {% for t in teamnav %}
+                    <option value="{{ t.abbreviation|lower }}">{{ t.abbreviation }}</option>
                     {% endfor %}
-                </div>
-                <div class="column">
-                    {% for p in pitchers %}
-                        <button id="player-{{ p.id }}" class="is-small is-fullwidth button team-{{ p.team.abbreviation|lower }}">{{ p.name }} {{ p.position }}</button>
-                    {% endfor %}
-                </div>
-                <div class="column">
-                    {% for p in picks %}
-                        <button id="pick-{{ p.id }}" class="is-small is-fullwidth button team-{{ p.team.abbreviation|lower }}">{{ p.year }} {{ p.season }} {{ p.slug }}</button>
-                    {% endfor %}                    
+                </select>
+            </div>
+            
+            <div id="player-2-select">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 text-sm">
+                    <div>
+                        <h3 class="font-bold mb-2 border-b border-gray-300 pb-1">Hitters</h3>
+                        {% for p in hitters %}
+                            <div class="player-option team-{{ p.team.abbreviation|lower }} cursor-pointer hover:bg-gray-100 px-2 py-1 border-b border-gray-100" 
+                                 data-id="player-{{ p.id }}" data-type="player">
+                                {{ p.position }} {{ p.name }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <div>
+                        <h3 class="font-bold mb-2 border-b border-gray-300 pb-1">Pitchers</h3>
+                        {% for p in pitchers %}
+                            <div class="player-option team-{{ p.team.abbreviation|lower }} cursor-pointer hover:bg-gray-100 px-2 py-1 border-b border-gray-100" 
+                                 data-id="player-{{ p.id }}" data-type="player">
+                                {{ p.position }} {{ p.name }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <div>
+                        <h3 class="font-bold mb-2 border-b border-gray-300 pb-1">Draft Picks</h3>
+                        {% for p in picks %}
+                            <div class="player-option team-{{ p.team.abbreviation|lower }} cursor-pointer hover:bg-gray-100 px-2 py-1 border-b border-gray-100" 
+                                 data-id="pick-{{ p.id }}" data-type="pick">
+                                {{ p.year }} {{ p.season }} {{ p.slug }}
+                            </div>
+                        {% endfor %}
+                    </div>
                 </div>
             </div>
         </div>
@@ -98,6 +132,7 @@
 </div>
 
 {% endblock %}
+
 {% block extrascript %}
 <script type="text/javascript">
     $(function(){
@@ -110,8 +145,8 @@
             $.each(["1", "2"], function(idx, side){
                 var team_abbr = $('#team-' + side + '-select option:selected').text().toLowerCase();
                 var receipt = []
-                $.each($('#player-' + side + '-select button.is-info'), function(idx, plr){
-                    receipt.push($(plr).attr('id'));
+                $.each($('#player-' + side + '-select .player-option.selected'), function(idx, plr){
+                    receipt.push($(plr).data('id'));
                 })
                 payload.push({
                     "team": team_abbr,
@@ -128,38 +163,35 @@
                     if (response['success'] == true) {
                         $('#trade-submit').remove();
                         $('#success-message').show();
-                        location.reload();
+                        setTimeout(function() {
+                            location.reload();
+                        }, 2000);
                     }
                 }
             });
-
         }
 
         var player_select_handler = function(el) {
-    
             el.preventDefault();
             $el = $(this);
-            $el.toggleClass('is-info')
-
+            $el.toggleClass('selected');
         }
 
         var team_select_handler = function(el) {
-    
             el.preventDefault();
             $el = $(this);
 
             var side = $el.attr('id').split('team-')[1].split('-select')[0]
             
-            $('#player-' + side + '-select button.button').removeClass('visible')
-            $('#player-' + side + '-select button.button').removeClass('is-info')
+            $('#player-' + side + '-select .player-option').removeClass('visible selected');
 
             var team_abbr = $('#team-' + side + '-select option:selected').text().toLowerCase();
-            $('#player-' + side + '-select button.team-' + team_abbr).addClass('visible');
+            $('#player-' + side + '-select .player-option.team-' + team_abbr).addClass('visible');
         }
     
         $('body').on('click', 'button.submit', trade_submit_handler);
-        $('body').on('click', 'div.player-selector button.button', player_select_handler);
-        $('body').on('change', 'div.select #team-1-select, div.select #team-2-select', team_select_handler);
+        $('body').on('click', '.player-selector .player-option', player_select_handler);
+        $('body').on('change', '#team-1-select, #team-2-select', team_select_handler);
     });
-    </script>
+</script>
 {% endblock %}

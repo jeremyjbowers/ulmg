@@ -1,19 +1,11 @@
-<div class="section is-desktop">
-    {% if team.championships %}<p class="title is-6 has-text-weight-light champs">{% for c in team.championships %}🏆 {{ c }}{% if forloop.last %}{% else %}, {% endif %}{% endfor %}</p>{% else %}<br/>{% endif %}
-    <p class="title is-1">
-        <span class="icon-text">
-            <span class="icon has-text-success">&nbsp;<i class="fas fa-user-circle"></i></span>
-            <span>&nbsp;{{ team.city }} {{ team.nickname }}</span>
-        </span>
-    </p>
-    <p class="subtitle is-4"><span>{{ team.division }} division</span></p>
-    <p class="subtitle is-5 has-text-weight-regular has-text-grey">
-        Owner:
-        {% if team.owner_obj %}
-            {{ team.owner_obj.name }}
-        {% else %}
-            &mdash;
-        {% endif %}
-        <br/><a href="/teams/{{ team.abbreviation }}/csv/{% if value %}?value=true{% endif %}">Download team roster &dtrif;</a>
+<div class="mb-6 pb-4 border-b border-gray-300">
+    {% if team.championships %}<p class="text-sm text-gray-600 mb-2">{% for c in team.championships %}🏆 {{ c }}{% if forloop.last %}{% else %}, {% endif %}{% endfor %}</p>{% endif %}
+    <h1 class="text-3xl font-bold mb-2">
+        {{ team.city }} {{ team.nickname }}
+    </h1>
+    <p class="text-lg text-gray-700 mb-2">{{ team.division }} division</p>
+    <p class="text-sm text-gray-600">
+        Owner: {% if team.owner_obj %}{{ team.owner_obj.name }}{% else %}—{% endif %}
+        <br><a href="/teams/{{ team.abbreviation }}/csv/{% if value %}?value=true{% endif %}" class="underline">Download team roster ↓</a>
     </p>
 </div>

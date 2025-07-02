@@ -1,27 +1,25 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <div class="container">
-        <div class="columns">
-            <div class="column">
-                <div class="field">
-                    <label class="label">Player list</label>
-                    <textarea id="players" name="players" class="textarea"></textarea>
-                </div>
-                <div class="field">
-                    <button id="submit" class="button submit-players">submit</button>
-                </div>
-            </div>
-            <div class="column">
-                <h2 class="title is-4">Created players</h2>
-                <ul id="added_players"></ul>
-            </div>
-            <div class="column">
-                <h2 class="title is-4">Found players</h2>
-                <ul id="found_players"></ul>
-            </div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-8 py-4">
+    <div>
+        <div class="mb-4">
+            <label class="block text-sm font-bold mb-2">Player list</label>
+            <textarea id="players" name="players" class="w-full h-64 border border-gray-300 px-3 py-2 text-sm"></textarea>
+        </div>
+        <div>
+            <button id="submit" class="bg-green-600 text-white px-4 py-2 text-sm underline cursor-pointer submit-players">submit</button>
         </div>
     </div>
+    <div>
+        <h2 class="text-lg font-bold mb-4 border-b border-gray-300 pb-1">Created players</h2>
+        <ul id="added_players" class="text-sm"></ul>
+    </div>
+    <div>
+        <h2 class="text-lg font-bold mb-4 border-b border-gray-300 pb-1">Found players</h2>
+        <ul id="found_players" class="text-sm"></ul>
+    </div>
+</div>
 {% endblock %}
 
 {% block extrascript %}
@@ -31,12 +29,8 @@
         $created_players = $('#added_players');
         $button = $("#submit");
 
-        var toggle_button = function() {
-            $button.toggleClass('is-loading');
-        }
-
         var render_player_row = function(player) {
-            var player_html = "<li><a target='_blank' href='/admin/ulmg/player/" + player['ulmg_id'] + "/change/'>" + player['position'] + " " + player['name'] + "</a></li>";
+            var player_html = "<li class='mb-1'><a target='_blank' href='/admin/ulmg/player/" + player['ulmg_id'] + "/change/' class='underline'>" + player['position'] + " " + player['name'] + "</a></li>";
 
             if (player['created']){
                 $created_players.append(player_html);
@@ -51,7 +45,7 @@
                 console.log(p);
                 render_player_row(p);
             });
-            toggle_button();
+            $button.prop('disabled', false).text('submit');
         }
 
         var submit_player_handler = function(el) {
@@ -63,7 +57,7 @@
 
             $found_players.html("");
             $created_players.html("");
-            toggle_button();
+            $button.prop('disabled', true).text('processing...');
 
             $.ajax({
                 type: "POST",

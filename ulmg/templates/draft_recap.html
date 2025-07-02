@@ -1,35 +1,37 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="section is-desktop">
-    <h1 class="is-title is-size-1 has-text-weight-bold">{{ year }} {{ season }} {{ draft_type }} draft</h1>
-    <div class="columns">
-        <div class="column is-three-quarters">
+<div class="max-w-6xl mx-auto py-4">
+    <h1 class="text-2xl font-bold mb-6 border-b border-gray-300 pb-2">{{ year }} {{ season }} {{ draft_type }} draft</h1>
+    
+    {% regroup picks by draft_round as rounds %}
 
-            {% regroup picks by draft_round as rounds %}
-
-            {% for round in rounds %}
-            <h1 class="is-title is-size-2 has-text-weight-bold">Round {{ round.grouper }}</h1>
-            <table class="table is-fullwidth">
-                <tr>
-                    <th>Pick</th>
-                    <th>Team</th>
-                    <th></th>
-                    <th>Pos</th>
-                    <th>Name</th>
+    {% for round in rounds %}
+    <div class="mb-8">
+        <h2 class="text-lg font-bold mb-2 border-b border-gray-300 pb-1">Round {{ round.grouper }}</h2>
+        <table class="w-full text-xs border-collapse">
+            <thead>
+                <tr class="border-b border-gray-300">
+                    <th class="text-center py-1">Pick</th>
+                    <th class="text-center py-1">Team</th>
+                    <th class="text-center py-1">Via</th>
+                    <th class="text-center py-1">Pos</th>
+                    <th class="text-left py-1">Name</th>
                 </tr>
+            </thead>
+            <tbody>
                 {% for pick in round.list %}
-                <tr>
-                    <td>{{ pick.pick_number }}</td>
-                    <td><a href="/teams/{{ pick.team.abbreviation|lower }}">{{ pick.team }}</a></td>
-                    <td>{% if pick.original_team != pick.team %}via <a href="/teams/{{ pick.original_team.abbreviation|lower }}">{{ pick.original_team }}</a>{% endif %}</td>
-                    <td>{% if pick.player %}{{ pick.player.position }}{% else %}-{% endif %}</td>
-                    <td class="left">{% if pick.player %}<a href="/players/{{ pick.player.id }}/">{{ pick.player.name }}</a>{% else %}{% if pick.skipped %}<em>skipped</em>{% else %}{{ pick.player_name|default_if_none:"" }}{% endif %}{% endif %}</a></td>
+                <tr class="border-b border-gray-100" id="pick-{{ pick.id }}">
+                    <td class="text-center py-1 font-bold">{{ pick.pick_number }}</td>
+                    <td class="text-center py-1"><a href="/teams/{{ pick.team.abbreviation|lower }}" class="underline">{{ pick.team }}</a></td>
+                    <td class="text-center py-1">{% if pick.original_team != pick.team %}<a href="/teams/{{ pick.original_team.abbreviation|lower }}" class="underline">{{ pick.original_team }}</a>{% else %}-{% endif %}</td>
+                    <td class="text-center py-1">{% if pick.player %}{{ pick.player.position }}{% else %}-{% endif %}</td>
+                    <td class="py-1">{% if pick.player %}<a href="/players/{{ pick.player.id }}/" class="underline">{{ pick.player.name }}</a>{% else %}{% if pick.skipped %}<em class="text-gray-500">skipped</em>{% else %}{{ pick.player_name|default_if_none:"" }}{% endif %}{% endif %}</td>
                 </tr>
                 {% endfor %}
-            </table>
-            {% endfor %}
-        </div>
+            </tbody>
+        </table>
     </div>
+    {% endfor %}
 </div>
 {% endblock %}

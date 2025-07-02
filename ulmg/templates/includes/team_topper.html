@@ -1,22 +1,7 @@
-<div class="section is-desktop">
-
-    <p class="title is-1">
+<div class="mb-6 pb-4 border-b border-gray-300">
+    <h1 class="text-3xl font-bold mb-2">
         {{ team.city }} {{ team.nickname }}
-    </p>
-    {% if team.championships != "" %}<p class="title is-6 has-text-weight-light champs">{% for c in team.championships %}🏆 {{ c }}{% if forloop.last %}{% else %}, {% endif %}{% endfor %}</p>{% else %}<br/>{% endif %}
-    <p class="subtitle is-4"><span>{{ team.division }} division</span>{% if team.owner_obj %} &mdash; {{ team.owner_obj.name }}{% endif %}</p>
-    <!-- <p class="subtitle is-5 has-text-weight-regular has-text-grey">
-        Owner:
-
-        <br/><a href="/teams/{{ team.abbreviation }}/csv/{% if value %}?value=true{% endif %}">Download team roster &dtrif;</a>
-    </p> -->
+    </h1>
+    {% if team.championships != "" %}<p class="text-sm text-gray-600 mb-2">{% for c in team.championships %}🏆 {{ c }}{% if forloop.last %}{% else %}, {% endif %}{% endfor %}</p>{% endif %}
+    <p class="text-lg text-gray-700">{{ team.division }} division{% if team.owner_obj %} — {{ team.owner_obj.name }}{% endif %}</p>
 </div>
-<style>
-    p.level-heading {
-        font-size:20px;
-    }
-    p.level-title {
-        font-size:32px;
-        font-weight:bold;
-    }
-</style>

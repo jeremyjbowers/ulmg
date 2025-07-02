@@ -1,364 +1,274 @@
-<html>
-    <head>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}The ULMG{% endblock %}</title>
+    
+    <!-- Favicon -->
+    <link rel="apple-touch-icon" sizes="120x120" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="manifest" href="/site.webmanifest">
+    <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+    <meta name="msapplication-TileColor" content="#da532c">
+    <meta name="theme-color" content="#ffffff">
 
-        <link rel="apple-touch-icon" sizes="120x120" href="/apple-touch-icon.png">
-        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
-        <link rel="manifest" href="/site.webmanifest">
-        <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
-        <meta name="msapplication-TileColor" content="#da532c">
-        <meta name="theme-color" content="#ffffff">
-
-        <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bulma/0.9.1/css/bulma.min.css">
-        <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/sortable/0.8.0/css/sortable-theme-minimal.min.css">
-        <link href="//fonts.googleapis.com/css?family=Bungee" rel="stylesheet">
-        <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/awesomplete/1.1.5/awesomplete.min.css">
-        <style type="text/css">
-            span.eye {
-                cursor: pointer;
-            }
-            #team tr.unprotected td {
-                background-color: #ffeaea;
-            }
-            table[data-sortable] th[data-sorted-direction="descending"]:after {
-                border-top-color: red;
-            }
-            table[data-sortable] th[data-sorted-direction="ascending"]:after {
-                border-bottom-color: red;
-            }
-            table[data-sortable] th:after {
-                margin-left: 5px!important;
-            }
-            table.small-table td, table.small-table th {
-                font-size:14px;
-                letter-spacing: -1px;
-            }
-            div.roster table tbody tr:hover td:first-child::before, 
-            div.picks table tbody tr:hover td:first-child::before {
-                content: "+ "
-            }
-            div.roster table tbody tr td, 
-            div.picks table tbody tr td {
-                font-size: 12px;
-            }
-            div.roster td.name,
-            div.picks td.name {
-                text-align: left!important;
-            }
-            div.column.active h1 {
-                color: green;
-            }
-            div.column.active h1:after {
-                content: " ↜"
-            }
-            span.active-arrow {
-                color: green;
-            }
-            .hidden {
-                display: none;
-            }
-            span.green {
-                color: green;
-            }
-            span.red {
-                color: red;
-            }
-            td, th {
-                text-align: center!important;
-                vertical-align: middle!important;
-            }
-            td.right {
-                text-align: right!important;
-            }
-            td.left {
-                text-align: left!important;
-            }
-            /* .tabs ul {
-                border-bottom-style: none;
-            } */
-            a.logo {
-                font-size: 28px;
-                font-family: 'Bungee', cursive;
-            }
-            div.awesomplete {
-                display: block!important;
-            }
-            div.awesomplete>ul {
-                padding: 3px 0 3px 10px;
-                margin: 3px 0 0 0;
-                border: 2px solid #dadada;
-                font-size: 1.5rem;
-            }
-
-            @media screen {
-                .navbar,
-                .navbar-menu,
-                .navbar-start,
-                .navbar-end {
-                    align-items: stretch;
-                    display: flex;
-                }
-                .navbar {
-                    min-height: 3.25rem;
-                }
-                .navbar.is-spaced {
-                    padding: 1rem 2rem;
-                }
-                .navbar.is-spaced .navbar-start,
-                .navbar.is-spaced .navbar-end {
-                    align-items: center;
-                }
-                .navbar.is-spaced a.navbar-item,
-                .navbar.is-spaced .navbar-link {
-                    border-radius: 4px;
-                }
-                .navbar.is-transparent a.navbar-item:hover, .navbar.is-transparent a.navbar-item.is-active,
-                .navbar.is-transparent .navbar-link:hover,
-                .navbar.is-transparent .navbar-link.is-active {
-                    background-color: transparent !important;
-                }
-                .navbar.is-transparent .navbar-item.has-dropdown.is-active .navbar-link, .navbar.is-transparent .navbar-item.has-dropdown.is-hoverable:hover .navbar-link {
-                    background-color: transparent !important;
-                }
-                .navbar.is-transparent .navbar-dropdown a.navbar-item:hover {
-                    background-color: whitesmoke;
-                    color: #0a0a0a;
-                }
-                .navbar.is-transparent .navbar-dropdown a.navbar-item.is-active {
-                    background-color: whitesmoke;
-                    color: #3273dc;
-                }
-                .navbar-burger {
-                    display: none;
-                }
-                .navbar-item,
-                .navbar-link {
-                    align-items: center;
-                    display: flex;
-                }
-                .navbar-item {
-                    display: flex;
-                }
-                .navbar-item.has-dropdown {
-                    align-items: stretch;
-                }
-                .navbar-item.has-dropdown-up .navbar-link::after {
-                    -webkit-transform: rotate(135deg) translate(0.25em, -0.25em);
-                            transform: rotate(135deg) translate(0.25em, -0.25em);
-                }
-                .navbar-item.has-dropdown-up .navbar-dropdown {
-                    border-bottom: 2px solid #dbdbdb;
-                    border-radius: 6px 6px 0 0;
-                    border-top: none;
-                    bottom: 100%;
-                    box-shadow: 0 -8px 8px rgba(10, 10, 10, 0.1);
-                    top: auto;
-                }
-                .navbar-item.is-active .navbar-dropdown, .navbar-item.is-hoverable:hover .navbar-dropdown {
-                    display: block;
-                }
-                .navbar.is-spaced .navbar-item.is-active .navbar-dropdown, .navbar-item.is-active .navbar-dropdown.is-boxed, .navbar.is-spaced .navbar-item.is-hoverable:hover .navbar-dropdown, .navbar-item.is-hoverable:hover .navbar-dropdown.is-boxed {
-                    opacity: 1;
-                    pointer-events: auto;
-                    -webkit-transform: translateY(0);
-                            transform: translateY(0);
-                }
-                .navbar-menu {
-                    flex-grow: 1;
-                    flex-shrink: 0;
-                }
-                .navbar-start {
-                    justify-content: flex-start;
-                    margin-right: auto;
-                }
-                .navbar-end {
-                    justify-content: flex-end;
-                    margin-left: auto;
-                }
-                .navbar-dropdown {
-                    background-color: white;
-                    border-bottom-left-radius: 6px;
-                    border-bottom-right-radius: 6px;
-                    border-top: 2px solid #dbdbdb;
-                    box-shadow: 0 8px 8px rgba(10, 10, 10, 0.1);
-                    display: none;
-                    font-size: 0.875rem;
-                    left: 0;
-                    min-width: 100%;
-                    position: absolute;
-                    top: 100%;
-                    z-index: 20;
-                }
-                .navbar-dropdown .navbar-item {
-                    padding: 0.375rem 1rem;
-                    white-space: nowrap;
-                }
-                .navbar-dropdown a.navbar-item {
-                    padding-right: 3rem;
-                }
-                .navbar-dropdown a.navbar-item:hover {
-                    background-color: whitesmoke;
-                    color: #0a0a0a;
-                }
-                .navbar-dropdown a.navbar-item.is-active {
-                    background-color: whitesmoke;
-                    color: #3273dc;
-                }
-                .navbar.is-spaced .navbar-dropdown, .navbar-dropdown.is-boxed {
-                    border-radius: 6px;
-                    border-top: none;
-                    box-shadow: 0 8px 8px rgba(10, 10, 10, 0.1), 0 0 0 1px rgba(10, 10, 10, 0.1);
-                    display: block;
-                    opacity: 0;
-                    pointer-events: none;
-                    top: calc(100% + (-4px));
-                    -webkit-transform: translateY(-5px);
-                            transform: translateY(-5px);
-                    transition-duration: 86ms;
-                    transition-property: opacity, -webkit-transform;
-                    transition-property: opacity, transform;
-                    transition-property: opacity, transform, -webkit-transform;
-                }
-                .navbar-dropdown.is-right {
-                    left: auto;
-                    right: 0;
-                }
-                .navbar-divider {
-                    display: block;
-                }
-                .navbar > .container .navbar-brand,
-                .container > .navbar .navbar-brand {
-                    margin-left: -.75rem;
-                }
-                .navbar > .container .navbar-menu,
-                .container > .navbar .navbar-menu {
-                    margin-right: -.75rem;
-                }
-                .navbar.is-fixed-bottom-desktop, .navbar.is-fixed-top-desktop {
-                    left: 0;
-                    position: fixed;
-                    right: 0;
-                    z-index: 30;
-                }
-                .navbar {
-                    z-index: unset;
-                }
-                .navbar.is-fixed-bottom-desktop {
-                    bottom: 0;
-                }
-                .navbar.is-fixed-bottom-desktop.has-shadow {
-                    box-shadow: 0 -2px 3px rgba(10, 10, 10, 0.1);
-                }
-                .navbar.is-fixed-top-desktop {
-                    top: 0;
-                }
-                html.has-navbar-fixed-top-desktop,
-                body.has-navbar-fixed-top-desktop {
-                    padding-top: 3.25rem;
-                }
-                html.has-navbar-fixed-bottom-desktop,
-                body.has-navbar-fixed-bottom-desktop {
-                    padding-bottom: 3.25rem;
-                }
-                html.has-spaced-navbar-fixed-top,
-                body.has-spaced-navbar-fixed-top {
-                    padding-top: 5.25rem;
-                }
-                html.has-spaced-navbar-fixed-bottom,
-                body.has-spaced-navbar-fixed-bottom {
-                    padding-bottom: 5.25rem;
-                }
-                a.navbar-item.is-active,
-                .navbar-link.is-active {
-                    color: #0a0a0a;
-                }
-                a.navbar-item.is-active:not(:hover),
-                .navbar-link.is-active:not(:hover) {
-                    background-color: transparent;
-                }
-                .navbar-item.has-dropdown:hover .navbar-link, .navbar-item.has-dropdown.is-active .navbar-link {
-                    background-color: #fafafa;
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Sortable tables -->
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/sortable/0.8.0/css/sortable-theme-minimal.min.css">
+    
+    <style>
+        /* Minimal custom styles for functionality */
+        .sortable th:hover {
+            background-color: #f3f4f6;
+            cursor: pointer;
+        }
+        
+        /* Row highlighting for different player statuses */
+        tr.unprotected td {
+            background-color: #fef2f2;
+        }
+        tr.minors td {
+            background-color: #f0fdf4;
+        }
+        tr.non-mlb td {
+            background-color: #eff6ff;
+        }
+        tr.majors td {
+            background-color: #ffffff;
+        }
+        
+        /* Hide elements */
+        .hidden {
+            display: none;
+        }
+        
+        /* Simple status colors */
+        .text-green { color: #16a34a; }
+        .text-red { color: #dc2626; }
+        
+        /* Navigation dropdown fixes */
+        .nav-dropdown {
+            position: relative;
+        }
+        .nav-dropdown-content {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background: white;
+            border: 1px solid #d1d5db;
+            padding: 0.5rem;
+            z-index: 1000;
+            display: none;
+        }
+        .nav-dropdown:hover .nav-dropdown-content {
+            display: block;
+        }
+        .nav-dropdown-content a {
+            display: block;
+            padding: 0.25rem 0;
+            text-decoration: underline;
+            font-size: 0.875rem;
+        }
+        
+        /* Player search dropdown */
+        .search-dropdown {
+            position: relative;
+        }
+        .search-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #d1d5db;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+        
+        /* Fixed header and filter section */
+        .fixed-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            background: white;
+        }
+        
+        /* Account for fixed header height */
+        .content-with-fixed-header {
+            margin-top: 80px; /* Initial fallback, dynamically adjusted by JavaScript */
+        }
+        .search-result-item {
+            padding: 8px 12px;
+            cursor: pointer;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        .search-result-item:hover,
+        .search-result-item.active {
+            background-color: #f3f4f6;
+        }
+        .visually-hidden {
+            display: none;
+        }
+    </style>
+    
+    {% block extrahead %}{% endblock %}
+</head>
+<body class="bg-white text-black font-mono text-sm leading-tight">
+    {% block prenav %}{% endblock %}
+    
+    <!-- Fixed header and filter section -->
+    <div class="fixed-header">
+        <!-- Simple header navigation -->
+        <header class="border-b border-gray-300 p-2">
+            {% include "includes/nav.html" %}
+        </header>
+        
+        <!-- Collapsible Filter Section -->
+        <div class="border-b border-gray-200">
+            <div class="p-2">
+                <button id="filter-toggle" class="underline text-sm cursor-pointer">Filter Players ▼</button>
+            </div>
+            <div id="filter-section" class="{% if not show_filters_by_default %}hidden{% endif %} border-t border-gray-200 p-4 bg-gray-50">
+            <form method="GET" action="/search/filter/" class="space-y-4">
+                <!-- Top row: Core filters -->
+                <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold mb-1">Carded</label>
+                        <select name="carded" class="w-full border border-gray-300 px-2 py-1 text-sm">
+                            <option value="">All</option>
+                            <option value="true"{% if carded == "true" %} selected{% endif %}>Yes</option>
+                            <option value="false"{% if carded == "false" %} selected{% endif %}>No</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-xs font-bold mb-1">Owned</label>
+                        <select name="owned" class="w-full border border-gray-300 px-2 py-1 text-sm">
+                            <option value="">All</option>
+                            <option value="true"{% if owned == "true" %} selected{% endif %}>Owned</option>
+                            <option value="false"{% if owned == "false" %} selected{% endif %}>Unowned</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-xs font-bold mb-1">Classification</label>
+                        <select name="classification" class="w-full border border-gray-300 px-2 py-1 text-sm">
+                            <option value="">All</option>
+                            <option value="1-majors"{% if classification == "1-majors" %} selected{% endif %}>Majors</option>
+                            <option value="2-minors"{% if classification == "2-minors" %} selected{% endif %}>Minors</option>
+                            <option value="3-npb"{% if classification == "3-npb" %} selected{% endif %}>NPB</option>
+                            <option value="4-kbo"{% if classification == "4-kbo" %} selected{% endif %}>KBO</option>
+                            <option value="5-ncaa"{% if classification == "5-ncaa" %} selected{% endif %}>NCAA</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-xs font-bold mb-1">Level</label>
+                        <select name="level" class="w-full border border-gray-300 px-2 py-1 text-sm">
+                            <option value="">All</option>
+                            <option value="V"{% if level == "V" %} selected{% endif %}>V (Veteran)</option>
+                            <option value="A"{% if level == "A" %} selected{% endif %}>A</option>
+                            <option value="B"{% if level == "B" %} selected{% endif %}>B</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-xs font-bold mb-1">Position</label>
+                        <select name="position" class="w-full border border-gray-300 px-2 py-1 text-sm">
+                            <option value="">All</option>
+                            <option value="h"{% if position == "h" %} selected{% endif %}>Hitters</option>
+                            <option value="C"{% if position == "C" %} selected{% endif %}>C</option>
+                            <option value="IF"{% if position == "IF" %} selected{% endif %}>IF</option>
+                            <option value="OF"{% if position == "OF" %} selected{% endif %}>OF</option>
+                            <option value="P"{% if position == "P" %} selected{% endif %}>P</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- Bottom row: Statistical filters -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+                    <div>
+                        <label class="block text-xs font-bold mb-1">Min PA</label>
+                        <input type="number" name="pa_cutoff" placeholder="0" value="{{ pa_cutoff|default_if_none:'' }}" class="w-full border border-gray-300 px-2 py-1 text-sm">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-xs font-bold mb-1">Min IP</label>
+                        <input type="number" name="ip_cutoff" placeholder="0" step="0.1" value="{{ ip_cutoff|default_if_none:'' }}" class="w-full border border-gray-300 px-2 py-1 text-sm">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-xs font-bold mb-1">Min Starts</label>
+                        <input type="number" name="gs_cutoff" placeholder="0" value="{{ gs_cutoff|default_if_none:'' }}" class="w-full border border-gray-300 px-2 py-1 text-sm">
+                    </div>
+                    
+                    <div>
+                        <button type="submit" class="w-full bg-black text-white px-3 py-1 text-sm underline hover:bg-gray-800">Filter</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+        </div>
+    </div>
+    
+    {% block hero %}{% endblock %}
+    
+    <!-- Main content with top margin for fixed header -->
+    <main class="p-4 content-with-fixed-header">
+        {% block content %}{% endblock %}
+    </main>
+    
+    <!-- Essential JavaScript -->
+    <script src="//code.jquery.com/jquery-2.2.4.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/sortable/0.8.0/js/sortable.min.js"></script>
+    <script src="//cdn.jsdelivr.net/npm/lodash@4.17.11/lodash.min.js"></script>
+    
+    <!-- Filter toggle and header positioning JavaScript -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const filterToggle = document.getElementById('filter-toggle');
+            const filterSection = document.getElementById('filter-section');
+            const fixedHeader = document.querySelector('.fixed-header');
+            const mainContent = document.querySelector('.content-with-fixed-header');
+            
+            // Function to adjust content margin based on header height
+            function adjustContentMargin() {
+                if (fixedHeader && mainContent) {
+                    const headerHeight = fixedHeader.offsetHeight;
+                    mainContent.style.marginTop = headerHeight + 'px';
                 }
             }
-            table td, table a, table th {
-                font-size: 12px;
+            
+            // Initial margin adjustment
+            adjustContentMargin();
+            
+            // Filter toggle functionality
+            if (filterToggle && filterSection) {
+                filterToggle.addEventListener('click', function() {
+                    if (filterSection.classList.contains('hidden')) {
+                        filterSection.classList.remove('hidden');
+                        filterToggle.textContent = 'Filter Players ▲';
+                    } else {
+                        filterSection.classList.add('hidden');
+                        filterToggle.textContent = 'Filter Players ▼';
+                    }
+                    // Adjust margin after filter toggle
+                    setTimeout(adjustContentMargin, 10);
+                });
             }
-            table[data-sortable] th, table[data-sortable] td {
-                padding: 3px;
-            }
-            tr.minors td {
-                background-color: #F4FEEF;
-            }
-            tr.il-pp td {
-                background-color: #F4E2FA;
-            }
-            tr.il-sp td {
-                background-color: #F4E2FA;
-            }
-            tr.il-rp td {
-                background-color: #F4E2FA;
-            }
-            tr.il-60 td {
-                background-color: #F4E2FA;
-            }
-            tr.il-15 td {
-                background-color: #F4E2FA;
-            }
-            tr.il-10 td {
-                background-color: #F4E2FA;
-            }
-            tr.il-7 td {
-                background-color: #F4E2FA;
-            }
-            tr.non-mlb td {
-                background-color: aliceblue;
-            }
-            span.title.is-5.has-text-weight-light.champs {
-                margin: 10px 0 5px 0;
-                display:block;
-            }
-            div.top-right-sticky {
-                position:fixed;
-                text-align: right;
-                z-index: 39;
-                top: 50px;
-                right: 25px;
-            }
-            div.top-right-sticky div.roster-item {
-                float:right;
-            }
-            .hero strong a {
-                color: #fff;
-            }
-            .hero strong a:hover {
-                color: pink;
-            }
-            table.table tr td {
-                padding: 1px 0;
-            }
-            p.notes {
-                font-size: 14px;
-            }
-            table.stat-table tr td {
-                background-color: #eee;
-                font-style: italic;
-            }
-            table.stat-table tr.majors td {
-                background-color: #fff;
-                font-style: normal;
-            }
-        </style>
-        {% block extrahead %}{% endblock %}
-    </head>
-    <body>
-        {% block prenav %}{% endblock %}
-        {% include "includes/nav.html" %}
-        {% block hero %}{% endblock %}
-            {% block content %}{% endblock %}
-        <script src="//code.jquery.com/jquery-2.2.4.min.js"></script>
-        <script src="//cdnjs.cloudflare.com/ajax/libs/sortable/0.8.0/js/sortable.min.js"></script>
-        <script src="//cdn.jsdelivr.net/npm/lodash@4.17.11/lodash.min.js"></script>
-        <script src="//kit.fontawesome.com/f569decd4a.js" crossorigin="anonymous"></script>
-        {% block extrascript %}{% endblock %}
-    </body>
+            
+            // Adjust margin on window resize
+            window.addEventListener('resize', adjustContentMargin);
+        });
+    </script>
+    
+    {% block extrascript %}{% endblock %}
+</body>
 </html>

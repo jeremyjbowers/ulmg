@@ -4,7 +4,7 @@ import datetime
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import render, get_object_or_404
-from django.db.models import Count, Avg, Sum, Max, Min, Q
+from django.db.models import Count, Avg, Sum, Max, Min, Q, Case, When, IntegerField
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.http import JsonResponse
 from django.conf import settings
@@ -33,14 +33,33 @@ def player_util(request):
             fg_id__isnull=True, bref_id__isnull=True, mlbam_id__isnull=True
         )
         .filter(is_amateur=False)
-        .order_by("-created")
+        .annotate(
+            team_order=Case(
+                When(team__isnull=True, then=1),
+                default=0,
+                output_field=IntegerField()
+            )
+        )
+        .order_by("team_order", "-created")
     )
     context["no_birthdates"] = models.Player.objects.filter(
         birthdate__isnull=True
-    ).order_by("-created")
+    ).annotate(
+        team_order=Case(
+            When(team__isnull=True, then=1),
+            default=0,
+            output_field=IntegerField()
+        )
+    ).order_by("team_order", "-created")
     context["suspect_birthdates"] = models.Player.objects.filter(
         birthdate_qa=False, birthdate__day=1
-    ).order_by("-birthdate")
+    ).annotate(
+        team_order=Case(
+            When(team__isnull=True, then=1),
+            default=0,
+            output_field=IntegerField()
+        )
+    ).order_by("team_order", "-birthdate")
     return render(request, "player_util.html", context)
 
 

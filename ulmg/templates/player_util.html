@@ -1,68 +1,69 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="columns section is-desktop">
-    <div class="column">
-        <h2 class="title is-4">No IDs ({{ no_ids|length }})</h2>
-        <table class="table">
+<div class="grid grid-cols-1 md:grid-cols-3 gap-8 py-4">
+    <div>
+        <h2 class="text-lg font-bold mb-4 border-b border-gray-300 pb-1">No IDs ({{ no_ids|length }})</h2>
+        <table class="w-full text-sm border-collapse">
             <thead>
-                <tr>
-                    <th>player</th>
-                    <th>team</th>
-                    <th>created</th>
+                <tr class="border-b border-gray-300">
+                    <th class="text-left py-1">Player</th>
+                    <th class="text-left py-1">Team</th>
+                    <th class="text-left py-1">Created</th>
                 </tr>
             </thead>
             <tbody>
                 {% for p in no_ids %}
-                <tr>
-                    <td class="left"><a href="/admin/ulmg/player/{{ p.id }}/change/" target="_blank">{{ p.name }}</a></td>
-                    <td>{{ p.team|default_if_none:"-" }}</td>
-                    <td>{{ p.created }}</td>
+                <tr class="border-b border-gray-100">
+                    <td class="py-1"><a href="/admin/ulmg/player/{{ p.id }}/change/" target="_blank" class="underline">{{ p.name }}</a></td>
+                    <td class="py-1">{{ p.team|default_if_none:"-" }}</td>
+                    <td class="py-1">{{ p.created }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
-    <div class="column">
-        <h2 class="title is-4">No birthdate {{ no_birthdates|length }}</h2>
-        <table class="table">
+    <div>
+        <h2 class="text-lg font-bold mb-4 border-b border-gray-300 pb-1">No birthdate ({{ no_birthdates|length }})</h2>
+        <table class="w-full text-sm border-collapse">
             <thead>
-                <tr>
-                    <th>player</th>
-                    <th>team</th>
-                    <th>created</th>
+                <tr class="border-b border-gray-300">
+                    <th class="text-left py-1">Player</th>
+                    <th class="text-left py-1">Team</th>
+                    <th class="text-left py-1">Created</th>
                 </tr>
             </thead>
             <tbody>
                 {% for p in no_birthdates %}
-                <tr>
-                    <td class="left"><a href="/admin/ulmg/player/{{ p.id }}/change/" target="_blank">{{ p.name }}</a></td>
-                    <td>{{ p.team|default_if_none:"-" }}</td>
-                    <td>{{ p.created }}</td>
+                <tr class="border-b border-gray-100">
+                    <td class="py-1"><a href="/admin/ulmg/player/{{ p.id }}/change/" target="_blank" class="underline">{{ p.name }}</a></td>
+                    <td class="py-1">{{ p.team|default_if_none:"-" }}</td>
+                    <td class="py-1">{{ p.created }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
-    <div class="column">
-        <h2 class="title is-4">Suspect birthdate {{ suspect_birthdates|length }}</h2>
-        <table class="table">
+    <div>
+        <h2 class="text-lg font-bold mb-4 border-b border-gray-300 pb-1">Suspect birthdate ({{ suspect_birthdates|length }})</h2>
+        <table class="w-full text-sm border-collapse">
             <thead>
-                <tr>
-                    <th>player</th>
-                    <th>team</th>
-                    <th>birthdate</th>
+                <tr class="border-b border-gray-300">
+                    <th class="text-left py-1">Player</th>
+                    <th class="text-left py-1">Team</th>
+                    <th class="text-left py-1">Birthdate</th>
                 </tr>
             </thead>
             <tbody>
                 {% for p in suspect_birthdates %}
-                <tr>
-                    <td class="left"><a href="/admin/ulmg/player/{{ p.id }}/change/" target="_blank">{{ p.name }}</a></td>
-                    <td>{{ p.team|default_if_none:"-" }}</td>
-                    <td>{{ p.birthdate }}</td>
+                <tr class="border-b border-gray-100">
+                    <td class="py-1"><a href="/admin/ulmg/player/{{ p.id }}/change/" target="_blank" class="underline">{{ p.name }}</a></td>
+                    <td class="py-1">{{ p.team|default_if_none:"-" }}</td>
+                    <td class="py-1">{{ p.birthdate }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
+</div>
 {% endblock %}

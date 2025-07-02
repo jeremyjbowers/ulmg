@@ -11,119 +11,134 @@
     tr.hide { display: none; }
     span.filter { cursor:pointer; }
     tbody.list-group tr td {background-color: white;}
-    tbody.list-group tr:nth-child(16n) td {border-bottom:3px solid; border-color: #555; }
+    tbody.list-group tr:nth-child(16n) td {border-bottom:3px solid #555; }
     tbody.list-group tr:nth-child(n+81) td {background-color: #eee; border-bottom: none;}
-    tbody.list-group tr.minors td { background-color: #F4FEEF; }
-    /*
-    tbody.list-group tr:nth-child(16) td:nth-child(1) > span.round:before { content: "Round 1"; }
-    tbody.list-group tr:nth-child(16) td:nth-child(1) > span.round { position: absolute; margin: 2px 0 0 -58px; display: block; text-align: center; padding: 3px 5px; background-color: #555; color: #fff; font-weight: bold;}
-    tbody.list-group tr:nth-child(32) td:nth-child(1) > span.round:before { content: "Round 2"; }
-    tbody.list-group tr:nth-child(32) td:nth-child(1) > span.round { position: absolute; margin: 2px 0 0 -58px; display: block; text-align: center; padding: 3px 5px; background-color: #555; color: #fff; font-weight: bold;}
-    tbody.list-group tr:nth-child(48) td:nth-child(1) > span.round:before { content: "Round 3"; }
-    tbody.list-group tr:nth-child(48) td:nth-child(1) > span.round { position: absolute; margin: 2px 0 0 -58px; display: block; text-align: center; padding: 3px 5px; background-color: #555; color: #fff; font-weight: bold;}
-    tbody.list-group tr:nth-child(64) td:nth-child(1) > span.round:before { content: "Round 4";}
-    tbody.list-group tr:nth-child(64) td:nth-child(1) > span.round { position: absolute; margin: 2px 0 0 -58px; display: block; text-align: center; padding: 3px 5px; background-color: #555; color: #fff; font-weight: bold;}
-    tbody.list-group tr:nth-child(80) td:nth-child(1) > span.round:before { content: "Round 5";}
-    tbody.list-group tr:nth-child(80) td:nth-child(1) > span.round { position: absolute; margin: 2px 0 0 -58px; display: block; text-align: center; padding: 3px 5px; background-color: #555; color: #fff; font-weight: bold;}
-    */
-
-    {% for pick in my_picks %}tbody.list-group tr:nth-child({{ pick.overall_pick_number }}) td {font-weight: bold; background-color: #ffffcc; border-bottom: none; }{% endfor %}
-    {% for pick in all_picks %}tbody.list-group tr:nth-child({{ pick.overall_pick_number }}) td:nth-child(1) > span.pickowner:before {text-align: left; content: " — {{ pick.team__abbreviation }} "; }{% endfor %}
+    tbody.list-group tr.minors td { background-color: #f0fdf4; }
+    .selected-tag { background-color: #16a34a; color: white; }
 </style>
-<div id="team" class="section is-desktop">
-    <div class="tabs is-centered is-boxed is-large">
-        <ul>
-            <li><a href="/teams/{{ team.abbreviation|lower }}/">Roster{% if num_owned %} ({{ num_owned }}){% endif %}</a></li>
-            <li><a href="/teams/{{ team.abbreviation|lower }}/other/">Trades & picks</a></li>
-            <li {% if draft_type == "aa" %}class="is-active"{% endif %}><a href="/my/wishlist/draft/beta/">AA Draft</a></li>
-            <li {% if draft_type == "open" %}class="is-active"{% endif %}><a href="/my/midseason/draft/">Open Draft</a></li>
-        </ul>
-    </div>
 
-    <div class="columns">
-        <div class="column is-2">
-            {% if tags %}
-            <h2 class="title is-5">Filter by tag</h2>
-            <p class="is-size-7">If you select 2 tags, rows matching either tag will be selected. Reload the page to see new tags added here.</p>
-            <ul style="margin-top:15px">
-                {% for t in tags %}
-                    <li><span class="tag is-info is-light filter" filter-type="tags">{{ t }}</span></li>
-                {% endfor %}
-            </ul>
-            {% endif %}
-        </div>
-        <div class="column is-10 table-container">
-            <table class="table is-hoverable is-fullwidth">
-                <thead>
-                    <tr>
-                        <th>rank</th>
-                        <th>player</th>
-                        <th>age</th>
-                        <th>level</th>
-                        <th>pos</th>
-                        <th>team</th>
-                        <th>yr</th>
-                        <th>lvl</th>
-                        <th>wRC+</th>
-                        <th>fip</th>
-                        <!-- <th></th> -->
-                        <th>tags</th>
-                    </tr>
-                </thead>
-                <tbody id="players" class="list-group">
-                    {% for p in players %}
-                        <tr data-playername="{{ p.player.name }}" data-playerid="{{ p.player.id }}"
-                        class="list-group-item 
-                        {% if p.player.roster_status %}{{ p.player.roster_status|lower|default_if_none:"non-mlb" }} {% else %}non-mlb {% endif %}
-                        {% if p.player.role_type %}{{ p.player.role_type|lower|default_if_none:""}} {% endif %}
-                        ">
-                            <td id="rank-{{ p.pk }}">
-                                <span>{% if p.rank == 0 %}-{% else %}{{ p.rank }}{% endif %}</span>
-                                <span class="pickowner"></span>
-                            </td>
-                            {% include "includes/my/player_name.html" %}
-                            <td>{{ p.player.age|default_if_none:"-" }}</td>
-                            <td>{{ p.player.level }}</td>
-                            <td>{{ p.player.position }}</td>
-                            <td>{{ p.player.mlb_org|default_if_none:"-" }}</td>
-                            <td>
-                                {% if p.player.position != "P" %}
-                                    {{ p.latest_hit_stats.year }}
-                                {% else %}
-                                    {% if p.latest_pit_stats %}
-                                        {{ p.latest_pit_stats.year }}
-                                    {% else %}
-                                    -
-                                    {% endif %}
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if p.player.position != "P" %}
-                                    {{ p.latest_hit_stats.level|default_if_none:"-" }}
-                                {% else %}
-                                    {% if p.latest_pit_stats %}
-                                        {{ p.latest_pit_stats.level|default_if_none:"-" }}
-                                    {% else %}
-                                    -
-                                    {% endif %}
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if p.latest_hit_stats and p.player.position != "P" %}{% if p.latest_hit_stats.wrc_plus %}{{ p.latest_hit_stats.wrc_plus|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
-                            </td>
-                            <td>
-                                {% if p.latest_pit_stats and p.player.position == "P" %}{% if p.latest_pit_stats.fip %}{{ p.latest_pit_stats.fip|floatformat:2|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
-                            </td>
-                            <!-- <td>{% include "includes/my/notechooser.html" %}</td> -->
-                            <td class="left tag-cell">{% include "includes/my/tagchooser.html" %}</td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+<!-- Simple tab navigation -->
+<div class="border-b border-gray-300 mb-4">
+    <div class="flex space-x-4 pb-2">
+        <a href="/teams/{{ team.abbreviation|lower }}/" class="underline">Roster{% if num_owned %} ({{ num_owned }}){% endif %}</a>
+        <a href="/teams/{{ team.abbreviation|lower }}/other/" class="underline">Trades & picks</a>
+        {% if draft_type == "aa" %}
+        <span class="font-bold">AA Draft</span>
+        {% else %}
+        <a href="/my/wishlist/draft/beta/" class="underline">AA Draft</a>
+        {% endif %}
+        {% if draft_type == "open" %}
+        <span class="font-bold">Open Draft</span>
+        {% else %}
+        <a href="/my/midseason/draft/" class="underline">Open Draft</a>
+        {% endif %}
     </div>
-
 </div>
+
+<div class="flex gap-4">
+    <!-- Tag filters sidebar -->
+    {% if tags %}
+    <div class="w-48 flex-shrink-0">
+        <h3 class="text-sm font-bold mb-2">Filter by tag</h3>
+        <p class="text-xs mb-3 text-gray-600">Click tags to filter. Reload page to see new tags.</p>
+        <div class="space-y-1">
+            {% for t in tags %}
+            <span class="inline-block px-2 py-1 text-xs border border-gray-300 cursor-pointer hover:bg-gray-100 filter" filter-type="tags">{{ t }}</span>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Main table -->
+    <div class="flex-1 overflow-x-auto">
+        <table class="w-full text-xs border-collapse">
+            <thead>
+                <tr class="border-b border-gray-300">
+                    <th class="text-left py-1">Rank</th>
+                    <th class="text-left py-1">Player</th>
+                    <th class="text-center py-1">Age</th>
+                    <th class="text-center py-1">Level</th>
+                    <th class="text-center py-1">Pos</th>
+                    <th class="text-center py-1">Team</th>
+                    <th class="text-center py-1">Yr</th>
+                    <th class="text-center py-1">Lvl</th>
+                    <th class="text-center py-1">PA</th>
+                    <th class="text-center py-1">wRC+</th>
+                    <th class="text-center py-1">BABIP</th>
+                    <th class="text-center py-1">GS</th>
+                    <th class="text-center py-1">IP</th>
+                    <th class="text-center py-1">FIP</th>
+                    <th class="text-center py-1">ERA</th>
+                    <th class="text-left py-1">Tags</th>
+                </tr>
+            </thead>
+            <tbody id="players" class="list-group">
+                {% for p in players %}
+                    <tr data-playername="{{ p.player.name }}" data-playerid="{{ p.player.id }}"
+                    class="list-group-item border-b border-gray-100 
+                    {% if p.player.roster_status %}{{ p.player.roster_status|lower|default_if_none:"non-mlb" }} {% else %}non-mlb {% endif %}
+                    {% if p.player.role_type %}{{ p.player.role_type|lower|default_if_none:""}} {% endif %}
+                    ">
+                        <td id="rank-{{ p.pk }}" class="py-1">
+                            <span>{% if p.rank == 0 %}-{% else %}{{ p.rank }}{% endif %}</span>
+                            <span class="pickowner"></span>
+                        </td>
+                        {% include "includes/my/player_name.html" %}
+                        <td class="text-center py-1">{{ p.player.age|default_if_none:"-" }}</td>
+                        <td class="text-center py-1">{{ p.player.level }}</td>
+                        <td class="text-center py-1">{{ p.player.position }}</td>
+                        <td class="text-center py-1">{{ p.player.mlb_org|default_if_none:"-" }}</td>
+                        <td class="text-center py-1">
+                            {% if p.player.position != "P" %}
+                                {{ p.latest_hit_stats.year }}
+                            {% else %}
+                                {% if p.latest_pit_stats %}
+                                    {{ p.latest_pit_stats.year }}
+                                {% else %}
+                                -
+                                {% endif %}
+                            {% endif %}
+                        </td>
+                        <td class="text-center py-1">
+                            {% if p.player.position != "P" %}
+                                {{ p.latest_hit_stats.level|default_if_none:"-" }}
+                            {% else %}
+                                {% if p.latest_pit_stats %}
+                                    {{ p.latest_pit_stats.level|default_if_none:"-" }}
+                                {% else %}
+                                -
+                                {% endif %}
+                            {% endif %}
+                        </td>
+                        <td class="text-center py-1">
+                            {% if p.latest_hit_stats and p.player.position != "P" %}{% if p.latest_hit_stats.plate_appearances %}{{ p.latest_hit_stats.plate_appearances|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
+                        </td>
+                        <td class="text-center py-1">
+                            {% if p.latest_hit_stats and p.player.position != "P" %}{% if p.latest_hit_stats.wrc_plus %}{{ p.latest_hit_stats.wrc_plus|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
+                        </td>
+                        <td class="text-center py-1">
+                            {% if p.latest_hit_stats and p.player.position != "P" %}{% if p.latest_hit_stats.babip %}{{ p.latest_hit_stats.babip|floatformat:3|slice:"1:"|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
+                        </td>
+                        <td class="text-center py-1">
+                            {% if p.latest_pit_stats and p.player.position == "P" %}{% if p.latest_pit_stats.gs %}{{ p.latest_pit_stats.gs|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
+                        </td>
+                        <td class="text-center py-1">
+                            {% if p.latest_pit_stats and p.player.position == "P" %}{% if p.latest_pit_stats.ip %}{{ p.latest_pit_stats.ip|floatformat:1|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
+                        </td>
+                        <td class="text-center py-1">
+                            {% if p.latest_pit_stats and p.player.position == "P" %}{% if p.latest_pit_stats.fip %}{{ p.latest_pit_stats.fip|floatformat:2|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
+                        </td>
+                        <td class="text-center py-1">
+                            {% if p.latest_pit_stats and p.player.position == "P" %}{% if p.latest_pit_stats.era %}{{ p.latest_pit_stats.era|floatformat:2|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
+                        </td>
+                        <td class="py-1 tag-cell">{% include "includes/my/tagchooser.html" %}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
 {% include "includes/notes_modal.html" %}
 {% endblock %}
         
@@ -140,7 +155,23 @@ $(function(){
         var tagname = $el.attr('data-tagname');
         var playerid = $el.attr('data-playerid');
 
-        $el.parent('span.tag').remove();
+        // Remove the tag span and handle comma separation
+        var $tagSpan = $el.parent('span.user-tag');
+        var $container = $tagSpan.parent();
+        
+        // Check if this tag has a following comma and space
+        var nextText = $tagSpan.get(0).nextSibling;
+        if (nextText && nextText.nodeType === 3 && nextText.textContent.trim() === ',') {
+            nextText.remove();
+        } else {
+            // Check if this tag has a preceding comma and space
+            var prevText = $tagSpan.get(0).previousSibling;
+            if (prevText && prevText.nodeType === 3 && prevText.textContent.trim() === ',') {
+                prevText.remove();
+            }
+        }
+        
+        $tagSpan.remove();
 
         $.ajax({
             type: "POST",
@@ -163,9 +194,9 @@ $(function(){
         el.preventDefault();
         var $el = $(this);
 
-        var $input = $($el.parent('p').parent('div').children('p.control').children('input'))
+        var $input = $el.siblings('input.tag-input');
 
-        $input.show();
+        $input.removeClass('hidden').focus();
     }
 
     var submit_tag_handler = function(el) {
@@ -174,9 +205,17 @@ $(function(){
         var playerid = $el.attr('data-playerid')
         var tagname = $el.val();
 
-        $el.hide();
+        $el.addClass('hidden');
         $el.val('');
-        $($el.parent('p').parent('div').children('p.control')[2]).append('<span class="tag is-info is-rounded is-small user-tag is-light">'+ tagname +' <button data-tagname="'+ tagname +'" data-playerid="'+ playerid +'" class="delete is-small"></button></span>');
+        
+        // Find the tag container for this row and add the new tag
+        var $tagContainer = $el.siblings('div');
+        var existingTags = $tagContainer.html().trim();
+        
+        // Add comma separator if there are existing tags
+        var separator = existingTags ? ', ' : '';
+        
+        $tagContainer.append(separator + '<span class="user-tag">' + tagname + ' <button data-tagname="' + tagname + '" data-playerid="' + playerid + '" class="text-red-600 hover:text-red-800 cursor-pointer">×</button></span>');
 
         $.ajax({
             type: "POST",
@@ -188,7 +227,6 @@ $(function(){
         });
     }
 
-    // $('body').on('click', 'span.action-remove-tag', remove_tag_handler);
     $('body').on('click', 'span.action-add-tag', show_tag_input_handler);
     $('body').on('click', 'button.delete', tag_delete_handler);
 
@@ -200,7 +238,6 @@ $(function(){
         }
     });
 
-
 });
 </script>
 
@@ -208,14 +245,6 @@ $(function(){
 $(function(){
     const players = document.getElementById('players');
 
-    /*
-    *
-    * function for handling all updates needed for the server
-    * takes in an event and a list of updates for the server
-    * server modifies wishlistplayer to update rank.
-    * idempotent; server does not create new wishlistplayers.
-    *
-    */
     var update_server = function(evt, update_list) {
         $.ajax({
             method: "POST",
@@ -227,44 +256,22 @@ $(function(){
         });
     }
 
-    /*
-    *
-    * function for handling all updates needed for the client.
-    * takes in the element of the table where the sortables live.
-    * returns a list of updates for the server.
-    * modifies the data elements on individual sortables.
-    * also modifies HTML on the sortables.
-    *
-    */
     var update_client = function(el) {
-
         var $el = $(el);
-
-        // set up a var for the data we'll return
         var update_list = []
 
-        // loop over the children list items to establish index / rank
         $el.children('tr.list-group-item').each(function(idx, ply){
-
-            // 1-based indexes, not 0
             idx = idx+1
-
-            // need a jquery element
             var $ply = $(ply);
             var plyspan = $ply.find('span')[0];
             var $plyspan = $(plyspan);
-
-            // grab playerid and name from the element's data attributes
             var playerid = $ply.attr('data-playerid');
             var name = $ply.attr('data-playername');
 
-            // update the element's data attribute with the new rank
-            // also update the element's rank HTML on the client
             $ply.attr('data-rank', idx);
             $plyspan.html(idx);
             $('#rank-' + $ply.attr('data-playerid')).html(idx);
 
-            // push a obj to the update list with id, name and new rank
             update_list.push({
                 'playerid': playerid,
                 'rank': idx,
@@ -272,7 +279,6 @@ $(function(){
             });
         });
     
-        // return the list of players to update
         return update_list
     }
 
@@ -284,7 +290,9 @@ $(function(){
     Sortable.create(players, { onEnd: function(evt) { update_handler(evt, players); } });
 });
 </script>
+
 {% include "includes/my/wishlistjs.html" %}
+
 <script type="text/javascript">
     $(function(){
     
@@ -334,19 +342,18 @@ $(function(){
         $('body').on('click', 'div.modal-background', close_modal_handler);
     });
 </script>
+
 <script type="text/javascript">
-
-
     var filter_handler = function(el) {
         $('#players tr').removeClass('hide');
 
         el.preventDefault();
         $el = $(this);
-        $el.toggleClass('is-success');
+        $el.toggleClass('selected-tag');
 
         var filter_text = []
 
-        $('span.filter.is-success').each(function(idx,el){
+        $('span.filter.selected-tag').each(function(idx,el){
             filter_text.push($(el).text());
         });
 
@@ -364,17 +371,6 @@ $(function(){
                     }
                 });
             });
-
-
-            // if (match.length == 0) {
-            //     $row.addClass('hide');
-            // } else {
-            //     if ( ([1, 2, 3].reduce((partialSum, a) => partialSum + a, 0)) === 0) {
-            //         console.log('all match');
-            //     } else {
-            //         $row.addClass('hide');
-            //     }
-            // }
 
             if (match != true) {
                 $row.addClass('hide')

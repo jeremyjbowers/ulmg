@@ -372,6 +372,68 @@ def draft_api(request, year, season, draft_type):
 
 
 @login_required
+def draft_watch_status(request, year, season, draft_type):
+    """
+    API endpoint for draft watch page to poll for updates
+    Returns current draft status with timestamps for change detection
+    """
+    from django.db.models import Q
+    
+    # Get made picks (picks that have been made or skipped)
+    made_picks = models.DraftPick.objects.filter(
+        Q(player_name__isnull=False) | Q(player__isnull=False) | Q(skipped=True)
+    ).filter(
+        year=year, season=season, draft_type=draft_type
+    ).order_by("year", "-season", "draft_type", "-draft_round", "-pick_number")
+    
+    # Get upcoming picks (picks that haven't been made yet)
+    upcoming_picks = models.DraftPick.objects.filter(
+        year=year, season=season, draft_type=draft_type
+    ).exclude(Q(player_name__isnull=False) | Q(player__isnull=False) | Q(skipped=True))
+    
+    # Convert to dictionaries for JSON response
+    made_picks_data = []
+    for pick in made_picks:
+        pick_data = {
+            'id': pick.id,
+            'pick_number': pick.pick_number,
+            'draft_round': pick.draft_round,
+            'team': pick.team.abbreviation if pick.team else '',
+            'team_name': f"{pick.team.city} {pick.team.nickname}" if pick.team else '',
+            'original_team': pick.original_team.abbreviation if pick.original_team else '',
+            'player_name': pick.player_name or '',
+            'player_position': pick.player.position if pick.player else '',
+            'player_id': pick.player.id if pick.player else None,
+            'skipped': pick.skipped,
+            'updated_at': pick.updated_at.isoformat() if hasattr(pick, 'updated_at') and pick.updated_at else None
+        }
+        made_picks_data.append(pick_data)
+    
+    upcoming_picks_data = []
+    for pick in upcoming_picks:
+        pick_data = {
+            'id': pick.id,
+            'pick_number': pick.pick_number,
+            'draft_round': pick.draft_round,
+            'team': pick.team.abbreviation if pick.team else '',
+            'team_name': f"{pick.team.city} {pick.team.nickname}" if pick.team else '',
+            'original_team': pick.original_team.abbreviation if pick.original_team else '',
+        }
+        upcoming_picks_data.append(pick_data)
+    
+    response_data = {
+        'made_picks': made_picks_data,
+        'upcoming_picks': upcoming_picks_data,
+        'year': year,
+        'season': season,
+        'draft_type': draft_type,
+        'timestamp': datetime.datetime.now().isoformat()
+    }
+    
+    return JsonResponse(response_data)
+
+
+@login_required
 @csrf_exempt
 def draft_action(request, pickid):
     playerid = None

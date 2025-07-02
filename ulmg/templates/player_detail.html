@@ -1,153 +1,111 @@
 {% extends "base.html" %}
 {% load ulmg_tags %}
 
-{% block extrahead %}
-<style>
-    .player-detail .player-details p,
-    .player-detail .player-details strong {
-        text-align: left !important;
-    }
-    .player-detail .player-header {
-        margin-bottom: 2rem; 
-        padding-bottom: 1.5rem; 
-        border-bottom: 1px solid #e8e8e8;
-    }
-    .player-detail .player-image {
-        margin-right: 1rem;
-    }
-    .player-detail .player-info h1,
-    .player-detail .player-info p {
-        text-align: left !important;
-        margin-bottom: 0.5rem;
-    }
-    .player-detail .player-details .column {
-        padding: 0.25rem 0.75rem;
-    }
-    .player-detail .subtitle {
-        margin-top: 0 !important;
-    }
-</style>
-{% endblock %}
-
 {% block content %}
-<div class="container player-detail">
-<div class="content">
 
 <!-- Player Header -->
-<div class="player-header">
-    <div class="columns is-vcentered is-mobile">
-        <div class="column is-narrow player-image">
-            <figure class="image is-96x96">
-                <img src="{{ p.mlb_image_url }}" alt="{{ p.name }}" class="is-rounded" style="object-fit: cover;">
-            </figure>
-        </div>
-        <div class="column player-info">
-            <h1 class="title is-2">
-                {% if p.position %}{{ p.position }}{% endif %} {{ p.name }}
-                {% if p.is_trade_block %}<span class="tag is-warning ml-2">Trade Block</span>{% endif %}
-            </h1>
-            <p class="subtitle is-5">
-                {% if p.team %}
-                    <a href="/teams/{{ p.team.abbreviation|lower }}/" class="has-text-link">{{ p.team.abbreviation }}</a>
-                {% else %}
-                    <span class="has-text-grey">Free Agent</span>
-                {% endif %}
-                • Level {{ p.level|default_if_none:"?" }}
-                {% if p.age %} • {{ p.age }} years old{% endif %}
-            </p>
-            <div class="tags">
-                {% if p.is_carded %}<span class="tag is-success is-outlined">Carded</span>{% endif %}
-                {% if p.is_prospect %}<span class="tag is-info is-outlined">Prospect</span>{% endif %}
-                {% if p.is_amateur %}<span class="tag is-light is-outlined">Amateur</span>{% endif %}
-                {% if p.is_mlb_roster %}<span class="tag is-primary is-outlined">MLB Roster</span>{% endif %}
-                {% if p.is_35man_roster %}<span class="tag is-link is-outlined">35-Man</span>{% endif %}
-            </div>
-        </div>
-    </div>
-
-    <!-- Player Details -->
-    <div class="player-details">
-        <div class="columns is-multiline">
-            {% if p.mlb_org %}
-            <div class="column is-3">
-                <strong class="has-text-grey-dark">MLB Organization:</strong><br>
-                <p>{{ p.mlb_org }}</p>
-            </div>
-            {% endif %}
-            {% if p.role %}
-            <div class="column is-3">
-                <strong class="has-text-grey-dark">Role:</strong><br>
-                <p>{{ p.role }}</p>
-            </div>
-            {% endif %}
-            {% if p.roster_status %}
-            <div class="column is-3">
-                <strong class="has-text-grey-dark">Roster Status:</strong><br>
-                <p>{{ p.roster_status }}</p>
-            </div>
-            {% endif %}
-            {% if p.birthdate %}
-            <div class="column is-3">
-                <strong class="has-text-grey-dark">Birthdate:</strong><br>
-                <p>{{ p.birthdate|date:"M j, Y" }}</p>
-            </div>
-            {% endif %}
-            {% if p.is_prospect and p.fg_fv %}
-            <div class="column is-3">
-                <strong class="has-text-grey-dark">FanGraphs FV:</strong><br>
-                <p><strong>{{ p.fg_fv }}</strong></p>
-            </div>
-            {% endif %}
-            {% if p.fg_eta %}
-            <div class="column is-3">
-                <strong class="has-text-grey-dark">ETA:</strong><br>
-                <p>{{ p.fg_eta }}</p>
-            </div>
-            {% endif %}
-            {% if p.defense %}
-            <div class="column is-6">
-                <strong class="has-text-grey-dark">Defense:</strong><br>
-                <p>{{ p.defense_display|default_if_none:"—" }}</p>
-            </div>
-            {% endif %}
-        </div>
-
-        <!-- External Links -->
-        {% if p.mlb_dotcom_url or p.fg_url or p.bref_url %}
-        <div class="mt-2">
-            <strong class="has-text-grey-dark">External Links: </strong>
-            {% if p.mlb_dotcom_url %}<a href="{{ p.mlb_dotcom_url }}" target="_blank" class="has-text-link">MLB.com</a>{% endif %}
-            {% if p.fg_url %}{% if p.mlb_dotcom_url %} • {% endif %}<a href="{{ p.fg_url }}" target="_blank" class="has-text-link">FanGraphs</a>{% endif %}
-            {% if p.bref_url %}{% if p.mlb_dotcom_url or p.fg_url %} • {% endif %}<a href="{{ p.bref_url }}" target="_blank" class="has-text-link">Baseball Reference</a>{% endif %}
-        </div>
+<div class="mb-6 pb-4 border-b border-gray-300">
+    <h1 class="text-2xl font-bold mb-2">
+        {% if p.position %}{{ p.position }} {% endif %}{{ p.name }}
+        {% if p.is_trade_block %}<span class="text-xs font-normal text-red">[Trade Block]</span>{% endif %}
+    </h1>
+    
+    <p class="text-sm text-gray-600 mb-2">
+        {% if p.team %}
+            <a href="/teams/{{ p.team.abbreviation|lower }}/" class="underline">{{ p.team.abbreviation }}</a>
+        {% else %}
+            Free Agent
         {% endif %}
+        • Level {{ p.level|default_if_none:"?" }}
+        {% if p.age %} • {{ p.age }} years old{% endif %}
+    </p>
+    
+    <!-- Player tags/status -->
+    <div class="text-xs text-gray-700">
+        {% if p.is_carded %}Carded {% endif %}
+        {% if p.is_prospect %}Prospect {% endif %}
+        {% if p.is_amateur %}Amateur {% endif %}
+        {% if p.is_mlb_roster %}MLB-Roster {% endif %}
+        {% if p.is_35man_roster %}35-Man{% endif %}
     </div>
 </div>
 
+<!-- Player Details -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 text-xs">
+    {% if p.mlb_org %}
+    <div>
+        <span class="font-bold">MLB Organization:</span><br>
+        {{ p.mlb_org }}
+    </div>
+    {% endif %}
+    {% if p.role %}
+    <div>
+        <span class="font-bold">Role:</span><br>
+        {{ p.role }}
+    </div>
+    {% endif %}
+    {% if p.roster_status %}
+    <div>
+        <span class="font-bold">Roster Status:</span><br>
+        {{ p.roster_status }}
+    </div>
+    {% endif %}
+    {% if p.birthdate %}
+    <div>
+        <span class="font-bold">Birthdate:</span><br>
+        {{ p.birthdate|date:"M j, Y" }}
+    </div>
+    {% endif %}
+    {% if p.is_prospect and p.fg_fv %}
+    <div>
+        <span class="font-bold">FanGraphs FV:</span><br>
+        <strong>{{ p.fg_fv }}</strong>
+    </div>
+    {% endif %}
+    {% if p.fg_eta %}
+    <div>
+        <span class="font-bold">ETA:</span><br>
+        {{ p.fg_eta }}
+    </div>
+    {% endif %}
+    {% if p.defense %}
+    <div>
+        <span class="font-bold">Defense:</span><br>
+        {{ p.defense_display|default_if_none:"—" }}
+    </div>
+    {% endif %}
+</div>
+
+<!-- External Links -->
+{% if p.mlb_dotcom_url or p.fg_url or p.bref_url %}
+<div class="mb-6 text-xs">
+    <span class="font-bold">External Links:</span>
+    {% if p.mlb_dotcom_url %}<a href="{{ p.mlb_dotcom_url }}" target="_blank" class="underline ml-2">MLB.com</a>{% endif %}
+    {% if p.fg_url %}<a href="{{ p.fg_url }}" target="_blank" class="underline ml-2">FanGraphs</a>{% endif %}
+    {% if p.bref_url %}<a href="{{ p.bref_url }}" target="_blank" class="underline ml-2">Baseball Reference</a>{% endif %}
+</div>
+{% endif %}
+
 <!-- Transactions History -->
 {% if transactions %}
-<div style="margin-bottom: 2rem;">
-    <h2 class="title is-4 mb-3">Transaction History</h2>
-    <table class="table is-fullwidth">
+<div class="mb-6">
+    <h2 class="text-lg font-bold mb-2 border-b border-gray-300 pb-1">Transaction History</h2>
+    <table class="w-full text-xs border-collapse">
         <thead>
-            <tr>
-                <th>Year</th>
-                <th>Type</th>
-                <th>Description</th>
-                <th>Details</th>
+            <tr class="border-b border-gray-300">
+                <th class="text-center py-1">Year</th>
+                <th class="text-center py-1">Type</th>
+                <th class="text-left py-1">Description</th>
+                <th class="text-left py-1">Details</th>
             </tr>
         </thead>
         <tbody>
             {% for transaction in transactions %}
-            <tr>
-                <td><strong>{{ transaction.year|default_if_none:"—" }}</strong></td>
-                <td>
-                    <span class="tag {% if transaction.type == 'trade' %}is-warning{% else %}is-success{% endif %}">
-                        {{ transaction.type|title }}
-                    </span>
-                </td>
-                <td>{{ transaction.description }}</td>
-                <td><small class="has-text-grey">{{ transaction.details }}</small></td>
+            <tr class="border-b border-gray-100">
+                <td class="text-center py-1 font-bold">{{ transaction.year|default_if_none:"—" }}</td>
+                <td class="text-center py-1">{{ transaction.type|title }}</td>
+                <td class="py-1">{{ transaction.description }}</td>
+                <td class="py-1 text-gray-600">{{ transaction.details }}</td>
             </tr>
             {% endfor %}
         </tbody>
@@ -157,67 +115,67 @@
 
 <!-- Stats Tables -->
 {% if hitter_stats %}
-<div style="margin-bottom: 2rem;">
-    <h2 class="title is-4 mb-3">Hitting Stats</h2>
-    <table class="table is-fullwidth" data-sortable>
+<div class="mb-6">
+    <h2 class="text-lg font-bold mb-2 border-b border-gray-300 pb-1">Hitting Stats</h2>
+    <table class="w-full text-xs border-collapse" data-sortable>
         <thead>
-            <tr>
-                <th data-sortable-type="numeric">Year</th>
-                <th data-sortable-type="alpha">Level</th>
-                <th data-sortable-type="numeric">PA</th>
-                <th data-sortable-type="numeric">AVG</th>
-                <th data-sortable-type="numeric">OBP</th>
-                <th data-sortable-type="numeric">SLG</th>
-                <th data-sortable-type="numeric">HR</th>
-                <th data-sortable-type="numeric">SB</th>
-                <th data-sortable-type="numeric">K%</th>
-                <th data-sortable-type="numeric">BB%</th>
-                <th data-sortable-type="numeric">wRC+</th>
-                <th data-sortable-type="numeric">xA</th>
-                <th data-sortable-type="numeric">xO</th>
-                <th data-sortable-type="numeric">xS</th>
+            <tr class="border-b border-gray-300">
+                <th class="text-center py-1 sortable" data-sortable-type="numeric">Year</th>
+                <th class="text-center py-1 sortable" data-sortable-type="alpha">Level</th>
+                <th class="text-center py-1 sortable" data-sortable-type="numeric">PA</th>
+                <th class="text-center py-1 sortable" data-sortable-type="numeric">AVG</th>
+                <th class="text-center py-1 sortable" data-sortable-type="numeric">OBP</th>
+                <th class="text-center py-1 sortable" data-sortable-type="numeric">SLG</th>
+                <th class="text-center py-1 sortable" data-sortable-type="numeric">HR</th>
+                <th class="text-center py-1 sortable" data-sortable-type="numeric">SB</th>
+                <th class="text-center py-1 sortable" data-sortable-type="numeric">K%</th>
+                <th class="text-center py-1 sortable" data-sortable-type="numeric">BB%</th>
+                <th class="text-center py-1 sortable" data-sortable-type="numeric">wRC+</th>
+                <th class="text-center py-1 sortable" data-sortable-type="numeric">xA</th>
+                <th class="text-center py-1 sortable" data-sortable-type="numeric">xO</th>
+                <th class="text-center py-1 sortable" data-sortable-type="numeric">xS</th>
             </tr>
         </thead>
         <tbody>
         {% for p in hitter_stats %}
-        <tr class="{% if p.minors %}non-mlb{% else %}majors{% endif %}">
-            <td data-value="{{ p.season }}">{{ p.season }}</td>
-            <td data-value="{{ p.level|default_if_none:"Z" }}">{{ p.level|default_if_none:"-" }}</td>
-            <td data-value="{% if p.hit_stats %}{{ p.hit_stats.plate_appearances|default_if_none:"-999" }}{% else %}-999{% endif %}">
+        <tr class="{% if p.minors %}non-mlb{% else %}majors{% endif %} border-b border-gray-100">
+            <td class="text-center py-1 font-bold">{{ p.season }}</td>
+            <td class="text-center py-1">{{ p.level|default_if_none:"-" }}</td>
+            <td class="text-center py-1">
                 {% if p.hit_stats %}{% if p.hit_stats.plate_appearances > 0 %}{{ p.hit_stats.plate_appearances|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
             </td>
-            <td data-value="{% if p.hit_stats %}{{ p.hit_stats.avg|default_if_none:"-999" }}{% else %}-999{% endif %}">
+            <td class="text-center py-1">
                 {% if p.hit_stats %}{% if p.hit_stats.plate_appearances > 0 %}{{ p.hit_stats.avg|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
             </td>
-            <td data-value="{% if p.hit_stats %}{{ p.hit_stats.obp|default_if_none:"-999" }}{% else %}-999{% endif %}">
+            <td class="text-center py-1">
                 {% if p.hit_stats %}{% if p.hit_stats.plate_appearances > 0 %}{{ p.hit_stats.obp|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
             </td>
-            <td data-value="{% if p.hit_stats %}{{ p.hit_stats.slg|default_if_none:"-999" }}{% else %}-999{% endif %}">
+            <td class="text-center py-1">
                 {% if p.hit_stats %}{% if p.hit_stats.plate_appearances > 0 %}{{ p.hit_stats.slg|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
             </td>
-            <td data-value="{% if p.hit_stats %}{{ p.hit_stats.hr|default_if_none:"-999" }}{% else %}-999{% endif %}">
+            <td class="text-center py-1">
                 {% if p.hit_stats %}{% if p.hit_stats.plate_appearances > 0 %}{{ p.hit_stats.hr|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
             </td>
-            <td data-value="{% if p.hit_stats %}{{ p.hit_stats.sb|default_if_none:"-999" }}{% else %}-999{% endif %}">
+            <td class="text-center py-1">
                 {% if p.hit_stats %}{% if p.hit_stats.plate_appearances > 0 %}{{ p.hit_stats.sb|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
             </td>
-            <td data-value="{% if p.hit_stats %}{{ p.hit_stats.k_pct|default_if_none:"-999" }}{% else %}-999{% endif %}">
+            <td class="text-center py-1">
                 {% if p.hit_stats %}{% if p.hit_stats.plate_appearances > 0 %}{{ p.hit_stats.k_pct|floatformat:1|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
             </td>
-            <td data-value="{% if p.hit_stats %}{{ p.hit_stats.bb_pct|default_if_none:"-999" }}{% else %}-999{% endif %}">
+            <td class="text-center py-1">
                 {% if p.hit_stats %}{% if p.hit_stats.plate_appearances > 0 %}{{ p.hit_stats.bb_pct|floatformat:1|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
             </td>
-            <td data-value="{% if p.hit_stats %}{{ p.hit_stats.wrc_plus|default_if_none:"-999" }}{% else %}-999{% endif %}">
+            <td class="text-center py-1">
                 {% if p.hit_stats %}{% if p.hit_stats.plate_appearances > 0 %}{{ p.hit_stats.wrc_plus|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
             </td>
-            <td data-value="{% if p.hit_stats %}{{ p.hit_stats.xavg|default_if_none:"-999" }}{% else %}-999{% endif %}">
-                {% if p.hit_stats %}{% if p.hit_stats.plate_appearances > 0 and p.hit_stats.xavg %}{{ p.hit_stats.xavg|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
+            <td class="text-center py-1">
+                {% if p.hit_stats %}{% if p.hit_stats.plate_appearances > 0 %}{{ p.hit_stats.xavg|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
             </td>
-            <td data-value="{% if p.hit_stats %}{{ p.hit_stats.xwoba|default_if_none:"-999" }}{% else %}-999{% endif %}">
-                {% if p.hit_stats %}{% if p.hit_stats.plate_appearances > 0 and p.hit_stats.xwoba %}{{ p.hit_stats.xwoba|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
+            <td class="text-center py-1">
+                {% if p.hit_stats %}{% if p.hit_stats.plate_appearances > 0 %}{{ p.hit_stats.xobp|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
             </td>
-            <td data-value="{% if p.hit_stats %}{{ p.hit_stats.xslg|default_if_none:"-999" }}{% else %}-999{% endif %}">
-                {% if p.hit_stats %}{% if p.hit_stats.plate_appearances > 0 and p.hit_stats.xslg %}{{ p.hit_stats.xslg|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
+            <td class="text-center py-1">
+                {% if p.hit_stats %}{% if p.hit_stats.plate_appearances > 0 %}{{ p.hit_stats.xslg|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
             </td>
         </tr>
         {% endfor %}
@@ -227,40 +185,64 @@
 {% endif %}
 
 {% if pitcher_stats %}
-<div style="margin-bottom: 2rem;">
-    <h2 class="title is-4 mb-3">Pitching Stats</h2>
-    <table class="table is-fullwidth" data-sortable>
+<div class="mb-6">
+    <h2 class="text-lg font-bold mb-2 border-b border-gray-300 pb-1">Pitching Stats</h2>
+    <table class="w-full text-xs border-collapse" data-sortable>
         <thead>
-            <tr>
-                <th data-sortable-type="numeric">Year</th>
-                <th data-sortable-type="alpha">Level</th>
-                <th data-sortable-type="numeric">G</th>
-                <th data-sortable-type="numeric">GS</th>
-                <th data-sortable-type="numeric">IP</th>
-                <th data-sortable-type="numeric">ERA</th>
-                <th data-sortable-type="numeric">K/9</th>
-                <th data-sortable-type="numeric">BB/9</th>
-                <th data-sortable-type="numeric">HR/9</th>
-                <th data-sortable-type="numeric">FIP</th>
-                <th data-sortable-type="numeric">xFIP</th>
-                <th data-sortable-type="numeric">SIERA</th>
+            <tr class="border-b border-gray-300">
+                <th class="text-center py-1 sortable" data-sortable-type="numeric">Year</th>
+                <th class="text-center py-1 sortable" data-sortable-type="alpha">Level</th>
+                <th class="text-center py-1 sortable" data-sortable-type="numeric">IP</th>
+                <th class="text-center py-1 sortable" data-sortable-type="numeric">W</th>
+                <th class="text-center py-1 sortable" data-sortable-type="numeric">L</th>
+                <th class="text-center py-1 sortable" data-sortable-type="numeric">ERA</th>
+                <th class="text-center py-1 sortable" data-sortable-type="numeric">WHIP</th>
+                <th class="text-center py-1 sortable" data-sortable-type="numeric">K</th>
+                <th class="text-center py-1 sortable" data-sortable-type="numeric">BB</th>
+                <th class="text-center py-1 sortable" data-sortable-type="numeric">K/9</th>
+                <th class="text-center py-1 sortable" data-sortable-type="numeric">BB/9</th>
+                <th class="text-center py-1 sortable" data-sortable-type="numeric">HR/9</th>
+                <th class="text-center py-1 sortable" data-sortable-type="numeric">FIP</th>
             </tr>
         </thead>
         <tbody>
         {% for p in pitcher_stats %}
-        <tr class="{% if p.minors %}non-mlb{% else %}majors{% endif %}">
-            <td data-value="{{ p.season }}">{{ p.season }}</td>
-            <td data-value="{{ p.level|default_if_none:"Z" }}">{{ p.level|default_if_none:"-" }}</td>
-            <td data-value="{% if p.pitch_stats %}{% if p.pitch_stats.ip > 0 %}{{ p.pitch_stats.g|default_if_none:"-999" }}{% else %}-999{% endif %}{% else %}-999{% endif %}">{% if p.pitch_stats %}{% if p.pitch_stats.ip > 0 %}{{ p.pitch_stats.g|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}</td>
-            <td data-value="{% if p.pitch_stats %}{% if p.pitch_stats.ip > 0 %}{{ p.pitch_stats.gs|default_if_none:"-999" }}{% else %}-999{% endif %}{% else %}-999{% endif %}">{% if p.pitch_stats %}{% if p.pitch_stats.ip > 0 %}{{ p.pitch_stats.gs|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}</td>
-            <td data-value="{% if p.pitch_stats %}{% if p.pitch_stats.ip > 0 %}{{ p.pitch_stats.ip|default_if_none:"-999" }}{% else %}-999{% endif %}{% else %}-999{% endif %}">{% if p.pitch_stats %}{% if p.pitch_stats.ip > 0 %}{{ p.pitch_stats.ip|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}</td>
-            <td data-value="{% if p.pitch_stats %}{% if p.pitch_stats.ip > 0 %}{{ p.pitch_stats.era|default_if_none:"999" }}{% else %}999{% endif %}{% else %}999{% endif %}">{% if p.pitch_stats %}{% if p.pitch_stats.ip > 0 %}{{ p.pitch_stats.era|floatformat:2|default_if_none:"-"  }}{% else %}-{% endif %}{% else %}-{% endif %}</td>
-            <td data-value="{% if p.pitch_stats %}{% if p.pitch_stats.ip > 0 %}{{ p.pitch_stats.k_9|default_if_none:"-999" }}{% else %}-999{% endif %}{% else %}-999{% endif %}">{% if p.pitch_stats %}{% if p.pitch_stats.ip > 0 %}{{ p.pitch_stats.k_9|floatformat:1|default_if_none:"-"  }}{% else %}-{% endif %}{% else %}-{% endif %}</td>
-            <td data-value="{% if p.pitch_stats %}{% if p.pitch_stats.ip > 0 %}{{ p.pitch_stats.bb_9|default_if_none:"999" }}{% else %}999{% endif %}{% else %}999{% endif %}">{% if p.pitch_stats %}{% if p.pitch_stats.ip > 0 %}{{ p.pitch_stats.bb_9|floatformat:1|default_if_none:"-"  }}{% else %}-{% endif %}{% else %}-{% endif %}</td>
-            <td data-value="{% if p.pitch_stats %}{% if p.pitch_stats.ip > 0 %}{{ p.pitch_stats.hr_9|default_if_none:"999" }}{% else %}999{% endif %}{% else %}999{% endif %}">{% if p.pitch_stats %}{% if p.pitch_stats.ip > 0 %}{{ p.pitch_stats.hr_9|floatformat:1|default_if_none:"-"  }}{% else %}-{% endif %}{% else %}-{% endif %}</td>
-            <td data-value="{% if p.pitch_stats %}{% if p.pitch_stats.ip > 0 %}{{ p.pitch_stats.fip|default_if_none:"999" }}{% else %}999{% endif %}{% else %}999{% endif %}">{% if p.pitch_stats %}{% if p.pitch_stats.ip > 0 %}{{ p.pitch_stats.fip|floatformat:2|default_if_none:"-"  }}{% else %}-{% endif %}{% else %}-{% endif %}</td>
-            <td data-value="{% if p.pitch_stats %}{% if p.pitch_stats.ip > 0 %}{{ p.pitch_stats.xfip|default_if_none:"999" }}{% else %}999{% endif %}{% else %}999{% endif %}">{% if p.pitch_stats %}{% if p.pitch_stats.ip > 0 %}{{ p.pitch_stats.xfip|floatformat:2|default_if_none:"-"  }}{% else %}-{% endif %}{% else %}-{% endif %}</td>
-            <td data-value="{% if p.pitch_stats %}{% if p.pitch_stats.ip > 0 %}{{ p.pitch_stats.siera|default_if_none:"999" }}{% else %}999{% endif %}{% else %}999{% endif %}">{% if p.pitch_stats %}{% if p.pitch_stats.ip > 0 and p.pitch_stats.siera %}{{ p.pitch_stats.siera|floatformat:2|default_if_none:"-"  }}{% else %}-{% endif %}{% else %}-{% endif %}</td>
+        <tr class="{% if p.minors %}non-mlb{% else %}majors{% endif %} border-b border-gray-100">
+            <td class="text-center py-1 font-bold">{{ p.season }}</td>
+            <td class="text-center py-1">{{ p.level|default_if_none:"-" }}</td>
+            <td class="text-center py-1">
+                {% if p.pitch_stats %}{% if p.pitch_stats.innings_pitched > 0 %}{{ p.pitch_stats.innings_pitched|floatformat:1|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
+            </td>
+            <td class="text-center py-1">
+                {% if p.pitch_stats %}{% if p.pitch_stats.innings_pitched > 0 %}{{ p.pitch_stats.wins|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
+            </td>
+            <td class="text-center py-1">
+                {% if p.pitch_stats %}{% if p.pitch_stats.innings_pitched > 0 %}{{ p.pitch_stats.losses|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
+            </td>
+            <td class="text-center py-1">
+                {% if p.pitch_stats %}{% if p.pitch_stats.innings_pitched > 0 %}{{ p.pitch_stats.era|floatformat:2|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
+            </td>
+            <td class="text-center py-1">
+                {% if p.pitch_stats %}{% if p.pitch_stats.innings_pitched > 0 %}{{ p.pitch_stats.whip|floatformat:2|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
+            </td>
+            <td class="text-center py-1">
+                {% if p.pitch_stats %}{% if p.pitch_stats.innings_pitched > 0 %}{{ p.pitch_stats.strikeouts|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
+            </td>
+            <td class="text-center py-1">
+                {% if p.pitch_stats %}{% if p.pitch_stats.innings_pitched > 0 %}{{ p.pitch_stats.walks|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
+            </td>
+            <td class="text-center py-1">
+                {% if p.pitch_stats %}{% if p.pitch_stats.innings_pitched > 0 %}{{ p.pitch_stats.k_per_9|floatformat:1|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
+            </td>
+            <td class="text-center py-1">
+                {% if p.pitch_stats %}{% if p.pitch_stats.innings_pitched > 0 %}{{ p.pitch_stats.bb_per_9|floatformat:1|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
+            </td>
+            <td class="text-center py-1">
+                {% if p.pitch_stats %}{% if p.pitch_stats.innings_pitched > 0 %}{{ p.pitch_stats.hr_per_9|floatformat:1|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
+            </td>
+            <td class="text-center py-1">
+                {% if p.pitch_stats %}{% if p.pitch_stats.innings_pitched > 0 %}{{ p.pitch_stats.fip|floatformat:2|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
+            </td>
         </tr>
         {% endfor %}
         </tbody>
@@ -268,6 +250,4 @@
 </div>
 {% endif %}
 
-</div>
-</div>
 {% endblock %}

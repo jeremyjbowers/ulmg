@@ -1,74 +1,270 @@
 {% extends "base.html" %}
 
 {% block extrahead %}
-<meta http-equiv="refresh" content="15" />
+<style>
+.pick-updated {
+    background-color: #fef3c7 !important; /* pale yellow */
+    transition: background-color 0.3s ease;
+}
+.pick-normal {
+    background-color: transparent;
+    transition: background-color 15s ease;
+}
+.status-ok {
+    color: #16a34a; /* green-600 */
+}
+.status-error {
+    color: #dc2626; /* red-600 */
+}
+.throbber {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border: 2px solid transparent;
+    border-top: 2px solid currentColor;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-right: 4px;
+}
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+</style>
 {% endblock %}
 
 {% block content %}
-<div class="section is-desktop">
-    <h1 class="is-title is-size-1 has-text-weight-bold">{{ year }} {{ season }} {{ draft_type }} draft</h1>
-    <br/>
-    <br/>
-    <div class="columns">
-        <div class="column">
-                <h1 class="is-title is-size-2 has-text-weight-bold">Upcoming</h1>
-                <br/>
-                <br/>
+<div class="max-w-6xl mx-auto py-4">
+    <h1 class="text-2xl font-bold mb-6 border-b border-gray-300 pb-2">{{ year }} {{ season }} {{ draft_type }} draft</h1>
+    
+    <!-- Status indicator -->
+    <div class="mb-4 text-xs text-gray-600">
+        <span id="last-update">Last updated: <span id="update-time">{{ now }}</span></span>
+        <span class="ml-4 status-ok" id="polling-status">Starting...</span>
+    </div>
+    
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <!-- Upcoming Picks -->
+        <div>
+            <h2 class="text-lg font-bold mb-4 border-b border-gray-300 pb-1">Upcoming</h2>
+            <div id="upcoming-picks">
                 {% for pick in upcoming_picks %}
-                <div class="box" id="pick-{{ pick.id }}" style="width:640px;">
-                    <article class="media">
-                        <div class="media-content">
-                        <div class="content">
-                            <p>
-                                <span class="is-size-6">
-                                    {% if pick.original_team != pick.team %}(via <strong>{{ pick.original_team }}</strong>){% endif %}
-                                    <a href="#pick-{{ pick.id }}">
-                                        Round <strong>{{ pick.draft_round }}</strong>, pick <strong>{{ pick.pick_number }}</strong>
-                                    </a>
-                                </span>
-                                <h1 class="is-title is-size-2">
-                                    {{ pick.team }} 
-                                    <span class="is-size-4" ><a href="/admin/ulmg/draftpick/{{ pick.id }}/change/">&#x270E;</a></span>
-                                </h1>
-                            </p>
-                        </div>
-                        </div>
-                    </article>
+                <div class="border border-gray-300 p-3 mb-3" id="pick-{{ pick.id }}" data-pick-id="{{ pick.id }}">
+                    <div class="text-xs text-gray-600 mb-1">
+                        {% if pick.original_team != pick.team %}(via <strong>{{ pick.original_team }}</strong>){% endif %}
+                        <a href="#pick-{{ pick.id }}" class="underline">
+                            Round <strong>{{ pick.draft_round }}</strong>, pick <strong>{{ pick.pick_number }}</strong>
+                        </a>
+                    </div>
+                    <h3 class="text-lg font-bold">
+                        {{ pick.team }} 
+                        <a href="/admin/ulmg/draftpick/{{ pick.id }}/change/" class="text-sm text-blue-600 underline">✎ edit</a>
+                    </h3>
                 </div>
-            {% endfor %}
+                {% endfor %}
+            </div>
         </div>
-        <div class="column">
-                <h1 class="is-title is-size-2 has-text-weight-bold">Pick history</h1>
-                <br/>
-                <br/>
+        
+        <!-- Pick History -->
+        <div>
+            <h2 class="text-lg font-bold mb-4 border-b border-gray-300 pb-1">Pick history</h2>
+            <div id="made-picks">
                 {% for pick in made_picks %}
-                <div class="box" id="pick-{{ pick.id }}" style="width:640px;">
-                    <article class="media">
-                        <div class="media-content">
-                        <div class="content">
-                            <p>
-                                <span class="is-size-6">
-                                    {% if pick.original_team != pick.team %}(via <strong>{{ pick.original_team }}</strong>){% endif %}
-                                    <a href="#pick-{{ pick.id }}">
-                                        Round <strong>{{ pick.draft_round }}</strong>, pick <strong>{{ pick.pick_number }}</strong>
-                                    </a>
-                                </span>
-                                <h1 class="is-title is-size-2">
-                                    {{ pick.team }} 
-                                    <span class="is-size-4" ><a href="/admin/ulmg/draftpick/{{ pick.id }}/change/">&#x270E;</a></span>
-                                </h1>
-                                {% if not pick.skipped %}
-                                <h1>{% if pick.player %}{{ pick.player.position }}{% endif %} {{ pick.player_name }}</h1>
-                                {% else %}
-                                <span><strong>{{ pick.team }}</strong> has skipped this pick.</span>
-                                {% endif %}
-                            </p>
-                        </div>
-                        </div>
-                    </article>
+                <div class="border border-gray-300 p-3 mb-3" id="pick-{{ pick.id }}" data-pick-id="{{ pick.id }}">
+                    <div class="text-xs text-gray-600 mb-1">
+                        {% if pick.original_team != pick.team %}(via <strong>{{ pick.original_team }}</strong>){% endif %}
+                        <a href="#pick-{{ pick.id }}" class="underline">
+                            Round <strong>{{ pick.draft_round }}</strong>, pick <strong>{{ pick.pick_number }}</strong>
+                        </a>
+                    </div>
+                    <h3 class="text-lg font-bold">
+                        {{ pick.team }} 
+                        <a href="/admin/ulmg/draftpick/{{ pick.id }}/change/" class="text-sm text-blue-600 underline">✎ edit</a>
+                    </h3>
+                    {% if not pick.skipped %}
+                    <div class="text-sm mt-1">
+                        {% if pick.player %}{{ pick.player.position }}{% endif %} {{ pick.player_name }}
+                    </div>
+                    {% else %}
+                    <div class="text-gray-600 italic text-sm mt-1">
+                        <strong>{{ pick.team }}</strong> has skipped this pick.
+                    </div>
+                    {% endif %}
                 </div>
-            {% endfor %}
+                {% endfor %}
+            </div>
         </div>
     </div>
 </div>
+
+<script>
+let lastUpdateTime = null;
+let pollInterval = null;
+let countdownInterval = null;
+let countdownSeconds = 0;
+
+function formatTime(date) {
+    return date.toLocaleTimeString();
+}
+
+function updateStatus(message, isError = false) {
+    const statusElement = document.getElementById('polling-status');
+    statusElement.innerHTML = message;
+    
+    // Update status color
+    statusElement.className = statusElement.className.replace(/status-(ok|error)/, '');
+    statusElement.classList.add(isError ? 'status-error' : 'status-ok');
+}
+
+function startCountdown(seconds) {
+    countdownSeconds = seconds;
+    
+    if (countdownInterval) {
+        clearInterval(countdownInterval);
+    }
+    
+    countdownInterval = setInterval(() => {
+        if (countdownSeconds > 0) {
+            updateStatus(`Next check in ${countdownSeconds}s`);
+            countdownSeconds--;
+        } else {
+            clearInterval(countdownInterval);
+        }
+    }, 1000);
+}
+
+function highlightUpdatedPick(pickId) {
+    const pickElement = document.getElementById(`pick-${pickId}`);
+    if (pickElement) {
+        // Add yellow highlight
+        pickElement.classList.remove('pick-normal');
+        pickElement.classList.add('pick-updated');
+        
+        // Remove highlight after 15 seconds
+        setTimeout(() => {
+            pickElement.classList.remove('pick-updated');
+            pickElement.classList.add('pick-normal');
+        }, 15000);
+    }
+}
+
+function updatePicksDisplay(data) {
+    const currentMadePicks = Array.from(document.querySelectorAll('#made-picks .border')).map(el => el.dataset.pickId);
+    const currentUpcomingPicks = Array.from(document.querySelectorAll('#upcoming-picks .border')).map(el => el.dataset.pickId);
+    
+    // Track which picks are new or moved
+    const newMadePicks = data.made_picks.filter(pick => !currentMadePicks.includes(pick.id.toString()));
+    const removedUpcomingPicks = data.upcoming_picks.filter(pick => currentUpcomingPicks.includes(pick.id.toString()));
+    
+    // Update made picks
+    const madePicksContainer = document.getElementById('made-picks');
+    madePicksContainer.innerHTML = '';
+    
+    data.made_picks.forEach(pick => {
+        const pickHtml = `
+            <div class="border border-gray-300 p-3 mb-3" id="pick-${pick.id}" data-pick-id="${pick.id}">
+                <div class="text-xs text-gray-600 mb-1">
+                    ${pick.original_team !== pick.team ? `(via <strong>${pick.original_team}</strong>)` : ''}
+                    <a href="#pick-${pick.id}" class="underline">
+                        Round <strong>${pick.draft_round}</strong>, pick <strong>${pick.pick_number}</strong>
+                    </a>
+                </div>
+                <h3 class="text-lg font-bold">
+                    ${pick.team} 
+                    <a href="/admin/ulmg/draftpick/${pick.id}/change/" class="text-sm text-blue-600 underline">✎ edit</a>
+                </h3>
+                ${!pick.skipped ? `
+                    <div class="text-sm mt-1">
+                        ${pick.player_position ? pick.player_position : ''} ${pick.player_name}
+                    </div>
+                ` : `
+                    <div class="text-gray-600 italic text-sm mt-1">
+                        <strong>${pick.team}</strong> has skipped this pick.
+                    </div>
+                `}
+            </div>
+        `;
+        madePicksContainer.innerHTML += pickHtml;
+    });
+    
+    // Update upcoming picks  
+    const upcomingPicksContainer = document.getElementById('upcoming-picks');
+    upcomingPicksContainer.innerHTML = '';
+    
+    data.upcoming_picks.forEach(pick => {
+        const pickHtml = `
+            <div class="border border-gray-300 p-3 mb-3" id="pick-${pick.id}" data-pick-id="${pick.id}">
+                <div class="text-xs text-gray-600 mb-1">
+                    ${pick.original_team !== pick.team ? `(via <strong>${pick.original_team}</strong>)` : ''}
+                    <a href="#pick-${pick.id}" class="underline">
+                        Round <strong>${pick.draft_round}</strong>, pick <strong>${pick.pick_number}</strong>
+                    </a>
+                </div>
+                <h3 class="text-lg font-bold">
+                    ${pick.team} 
+                    <a href="/admin/ulmg/draftpick/${pick.id}/change/" class="text-sm text-blue-600 underline">✎ edit</a>
+                </h3>
+            </div>
+        `;
+        upcomingPicksContainer.innerHTML += pickHtml;
+    });
+    
+    // Highlight newly made picks
+    newMadePicks.forEach(pick => {
+        highlightUpdatedPick(pick.id);
+    });
+}
+
+function pollDraftStatus() {
+    const url = `/api/v1/draft/watch/{{ year }}/{{ season }}/{{ draft_type }}/`;
+    
+    // Show checking status with throbber
+    updateStatus('<span class="throbber"></span>Checking for updates...');
+    
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            updatePicksDisplay(data);
+            
+            // Update timestamp
+            const now = new Date();
+            document.getElementById('update-time').textContent = formatTime(now);
+            
+            // Start countdown
+            startCountdown(10);
+            
+            lastUpdateTime = data.timestamp;
+        })
+        .catch(error => {
+            console.error('Error polling draft status:', error);
+            updateStatus('Error checking for updates - retrying in 10s', true);
+            
+            // Still countdown even on error, so it retries
+            startCountdown(10);
+        });
+}
+
+// Start polling when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    // Set initial timestamp
+    document.getElementById('update-time').textContent = formatTime(new Date());
+    
+    // Start polling every 10 seconds
+    updateStatus('Starting automatic updates...');
+    pollInterval = setInterval(pollDraftStatus, 10000);
+    
+    // Poll immediately once
+    setTimeout(pollDraftStatus, 1000);
+});
+
+// Cleanup on page unload
+window.addEventListener('beforeunload', function() {
+    if (pollInterval) {
+        clearInterval(pollInterval);
+    }
+    if (countdownInterval) {
+        clearInterval(countdownInterval);
+    }
+});
+</script>
 {% endblock %}
