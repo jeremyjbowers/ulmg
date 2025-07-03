@@ -426,6 +426,40 @@ class Player(BaseModel):
         current_status = self.current_season_status()
         return current_status.mlb_org if current_status else None
 
+    def is_35man_roster(self):
+        """Check if player is on 35-man roster for current season."""
+        current_status = self.current_season_status()
+        return current_status.is_35man_roster if current_status else False
+
+    def is_mlb_roster(self):
+        """Check if player is on MLB roster for current season."""
+        current_status = self.current_season_status()
+        return current_status.is_mlb_roster if current_status else False
+
+    def is_aaa_roster(self):
+        """Check if player is on AAA roster for current season."""
+        current_status = self.current_season_status()
+        return current_status.is_aaa_roster if current_status else False
+
+    def roster_status(self):
+        """Get the current season's roster status."""
+        current_status = self.current_season_status()
+        return current_status.roster_status if current_status else None
+
+    def role_type(self):
+        """Get the current season's role type."""
+        current_status = self.current_season_status()
+        return current_status.role_type if current_status else None
+
+    def role(self):
+        """Get the current season's role."""
+        current_status = self.current_season_status()
+        return current_status.role if current_status else None
+
+    def mlb_org(self):
+        """Get the current season's MLB organization (for template compatibility)."""
+        return self.current_mlb_org()
+
     def latest_hit_stats(self):
         stats = PlayerStatSeason.objects.filter(player=self).first()
         if stats:

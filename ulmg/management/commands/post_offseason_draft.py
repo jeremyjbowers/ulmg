@@ -16,8 +16,7 @@ from ulmg import models
 class Command(BaseCommand):
     def reset_rosters(self):
         print(".... resetting rosters")
-        models.Player.objects.filter(is_mlb_roster=True).update(is_mlb_roster=False)
-        models.Player.objects.filter(is_aaa_roster=True).update(is_aaa_roster=False)
+        # Reset Player model roster statuses that are still there
         models.Player.objects.filter(is_1h_c=True).update(is_1h_c=False)
         models.Player.objects.filter(is_1h_p=True).update(is_1h_p=False)
         models.Player.objects.filter(is_1h_pos=True).update(is_1h_pos=False)
@@ -25,7 +24,15 @@ class Command(BaseCommand):
         models.Player.objects.filter(is_2h_p=True).update(is_2h_p=False)
         models.Player.objects.filter(is_2h_pos=True).update(is_2h_pos=False)
         models.Player.objects.filter(is_reserve=True).update(is_reserve=False)
-        models.Player.objects.filter(is_35man_roster=True).update(is_35man_roster=False)
+        
+        # Reset PlayerStatSeason roster statuses for current season
+        from datetime import datetime
+        current_season = datetime.now().year
+        models.PlayerStatSeason.objects.filter(season=current_season).update(
+            is_mlb_roster=False,
+            is_aaa_roster=False,
+            is_35man_roster=False
+        )
 
     def handle(self, *args, **options):
         self.reset_rosters()

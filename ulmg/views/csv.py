@@ -14,11 +14,19 @@ from ulmg import models, utils
 
 
 def all_csv(request):
+    # Get current season for PlayerStatSeason lookup
+    current_season = datetime.datetime.now().year
+    
+    # Get carded players by checking PlayerStatSeason
+    carded_player_ids = models.PlayerStatSeason.objects.filter(
+        season=current_season,
+        carded=True
+    ).values_list('player_id', flat=True)
+    
     team_players = (
-        models.Player.objects.filter(is_owned=True, is_carded=True)
+        models.Player.objects.filter(is_owned=True, id__in=carded_player_ids)
         .order_by(
             "team",
-            "-is_35man_roster",
             "position",
             "-level_order",
             "last_name",
@@ -53,8 +61,6 @@ def team_csv(request, abbreviation):
     team_players = (
         models.Player.objects.filter(team=team)
         .order_by(
-            "-is_mlb_roster",
-            "-is_aaa_roster",
             "position",
             "-level_order",
             "last_name",

@@ -91,12 +91,27 @@ def my_team(request, abbreviation):
     )
     context["owner"] = context["team"].owner
 
+    # Get current season for PlayerStatSeason queries
+    current_season = datetime.datetime.now().year
+
     # Get team players for roster counts and distribution
     team_players = models.Player.objects.filter(team=context["team"])
-    context["35_roster_count"] = team_players.filter(is_35man_roster=True).count()
-    context["mlb_roster_count"] = team_players.filter(
-        is_mlb_roster=True, is_aaa_roster=False, is_reserve=False
+    
+    # Count roster statuses using PlayerStatSeason
+    context["35_roster_count"] = models.PlayerStatSeason.objects.filter(
+        player__team=context["team"], 
+        season=current_season,
+        is_35man_roster=True
     ).count()
+    
+    context["mlb_roster_count"] = models.PlayerStatSeason.objects.filter(
+        player__team=context["team"],
+        season=current_season,
+        is_mlb_roster=True, 
+        is_aaa_roster=False,
+        player__is_reserve=False
+    ).count()
+    
     context["level_distribution"] = (
         team_players.order_by("level_order")
         .values("level_order")
@@ -107,10 +122,10 @@ def my_team(request, abbreviation):
     # Query for players directly instead of PlayerStatSeason objects
     # Split into hitters and pitchers using Player objects
     hitters = team_players.exclude(position="P").order_by(
-        "position", "-level_order", "-is_carded", "last_name", "first_name"
+        "position", "-level_order", "last_name", "first_name"
     )
     pitchers = team_players.filter(position="P").order_by(
-        "-level_order", "-is_carded", "last_name", "first_name"
+        "-level_order", "last_name", "first_name"
     )
 
     context["hitters"] = hitters

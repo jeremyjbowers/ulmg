@@ -25,17 +25,6 @@ def trade_block(request):
     return render(request, "trade_block.html", context)
 
 
-
-
-
-
-
-
-
-
-
-
-
 def index(request):
     context = utils.build_context(request)
     context["teams"] = models.Team.objects.all()
@@ -155,6 +144,7 @@ def team_detail(request, abbreviation):
     context["team"] = get_object_or_404(
         models.Team, abbreviation__icontains=abbreviation
     )
+
     if request.user.is_authenticated:
         owner = models.Owner.objects.get(user=request.user)
         if owner.team() == context["team"]:
@@ -167,12 +157,27 @@ def team_detail(request, abbreviation):
     if request.user.is_superuser:
         context["own_team"] = True
 
+    # Get current season for PlayerStatSeason queries
+    current_season = datetime.now().year
+
     # Get team players for roster counts and distribution
     team_players = models.Player.objects.filter(team=context["team"])
-    context["35_roster_count"] = team_players.filter(is_35man_roster=True).count()
-    context["mlb_roster_count"] = team_players.filter(
-        is_mlb_roster=True, is_aaa_roster=False, is_reserve=False
+    
+    # Count roster statuses using PlayerStatSeason
+    context["35_roster_count"] = models.PlayerStatSeason.objects.filter(
+        player__team=context["team"], 
+        season=current_season,
+        is_35man_roster=True
     ).count()
+    
+    context["mlb_roster_count"] = models.PlayerStatSeason.objects.filter(
+        player__team=context["team"],
+        season=current_season,
+        is_mlb_roster=True, 
+        is_aaa_roster=False,
+        player__is_reserve=False
+    ).count()
+    
     context["level_distribution"] = (
         team_players.order_by("level_order")
         .values("level_order")
@@ -183,11 +188,11 @@ def team_detail(request, abbreviation):
     # Query for players directly instead of PlayerStatSeason objects
     # Split into hitters and pitchers, then sort as desired
     hitters = team_players.exclude(position="P").order_by(
-        "position", "-level_order", "-is_carded", "last_name", "first_name"
+        "position", "-level_order", "last_name", "first_name"
     )
     
     pitchers = team_players.filter(position__icontains="P").order_by(
-        "-level_order", "-is_carded", "last_name", "first_name"
+        "-level_order", "last_name", "first_name"
     )
 
     context["hitters"] = hitters
@@ -275,17 +280,29 @@ def draft_admin(request, year, season, draft_type):
 
         if season == "offseason":
             # 35-man roster is a form of protection for offseason drafts?
-            for p in models.Player.objects.filter(
+            current_season = datetime.now().year
+            # Get players not on 35-man roster via PlayerStatSeason
+            players_not_35man = models.Player.objects.filter(
                 is_owned=True,
                 level__in=["V","A"],
                 team__isnull=False,
-                is_mlb_roster=False,
                 is_1h_c=False,
                 is_1h_p=False,
                 is_1h_pos=False,
-                is_35man_roster=False,
                 is_reserve=False,
-            ).values("id", "name", "position", 'mlbam_id', 'mlb_org'):
+            ).exclude(
+                playerstatseason__season=current_season,
+                playerstatseason__is_35man_roster=True
+            ).exclude(
+                playerstatseason__season=current_season,
+                playerstatseason__is_mlb_roster=True
+            )
+            
+            for p in players_not_35man.values("id", "name", "position", 'mlbam_id'):
+                # Get mlb_org from current season PlayerStatSeason if available
+                player_obj = models.Player.objects.get(id=p['id'])
+                current_status = player_obj.current_season_status()
+                p['mlb_org'] = current_status.mlb_org if current_status else None
                 players.append(format_player_for_autocomplete(p))
 
         if season == "midseason":
@@ -344,33 +361,68 @@ def draft_recap(request, year, season, draft_type):
 
 def player_available_midseason(request):
     context = utils.build_context(request)
-    context["hitters"] = (
-        models.Player.objects.filter(
-            Q(team__isnull=True, stats__2025_majors_hit__plate_appearances__gte=1)
-            | Q(
-                level="V",
-                is_owned=True,
-                is_mlb_roster=False,
-                is_1h_c=False,
-                is_1h_pos=False,
-                is_reserve=False,
-            )
-        )
-        .exclude(position="P")
-        .order_by("position", "-level_order", "last_name", "first_name")
+    current_season = datetime.now().year
+    
+    # For midseason availability, get unowned players with MLB stats or owned level V players not on MLB roster
+    unowned_with_mlb_stats = models.PlayerStatSeason.objects.filter(
+        season=current_season,
+        classification="1-majors",
+        owned=False,
+        hit_stats__plate_appearances__gte=1
+    ).select_related('player')
+    
+    owned_level_v_not_mlb = models.Player.objects.filter(
+        level="V",
+        is_owned=True,
+        is_1h_c=False,
+        is_1h_pos=False,
+        is_reserve=False,
+    ).exclude(
+        playerstatseason__season=current_season,
+        playerstatseason__is_mlb_roster=True
+    )
+    
+    # Combine queries for hitters
+    context["hitters"] = []
+    
+    # Add unowned hitters with MLB stats
+    for stat_season in unowned_with_mlb_stats.exclude(player__position="P"):
+        context["hitters"].append(stat_season.player)
+    
+    # Add owned level V hitters not on MLB roster
+    for player in owned_level_v_not_mlb.exclude(position="P"):
+        context["hitters"].append(player)
+    
+    # Sort hitters
+    context["hitters"] = sorted(
+        set(context["hitters"]), 
+        key=lambda p: (p.position, -p.level_order, p.last_name, p.first_name)
     )
 
-    context["pitchers"] = models.Player.objects.filter(
-        Q(team__isnull=True, stats__2025_majors_pitch__ip__gte=1, position__icontains="P")
-        | Q(
-            level="V",
-            position="P",
-            is_owned=True,
-            is_mlb_roster=False,
-            is_1h_p=False,
-            is_reserve=False,
-        )
-    ).order_by("-level_order", "last_name", "first_name")
+    # Similar for pitchers
+    context["pitchers"] = []
+    
+    # Add unowned pitchers with MLB stats
+    unowned_pitchers_with_mlb_stats = models.PlayerStatSeason.objects.filter(
+        season=current_season,
+        classification="1-majors",
+        owned=False,
+        pitch_stats__ip__gte=1,
+        player__position__icontains="P"
+    ).select_related('player')
+    
+    for stat_season in unowned_pitchers_with_mlb_stats:
+        context["pitchers"].append(stat_season.player)
+    
+    # Add owned level V pitchers not on MLB roster
+    for player in owned_level_v_not_mlb.filter(position="P", is_1h_p=False):
+        context["pitchers"].append(player)
+    
+    # Sort pitchers
+    context["pitchers"] = sorted(
+        set(context["pitchers"]), 
+        key=lambda p: (-p.level_order, p.last_name, p.first_name)
+    )
 
     # Filters hidden by default for midseason available players
     context["show_filters_by_default"] = False
@@ -380,17 +432,24 @@ def player_available_midseason(request):
 
 def player_available_offseason(request):
     context = utils.build_context(request)
-    context["hitters"] = (
-        models.Player.objects.filter(
-            is_owned=True, is_35man_roster=False, level__in=["A", "V"]
-        )
-        .exclude(position="P")
-        .order_by("position", "-level_order", "last_name", "first_name")
+    current_season = datetime.now().year
+    
+    # Get owned players not on 35-man roster
+    available_players = models.Player.objects.filter(
+        is_owned=True, 
+        level__in=["A", "V"]
+    ).exclude(
+        playerstatseason__season=current_season,
+        playerstatseason__is_35man_roster=True
+    )
+    
+    context["hitters"] = available_players.exclude(position="P").order_by(
+        "position", "-level_order", "last_name", "first_name"
     )
 
-    context["pitchers"] = models.Player.objects.filter(
-        is_owned=True, is_35man_roster=False, level__in=["A", "V"], position__icontains="P"
-    ).order_by("-level_order", "last_name", "first_name")
+    context["pitchers"] = available_players.filter(position__icontains="P").order_by(
+        "-level_order", "last_name", "first_name"
+    )
 
     # Filters hidden by default for offseason available players
     context["show_filters_by_default"] = False

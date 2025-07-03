@@ -67,7 +67,7 @@
                 <a href="/players/{{ p.id }}/" class="underline">{{ p.name }}</a>
                 {% endif %}
             </td>
-            <td class="text-center py-1">{% if p.player %}{% if p.player.mlb_org %}{{ p.player.mlb_org|default_if_none:"-" }}{% else %}-{% endif %}{% else %}{% if p.mlb_org %}{{ p.mlb_org|default_if_none:"-" }}{% else %}-{% endif %}{% endif %}</td>
+            <td class="text-center py-1">{% if p.player %}{{ p.player.mlb_org|default_if_none:"-" }}{% else %}{{ p.mlb_org|default_if_none:"-" }}{% endif %}</td>
             <td class="text-center py-1">
                 {% if p.player %}
                     {% if p.player.team %}<a href="/teams/{{ p.player.team.abbreviation }}/" class="underline">{{ p.player.team|default_if_none:"-" }}</a>{% else %}-{% endif %}
@@ -127,7 +127,7 @@
                 <a href="/players/{{ p.id }}/" class="underline">{{ p.name }}</a>
                 {% endif %}
             </td>
-            <td class="text-center py-1">{% if p.player %}{% if p.player.mlb_org %}{{ p.player.mlb_org|default_if_none:"-" }}{% else %}-{% endif %}{% else %}{% if p.mlb_org %}{{ p.mlb_org|default_if_none:"-" }}{% else %}-{% endif %}{% endif %}</td>
+            <td class="text-center py-1">{% if p.player %}{{ p.player.mlb_org|default_if_none:"-" }}{% else %}{{ p.mlb_org|default_if_none:"-" }}{% endif %}</td>
             <td class="text-center py-1">
                 {% if p.player %}
                     {% if p.player.team %}<a href="/teams/{{ p.player.team.abbreviation }}/" class="underline">{{ p.player.team|default_if_none:"-" }}</a>{% else %}-{% endif %}

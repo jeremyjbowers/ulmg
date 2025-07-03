@@ -34,7 +34,7 @@ def get_wishlist_players(request):
                 "position": p.player.position,
                 "age": p.player.age,
                 "url": f"/players/{ p.player.id }/",
-                "mlb_team": p.player.mlb_org,
+                "mlb_team": p.player.current_mlb_org(),
                 "team": None,
                 "stats": None,
             }
@@ -156,25 +156,43 @@ def wishlist_player_action(request, playerid):
 @login_required
 @csrf_exempt
 def player_action(request, playerid, action):
-    p = get_object_or_404(models.Player, id=playerid)
-
-    if action == "trade_block":
-        if p.is_trade_block:
-            p.is_trade_block = False
-        else:
-            p.is_trade_block = True
-        p.save()
-
-        return HttpResponse("ok")
+    p = models.Player.objects.get(id=playerid)
+    current_season = datetime.datetime.now().year
+    
+    def _update_player_stat_season(player, **kwargs):
+        """Update or create PlayerStatSeason with roster status fields."""
+        # Get or create the most recent PlayerStatSeason for this player
+        player_stat_season = models.PlayerStatSeason.objects.filter(
+            player=player,
+            season=current_season
+        ).first()
+        
+        if not player_stat_season:
+            # Create a new PlayerStatSeason for the current season
+            player_stat_season = models.PlayerStatSeason.objects.create(
+                player=player,
+                season=current_season,
+                classification='1-majors',  # Default, will be corrected by stats updates
+                owned=player.is_owned,
+                carded=False  # Will be set by separate command
+            )
+        
+        # Update the roster status fields
+        for field, value in kwargs.items():
+            if hasattr(player_stat_season, field):
+                setattr(player_stat_season, field, value)
+        
+        player_stat_season.save()
+        return player_stat_season
 
     if action == "to_35_man":
         p.is_reserve = False
         p.is_1h_c = False
         p.is_1h_p = False
         p.is_1h_pos = False
-        p.is_35man_roster = True
         p.is_protected = True
         p.save()
+        _update_player_stat_season(p, is_35man_roster=True)
         return HttpResponse("ok")
 
     if action == "unprotect":
@@ -185,26 +203,29 @@ def player_action(request, playerid, action):
         # p.is_2h_c = False
         # p.is_2h_p = False
         # p.is_2h_pos = False
-        p.is_35man_roster = False
-        p.is_mlb_roster = False
-        p.is_aaa_roster = False
         p.is_protected = False
         p.save()
+        _update_player_stat_season(p, 
+            is_35man_roster=False,
+            is_mlb_roster=False,
+            is_aaa_roster=False
+        )
         return HttpResponse("ok")
 
     if action == "is_reserve":
         old = models.Player.objects.filter(team=p.team, is_reserve=True).update(
             is_reserve=False
         )
-        p.is_reserve = False
+        p.is_reserve = True
         p.is_1h_c = False
         p.is_1h_p = False
         p.is_1h_pos = False
-        p.is_35man_roster = False
-        p.is_reserve = True
-        p.is_mlb_roster = False
-        p.is_aaa_roster = False
         p.save()
+        _update_player_stat_season(p, 
+            is_35man_roster=False,
+            is_mlb_roster=False,
+            is_aaa_roster=False
+        )
         return HttpResponse("ok")
 
     # if action == "is_2h_p":
@@ -255,13 +276,14 @@ def player_action(request, playerid, action):
         )
         p.is_reserve = False
         p.is_1h_c = False
-        p.is_1h_p = False
-        p.is_1h_pos = False
-        p.is_35man_roster = False
         p.is_1h_p = True
-        p.is_mlb_roster = False
-        p.is_aaa_roster = False
+        p.is_1h_pos = False
         p.save()
+        _update_player_stat_season(p, 
+            is_35man_roster=False,
+            is_mlb_roster=False,
+            is_aaa_roster=False
+        )
         return HttpResponse("ok")
 
     if action == "is_1h_c":
@@ -269,14 +291,15 @@ def player_action(request, playerid, action):
             is_1h_c=False
         )
         p.is_reserve = False
-        p.is_1h_c = False
+        p.is_1h_c = True
         p.is_1h_p = False
         p.is_1h_pos = False
-        p.is_35man_roster = False
-        p.is_1h_c = True
-        p.is_mlb_roster = False
-        p.is_aaa_roster = False
         p.save()
+        _update_player_stat_season(p, 
+            is_35man_roster=False,
+            is_mlb_roster=False,
+            is_aaa_roster=False
+        )
         return HttpResponse("ok")
 
     if action == "is_1h_pos":
@@ -286,17 +309,16 @@ def player_action(request, playerid, action):
         p.is_reserve = False
         p.is_1h_c = False
         p.is_1h_p = False
-        p.is_1h_pos = False
-        p.is_35man_roster = False
         p.is_1h_pos = True
-        p.is_mlb_roster = False
-        p.is_aaa_roster = False
         p.save()
+        _update_player_stat_season(p, 
+            is_35man_roster=False,
+            is_mlb_roster=False,
+            is_aaa_roster=False
+        )
         return HttpResponse("ok")
 
     if action == "to_mlb":
-        p.is_mlb_roster = True
-        p.is_aaa_roster = False
         p.is_reserve = False
         p.is_1h_c = False
         p.is_1h_p = False
@@ -304,13 +326,14 @@ def player_action(request, playerid, action):
         p.is_2h_c = False
         p.is_2h_p = False
         p.is_2h_pos = False
-        p.is_2h_pos = False
         p.save()
+        _update_player_stat_season(p, 
+            is_mlb_roster=True,
+            is_aaa_roster=False
+        )
         return HttpResponse("ok")
 
     if action == "to_aaa":
-        p.is_mlb_roster = False
-        p.is_aaa_roster = True
         p.is_reserve = False
         p.is_1h_c = False
         p.is_1h_p = False
@@ -318,13 +341,14 @@ def player_action(request, playerid, action):
         p.is_2h_c = False
         p.is_2h_p = False
         p.is_2h_pos = False
-        p.is_2h_pos = False
         p.save()
+        _update_player_stat_season(p, 
+            is_mlb_roster=False,
+            is_aaa_roster=True
+        )
         return HttpResponse("ok")
 
     if action == "off_roster":
-        p.is_mlb_roster = False
-        p.is_aaa_roster = False
         p.is_reserve = False
         p.is_1h_c = False
         p.is_1h_p = False
@@ -332,13 +356,14 @@ def player_action(request, playerid, action):
         p.is_2h_c = False
         p.is_2h_p = False
         p.is_2h_pos = False
-        p.is_2h_pos = False
         p.save()
+        _update_player_stat_season(p, 
+            is_mlb_roster=False,
+            is_aaa_roster=False
+        )
         return HttpResponse("ok")
 
     if action == "drop":
-        p.is_mlb_roster = False
-        p.is_aaa_roster = False
         p.team = None
         p.is_owned = False
         p.is_reserve = False
@@ -350,6 +375,11 @@ def player_action(request, playerid, action):
         p.is_2h_pos = False
         p.is_protected = False
         p.save()
+        _update_player_stat_season(p, 
+            is_mlb_roster=False,
+            is_aaa_roster=False,
+            owned=False
+        )
         return HttpResponse("ok")
 
     return HttpResponse("error")
@@ -574,21 +604,25 @@ def search(request):
     if request.GET.get("protected", None):
         protected = request.GET["protected"]
         if protected.lower() != "":
+            current_season = datetime.datetime.now().year
             if to_bool(protected) == False:
+                # Get players that are NOT protected
                 query = query.filter(
                     Q(is_1h_c=False),
                     Q(is_1h_p=False),
                     Q(is_1h_pos=False),
-                    Q(is_35man_roster=False),
                     Q(is_reserve=False),
+                ).exclude(
+                    Q(playerstatseason__season=current_season, playerstatseason__is_35man_roster=True)
                 )
             else:
+                # Get players that ARE protected
                 query = query.filter(
                     Q(is_1h_c=True)
                     | Q(is_1h_p=True)
                     | Q(is_1h_pos=True)
-                    | Q(is_35man_roster=True)
                     | Q(is_reserve=True)
+                    | Q(playerstatseason__season=current_season, playerstatseason__is_35man_roster=True)
                 )
 
             context["protected"] = protected
@@ -636,7 +670,21 @@ def search(request):
     if request.GET.get("carded", None):
         carded = request.GET["carded"]
         if carded.lower() != "":
-            query = query.filter(is_carded=to_bool(carded))
+            current_season = datetime.datetime.now().year
+            if to_bool(carded):
+                # Get carded players via PlayerStatSeason
+                carded_player_ids = models.PlayerStatSeason.objects.filter(
+                    season=current_season,
+                    carded=True
+                ).values_list('player_id', flat=True)
+                query = query.filter(id__in=carded_player_ids)
+            else:
+                # Get non-carded players
+                carded_player_ids = models.PlayerStatSeason.objects.filter(
+                    season=current_season,
+                    carded=True
+                ).values_list('player_id', flat=True)
+                query = query.exclude(id__in=carded_player_ids)
             context["carded"] = carded
 
     if request.GET.get("amateur", None):

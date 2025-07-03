@@ -93,7 +93,7 @@
             </thead>
             <tbody>
             {% for p in hitter_hr %}
-            <tr class="{% if p.player.roster_status %}{{ p.player.roster_status|lower|default_if_none:"non-mlb" }} {% else %}non-mlb {% endif %}border-b border-gray-100">
+            <tr class="{% if p.roster_status %}{{ p.roster_status|lower|default_if_none:"non-mlb" }} {% else %}non-mlb {% endif %}border-b border-gray-100">
                 <td class="py-1">
                     {% if user.is_authenticated and p.player.team.owner_obj.user != user %}
                         <span id="player-{{ p.player.id }}" class="action-add-wishlist text-gray-400 cursor-pointer mr-1 px-1 py-1 text-sm hover:bg-yellow-100" data-playerid="{{ p.player.id }}">☆</span>
@@ -123,7 +123,7 @@
             </thead>
             <tbody>
             {% for p in hitter_sb %}
-            <tr class="{% if p.player.roster_status %}{{ p.player.roster_status|lower|default_if_none:"non-mlb" }} {% else %}non-mlb {% endif %}border-b border-gray-100">
+            <tr class="{% if p.roster_status %}{{ p.roster_status|lower|default_if_none:"non-mlb" }} {% else %}non-mlb {% endif %}border-b border-gray-100">
                 <td class="py-1">
                     {% if user.is_authenticated and p.player.team.owner_obj.user != user %}
                         <span id="player-{{ p.player.id }}" class="action-add-wishlist text-gray-400 cursor-pointer mr-1 px-1 py-1 text-sm hover:bg-yellow-100" data-playerid="{{ p.player.id }}">☆</span>
@@ -154,7 +154,7 @@
             </thead>
             <tbody>
             {% for p in hitter_avg %}
-            <tr class="{% if p.player.roster_status %}{{ p.player.roster_status|lower|default_if_none:"non-mlb" }} {% else %}non-mlb {% endif %}border-b border-gray-100">
+            <tr class="{% if p.roster_status %}{{ p.roster_status|lower|default_if_none:"non-mlb" }} {% else %}non-mlb {% endif %}border-b border-gray-100">
                 <td class="py-1">
                     {% if user.is_authenticated and p.player.team.owner_obj.user != user %}
                         <span id="player-{{ p.player.id }}" class="action-add-wishlist text-gray-400 cursor-pointer mr-1 px-1 py-1 text-sm hover:bg-yellow-100" data-playerid="{{ p.player.id }}">☆</span>
@@ -187,7 +187,7 @@
             </thead>
             <tbody>
             {% for p in pitcher_starts %}
-            <tr class="{% if p.player.roster_status %}{{ p.player.roster_status|lower|default_if_none:"non-mlb" }} {% else %}non-mlb {% endif %}border-b border-gray-100">
+            <tr class="{% if p.roster_status %}{{ p.roster_status|lower|default_if_none:"non-mlb" }} {% else %}non-mlb {% endif %}border-b border-gray-100">
                 <td class="py-1">
                     {% if user.is_authenticated and p.player.team.owner_obj.user != user %}
                         <span id="player-{{ p.player.id }}" class="action-add-wishlist text-gray-400 cursor-pointer mr-1 px-1 py-1 text-sm hover:bg-yellow-100" data-playerid="{{ p.player.id }}">☆</span>
@@ -217,7 +217,7 @@
             </thead>
             <tbody>
             {% for p in pitcher_innings %}
-            <tr class="{% if p.player.roster_status %}{{ p.player.roster_status|lower|default_if_none:"non-mlb" }} {% else %}non-mlb {% endif %}border-b border-gray-100">
+            <tr class="{% if p.roster_status %}{{ p.roster_status|lower|default_if_none:"non-mlb" }} {% else %}non-mlb {% endif %}border-b border-gray-100">
                 <td class="py-1">
                     {% if user.is_authenticated and p.player.team.owner_obj.user != user %}
                         <span id="player-{{ p.player.id }}" class="action-add-wishlist text-gray-400 cursor-pointer mr-1 px-1 py-1 text-sm hover:bg-yellow-100" data-playerid="{{ p.player.id }}">☆</span>
@@ -248,7 +248,7 @@
             </thead>
             <tbody>
             {% for p in pitcher_era %}
-            <tr class="{% if p.player.roster_status %}{{ p.player.roster_status|lower|default_if_none:"non-mlb" }} {% else %}non-mlb {% endif %}border-b border-gray-100">
+            <tr class="{% if p.roster_status %}{{ p.roster_status|lower|default_if_none:"non-mlb" }} {% else %}non-mlb {% endif %}border-b border-gray-100">
                 <td class="py-1">
                     {% if user.is_authenticated and p.player.team.owner_obj.user != user %}
                         <span id="player-{{ p.player.id }}" class="action-add-wishlist text-gray-400 cursor-pointer mr-1 px-1 py-1 text-sm hover:bg-yellow-100" data-playerid="{{ p.player.id }}">☆</span>
@@ -285,7 +285,7 @@
         </thead>
         <tbody>
         {% for p in position.list %}
-        <tr class="{% if p.player.roster_status %}{{ p.player.roster_status|lower|default_if_none:"non-mlb" }} {% else %}non-mlb {% endif %}border-b border-gray-100">
+        <tr class="{% if p.roster_status %}{{ p.roster_status|lower|default_if_none:"non-mlb" }} {% else %}non-mlb {% endif %}border-b border-gray-100">
             <td class="py-1">
                 {% if user.is_authenticated %}
                     <span id="player-{{ p.player.id }}" class="action-add-wishlist text-gray-400 cursor-pointer mr-1 px-1 py-1 text-sm hover:bg-yellow-100" data-playerid="{{ p.player.id }}">☆</span>
@@ -317,7 +317,7 @@
         </thead>
         <tbody>
         {% for p in pitchers %}
-        <tr class="{% if p.player.roster_status %}{{ p.player.roster_status|lower|default_if_none:"non-mlb" }} {% else %}non-mlb {% endif %}border-b border-gray-100">
+        <tr class="{% if p.roster_status %}{{ p.roster_status|lower|default_if_none:"non-mlb" }} {% else %}non-mlb {% endif %}border-b border-gray-100">
             <td class="py-1">
                 {% if user.is_authenticated %}
                     <span id="player-{{ p.player.id }}" class="action-add-wishlist text-gray-400 cursor-pointer mr-1 px-1 py-1 text-sm hover:bg-yellow-100" data-playerid="{{ p.player.id }}">☆</span>

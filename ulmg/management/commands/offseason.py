@@ -18,22 +18,28 @@ class Command(BaseCommand):
         season = utils.get_current_season()
 
         if not options.get("dry_run", None):
-            models.Player.objects.all().update(is_carded=False)
-            models.Player.objects.filter(
-                stats__2024_majors_hit__isnull=False
-            ).update(is_carded=True)
-            models.Player.objects.filter(
-                stats__2024_majors_pitch__isnull=False
-            ).update(is_carded=True)
+            # Reset carded status in PlayerStatSeason for the season
+            models.PlayerStatSeason.objects.filter(season=season).update(carded=False)
+            
+            # Set carded=True for players with MLB stats in that season
+            models.PlayerStatSeason.objects.filter(
+                season=season,
+                classification="1-majors",
+                hit_stats__isnull=False
+            ).update(carded=True)
+            
+            models.PlayerStatSeason.objects.filter(
+                season=season,
+                classification="1-majors",
+                pitch_stats__isnull=False
+            ).update(carded=True)
         else:
-            print(models.Player.objects.filter(stats__current__year=season).count())
+            print(models.PlayerStatSeason.objects.filter(season=season).count())
 
 
     def reset_rosters(self, *args, **options):
         if not options.get("dry_run", None):
-            models.Player.objects.filter(is_mlb_roster=True).update(is_mlb_roster=False)
-            models.Player.objects.filter(is_aaa_roster=True).update(is_aaa_roster=False)
-            models.Player.objects.filter(is_35man_roster=True).update(is_35man_roster=False)
+            # Reset Player model roster statuses that are still there
             models.Player.objects.filter(is_1h_c=True).update(is_1h_c=False)
             models.Player.objects.filter(is_1h_p=True).update(is_1h_p=False)
             models.Player.objects.filter(is_1h_pos=True).update(is_1h_pos=False)
@@ -44,12 +50,29 @@ class Command(BaseCommand):
             models.Player.objects.filter(is_2h_pos=True).update(is_2h_pos=False)
             models.Player.objects.filter(is_2h_draft=True).update(is_2h_draft=False)
 
+            # Reset PlayerStatSeason roster statuses for current season
+            season = utils.get_current_season()
+            models.PlayerStatSeason.objects.filter(season=season).update(
+                is_mlb_roster=False,
+                is_aaa_roster=False,
+                is_35man_roster=False
+            )
+
             # Unprotect all V and A players prior to the 35-man roster.
             models.Player.objects.filter(is_owned=True, level__in=["A", "V"]).update(
                 is_protected=False
             )
+            
+            # Get non-carded players for protection logic
+            non_carded_player_ids = models.PlayerStatSeason.objects.filter(
+                season=season,
+                carded=False
+            ).values_list('player_id', flat=True)
+            
             models.Player.objects.filter(
-                is_owned=True, is_carded=False, level__in=["A", "V"]
+                is_owned=True, 
+                level__in=["A", "V"],
+                id__in=non_carded_player_ids
             ).update(is_protected=True)
 
 

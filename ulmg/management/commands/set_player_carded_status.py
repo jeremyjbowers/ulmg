@@ -48,17 +48,17 @@ class Command(BaseCommand):
         ).exclude(carded=True)  # Only update records not already marked as carded
 
         # Find PlayerStatSeason records that should NOT be marked as carded
+        # A player is NOT carded if they had NO MLB appearances (PA, IP, or G are null or 0)
         not_carded_records = queryset.filter(
-            Q(hit_stats__pa__isnull=True) & Q(pitch_stats__ip__isnull=True) &
-            Q(hit_stats__g__isnull=True) & Q(pitch_stats__g__isnull=True)
-        ).filter(carded=True)  # Only update records currently marked as carded
-
-        # Also check for zero stats (not just null)
-        not_carded_records = not_carded_records.union(
-            queryset.filter(
-                Q(hit_stats__pa=0) & Q(pitch_stats__ip=0) &
-                Q(hit_stats__g=0) & Q(pitch_stats__g=0)
-            ).filter(carded=True)
+            (
+                # All null stats
+                (Q(hit_stats__pa__isnull=True) & Q(pitch_stats__ip__isnull=True) &
+                 Q(hit_stats__g__isnull=True) & Q(pitch_stats__g__isnull=True)) |
+                # OR all zero stats
+                (Q(hit_stats__pa=0) & Q(pitch_stats__ip=0) &
+                 Q(hit_stats__g=0) & Q(pitch_stats__g=0))
+            ) &
+            Q(carded=True)  # Only update records currently marked as carded
         )
 
         self.stdout.write(f"Found {carded_records.count()} records to mark as carded")
