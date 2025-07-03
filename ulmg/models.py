@@ -335,17 +335,19 @@ class Player(BaseModel):
     notes = models.TextField(blank=True, null=True)
 
     # STATUS AND SUCH
-    is_owned = models.BooleanField(default=False)
-    is_carded = models.BooleanField(default=False)
-    is_amateur = models.BooleanField(default=False)
+    is_owned = models.BooleanField(default=False)  # ULMG ownership stays on Player
+    
+    # SEASON-SPECIFIC FIELDS - MOVED TO PlayerStatSeason
+    # is_carded = models.BooleanField(default=False)
+    # is_amateur = models.BooleanField(default=False)
     league = models.CharField(
         max_length=255, blank=True, null=True, choices=OTHER_PRO_LEAGUES
     )
 
-    # ULMG ROSTERS
-    is_mlb_roster = models.BooleanField(default=False)
-    is_aaa_roster = models.BooleanField(default=False)
-    is_35man_roster = models.BooleanField(default=False)
+    # ULMG ROSTERS - MOVED TO PlayerStatSeason
+    # is_mlb_roster = models.BooleanField(default=False)
+    # is_aaa_roster = models.BooleanField(default=False)
+    # is_35man_roster = models.BooleanField(default=False)
 
     # ULMG STATUS
     is_reserve = models.BooleanField(default=False)
@@ -370,24 +372,8 @@ class Player(BaseModel):
     # DEFENSE
     defense = ArrayField(models.CharField(max_length=10), blank=True, null=True)
 
-    # FROM LIVE ROSTERS
-    is_starter = models.BooleanField(default=False)
-    is_bench = models.BooleanField(default=False)
-    is_player_pool = models.BooleanField(default=False)
-    is_injured = models.BooleanField(default=False)
-    injury_description = models.CharField(max_length=255, null=True, blank=True)
-    role = models.CharField(max_length=255, null=True, blank=True)
-    role_type = models.CharField(max_length=255, null=True, blank=True)
-    roster_status = models.CharField(max_length=255, null=True, blank=True)
-    mlb_org = models.CharField(max_length=255, null=True, blank=True)
-    is_mlb40man = models.BooleanField(default=False)
-    is_bullpen = models.BooleanField(default=False)
-    is_mlb = models.BooleanField(default=False)
-
-    # STATS
-    # Here's the schema for a stats dictionary
-    #
-    stats = models.JSONField(null=True, blank=True)
+    # STATS - DEPRECATED: Use PlayerStatSeason model instead
+    # stats = models.JSONField(null=True, blank=True)  # Removed - use PlayerStatSeason
 
     # STRAT RATINGS
     # here's the schema for strat ratings
@@ -407,18 +393,38 @@ class Player(BaseModel):
         return self.name
 
     def is_mlb(self):
-        if self.stats['level'] == "mlb":
-            return True
-        return False
-
-    def set_stats(self, stats_dict):
-        if not self.stats:
-            self.stats = {}
-
-        if type(self.stats) is not dict:
-            self.stats = {}
-
-        self.stats[stats_dict["slug"]] = stats_dict
+        # Check if player has any MLB-level stats in PlayerStatSeason
+        return PlayerStatSeason.objects.filter(
+            player=self, 
+            classification='1-majors'
+        ).exists()
+    
+    def is_carded(self):
+        # Check if player has any carded seasons in PlayerStatSeason
+        return PlayerStatSeason.objects.filter(
+            player=self, 
+            carded=True
+        ).exists()
+    
+    def current_season_status(self):
+        """Get the most recent season's status fields."""
+        from datetime import datetime
+        current_season = datetime.now().year
+        
+        return PlayerStatSeason.objects.filter(
+            player=self,
+            season=current_season
+        ).order_by('-classification').first()
+    
+    def is_injured(self):
+        """Check if player is currently injured."""
+        current_status = self.current_season_status()
+        return current_status.is_injured if current_status else False
+    
+    def current_mlb_org(self):
+        """Get player's current MLB organization."""
+        current_status = self.current_season_status()
+        return current_status.mlb_org if current_status else None
 
     def latest_hit_stats(self):
         stats = PlayerStatSeason.objects.filter(player=self).first()
@@ -464,6 +470,9 @@ class Player(BaseModel):
             )
 
     def to_api_obj(self):
+        # Get current season status for season-specific fields
+        current_status = self.current_season_status()
+        
         payload = {
             "level": self.level,
             "name": self.name,
@@ -479,11 +488,11 @@ class Player(BaseModel):
             },
             "notes": self.notes,
             "is_owned": self.is_owned,
-            "is_carded": self.is_carded,
-            "is_amateur": self.is_amateur,
-            "is_mlb_roster": self.is_mlb_roster,
-            "is_aaa_roster": self.is_aaa_roster,
-            "is_35man_roster": self.is_35man_roster,
+            "is_carded": self.is_carded(),
+            "is_amateur": current_status.is_amateur if current_status else False,
+            "is_mlb_roster": current_status.is_mlb_roster if current_status else False,
+            "is_aaa_roster": current_status.is_aaa_roster if current_status else False,
+            "is_35man_roster": current_status.is_35man_roster if current_status else False,
             "is_reserve": self.is_reserve,
             "is_1h_p": self.is_1h_p,
             "is_1h_c": self.is_1h_c,
@@ -495,7 +504,6 @@ class Player(BaseModel):
             "is_protected": self.is_protected,
             "cannot_be_protected": self.cannot_be_protected,
             "team": None,
-            "stats": self.stats,
         }
 
         if self.team:
@@ -654,6 +662,24 @@ class PlayerStatSeason(BaseModel):
     minors = models.BooleanField(default=False)
     carded = models.BooleanField(default=False)
     owned = models.BooleanField(default=False)
+    
+    # SEASON-SPECIFIC ROSTER STATUS (moved from Player model)
+    is_starter = models.BooleanField(default=False)
+    is_bench = models.BooleanField(default=False)
+    is_player_pool = models.BooleanField(default=False)
+    is_injured = models.BooleanField(default=False)
+    injury_description = models.CharField(max_length=255, null=True, blank=True)
+    role = models.CharField(max_length=255, null=True, blank=True)
+    role_type = models.CharField(max_length=255, null=True, blank=True)
+    roster_status = models.CharField(max_length=255, null=True, blank=True)
+    mlb_org = models.CharField(max_length=255, null=True, blank=True)
+    is_mlb40man = models.BooleanField(default=False)
+    is_bullpen = models.BooleanField(default=False)
+    is_mlb = models.BooleanField(default=False)
+    is_amateur = models.BooleanField(default=False)
+    is_mlb_roster = models.BooleanField(default=False)
+    is_aaa_roster = models.BooleanField(default=False)
+    is_35man_roster = models.BooleanField(default=False)
 
     def __unicode__(self):
         return f"{self.player} @ {self.season} @ {self.classification}"
@@ -1146,45 +1172,51 @@ class WishlistPlayer(BaseModel):
     player_year = models.IntegerField(blank=True, null=True)
     player_fv = models.IntegerField(blank=True, null=True)
 
-    stats = models.JSONField(null=True, blank=True)
+    # stats = models.JSONField(null=True, blank=True)  # Removed - use PlayerStatSeason
 
     def __unicode__(self):
         return f"{self.player} [{self.rank}][{self.tier}]"
 
     def pit_stats(self):
         payload = []
-
-        if self.stats:
-            for year_side_level, stats in self.stats.items():
-                if stats['side'] == "pitch":
-                    if stats['g'] >= 1:
-                        payload.append(stats)
-
-        payload = sorted(payload, key=lambda x: (int(x['year']), utils.get_level_order(x['level'])), reverse=True)
-
+        
+        # Get pitching stats from PlayerStatSeason for this player
+        stat_seasons = PlayerStatSeason.objects.filter(
+            player=self.player,
+            pitch_stats__isnull=False
+        ).order_by('-season', 'classification')
+        
+        for stat_season in stat_seasons:
+            if stat_season.pitch_stats and stat_season.pitch_stats.get('g', 0) >= 1:
+                payload.append(stat_season.pitch_stats)
+        
         return payload
 
     def hit_stats(self):
         payload = []
-
-        if self.stats:
-            for year_side_level, stats in self.stats.items():
-                if stats['side'] == "hit":
-                    if stats['plate_appearances'] >= 1:
-                        payload.append(stats)
-
-        payload = sorted(payload, key=lambda x: (int(x['year']), utils.get_level_order(x['level'])), reverse=True)
-
+        
+        # Get hitting stats from PlayerStatSeason for this player
+        stat_seasons = PlayerStatSeason.objects.filter(
+            player=self.player,
+            hit_stats__isnull=False
+        ).order_by('-season', 'classification')
+        
+        for stat_season in stat_seasons:
+            if stat_season.hit_stats and stat_season.hit_stats.get('plate_appearances', 0) >= 1:
+                payload.append(stat_season.hit_stats)
+        
         return payload
 
     def latest_hit_stats(self):
-        if len(self.hit_stats()) > 0:
-            return self.hit_stats()[0]
+        hit_stats = self.hit_stats()
+        if len(hit_stats) > 0:
+            return hit_stats[0]
         return None
 
     def latest_pit_stats(self):
-        if len(self.pit_stats()) > 0:
-            return self.pit_stats()[0]
+        pit_stats = self.pit_stats()
+        if len(pit_stats) > 0:
+            return pit_stats[0]
         return None
 
     @property
@@ -1192,8 +1224,7 @@ class WishlistPlayer(BaseModel):
         return self.wishlist.owner.name
 
     def save(self, *args, **kwargs):
-        self.stats = self.player.stats
-
+        # Note: stats field will be populated from PlayerStatSeason when needed
         super().save(*args, **kwargs)
 
 

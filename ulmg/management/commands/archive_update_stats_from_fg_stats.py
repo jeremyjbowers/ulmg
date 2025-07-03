@@ -6,7 +6,7 @@ from decimal import Decimal
 from bs4 import BeautifulSoup
 from dateutil.parser import parse
 from django.apps import apps
-from django.db import connection
+from django.db import connection, transaction
 from django.db.models import Avg, Sum, Count
 from django.core.management import call_command
 from django.core.management.base import BaseCommand, CommandError
@@ -20,387 +20,289 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument("season", type=str)
 
+    def _save_player_stat_season(self, obj, season, stats_dict, stats_type):
+        """Save stats to PlayerStatSeason model instead of Player.stats."""
+        # Map stats types to PlayerStatSeason classifications
+        classification_map = {
+            'majors': '1-majors',
+            'minors': '2-minors', 
+            'amateur': '5-ncaa',
+            'pro': '3-npb',  # Default for international pro
+        }
+        
+        # Handle special international leagues
+        if stats_type == 'pro':
+            if stats_dict.get('League') == 'NPB':
+                classification = '3-npb'
+            elif stats_dict.get('League') == 'KBO':
+                classification = '4-kbo'
+            else:
+                classification = '3-npb'  # Default
+        else:
+            classification = classification_map.get(stats_type, '2-minors')
+        
+        # Determine if this is minors vs majors
+        minors = classification != '1-majors'
+        
+        # Get or create PlayerStatSeason
+        player_stat_season, created = models.PlayerStatSeason.objects.get_or_create(
+            player=obj,
+            season=season,
+            classification=classification,
+            defaults={
+                'minors': minors,
+                'carded': False,  # Will be set by separate command
+                'owned': obj.is_owned,  # Set ownership based on player
+            }
+        )
+        
+        # Update stats
+        if obj.position == 'P':
+            player_stat_season.pitch_stats = stats_dict
+        else:
+            player_stat_season.hit_stats = stats_dict
+        
+        # Update ownership if it has changed
+        if player_stat_season.owned != obj.is_owned:
+            player_stat_season.owned = obj.is_owned
+        
+        player_stat_season.save()
+        
+        return player_stat_season
+
     def set_mlb_hitter_season(self):
-        with open(f'data/{self.season}/fg_mlb_bat.json', 'r') as readfile:
-            rows = json.loads(readfile.read())
+        """Load the stats for Major League Hitters this season."""
+        local_path = f"data/{self.season}/fg_mlb_bat.json"
+        rows = utils.s3_manager.get_file_content(local_path)
+        
+        if not rows:
+            self.stderr.write(f"Could not find MLB batting data for {self.season}")
+            return
+            
+        for row in rows:
+            if self.should_skip_player(row):
+                continue
 
-            for row in rows:
-                stats_dict = {}
+            obj = self.get_or_create_player(row)
+            if not obj:
+                continue
 
-                stats_dict["year"] = self.season
-                stats_dict["type"] = "majors"
-                stats_dict["level"] = "mlb"
-                stats_dict["side"] = "hit"
-                stats_dict["slug"] = f"{stats_dict['year']}_{stats_dict['type']}_{stats_dict['side']}"
-
-                obj = models.Player.objects.filter(
-                    fg_id=row['playerid']
-                )
-
-                if obj.count() > 0:
-                    obj = obj[0]
-
-                    stats_dict["hits"] = utils.to_int(row['H'])
-                    stats_dict["2b"] = utils.to_int(row['2B'])
-                    stats_dict["3b"] = utils.to_int(row['3B'])
-                    stats_dict["hr"] = utils.to_int(row['HR'])
-                    stats_dict["sb"] = utils.to_int(row['SB'])
-                    stats_dict["runs"] = utils.to_int(row['R'])
-                    stats_dict["rbi"] = utils.to_int(row['RBI'])
-                    stats_dict["wrc_plus"] = utils.to_int(row['wRC+'])
-                    stats_dict["plate_appearances"] = utils.to_int(row['PA'])
-                    stats_dict["ab"] = utils.to_int(row['AB'])
-
-                    stats_dict["avg"] = utils.to_float(row['AVG'])
-                    stats_dict["xavg"] = utils.to_float(row['xAVG'])
-                    stats_dict["obp"] = utils.to_float(row['OBP'])
-                    stats_dict["slg"] = utils.to_float(row['SLG'])
-                    stats_dict["xslg"] = utils.to_float(row['xSLG'])
-                    stats_dict["babip"] = utils.to_float(row['BABIP'])
-                    stats_dict["iso"] = utils.to_float(row['ISO'])
-                    stats_dict["k_pct"] = utils.to_float(row["K%"], default=0.0) * 100.0
-                    stats_dict["bb_pct"] = utils.to_float(row["BB%"], default=0.0) * 100.0
-                    stats_dict["xwoba"] = utils.to_float(row['xwOBA'])
-
-                    obj.set_stats(stats_dict)
-                    obj.save()
-
+            stats_dict = self.build_hitter_stats_dict(row, 'majors')
+            if stats_dict:
+                # Update PlayerStatSeason only
+                self._save_player_stat_season(obj, self.season, stats_dict, stats_dict['type'])
+                obj.save()
 
     def set_mlb_pitcher_season(self):
-        with open(f'data/{self.season}/fg_mlb_pit.json', 'r') as readfile:
-            rows = json.loads(readfile.read())
+        """Load the stats for Major League Pitchers this season."""
+        local_path = f"data/{self.season}/fg_mlb_pit.json"
+        rows = utils.s3_manager.get_file_content(local_path)
+        
+        if not rows:
+            self.stderr.write(f"Could not find MLB pitching data for {self.season}")
+            return
 
-            for row in rows:
-                stats_dict = {}
+        for row in rows:
+            if self.should_skip_player(row):
+                continue
 
-                stats_dict["year"] = self.season
-                stats_dict["type"] = "majors"
-                stats_dict["level"] = "mlb"
-                stats_dict["side"] = "pitch"
-                stats_dict["slug"] = f"{stats_dict['year']}_{stats_dict['type']}_{stats_dict['side']}"
+            obj = self.get_or_create_player(row)
+            if not obj:
+                continue
 
-                obj = models.Player.objects.filter(
-                    fg_id=row['playerid']
-                )
+            stats_dict = self.build_pitcher_stats_dict(row, 'majors')
+            if stats_dict:
+                # Update PlayerStatSeason only
+                self._save_player_stat_season(obj, self.season, stats_dict, stats_dict['type'])
+                obj.save()
 
-                if obj.count() > 0:
-                    obj = obj[0]
+    def set_minor_hitter_season(self):
+        """Load the stats for Minor League Hitters this season."""
+        local_path = f"data/{self.season}/fg_milb_bat.json"
+        rows = utils.s3_manager.get_file_content(local_path)
+        
+        if not rows:
+            self.stderr.write(f"Could not find Minor League batting data for {self.season}")
+            return
 
-                    stats_dict["g"] = utils.to_int(row['G'])
-                    stats_dict["gs"] = utils.to_int(row['GS'])
-                    stats_dict["k"] = utils.to_int(row['SO'])
-                    stats_dict["bb"] = utils.to_int(row['BB'])
-                    stats_dict["ha"] = utils.to_int(row['H'])
-                    stats_dict["hra"] = utils.to_int(row['HR'])
-                    stats_dict["ip"] = utils.to_float(row['IP'])
-                    stats_dict["k_9"] = utils.to_float(row['K/9'])
-                    stats_dict["bb_9"] = utils.to_float(row['BB/9'])
-                    stats_dict["hr_9"] = utils.to_float(row['HR/9'])
-                    stats_dict["lob_pct"] = (
-                        utils.to_float(row["LOB%"], default=0.0) * 100.0
-                    )
-                    stats_dict["gb_pct"] = utils.to_float(row["GB%"], default=0.0) * 100.0
-                    stats_dict["hr_fb"] = utils.to_float(row['HR/FB'])
-                    stats_dict["era"] = utils.to_float(row['ERA'])
-                    stats_dict["fip"] = utils.to_float(row['FIP'])
-                    stats_dict["xfip"] = utils.to_float(row['xFIP'])
-                    stats_dict["siera"] = utils.to_float(row['SIERA'])
-                    stats_dict['xERA'] = utils.to_float(row['xERA'])
-                    stats_dict['sp_stuff'] = utils.to_float(row['sp_stuff'])
-                    stats_dict['sp_location'] = utils.to_float(row['sp_location'])
-                    stats_dict['sp_pitching'] = utils.to_float(row['sp_pitching'])
-                    stats_dict["er"] = utils.to_float(row['ER'])
-                    stats_dict["k_9+"] = utils.to_int(row['K/9+'])
-                    stats_dict["bb_9+"] = utils.to_int(row['BB/9+'])
-                    stats_dict["era-"] = utils.to_int(row['ERA-'])
-                    stats_dict["fip-"] = utils.to_int(row['FIP-'])
-                    stats_dict["xfip-"] = utils.to_int(row['xFIP-'])
+        for row in rows:
+            if self.should_skip_player(row):
+                continue
 
-                    obj.set_stats(stats_dict)
+            obj = self.get_or_create_player(row)
+            if obj:
+                stats_dict = self.build_hitter_stats_dict(row, 'minors')
+                if stats_dict:
+                    # Update PlayerStatSeason only
+                    self._save_player_stat_season(obj, self.season, stats_dict, stats_dict['type'])
                     obj.save()
 
-    def set_minor_season(self):
-        for side in ['bat', 'pit']:
-            with open(f'data/{self.season}/fg_milb_{side}.json', 'r') as readfile:
-                rows = json.loads(readfile.read())
+    def set_minor_pitcher_season(self):
+        """Load the stats for Minor League Pitchers this season."""
+        local_path = f"data/{self.season}/fg_milb_pit.json"
+        rows = utils.s3_manager.get_file_content(local_path)
+        
+        if not rows:
+            self.stderr.write(f"Could not find Minor League pitching data for {self.season}")
+            return
 
-                for player in rows:
-                    fg_id = player["playerids"]
-                    name = player["PlayerName"]
-                    p = models.Player.objects.filter(fg_id=fg_id)
+        for row in rows:
+            if self.should_skip_player(row):
+                continue
 
-                    if len(p) == 1:
-                        obj = p[0]
+            obj = self.get_or_create_player(row)
+            if obj:
+                stats_dict = self.build_pitcher_stats_dict(row, 'minors')
+                if stats_dict:
+                    # Update PlayerStatSeason only
+                    self._save_player_stat_season(obj, self.season, stats_dict, stats_dict['type'])
+                    obj.save()
 
-                        stats_dict = {}
-                        stats_dict['side'] = side
-                        stats_dict["type"] = "minors"
-                        stats_dict["level"] = player["aLevel"]
-                        stats_dict["year"] = self.season
-                        stats_dict["slug"] = f"{stats_dict['year']}_{stats_dict['type']}_{stats_dict['side']}"
+    def set_college_hitter_season(self):
+        """Load the stats for College Hitters this season."""
+        local_path = f"data/{self.season}/fg_college_bat.json"
+        rows = utils.s3_manager.get_file_content(local_path)
+        
+        if not rows:
+            self.stderr.write(f"Could not find college batting data for {self.season}")
+            return
 
-                        if side == "bat":
-                            stats_dict["side"] = "hit"
-                            stats_dict["hits"] = utils.to_int(player["H"])
-                            stats_dict["2b"] = utils.to_int(player["2B"])
-                            stats_dict["3b"] = utils.to_int(player["3B"])
-                            stats_dict["hr"] = utils.to_int(player["HR"])
-                            stats_dict["sb"] = utils.to_int(player["SB"])
-                            stats_dict["runs"] = utils.to_int(player["R"])
-                            stats_dict["rbi"] = utils.to_int(player["RBI"])
-                            stats_dict["avg"] = utils.to_float(player["AVG"])
-                            stats_dict["obp"] = utils.to_float(player["OBP"])
-                            stats_dict["slg"] = utils.to_float(player["SLG"])
-                            stats_dict["babip"] = utils.to_float(player["BABIP"])
-                            stats_dict["wrc_plus"] = utils.to_int(player["wRC+"])
-                            stats_dict["plate_appearances"] = utils.to_int(player["PA"])
-                            stats_dict["iso"] = utils.to_float(player["ISO"])
-                            stats_dict["k_pct"] = utils.to_float(player["K%"], default=0.0) * 100.0
-                            stats_dict["bb_pct"] = utils.to_float(player["BB%"], default=0.0) * 100.0
-                            stats_dict["woba"] = utils.to_float(player["wOBA"])
+        for row in rows:
+            if self.should_skip_player(row):
+                continue
 
-                        if side == "pit":
-                            stats_dict["side"] = "pitch"
-                            stats_dict["g"] = utils.to_int(player["G"])
-                            stats_dict["gs"] = utils.to_int(player["GS"])
-                            stats_dict["k"] = utils.to_int(player["SO"])
-                            stats_dict["bb"] = utils.to_int(player["BB"])
-                            stats_dict["ha"] = utils.to_int(player["H"])
-                            stats_dict["hra"] = utils.to_int(player["HR"])
-                            stats_dict["ip"] = utils.to_float(player["IP"])
-                            stats_dict["k_9"] = utils.to_float(player["K/9"])
-                            stats_dict["bb_9"] = utils.to_float(player["BB/9"])
-                            stats_dict["hr_9"] = utils.to_float(player["HR/9"])
-                            stats_dict["lob_pct"] = (
-                                utils.to_float(player["LOB%"], default=0.0) * 100.0
-                            )
-                            stats_dict["gb_pct"] = utils.to_float(player["GB%"], default=0.0) * 100.0
-                            stats_dict["hr_fb"] = utils.to_float(player["HR/FB"])
-                            stats_dict["era"] = utils.to_float(player["ERA"])
-                            stats_dict["fip"] = utils.to_float(player["FIP"])
-                            stats_dict["xfip"] = utils.to_float(player["xFIP"])
+            obj = self.get_or_create_player(row)
+            if obj:
+                stats_dict = self.build_hitter_stats_dict(row, 'amateur')
+                if stats_dict:
+                    # Update PlayerStatSeason only
+                    self._save_player_stat_season(obj, self.season, stats_dict, stats_dict['type'])
+                    obj.save()
 
-                        obj.set_stats(stats_dict)
-                        obj.save()
+    def set_college_pitcher_season(self):
+        """Load the stats for College Pitchers this season."""
+        local_path = f"data/{self.season}/fg_college_pit.json"
+        rows = utils.s3_manager.get_file_content(local_path)
+        
+        if not rows:
+            self.stderr.write(f"Could not find college pitching data for {self.season}")
+            return
 
-    def set_college_season(self):
-        for side in ['bat', 'pit']:
-            with open(f'data/{self.season}/fg_college_{side}.json', 'r') as readfile:
-                rows = json.loads(readfile.read())
+        for row in rows:
+            if self.should_skip_player(row):
+                continue
 
-                for player in rows:
-                    fg_id = player["UPID"]
-                    mlbam_id = player['xMLBAMID']
-                    name = player["PlayerName"]
+            obj = self.get_or_create_player(row)
+            if obj:
+                stats_dict = self.build_pitcher_stats_dict(row, 'amateur')
+                if stats_dict:
+                    # Update PlayerStatSeason only
+                    self._save_player_stat_season(obj, self.season, stats_dict, stats_dict['type'])
+                    obj.save()
 
-                    obj = None
+    def set_npb_hitter_season(self):
+        """Load the stats for NPB Hitters this season."""
+        local_path = f"data/{self.season}/fg_npb_bat.json"
+        rows = utils.s3_manager.get_file_content(local_path)
+        
+        if not rows:
+            self.stderr.write(f"Could not find NPB batting data for {self.season}")
+            return
 
-                    try:
-                        obj = models.Player.objects.get(fg_id=fg_id)
-                        if mlbam_id:
-                            obj.mlbam_id = mlbam_id
+        for row in rows:
+            if self.should_skip_player(row):
+                continue
 
-                    except:
-                        pass
+            obj = self.get_or_create_player(row)
+            if obj:
+                stats_dict = self.build_hitter_stats_dict(row, 'pro')
+                if stats_dict:
+                    stats_dict['League'] = 'NPB'  # Set league for classification
+                    # Update PlayerStatSeason only
+                    self._save_player_stat_season(obj, self.season, stats_dict, stats_dict['type'])
+                    obj.save()
 
-                    if not obj:
-                        if mlbam_id:
-                            try:
-                                obj = models.Player.get(mlbam_id=mlbam_id)
-                                if fg_id:
-                                    obj.fg_id = fg_id
-                            except:
-                                pass
+    def set_npb_pitcher_season(self):
+        """Load the stats for NPB Pitchers this season."""
+        local_path = f"data/{self.season}/fg_npb_pit.json"
+        rows = utils.s3_manager.get_file_content(local_path)
+        
+        if not rows:
+            self.stderr.write(f"Could not find NPB pitching data for {self.season}")
+            return
 
-                    if obj:
-                        stats_dict = {}
-                        stats_dict['side'] = side
-                        stats_dict["type"] = "amateur"
-                        stats_dict["level"] = "NCAA"
-                        stats_dict["year"] = self.season
-                        stats_dict["slug"] = f"{stats_dict['year']}_{stats_dict['type']}_{stats_dict['side']}"
+        for row in rows:
+            if self.should_skip_player(row):
+                continue
 
-                        if side == "bat":
-                            stats_dict["side"] = "hit"
-                            stats_dict["hits"] = utils.to_int(player["H"])
-                            stats_dict["2b"] = utils.to_int(player["2B"])
-                            stats_dict["3b"] = utils.to_int(player["3B"])
-                            stats_dict["hr"] = utils.to_int(player["HR"])
-                            stats_dict["sb"] = utils.to_int(player["SB"])
-                            stats_dict["runs"] = utils.to_int(player["R"])
-                            stats_dict["rbi"] = utils.to_int(player["RBI"])
-                            stats_dict["avg"] = utils.to_float(player["AVG"])
-                            stats_dict["obp"] = utils.to_float(player["OBP"])
-                            stats_dict["slg"] = utils.to_float(player["SLG"])
-                            stats_dict["babip"] = utils.to_float(player["BABIP"])
-                            stats_dict["wrc_plus"] = utils.to_int(player["wRC+"])
-                            stats_dict["plate_appearances"] = utils.to_int(player["PA"])
-                            stats_dict["iso"] = utils.to_float(player["ISO"])
-                            stats_dict["k_pct"] = utils.to_float(player["K%"], default=0.0) * 100.0
-                            stats_dict["bb_pct"] = utils.to_float(player["BB%"], default=0.0) * 100.0
-                            stats_dict["woba"] = utils.to_float(player["wOBA"])
+            obj = self.get_or_create_player(row)
+            if obj:
+                stats_dict = self.build_pitcher_stats_dict(row, 'pro')
+                if stats_dict:
+                    stats_dict['League'] = 'NPB'  # Set league for classification
+                    # Update PlayerStatSeason only
+                    self._save_player_stat_season(obj, self.season, stats_dict, stats_dict['type'])
+                    obj.save()
 
-                        if side == "pit":
-                            stats_dict["side"] = "pitch"
-                            stats_dict["g"] = utils.to_int(player["G"])
-                            stats_dict["gs"] = utils.to_int(player["GS"])
-                            stats_dict["k"] = utils.to_int(player["SO"])
-                            stats_dict["bb"] = utils.to_int(player["BB"])
-                            stats_dict["ha"] = utils.to_int(player["H"])
-                            stats_dict["hra"] = utils.to_int(player["HR"])
-                            stats_dict["ip"] = utils.to_float(player["IP"])
-                            stats_dict["k_9"] = utils.to_float(player["K/9"])
-                            stats_dict["bb_9"] = utils.to_float(player["BB/9"])
-                            stats_dict["hr_9"] = utils.to_float(player["HR/9"])
-                            stats_dict["lob_pct"] = (
-                                utils.to_float(player["LOB%"], default=0.0) * 100.0
-                            )
-                            stats_dict["era"] = utils.to_float(player["ERA"])
-                            stats_dict["fip"] = utils.to_float(player["FIP"])
+    def set_kbo_hitter_season(self):
+        """Load the stats for KBO Hitters this season."""
+        local_path = f"data/{self.season}/fg_kbo_bat.json"
+        rows = utils.s3_manager.get_file_content(local_path)
+        
+        if not rows:
+            self.stderr.write(f"Could not find KBO batting data for {self.season}")
+            return
 
-                        obj.set_stats(stats_dict)
-                        obj.save()
+        for row in rows:
+            if self.should_skip_player(row):
+                continue
 
-    def set_kbo_season(self):
-        for side in ['bat', 'pit']:
-            with open(f'data/{self.season}/fg_kbo_{side}.json', 'r') as readfile:
-                rows = json.loads(readfile.read())
+            obj = self.get_or_create_player(row)
+            if obj:
+                stats_dict = self.build_hitter_stats_dict(row, 'pro')
+                if stats_dict:
+                    stats_dict['League'] = 'KBO'  # Set league for classification
+                    # Update PlayerStatSeason only
+                    self._save_player_stat_season(obj, self.season, stats_dict, stats_dict['type'])
+                    obj.save()
 
-                for player in rows:
-                    fg_id = player["playerids"]
-                    name = player["PlayerName"]
+    def set_kbo_pitcher_season(self):
+        """Load the stats for KBO Pitchers this season."""
+        local_path = f"data/{self.season}/fg_kbo_pit.json"
+        rows = utils.s3_manager.get_file_content(local_path)
+        
+        if not rows:
+            self.stderr.write(f"Could not find KBO pitching data for {self.season}")
+            return
 
-                    obj = None
+        for row in rows:
+            if self.should_skip_player(row):
+                continue
 
-                    try:
-                        obj = models.Player.objects.get(fg_id=fg_id)
-                        print(obj)
-
-                    except:
-                        pass
-
-                    if obj:
-                        stats_dict = {}
-                        stats_dict['side'] = side
-                        stats_dict["type"] = "pro"
-                        stats_dict["level"] = "KBO"
-                        stats_dict["year"] = self.season
-                        stats_dict["slug"] = f"{stats_dict['year']}_{stats_dict['type']}_{stats_dict['side']}"
-
-                        if side == "bat":
-                            stats_dict["side"] = "hit"
-                            stats_dict["hits"] = utils.to_int(player["H"])
-                            stats_dict["2b"] = utils.to_int(player["2B"])
-                            stats_dict["3b"] = utils.to_int(player["3B"])
-                            stats_dict["hr"] = utils.to_int(player["HR"])
-                            stats_dict["sb"] = utils.to_int(player["SB"])
-                            stats_dict["runs"] = utils.to_int(player["R"])
-                            stats_dict["rbi"] = utils.to_int(player["RBI"])
-                            stats_dict["avg"] = utils.to_float(player["AVG"])
-                            stats_dict["obp"] = utils.to_float(player["OBP"])
-                            stats_dict["slg"] = utils.to_float(player["SLG"])
-                            stats_dict["babip"] = utils.to_float(player["BABIP"])
-                            stats_dict["wrc_plus"] = utils.to_int(player["wRC+"])
-                            stats_dict["plate_appearances"] = utils.to_int(player["PA"])
-                            stats_dict["iso"] = utils.to_float(player["ISO"])
-                            stats_dict["k_pct"] = utils.to_float(player["K%"], default=0.0) * 100.0
-                            stats_dict["bb_pct"] = utils.to_float(player["BB%"], default=0.0) * 100.0
-                            stats_dict["woba"] = utils.to_float(player["wOBA"])
-
-                        if side == "pit":
-                            stats_dict["side"] = "pitch"
-                            stats_dict["g"] = utils.to_int(player["G"])
-                            stats_dict["gs"] = utils.to_int(player["GS"])
-                            stats_dict["k"] = utils.to_int(player["SO"])
-                            stats_dict["bb"] = utils.to_int(player["BB"])
-                            stats_dict["ha"] = utils.to_int(player["H"])
-                            stats_dict["hra"] = utils.to_int(player["HR"])
-                            stats_dict["ip"] = utils.to_float(player["IP"])
-                            stats_dict["k_9"] = utils.to_float(player["K/9"])
-                            stats_dict["bb_9"] = utils.to_float(player["BB/9"])
-                            stats_dict["hr_9"] = utils.to_float(player["HR/9"])
-                            stats_dict["lob_pct"] = (
-                                utils.to_float(player["LOB%"], default=0.0) * 100.0
-                            )
-                            stats_dict["era"] = utils.to_float(player["ERA"])
-                            stats_dict["fip"] = utils.to_float(player["FIP"])
-
-                        obj.set_stats(stats_dict)
-                        obj.save()
-
-    def set_npb_season(self):
-        for side in ['bat', 'pit']:
-            with open(f'data/{self.season}/fg_npb_{side}.json', 'r') as readfile:
-                rows = json.loads(readfile.read())
-
-                for player in rows:
-                    fg_id = player["playerids"]
-                    name = player["PlayerName"]
-
-                    obj = None
-
-                    try:
-                        obj = models.Player.objects.get(fg_id=fg_id)
-                        print(obj)
-
-                    except:
-                        pass
-
-                    if obj:
-                        stats_dict = {}
-                        stats_dict['side'] = side
-                        stats_dict["type"] = "pro"
-                        stats_dict["level"] = "NPB"
-                        stats_dict["year"] = self.season
-                        stats_dict["slug"] = f"{stats_dict['year']}_{stats_dict['type']}_{stats_dict['side']}"
-
-                        if side == "bat":
-                            stats_dict["side"] = "hit"
-                            stats_dict["hits"] = utils.to_int(player["H"])
-                            stats_dict["2b"] = utils.to_int(player["2B"])
-                            stats_dict["3b"] = utils.to_int(player["3B"])
-                            stats_dict["hr"] = utils.to_int(player["HR"])
-                            stats_dict["sb"] = utils.to_int(player["SB"])
-                            stats_dict["runs"] = utils.to_int(player["R"])
-                            stats_dict["rbi"] = utils.to_int(player["RBI"])
-                            stats_dict["avg"] = utils.to_float(player["AVG"])
-                            stats_dict["obp"] = utils.to_float(player["OBP"])
-                            stats_dict["slg"] = utils.to_float(player["SLG"])
-                            stats_dict["babip"] = utils.to_float(player["BABIP"])
-                            stats_dict["wrc_plus"] = utils.to_int(player["wRC+"])
-                            stats_dict["plate_appearances"] = utils.to_int(player["PA"])
-                            stats_dict["iso"] = utils.to_float(player["ISO"])
-                            stats_dict["k_pct"] = utils.to_float(player["K%"], default=0.0) * 100.0
-                            stats_dict["bb_pct"] = utils.to_float(player["BB%"], default=0.0) * 100.0
-                            stats_dict["woba"] = utils.to_float(player["wOBA"])
-
-                        if side == "pit":
-                            stats_dict["side"] = "pitch"
-                            stats_dict["g"] = utils.to_int(player["G"])
-                            stats_dict["gs"] = utils.to_int(player["GS"])
-                            stats_dict["k"] = utils.to_int(player["SO"])
-                            stats_dict["bb"] = utils.to_int(player["BB"])
-                            stats_dict["ha"] = utils.to_int(player["H"])
-                            stats_dict["hra"] = utils.to_int(player["HR"])
-                            stats_dict["ip"] = utils.to_float(player["IP"])
-                            stats_dict["k_9"] = utils.to_float(player["K/9"])
-                            stats_dict["bb_9"] = utils.to_float(player["BB/9"])
-                            stats_dict["hr_9"] = utils.to_float(player["HR/9"])
-                            stats_dict["lob_pct"] = (
-                                utils.to_float(player["LOB%"], default=0.0) * 100.0
-                            )
-                            stats_dict["era"] = utils.to_float(player["ERA"])
-                            stats_dict["fip"] = utils.to_float(player["FIP"])
-
-                        obj.set_stats(stats_dict)
-                        obj.save()
+            obj = self.get_or_create_player(row)
+            if obj:
+                stats_dict = self.build_pitcher_stats_dict(row, 'pro')
+                if stats_dict:
+                    stats_dict['League'] = 'KBO'  # Set league for classification
+                    # Update PlayerStatSeason only
+                    self._save_player_stat_season(obj, self.season, stats_dict, stats_dict['type'])
+                    obj.save()
 
     def handle(self, *args, **options):
-        self.season = options.get("season", None)
-        self.set_college_season()
-        self.set_minor_season()
-        self.set_kbo_season()
-        self.set_npb_season()
+        self.season = options['season']
+        print(f"Loading stats for season {self.season}")
+        
+        # Call individual methods for each data type
         self.set_mlb_hitter_season()
         self.set_mlb_pitcher_season()
+        self.set_minor_hitter_season()
+        self.set_minor_pitcher_season()
+        self.set_college_hitter_season()
+        self.set_college_pitcher_season()
+        self.set_npb_hitter_season()
+        self.set_npb_pitcher_season()
+        self.set_kbo_hitter_season()
+        self.set_kbo_pitcher_season()
+        
+        print(f"Finished loading stats for season {self.season}")
 

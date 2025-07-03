@@ -20,21 +20,46 @@ from ulmg import models, utils
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 class Command(BaseCommand):
+    help = 'Download current season FanGraphs stats data and save both locally and to S3'
+    
     season = 2025
+
+    def add_arguments(self, parser):
+        parser.add_argument(
+            '--local-only',
+            action='store_true',
+            help='Save files locally only, skip S3 upload'
+        )
 
     def get_fg_major_hitter_season(self):
         url = f"https://www.fangraphs.com/api/leaders/major-league/data?age=0&pos=all&stats=bat&lg=all&qual=0&season={self.season}&season1={self.season}&startdate={self.season}-01-01&enddate={self.season}-12-31&month=0&team=0&pageitems=5000&pagenum=1&ind=0&rost=0&players=0&type=c%2C6%2C-1%2C312%2C305%2C309%2C306%2C307%2C308%2C310%2C311%2C-1%2C23%2C315%2C-1%2C38%2C316%2C-1%2C50%2C317%2C7%2C8%2C9%2C10%2C11%2C12%2C13%2C14%2C21%2C23%2C34%2C35%2C37%2C38%2C39%2C40%2C41%2C50%2C52%2C57%2C58%2C61%2C62%2C5&sortdir=desc&sortstat=Events"
         rows = requests.get(url, verify=False).json()['data']
 
-        with open(f'data/{self.season}/fg_mlb_bat.json', 'w') as writefile:
-            writefile.write(json.dumps(rows))
+        local_path = f'data/{self.season}/fg_mlb_bat.json'
+        if self.local_only:
+            # Create directory if it doesn't exist
+            os.makedirs(os.path.dirname(local_path), exist_ok=True)
+            with open(local_path, 'w') as writefile:
+                json.dump(rows, writefile, indent=2)
+            self.stdout.write(f"Saved MLB batting data to {local_path}")
+        else:
+            utils.s3_manager.save_and_upload_json(rows, local_path)
+            self.stdout.write(f"Saved MLB batting data to {local_path} and uploaded to S3")
 
     def get_fg_major_pitcher_season(self):
         url = f"https://www.fangraphs.com/api/leaders/major-league/data?age=0&pos=all&stats=pit&lg=all&qual=2&season={self.season}&season1={self.season}&startdate={self.season}-01-01&enddate={self.season}-12-31&month=0&team=0&pageitems=5000&pagenum=1&ind=0&rost=0&players=0&type=c%2C4%2C5%2C11%2C7%2C8%2C13%2C-1%2C24%2C19%2C15%2C18%2C36%2C37%2C40%2C43%2C44%2C48%2C51%2C-1%2C240%2C-1%2C6%2C332%2C45%2C62%2C122%2C-1%2C59%2C17%2C301%2C302%2C303%2C117%2C118%2C119&sortdir=desc&sortstat=SO"
         rows = requests.get(url, verify=False).json()['data']
 
-        with open(f'data/{self.season}/fg_mlb_pit.json', 'w') as writefile:
-            writefile.write(json.dumps(rows))
+        local_path = f'data/{self.season}/fg_mlb_pit.json'
+        if self.local_only:
+            # Create directory if it doesn't exist
+            os.makedirs(os.path.dirname(local_path), exist_ok=True)
+            with open(local_path, 'w') as writefile:
+                json.dump(rows, writefile, indent=2)
+            self.stdout.write(f"Saved MLB pitching data to {local_path}")
+        else:
+            utils.s3_manager.save_and_upload_json(rows, local_path)
+            self.stdout.write(f"Saved MLB pitching data to {local_path} and uploaded to S3")
 
     def get_fg_minor_season(self):
         headers = {"accept": "application/json"}
@@ -46,8 +71,16 @@ class Command(BaseCommand):
             players[k] += r.json()
 
         for k, v in players.items():
-                with open(f'data/{self.season}/fg_milb_{k}.json', 'w') as writefile:
-                    writefile.write(json.dumps(v))
+            local_path = f'data/{self.season}/fg_milb_{k}.json'
+            if self.local_only:
+                # Create directory if it doesn't exist
+                os.makedirs(os.path.dirname(local_path), exist_ok=True)
+                with open(local_path, 'w') as writefile:
+                    json.dump(v, writefile, indent=2)
+                self.stdout.write(f"Saved MiLB {k} data to {local_path}")
+            else:
+                utils.s3_manager.save_and_upload_json(v, local_path)
+                self.stdout.write(f"Saved MiLB {k} data to {local_path} and uploaded to S3")
 
     def get_fg_college_season(self):
         headers = {"accept": "application/json"}
@@ -59,8 +92,16 @@ class Command(BaseCommand):
             players[k] += r.json().get('data')
 
         for k, v in players.items():
-                with open(f'data/{self.season}/fg_college_{k}.json', 'w') as writefile:
-                    writefile.write(json.dumps(v))
+            local_path = f'data/{self.season}/fg_college_{k}.json'
+            if self.local_only:
+                # Create directory if it doesn't exist
+                os.makedirs(os.path.dirname(local_path), exist_ok=True)
+                with open(local_path, 'w') as writefile:
+                    json.dump(v, writefile, indent=2)
+                self.stdout.write(f"Saved college {k} data to {local_path}")
+            else:
+                utils.s3_manager.save_and_upload_json(v, local_path)
+                self.stdout.write(f"Saved college {k} data to {local_path} and uploaded to S3")
 
     def get_fg_npb_season(self):
         headers = {"accept": "application/json"}
@@ -72,8 +113,16 @@ class Command(BaseCommand):
             players[k] += r.json()
 
         for k, v in players.items():
-                with open(f'data/{self.season}/fg_npb_{k}.json', 'w') as writefile:
-                    writefile.write(json.dumps(v))
+            local_path = f'data/{self.season}/fg_npb_{k}.json'
+            if self.local_only:
+                # Create directory if it doesn't exist
+                os.makedirs(os.path.dirname(local_path), exist_ok=True)
+                with open(local_path, 'w') as writefile:
+                    json.dump(v, writefile, indent=2)
+                self.stdout.write(f"Saved NPB {k} data to {local_path}")
+            else:
+                utils.s3_manager.save_and_upload_json(v, local_path)
+                self.stdout.write(f"Saved NPB {k} data to {local_path} and uploaded to S3")
 
     def get_fg_kbo_season(self):
         headers = {"accept": "application/json"}
@@ -85,13 +134,33 @@ class Command(BaseCommand):
             players[k] += r.json()
 
         for k, v in players.items():
-                with open(f'data/{self.season}/fg_kbo_{k}.json', 'w') as writefile:
-                    writefile.write(json.dumps(v))
+            local_path = f'data/{self.season}/fg_kbo_{k}.json'
+            if self.local_only:
+                # Create directory if it doesn't exist
+                os.makedirs(os.path.dirname(local_path), exist_ok=True)
+                with open(local_path, 'w') as writefile:
+                    json.dump(v, writefile, indent=2)
+                self.stdout.write(f"Saved KBO {k} data to {local_path}")
+            else:
+                utils.s3_manager.save_and_upload_json(v, local_path)
+                self.stdout.write(f"Saved KBO {k} data to {local_path} and uploaded to S3")
 
     def handle(self, *args, **options):
+        self.local_only = options.get('local_only', False)
+        
+        if self.local_only:
+            self.stdout.write("Running in local-only mode, will not upload to S3")
+        elif not utils.s3_manager.s3_client:
+            self.stdout.write(self.style.WARNING("S3 not configured, saving locally only"))
+            self.local_only = True
+        
+        self.stdout.write(f"Downloading FanGraphs data for {self.season} season...")
+        
         self.get_fg_major_hitter_season()
         self.get_fg_major_pitcher_season()
         self.get_fg_minor_season()
         self.get_fg_college_season()
         self.get_fg_npb_season()
         self.get_fg_kbo_season()
+        
+        self.stdout.write(self.style.SUCCESS(f"Successfully downloaded all FanGraphs data for {self.season}"))

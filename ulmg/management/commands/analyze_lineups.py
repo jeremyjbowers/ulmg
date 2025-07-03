@@ -12,80 +12,62 @@ class Command(BaseCommand):
         for team in teams:
             wrc_buckets = {
                 "greater than 130": {
-                    "filter": {
-                        "stats__2025_majors_hit__wrc_plus__gte": 130 
-                    },
+                    "wrc_threshold": 130,
                     "plate_appearances": 0,
                     "positions": set([]),
                     "players": [],
                     "num_players": 0
                 },
                 "greater than 120": {
-                    "filter": {
-                        "stats__2025_majors_hit__wrc_plus__gte": 120 
-                    },
+                    "wrc_threshold": 120,
                     "plate_appearances": 0,
                     "positions": set([]),
                     "players": [],
                     "num_players": 0
                 },
                 "greater than 110": {
-                    "filter": {
-                        "stats__2025_majors_hit__wrc_plus__gte": 110 
-                    },
+                    "wrc_threshold": 110,
                     "plate_appearances": 0,
                     "positions": set([]),
                     "players": [],
                     "num_players": 0
                 },
                 "greater than 100": {
-                    "filter": {
-                        "stats__2025_majors_hit__wrc_plus__gte": 100 
-                    },
+                    "wrc_threshold": 100,
                     "plate_appearances": 0,
                     "positions": set([]),
                     "players": [],
                     "num_players": 0
                 },
-                # "greater than 90": {
-                #     "filter": {
-                #         "stats__2025_majors_hit__wrc_plus__gte": 90 
-                #     },
-                #     "plate_appearances": 0,
-                #     "positions": set([]),
-                #     "players": [],
-                #     "num_players": 0
-                # },
-                # "below 90": {
-                #     "filter": {
-                #         "stats__2025_majors_hit__wrc_plus__lt": 90 
-                #     },
-                #     "plate_appearances": 0,
-                #     "positions": set([]),
-                #     "players": [],
-                #     "num_players": 0
-                # },
             }
-            team_players = models.Player.objects.filter(team=team).filter(stats__2025_majors_hit__plate_appearances__gte=5)
-
-            for bucket,data in wrc_buckets.items():
-                bucket_players = team_players.filter(**data['filter'])
-                for player in bucket_players:
-                    data['plate_appearances'] += player.stats['2025_majors_hit']['plate_appearances']
+            
+            # Get team players with 2025 major league hitting stats and >= 5 PA
+            team_players = models.Player.objects.filter(team=team)
+            
+            for bucket, data in wrc_buckets.items():
+                wrc_threshold = data['wrc_threshold']
+                
+                # Find PlayerStatSeason objects for 2025 majors hitting with sufficient PA and wRC+
+                qualifying_stat_seasons = models.PlayerStatSeason.objects.filter(
+                    player__team=team,
+                    season=2025,
+                    classification='1-majors',
+                    hit_stats__plate_appearances__gte=5,
+                    hit_stats__wrc_plus__gte=wrc_threshold
+                ).select_related('player')
+                
+                for stat_season in qualifying_stat_seasons:
+                    player = stat_season.player
+                    hit_stats = stat_season.hit_stats
+                    
+                    data['plate_appearances'] += hit_stats.get('plate_appearances', 0)
                     data['positions'].add(player.position)
-                    # for pos in player.defense:
-                    #     data['positions'].add(pos.split('-')[0])
                     data['num_players'] += 1
                     data['players'].append(player.name)
 
             team_row = [team.abbreviation]
 
-            for bucket,data in wrc_buckets.items():
+            for bucket, data in wrc_buckets.items():
                 team_row.append(f"{data['plate_appearances']}")
-                # print(f"{team} {bucket}")
-                # print(f"\tplate appearances: {data['plate_appearances']}")
-                # print(f"\tpositions: {data['positions']}")
-                # print(f"\tplayers: {data['num_players']}")
-                # # print(f"\tplayers: {', '.join(data['players'])}")
 
             print(",".join(team_row))

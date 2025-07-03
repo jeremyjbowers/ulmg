@@ -4,6 +4,8 @@ from django.contrib.admin.widgets import FilteredSelectMultiple
 from django.contrib.auth.models import User
 from django.forms import ModelForm, DateField
 from django.forms.widgets import SelectDateWidget
+from django.db.models import Q
+from datetime import datetime
 
 from ulmg.models import (
     Team,
@@ -28,12 +30,190 @@ admin.site.site_title = "The ULMG"
 admin.site.site_header = "The ULMG: Admin"
 admin.site.index_title = "Administer The ULMG Website"
 
+
+class CurrentSeasonMLBFilter(admin.SimpleListFilter):
+    title = 'MLB Status (Current Season)'
+    parameter_name = 'current_mlb'
+
+    def lookups(self, request, model_admin):
+        return (
+            ('yes', 'MLB'),
+            ('no', 'Not MLB'),
+        )
+
+    def queryset(self, request, queryset):
+        current_season = datetime.now().year
+        if self.value() == 'yes':
+            return queryset.filter(
+                playerstatseason__season=current_season,
+                playerstatseason__classification='1-majors'
+            ).distinct()
+        if self.value() == 'no':
+            return queryset.exclude(
+                playerstatseason__season=current_season,
+                playerstatseason__classification='1-majors'
+            ).distinct()
+
+
+class CurrentSeasonCardedFilter(admin.SimpleListFilter):
+    title = 'Carded Status (Current Season)'
+    parameter_name = 'current_carded'
+
+    def lookups(self, request, model_admin):
+        return (
+            ('yes', 'Carded'),
+            ('no', 'Not Carded'),
+        )
+
+    def queryset(self, request, queryset):
+        current_season = datetime.now().year
+        if self.value() == 'yes':
+            return queryset.filter(
+                playerstatseason__season=current_season,
+                playerstatseason__carded=True
+            ).distinct()
+        if self.value() == 'no':
+            return queryset.exclude(
+                playerstatseason__season=current_season,
+                playerstatseason__carded=True
+            ).distinct()
+
+
+class CurrentSeasonInjuredFilter(admin.SimpleListFilter):
+    title = 'Injured Status (Current Season)'
+    parameter_name = 'current_injured'
+
+    def lookups(self, request, model_admin):
+        return (
+            ('yes', 'Injured'),
+            ('no', 'Not Injured'),
+        )
+
+    def queryset(self, request, queryset):
+        current_season = datetime.now().year
+        if self.value() == 'yes':
+            return queryset.filter(
+                playerstatseason__season=current_season,
+                playerstatseason__is_injured=True
+            ).distinct()
+        if self.value() == 'no':
+            return queryset.exclude(
+                playerstatseason__season=current_season,
+                playerstatseason__is_injured=True
+            ).distinct()
+
+
+class CurrentSeasonMLBOrgFilter(admin.SimpleListFilter):
+    title = 'MLB Organization (Current Season)'
+    parameter_name = 'current_mlb_org'
+
+    def lookups(self, request, model_admin):
+        # Get unique MLB organizations from current season
+        current_season = datetime.now().year
+        orgs = PlayerStatSeason.objects.filter(
+            season=current_season,
+            mlb_org__isnull=False
+        ).values_list('mlb_org', flat=True).distinct()
+        return [(org, org) for org in sorted(orgs) if org]
+
+    def queryset(self, request, queryset):
+        current_season = datetime.now().year
+        if self.value():
+            return queryset.filter(
+                playerstatseason__season=current_season,
+                playerstatseason__mlb_org=self.value()
+            ).distinct()
+
+
 @admin.register(PlayerStatSeason)
 class PlayerStatSeasonAdmin(admin.ModelAdmin):
     model = PlayerStatSeason
-    list_display = ["player", "season", "classification", "level"]
-    list_filter = ["season", "classification", "level"]
-    search_fields = ["player__name", "season", "classification", "level"]
+    list_display = ["player", "season", "classification", "level", "carded", "owned", "is_mlb", "mlb_org"]
+    list_filter = [
+        "season", 
+        "classification", 
+        "level", 
+        "carded", 
+        "owned", 
+        "is_mlb", 
+        "is_injured", 
+        "mlb_org",
+        "is_starter",
+        "is_bench"
+    ]
+    search_fields = ["player__name", "season", "classification", "level", "mlb_org"]
+    autocomplete_fields = ["player"]
+    readonly_fields = ["created", "last_modified"]
+    
+    class Media:
+        css = {
+            'all': ('admin/css/widgets.css',)
+        }
+    
+    def get_readonly_fields(self, request, obj=None):
+        if obj:  # editing an existing object
+            return self.readonly_fields + ["player", "season", "classification"]
+        return self.readonly_fields
+    
+    fieldsets = (
+        (
+            "Basic Info",
+            {
+                "description": "Season-specific player information. These fields track attributes that change by season rather than permanent player characteristics.",
+                "fields": (
+                    "player",
+                    ("season", "classification", "level"),
+                    ("minors", "owned", "carded"),
+                ),
+            },
+        ),
+        (
+            "MLB Status",
+            {
+                "description": "Major League Baseball status and roster information for this season.",
+                "fields": (
+                    ("is_mlb", "is_amateur"),
+                    ("is_mlb_roster", "is_aaa_roster", "is_35man_roster"),
+                    ("is_mlb40man", "mlb_org"),
+                ),
+            },
+        ),
+        (
+            "Roster Position",
+            {
+                "classes": ("collapse",),
+                "description": "Current roster position and role information.",
+                "fields": (
+                    ("is_starter", "is_bench", "is_player_pool"),
+                    ("is_bullpen", "role", "role_type"),
+                    "roster_status",
+                ),
+            },
+        ),
+        (
+            "Health",
+            {
+                "classes": ("collapse",),
+                "description": "Injury status and health information.",
+                "fields": (
+                    "is_injured",
+                    "injury_description",
+                ),
+            },
+        ),
+        (
+            "Stats",
+            {
+                "classes": ("collapse",),
+                "description": "Statistical performance data for this season.",
+                "fields": (
+                    "hit_stats",
+                    "pitch_stats",
+                ),
+            },
+        ),
+    )
+
 
 @admin.register(Venue)
 class VenueAdmin(admin.ModelAdmin):
@@ -100,11 +280,22 @@ class WishlistAdmin(admin.ModelAdmin):
 
 
 @admin.register(WishlistPlayer)
-class WishlistPlayer(admin.ModelAdmin):
+class WishlistPlayerAdmin(admin.ModelAdmin):
     model = WishlistPlayer
     autocomplete_fields = ["player"]
     list_display = ["player", "owner_name", "rank", 'player_type', 'player_level', 'player_school', 'player_year', 'player_fv']
-    list_filter = ["wishlist", 'player__level', 'tier', 'player__is_owned', 'player_type', 'player_level', 'player_year', 'player_fv']
+    list_filter = [
+        "wishlist", 
+        'player__level', 
+        'tier', 
+        'player__is_owned', 
+        'player_type', 
+        'player_level', 
+        'player_year', 
+        'player_fv',
+        # Note: Season-specific filters like carded, injured, etc. are now in PlayerStatSeason
+        # Use the Player admin with custom filters to find players by season-specific criteria
+    ]
     list_editable = ['rank', 'player_type', 'player_level', 'player_school', 'player_year', 'player_fv']
 
 
@@ -196,15 +387,65 @@ class TeamAdmin(admin.ModelAdmin):
     )
 
 
+class PlayerStatSeasonInline(admin.TabularInline):
+    model = PlayerStatSeason
+    extra = 0
+    readonly_fields = ["created", "last_modified"]
+    fields = [
+        "season", 
+        "classification", 
+        "level", 
+        "carded", 
+        "owned", 
+        "is_mlb", 
+        "is_injured", 
+        "mlb_org",
+        "is_starter",
+        "is_bench"
+    ]
+    
+    def get_queryset(self, request):
+        """Show most recent seasons first"""
+        return super().get_queryset(request).order_by('-season', '-classification')
+
+
 @admin.register(Player)
 class PlayerAdmin(admin.ModelAdmin):
     model = Player
+    inlines = [PlayerStatSeasonInline]
+    
+    def current_season_carded(self, obj):
+        """Show if player is carded in current season"""
+        current_season = datetime.now().year
+        stat_season = obj.playerstatseason_set.filter(season=current_season).first()
+        return stat_season.carded if stat_season else False
+    current_season_carded.boolean = True
+    current_season_carded.short_description = 'Carded (Current)'
+    
+    def current_season_mlb_org(self, obj):
+        """Show player's current MLB organization"""
+        current_season = datetime.now().year
+        stat_season = obj.playerstatseason_set.filter(season=current_season).first()
+        return stat_season.mlb_org if stat_season else None
+    current_season_mlb_org.short_description = 'MLB Org (Current)'
+    
+    def current_season_injured(self, obj):
+        """Show if player is injured in current season"""
+        current_season = datetime.now().year
+        stat_season = obj.playerstatseason_set.filter(season=current_season).first()
+        return stat_season.is_injured if stat_season else False
+    current_season_injured.boolean = True
+    current_season_injured.short_description = 'Injured (Current)'
+    
     list_display = [
         "last_name",
         "first_name",
         "is_owned",
         "team",
         "level",
+        "current_season_carded",
+        "current_season_mlb_org",
+        "current_season_injured",
         'mlbam_id',
         'fg_id',
         'birthdate'
@@ -214,7 +455,10 @@ class PlayerAdmin(admin.ModelAdmin):
         "team",
         "level",
         "position",
-        "is_mlb40man",
+        CurrentSeasonMLBFilter,
+        CurrentSeasonCardedFilter,
+        CurrentSeasonInjuredFilter,
+        CurrentSeasonMLBOrgFilter,
     ]
     list_editable = ['mlbam_id','fg_id', 'birthdate']
     readonly_fields = ["name", "age"]
@@ -231,27 +475,32 @@ class PlayerAdmin(admin.ModelAdmin):
                     "position",
                     "level",
                     "team",
-                    ("mlb_org"),
                 ),
             },
         ),
         (
-            "External",
+            "External IDs",
             {
                 "fields": (
-                    ("fg_id", "mlbam_id",),
+                    ("fg_id", "mlbam_id"),
+                    ("ba_id", "bp_id", "bref_id"),
+                    ("fantrax_id", "baseballcube_id", "perfectgame_id"),
                 )
             },
         ),
         (
-            "Roster",
+            "External URLs",
             {
                 "classes": ("collapse",),
-                "fields": (("is_mlb_roster", "is_aaa_roster", "is_35man_roster"),),
+                "fields": (
+                    ("ba_url", "bref_url", "fg_url"),
+                    ("mlb_dotcom_url", "fantrax_url"),
+                    "bref_img",
+                )
             },
         ),
         (
-            "Protection",
+            "ULMG Protection Status",
             {
                 "classes": ("collapse",),
                 "fields": (
@@ -259,28 +508,16 @@ class PlayerAdmin(admin.ModelAdmin):
                     ("is_1h_p", "is_1h_c", "is_1h_pos"),
                     ("is_2h_draft", "is_2h_p", "is_2h_c", "is_2h_pos"),
                     ("is_protected", "cannot_be_protected", "covid_protected"),
+                    "is_trade_block",
                 ),
             },
         ),
         (
-            "Live stats",
+            "Prospect Info",
             {
                 "classes": ("collapse",),
                 "fields": (
-                    ("is_starter", "is_bench", "is_player_pool"),
-                    ("is_injured"),
-                    "injury_description",
-                    ("role", "role_type", "roster_status"),
-                    ("is_mlb40man", "is_bullpen"),
-                ),
-            },
-        ),
-        (
-            "Prospect",
-            {
-                "classes": ("collapse",),
-                "fields": (
-                    ("is_prospect", "is_amateur"),
+                    "is_prospect",
                     "league",
                     "prospect_rating_avg",
                     "class_year",
@@ -290,10 +527,23 @@ class PlayerAdmin(admin.ModelAdmin):
             },
         ),
         (
+            "Career Stats",
+            {
+                "classes": ("collapse",),
+                "fields": (
+                    ("cs_pa", "cs_gp", "cs_st", "cs_ip"),
+                ),
+            },
+        ),
+        (
             "Advanced",
             {
                 "classes": ("collapse",),
-                "fields": ("is_carded", "is_owned", "defense", "stats"),
+                "fields": (
+                    "is_owned", 
+                    "defense", 
+                    "strat_ratings"
+                ),
             },
         ),
     )

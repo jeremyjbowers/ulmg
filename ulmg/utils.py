@@ -23,6 +23,13 @@ import time
 
 from ulmg import models
 
+import boto3
+from botocore.exceptions import ClientError, NoCredentialsError
+import os
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 def get_level_order(level):
     """
@@ -127,13 +134,12 @@ def to_float(might_float, default=None):
 
 
 def reset_player_stats(id_type=None, player_ids=None):
+    """Reset player stats by deleting PlayerStatSeason objects."""
     if id_type and player_ids:
-        lookup = f"{id_type}__in"
-        keyword = player_ids
-        models.Player.objects.filter(**{lookup: keyword}).update(stats={})
-
+        lookup = f"player__{id_type}__in"
+        models.PlayerStatSeason.objects.filter(**{lookup: player_ids}).delete()
     else:
-        models.Player.objects.filter(stats__isnull=False).update(stats={})
+        models.PlayerStatSeason.objects.all().delete()
 
 
 def get_scriptname():
@@ -405,3 +411,166 @@ def get_sheet(sheet_id, sheet_range):
     if values:
         return [dict(zip(values[0], r)) for r in values[1:]]
     return []
+
+
+class S3DataManager:
+    """
+    Utility class for managing FanGraphs data in S3-compatible storage (DigitalOcean Spaces).
+    Provides upload/download functionality with local fallback.
+    """
+    
+    def __init__(self):
+        self.s3_client = None
+        self.bucket_name = getattr(settings, 'AWS_STORAGE_BUCKET_NAME', None)
+        self.data_prefix = 'fangraphs-data/'  # Prefix for all FanGraphs data in bucket
+        
+        # Initialize S3 client if credentials are available
+        try:
+            self.s3_client = boto3.client(
+                's3',
+                endpoint_url=getattr(settings, 'AWS_S3_ENDPOINT_URL', None),
+                aws_access_key_id=getattr(settings, 'AWS_ACCESS_KEY_ID', None),
+                aws_secret_access_key=getattr(settings, 'AWS_SECRET_ACCESS_KEY', None),
+                region_name=getattr(settings, 'AWS_S3_REGION_NAME', 'us-east-1')
+            )
+            # Test connection
+            if self.bucket_name:
+                self.s3_client.head_bucket(Bucket=self.bucket_name)
+                logger.info(f"S3 connection established to bucket: {self.bucket_name}")
+        except (ClientError, NoCredentialsError, Exception) as e:
+            logger.warning(f"S3 connection failed: {e}. Will use local files only.")
+            self.s3_client = None
+    
+    def _get_s3_key(self, local_path):
+        """Convert local file path to S3 key."""
+        # Remove leading 'data/' and prepend our prefix
+        if local_path.startswith('data/'):
+            local_path = local_path[5:]
+        return f"{self.data_prefix}{local_path}"
+    
+    def upload_file(self, local_path, s3_key=None):
+        """
+        Upload a local file to S3.
+        
+        Args:
+            local_path: Path to local file (e.g., 'data/2025/fg_mlb_bat.json')
+            s3_key: Optional custom S3 key, otherwise derived from local_path
+        
+        Returns:
+            bool: True if successful, False otherwise
+        """
+        if not self.s3_client or not self.bucket_name:
+            logger.debug("S3 not configured, skipping upload")
+            return False
+        
+        if s3_key is None:
+            s3_key = self._get_s3_key(local_path)
+        
+        try:
+            self.s3_client.upload_file(local_path, self.bucket_name, s3_key)
+            logger.info(f"Uploaded {local_path} to s3://{self.bucket_name}/{s3_key}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to upload {local_path} to S3: {e}")
+            return False
+    
+    def download_file(self, s3_key, local_path):
+        """
+        Download a file from S3 to local path.
+        
+        Args:
+            s3_key: S3 object key
+            local_path: Where to save the file locally
+        
+        Returns:
+            bool: True if successful, False otherwise
+        """
+        if not self.s3_client or not self.bucket_name:
+            logger.debug("S3 not configured, cannot download")
+            return False
+        
+        try:
+            # Ensure local directory exists
+            os.makedirs(os.path.dirname(local_path), exist_ok=True)
+            
+            self.s3_client.download_file(self.bucket_name, s3_key, local_path)
+            logger.info(f"Downloaded s3://{self.bucket_name}/{s3_key} to {local_path}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to download {s3_key} from S3: {e}")
+            return False
+    
+    def file_exists_in_s3(self, s3_key):
+        """Check if a file exists in S3."""
+        if not self.s3_client or not self.bucket_name:
+            return False
+        
+        try:
+            self.s3_client.head_object(Bucket=self.bucket_name, Key=s3_key)
+            return True
+        except:
+            return False
+    
+    def get_file_content(self, local_path):
+        """
+        Get file content, trying local file first, then S3.
+        
+        Args:
+            local_path: Path to local file (e.g., 'data/2025/fg_mlb_bat.json')
+        
+        Returns:
+            dict: Parsed JSON content or None if not found
+        """
+        # Try local file first
+        if os.path.exists(local_path):
+            try:
+                with open(local_path, 'r') as f:
+                    return json.load(f)
+            except Exception as e:
+                logger.error(f"Failed to read local file {local_path}: {e}")
+        
+        # Try S3 if local file doesn't exist or failed to read
+        if self.s3_client and self.bucket_name:
+            s3_key = self._get_s3_key(local_path)
+            if self.download_file(s3_key, local_path):
+                try:
+                    with open(local_path, 'r') as f:
+                        return json.load(f)
+                except Exception as e:
+                    logger.error(f"Failed to read downloaded file {local_path}: {e}")
+        
+        logger.warning(f"Could not find or read file: {local_path}")
+        return None
+    
+    def save_and_upload_json(self, data, local_path):
+        """
+        Save JSON data to local file and upload to S3.
+        
+        Args:
+            data: Data to save (will be JSON serialized)
+            local_path: Local file path to save to
+        
+        Returns:
+            bool: True if local save succeeded (S3 upload is best-effort)
+        """
+        try:
+            # Ensure local directory exists
+            os.makedirs(os.path.dirname(local_path), exist_ok=True)
+            
+            # Save locally
+            with open(local_path, 'w') as f:
+                json.dump(data, f, indent=2)
+            
+            logger.info(f"Saved data to {local_path}")
+            
+            # Upload to S3 (best effort)
+            self.upload_file(local_path)
+            
+            return True
+        except Exception as e:
+            logger.error(f"Failed to save data to {local_path}: {e}")
+            return False
+
+
+# Global instance for easy access
+s3_manager = S3DataManager()
