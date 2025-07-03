@@ -146,7 +146,15 @@ class Command(BaseCommand):
                     obj.position = utils.normalize_pos(player['position'])
                     obj.fg_id = fg_id
                     obj.mlbam_id = mlbam_id
-                    obj.raw_age = player['age'].split('.')[0]
+                    # Handle #N/A values in age data
+                    age_str = str(player['age']).strip()
+                    if age_str and age_str != '#N/A' and age_str != '':
+                        try:
+                            obj.raw_age = int(float(age_str.split('.')[0]))
+                        except (ValueError, IndexError):
+                            obj.raw_age = None
+                    else:
+                        obj.raw_age = None
                     obj.save()  # Save player first
                     print(f"+++ {obj}")
 
