@@ -87,7 +87,7 @@
                 {% if p.is_aaa_roster %}AAA {% endif %}
                 {% if p.is_2h_draft %}2H{% endif %}
             </td>
-            {% include "includes/hitter_stat_cells.html" %}
+            {% include "includes/hitter_stat_cells_player.html" %}
             {% if own_team and protect_tab %}
             <td class="text-center py-1">
                 {% if p.is_protected %}
@@ -139,7 +139,7 @@
                 {% if p.is_2h_draft %}2H {% endif %}
                 {% if p.is_35man_roster %}40-man{% endif %}
             </td>
-            {% include "includes/pitcher_stat_cells.html" %}
+            {% include "includes/pitcher_stat_cells_player.html" %}
             {% if own_team and protect_tab %}
             <td class="text-center py-1">
                 {% if p.is_protected %}

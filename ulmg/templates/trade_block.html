@@ -78,7 +78,7 @@
                     <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
                     <td data-value="{{ p.level|default_if_none:"Z" }}">{{ p.level|default_if_none:"" }}</td>
                     <td data-value="{{ p.team|default_if_none:"" }}">{% if p.team %}<a href="/teams/{{ p.team.abbreviation }}/">{% endif %}{{ p.team|default_if_none:"-" }}{% if p.team %}</a>{% endif %}</td>
-                    {% include "includes/hitter_stat_cells.html" %}
+                    {% include "includes/hitter_stat_cells_player.html" %}
                 </tr>
             {% endfor %}
             </tbody>
@@ -108,7 +108,7 @@
                     <td data-value="{{ p.age|default_if_none:"-999" }}">{{ p.age|default_if_none:"-" }}</td>
                     <td data-value="{{ p.level|default_if_none:"Z" }}<">{{ p.level|default_if_none:"" }}</td>
                     <td data-value="{{ p.team|default_if_none:"" }}">{% if p.team %}<a href="/teams/{{ p.team.abbreviation }}/">{% endif %}{{ p.team|default_if_none:"-" }}{% if p.team %}</a>{% endif %}</td>
-                    {% include "includes/pitcher_stat_cells.html" %}
+                    {% include "includes/pitcher_stat_cells_player.html" %}
                 </tr>
             {% endfor %}
             </tbody>

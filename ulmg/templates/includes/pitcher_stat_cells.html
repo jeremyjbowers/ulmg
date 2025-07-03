@@ -1,29 +1,27 @@
 {% load ulmg_tags %}
-<td>{{ p.mlb_org|default_if_none:"-" }}</td>
+<td>{{ p.player.mlb_org|default_if_none:"-" }}</td>
 
-<!-- <td data-value="{% if p.roster_status %}{{ p.roster_status|default_if_none:"-" }}{% else %}-{% endif %}">
-    {% if p.roster_status %}{{ p.roster_status|default_if_none:"-" }}{% else %}-{% endif %}
+<!-- <td data-value="{% if p.player.roster_status %}{{ p.player.roster_status|default_if_none:"-" }}{% else %}-{% endif %}">
+    {% if p.player.roster_status %}{{ p.player.roster_status|default_if_none:"-" }}{% else %}-{% endif %}
 </td> -->
 
-<td data-value="{{ p.role_type|default_if_none:"-" }}">
-    {{ p.role_type|default_if_none:"-" }}
+<td data-value="{{ p.player.role_type|default_if_none:"-" }}">
+    {{ p.player.role_type|default_if_none:"-" }}
 </td>
 
-{% with best_stats=p.get_best_stat_season %}
-<td data-value="{% if best_stats %}{% if best_stats.level %}{{ best_stats.season }} {{ best_stats.level|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}">
-    {% if best_stats %}{% if best_stats.level %}{{ best_stats.season }} {{ best_stats.level|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
+<td data-value="{% if p.level %}{{ p.season }} {{ p.level|default_if_none:"-" }}{% else %}-{% endif %}">
+    {% if p.level %}{{ p.season }} {{ p.level|default_if_none:"-" }}{% else %}-{% endif %}
 </td>
 
-<td data-value="{% if best_stats and best_stats.pitch_stats %}{% if best_stats.pitch_stats.ip > 0 %}{{ best_stats.pitch_stats.g|default_if_none:"-999" }}{% else %}-999{% endif %}{% else %}-999{% endif %}">{% if best_stats and best_stats.pitch_stats %}{% if best_stats.pitch_stats.ip > 0 %}{{ best_stats.pitch_stats.g|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}</td>
-<td data-value="{% if best_stats and best_stats.pitch_stats %}{% if best_stats.pitch_stats.ip > 0 %}{{ best_stats.pitch_stats.gs|default_if_none:"-999" }}{% else %}-999{% endif %}{% else %}-999{% endif %}">{% if best_stats and best_stats.pitch_stats %}{% if best_stats.pitch_stats.ip > 0 %}{{ best_stats.pitch_stats.gs|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}</td>
-<td data-value="{% if best_stats and best_stats.pitch_stats %}{% if best_stats.pitch_stats.ip > 0 %}{{ best_stats.pitch_stats.ip|default_if_none:"-999" }}{% else %}-999{% endif %}{% else %}-999{% endif %}">{% if best_stats and best_stats.pitch_stats %}{% if best_stats.pitch_stats.ip > 0 %}{{ best_stats.pitch_stats.ip|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}</td>
-<td data-value="{% if best_stats and best_stats.pitch_stats %}{% if best_stats.pitch_stats.ip > 0 %}{{ best_stats.pitch_stats.era|default_if_none:"999" }}{% else %}999{% endif %}{% else %}999{% endif %}">{% if best_stats and best_stats.pitch_stats %}{% if best_stats.pitch_stats.ip > 0 %}{{ best_stats.pitch_stats.era|floatformat:2|default_if_none:"-"  }}{% else %}-{% endif %}{% else %}-{% endif %}</td>
-<td data-value="{% if best_stats and best_stats.pitch_stats %}{% if best_stats.pitch_stats.ip > 0 %}{{ best_stats.pitch_stats.whip|default_if_none:"999" }}{% else %}999{% endif %}{% else %}999{% endif %}">{% if best_stats and best_stats.pitch_stats %}{% if best_stats.pitch_stats.ip > 0 %}{{ best_stats.pitch_stats.whip|floatformat:2|default_if_none:"-"  }}{% else %}-{% endif %}{% else %}-{% endif %}</td>
-<td data-value="{% if best_stats and best_stats.pitch_stats %}{% if best_stats.pitch_stats.ip > 0 %}{{ best_stats.pitch_stats.k_9|default_if_none:"-999" }}{% else %}-999{% endif %}{% else %}-999{% endif %}">{% if best_stats and best_stats.pitch_stats %}{% if best_stats.pitch_stats.ip > 0 %}{{ best_stats.pitch_stats.k_9|floatformat:1|default_if_none:"-"  }}{% else %}-{% endif %}{% else %}-{% endif %}</td>
-<td data-value="{% if best_stats and best_stats.pitch_stats %}{% if best_stats.pitch_stats.ip > 0 %}{{ best_stats.pitch_stats.bb_9|default_if_none:"999" }}{% else %}999{% endif %}{% else %}999{% endif %}">{% if best_stats and best_stats.pitch_stats %}{% if best_stats.pitch_stats.ip > 0 %}{{ best_stats.pitch_stats.bb_9|floatformat:1|default_if_none:"-"  }}{% else %}-{% endif %}{% else %}-{% endif %}</td>
-<td data-value="{% if best_stats and best_stats.pitch_stats %}{% if best_stats.pitch_stats.ip > 0 %}{{ best_stats.pitch_stats.hr_9|default_if_none:"999" }}{% else %}999{% endif %}{% else %}999{% endif %}">{% if best_stats and best_stats.pitch_stats %}{% if best_stats.pitch_stats.ip > 0 %}{{ best_stats.pitch_stats.hr_9|floatformat:1|default_if_none:"-"  }}{% else %}-{% endif %}{% else %}-{% endif %}</td>
+<td data-value="{% if p.pitch_stats %}{% if p.pitch_stats.ip > 0 %}{{ p.pitch_stats.g|default_if_none:"-999" }}{% else %}-999{% endif %}{% else %}-999{% endif %}">{% if p.pitch_stats %}{% if p.pitch_stats.ip > 0 %}{{ p.pitch_stats.g|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}</td>
+<td data-value="{% if p.pitch_stats %}{% if p.pitch_stats.ip > 0 %}{{ p.pitch_stats.gs|default_if_none:"-999" }}{% else %}-999{% endif %}{% else %}-999{% endif %}">{% if p.pitch_stats %}{% if p.pitch_stats.ip > 0 %}{{ p.pitch_stats.gs|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}</td>
+<td data-value="{% if p.pitch_stats %}{% if p.pitch_stats.ip > 0 %}{{ p.pitch_stats.ip|default_if_none:"-999" }}{% else %}-999{% endif %}{% else %}-999{% endif %}">{% if p.pitch_stats %}{% if p.pitch_stats.ip > 0 %}{{ p.pitch_stats.ip|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}</td>
+<td data-value="{% if p.pitch_stats %}{% if p.pitch_stats.ip > 0 %}{{ p.pitch_stats.era|default_if_none:"999" }}{% else %}999{% endif %}{% else %}999{% endif %}">{% if p.pitch_stats %}{% if p.pitch_stats.ip > 0 %}{{ p.pitch_stats.era|floatformat:2|default_if_none:"-"  }}{% else %}-{% endif %}{% else %}-{% endif %}</td>
+<td data-value="{% if p.pitch_stats %}{% if p.pitch_stats.ip > 0 %}{{ p.pitch_stats.whip|default_if_none:"999" }}{% else %}999{% endif %}{% else %}999{% endif %}">{% if p.pitch_stats %}{% if p.pitch_stats.ip > 0 %}{{ p.pitch_stats.whip|floatformat:2|default_if_none:"-"  }}{% else %}-{% endif %}{% else %}-{% endif %}</td>
+<td data-value="{% if p.pitch_stats %}{% if p.pitch_stats.ip > 0 %}{{ p.pitch_stats.k_9|default_if_none:"-999" }}{% else %}-999{% endif %}{% else %}-999{% endif %}">{% if p.pitch_stats %}{% if p.pitch_stats.ip > 0 %}{{ p.pitch_stats.k_9|floatformat:1|default_if_none:"-"  }}{% else %}-{% endif %}{% else %}-{% endif %}</td>
+<td data-value="{% if p.pitch_stats %}{% if p.pitch_stats.ip > 0 %}{{ p.pitch_stats.bb_9|default_if_none:"999" }}{% else %}999{% endif %}{% else %}999{% endif %}">{% if p.pitch_stats %}{% if p.pitch_stats.ip > 0 %}{{ p.pitch_stats.bb_9|floatformat:1|default_if_none:"-"  }}{% else %}-{% endif %}{% else %}-{% endif %}</td>
+<td data-value="{% if p.pitch_stats %}{% if p.pitch_stats.ip > 0 %}{{ p.pitch_stats.hr_9|default_if_none:"999" }}{% else %}999{% endif %}{% else %}999{% endif %}">{% if p.pitch_stats %}{% if p.pitch_stats.ip > 0 %}{{ p.pitch_stats.hr_9|floatformat:1|default_if_none:"-"  }}{% else %}-{% endif %}{% else %}-{% endif %}</td>
 
-<td data-value="{% if best_stats and best_stats.pitch_stats %}{% if best_stats.pitch_stats.ip > 0 %}{{ best_stats.pitch_stats.fip|default_if_none:"999" }}{% else %}999{% endif %}{% else %}999{% endif %}">{% if best_stats and best_stats.pitch_stats %}{% if best_stats.pitch_stats.ip > 0 %}{{ best_stats.pitch_stats.fip|floatformat:2|default_if_none:"-"  }}{% else %}-{% endif %}{% else %}-{% endif %}</td>
-<td data-value="{% if best_stats and best_stats.pitch_stats %}{% if best_stats.pitch_stats.ip > 0 %}{{ best_stats.pitch_stats.xfip|default_if_none:"999" }}{% else %}999{% endif %}{% else %}999{% endif %}">{% if best_stats and best_stats.pitch_stats %}{% if best_stats.pitch_stats.ip > 0 %}{{ best_stats.pitch_stats.xfip|floatformat:2|default_if_none:"-"  }}{% else %}-{% endif %}{% else %}-{% endif %}</td>
-<td data-value="{% if best_stats and best_stats.pitch_stats %}{% if best_stats.pitch_stats.ip > 0 %}{{ best_stats.pitch_stats.siera|default_if_none:"999" }}{% else %}999{% endif %}{% else %}999{% endif %}">{% if best_stats and best_stats.pitch_stats %}{% if best_stats.pitch_stats.ip > 0 and best_stats.pitch_stats.siera %}{{ best_stats.pitch_stats.siera|floatformat:2|default_if_none:"-"  }}{% else %}-{% endif %}{% else %}-{% endif %}</td>
-{% endwith %}
+<td data-value="{% if p.pitch_stats %}{% if p.pitch_stats.ip > 0 %}{{ p.pitch_stats.fip|default_if_none:"999" }}{% else %}999{% endif %}{% else %}999{% endif %}">{% if p.pitch_stats %}{% if p.pitch_stats.ip > 0 %}{{ p.pitch_stats.fip|floatformat:2|default_if_none:"-"  }}{% else %}-{% endif %}{% else %}-{% endif %}</td>
+<td data-value="{% if p.pitch_stats %}{% if p.pitch_stats.ip > 0 %}{{ p.pitch_stats.xfip|default_if_none:"999" }}{% else %}999{% endif %}{% else %}999{% endif %}">{% if p.pitch_stats %}{% if p.pitch_stats.ip > 0 %}{{ p.pitch_stats.xfip|floatformat:2|default_if_none:"-"  }}{% else %}-{% endif %}{% else %}-{% endif %}</td>
+<td data-value="{% if p.pitch_stats %}{% if p.pitch_stats.ip > 0 %}{{ p.pitch_stats.siera|default_if_none:"999" }}{% else %}999{% endif %}{% else %}999{% endif %}">{% if p.pitch_stats %}{% if p.pitch_stats.ip > 0 and p.pitch_stats.siera %}{{ p.pitch_stats.siera|floatformat:2|default_if_none:"-"  }}{% else %}-{% endif %}{% else %}-{% endif %}</td>
