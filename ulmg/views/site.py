@@ -102,8 +102,8 @@ def player(request, playerid):
     for trade in trades:
         transactions.append({
             'type': 'trade',
-            'date': trade.trade.date,
-            'year': trade.trade.date.year if trade.trade.date else None,
+            'date': trade.trade.date if trade.trade else None,
+            'year': trade.trade.date.year if trade.trade and trade.trade.date else None,
             'description': f"Traded to {trade.team.abbreviation}",
             'team': trade.team,
             'details': trade.trade.summary() if trade.trade else "Trade details not available"
