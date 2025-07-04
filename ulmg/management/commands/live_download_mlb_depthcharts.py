@@ -115,8 +115,8 @@ class Command(BaseCommand):
                         player_stat_season, created = models.PlayerStatSeason.objects.get_or_create(
                             player=player_obj,
                             season=current_season,
+                            classification='1-majors',  # Include classification in lookup
                             defaults={
-                                'classification': '1-majors',  # Default for MLB depth chart data
                                 'mlb_org': player_dict['mlb_org'],
                                 'roster_status': player_dict['roster_status']
                             }
