@@ -775,8 +775,8 @@ class PlayerStatSeason(BaseModel):
         """
         Determine the player's level classification for CSS styling:
         - 'mlb': Has MLB stats (classification="1-majors" with actual stats)
-        - 'milb': Has MiLB stats or MLB organization but no MLB stats
-        - 'amateur': No MLB organization and no professional stats
+        - 'milb': Has MiLB stats (classification="2-minors") or MLB organization but no MLB stats
+        - 'amateur': Foreign leagues (NPB, KBO, NCAA), no stats, or no professional organization
         """
         # Check for MLB stats (classification="1-majors" with actual stats)
         if (self.classification == "1-majors" and 
@@ -784,21 +784,30 @@ class PlayerStatSeason(BaseModel):
              (self.pitch_stats and self.pitch_stats.get('ip', 0) > 0))):
             return 'mlb'
         
-        # Check for minor league stats (classification="2-minors" with stats) or MLB organization
+        # Check for minor league stats (classification="2-minors") or MLB organization
         if (self.classification == "2-minors" or 
-            self.mlb_org or 
-            ((self.hit_stats and self.hit_stats.get('plate_appearances', 0) > 0) or
-             (self.pitch_stats and self.pitch_stats.get('ip', 0) > 0))):
+            (self.mlb_org and self.classification not in ["3-npb", "4-kbo", "5-ncaa"])):
             return 'milb'
+        
+        # Foreign leagues (NPB, KBO, NCAA) and amateurs should be 'amateur'
+        if self.classification in ["3-npb", "4-kbo", "5-ncaa"]:
+            return 'amateur'
         
         # Default to amateur if no pro stats or organization
         return 'amateur'
 
     def is_on_il(self):
         """
-        Check if player is on any injured list (IL-7, IL-10, IL-15, IL-60, etc.)
+        Check if player is on any injured list (IL) based on any role or status field.
+        Checks roster_status, role, and role_type for any occurrence of 'IL'.
         """
-        return self.roster_status and self.roster_status.startswith('IL-')
+        fields_to_check = [self.roster_status, self.role, self.role_type]
+        
+        for field in fields_to_check:
+            if field and 'IL' in field.upper():
+                return True
+        
+        return False
 
     class Meta:
         ordering = ['season', 'classification']
