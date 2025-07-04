@@ -1,5 +1,7 @@
 from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
+from django.db import transaction
+import datetime
 
 import requests
 from bs4 import BeautifulSoup
@@ -42,7 +44,11 @@ class Command(BaseCommand):
     }
     
     def get_rosters(self):
-        models.Player.objects.all().update(roster_status="MINORS")
+        current_season = datetime.datetime.now().year
+        
+        # Reset all current season PlayerStatSeason roster_status to "MINORS"
+        models.PlayerStatSeason.objects.filter(season=current_season).update(roster_status="MINORS")
+        
         team_list_url = "https://statsapi.mlb.com/api/v1/teams/"
 
         r = requests.get(team_list_url)
@@ -57,6 +63,7 @@ class Command(BaseCommand):
         rookie_teams = [self.parse_players(t) for t in team_list if t['sport']['id'] == 16]            
 
     def parse_players(self, t):
+        current_season = datetime.datetime.now().year
         roster_link = f"https://statsapi.mlb.com/api/v1/teams/{t['id']}/roster/40Man"
         tr = requests.get(roster_link).json()
 
@@ -77,6 +84,7 @@ class Command(BaseCommand):
                 player_dict['name'] = p['person']['fullName']
                 player_dict['position'] = utils.normalize_pos(p['position']['abbreviation'])
                 player_dict['mlb_org'] = mlb_team
+                player_dict['roster_status'] = "MINORS"  # Default
 
                 if "injured" in p['status']['description'].lower():
                     if "7" in p['status']['description']:
@@ -93,12 +101,32 @@ class Command(BaseCommand):
                         player_dict['roster_status'] = "MLB"
 
                 try:
-                    obj = models.Player.objects.get(mlbam_id=player_dict['mlbam_id'])
+                    player_obj = models.Player.objects.get(mlbam_id=player_dict['mlbam_id'])
+                    
+                    # Update player-level fields
+                    if player_dict.get('name'):
+                        player_obj.name = player_dict['name']
+                    if player_dict.get('position'):
+                        player_obj.position = player_dict['position']
+                    player_obj.save()
 
-                    for k,v in player_dict.items():
-                        setattr(obj, k, v)
-
-                    obj.save()
+                    # Get or create PlayerStatSeason for current season
+                    with transaction.atomic():
+                        player_stat_season, created = models.PlayerStatSeason.objects.get_or_create(
+                            player=player_obj,
+                            season=current_season,
+                            defaults={
+                                'classification': '1-majors',  # Default for MLB depth chart data
+                                'mlb_org': player_dict['mlb_org'],
+                                'roster_status': player_dict['roster_status']
+                            }
+                        )
+                        
+                        if not created:
+                            # Update existing record
+                            player_stat_season.mlb_org = player_dict['mlb_org']
+                            player_stat_season.roster_status = player_dict['roster_status']
+                            player_stat_season.save()
 
                 except models.Player.DoesNotExist:
                     # we're not creating new players from the MLB just yet

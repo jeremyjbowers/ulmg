@@ -31,11 +31,15 @@ def index(request):
 
     season = 2025
 
-    # Get PlayerStatSeason objects for unowned 2025 MLB major league players
+    # Get PlayerStatSeason objects for unowned 2025 MLB major league players WITH ACTUAL STATS
     base_stats = models.PlayerStatSeason.objects.select_related('player').filter(
         season=season,
         classification="1-majors",  # MLB major league only (excludes NPB, KBO, NCAA, minors)
         owned=False    # Unowned only
+    ).filter(
+        # Only include players with actual MLB stats (at least 1 PA or 1 IP)
+        Q(hit_stats__plate_appearances__gte=1) |
+        Q(pitch_stats__ip__gte=1)
     )
 
     # Split into hitters and pitchers by position

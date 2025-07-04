@@ -460,6 +460,13 @@ class Player(BaseModel):
         """Get the current season's MLB organization (for template compatibility)."""
         return self.current_mlb_org()
 
+    def player_level_class(self):
+        """Get the current season's player level class for CSS styling."""
+        current_status = self.current_season_status()
+        if current_status:
+            return current_status.player_level_class()
+        return 'amateur'  # Default for players with no current season data
+
     def latest_hit_stats(self):
         stats = PlayerStatSeason.objects.filter(player=self).first()
         if stats:
@@ -718,6 +725,29 @@ class PlayerStatSeason(BaseModel):
     def __unicode__(self):
         return f"{self.player} @ {self.season} @ {self.classification}"
 
+    def player_level_class(self):
+        """
+        Determine the player's level classification for CSS styling:
+        - 'mlb': Has MLB stats (classification="1-majors" with actual stats)
+        - 'milb': Has MiLB stats or MLB organization but no MLB stats
+        - 'amateur': No MLB organization and no professional stats
+        """
+        # Check for MLB stats (classification="1-majors" with actual stats)
+        if (self.classification == "1-majors" and 
+            ((self.hit_stats and self.hit_stats.get('plate_appearances', 0) > 0) or
+             (self.pitch_stats and self.pitch_stats.get('ip', 0) > 0))):
+            return 'mlb'
+        
+        # Check for minor league stats (classification="2-minors" with stats) or MLB organization
+        if (self.classification == "2-minors" or 
+            self.mlb_org or 
+            ((self.hit_stats and self.hit_stats.get('plate_appearances', 0) > 0) or
+             (self.pitch_stats and self.pitch_stats.get('ip', 0) > 0))):
+            return 'milb'
+        
+        # Default to amateur if no pro stats or organization
+        return 'amateur'
+
     class Meta:
         ordering = ['season', 'classification']
         indexes = [
@@ -738,6 +768,9 @@ class PlayerStatSeason(BaseModel):
             models.Index(fields=['season', 'classification']),   # Already in ordering, but explicit
             models.Index(fields=['classification']),  # Individual classification filtering
             models.Index(fields=['level']),  # Individual level filtering (AAA, AA, etc.)
+            
+            # Index page optimization - unowned MLB players with stats
+            models.Index(fields=['season', 'classification', 'owned']),  # Index page base filter
         ]
 
 class DraftPick(BaseModel):
