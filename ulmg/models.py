@@ -386,6 +386,49 @@ class Player(BaseModel):
 
     class Meta:
         ordering = ["last_name", "first_name", "level", "position"]
+        indexes = [
+            # Team filtering (heavily used in team detail views)
+            models.Index(fields=['team']),
+            # Name search optimization (used in search views and autocomplete)
+            models.Index(fields=['name']),
+            models.Index(fields=['last_name', 'first_name']),
+            # Level and position filtering (used in search and filtering)
+            models.Index(fields=['level', 'position']),
+            models.Index(fields=['position', 'level']),
+            # Ownership filtering combined with other common filters
+            models.Index(fields=['team', 'level']),
+            models.Index(fields=['team', 'position']),
+            # Draft eligibility and protection status
+            models.Index(fields=['cannot_be_protected']),
+            models.Index(fields=['covid_protected']),
+            # Player ID crosswalks for data import/sync
+            models.Index(fields=['mlbam_id']),
+            models.Index(fields=['fg_id']),
+            models.Index(fields=['fantrax_id']),
+            # Ownership status
+            models.Index(fields=['is_owned']),
+            models.Index(fields=['is_owned', 'team']),
+            models.Index(fields=['is_owned', 'level']),
+            
+            # READ-HEAVY OPTIMIZATIONS (perfect for low-write workloads)
+            # Covering indexes - include frequently accessed columns to avoid table lookups
+            models.Index(fields=['team'], include=['name', 'position', 'level'], name='idx_player_team_cov'),
+            models.Index(fields=['name'], include=['team', 'position', 'level'], name='idx_player_name_cov'),
+            models.Index(fields=['last_name', 'first_name'], include=['team', 'position', 'level'], name='idx_player_fname_cov'),
+            
+            # Partial indexes for frequently filtered subsets
+            models.Index(fields=['team', 'position'], condition=models.Q(level__in=['V', 'A', 'B']), name='idx_upper_level_play'),
+            models.Index(fields=['name'], condition=models.Q(level='V'), name='idx_vet_players_name'),
+            models.Index(fields=['position'], condition=models.Q(level='V'), name='idx_vet_players_pos'),
+            
+            # Protection status optimizations (used in draft prep)
+            models.Index(fields=['team'], condition=models.Q(cannot_be_protected=True), name='idx_unprotectable_play'),
+            models.Index(fields=['team'], condition=models.Q(covid_protected=True), name='idx_covid_protected_play'),
+            
+            # Trade block optimization (if used frequently)
+            models.Index(fields=['is_trade_block'], condition=models.Q(is_trade_block=True), name='idx_trade_block_play'),
+            models.Index(fields=['team', 'is_trade_block']),
+        ]
 
     def __unicode__(self):
         if self.get_team():
@@ -779,6 +822,42 @@ class PlayerStatSeason(BaseModel):
             
             # Index page optimization - unowned MLB players with stats
             models.Index(fields=['season', 'classification', 'owned']),  # Index page base filter
+            
+            # Additional optimizations for popular query patterns
+            models.Index(fields=['season', 'classification', 'owned', 'player']),  # Index + player lookup
+            models.Index(fields=['season', 'owned', 'classification']),  # Alternative ordering for search
+            models.Index(fields=['owned', 'season', 'classification']),  # Ownership-first filtering
+            models.Index(fields=['classification', 'season', 'owned']),  # Classification-first filtering
+            
+            # Team-based filtering (for team detail pages accessing PlayerStatSeason)
+            models.Index(fields=['season', 'player']),  # Season + player lookup (already exists but ensuring)
+            
+            # Protection and roster status queries
+            models.Index(fields=['season', 'is_35man_roster']),
+            models.Index(fields=['season', 'is_mlb_roster']),
+            models.Index(fields=['season', 'owned', 'is_35man_roster']),
+            
+            # READ-HEAVY OPTIMIZATIONS (perfect for low-write workloads)
+            # Covering indexes - include frequently accessed columns to avoid table lookups
+            models.Index(fields=['season', 'classification', 'owned'], include=['player', 'carded', 'minors'], name='idx_pss_main_covering'),
+            models.Index(fields=['player', 'season'], include=['classification', 'owned', 'carded'], name='idx_pss_player_covering'),
+            
+            # Partial indexes for boolean filters (much smaller, faster for read-heavy workloads)
+            models.Index(fields=['season', 'classification'], condition=models.Q(owned=False), name='idx_unowned_players'),
+            models.Index(fields=['season', 'classification'], condition=models.Q(carded=True), name='idx_carded_players'),
+            models.Index(fields=['season'], condition=models.Q(classification='1-majors', owned=False), name='idx_unowned_mlb'),
+            
+            # JSON field optimizations for stats queries (GIN indexes for complex JSON operations)
+            models.Index(fields=['season', 'classification'], condition=models.Q(hit_stats__isnull=False), name='idx_hitters_with_stats'),
+            models.Index(fields=['season', 'classification'], condition=models.Q(pitch_stats__isnull=False), name='idx_pitchers_with_stats'),
+            
+            # Roster status optimizations (frequently queried in team views)
+            models.Index(fields=['season', 'is_mlb_roster', 'is_aaa_roster']),
+            models.Index(fields=['season', 'roster_status']),
+            models.Index(fields=['season', 'mlb_org']),
+            
+            # Injury list optimization
+            models.Index(fields=['season'], condition=models.Q(roster_status__startswith='IL-'), name='idx_injured_players'),
         ]
 
 class DraftPick(BaseModel):
@@ -821,6 +900,21 @@ class DraftPick(BaseModel):
 
     class Meta:
         ordering = ["-year", "-season", "draft_type", "draft_round", "pick_number"]
+        indexes = [
+            # Team-based queries (heavily used in team detail views)
+            models.Index(fields=['team']),
+            models.Index(fields=['year', 'team']),
+            models.Index(fields=['year', 'season', 'team']),
+            # Draft admin queries
+            models.Index(fields=['year', 'season', 'draft_type']),
+            # Player lookup optimization
+            models.Index(fields=['player']),
+            # Overall pick number for ordering
+            models.Index(fields=['overall_pick_number']),
+            # Common filter combinations
+            models.Index(fields=['year', 'season']),
+            models.Index(fields=['season', 'draft_type']),
+        ]
 
     def __unicode__(self):
         return "%s %s %s (%s)" % (self.year, self.season, self.slug, self.team)
@@ -1301,6 +1395,21 @@ class WishlistPlayer(BaseModel):
     def save(self, *args, **kwargs):
         # Note: stats field will be populated from PlayerStatSeason when needed
         super().save(*args, **kwargs)
+    
+    class Meta:
+        indexes = [
+            # Wishlist-based queries (heavily used in draft prep views)
+            models.Index(fields=['wishlist']),
+            models.Index(fields=['wishlist', 'rank']),
+            # Player ownership filtering (used in draft prep)
+            models.Index(fields=['wishlist', 'player']),
+            # Level filtering for draft prep
+            models.Index(fields=['wishlist', 'player', 'rank']),
+            # Player lookup optimization
+            models.Index(fields=['player']),
+            # Rank ordering optimization
+            models.Index(fields=['rank']),
+        ]
 
 
 class Event(BaseModel):

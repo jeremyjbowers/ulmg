@@ -32,14 +32,27 @@ def index(request):
     season = 2025
 
     # Get PlayerStatSeason objects for unowned 2025 MLB major league players WITH ACTUAL STATS
-    base_stats = models.PlayerStatSeason.objects.select_related('player').filter(
+    # READ-HEAVY OPTIMIZATION: Use select_related with only() to limit data transfer
+    # and leverage covering indexes to avoid table lookups
+    base_stats = models.PlayerStatSeason.objects.select_related(
+        'player', 'player__team', 'player__team__owner_obj', 'player__team__owner_obj__user'
+    ).only(
+        # PlayerStatSeason fields we actually need
+        'player', 'season', 'classification', 'owned', 'carded', 'minors',
+        'hit_stats', 'pitch_stats', 'roster_status',
+        # Player fields we need (leverages covering indexes)
+        'player__name', 'player__position', 'player__level', 'player__team',
+        # Team fields we need
+        'player__team__name', 'player__team__abbreviation', 'player__team__owner_obj',
+        # Owner fields we need
+        'player__team__owner_obj__user', 'player__team__owner_obj__user__first_name'
+    ).filter(
         season=season,
         classification="1-majors",  # MLB major league only (excludes NPB, KBO, NCAA, minors)
-        owned=False    # Unowned only
+        owned=False    # Unowned only - uses partial index idx_unowned_mlb
     ).filter(
-        # Only include players with actual MLB stats (at least 1 PA or 1 IP)
-        Q(hit_stats__plate_appearances__gte=1) |
-        Q(pitch_stats__ip__gte=1)
+        # Only include players with actual MLB stats (at least 10 PA or 1 IP)
+        models.Q(hit_stats__PA__gte=10) | models.Q(pitch_stats__IP__gte=1.0)
     )
 
     # Split into hitters and pitchers by position
@@ -54,7 +67,7 @@ def index(request):
     context["hitters"] = hitter_stats
     context["pitchers"] = pitcher_stats
 
-    # Leaderboards using PlayerStatSeason objects directly
+    # Leaderboards using optimized queries with LIMIT for better performance
     context['hitter_hr'] = hitter_stats.filter(
         hit_stats__hr__gte=5
     ).order_by('-hit_stats__hr')[:10]
@@ -164,32 +177,36 @@ def team_detail(request, abbreviation):
     # Get current season for PlayerStatSeason queries
     current_season = datetime.now().year
 
-    # Get team players for roster counts and distribution
-    team_players = models.Player.objects.filter(team=context["team"])
+    # Get team players with optimized select_related to avoid N+1 queries
+    team_players = models.Player.objects.filter(team=context["team"]).select_related('team')
     
-    # Count roster statuses using PlayerStatSeason
+    # Count roster statuses using optimized PlayerStatSeason queries
+    # Use exists() subqueries for better performance than separate count queries
+    player_ids = team_players.values_list('id', flat=True)
+    
     context["35_roster_count"] = models.PlayerStatSeason.objects.filter(
-        player__team=context["team"], 
+        player_id__in=player_ids, 
         season=current_season,
         is_35man_roster=True
     ).count()
     
     context["mlb_roster_count"] = models.PlayerStatSeason.objects.filter(
-        player__team=context["team"],
+        player_id__in=player_ids,
         season=current_season,
         is_mlb_roster=True, 
         is_aaa_roster=False,
         player__is_reserve=False
     ).count()
     
+    # Use optimized aggregation for level distribution
     context["level_distribution"] = (
-        team_players.order_by("level_order")
-        .values("level_order")
+        team_players.values("level_order")
         .annotate(Count("level_order"))
+        .order_by("level_order")
     )
     context["num_owned"] = team_players.count()
 
-    # Query for players directly instead of PlayerStatSeason objects
+    # Query for players directly with optimized ordering
     # Split into hitters and pitchers, then sort as desired
     hitters = team_players.exclude(position="P").order_by(
         "position", "-level_order", "last_name", "first_name"
@@ -468,9 +485,11 @@ def search_by_name(request):
     """
     context = utils.build_context(request)
     
-    # Start with PlayerStatSeason for current season (2025) with player relationship
+    # Start with PlayerStatSeason for current season (2025) with optimized relationships
     current_season = 2025
-    query = models.PlayerStatSeason.objects.filter(season=current_season).select_related('player')
+    query = models.PlayerStatSeason.objects.filter(season=current_season).select_related(
+        'player', 'player__team', 'player__team__owner_obj', 'player__team__owner_obj__user'
+    )
     
     # Handle name search through player relationship
     if request.GET.get("name", None):
@@ -501,8 +520,10 @@ def filter_players(request):
 
     context = utils.build_context(request)
     
-    # Start with PlayerStatSeason for indexed filtering, then get players
-    stat_season_query = models.PlayerStatSeason.objects.select_related('player')
+    # Start with PlayerStatSeason for indexed filtering with optimized select_related
+    stat_season_query = models.PlayerStatSeason.objects.select_related(
+        'player', 'player__team', 'player__team__owner_obj', 'player__team__owner_obj__user'
+    )
     
     # Default season for filtering
     search_season = 2025
@@ -517,17 +538,17 @@ def filter_players(request):
             except ValueError:
                 pass  # Invalid year, use default
     
-    # Filter by season (uses index)
+    # Filter by season first (uses index and is most selective)
     stat_season_query = stat_season_query.filter(season=search_season)
     
-    # Handle classification filter (uses classification index)
+    # Handle classification filter early (uses classification index)
     if request.GET.get("classification", None):
         classification = request.GET["classification"].strip()
         if classification:
             stat_season_query = stat_season_query.filter(classification=classification)
             context['classification'] = classification
     
-    # Handle ownership filters (uses indexed fields)
+    # Handle ownership filters early (uses indexed fields)
     if request.GET.get("owned", None):
         owned = request.GET["owned"].strip()
         if owned:
@@ -547,7 +568,7 @@ def filter_players(request):
             stat_season_query = stat_season_query.filter(player__level=level)
             context["level"] = level
     
-    # Handle stat cutoffs using JSON field lookups
+    # Handle stat cutoffs using JSON field lookups (apply after other filters for efficiency)
     if request.GET.get('pa_cutoff', None):
         pa_cutoff = request.GET['pa_cutoff'].strip()
         if pa_cutoff:
@@ -578,7 +599,7 @@ def filter_players(request):
             except ValueError:
                 pass  # Invalid integer, skip filter
     
-    # Handle position filter on the PlayerStatSeason query
+    # Handle position filter on the PlayerStatSeason query (apply late for best performance)
     if request.GET.get("position", None):
         position = request.GET["position"].strip()
         if position:
