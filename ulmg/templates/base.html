@@ -156,6 +156,34 @@
         .wishlist-btn:active {
             transform: scale(0.95);
         }
+        
+        /* Wishlist button when player is already on wishlist - GREEN CIRCLE */
+        .wishlist-btn-active {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background-color: #16a34a; /* green-600 */
+            color: white;
+            font-weight: bold;
+            font-size: 12px;
+            margin-right: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+            text-decoration: none;
+        }
+        
+        .wishlist-btn-active:hover {
+            background-color: #15803d; /* green-700 */
+            transform: scale(1.1);
+        }
+        
+        .wishlist-btn-active:active {
+            transform: scale(0.95);
+        }
     </style>
     
     {% block extrahead %}{% endblock %}

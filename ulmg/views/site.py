@@ -4,7 +4,7 @@ import itertools
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import render, get_object_or_404
-from django.db.models import Count, Avg, Sum, Max, Min, Q, Prefetch
+from django.db.models import Count, Avg, Sum, Max, Min, Q, Prefetch, Case, When, IntegerField, OuterRef, Subquery
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.http import JsonResponse
 from django.conf import settings
@@ -31,13 +31,12 @@ def index(request):
     season = 2025
 
     # Get PlayerStatSeason objects for unowned 2025 MLB major league players WITH ACTUAL STATS
-    # READ-HEAVY OPTIMIZATION: Use select_related with only() to limit data transfer
-    # and leverage covering indexes to avoid table lookups
+    # READ-HEAVY OPTIMIZATION: Use select_related to preload player data and avoid N+1 queries
     base_stats = models.PlayerStatSeason.objects.filter(
         season=season,
         classification="1-majors",  # MLB major league only (excludes NPB, KBO, NCAA, minors)
         owned=False    # Unowned only - uses partial index idx_unowned_mlb
-    )
+    ).select_related('player')
 
     # Split into hitters and pitchers by position
     hitter_stats = base_stats.exclude(player__position="P").filter(hit_stats__plate_appearances__gte=1).order_by(
@@ -454,9 +453,7 @@ def search_by_name(request):
     
     # Start with PlayerStatSeason for current season (2025) with optimized relationships
     current_season = 2025
-    query = models.PlayerStatSeason.objects.filter(season=current_season).select_related(
-        'player', 'player__team', 'player__team__owner_obj', 'player__team__owner_obj__user'
-    )
+    query = models.PlayerStatSeason.objects.filter(season=current_season).select_related('player')
     
     # Handle name search through player relationship
     if request.GET.get("name", None):
@@ -488,9 +485,8 @@ def filter_players(request):
     context = utils.build_context(request)
     
     # Start with PlayerStatSeason for indexed filtering with optimized select_related
-    stat_season_query = models.PlayerStatSeason.objects.select_related(
-        'player', 'player__team', 'player__team__owner_obj', 'player__team__owner_obj__user'
-    )
+    # Include player in select_related to avoid N+1 queries
+    stat_season_query = models.PlayerStatSeason.objects.select_related('player')
     
     # Default season for filtering
     search_season = 2025
@@ -578,11 +574,71 @@ def filter_players(request):
                 stat_season_query = stat_season_query.filter(player__position__icontains=position)
             context["position"] = position
     
-    # Apply ordering and split into hitters and pitchers for the template
-    # Order by player fields through the relationship
-    stat_seasons = stat_season_query.order_by("player__position", "-player__level_order", "player__last_name", "player__first_name")
-    context["hitters"] = stat_seasons.exclude(player__position="P")
-    context["pitchers"] = stat_seasons.filter(player__position__icontains="P")
+    # Apply filtering and deduplication
+    # To avoid showing duplicate players (same player with multiple classifications),
+    # we'll use Python-based deduplication to get the best record per player
+    
+    # Get all filtered records with priority scoring
+    from django.db.models import Case, When, IntegerField
+    
+    # Create a priority score for each record
+    priority_annotation = Case(
+        # Highest priority: Major league records with hitting stats
+        When(
+            classification='1-majors',
+            hit_stats__plate_appearances__gt=0,
+            then=1
+        ),
+        # Second priority: Major league records with pitching stats  
+        When(
+            classification='1-majors',
+            pitch_stats__g__gt=0,
+            then=2
+        ),
+        # Third priority: Minor league records with hitting stats
+        When(
+            classification='2-minors',
+            hit_stats__plate_appearances__gt=0,
+            then=3
+        ),
+        # Fourth priority: Minor league records with pitching stats
+        When(
+            classification='2-minors', 
+            pitch_stats__g__gt=0,
+            then=4
+        ),
+        # Fifth priority: Any major league record (even without stats)
+        When(classification='1-majors', then=5),
+        # Lowest priority: Any other record
+        default=6,
+        output_field=IntegerField()
+    )
+    
+    # Get all records with priority annotation, ordered by priority
+    all_records = stat_season_query.annotate(
+        priority=priority_annotation
+    ).order_by('priority', '-id')
+    
+    # Deduplicate in Python: keep only the best record per player
+    seen_players = set()
+    deduplicated_records = []
+    
+    for record in all_records:
+        if record.player_id not in seen_players:
+            deduplicated_records.append(record)
+            seen_players.add(record.player_id)
+    
+    # Sort the deduplicated records for display
+    deduplicated_records.sort(key=lambda r: (
+        r.player.position, 
+        -r.player.level_order, 
+        r.player.last_name, 
+        r.player.first_name
+    ))
+    
+    # Split into hitters and pitchers
+    context["hitters"] = [r for r in deduplicated_records if r.player.position != "P"]
+    context["pitchers"] = [r for r in deduplicated_records if "P" in r.player.position]
     
     # Filters visible by default for advanced filtering
     context["show_filters_by_default"] = True

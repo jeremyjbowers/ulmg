@@ -48,7 +48,7 @@
         </thead>
         <tbody>
         {% for p in position.list %}
-        <tr class="{% if p.player %}{% if p.player.roster_status %}{{ p.player.roster_status|lower|default_if_none:"non-mlb" }} {% else %}non-mlb {% endif %}{% else %}{% if p.roster_status %}{{ p.roster_status|lower|default_if_none:"non-mlb" }} {% else %}non-mlb {% endif %}{% endif %}border-b border-gray-100">
+        <tr class="border-b border-gray-100">
             <td class="py-1">
                 {% if user.is_authenticated %}
                     {% if p.player %}
@@ -108,7 +108,7 @@
         </thead>
         <tbody>
         {% for p in pitchers %}
-        <tr class="{% if p.player %}{% if p.player.roster_status %}{{ p.player.roster_status|lower|default_if_none:"non-mlb" }} {% else %}non-mlb {% endif %}{% else %}{% if p.roster_status %}{{ p.roster_status|lower|default_if_none:"non-mlb" }} {% else %}non-mlb {% endif %}{% endif %}border-b border-gray-100">
+        <tr class="border-b border-gray-100">
             <td class="py-1">
                 {% if user.is_authenticated %}
                     {% if p.player %}
