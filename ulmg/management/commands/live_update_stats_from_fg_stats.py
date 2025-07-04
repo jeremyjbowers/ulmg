@@ -81,8 +81,10 @@ class Command(BaseCommand):
             
             # Set position if available
             position = row.get('Pos', row.get('Position', ''))
-            if position:
+            if position and str(position).strip():
                 obj.position = utils.normalize_pos(position)
+            else:
+                obj.position = "DH"  # Default for unknown positions
             
             # Set age if available
             age_str = str(row.get('Age', '')).strip()

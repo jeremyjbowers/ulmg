@@ -328,6 +328,14 @@ def normalize_pos(pos):
     """
     Normalize positions to P, C, IF, OF or IF/OF
     """
+    # Handle None or empty positions
+    if not pos or pos is None:
+        return "DH"  # Default for unknown positions
+    
+    # Convert to string and strip whitespace
+    pos = str(pos).strip()
+    if not pos:
+        return "DH"
 
     if pos.upper().strip() in ["OF", "OUTFIELD"]:
         return "OF"

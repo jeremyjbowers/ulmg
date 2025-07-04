@@ -713,7 +713,10 @@ class Player(BaseModel):
         return None
 
     def set_position(self):
-        self.position = utils.normalize_pos(self.position)
+        if self.position:
+            self.position = utils.normalize_pos(self.position)
+        else:
+            self.position = "DH"  # Default for unknown positions
 
     def save(self, *args, **kwargs):
         """
