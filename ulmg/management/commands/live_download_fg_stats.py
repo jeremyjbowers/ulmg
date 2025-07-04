@@ -156,11 +156,45 @@ class Command(BaseCommand):
         
         self.stdout.write(f"Downloading FanGraphs data for {self.season} season...")
         
-        self.get_fg_major_hitter_season()
-        self.get_fg_major_pitcher_season()
-        self.get_fg_minor_season()
-        self.get_fg_college_season()
-        self.get_fg_npb_season()
-        self.get_fg_kbo_season()
+        # Track successes and failures
+        results = {'success': [], 'failed': []}
         
-        self.stdout.write(self.style.SUCCESS(f"Successfully downloaded all FanGraphs data for {self.season}"))
+        operations = [
+            ('MLB Hitters', self.get_fg_major_hitter_season),
+            ('MLB Pitchers', self.get_fg_major_pitcher_season),
+            ('Minor League Players', self.get_fg_minor_season),
+            ('College Players', self.get_fg_college_season),
+            ('NPB Players', self.get_fg_npb_season),
+            ('KBO Players', self.get_fg_kbo_season),
+        ]
+        
+        for operation_name, operation_func in operations:
+            try:
+                self.stdout.write(f'Downloading {operation_name}...')
+                operation_func()
+                results['success'].append(operation_name)
+                self.stdout.write(f'✓ {operation_name} downloaded successfully')
+            except Exception as e:
+                self.stdout.write(self.style.ERROR(f'✗ ERROR downloading {operation_name}: {e}'))
+                results['failed'].append(f'{operation_name}: {str(e)}')
+                # Continue with next operation
+                continue
+        
+        # Print summary
+        self.stdout.write('\n' + '='*50)
+        self.stdout.write('FG DOWNLOAD SUMMARY')
+        self.stdout.write('='*50)
+        self.stdout.write(f'✓ Successful ({len(results["success"])}):')
+        for item in results['success']:
+            self.stdout.write(f'  - {item}')
+        
+        if results['failed']:
+            self.stdout.write(f'\n✗ Failed ({len(results["failed"])}):')
+            for item in results['failed']:
+                self.stdout.write(f'  - {item}')
+        else:
+            self.stdout.write('\n✓ All operations completed successfully!')
+        self.stdout.write('='*50)
+        
+        if results['success']:
+            self.stdout.write(self.style.SUCCESS(f"Downloaded {len(results['success'])} out of {len(operations)} FanGraphs data sources for {self.season}"))

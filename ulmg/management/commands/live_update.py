@@ -26,38 +26,102 @@ class Command(BaseCommand):
         urllib3.disable_warnings()
 
         season = utils.get_current_season()
+        
+        # Track successes and failures
+        results = {'success': [], 'failed': []}
 
         if not options['cached']:
-
             # download roster files
-            print('LIVE: Download FG rosters')
-            call_command('live_download_fg_rosters')
+            try:
+                print('LIVE: Download FG rosters')
+                call_command('live_download_fg_rosters')
+                results['success'].append('Download FG rosters')
+            except Exception as e:
+                print(f'ERROR downloading FG rosters: {e}')
+                results['failed'].append(f'Download FG rosters: {e}')
 
-            print('LIVE: Fix duplicates')
-            call_command('fix_dupes')
+            try:
+                print('LIVE: Fix duplicates')
+                call_command('fix_dupes')
+                results['success'].append('Fix duplicates')
+            except Exception as e:
+                print(f'ERROR fixing duplicates: {e}')
+                results['failed'].append(f'Fix duplicates: {e}')
 
             # download mlb depth charts
             # this also sets status in realtime but doesn't create players
-            print('LIVE: Download MLB depth charts')
-            call_command('live_download_mlb_depthcharts')
+            try:
+                print('LIVE: Download MLB depth charts')
+                call_command('live_download_mlb_depthcharts')
+                results['success'].append('Download MLB depth charts')
+            except Exception as e:
+                print(f'ERROR downloading MLB depth charts: {e}')
+                results['failed'].append(f'Download MLB depth charts: {e}')
 
             # download fg stats
-            print('LIVE: Download FG stats')
-            call_command('live_download_fg_stats')
+            try:
+                print('LIVE: Download FG stats')
+                call_command('live_download_fg_stats')
+                results['success'].append('Download FG stats')
+            except Exception as e:
+                print(f'ERROR downloading FG stats: {e}')
+                results['failed'].append(f'Download FG stats: {e}')
 
         # use roster files to update players who have fg_ids with mlb_ids
-        print('LIVE: Crosswalk FGIDs to MLBIDs')
-        call_command('live_crosswalk_ids')
-        call_command('fix_dupes')
+        try:
+            print('LIVE: Crosswalk FGIDs to MLBIDs')
+            call_command('live_crosswalk_ids')
+            results['success'].append('Crosswalk FGIDs to MLBIDs')
+        except Exception as e:
+            print(f'ERROR crosswalking IDs: {e}')
+            results['failed'].append(f'Crosswalk FGIDs to MLBIDs: {e}')
+            
+        try:
+            call_command('fix_dupes')
+            results['success'].append('Fix duplicates (post-crosswalk)')
+        except Exception as e:
+            print(f'ERROR fixing duplicates (post-crosswalk): {e}')
+            results['failed'].append(f'Fix duplicates (post-crosswalk): {e}')
 
         # use roster files to update all player status
         # creates new players from FG with appropriate IDs
-        print('LIVE: Update status from FG rosters')
-        call_command('live_update_status_from_fg_rosters')
+        try:
+            print('LIVE: Update status from FG rosters')
+            call_command('live_update_status_from_fg_rosters')
+            results['success'].append('Update status from FG rosters')
+        except Exception as e:
+            print(f'ERROR updating status from FG rosters: {e}')
+            results['failed'].append(f'Update status from FG rosters: {e}')
 
         # use fg stats to update all player stats
-        print('LIVE: Update stats from FG stats')
-        call_command('live_update_stats_from_fg_stats')
+        try:
+            print('LIVE: Update stats from FG stats')
+            call_command('live_update_stats_from_fg_stats')
+            results['success'].append('Update stats from FG stats')
+        except Exception as e:
+            print(f'ERROR updating stats from FG stats: {e}')
+            results['failed'].append(f'Update stats from FG stats: {e}')
 
         # because stats are denormalized into wishlist players, save them
-        [a.save() for a in models.WishlistPlayer.objects.all()]
+        try:
+            [a.save() for a in models.WishlistPlayer.objects.all()]
+            results['success'].append('Update wishlist players')
+        except Exception as e:
+            print(f'ERROR updating wishlist players: {e}')
+            results['failed'].append(f'Update wishlist players: {e}')
+            
+        # Print summary
+        print('\n' + '='*50)
+        print('LIVE UPDATE SUMMARY')
+        print('='*50)
+        print(f'✓ Successful ({len(results["success"])}):')
+        for item in results['success']:
+            print(f'  - {item}')
+        
+        if results['failed']:
+            print(f'\n✗ Failed ({len(results["failed"])}):')
+            for item in results['failed']:
+                print(f'  - {item}')
+        else:
+            print('\n✓ All operations completed successfully!')
+        print('='*50)

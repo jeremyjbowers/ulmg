@@ -42,27 +42,56 @@ class Command(BaseCommand):
 
         self.stdout.write(f"Downloading roster data for {len(teams)} teams...")
 
+        # Track successes and failures
+        results = {'success': [], 'failed': []}
+
         for team_id, team_abbrev, team_name in teams:
-            url = f"https://www.fangraphs.com/api/depth-charts/roster?teamid={team_id}"
+            try:
+                url = f"https://www.fangraphs.com/api/depth-charts/roster?teamid={team_id}"
 
-            r = requests.get(url, verify=False)
-            print(r.status_code, url)
-            if r.status_code == 200:
-                roster = r.json()
-                local_path = f"data/rosters/{team_abbrev}_roster.json"
-                
-                if local_only:
-                    # Create directory if it doesn't exist
-                    os.makedirs(os.path.dirname(local_path), exist_ok=True)
-                    with open(local_path, "w") as writefile:
-                        json.dump(roster, writefile, indent=2)
-                    self.stdout.write(f"Saved {team_name} roster to {local_path}")
+                r = requests.get(url, verify=False)
+                print(r.status_code, url)
+                if r.status_code == 200:
+                    roster = r.json()
+                    local_path = f"data/rosters/{team_abbrev}_roster.json"
+                    
+                    if local_only:
+                        # Create directory if it doesn't exist
+                        os.makedirs(os.path.dirname(local_path), exist_ok=True)
+                        with open(local_path, "w") as writefile:
+                            json.dump(roster, writefile, indent=2)
+                        self.stdout.write(f"Saved {team_name} roster to {local_path}")
+                    else:
+                        utils.s3_manager.save_and_upload_json(roster, local_path)
+                        self.stdout.write(f"Saved {team_name} roster to {local_path} and uploaded to S3")
+                    
+                    results['success'].append(team_name)
                 else:
-                    utils.s3_manager.save_and_upload_json(roster, local_path)
-                    self.stdout.write(f"Saved {team_name} roster to {local_path} and uploaded to S3")
-            else:
-                self.stderr.write(f"Failed to download {team_name} roster: HTTP {r.status_code}")
+                    self.stderr.write(f"Failed to download {team_name} roster: HTTP {r.status_code}")
+                    results['failed'].append(f"{team_name}: HTTP {r.status_code}")
 
-            time.sleep(5)
+                time.sleep(5)
+                
+            except Exception as e:
+                self.stderr.write(f"ERROR downloading {team_name} roster: {e}")
+                results['failed'].append(f"{team_name}: {str(e)}")
+                continue
+
+        # Print summary
+        self.stdout.write('\n' + '='*40)
+        self.stdout.write('FG ROSTER DOWNLOAD SUMMARY')
+        self.stdout.write('='*40)
+        self.stdout.write(f'✓ Successful ({len(results["success"])}):')
+        for team in results['success']:
+            self.stdout.write(f'  - {team}')
         
-        self.stdout.write(self.style.SUCCESS("Successfully downloaded all roster data"))
+        if results['failed']:
+            self.stdout.write(f'\n✗ Failed ({len(results["failed"])}):')
+            for team in results['failed']:
+                self.stdout.write(f'  - {team}')
+        else:
+            self.stdout.write('\n✓ All teams downloaded successfully!')
+        self.stdout.write('='*40)
+        
+        if results['success']:
+            self.stdout.write(self.style.SUCCESS(f"Downloaded {len(results['success'])} out of {len(teams)} team rosters"))
