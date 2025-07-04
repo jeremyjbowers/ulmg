@@ -75,197 +75,6 @@
 {% endblock %}
 
 {% block content %}
-<h1 class="text-2xl font-bold mb-4">Best Available By Category</h1>
-<p class="text-sm text-gray-600 mb-6">with live 2025 stats</p>
-
-<div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-    <!-- Most Home Runs -->
-    <div>
-        <h2 class="text-lg font-bold mb-2 border-b border-gray-300 pb-1">Most Home Runs</h2>
-        <table class="w-full text-xs border-collapse">
-            <thead>
-                <tr class="border-b border-gray-300">
-                    <th class="text-left py-1">Name</th>
-                    <th class="text-center py-1">Age</th>
-                    <th class="text-center py-1">Lvl</th>
-                    <th class="text-center py-1">HR</th>
-                </tr>
-            </thead>
-            <tbody>
-            {% for p in hitter_hr %}
-            <tr class="{{ p.role_type_class }} border-b border-gray-100">
-                <td class="py-1">
-                    {% if user.is_authenticated and p.player.team.owner_obj.user != user %}
-                        <span id="player-{{ p.player.id }}" class="action-add-wishlist wishlist-btn" data-playerid="{{ p.player.id }}">+</span>
-                    {% endif %}
-                    <a href="/players/{{ p.player.id }}/" class="underline">{{ p.player.name }}</a>
-                </td>
-                <td class="text-center py-1">{{ p.player.age|default_if_none:"-" }}</td>
-                <td class="text-center py-1">{{ p.player.level|default_if_none:"" }}</td>
-                <td class="text-center py-1 font-bold">{{ p.hit_stats.hr }}</td>
-            </tr>
-            {% endfor %}
-            </tbody>
-        </table>
-    </div>
-
-    <!-- Most Steals -->
-    <div>
-        <h2 class="text-lg font-bold mb-2 border-b border-gray-300 pb-1">Most Steals</h2>
-        <table class="w-full text-xs border-collapse">
-            <thead>
-                <tr class="border-b border-gray-300">
-                    <th class="text-left py-1">Name</th>
-                    <th class="text-center py-1">Age</th>
-                    <th class="text-center py-1">Lvl</th>
-                    <th class="text-center py-1">SB</th>
-                </tr>
-            </thead>
-            <tbody>
-            {% for p in hitter_sb %}
-            <tr class="{{ p.role_type_class }} border-b border-gray-100">
-                <td class="py-1">
-                    {% if user.is_authenticated and p.player.team.owner_obj.user != user %}
-                        <span id="player-{{ p.player.id }}" class="action-add-wishlist wishlist-btn" data-playerid="{{ p.player.id }}">+</span>
-                    {% endif %}
-                    <a href="/players/{{ p.player.id }}/" class="underline">{{ p.player.name }}</a>
-                </td>
-                <td class="text-center py-1">{{ p.player.age|default_if_none:"-" }}</td>
-                <td class="text-center py-1">{{ p.player.level|default_if_none:"" }}</td>
-                <td class="text-center py-1 font-bold">{{ p.hit_stats.sb }}</td>
-            </tr>
-            {% endfor %}
-            </tbody>
-        </table>
-    </div>
-
-    <!-- Best Average -->
-    <div>
-        <h2 class="text-lg font-bold mb-2 border-b border-gray-300 pb-1">Best Average <span class="text-xs font-normal text-gray-600">(min 50 PA)</span></h2>
-        <table class="w-full text-xs border-collapse">
-            <thead>
-                <tr class="border-b border-gray-300">
-                    <th class="text-left py-1">Name</th>
-                    <th class="text-center py-1">Age</th>
-                    <th class="text-center py-1">Lvl</th>
-                    <th class="text-center py-1">PA</th>
-                    <th class="text-center py-1">AVG</th>
-                </tr>
-            </thead>
-            <tbody>
-            {% for p in hitter_avg %}
-            <tr class="{{ p.role_type_class }} border-b border-gray-100">
-                <td class="py-1">
-                    {% if user.is_authenticated and p.player.team.owner_obj.user != user %}
-                        <span id="player-{{ p.player.id }}" class="action-add-wishlist wishlist-btn" data-playerid="{{ p.player.id }}">+</span>
-                    {% endif %}
-                    <a href="/players/{{ p.player.id }}/" class="underline">{{ p.player.name }}</a>
-                </td>
-                <td class="text-center py-1">{{ p.player.age|default_if_none:"-" }}</td>
-                <td class="text-center py-1">{{ p.player.level|default_if_none:"" }}</td>
-                <td class="text-center py-1">{{ p.hit_stats.plate_appearances }}</td>
-                <td class="text-center py-1 font-bold">{{ p.hit_stats.avg|floatformat:3|kill_leading_zero }}</td>
-            </tr>
-            {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</div>
-
-<div class="grid grid-cols-1 md:grid-cols-3 gap-8 mt-8">
-    <!-- Most Wins -->
-    <div>
-        <h2 class="text-lg font-bold mb-2 border-b border-gray-300 pb-1">Most Starts</h2>
-        <table class="w-full text-xs border-collapse">
-            <thead>
-                <tr class="border-b border-gray-300">
-                    <th class="text-left py-1">Name</th>
-                    <th class="text-center py-1">Age</th>
-                    <th class="text-center py-1">Lvl</th>
-                    <th class="text-center py-1">GS</th>
-                </tr>
-            </thead>
-            <tbody>
-            {% for p in pitcher_starts %}
-            <tr class="{{ p.role_type_class }} border-b border-gray-100">
-                <td class="py-1">
-                    {% if user.is_authenticated and p.player.team.owner_obj.user != user %}
-                        <span id="player-{{ p.player.id }}" class="action-add-wishlist wishlist-btn" data-playerid="{{ p.player.id }}">+</span>
-                    {% endif %}
-                    <a href="/players/{{ p.player.id }}/" class="underline">{{ p.player.name }}</a>
-                </td>
-                <td class="text-center py-1">{{ p.player.age|default_if_none:"-" }}</td>
-                <td class="text-center py-1">{{ p.player.level|default_if_none:"" }}</td>
-                <td class="text-center py-1 font-bold">{{ p.pitch_stats.gs }}</td>
-            </tr>
-            {% endfor %}
-            </tbody>
-        </table>
-    </div>
-
-    <!-- Most Strikeouts -->
-    <div>
-        <h2 class="text-lg font-bold mb-2 border-b border-gray-300 pb-1">Most Innings</h2>
-        <table class="w-full text-xs border-collapse">
-            <thead>
-                <tr class="border-b border-gray-300">
-                    <th class="text-left py-1">Name</th>
-                    <th class="text-center py-1">Age</th>
-                    <th class="text-center py-1">Lvl</th>
-                    <th class="text-center py-1">IP</th>
-                </tr>
-            </thead>
-            <tbody>
-            {% for p in pitcher_innings %}
-            <tr class="{{ p.role_type_class }} border-b border-gray-100">
-                <td class="py-1">
-                    {% if user.is_authenticated and p.player.team.owner_obj.user != user %}
-                        <span id="player-{{ p.player.id }}" class="action-add-wishlist wishlist-btn" data-playerid="{{ p.player.id }}">+</span>
-                    {% endif %}
-                    <a href="/players/{{ p.player.id }}/" class="underline">{{ p.player.name }}</a>
-                </td>
-                <td class="text-center py-1">{{ p.player.age|default_if_none:"-" }}</td>
-                <td class="text-center py-1">{{ p.player.level|default_if_none:"" }}</td>
-                <td class="text-center py-1 font-bold">{{ p.pitch_stats.ip|floatformat:1 }}</td>
-            </tr>
-            {% endfor %}
-            </tbody>
-        </table>
-    </div>
-
-    <!-- Best ERA -->
-    <div>
-        <h2 class="text-lg font-bold mb-2 border-b border-gray-300 pb-1">Best ERA <span class="text-xs font-normal text-gray-600">(min 20 IP)</span></h2>
-        <table class="w-full text-xs border-collapse">
-            <thead>
-                <tr class="border-b border-gray-300">
-                    <th class="text-left py-1">Name</th>
-                    <th class="text-center py-1">Age</th>
-                    <th class="text-center py-1">Lvl</th>
-                    <th class="text-center py-1">IP</th>
-                    <th class="text-center py-1">ERA</th>
-                </tr>
-            </thead>
-            <tbody>
-            {% for p in pitcher_era %}
-            <tr class="{{ p.role_type_class }} border-b border-gray-100">
-                <td class="py-1">
-                    {% if user.is_authenticated and p.player.team.owner_obj.user != user %}
-                        <span id="player-{{ p.player.id }}" class="action-add-wishlist wishlist-btn" data-playerid="{{ p.player.id }}">+</span>
-                    {% endif %}
-                    <a href="/players/{{ p.player.id }}/" class="underline">{{ p.player.name }}</a>
-                </td>
-                <td class="text-center py-1">{{ p.player.age|default_if_none:"-" }}</td>
-                <td class="text-center py-1">{{ p.player.level|default_if_none:"" }}</td>
-                <td class="text-center py-1">{{ p.pitch_stats.ip|floatformat:1 }}</td>
-                <td class="text-center py-1 font-bold">{{ p.pitch_stats.era|floatformat:2 }}</td>
-            </tr>
-            {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</div>
-
 <!-- Unowned Players Section -->
 <h1 class="text-2xl font-bold mb-4 mt-12 border-t border-gray-300 pt-8">Unowned Players <span class="text-sm font-normal text-gray-600">with live 2025 stats</span></h1>
 
@@ -285,7 +94,7 @@
         </thead>
         <tbody>
         {% for p in position.list %}
-        <tr class="{{ p.role_type_class }} border-b border-gray-100">
+        <tr class="border-b border-gray-100">
             <td class="py-1">
                 {% if user.is_authenticated %}
                     <span id="player-{{ p.player.id }}" class="action-add-wishlist wishlist-btn" data-playerid="{{ p.player.id }}">+</span>
@@ -317,7 +126,7 @@
         </thead>
         <tbody>
         {% for p in pitchers %}
-        <tr class="{% if p.roster_status %}{{ p.roster_status|lower|default_if_none:"non-mlb" }} {% else %}non-mlb {% endif %}{% if p.is_on_il %}player-on-il {% endif %}player-level-{{ p.player_level_class }} border-b border-gray-100">
+        <tr class="border-b border-gray-100">
             <td class="py-1">
                 {% if user.is_authenticated %}
                     <span id="player-{{ p.player.id }}" class="action-add-wishlist wishlist-btn" data-playerid="{{ p.player.id }}">+</span>
