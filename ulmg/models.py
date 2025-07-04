@@ -750,6 +750,8 @@ class PlayerStatSeason(BaseModel):
 
     class Meta:
         ordering = ['season', 'classification']
+        # Prevent duplicate records for the same player/season/classification combination
+        unique_together = [['player', 'season', 'classification']]
         indexes = [
             # Single field indexes for common filters
             models.Index(fields=['season']),  # Most common filter

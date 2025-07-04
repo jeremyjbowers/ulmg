@@ -4,17 +4,18 @@ $(function(){
 
     var toggle_classes = function($el) {
         $el.toggleClass('action-remove-wishlist')
-        $el.toggleClass('text-yellow-600')
         $el.toggleClass('action-add-wishlist')
-        $el.toggleClass('text-gray-400')
+        // Toggle between yellow (not on wishlist) and green (on wishlist)
+        $el.toggleClass('wishlist-btn')
+        $el.toggleClass('wishlist-btn-active')
     }
 
     var toggle_symbol = function($el) {
         var currentText = $el.text();
-        if (currentText === '☆') {
-            $el.text('★');
+        if (currentText === '+') {
+            $el.text('✓');
         } else {
-            $el.text('☆');
+            $el.text('+');
         }
     }
 
