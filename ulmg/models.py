@@ -748,6 +748,12 @@ class PlayerStatSeason(BaseModel):
         # Default to amateur if no pro stats or organization
         return 'amateur'
 
+    def is_on_il(self):
+        """
+        Check if player is on any injured list (IL-7, IL-10, IL-15, IL-60, etc.)
+        """
+        return self.roster_status and self.roster_status.startswith('IL-')
+
     class Meta:
         ordering = ['season', 'classification']
         # Prevent duplicate records for the same player/season/classification combination

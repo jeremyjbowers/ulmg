@@ -288,9 +288,13 @@ class Command(BaseCommand):
                     obj.save()
 
     def handle(self, *args, **options):
-        self.set_college_season()
-        self.set_minor_season()
-        self.set_kbo_season()
-        self.set_npb_season()
+        self.set_college_hitter_season()
+        self.set_college_pitcher_season()
+        self.set_minor_hitter_season()
+        self.set_minor_pitcher_season()
+        self.set_kbo_hitter_season()
+        self.set_kbo_pitcher_season()
+        self.set_npb_hitter_season()
+        self.set_npb_pitcher_season()
         self.set_mlb_hitter_season()
         self.set_mlb_pitcher_season()
