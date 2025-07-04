@@ -32,29 +32,24 @@
             background-color: #fef2f2;
         }
         
-        /* UPDATED: Player level background colors based on user requirements */
-        /* MLB players: white background (no special styling) */
-        tr.majors td,
-        .player-level-mlb {
-            background-color: #ffffff; /* white - no special background */
+        /* UPDATED: Player background colors based on role_type */
+        /* Default/Other: white background (no special styling) */
+        .player-role-default {
+            background-color: #ffffff; /* white */
         }
         
         /* MiLB players: light green background */
-        tr.minors td,
-        .player-level-milb {
+        .player-role-milb {
             background-color: #dcfce7; /* light green */
         }
         
-        /* Amateurs and foreign league players: light blue background */
-        tr.non-mlb td,
-        tr.amateur td,
-        .player-level-amateur {
+        /* Blank/empty role_type: light blue background */
+        .player-role-blank {
             background-color: #dbeafe; /* light blue */
         }
         
-        /* Injured List (IL) highlighting: light pink - HIGHEST PRIORITY */
-        .player-on-il,
-        tr.player-on-il td {
+        /* Injured List (IL) players: light pink - HIGHEST PRIORITY */
+        .player-role-il {
             background-color: #fce7f3 !important; /* light pink - overrides other backgrounds */
         }
         

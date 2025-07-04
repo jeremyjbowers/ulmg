@@ -454,6 +454,12 @@ class Player(BaseModel):
         from datetime import datetime
         current_season = datetime.now().year
         
+        # Use prefetched data if available (more efficient)
+        if hasattr(self, 'current_season_stats'):
+            # Return the first (highest classification) from prefetched data
+            return self.current_season_stats[0] if self.current_season_stats else None
+        
+        # Fallback to database query if not prefetched
         return PlayerStatSeason.objects.filter(
             player=self,
             season=current_season
@@ -509,6 +515,30 @@ class Player(BaseModel):
         if current_status:
             return current_status.player_level_class()
         return 'amateur'  # Default for players with no current season data
+
+    def is_on_il(self):
+        """Check if player is on injured list for current season."""
+        current_status = self.current_season_status()
+        return current_status.is_on_il() if current_status else False
+
+    def role_type_class(self):
+        """Determine CSS class based on role_type for background colors."""
+        role_type = self.role_type()
+        
+        if role_type:
+            role_type_upper = role_type.upper()
+            # Check for IL first (highest priority)
+            if 'IL' in role_type_upper:
+                return 'player-role-il'
+            # Check for MiLB
+            elif 'MILB' in role_type_upper:
+                return 'player-role-milb'
+            else:
+                # Has role_type but not IL or MiLB
+                return 'player-role-default'
+        else:
+            # Blank/empty role_type
+            return 'player-role-blank'
 
     def latest_hit_stats(self):
         stats = PlayerStatSeason.objects.filter(player=self).first()
@@ -808,6 +838,23 @@ class PlayerStatSeason(BaseModel):
                 return True
         
         return False
+
+    def role_type_class(self):
+        """Determine CSS class based on role_type for background colors."""
+        if self.role_type:
+            role_type_upper = self.role_type.upper()
+            # Check for IL first (highest priority)
+            if 'IL' in role_type_upper:
+                return 'player-role-il'
+            # Check for MiLB
+            elif 'MILB' in role_type_upper:
+                return 'player-role-milb'
+            else:
+                # Has role_type but not IL or MiLB
+                return 'player-role-default'
+        else:
+            # Blank/empty role_type
+            return 'player-role-blank'
 
     class Meta:
         ordering = ['season', 'classification']

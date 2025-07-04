@@ -4,12 +4,11 @@ import itertools
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import render, get_object_or_404
-from django.db.models import Count, Avg, Sum, Max, Min, Q
+from django.db.models import Count, Avg, Sum, Max, Min, Q, Prefetch
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.http import JsonResponse
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
-from django.db.models import Q
 
 import ujson as json
 from datetime import datetime
@@ -43,7 +42,7 @@ def index(request):
         # Player fields we need (leverages covering indexes)
         'player__name', 'player__position', 'player__level', 'player__team',
         # Team fields we need
-        'player__team__name', 'player__team__abbreviation', 'player__team__owner_obj',
+        'player__team__abbreviation', 'player__team__owner_obj',
         # Owner fields we need
         'player__team__owner_obj__user', 'player__team__owner_obj__user__first_name'
     ).filter(
@@ -51,8 +50,9 @@ def index(request):
         classification="1-majors",  # MLB major league only (excludes NPB, KBO, NCAA, minors)
         owned=False    # Unowned only - uses partial index idx_unowned_mlb
     ).filter(
-        # Only include players with actual MLB stats (at least 10 PA or 1 IP)
-        models.Q(hit_stats__PA__gte=10) | models.Q(pitch_stats__IP__gte=1.0)
+        # Only include players with actual 2025 MLB stats (at least 1 PA or 1 IP)
+        Q(hit_stats__isnull=False, hit_stats__has_key='plate_appearances', hit_stats__plate_appearances__gte=1) |
+        Q(pitch_stats__isnull=False, pitch_stats__has_key='ip', pitch_stats__ip__gte=1)
     )
 
     # Split into hitters and pitchers by position
@@ -68,29 +68,40 @@ def index(request):
     context["pitchers"] = pitcher_stats
 
     # Leaderboards using optimized queries with LIMIT for better performance
+    # Filter for players with actual stats and proper JSON field access
     context['hitter_hr'] = hitter_stats.filter(
-        hit_stats__hr__gte=5
-    ).order_by('-hit_stats__hr')[:10]
+        hit_stats__isnull=False,
+        hit_stats__has_key='hr'
+    ).exclude(hit_stats__hr=0).order_by('-hit_stats__hr')[:10]
     
     context['hitter_sb'] = hitter_stats.filter(
-        hit_stats__sb__gte=5
-    ).order_by('-hit_stats__sb')[:10]
+        hit_stats__isnull=False,
+        hit_stats__has_key='sb'
+    ).exclude(hit_stats__sb=0).order_by('-hit_stats__sb')[:10]
     
     context['hitter_avg'] = hitter_stats.filter(
-        hit_stats__plate_appearances__gte=50
-    ).order_by('-hit_stats__avg')[:10]
+        hit_stats__isnull=False,
+        hit_stats__has_key='avg'
+    ).filter(
+        hit_stats__has_key='plate_appearances'
+    ).exclude(hit_stats__plate_appearances__lt=50).order_by('-hit_stats__avg')[:10]
     
     context['pitcher_innings'] = pitcher_stats.filter(
-        pitch_stats__ip__gte=10
-    ).order_by('-pitch_stats__ip')[:10]
+        pitch_stats__isnull=False,
+        pitch_stats__has_key='ip'
+    ).exclude(pitch_stats__ip=0).order_by('-pitch_stats__ip')[:10]
     
     context['pitcher_starts'] = pitcher_stats.filter(
-        pitch_stats__gs__gte=1
-    ).order_by('-pitch_stats__gs')[:10]
+        pitch_stats__isnull=False,
+        pitch_stats__has_key='gs'
+    ).exclude(pitch_stats__gs=0).order_by('-pitch_stats__gs')[:10]
     
     context['pitcher_era'] = pitcher_stats.filter(
-        pitch_stats__ip__gte=20
-    ).order_by('pitch_stats__era')[:10]
+        pitch_stats__isnull=False,
+        pitch_stats__has_key='era'
+    ).filter(
+        pitch_stats__has_key='ip'
+    ).exclude(pitch_stats__ip__lt=20).order_by('pitch_stats__era')[:10]
 
     return render(request, "index.html", context)
 
@@ -177,21 +188,29 @@ def team_detail(request, abbreviation):
     # Get current season for PlayerStatSeason queries
     current_season = datetime.now().year
 
-    # Get team players with optimized select_related to avoid N+1 queries
-    team_players = models.Player.objects.filter(team=context["team"]).select_related('team')
+    # Get team players with current season data efficiently
+    # This gets all players on the team, whether they have current season data or not
+    team_players = models.Player.objects.filter(
+        team=context["team"]
+    ).select_related('team').prefetch_related(
+        # Prefetch current season PlayerStatSeason data (ordered by classification)
+        Prefetch(
+            'playerstatseason_set',
+            queryset=models.PlayerStatSeason.objects.filter(season=current_season).order_by('classification'),
+            to_attr='current_season_stats'
+        )
+    )
     
     # Count roster statuses using optimized PlayerStatSeason queries
-    # Use exists() subqueries for better performance than separate count queries
-    player_ids = team_players.values_list('id', flat=True)
-    
+    # Use direct queries for better performance
     context["35_roster_count"] = models.PlayerStatSeason.objects.filter(
-        player_id__in=player_ids, 
+        player__team=context["team"], 
         season=current_season,
         is_35man_roster=True
     ).count()
     
     context["mlb_roster_count"] = models.PlayerStatSeason.objects.filter(
-        player_id__in=player_ids,
+        player__team=context["team"],
         season=current_season,
         is_mlb_roster=True, 
         is_aaa_roster=False,
