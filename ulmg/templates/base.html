@@ -233,11 +233,11 @@
                         <label class="block text-xs font-bold mb-1">Stats Level</label>
                         <select name="classification" class="w-full border border-gray-300 px-2 py-1 text-sm">
                             <option value="">All</option>
-                            <option value="1-majors"{% if classification == "1-mlb" %} selected{% endif %}>Majors</option>
-                            <option value="2-minors"{% if classification == "2-milb" %} selected{% endif %}>Minors</option>
+                            <option value="1-mlb"{% if classification == "1-mlb" %} selected{% endif %}>Majors</option>
+                            <option value="2-milb"{% if classification == "2-milb" %} selected{% endif %}>Minors</option>
                             <option value="3-npb"{% if classification == "3-npb" %} selected{% endif %}>NPB</option>
                             <option value="4-kbo"{% if classification == "4-kbo" %} selected{% endif %}>KBO</option>
-                            <option value="5-ncaa"{% if classification == "5-college" %} selected{% endif %}>College</option>
+                            <option value="5-college"{% if classification == "5-college" %} selected{% endif %}>College</option>
                         </select>
                     </div>
                     
