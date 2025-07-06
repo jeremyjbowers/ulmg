@@ -349,26 +349,15 @@ def draft_recap(request, year, season, draft_type):
 
 def player_available_midseason(request):
     context = utils.build_context(request)
-    current_season = datetime.now().year
+    current_season = 2025
     
     # For midseason availability, get unowned players with MLB stats or owned level V players not on MLB roster
     unowned_with_mlb_stats = models.PlayerStatSeason.objects.filter(
         season=current_season,
         classification="1-mlb",
-        owned=False,
-        hit_stats__PA__gte=1
+        player__team__isnull=True,
+        hit_stats__pa__gte=1
     ).select_related('player')
-    
-    owned_level_v_not_mlb = models.Player.objects.filter(
-        level="V",
-        is_owned=True,
-        is_1h_c=False,
-        is_1h_pos=False,
-        is_reserve=False,
-    ).exclude(
-        playerstatseason__season=current_season,
-        playerstatseason__is_mlb_roster=True
-    )
     
     # Combine queries for hitters
     context["hitters"] = []
@@ -377,9 +366,9 @@ def player_available_midseason(request):
     for stat_season in unowned_with_mlb_stats.exclude(player__position="P"):
         context["hitters"].append(stat_season.player)
     
-    # Add owned level V hitters not on MLB roster
-    for player in owned_level_v_not_mlb.exclude(position="P"):
-        context["hitters"].append(player)
+    # # Add owned level V hitters not on MLB roster
+    # for player in owned_level_v_not_mlb.exclude(position="P"):
+    #     context["hitters"].append(player)
     
     # Sort hitters
     context["hitters"] = sorted(
@@ -394,17 +383,17 @@ def player_available_midseason(request):
     unowned_pitchers_with_mlb_stats = models.PlayerStatSeason.objects.filter(
         season=current_season,
         classification="1-mlb",
-        owned=False,
-        pitch_stats__IP__gte=1,
+        player__team__isnull=True,
+        pitch_stats__ip__gte=1,
         player__position__icontains="P"
     ).select_related('player')
     
     for stat_season in unowned_pitchers_with_mlb_stats:
         context["pitchers"].append(stat_season.player)
     
-    # Add owned level V pitchers not on MLB roster
-    for player in owned_level_v_not_mlb.filter(position="P", is_1h_p=False):
-        context["pitchers"].append(player)
+    # # Add owned level V pitchers not on MLB roster
+    # for player in owned_level_v_not_mlb.filter(position="P", is_1h_p=False):
+    #     context["pitchers"].append(player)
     
     # Sort pitchers
     context["pitchers"] = sorted(

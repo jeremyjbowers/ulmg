@@ -62,7 +62,7 @@ def my_draft_prep(request, list_type):
     context["team"] = get_object_or_404(models.Team, owner_obj=context["owner"])
     context["wishlist"] = models.Wishlist.objects.get(owner=context["owner"])
 
-    context['my_picks'] = models.DraftPick.objects.filter(team=context['team'], year=2025, season="midseason", draft_type="open")
+    context['my_picks'] = [p.overall_pick_number for p in models.DraftPick.objects.filter(team=context['team'], year=2025, season="midseason", draft_type="open")]
     context['all_picks'] = models.DraftPick.objects.filter(year=2025, season="midseason", draft_type="open").values('overall_pick_number', 'team__abbreviation')
  
     context['players'] = []

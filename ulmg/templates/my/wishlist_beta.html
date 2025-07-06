@@ -15,6 +15,10 @@
     tbody.list-group tr:nth-child(n+81) td {background-color: #eee; border-bottom: none;}
     tbody.list-group tr.minors td { background-color: #f0fdf4; }
     .selected-tag { background-color: #16a34a; color: white; }
+    tr.my-pick td{
+        font-weight: bold;
+        background-color: lightyellow;
+    }
 </style>
 
 <!-- Simple tab navigation -->
@@ -76,9 +80,9 @@
                 {% for p in players %}
                     <tr data-playername="{{ p.player.name }}" data-playerid="{{ p.player.id }}"
                     class="list-group-item border-b border-gray-100 
-                    level-{{ p.player.get_best_stat_season.clean_classification }}
+                    level-{{ p.player.get_best_stat_season.clean_classification }}{% if forloop.counter in my_picks %} my-pick{% endif %}
                     ">
-                        <td id="rank-{{ p.pk }}" class="py-1">
+                        <td id="rank-{{ p.pk }}" class="py-1{% if forloop.counter in my_picks %} my-pick{% endif %}">
                             <span>{% if p.rank == 0 %}-{% else %}{{ p.rank }}{% endif %}</span>
                             <span class="pickowner"></span>
                         </td>
