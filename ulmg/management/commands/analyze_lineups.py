@@ -52,7 +52,7 @@ class Command(BaseCommand):
                     player__team=team,
                     season=2025,
                     classification='1-mlb',
-                    hit_stats__plate_appearances__gte=5,
+                    hit_stats__pa__gte=5,
                     hit_stats__wrc_plus__gte=wrc_threshold
                 ).select_related('player')
                 
