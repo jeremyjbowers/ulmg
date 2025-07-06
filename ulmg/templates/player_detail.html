@@ -146,7 +146,7 @@
         {% for p in hitter_stats %}
         <tr class="level-{{ p.clean_classification }} border-b border-gray-100">
             <td class="text-center py-1 font-bold">{{ p.season }}</td>
-            <td class="text-center py-1">{{ p.level|default_if_none:"-" }}</td>
+            <td class="text-center py-1">{{ p.clean_classification|default_if_none:"-" }}</td>
             <td class="text-center py-1">
                 {% if p.hit_stats %}{% if p.hit_stats.pa > 0 %}{{ p.hit_stats.pa|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
             </td>
@@ -166,13 +166,13 @@
                 {% if p.hit_stats %}{% if p.hit_stats.pa > 0 %}{{ p.hit_stats.sb|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
             </td>
             <td class="text-center py-1">
-                {% if p.hit_stats %}{% if p.hit_stats.pa > 0 %}{{ p.hit_stats.so|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
+                {% if p.hit_stats %}{% if p.hit_stats.pa > 0 %}{{ p.hit_stats.k_pct|floatformat:"1"|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
             </td>
             <td class="text-center py-1">
-                {% if p.hit_stats %}{% if p.hit_stats.pa > 0 %}{{ p.hit_stats.bb|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
+                {% if p.hit_stats %}{% if p.hit_stats.pa > 0 %}{{ p.hit_stats.bb_pct|floatformat:"1"|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
             </td>
             <td class="text-center py-1">
-                {% if p.hit_stats %}{% if p.hit_stats.pa > 0 %}{{ p.hit_stats.wrc_plus|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
+                {% if p.hit_stats %}{% if p.hit_stats.pa > 0 %}{{ p.hit_stats.wrc_plus|floatformat:"0"|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
             </td>
             <td class="text-center py-1">
                 {% if p.hit_stats %}{% if p.hit_stats.pa > 0 %}{{ p.hit_stats.xavg|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
