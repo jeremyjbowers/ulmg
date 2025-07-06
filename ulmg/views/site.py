@@ -538,7 +538,7 @@ def filter_players(request):
         if pa_cutoff:
             try:
                 pa_cutoff = int(pa_cutoff)
-                stat_season_query = stat_season_query.filter(hit_stats__PA__gte=pa_cutoff)
+                stat_season_query = stat_season_query.filter(hit_stats__pa__gte=pa_cutoff)
                 context['pa_cutoff'] = f"{pa_cutoff}"
             except ValueError:
                 pass  # Invalid integer, skip filter
@@ -548,7 +548,7 @@ def filter_players(request):
         if ip_cutoff:
             try:
                 ip_cutoff = int(ip_cutoff)
-                stat_season_query = stat_season_query.filter(pitch_stats__IP__gte=ip_cutoff)
+                stat_season_query = stat_season_query.filter(pitch_stats__ip__gte=ip_cutoff)
                 context['ip_cutoff'] = f"{ip_cutoff}"
             except ValueError:
                 pass  # Invalid integer, skip filter
