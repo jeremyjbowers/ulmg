@@ -516,13 +516,13 @@ def filter_players(request):
     if request.GET.get("owned", None):
         owned = request.GET["owned"].strip()
         if owned:
-            stat_season_query = stat_season_query.filter(owned=to_bool(owned))
+            stat_season_query = stat_season_query.exclude(player__team__isnull=to_bool(owned))
             context["owned"] = owned
     
     if request.GET.get("carded", None):
         carded = request.GET["carded"].strip()
         if carded:
-            stat_season_query = stat_season_query.filter(carded=to_bool(carded))
+            stat_season_query = stat_season_query.filter(player__carded_seasons__contains=[int(carded)])
             context["carded"] = carded
     
     # Handle level filter (uses level index)
