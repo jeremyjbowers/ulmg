@@ -10,6 +10,24 @@
 </td>
 
 {% with best_stats=p.get_best_stat_season %}
+<td data-value="{% if best_stats.pitch_stats.level %}2{% else %}{% if p.clean_classification == "mlb" %}1{% elif p.clean_classification == "npb" %}3{% elif p.clean_classification == "kbo" %}4{% elif p.clean_classification == "college" %}5{% else %}6{% endif %}{% endif %}">
+    {% if best_stats.pitch_stats.level %}
+        {{ best_stats.pitch_stats.level }}
+    {% else %}
+        {% if best_stats.clean_classification == "mlb" %}
+            MLB
+        {% elif best_stats.clean_classification == "npb" %}
+            NPB
+        {% elif best_stats.clean_classification == "kbo" %}
+            KBO
+        {% elif best_stats.clean_classification == "college" %}
+            NCAA
+        {% else %}
+            -
+        {% endif %}
+    {% endif %}
+</td>
+
 <td data-value="{% if best_stats %}{% if best_stats.clean_classification %}{{ best_stats.season }} {{ best_stats.clean_classification|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}">
     {% if best_stats %}{% if best_stats.clean_classification %}{{ best_stats.season }} {{ best_stats.clean_classification|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
 </td>

@@ -11,8 +11,22 @@
     {{ p.player.role_type|default_if_none:"-" }}
 </td>
 
-<td data-value="{{ p.player.role|default_if_none:"-" }}">
-    {{ p.player.role|default_if_none:"-" }}
+<td data-value="{% if p.hit_stats.level %}2{% else %}{% if p.clean_classification == "mlb" %}1{% elif p.clean_classification == "npb" %}3{% elif p.clean_classification == "kbo" %}4{% elif p.clean_classification == "college" %}5{% else %}6{% endif %}{% endif %}">
+    {% if p.hit_stats.level %}
+        {{ p.hit_stats.level }}
+    {% else %}
+        {% if p.clean_classification == "mlb" %}
+            MLB
+        {% elif p.clean_classification == "npb" %}
+            NPB
+        {% elif p.clean_classification == "kbo" %}
+            KBO
+        {% elif p.clean_classification == "college" %}
+            NCAA
+        {% else %}
+            -
+        {% endif %}
+    {% endif %}
 </td>
 
 <td data-value="{% if p.clean_classification %}{{ p.season }} {{ p.clean_classification|default_if_none:"-" }}{% else %}-{% endif %}">

@@ -7,15 +7,29 @@
     {% if p.roster_status != "" %}{{ p.roster_status|default_if_none:"-" }}{% else %}-{% endif %}
 </td> -->
 
+{% with best_stats=p.get_best_stat_season %}
 <td data-value="{{ p.role_type|default_if_none:"-" }}">
     {{ p.role_type|default_if_none:"-" }}
 </td>
 
 <td data-value="{{ p.role|default_if_none:"-" }}">
-    {{ p.role|default_if_none:"-" }}
+    {% if best_stats.hit_stats.level %}
+        {{ best_stats.hit_stats.level }}
+    {% else %}
+        {% if best_stats.clean_classification == "mlb" %}
+            MLB
+        {% elif best_stats.clean_classification == "npb" %}
+            NPB
+        {% elif best_stats.clean_classification == "kbo" %}
+            KBO
+        {% elif best_stats.clean_classification == "college" %}
+            NCAA
+        {% else %}
+            -
+        {% endif %}
+    {% endif %}
 </td>
 
-{% with best_stats=p.get_best_stat_season %}
 <td data-value="{% if best_stats %}{% if best_stats.clean_classification %}{{ best_stats.season }} {{ best_stats.clean_classification|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}">
     {% if best_stats %}{% if best_stats.clean_classification %}{{ best_stats.season }} {{ best_stats.clean_classification|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
 </td>
