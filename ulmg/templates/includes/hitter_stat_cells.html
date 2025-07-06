@@ -38,10 +38,10 @@
     {% if p.hit_stats %}{% if p.hit_stats.pa > 0 %}{{ p.hit_stats.sb|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
 </td>
 <td data-value="{% if p.hit_stats %}{{ p.hit_stats.k_pct|default_if_none:"-999" }}{% else %}-999{% endif %}">
-    {% if p.hit_stats %}{% if p.hit_stats.pa > 0 %}{{ p.hit_stats.k_pct|floatformat:"1"|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
+    {% if p.hit_stats %}{% if p.hit_stats.pa > 0 %}{{ p.hit_stats.k_pct|percents_to_hundreds|floatformat:"1"|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
 </td>
 <td data-value="{% if p.hit_stats %}{{ p.hit_stats.bb_pct|default_if_none:"-999" }}{% else %}-999{% endif %}">
-    {% if p.hit_stats %}{% if p.hit_stats.pa > 0 %}{{ p.hit_stats.bb_pct|floatformat:"1"|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
+    {% if p.hit_stats %}{% if p.hit_stats.pa > 0 %}{{ p.hit_stats.bb_pct|percents_to_hundreds|floatformat:"1"|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
 </td>
 <td data-value="{% if p.hit_stats %}{{ p.hit_stats.wrc_plus|default_if_none:"-999" }}{% else %}-999{% endif %}">
     {% if p.hit_stats %}{% if p.hit_stats.pa > 0 %}{{ p.hit_stats.wrc_plus|floatformat:"0"|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}

@@ -3,6 +3,11 @@ from decimal import Decimal
 
 register = template.Library()
 
+@register.filter(name="percents_to_hundreds")
+def percents_to_hundreds(value):
+    value = float(value)
+    return value * 100.0
+
 
 @register.filter(name="kill_leading_zero")
 def kill_leading_zero(value):
