@@ -37,7 +37,7 @@ def my_wishlist_beta(request):
     context['all_aa_picks'] = models.DraftPick.objects.filter(year=2025, season="offseason", draft_type="aa").values('overall_pick_number', 'team__abbreviation')
  
     context["players"] = models.WishlistPlayer.objects.filter(
-        wishlist=context["wishlist"], player__is_owned=False, player__level="B"
+        wishlist=context["wishlist"], player__team__isnull=True, player__level="B"
     ).order_by("rank")
 
     context["tags"] = set()
@@ -69,12 +69,12 @@ def my_draft_prep(request, list_type):
  
     if list_type == "offseason":    
         context["players"] = models.WishlistPlayer.objects.filter(
-            wishlist=context["wishlist"], player__is_owned=False, player__level__in=["A","V"]
+            wishlist=context["wishlist"], player__team__isnull=True, player__level__in=["A","V"]
         ).order_by("rank")
 
     if list_type == "midseason":
         context["players"] = models.WishlistPlayer.objects.filter(
-            wishlist=context["wishlist"], player__is_owned=False, player__is_carded=True
+            wishlist=context["wishlist"], player__team__isnull=True, player__carded_seasons__contains=[2024]
         ).order_by("rank") 
 
     context["tags"] = set()

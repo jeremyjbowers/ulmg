@@ -374,6 +374,9 @@ class Player(BaseModel):
     # DEFENSE
     defense = ArrayField(models.CharField(max_length=10), blank=True, null=True)
 
+    # Grumble grumble
+    carded_seasons = ArrayField(models.IntegerField(), blank=True, null=True)
+
     # STATS - DEPRECATED: Use PlayerStatSeason model instead
     # stats = models.JSONField(null=True, blank=True)  # Removed - use PlayerStatSeason
 
@@ -750,6 +753,14 @@ class Player(BaseModel):
         else:
             self.position = "DH"  # Default for unknown positions
 
+    def set_carded_seasons(self):
+        if not self.carded_seasons:
+            self.carded_seasons = []
+
+        for pss in PlayerStatSeason.objects.filter(player=self):
+            if pss.classification == "1-mlb":
+                self.carded_seasons.append(pss.season)
+
     def save(self, *args, **kwargs):
         """
         Some light housekeeping.
@@ -761,6 +772,7 @@ class Player(BaseModel):
         self.set_level_order()
         self.set_owned()
         self.set_protected()
+        self.set_carded_seasons()
 
         super().save(*args, **kwargs)
 
@@ -781,6 +793,7 @@ class PlayerStatSeason(BaseModel):
     pitch_stats = models.JSONField(null=True, blank=True)
     minors = models.BooleanField(default=False)
     carded = models.BooleanField(default=False)
+    previous_carded = models.BooleanField(default=False)
     owned = models.BooleanField(default=False)
     
     # SEASON-SPECIFIC ROSTER STATUS (moved from Player model)
@@ -803,6 +816,18 @@ class PlayerStatSeason(BaseModel):
 
     def __unicode__(self):
         return f"{self.player} @ {self.season} @ {self.classification}"
+
+    def save(self, *args, **kwargs):
+        self.set_previous_carded()
+        super().save(*args, **kwargs)
+
+    def set_previous_carded(self):
+        try:
+            obj = PlayerStatSeason.objects.get(classification="1-mlb", season=self.season-1)
+            self.previous_carded = True
+
+        except:
+            pass
 
     def clean_classification(self):
         try:
@@ -1479,7 +1504,7 @@ class WishlistPlayer(BaseModel):
         ).order_by('-season', 'classification')
         
         for stat_season in stat_seasons:
-            if stat_season.hit_stats and stat_season.hit_stats.get('plate_appearances', 0) >= 1:
+            if stat_season.hit_stats and stat_season.hit_stats.get('pa', 0) >= 1:
                 payload.append(stat_season.hit_stats)
         
         return payload
