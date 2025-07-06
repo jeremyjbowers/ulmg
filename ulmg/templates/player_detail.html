@@ -144,44 +144,44 @@
         </thead>
         <tbody>
         {% for p in hitter_stats %}
-        <tr class="{% if p.minors %}non-mlb{% else %}majors{% endif %} border-b border-gray-100">
+        <tr class="level-{{ p.clean_classification }} border-b border-gray-100">
             <td class="text-center py-1 font-bold">{{ p.season }}</td>
             <td class="text-center py-1">{{ p.level|default_if_none:"-" }}</td>
             <td class="text-center py-1">
-                {% if p.hit_stats %}{% if p.hit_stats.plate_appearances > 0 %}{{ p.hit_stats.plate_appearances|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
+                {% if p.hit_stats %}{% if p.hit_stats.pa > 0 %}{{ p.hit_stats.pa|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
             </td>
             <td class="text-center py-1">
-                {% if p.hit_stats %}{% if p.hit_stats.plate_appearances > 0 %}{{ p.hit_stats.avg|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
+                {% if p.hit_stats %}{% if p.hit_stats.pa > 0 %}{{ p.hit_stats.avg|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
             </td>
             <td class="text-center py-1">
-                {% if p.hit_stats %}{% if p.hit_stats.plate_appearances > 0 %}{{ p.hit_stats.obp|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
+                {% if p.hit_stats %}{% if p.hit_stats.pa > 0 %}{{ p.hit_stats.obp|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
             </td>
             <td class="text-center py-1">
-                {% if p.hit_stats %}{% if p.hit_stats.plate_appearances > 0 %}{{ p.hit_stats.slg|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
+                {% if p.hit_stats %}{% if p.hit_stats.pa > 0 %}{{ p.hit_stats.slg|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
             </td>
             <td class="text-center py-1">
-                {% if p.hit_stats %}{% if p.hit_stats.plate_appearances > 0 %}{{ p.hit_stats.hr|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
+                {% if p.hit_stats %}{% if p.hit_stats.pa > 0 %}{{ p.hit_stats.hr|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
             </td>
             <td class="text-center py-1">
-                {% if p.hit_stats %}{% if p.hit_stats.plate_appearances > 0 %}{{ p.hit_stats.sb|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
+                {% if p.hit_stats %}{% if p.hit_stats.pa > 0 %}{{ p.hit_stats.sb|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
             </td>
             <td class="text-center py-1">
-                {% if p.hit_stats %}{% if p.hit_stats.plate_appearances > 0 %}{{ p.hit_stats.k_pct|floatformat:1|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
+                {% if p.hit_stats %}{% if p.hit_stats.pa > 0 %}{{ p.hit_stats.so|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
             </td>
             <td class="text-center py-1">
-                {% if p.hit_stats %}{% if p.hit_stats.plate_appearances > 0 %}{{ p.hit_stats.bb_pct|floatformat:1|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
+                {% if p.hit_stats %}{% if p.hit_stats.pa > 0 %}{{ p.hit_stats.bb|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
             </td>
             <td class="text-center py-1">
-                {% if p.hit_stats %}{% if p.hit_stats.plate_appearances > 0 %}{{ p.hit_stats.wrc_plus|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
+                {% if p.hit_stats %}{% if p.hit_stats.pa > 0 %}{{ p.hit_stats.wrc_plus|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
             </td>
             <td class="text-center py-1">
-                {% if p.hit_stats %}{% if p.hit_stats.plate_appearances > 0 %}{{ p.hit_stats.xavg|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
+                {% if p.hit_stats %}{% if p.hit_stats.pa > 0 %}{{ p.hit_stats.xavg|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
             </td>
             <td class="text-center py-1">
-                {% if p.hit_stats %}{% if p.hit_stats.plate_appearances > 0 %}{{ p.hit_stats.xobp|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
+                {% if p.hit_stats %}{% if p.hit_stats.pa > 0 %}{{ p.hit_stats.xwoba|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
             </td>
             <td class="text-center py-1">
-                {% if p.hit_stats %}{% if p.hit_stats.plate_appearances > 0 %}{{ p.hit_stats.xslg|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
+                {% if p.hit_stats %}{% if p.hit_stats.pa > 0 %}{{ p.hit_stats.xslg|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
             </td>
         </tr>
         {% endfor %}
@@ -209,45 +209,53 @@
                 <th class="text-center py-1 sortable" data-sortable-type="numeric">BB/9</th>
                 <th class="text-center py-1 sortable" data-sortable-type="numeric">HR/9</th>
                 <th class="text-center py-1 sortable" data-sortable-type="numeric">FIP</th>
+                <th class="text-center py-1 sortable" data-sortable-type="numeric">xFIP</th>
+                <th class="text-center py-1 sortable" data-sortable-type="numeric">SIERA</th>
             </tr>
         </thead>
         <tbody>
         {% for p in pitcher_stats %}
-        <tr class="{% if p.minors %}non-mlb{% else %}majors{% endif %} border-b border-gray-100">
+        <tr class="level-{{ p.clean_classification }} border-b border-gray-100">
             <td class="text-center py-1 font-bold">{{ p.season }}</td>
-            <td class="text-center py-1">{{ p.level|default_if_none:"-" }}</td>
+            <td class="text-center py-1">{{ p.clean_classification|default_if_none:"-" }}</td>
             <td class="text-center py-1">
-                {% if p.pitch_stats %}{% if p.pitch_stats.innings_pitched > 0 %}{{ p.pitch_stats.innings_pitched|floatformat:1|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
+                {% if p.pitch_stats %}{% if p.pitch_stats.ip > 0 %}{{ p.pitch_stats.ip|floatformat:1|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
             </td>
             <td class="text-center py-1">
-                {% if p.pitch_stats %}{% if p.pitch_stats.innings_pitched > 0 %}{{ p.pitch_stats.wins|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
+                {% if p.pitch_stats %}{% if p.pitch_stats.ip > 0 %}{{ p.pitch_stats.w|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
             </td>
             <td class="text-center py-1">
-                {% if p.pitch_stats %}{% if p.pitch_stats.innings_pitched > 0 %}{{ p.pitch_stats.losses|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
+                {% if p.pitch_stats %}{% if p.pitch_stats.ip > 0 %}{{ p.pitch_stats.l|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
             </td>
             <td class="text-center py-1">
-                {% if p.pitch_stats %}{% if p.pitch_stats.innings_pitched > 0 %}{{ p.pitch_stats.era|floatformat:2|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
+                {% if p.pitch_stats %}{% if p.pitch_stats.ip > 0 %}{{ p.pitch_stats.era|floatformat:2|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
             </td>
             <td class="text-center py-1">
-                {% if p.pitch_stats %}{% if p.pitch_stats.innings_pitched > 0 %}{{ p.pitch_stats.whip|floatformat:2|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
+                {% if p.pitch_stats %}{% if p.pitch_stats.ip > 0 %}{{ p.pitch_stats.whip|floatformat:2|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
             </td>
             <td class="text-center py-1">
-                {% if p.pitch_stats %}{% if p.pitch_stats.innings_pitched > 0 %}{{ p.pitch_stats.strikeouts|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
+                {% if p.pitch_stats %}{% if p.pitch_stats.ip > 0 %}{{ p.pitch_stats.so|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
             </td>
             <td class="text-center py-1">
-                {% if p.pitch_stats %}{% if p.pitch_stats.innings_pitched > 0 %}{{ p.pitch_stats.walks|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
+                {% if p.pitch_stats %}{% if p.pitch_stats.ip > 0 %}{{ p.pitch_stats.bb|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
             </td>
             <td class="text-center py-1">
-                {% if p.pitch_stats %}{% if p.pitch_stats.innings_pitched > 0 %}{{ p.pitch_stats.k_per_9|floatformat:1|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
+                {% if p.pitch_stats %}{% if p.pitch_stats.ip > 0 %}{{ p.pitch_stats.k_9|floatformat:1|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
             </td>
             <td class="text-center py-1">
-                {% if p.pitch_stats %}{% if p.pitch_stats.innings_pitched > 0 %}{{ p.pitch_stats.bb_per_9|floatformat:1|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
+                {% if p.pitch_stats %}{% if p.pitch_stats.ip > 0 %}{{ p.pitch_stats.bb_9|floatformat:1|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
             </td>
             <td class="text-center py-1">
-                {% if p.pitch_stats %}{% if p.pitch_stats.innings_pitched > 0 %}{{ p.pitch_stats.hr_per_9|floatformat:1|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
+                {% if p.pitch_stats %}{% if p.pitch_stats.ip > 0 %}{{ p.pitch_stats.hr_9|floatformat:1|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
             </td>
             <td class="text-center py-1">
-                {% if p.pitch_stats %}{% if p.pitch_stats.innings_pitched > 0 %}{{ p.pitch_stats.fip|floatformat:2|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
+                {% if p.pitch_stats %}{% if p.pitch_stats.ip > 0 %}{{ p.pitch_stats.fip|floatformat:2|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
+            </td>
+            <td class="text-center py-1">
+                {% if p.pitch_stats %}{% if p.pitch_stats.ip > 0 %}{{ p.pitch_stats.xfip|floatformat:2|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
+            </td>
+            <td class="text-center py-1">
+                {% if p.pitch_stats %}{% if p.pitch_stats.ip > 0 %}{{ p.pitch_stats.siera|floatformat:2|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
             </td>
         </tr>
         {% endfor %}

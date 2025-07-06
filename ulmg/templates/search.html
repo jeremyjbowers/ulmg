@@ -48,7 +48,7 @@
         </thead>
         <tbody>
         {% for p in position.list %}
-        <tr class="border-b border-gray-100">
+        <tr class="level-{{ p.clean_classification }} border-b border-gray-100">
             <td class="py-1">
                 {% if user.is_authenticated %}
                     {% if p.player %}
@@ -108,7 +108,7 @@
         </thead>
         <tbody>
         {% for p in pitchers %}
-        <tr class="border-b border-gray-100">
+        <tr class="level-{{ p.clean_classification }} border-b border-gray-100">
             <td class="py-1">
                 {% if user.is_authenticated %}
                     {% if p.player %}

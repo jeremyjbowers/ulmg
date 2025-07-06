@@ -111,7 +111,7 @@
                             {% endif %}
                         </td>
                         <td class="text-center py-1">
-                            {% if p.latest_hit_stats and p.player.position != "P" %}{% if p.latest_hit_stats.plate_appearances %}{{ p.latest_hit_stats.plate_appearances|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
+                            {% if p.latest_hit_stats and p.player.position != "P" %}{% if p.latest_hit_stats.PA %}{{ p.latest_hit_stats.PA|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
                         </td>
                         <td class="text-center py-1">
                             {% if p.latest_hit_stats and p.player.position != "P" %}{% if p.latest_hit_stats.wrc_plus %}{{ p.latest_hit_stats.wrc_plus|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}

@@ -10,8 +10,8 @@
 </td>
 
 {% with best_stats=p.get_best_stat_season %}
-<td data-value="{% if best_stats %}{% if best_stats.level %}{{ best_stats.season }} {{ best_stats.level|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}">
-    {% if best_stats %}{% if best_stats.level %}{{ best_stats.season }} {{ best_stats.level|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
+<td data-value="{% if best_stats %}{% if best_stats.clean_classification %}{{ best_stats.season }} {{ best_stats.clean_classification|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}">
+    {% if best_stats %}{% if best_stats.clean_classification %}{{ best_stats.season }} {{ best_stats.clean_classification|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
 </td>
 
 <td data-value="{% if best_stats and best_stats.pitch_stats %}{% if best_stats.pitch_stats.ip > 0 %}{{ best_stats.pitch_stats.g|default_if_none:"-999" }}{% else %}-999{% endif %}{% else %}-999{% endif %}">{% if best_stats and best_stats.pitch_stats %}{% if best_stats.pitch_stats.ip > 0 %}{{ best_stats.pitch_stats.g|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}</td>

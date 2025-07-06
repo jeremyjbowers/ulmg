@@ -34,12 +34,13 @@ def index(request):
     # READ-HEAVY OPTIMIZATION: Use select_related to preload player data and avoid N+1 queries
     base_stats = models.PlayerStatSeason.objects.filter(
         season=season,
-        classification="1-majors",  # MLB major league only (excludes NPB, KBO, NCAA, minors)
-        owned=False    # Unowned only - uses partial index idx_unowned_mlb
-    ).select_related('player')
+        classification="1-mlb",  # MLB major league only (excludes NPB, KBO, NCAA, minors)
+        player__team__isnull=True    # Unowned only - uses partial index idx_unowned_mlb
+    )
 
     # Split into hitters and pitchers by position
-    hitter_stats = base_stats.exclude(player__position="P").filter(hit_stats__plate_appearances__gte=1).order_by(
+    # NOTE: Can also use new QuerySet methods: base_stats.with_hitting_stats() or base_stats.with_pitching_stats()
+    hitter_stats = base_stats.exclude(player__position="P").filter(hit_stats__pa__gte=1).order_by(
         "player__position", "-player__level_order", "player__last_name", "player__first_name"
     )
     
@@ -353,9 +354,9 @@ def player_available_midseason(request):
     # For midseason availability, get unowned players with MLB stats or owned level V players not on MLB roster
     unowned_with_mlb_stats = models.PlayerStatSeason.objects.filter(
         season=current_season,
-        classification="1-majors",
+        classification="1-mlb",
         owned=False,
-        hit_stats__plate_appearances__gte=1
+        hit_stats__PA__gte=1
     ).select_related('player')
     
     owned_level_v_not_mlb = models.Player.objects.filter(
@@ -392,9 +393,9 @@ def player_available_midseason(request):
     # Add unowned pitchers with MLB stats
     unowned_pitchers_with_mlb_stats = models.PlayerStatSeason.objects.filter(
         season=current_season,
-        classification="1-majors",
+        classification="1-mlb",
         owned=False,
-        pitch_stats__ip__gte=1,
+        pitch_stats__IP__gte=1,
         player__position__icontains="P"
     ).select_related('player')
     
@@ -537,7 +538,7 @@ def filter_players(request):
         if pa_cutoff:
             try:
                 pa_cutoff = int(pa_cutoff)
-                stat_season_query = stat_season_query.filter(hit_stats__plate_appearances__gte=pa_cutoff)
+                stat_season_query = stat_season_query.filter(hit_stats__PA__gte=pa_cutoff)
                 context['pa_cutoff'] = f"{pa_cutoff}"
             except ValueError:
                 pass  # Invalid integer, skip filter
@@ -547,7 +548,7 @@ def filter_players(request):
         if ip_cutoff:
             try:
                 ip_cutoff = int(ip_cutoff)
-                stat_season_query = stat_season_query.filter(pitch_stats__ip__gte=ip_cutoff)
+                stat_season_query = stat_season_query.filter(pitch_stats__IP__gte=ip_cutoff)
                 context['ip_cutoff'] = f"{ip_cutoff}"
             except ValueError:
                 pass  # Invalid integer, skip filter
@@ -585,30 +586,30 @@ def filter_players(request):
     priority_annotation = Case(
         # Highest priority: Major league records with hitting stats
         When(
-            classification='1-majors',
-            hit_stats__plate_appearances__gt=0,
+            classification='1-mlb',
+            hit_stats__PA__gt=0,
             then=1
         ),
         # Second priority: Major league records with pitching stats  
         When(
-            classification='1-majors',
-            pitch_stats__g__gt=0,
+            classification='1-mlb',
+            pitch_stats__G__gt=0,
             then=2
         ),
         # Third priority: Minor league records with hitting stats
         When(
             classification='2-minors',
-            hit_stats__plate_appearances__gt=0,
+            hit_stats__PA__gt=0,
             then=3
         ),
         # Fourth priority: Minor league records with pitching stats
         When(
             classification='2-minors', 
-            pitch_stats__g__gt=0,
+            pitch_stats__G__gt=0,
             then=4
         ),
         # Fifth priority: Any major league record (even without stats)
-        When(classification='1-majors', then=5),
+        When(classification='1-mlb', then=5),
         # Lowest priority: Any other record
         default=6,
         output_field=IntegerField()

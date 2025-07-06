@@ -34,19 +34,19 @@
         
         /* UPDATED: Player background colors based on role_type */
         /* Default/Other: white background (no special styling) */
-        .player-role-default {
+        .level-mlb {
             background-color: #ffffff; /* white */
         }
         
         /* MiLB players: light green background */
-        .player-role-milb {
+        .level-milb {
             background-color: #dcfce7; /* light green */
         }
         
         /* Blank/empty role_type: light blue background */
-        .player-role-blank {
+        .level-college, .level-none, .level-npb, .level-kbo, .level- {
             background-color: #dbeafe; /* light blue */
-        }
+        }        
         
         /* Injured List (IL) players: light pink - HIGHEST PRIORITY */
         .player-role-il {
@@ -229,11 +229,11 @@
                         <label class="block text-xs font-bold mb-1">Classification</label>
                         <select name="classification" class="w-full border border-gray-300 px-2 py-1 text-sm">
                             <option value="">All</option>
-                            <option value="1-majors"{% if classification == "1-majors" %} selected{% endif %}>Majors</option>
-                            <option value="2-minors"{% if classification == "2-minors" %} selected{% endif %}>Minors</option>
+                            <option value="1-majors"{% if classification == "1-mlb" %} selected{% endif %}>Majors</option>
+                            <option value="2-minors"{% if classification == "2-milb" %} selected{% endif %}>Minors</option>
                             <option value="3-npb"{% if classification == "3-npb" %} selected{% endif %}>NPB</option>
                             <option value="4-kbo"{% if classification == "4-kbo" %} selected{% endif %}>KBO</option>
-                            <option value="5-ncaa"{% if classification == "5-ncaa" %} selected{% endif %}>NCAA</option>
+                            <option value="5-ncaa"{% if classification == "5-college" %} selected{% endif %}>College</option>
                         </select>
                     </div>
                     

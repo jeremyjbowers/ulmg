@@ -5,6 +5,7 @@ import secrets
 from dateutil.relativedelta import *
 from django.contrib.auth.models import User
 from django.db import models
+from django.db.models import Count
 from django.contrib.postgres.fields import JSONField, ArrayField
 from django.db.models.signals import post_save, m2m_changed
 from django.dispatch import receiver
@@ -13,6 +14,7 @@ from django.utils import timezone
 from nameparser import HumanName
 
 from ulmg import utils
+from ulmg.constants import HITTING_STATS, PITCHING_STATS, STAT_THRESHOLDS
 
 
 class BaseModel(models.Model):
@@ -439,7 +441,7 @@ class Player(BaseModel):
         # Check if player has any MLB-level stats in PlayerStatSeason
         return PlayerStatSeason.objects.filter(
             player=self, 
-            classification='1-majors'
+            classification='1-mlb'
         ).exists()
     
     def is_carded(self):
@@ -730,7 +732,7 @@ class Player(BaseModel):
     def get_best_stat_season(self):
         """
         Get the best PlayerStatSeason for this player, sorted by newest season 
-        and highest classification (1-majors is highest, 5-ncaa is lowest).
+        and highest classification (1-mlb is highest, 5-college is lowest).
         Returns None if no stat seasons exist.
         """
         return PlayerStatSeason.objects.filter(
@@ -762,15 +764,16 @@ class Player(BaseModel):
 
         super().save(*args, **kwargs)
 
+
 class PlayerStatSeason(BaseModel):
     player = models.ForeignKey(Player, on_delete=models.SET_NULL, blank=True, null=True)
     season = models.IntegerField(blank=True, null=True)
     CLASSIFICATION_CHOICES = (
-        ("1-majors", "1-majors"),
-        ("2-minors", "2-minors"),
+        ("1-mlb", "1-mlb"),
+        ("2-milb", "2-milb"),
         ("3-npb", "3-npb"),
         ("4-kbo", "4-kbo"),
-        ("5-ncaa", "5-ncaa"),
+        ("5-college", "5-college"),
     )
     classification = models.CharField(max_length=255, choices=CLASSIFICATION_CHOICES, null=True)
     level = models.CharField(max_length=255, blank=True, null=True)
@@ -801,26 +804,33 @@ class PlayerStatSeason(BaseModel):
     def __unicode__(self):
         return f"{self.player} @ {self.season} @ {self.classification}"
 
+    def clean_classification(self):
+        try:
+            return self.classification.split('-')[1]
+        except:
+            pass
+        return None
+
     def player_level_class(self):
         """
         Determine the player's level classification for CSS styling:
-        - 'mlb': Has MLB stats (classification="1-majors" with actual stats)
-        - 'milb': Has MiLB stats (classification="2-minors") or MLB organization but no MLB stats
+        - 'mlb': Has MLB stats (classification="1-mlb" with actual stats)
+        - 'milb': Has MiLB stats (classification="2-milb") or MLB organization but no MLB stats
         - 'amateur': Foreign leagues (NPB, KBO, NCAA), no stats, or no professional organization
         """
-        # Check for MLB stats (classification="1-majors" with actual stats)
-        if (self.classification == "1-majors" and 
+        # Check for MLB stats (classification="1-mlb" with actual stats)
+        if (self.classification == "1-mlb" and 
             ((self.hit_stats and self.hit_stats.get('plate_appearances', 0) > 0) or
              (self.pitch_stats and self.pitch_stats.get('ip', 0) > 0))):
             return 'mlb'
         
-        # Check for minor league stats (classification="2-minors") or MLB organization
-        if (self.classification == "2-minors" or 
-            (self.mlb_org and self.classification not in ["3-npb", "4-kbo", "5-ncaa"])):
+        # Check for minor league stats (classification="2-milb") or MLB organization
+        if (self.classification == "2-milb" or 
+            (self.mlb_org and self.classification not in ["3-npb", "4-kbo", "5-college"])):
             return 'milb'
         
         # Foreign leagues (NPB, KBO, NCAA) and amateurs should be 'amateur'
-        if self.classification in ["3-npb", "4-kbo", "5-ncaa"]:
+        if self.classification in ["3-npb", "4-kbo", "5-college"]:
             return 'amateur'
         
         # Default to amateur if no pro stats or organization
@@ -856,6 +866,45 @@ class PlayerStatSeason(BaseModel):
             # Blank/empty role_type
             return 'player-role-blank'
 
+    # Stat field access methods using constants
+    def get_hitting_stat(self, stat_name):
+        """Get hitting stat value using constant name (e.g., 'PLATE_APPEARANCES')"""
+        if not self.hit_stats:
+            return None
+        field_name = HITTING_STATS.get(stat_name)
+        if not field_name:
+            return None
+        return self.hit_stats.get(field_name)
+    
+    def get_pitching_stat(self, stat_name):
+        """Get pitching stat value using constant name (e.g., 'GAMES')"""
+        if not self.pitch_stats:
+            return None
+        field_name = PITCHING_STATS.get(stat_name)
+        if not field_name:
+            return None
+        return self.pitch_stats.get(field_name)
+    
+    def has_hitting_stats(self):
+        """Check if player has meaningful hitting stats"""
+        pa = self.get_hitting_stat('PLATE_APPEARANCES')
+        return pa is not None and pa >= STAT_THRESHOLDS['MIN_PLATE_APPEARANCES']
+    
+    def has_pitching_stats(self):
+        """Check if player has meaningful pitching stats"""
+        games = self.get_pitching_stat('GAMES')
+        return games is not None and games >= STAT_THRESHOLDS['MIN_GAMES_PITCHED']
+    
+    def has_starting_pitching_stats(self):
+        """Check if player has games started as a pitcher"""
+        gs = self.get_pitching_stat('GAMES_STARTED')
+        return gs is not None and gs >= STAT_THRESHOLDS['MIN_GAMES_STARTED']
+    
+    def has_substantial_pitching_stats(self):
+        """Check if player has substantial innings pitched"""
+        ip = self.get_pitching_stat('INNINGS_PITCHED')
+        return ip is not None and ip >= STAT_THRESHOLDS['MIN_INNINGS_PITCHED']
+
     class Meta:
         ordering = ['season', 'classification']
         # Prevent duplicate records for the same player/season/classification combination
@@ -863,7 +912,7 @@ class PlayerStatSeason(BaseModel):
         indexes = [
             # Single field indexes for common filters
             models.Index(fields=['season']),  # Most common filter
-            models.Index(fields=['minors']),  # Majors vs minors filtering
+            models.Index(fields=['minors']),  # mlb vs minors filtering
             models.Index(fields=['owned']),   # Ownership filtering
             models.Index(fields=['carded']),  # Carded status filtering
             
@@ -904,7 +953,7 @@ class PlayerStatSeason(BaseModel):
             # Partial indexes for boolean filters (much smaller, faster for read-heavy workloads)
             models.Index(fields=['season', 'classification'], condition=models.Q(owned=False), name='idx_unowned_players'),
             models.Index(fields=['season', 'classification'], condition=models.Q(carded=True), name='idx_carded_players'),
-            models.Index(fields=['season'], condition=models.Q(classification='1-majors', owned=False), name='idx_unowned_mlb'),
+            models.Index(fields=['season'], condition=models.Q(classification='1-mlb', owned=False), name='idx_unowned_mlb'),
             
             # JSON field optimizations for stats queries (GIN indexes for complex JSON operations)
             models.Index(fields=['season', 'classification'], condition=models.Q(hit_stats__isnull=False), name='idx_hitters_with_stats'),

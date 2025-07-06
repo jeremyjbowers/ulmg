@@ -12,18 +12,18 @@ list-group-item
         {% if p.player.hit_stats %}{% if p.player.hit_stats.level != "" %}{{ p.player.hit_stats.level|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
     </td>
     <td>
-        {% if p.player.hit_stats.plate_appearances > 0 %}{{ p.player.hit_stats.plate_appearances|default_if_none:"-" }}{% else %}-{% endif %}
+        {% if p.player.hit_stats.PA > 0 %}{{ p.player.hit_stats.PA|default_if_none:"-" }}{% else %}-{% endif %}
     </td>
     <td>
-        {% if p.player.hit_stats.plate_appearances > 0 %}{{ p.player.hit_stats.avg|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}/{% if p.player.hit_stats.plate_appearances > 0 %}{{ p.player.hit_stats.obp|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}/{% if p.player.hit_stats.plate_appearances > 0 %}{{ p.player.hit_stats.slg|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
+        {% if p.player.hit_stats.PA > 0 %}{{ p.player.hit_stats.AVG|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}/{% if p.player.hit_stats.PA > 0 %}{{ p.player.hit_stats.OBP|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}/{% if p.player.hit_stats.PA > 0 %}{{ p.player.hit_stats.SLG|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
     </td>
     <td>
-        {% if p.player.hit_stats.plate_appearances > 0 %}{{ p.player.hit_stats.k_pct|floatformat:1|default_if_none:"-" }}{% else %}-{% endif %}
+        {% if p.player.hit_stats.PA > 0 %}{{ p.player.hit_stats.SO|default_if_none:"-" }}{% else %}-{% endif %}
     </td><td>
-        {% if p.player.hit_stats.plate_appearances > 0 %}{{ p.player.hit_stats.bb_pct|floatformat:1|default_if_none:"-" }}{% else %}-{% endif %}
+        {% if p.player.hit_stats.PA > 0 %}{{ p.player.hit_stats.BB|default_if_none:"-" }}{% else %}-{% endif %}
     </td>
     <td>
-        {% if p.player.hit_stats.plate_appearances > 0 %}{{ p.player.hit_stats.wrc_plus|default_if_none:"-" }}{% else %}-{% endif %}
+        {% if p.player.hit_stats.PA > 0 %}{{ p.player.hit_stats.wRC+|default_if_none:"-" }}{% else %}-{% endif %}
     </td>
 
     <td>{% include "includes/my/tierpicker.html" %}</td>

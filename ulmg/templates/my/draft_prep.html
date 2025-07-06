@@ -74,27 +74,27 @@
                             <td>-</td><td>-</td><td>-</td><td>-</td>
                             {% else %}
                             <td>
-                                {% if p.player.hit_stats.plate_appearances > 0 %}{{ p.player.hit_stats.plate_appearances|default_if_none:"-" }}{% else %}-{% endif %}
+                                {% if p.player.hit_stats.PA > 0 %}{{ p.player.hit_stats.PA|default_if_none:"-" }}{% else %}-{% endif %}
                             </td>
                             <td>
-                                {% if p.player.hit_stats.plate_appearances > 0 %}{{ p.player.hit_stats.avg|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}/{% if p.player.hit_stats.plate_appearances > 0 %}{{ p.player.hit_stats.obp|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}/{% if p.player.hit_stats.plate_appearances > 0 %}{{ p.player.hit_stats.slg|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
+                                {% if p.player.hit_stats.PA > 0 %}{{ p.player.hit_stats.AVG|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}/{% if p.player.hit_stats.PA > 0 %}{{ p.player.hit_stats.OBP|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}/{% if p.player.hit_stats.PA > 0 %}{{ p.player.hit_stats.SLG|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
                             </td>
                             <td>
-                                {% if p.player.hit_stats.plate_appearances > 0 %}{{ p.player.hit_stats.k_pct|floatformat:1|default_if_none:"-" }}{% else %}-{% endif %} | {% if p.player.hit_stats.plate_appearances > 0 %}{{ p.player.hit_stats.bb_pct|floatformat:1|default_if_none:"-" }}{% else %}-{% endif %}
+                                {% if p.player.hit_stats.PA > 0 %}{{ p.player.hit_stats.SO|default_if_none:"-" }}{% else %}-{% endif %} | {% if p.player.hit_stats.PA > 0 %}{{ p.player.hit_stats.BB|default_if_none:"-" }}{% else %}-{% endif %}
                             </td>
                             <td>
-                                {% if p.player.hit_stats.plate_appearances > 0 %}{{ p.player.hit_stats.wrc_plus|default_if_none:"-" }}{% else %}-{% endif %}
+                                {% if p.player.hit_stats.PA > 0 %}{{ p.player.hit_stats.wRC+|default_if_none:"-" }}{% else %}-{% endif %}
                             </td>
                             {% endif %}
                             {% if p.player.position != "P" %}
                             <td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td>
                             {% else %}
-                            <td>{% if p.player.pit_stats.ip > 0 %}{{ p.player.pit_stats.gs|default_if_none:"-" }}{% else %}-{% endif %}</td>
-                            <td>{% if p.player.pit_stats.ip > 0 %}{{ p.player.pit_stats.ip|default_if_none:"-" }}{% else %}-{% endif %}</td>
-                            <td>{% if p.player.pit_stats.ip > 0 %}{{ p.player.pit_stats.k_9|floatformat:1|default_if_none:"-"  }}{% else %}-{% endif %} | {% if p.player.pit_stats.ip > 0 %}{{ p.player.pit_stats.bb_9|floatformat:1|default_if_none:"-"  }}{% else %}-{% endif %}</td>
-                            <td>{% if p.player.pit_stats.ip > 0 %}{{ p.player.pit_stats.era|floatformat:2|default_if_none:"-"  }}{% else %}-{% endif %}</td>
-                            <td>{% if p.player.pit_stats.ip > 0 %}{{ p.player.pit_stats.xfip|floatformat:2|default_if_none:"-"  }}{% else %}-{% endif %}</td>
-                            <td>{% if p.player.pit_stats.ip > 0 and p.player.pit_stats.siera %}{{ p.player.pit_stats.siera|floatformat:2|default_if_none:"-"  }}{% else %}-{% endif %}</td>
+                            <td>{% if p.player.pit_stats.IP > 0 %}{{ p.player.pit_stats.GS|default_if_none:"-" }}{% else %}-{% endif %}</td>
+                            <td>{% if p.player.pit_stats.IP > 0 %}{{ p.player.pit_stats.IP|default_if_none:"-" }}{% else %}-{% endif %}</td>
+                            <td>{% if p.player.pit_stats.IP > 0 %}{{ p.player.pit_stats.K/9|floatformat:1|default_if_none:"-"  }}{% else %}-{% endif %} | {% if p.player.pit_stats.IP > 0 %}{{ p.player.pit_stats.BB/9|floatformat:1|default_if_none:"-"  }}{% else %}-{% endif %}</td>
+                            <td>{% if p.player.pit_stats.IP > 0 %}{{ p.player.pit_stats.ERA|floatformat:2|default_if_none:"-"  }}{% else %}-{% endif %}</td>
+                            <td>{% if p.player.pit_stats.IP > 0 %}{{ p.player.pit_stats.xFIP|floatformat:2|default_if_none:"-"  }}{% else %}-{% endif %}</td>
+                            <td>{% if p.player.pit_stats.IP > 0 and p.player.pit_stats.SIERA %}{{ p.player.pit_stats.SIERA|floatformat:2|default_if_none:"-"  }}{% else %}-{% endif %}</td>
                             {% endif %}
                         </tr>
                     {% endfor %}

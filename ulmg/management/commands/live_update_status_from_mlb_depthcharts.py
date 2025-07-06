@@ -26,7 +26,7 @@ class Command(BaseCommand):
             player_stat_season = models.PlayerStatSeason.objects.create(
                 player=player,
                 season=season,
-                classification='1-majors',  # Default to majors, will be corrected by stats updates
+                classification='2-minors',  # Default to majors, will be corrected by stats updates
                 owned=player.is_owned,
                 carded=False  # Will be set by separate command
             )

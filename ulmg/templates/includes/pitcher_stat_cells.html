@@ -9,8 +9,8 @@
     {{ p.player.role_type|default_if_none:"-" }}
 </td>
 
-<td data-value="{% if p.level %}{{ p.season }} {{ p.level|default_if_none:"-" }}{% else %}-{% endif %}">
-    {% if p.level %}{{ p.season }} {{ p.level|default_if_none:"-" }}{% else %}-{% endif %}
+<td data-value="{% if p.clean_classification %}{{ p.season }} {{ p.clean_classification|default_if_none:"-" }}{% else %}-{% endif %}">
+    {% if p.clean_classification %}{{ p.season }} {{ p.clean_classification|default_if_none:"-" }}{% else %}-{% endif %}
 </td>
 
 <td data-value="{% if p.pitch_stats %}{% if p.pitch_stats.ip > 0 %}{{ p.pitch_stats.g|default_if_none:"-999" }}{% else %}-999{% endif %}{% else %}-999{% endif %}">{% if p.pitch_stats %}{% if p.pitch_stats.ip > 0 %}{{ p.pitch_stats.g|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}</td>

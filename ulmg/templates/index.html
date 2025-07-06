@@ -80,7 +80,7 @@
         </thead>
         <tbody>
         {% for p in position.list %}
-        <tr class="border-b border-gray-100">
+        <tr class="level-{{ p.clean_classification }} border-b border-gray-100">
             <td class="py-1">
                 {% if user.is_authenticated %}
                     <span id="player-{{ p.player.id }}" class="action-add-wishlist wishlist-btn" data-playerid="{{ p.player.id }}">+</span>
@@ -112,7 +112,7 @@
         </thead>
         <tbody>
         {% for p in pitchers %}
-        <tr class="border-b border-gray-100">
+        <tr class="level-{{ p.clean_classification }} border-b border-gray-100">
             <td class="py-1">
                 {% if user.is_authenticated %}
                     <span id="player-{{ p.player.id }}" class="action-add-wishlist wishlist-btn" data-playerid="{{ p.player.id }}">+</span>

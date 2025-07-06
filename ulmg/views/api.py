@@ -172,7 +172,7 @@ def player_action(request, playerid, action):
             player_stat_season = models.PlayerStatSeason.objects.create(
                 player=player,
                 season=current_season,
-                classification='1-majors',  # Default, will be corrected by stats updates
+                classification='1-mlb',  # Default, will be corrected by stats updates
                 owned=player.is_owned,
                 carded=False  # Will be set by separate command
             )

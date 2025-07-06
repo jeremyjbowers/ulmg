@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="p-4">
+    <h1 class="text-2xl font-bold mb-4">Debug Stats Information</h1>
+    
+    <div class="bg-gray-100 p-4 rounded mb-4">
+        <h2 class="text-lg font-bold mb-2">Database Counts</h2>
+        <ul class="space-y-1">
+            <li><strong>Total PlayerStatSeason records for 2025:</strong> {{ debug_info.total_playerstatseasons }}</li>
+            <li><strong>Major league classification only:</strong> {{ debug_info.majors_only }}</li>
+            <li><strong>Unowned major league players:</strong> {{ debug_info.unowned_majors }}</li>
+            <li><strong>Hitters with stats (PA >= 1):</strong> {{ debug_info.hitters_with_stats }}</li>
+            <li><strong>Pitchers with stats (G >= 1):</strong> {{ debug_info.pitchers_with_stats }}</li>
+        </ul>
+    </div>
+    
+    <div class="bg-gray-100 p-4 rounded">
+        <h2 class="text-lg font-bold mb-2">Sample PlayerStatSeason Records</h2>
+        {% for record in debug_info.sample_records %}
+        <div class="mb-2 p-2 bg-white rounded">
+            <strong>{{ record.player.name }}</strong> ({{ record.player.position }}) - {{ record.classification }}
+            <br>
+            Owned: {{ record.owned }} | Season: {{ record.season }} | Carded: {{ record.carded }}
+            {% if record.hit_stats %}
+            <br>Hit Stats: PA={{ record.hit_stats.PA|default:"None" }}
+            {% endif %}
+            {% if record.pitch_stats %}
+            <br>Pitch Stats: G={{ record.pitch_stats.g|default:"None" }}
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    
+    <div class="mt-4">
+        <a href="/" class="bg-blue-500 text-white px-4 py-2 rounded">Back to Index</a>
+    </div>
+</div>
+{% endblock %} 
