@@ -13,28 +13,28 @@ class Command(BaseCommand):
             wrc_buckets = {
                 "greater than 130": {
                     "wrc_threshold": 130,
-                    "plate_appearances": 0,
+                    "pa": 0,
                     "positions": set([]),
                     "players": [],
                     "num_players": 0
                 },
                 "greater than 120": {
                     "wrc_threshold": 120,
-                    "plate_appearances": 0,
+                    "pa": 0,
                     "positions": set([]),
                     "players": [],
                     "num_players": 0
                 },
                 "greater than 110": {
                     "wrc_threshold": 110,
-                    "plate_appearances": 0,
+                    "pa": 0,
                     "positions": set([]),
                     "players": [],
                     "num_players": 0
                 },
                 "greater than 100": {
                     "wrc_threshold": 100,
-                    "plate_appearances": 0,
+                    "pa": 0,
                     "positions": set([]),
                     "players": [],
                     "num_players": 0
@@ -60,7 +60,7 @@ class Command(BaseCommand):
                     player = stat_season.player
                     hit_stats = stat_season.hit_stats
                     
-                    data['plate_appearances'] += hit_stats.get('plate_appearances', 0)
+                    data['pa'] += hit_stats.get('pa', 0)
                     data['positions'].add(player.position)
                     data['num_players'] += 1
                     data['players'].append(player.name)
@@ -68,6 +68,6 @@ class Command(BaseCommand):
             team_row = [team.abbreviation]
 
             for bucket, data in wrc_buckets.items():
-                team_row.append(f"{data['plate_appearances']}")
+                team_row.append(f"{data['pa']}")
 
             print(",".join(team_row))

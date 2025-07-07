@@ -430,7 +430,7 @@ class S3DataManager:
     def __init__(self):
         self.s3_client = None
         self.bucket_name = getattr(settings, 'AWS_STORAGE_BUCKET_NAME', None)
-        self.data_prefix = 'fangraphs-data/'  # Prefix for all FanGraphs data in bucket
+        self.data_prefix = 'fg-stats/'  # Prefix for all FanGraphs data in bucket
         
         # Initialize S3 client if credentials are available
         try:
