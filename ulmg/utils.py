@@ -458,7 +458,7 @@ class S3DataManager:
     
     def upload_file(self, local_path, s3_key=None):
         """
-        Upload a local file to S3.
+        Upload a local file to S3 with public read access.
         
         Args:
             local_path: Path to local file (e.g., 'data/2025/fg_mlb_bat.json')
@@ -475,8 +475,13 @@ class S3DataManager:
             s3_key = self._get_s3_key(local_path)
         
         try:
-            self.s3_client.upload_file(local_path, self.bucket_name, s3_key)
-            logger.info(f"Uploaded {local_path} to s3://{self.bucket_name}/{s3_key}")
+            self.s3_client.upload_file(
+                local_path, 
+                self.bucket_name, 
+                s3_key,
+                ExtraArgs={'ACL': 'public-read'}
+            )
+            logger.info(f"Uploaded {local_path} to s3://{self.bucket_name}/{s3_key} (public read)")
             return True
         except Exception as e:
             logger.error(f"Failed to upload {local_path} to S3: {e}")
