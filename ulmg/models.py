@@ -623,9 +623,6 @@ class Player(BaseModel):
         else:
             self.is_ulmg_protected = False
 
-        if self.cannot_be_protected:
-            self.is_ulmg_protected = False
-
     def get_best_stat_season(self):
         """
         Get the best PlayerStatSeason for this player, sorted by newest season 
