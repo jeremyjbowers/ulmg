@@ -26,6 +26,7 @@ from ulmg.models import (
     Transaction,
 )
 
+# Configure admin site
 admin.site.site_title = "The ULMG"
 admin.site.site_header = "The ULMG: Admin"
 admin.site.index_title = "Administer The ULMG Website"

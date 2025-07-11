@@ -18,37 +18,134 @@
   </div>
   {% endif %}
 
-  <div class="border border-gray-300 p-3 mb-4 bg-gray-50">
-    <p class="text-sm">We use passwordless authentication. Enter your email address and we'll send you a magic link to log in!</p>
+  <!-- Login method tabs -->
+  <div class="mb-4">
+    <div class="flex border-b border-gray-300">
+      <button 
+        id="password-tab" 
+        class="flex-1 py-2 px-4 text-sm font-medium text-center border-b-2 border-black bg-gray-50"
+        onclick="switchTab('password')"
+      >
+        Password
+      </button>
+      <button 
+        id="magic-tab" 
+        class="flex-1 py-2 px-4 text-sm font-medium text-center border-b-2 border-transparent hover:bg-gray-50"
+        onclick="switchTab('magic')"
+      >
+        Magic Link
+      </button>
+    </div>
   </div>
 
-  <form method="post" class="space-y-4">
-    {% csrf_token %}
-    
-    <div>
-      <label for="email" class="block text-xs font-bold mb-1">Email Address</label>
-      <input 
-        type="email" 
-        name="email" 
-        id="email"
-        placeholder="your-email@example.com" 
-        required
-        class="w-full border border-gray-300 px-2 py-1 text-sm"
-      >
+  <!-- Password login form -->
+  <div id="password-form" class="login-form">
+    <div class="border border-gray-300 p-3 mb-4 bg-gray-50">
+      <p class="text-sm">Login with your email and password.</p>
     </div>
-    
-    <button 
-      type="submit" 
-      class="w-full bg-black text-white px-3 py-1 text-sm underline hover:bg-gray-800"
-    >
-      Send Magic Link
-    </button>
-    
-    <input type="hidden" name="next" value="{{ next }}">
-  </form>
 
-  <div class="mt-4 text-center">
-    <p class="text-xs text-gray-600">The magic link will be valid for 60 days and can be used multiple times.</p>
+    <form method="post" class="space-y-4">
+      {% csrf_token %}
+      <input type="hidden" name="login_method" value="password">
+      
+      <div>
+        <label for="email-password" class="block text-xs font-bold mb-1">Email Address</label>
+        <input 
+          type="email" 
+          name="email" 
+          id="email-password"
+          placeholder="your-email@example.com" 
+          required
+          class="w-full border border-gray-300 px-2 py-1 text-sm"
+        >
+      </div>
+      
+      <div>
+        <label for="password" class="block text-xs font-bold mb-1">Password</label>
+        <input 
+          type="password" 
+          name="password" 
+          id="password"
+          placeholder="Enter your password" 
+          required
+          class="w-full border border-gray-300 px-2 py-1 text-sm"
+        >
+      </div>
+      
+      <button 
+        type="submit" 
+        class="w-full bg-black text-white px-3 py-1 text-sm underline hover:bg-gray-800"
+      >
+        Login
+      </button>
+      
+      <input type="hidden" name="next" value="{{ next }}">
+    </form>
+  </div>
+
+  <!-- Magic link form -->
+  <div id="magic-form" class="login-form hidden">
+    <div class="border border-gray-300 p-3 mb-4 bg-gray-50">
+      <p class="text-sm">We'll send you a magic link to log in. No password required!</p>
+    </div>
+
+    <form method="post" class="space-y-4">
+      {% csrf_token %}
+      <input type="hidden" name="login_method" value="magic_link">
+      
+      <div>
+        <label for="email-magic" class="block text-xs font-bold mb-1">Email Address</label>
+        <input 
+          type="email" 
+          name="email" 
+          id="email-magic"
+          placeholder="your-email@example.com" 
+          required
+          class="w-full border border-gray-300 px-2 py-1 text-sm"
+        >
+      </div>
+      
+      <button 
+        type="submit" 
+        class="w-full bg-black text-white px-3 py-1 text-sm underline hover:bg-gray-800"
+      >
+        Send Magic Link
+      </button>
+      
+      <input type="hidden" name="next" value="{{ next }}">
+    </form>
+
+    <div class="mt-4 text-center">
+      <p class="text-xs text-gray-600">The magic link will be valid for 60 days and can be used multiple times.</p>
+    </div>
   </div>
 </div>
+
+<script>
+function switchTab(method) {
+  // Update tab styling
+  const passwordTab = document.getElementById('password-tab');
+  const magicTab = document.getElementById('magic-tab');
+  const passwordForm = document.getElementById('password-form');
+  const magicForm = document.getElementById('magic-form');
+  
+  if (method === 'password') {
+    passwordTab.classList.add('border-black', 'bg-gray-50');
+    passwordTab.classList.remove('border-transparent');
+    magicTab.classList.add('border-transparent');
+    magicTab.classList.remove('border-black', 'bg-gray-50');
+    
+    passwordForm.classList.remove('hidden');
+    magicForm.classList.add('hidden');
+  } else {
+    magicTab.classList.add('border-black', 'bg-gray-50');
+    magicTab.classList.remove('border-transparent');
+    passwordTab.classList.add('border-transparent');
+    passwordTab.classList.remove('border-black', 'bg-gray-50');
+    
+    magicForm.classList.remove('hidden');
+    passwordForm.classList.add('hidden');
+  }
+}
+</script>
 {% endblock %}

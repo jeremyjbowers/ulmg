@@ -64,10 +64,59 @@
     margin: 0;
   }
   
+  .messagelist .error {
+    font-size: 0.875rem;
+    margin: 0;
+    color: #dc2626;
+  }
+  
+  .messagelist .success {
+    font-size: 0.875rem;
+    margin: 0;
+    color: #059669;
+  }
+  
   h1 {
     font-size: 1.125rem;
     font-weight: bold;
     margin-bottom: 1rem;
+  }
+  
+  /* Tab styles */
+  .admin-tabs {
+    display: flex;
+    border-bottom: 1px solid #d1d5db;
+    margin-bottom: 1rem;
+  }
+  
+  .admin-tab {
+    flex: 1;
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-align: center;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    background: none;
+    border: none;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
+  }
+  
+  .admin-tab.active {
+    border-bottom-color: #000;
+    background-color: #f9fafb;
+  }
+  
+  .admin-tab:hover {
+    background-color: #f9fafb;
+  }
+  
+  .login-form {
+    display: none;
+  }
+  
+  .login-form.active {
+    display: block;
   }
 </style>
 {% endblock %}
@@ -80,34 +129,104 @@
 <div id="content-main">
   <h1>Admin Login</h1>
   
-  <div style="border: 1px solid #d1d5db; padding: 0.75rem; margin-bottom: 1rem; background-color: #f9fafb;">
-    <p style="font-size: 0.875rem; margin: 0;">Enter your email address and we'll send you a magic link to access the admin panel.</p>
+  <!-- Display messages -->
+  {% if messages %}
+    <div class="messagelist">
+      {% for message in messages %}
+        <div class="{% if message.tags == 'success' %}success{% elif message.tags == 'error' %}error{% else %}info{% endif %}">
+          {{ message }}
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+  
+  <!-- Login method tabs -->
+  <div class="admin-tabs">
+    <button id="password-tab" class="admin-tab active" onclick="switchTab('password')">
+      Password
+    </button>
+    <button id="magic-tab" class="admin-tab" onclick="switchTab('magic')">
+      Magic Link
+    </button>
   </div>
 
-  <form id="login-form" method="post">
-    {% csrf_token %}
-    <div class="form-row">
-      <label for="id_email" class="required">Email address:</label>
-      <input type="email" name="email" id="id_email" class="vTextField" required>
+  <!-- Password login form -->
+  <div id="password-form" class="login-form active">
+    <div style="border: 1px solid #d1d5db; padding: 0.75rem; margin-bottom: 1rem; background-color: #f9fafb;">
+      <p style="font-size: 0.875rem; margin: 0;">Login with your email and password.</p>
     </div>
-    
-    <div class="submit-row">
-      <input type="submit" value="Send Magic Link" class="default">
-    </div>
-  </form>
 
-  <div id="message" style="margin-top: 20px; display: none;">
-    <div class="messagelist">
-      <div class="info" id="message-text"></div>
+    <form method="post">
+      {% csrf_token %}
+      <div class="form-row">
+        <label for="id_email_password" class="required">Email address:</label>
+        <input type="email" name="email" id="id_email_password" class="vTextField" required>
+      </div>
+      
+      <div class="form-row">
+        <label for="id_password" class="required">Password:</label>
+        <input type="password" name="password" id="id_password" class="vTextField" required>
+      </div>
+      
+      <div class="submit-row">
+        <input type="submit" value="Login" class="default">
+      </div>
+      
+      <input type="hidden" name="next" value="{{ next }}">
+    </form>
+  </div>
+
+  <!-- Magic link form -->
+  <div id="magic-form" class="login-form">
+    <div style="border: 1px solid #d1d5db; padding: 0.75rem; margin-bottom: 1rem; background-color: #f9fafb;">
+      <p style="font-size: 0.875rem; margin: 0;">Enter your email address and we'll send you a magic link to access the admin panel.</p>
+    </div>
+
+    <form id="magic-login-form" method="post">
+      {% csrf_token %}
+      <div class="form-row">
+        <label for="id_email_magic" class="required">Email address:</label>
+        <input type="email" name="email" id="id_email_magic" class="vTextField" required>
+      </div>
+      
+      <div class="submit-row">
+        <input type="submit" value="Send Magic Link" class="default">
+      </div>
+    </form>
+
+    <div id="message" style="margin-top: 20px; display: none;">
+      <div class="messagelist">
+        <div class="info" id="message-text"></div>
+      </div>
     </div>
   </div>
 
   <script>
+    function switchTab(method) {
+      // Update tab styling
+      const passwordTab = document.getElementById('password-tab');
+      const magicTab = document.getElementById('magic-tab');
+      const passwordForm = document.getElementById('password-form');
+      const magicForm = document.getElementById('magic-form');
+      
+      if (method === 'password') {
+        passwordTab.classList.add('active');
+        magicTab.classList.remove('active');
+        passwordForm.classList.add('active');
+        magicForm.classList.remove('active');
+      } else {
+        magicTab.classList.add('active');
+        passwordTab.classList.remove('active');
+        magicForm.classList.add('active');
+        passwordForm.classList.remove('active');
+      }
+    }
+
     $(document).ready(function() {
-      $('#login-form').on('submit', function(e) {
+      $('#magic-login-form').on('submit', function(e) {
         e.preventDefault();
         
-        var email = $('#id_email').val();
+        var email = $('#id_email_magic').val();
         if (!email) {
           alert('Please enter your email address.');
           return;
@@ -123,7 +242,7 @@
           success: function(response) {
             $('#message-text').text(response.message || 'Magic link sent! Check your email.');
             $('#message').show();
-            $('#login-form').hide();
+            $('#magic-login-form').hide();
           },
           error: function(xhr) {
             var response = JSON.parse(xhr.responseText);

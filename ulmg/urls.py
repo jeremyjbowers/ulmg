@@ -5,9 +5,13 @@ from django.contrib.auth import views as auth_views
 from ulmg import views
 
 urlpatterns = [
+    # Custom admin login
+    path("admin/login/", views.auth.admin_login_view, name="admin:login"),
+    
+    # Use default admin site
     path("admin/", admin.site.urls),
     
-    # Magic link authentication URLs
+    # Authentication URLs - supports both password and magic link
     path("accounts/login/", views.auth.magic_login_request, name="login"),
     path("accounts/magic-verify/<str:token>/", views.auth.magic_login_verify, name="magic_login_verify"),
     path("admin/magic-login/", views.auth.admin_magic_login_request, name="admin_magic_login_request"),

@@ -1,7 +1,7 @@
 import datetime
 import logging
 from django.shortcuts import render, redirect
-from django.contrib.auth import login
+from django.contrib.auth import login, authenticate
 from django.contrib.auth.models import User
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -17,45 +17,79 @@ logger = logging.getLogger(__name__)
 
 def magic_login_request(request):
     """
-    View to request a magic link. User enters their email.
+    View to handle both password and magic link authentication.
     """
     if request.method == 'POST':
         email = request.POST.get('email', '').strip().lower()
+        password = request.POST.get('password', '')
+        login_method = request.POST.get('login_method', 'password')
         
         if not email:
             messages.error(request, 'Please enter your email address.')
             return render(request, 'registration/login.html')
         
-        try:
-            # First try to find user by email field
-            user = User.objects.get(email=email)
-        except User.DoesNotExist:
-            # Then try to find owner by email and get associated user
+        # Handle password authentication
+        if login_method == 'password' and password:
+            # Try to find user by email
+            user = None
             try:
-                owner = models.Owner.objects.get(email=email)
-                user = owner.user
-            except models.Owner.DoesNotExist:
-                # Don't reveal whether email exists or not for security
-                messages.success(
-                    request, 
-                    'If that email address is in our system, you will receive a magic link shortly.'
-                )
+                # First try to find user by email field
+                user = User.objects.get(email=email)
+            except User.DoesNotExist:
+                # Then try to find owner by email and get associated user
+                try:
+                    owner = models.Owner.objects.get(email=email)
+                    user = owner.user
+                except models.Owner.DoesNotExist:
+                    pass
+            
+            if user:
+                # Authenticate with username and password
+                authenticated_user = authenticate(request, username=user.username, password=password)
+                if authenticated_user:
+                    login(request, authenticated_user)
+                    messages.success(request, 'You have been logged in successfully!')
+                    next_url = request.POST.get('next', '/')
+                    return redirect(next_url)
+                else:
+                    messages.error(request, 'Invalid email or password.')
+                    return render(request, 'registration/login.html')
+            else:
+                messages.error(request, 'Invalid email or password.')
                 return render(request, 'registration/login.html')
         
-        # Create magic link token
-        magic_link = models.MagicLinkToken.create_for_user(user)
-        
-        # Build magic link URL
-        magic_url = request.build_absolute_uri(
-            reverse('magic_login_verify', kwargs={'token': magic_link.token})
-        )
-        
-        # Send email
-        email_result = utils.send_email(
-            from_email="ULMG <noreply@theulmg.com>",
-            to_emails=[email],
-            subject="Your ULMG Magic Link",
-            text=f"""
+        # Handle magic link authentication
+        elif login_method == 'magic_link':
+            try:
+                # First try to find user by email field
+                user = User.objects.get(email=email)
+            except User.DoesNotExist:
+                # Then try to find owner by email and get associated user
+                try:
+                    owner = models.Owner.objects.get(email=email)
+                    user = owner.user
+                except models.Owner.DoesNotExist:
+                    # Don't reveal whether email exists or not for security
+                    messages.success(
+                        request, 
+                        'If that email address is in our system, you will receive a magic link shortly.'
+                    )
+                    return render(request, 'registration/login.html')
+            
+            # Create magic link token
+            magic_link = models.MagicLinkToken.create_for_user(user)
+            
+            # Build magic link URL
+            magic_url = request.build_absolute_uri(
+                reverse('magic_login_verify', kwargs={'token': magic_link.token})
+            )
+            
+            # Send email
+            email_result = utils.send_email(
+                from_email="ULMG <noreply@theulmg.com>",
+                to_emails=[email],
+                subject="Your ULMG Magic Link",
+                text=f"""
 Hi there,
 
 Click the link below to log in to ULMG. This link will work for 60 days.
@@ -66,17 +100,70 @@ If you didn't request this, you can safely ignore this email.
 
 Thanks,
 The ULMG Team
-            """.strip()
-        )
+                """.strip()
+            )
+            
+            messages.success(
+                request, 
+                'If that email address is in our system, you will receive a magic link shortly.'
+            )
+            
+            return render(request, 'registration/login.html')
         
-        messages.success(
-            request, 
-            'If that email address is in our system, you will receive a magic link shortly.'
-        )
-        
-        return render(request, 'registration/login.html')
+        else:
+            messages.error(request, 'Please enter your password or request a magic link.')
+            return render(request, 'registration/login.html')
     
     return render(request, 'registration/login.html')
+
+
+def admin_login_view(request):
+    """
+    Custom admin login view that handles both password and magic link authentication.
+    """
+    if request.method == 'POST':
+        email = request.POST.get('email', '').strip().lower()
+        password = request.POST.get('password', '')
+        
+        if email and password:
+            # Handle password authentication
+            user = None
+            try:
+                # First try to find user by email field
+                user = User.objects.get(email=email)
+            except User.DoesNotExist:
+                # Then try to find owner by email and get associated user
+                try:
+                    owner = models.Owner.objects.get(email=email)
+                    user = owner.user
+                except models.Owner.DoesNotExist:
+                    pass
+            
+            if user and user.is_staff:
+                # Authenticate with username and password
+                authenticated_user = authenticate(request, username=user.username, password=password)
+                if authenticated_user:
+                    login(request, authenticated_user)
+                    messages.success(request, 'You have been logged in successfully!')
+                    
+                    # Redirect to the admin index or the 'next' parameter
+                    next_url = request.POST.get('next') or request.GET.get('next') or '/admin/'
+                    return redirect(next_url)
+                else:
+                    messages.error(request, 'Invalid email or password.')
+            else:
+                messages.error(request, 'Invalid email or password.')
+        else:
+            messages.error(request, 'Please enter both email and password.')
+    
+    # For GET requests or failed authentication, show the login form
+    context = {
+        'title': 'Log in',
+        'app_path': request.get_full_path(),
+        'username': request.user.get_username(),
+    }
+    
+    return render(request, 'admin/login.html', context)
 
 
 def magic_login_verify(request, token):
