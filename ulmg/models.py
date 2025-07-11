@@ -636,6 +636,39 @@ class Player(BaseModel):
             player=self
         ).order_by('-season', 'classification').first()
 
+    def current_mlb_org(self):
+        """
+        Get the current season's MLB organization for this player.
+        Returns None if no current season data exists.
+        """
+        import datetime
+        current_season = datetime.datetime.now().year
+        current_status = PlayerStatSeason.objects.filter(
+            player=self, 
+            season=current_season
+        ).first()
+        return current_status.mlb_org if current_status else None
+
+    def current_season_status(self):
+        """
+        Get the current season's PlayerStatSeason for this player.
+        Returns None if no current season data exists.
+        """
+        import datetime
+        current_season = datetime.datetime.now().year
+        return PlayerStatSeason.objects.filter(
+            player=self, 
+            season=current_season
+        ).first()
+
+    def is_carded(self):
+        """
+        Check if player is carded in the current season.
+        Returns False if no current season data exists.
+        """
+        current_status = self.current_season_status()
+        return current_status.carded if current_status else False
+
     def team_display(self):
         if self.team:
             return self.team.abbreviation
