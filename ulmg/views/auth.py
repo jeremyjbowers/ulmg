@@ -1,4 +1,5 @@
 import datetime
+import logging
 from django.shortcuts import render, redirect
 from django.contrib.auth import login
 from django.contrib.auth.models import User
@@ -10,6 +11,8 @@ from django.conf import settings
 from django.urls import reverse
 
 from ulmg import models, utils
+
+logger = logging.getLogger(__name__)
 
 
 def magic_login_request(request):
@@ -80,6 +83,14 @@ def magic_login_verify(request, token):
     """
     View to verify a magic link token and log the user in.
     """
+    user_agent = request.META.get('HTTP_USER_AGENT', '')
+    is_mobile = any(mobile_ua in user_agent.lower() for mobile_ua in ['mobile', 'iphone', 'android', 'ipad'])
+    
+    logger.info(f"Magic link verification attempt - Token: {token[:10]}..., Mobile: {is_mobile}, User Agent: {user_agent[:50]}...")
+    
+    # Log all GET parameters for debugging
+    logger.info(f"GET parameters: {dict(request.GET)}")
+    
     user = models.MagicLinkToken.authenticate(token)
     
     if user:
@@ -88,8 +99,10 @@ def magic_login_verify(request, token):
         
         # Redirect to 'next' parameter if provided, otherwise to home
         next_url = request.GET.get('next', '/')
+        logger.info(f"Successful login - User: {user.username}, Next URL: {next_url}, Mobile: {is_mobile}, Token: {token[:10]}...")
         return redirect(next_url)
     else:
+        logger.warning(f"Failed login attempt - Token: {token[:10]}..., Mobile: {is_mobile}, User Agent: {user_agent[:100]}...")
         messages.error(
             request, 
             'This magic link is invalid or has expired. Please request a new one.'

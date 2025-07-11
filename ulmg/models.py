@@ -1,6 +1,7 @@
 import datetime
 import os
 import secrets
+import logging
 
 from dateutil.relativedelta import *
 from django.contrib.auth.models import User
@@ -12,6 +13,8 @@ from django.dispatch import receiver
 from django.conf import settings
 from django.utils import timezone
 from nameparser import HumanName
+
+logger = logging.getLogger(__name__)
 
 from ulmg import utils
 from ulmg.constants import HITTING_STATS, PITCHING_STATS, STAT_THRESHOLDS
@@ -79,11 +82,24 @@ class MagicLinkToken(BaseModel):
             magic_link = cls.objects.get(
                 token=token,
                 active=True,
-                used=False,
                 expires_at__gt=timezone.now()
             )
+            
+            # For mobile compatibility, allow recently used tokens (within 5 minutes)
+            if magic_link.used:
+                if magic_link.last_modified and (timezone.now() - magic_link.last_modified).total_seconds() < 300:
+                    # Token was used recently, allow it for mobile compatibility
+                    logger.info(f"Magic link reuse allowed for mobile compatibility - User: {magic_link.user.username}, Token: {token[:10]}...")
+                    return magic_link.user
+                else:
+                    # Token was used too long ago, reject it
+                    logger.info(f"Magic link reuse rejected (too old) - User: {magic_link.user.username}, Token: {token[:10]}...")
+                    return None
+            
+            # First use - mark as used
             magic_link.used = True
             magic_link.save()
+            logger.info(f"Magic link first use - User: {magic_link.user.username}, Token: {token[:10]}...")
             return magic_link.user
         except cls.DoesNotExist:
             return None
@@ -346,24 +362,21 @@ class Player(BaseModel):
         max_length=255, blank=True, null=True, choices=OTHER_PRO_LEAGUES
     )
 
-    # ULMG ROSTERS - MOVED TO PlayerStatSeason
-    # is_mlb_roster = models.BooleanField(default=False)
-    # is_aaa_roster = models.BooleanField(default=False)
-    # is_35man_roster = models.BooleanField(default=False)
-
     # ULMG STATUS
-    is_reserve = models.BooleanField(default=False)
-    is_1h_p = models.BooleanField(default=False)
-    is_1h_c = models.BooleanField(default=False)
-    is_1h_pos = models.BooleanField(default=False)
-    is_2h_p = models.BooleanField(default=False)
-    is_2h_c = models.BooleanField(default=False)
-    is_2h_pos = models.BooleanField(default=False)
-    is_2h_draft = models.BooleanField(default=False)
-    is_protected = models.BooleanField(default=False)
-    cannot_be_protected = models.BooleanField(default=False)
-    covid_protected = models.BooleanField(default=False)
-    is_trade_block = models.BooleanField(default=False)
+    is_ulmg_reserve = models.BooleanField(default=False)
+    is_ulmg_1h_p = models.BooleanField(default=False)
+    is_ulmg_1h_c = models.BooleanField(default=False)
+    is_ulmg_1h_pos = models.BooleanField(default=False)
+    is_ulmg_2h_p = models.BooleanField(default=False)
+    is_ulmg_2h_c = models.BooleanField(default=False)
+    is_ulmg_2h_pos = models.BooleanField(default=False)
+    is_ulmg_2h_draft = models.BooleanField(default=False)
+    is_ulmg_protected = models.BooleanField(default=False)
+    is_ulmg_trade_block = models.BooleanField(default=False)
+    is_ulmg_35man_roster = models.BooleanField(default=False)
+    is_ulmg_mlb_roster = models.BooleanField(default=False)
+    is_ulmg_aaa_roster = models.BooleanField(default=False)
+    is_ulmg_trade_block = models.BooleanField(default=False)
 
     # CAREER STATS (for level)
     cs_pa = models.IntegerField(blank=True, null=True)
@@ -374,20 +387,8 @@ class Player(BaseModel):
     # DEFENSE
     defense = ArrayField(models.CharField(max_length=10), blank=True, null=True)
 
-    # Grumble grumble
+    # Track seasons a player has been carded for as an array of integers.
     carded_seasons = ArrayField(models.IntegerField(), blank=True, null=True)
-
-    # STATS - DEPRECATED: Use PlayerStatSeason model instead
-    # stats = models.JSONField(null=True, blank=True)  # Removed - use PlayerStatSeason
-
-    # STRAT RATINGS
-    # here's the schema for strat ratings
-    # year (current), type (hit/pitch)
-    # pitching and hitting stats are in separate dictionaries.
-    #
-    # Not used yet.
-    #
-    strat_ratings = models.JSONField(null=True, blank=True)
 
     class Meta:
         ordering = ["last_name", "first_name", "level", "position"]
@@ -403,9 +404,6 @@ class Player(BaseModel):
             # Ownership filtering combined with other common filters
             models.Index(fields=['team', 'level']),
             models.Index(fields=['team', 'position']),
-            # Draft eligibility and protection status
-            models.Index(fields=['cannot_be_protected']),
-            models.Index(fields=['covid_protected']),
             # Player ID crosswalks for data import/sync
             models.Index(fields=['mlbam_id']),
             models.Index(fields=['fg_id']),
@@ -431,119 +429,14 @@ class Player(BaseModel):
             models.Index(fields=['team'], condition=models.Q(covid_protected=True), name='idx_covid_protected_play'),
             
             # Trade block optimization (if used frequently)
-            models.Index(fields=['is_trade_block'], condition=models.Q(is_trade_block=True), name='idx_trade_block_play'),
-            models.Index(fields=['team', 'is_trade_block']),
+            models.Index(fields=['is_ulmg_trade_block'], condition=models.Q(is_ulmg_trade_block=True), name='idx_trade_block_play'),
+            models.Index(fields=['team', 'is_ulmg_trade_block']),
         ]
 
     def __unicode__(self):
         if self.get_team():
             return "%s (%s)" % (self.name, self.get_team().abbreviation)
         return self.name
-
-    def is_mlb(self):
-        # Check if player has any MLB-level stats in PlayerStatSeason
-        return PlayerStatSeason.objects.filter(
-            player=self, 
-            classification='1-mlb'
-        ).exists()
-    
-    def is_carded(self):
-        # Check if player has any carded seasons in PlayerStatSeason
-        return PlayerStatSeason.objects.filter(
-            player=self, 
-            carded=True
-        ).exists()
-    
-    def current_season_status(self):
-        """Get the most recent season's status fields."""
-        from datetime import datetime
-        current_season = datetime.now().year
-        
-        # Use prefetched data if available (more efficient)
-        if hasattr(self, 'current_season_stats'):
-            # Return the first (highest classification) from prefetched data
-            return self.current_season_stats[0] if self.current_season_stats else None
-        
-        # Fallback to database query if not prefetched
-        return PlayerStatSeason.objects.filter(
-            player=self,
-            season=current_season
-        ).order_by('-classification').first()
-    
-    def is_injured(self):
-        """Check if player is currently injured."""
-        current_status = self.current_season_status()
-        return current_status.is_injured if current_status else False
-    
-    def current_mlb_org(self):
-        """Get player's current MLB organization."""
-        current_status = self.current_season_status()
-        return current_status.mlb_org if current_status else None
-
-    def is_35man_roster(self):
-        """Check if player is on 35-man roster for current season."""
-        current_status = self.current_season_status()
-        return current_status.is_35man_roster if current_status else False
-
-    def is_mlb_roster(self):
-        """Check if player is on MLB roster for current season."""
-        current_status = self.current_season_status()
-        return current_status.is_mlb_roster if current_status else False
-
-    def is_aaa_roster(self):
-        """Check if player is on AAA roster for current season."""
-        current_status = self.current_season_status()
-        return current_status.is_aaa_roster if current_status else False
-
-    def roster_status(self):
-        """Get the current season's roster status."""
-        current_status = self.current_season_status()
-        return current_status.roster_status if current_status else None
-
-    def role_type(self):
-        """Get the current season's role type."""
-        current_status = self.current_season_status()
-        return current_status.role_type if current_status else None
-
-    def role(self):
-        """Get the current season's role."""
-        current_status = self.current_season_status()
-        return current_status.role if current_status else None
-
-    def mlb_org(self):
-        """Get the current season's MLB organization (for template compatibility)."""
-        return self.current_mlb_org()
-
-    def player_level_class(self):
-        """Get the current season's player level class for CSS styling."""
-        current_status = self.current_season_status()
-        if current_status:
-            return current_status.player_level_class()
-        return 'amateur'  # Default for players with no current season data
-
-    def is_on_il(self):
-        """Check if player is on injured list for current season."""
-        current_status = self.current_season_status()
-        return current_status.is_on_il() if current_status else False
-
-    def role_type_class(self):
-        """Determine CSS class based on role_type for background colors."""
-        role_type = self.role_type()
-        
-        if role_type:
-            role_type_upper = role_type.upper()
-            # Check for IL first (highest priority)
-            if 'IL' in role_type_upper:
-                return 'player-role-il'
-            # Check for MiLB
-            elif 'MILB' in role_type_upper:
-                return 'player-role-milb'
-            else:
-                # Has role_type but not IL or MiLB
-                return 'player-role-default'
-        else:
-            # Blank/empty role_type
-            return 'player-role-blank'
 
     def latest_hit_stats(self):
         stats = PlayerStatSeason.objects.filter(player=self).first()
@@ -609,19 +502,20 @@ class Player(BaseModel):
             "is_owned": self.is_owned,
             "is_carded": self.is_carded(),
             "is_amateur": current_status.is_amateur if current_status else False,
-            "is_mlb_roster": current_status.is_mlb_roster if current_status else False,
+            "is_ulmg_mlb_roster": current_status.is_ulmg_mlb_roster if current_status else False,
             "is_aaa_roster": current_status.is_aaa_roster if current_status else False,
             "is_35man_roster": current_status.is_35man_roster if current_status else False,
-            "is_reserve": self.is_reserve,
-            "is_1h_p": self.is_1h_p,
-            "is_1h_c": self.is_1h_c,
-            "is_1h_pos": self.is_1h_pos,
-            "is_2h_p": self.is_2h_p,
-            "is_2h_c": self.is_2h_c,
-            "is_2h_pos": self.is_2h_pos,
-            "is_2h_draft": self.is_2h_draft,
-            "is_protected": self.is_protected,
-            "cannot_be_protected": self.cannot_be_protected,
+            "is_ulmg_reserve": self.is_ulmg_reserve,
+            "is_ulmg_1h_p": self.is_ulmg_1h_p,
+            "is_ulmg_1h_c": self.is_ulmg_1h_c,
+            "is_ulmg_1h_pos": self.is_ulmg_1h_pos,
+            "is_ulmg_2h_p": self.is_ulmg_2h_p,
+            "is_ulmg_2h_c": self.is_ulmg_2h_c,
+            "is_ulmg_2h_pos": self.is_ulmg_2h_pos,
+            "is_ulmg_2h_draft": self.is_ulmg_2h_draft,
+            "is_ulmg_protected": self.is_ulmg_protected,
+            "is_ulmg_mlb_roster": self.is_ulmg_mlb_roster,
+            "is_ulmg_aaa_roster": self.is_ulmg_aaa_roster,
             "team": None,
         }
 
@@ -715,22 +609,22 @@ class Player(BaseModel):
     def set_protected(self):
         # Set protections
         if (
-            self.is_reserve
-            or self.is_1h_p
-            or self.is_1h_c
-            or self.is_1h_pos
-            or self.is_2h_p
-            or self.is_2h_c
-            or self.is_2h_pos
-            or self.is_mlb_roster
-            or self.is_protected
+            self.is_ulmg_reserve
+            or self.is_ulmg_1h_p
+            or self.is_ulmg_1h_c
+            or self.is_ulmg_1h_pos
+            or self.is_ulmg_2h_p
+            or self.is_ulmg_2h_c
+            or self.is_ulmg_2h_pos
+            or self.is_ulmg_mlb_roster
+            or self.is_ulmg_protected
         ):
-            self.is_protected = True
+            self.is_ulmg_protected = True
         else:
-            self.is_protected = False
+            self.is_ulmg_protected = False
 
         if self.cannot_be_protected:
-            self.is_protected = False
+            self.is_ulmg_protected = False
 
     def get_best_stat_season(self):
         """
@@ -810,7 +704,7 @@ class PlayerStatSeason(BaseModel):
     is_bullpen = models.BooleanField(default=False)
     is_mlb = models.BooleanField(default=False)
     is_amateur = models.BooleanField(default=False)
-    is_mlb_roster = models.BooleanField(default=False)
+    is_ulmg_mlb_roster = models.BooleanField(default=False)
     is_aaa_roster = models.BooleanField(default=False)
     is_35man_roster = models.BooleanField(default=False)
 
@@ -967,7 +861,7 @@ class PlayerStatSeason(BaseModel):
             
             # Protection and roster status queries
             models.Index(fields=['season', 'is_35man_roster']),
-            models.Index(fields=['season', 'is_mlb_roster']),
+            models.Index(fields=['season', 'is_ulmg_mlb_roster']),
             models.Index(fields=['season', 'owned', 'is_35man_roster']),
             
             # READ-HEAVY OPTIMIZATIONS (perfect for low-write workloads)
@@ -985,7 +879,7 @@ class PlayerStatSeason(BaseModel):
             models.Index(fields=['season', 'classification'], condition=models.Q(pitch_stats__isnull=False), name='idx_pitchers_with_stats'),
             
             # Roster status optimizations (frequently queried in team views)
-            models.Index(fields=['season', 'is_mlb_roster', 'is_aaa_roster']),
+            models.Index(fields=['season', 'is_ulmg_mlb_roster', 'is_aaa_roster']),
             models.Index(fields=['season', 'roster_status']),
             models.Index(fields=['season', 'mlb_org']),
             
@@ -1315,17 +1209,17 @@ class TradeReceipt(BaseModel):
                 team = instance.team
                 for p in pk_set:
                     obj = Player.objects.get(id=p)
-                    obj.is_reserve = False
-                    obj.is_1h_c = False
-                    obj.is_1h_p = False
-                    obj.is_1h_pos = False
-                    obj.is_2h_c = False
-                    obj.is_2h_p = False
-                    obj.is_2h_pos = False
+                    obj.is_ulmg_reserve = False
+                    obj.is_ulmg_1h_c = False
+                    obj.is_ulmg_1h_p = False
+                    obj.is_ulmg_1h_pos = False
+                    obj.is_ulmg_2h_c = False
+                    obj.is_ulmg_2h_p = False
+                    obj.is_ulmg_2h_pos = False
                     obj.is_35man_roster = False
                     obj.is_mlb = False
                     obj.is_aaa_roster = False
-                    obj.is_protected = False
+                    obj.is_ulmg_protected = False
                     obj.is_owned = True
                     obj.team = instance.team
                     obj.save()

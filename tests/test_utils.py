@@ -1,37 +1,27 @@
-import pytest
-
+from django.test import TestCase
 from ulmg import utils
 
 
-def test_normalized_pos():
-    for p in ["1B", "2B", "3B", "SS"]:
-        assert utils.normalize_pos(p) == "IF"
-        assert utils.normalize_pos(p.lower()) == "IF"
+class UtilsTestCase(TestCase):
+    """Test utility functions"""
+    
+    def test_normalized_pos(self):
+        for p in ["1B", "2B", "3B", "SS"]:
+            self.assertEqual(utils.normalize_pos(p), "IF")
+            self.assertEqual(utils.normalize_pos(p.lower()), "IF")
 
-    for p in ["RF", "CF", "LF"]:
-        assert utils.normalize_pos(p) == "OF"
-        assert utils.normalize_pos(p.lower()) == "OF"
+        for p in ["RF", "CF", "LF"]:
+            self.assertEqual(utils.normalize_pos(p), "OF")
+            self.assertEqual(utils.normalize_pos(p.lower()), "OF")
 
+    def test_str_to_bool(self):
+        for b in ["y", "yes", "t", "true"]:
+            self.assertEqual(utils.str_to_bool(b), True)
+            self.assertEqual(utils.str_to_bool(b.upper()), True)
 
-"""
-def str_to_bool(possible_bool):
-    if possible_bool:
-        if possible_bool.lower() in ["y", "yes", "t", "true"]:
-            return True
-        if possible_bool.lower() in ["n", "no", "f", "false"]:
-            return False
-    return None
-"""
+        for b in ["n", "no", "f", "false"]:
+            self.assertEqual(utils.str_to_bool(b), False)
+            self.assertEqual(utils.str_to_bool(b.upper()), False)
 
-
-def test_str_to_bool():
-    for b in ["y", "yes", "t", "true"]:
-        assert (utils.str_to_bool(b)) == True
-        assert (utils.str_to_bool(b.upper())) == True
-
-    for b in ["n", "no", "f", "false"]:
-        assert (utils.str_to_bool(b)) == False
-        assert (utils.str_to_bool(b.upper())) == False
-
-    for b in ["nope", "yup", "yessir", 12345, True]:
-        assert (utils.str_to_bool(b)) == None
+        for b in ["nope", "yup", "yessir", 12345, True]:
+            self.assertEqual(utils.str_to_bool(b), None)

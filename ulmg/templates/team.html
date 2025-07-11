@@ -78,19 +78,20 @@
             <td class="text-center py-1">{{ p.age|default_if_none:"-" }}</td>
             <td class="text-center py-1">{{ p.level|default_if_none:"" }}</td>
             <td class="text-center py-1 text-xs">
-                {% if p.is_reserve %}ASR {% endif %}
-                {% if p.is_1h_pos %}HIT {% endif %}
-                {% if p.is_1h_c %}C {% endif %}
-                {% if p.is_1h_p %}P {% endif %}
-                {% if p.is_35man_roster %}40-man {% endif %}
-                {% if p.is_mlb_roster %}<strong>MLB</strong> {% endif %}
-                {% if p.is_aaa_roster %}AAA {% endif %}
-                {% if p.is_2h_draft %}2H{% endif %}
+                {% if p.is_ulmg_reserve %}ASR {% endif %}
+                {% if p.is_ulmg_1h_pos %}HIT {% endif %}
+                {% if p.is_ulmg_1h_c %}C {% endif %}
+                {% if p.is_ulmg_35man_roster %}40-man {% endif %}
+                {% if p.is_ulmg_mlb_roster %}<strong>MLB</strong> {% endif %}
+                {% if p.is_ulmg_aaa_roster %}AAA {% endif %}
+                {% if p.is_ulmg_2h_draft %}2H{% endif %}
+                {% if p.is_ulmg_2h_pos %}HIT {% endif %}
+                {% if p.is_ulmg_2h_c %}C {% endif %}
             </td>
             {% include "includes/hitter_stat_cells_player.html" %}
             {% if own_team and protect_tab %}
             <td class="text-center py-1">
-                {% if p.is_protected %}
+                {% if p.is_ulmg_protected %}
                 <a href="#" class="text-red underline player-action" data-action="unprotect" data-playerid="{{ p.id }}">✗</a>
                 {% else %}
                 <a href="#" class="text-green underline player-action" data-action="protect" data-playerid="{{ p.id }}">✓</a>
@@ -130,19 +131,18 @@
             <td class="text-center py-1">{{ p.age|default_if_none:"-" }}</td>
             <td class="text-center py-1">{{ p.level|default_if_none:"" }}</td>
             <td class="text-center py-1 text-xs">
-                {% if p.is_reserve %}ASR {% endif %}
-                {% if p.is_1h_pos %}HIT {% endif %}
-                {% if p.is_1h_c %}C {% endif %}
-                {% if p.is_1h_p %}P {% endif %}
-                {% if p.is_mlb_roster %}<strong>MLB</strong> {% endif %}
-                {% if p.is_aaa_roster %}AAA {% endif %}
-                {% if p.is_2h_draft %}2H {% endif %}
-                {% if p.is_35man_roster %}40-man{% endif %}
+                {% if p.is_ulmg_reserve %}ASR {% endif %}
+                {% if p.is_ulmg_1h_p %}P {% endif %}
+                {% if p.is_ulmg_mlb_roster %}<strong>MLB</strong> {% endif %}
+                {% if p.is_ulmg_aaa_roster %}AAA {% endif %}
+                {% if p.is_ulmg_2h_draft %}2H {% endif %}
+                {% if p.is_ulmg_35man_roster %}40-man{% endif %}
+                {% if p.is_ulmg_2h_p %}P {% endif %}
             </td>
             {% include "includes/pitcher_stat_cells_player.html" %}
             {% if own_team and protect_tab %}
             <td class="text-center py-1">
-                {% if p.is_protected %}
+                {% if p.is_ulmg_protected %}
                 <a href="#" class="text-red underline player-action" data-action="unprotect" data-playerid="{{ p.id }}">✗</a>
                 {% else %}
                 <a href="#" class="text-green underline player-action" data-action="protect" data-playerid="{{ p.id }}">✓</a>
