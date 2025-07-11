@@ -28,7 +28,7 @@ def index(request):
     context = utils.build_context(request)
     context["teams"] = models.Team.objects.all()
 
-    season = 2025
+    season = settings.CURRENT_SEASON
 
     # Get PlayerStatSeason objects for unowned 2025 MLB major league players WITH ACTUAL STATS
     # READ-HEAVY OPTIMIZATION: Use select_related to preload player data and avoid N+1 queries
@@ -134,7 +134,7 @@ def team_detail(request, abbreviation):
         context["own_team"] = True
 
     # Get current season for PlayerStatSeason queries
-    current_season = datetime.now().year
+    season = settings.CURRENT_SEASON
 
     # Get team players with current season data efficiently
     # This gets all players on the team, whether they have current season data or not
@@ -144,25 +144,23 @@ def team_detail(request, abbreviation):
         # Prefetch current season PlayerStatSeason data (ordered by classification)
         Prefetch(
             'playerstatseason_set',
-            queryset=models.PlayerStatSeason.objects.filter(season=current_season).order_by('classification'),
+            queryset=models.PlayerStatSeason.objects.filter(season=season).order_by('classification'),
             to_attr='current_season_stats'
         )
     )
     
     # Count roster statuses using optimized PlayerStatSeason queries
     # Use direct queries for better performance
-    context["35_roster_count"] = models.PlayerStatSeason.objects.filter(
-        player__team=context["team"], 
-        season=current_season,
-        is_35man_roster=True
+    context["35_roster_count"] = models.Player.objects.filter(
+        team=context["team"], 
+        is_ulmg_35man_roster=True
     ).count()
     
-    context["mlb_roster_count"] = models.PlayerStatSeason.objects.filter(
-        player__team=context["team"],
-        season=current_season,
-        is_mlb_roster=True, 
-        is_aaa_roster=False,
-        player__is_reserve=False
+    context["mlb_roster_count"] = models.Player.objects.filter(
+        team=context["team"],
+        is_ulmg_mlb_roster=True, 
+        is_ulmg_aaa_roster=False,
+        is_ulmg_reserve=False
     ).count()
     
     # Use optimized aggregation for level distribution
@@ -268,16 +266,16 @@ def draft_admin(request, year, season, draft_type):
 
         if season == "offseason":
             # 35-man roster is a form of protection for offseason drafts?
-            current_season = datetime.now().year
+            current_season = settings.CURRENT_SEASON
             # Get players not on 35-man roster via PlayerStatSeason
             players_not_35man = models.Player.objects.filter(
                 is_owned=True,
                 level__in=["V","A"],
                 team__isnull=False,
-                is_1h_c=False,
-                is_1h_p=False,
-                is_1h_pos=False,
-                is_reserve=False,
+                is_ulmg_1h_c=False,
+                is_ulmg_1h_p=False,
+                is_ulmg_1h_pos=False,
+                is_ulmg_reserve=False,
             ).exclude(
                 playerstatseason__season=current_season,
                 playerstatseason__is_35man_roster=True
@@ -300,10 +298,10 @@ def draft_admin(request, year, season, draft_type):
                 level="V",
                 team__isnull=False,
                 is_mlb_roster=False,
-                is_1h_c=False,
-                is_1h_p=False,
-                is_1h_pos=False,
-                is_reserve=False,
+                is_ulmg_1h_c=False,
+                is_ulmg_1h_p=False,
+                is_ulmg_1h_pos=False,
+                is_ulmg_reserve=False,
             ).values("id", "name", "position", 'mlbam_id', 'mlb_org'):
                 players.append(format_player_for_autocomplete(p))
 
@@ -349,7 +347,7 @@ def draft_recap(request, year, season, draft_type):
 
 def player_available_midseason(request):
     context = utils.build_context(request)
-    current_season = 2025
+    current_season = settings.CURRENT_SEASON
     
     # For midseason availability, get unowned players with MLB stats or owned level V players not on MLB roster
     unowned_with_mlb_stats = models.PlayerStatSeason.objects.filter(
@@ -392,7 +390,7 @@ def player_available_midseason(request):
         context["pitchers"].append(stat_season.player)
     
     # # Add owned level V pitchers not on MLB roster
-    # for player in owned_level_v_not_mlb.filter(position="P", is_1h_p=False):
+    # for player in owned_level_v_not_mlb.filter(position="P", is_ulmg_1h_p=False):
     #     context["pitchers"].append(player)
     
     # Sort pitchers
@@ -409,7 +407,7 @@ def player_available_midseason(request):
 
 def player_available_offseason(request):
     context = utils.build_context(request)
-    current_season = datetime.now().year
+    current_season = settings.CURRENT_SEASON
     
     # Get owned players not on 35-man roster
     available_players = models.Player.objects.filter(
@@ -442,7 +440,7 @@ def search_by_name(request):
     context = utils.build_context(request)
     
     # Start with PlayerStatSeason for current season (2025) with optimized relationships
-    current_season = 2025
+    current_season = settings.CURRENT_SEASON
     query = models.PlayerStatSeason.objects.filter(season=current_season).select_related('player')
     
     # Handle name search through player relationship
@@ -479,7 +477,7 @@ def filter_players(request):
     stat_season_query = models.PlayerStatSeason.objects.select_related('player')
     
     # Default season for filtering
-    search_season = 2025
+    search_season = settings.CURRENT_SEASON
     
     # Handle season selection first (most selective filter)
     if request.GET.get("season", None):
@@ -564,71 +562,76 @@ def filter_players(request):
                 stat_season_query = stat_season_query.filter(player__position__icontains=position)
             context["position"] = position
     
-    # Apply filtering and deduplication
-    # To avoid showing duplicate players (same player with multiple classifications),
-    # we'll use Python-based deduplication to get the best record per player
+    stat_season_query = stat_season_query.order_by('player__position', '-player__level_order', 'player__last_name', 'player__first_name')
+
+    # # Apply filtering and deduplication
+    # # To avoid showing duplicate players (same player with multiple classifications),
+    # # we'll use Python-based deduplication to get the best record per player
     
-    # Get all filtered records with priority scoring
-    from django.db.models import Case, When, IntegerField
+    # # Get all filtered records with priority scoring
+    # from django.db.models import Case, When, IntegerField
     
-    # Create a priority score for each record
-    priority_annotation = Case(
-        # Highest priority: Major league records with hitting stats
-        When(
-            classification='1-mlb',
-            hit_stats__PA__gt=0,
-            then=1
-        ),
-        # Second priority: Major league records with pitching stats  
-        When(
-            classification='1-mlb',
-            pitch_stats__G__gt=0,
-            then=2
-        ),
-        # Third priority: Minor league records with hitting stats
-        When(
-            classification='2-minors',
-            hit_stats__PA__gt=0,
-            then=3
-        ),
-        # Fourth priority: Minor league records with pitching stats
-        When(
-            classification='2-minors', 
-            pitch_stats__G__gt=0,
-            then=4
-        ),
-        # Fifth priority: Any major league record (even without stats)
-        When(classification='1-mlb', then=5),
-        # Lowest priority: Any other record
-        default=6,
-        output_field=IntegerField()
-    )
+    # # Create a priority score for each record
+    # priority_annotation = Case(
+    #     # Highest priority: Major league records with hitting stats
+    #     When(
+    #         classification='1-mlb',
+    #         hit_stats__PA__gt=0,
+    #         then=1
+    #     ),
+    #     # Second priority: Major league records with pitching stats  
+    #     When(
+    #         classification='1-mlb',
+    #         pitch_stats__G__gt=0,
+    #         then=2
+    #     ),
+    #     # Third priority: Minor league records with hitting stats
+    #     When(
+    #         classification='2-minors',
+    #         hit_stats__PA__gt=0,
+    #         then=3
+    #     ),
+    #     # Fourth priority: Minor league records with pitching stats
+    #     When(
+    #         classification='2-minors', 
+    #         pitch_stats__G__gt=0,
+    #         then=4
+    #     ),
+    #     # Fifth priority: Any major league record (even without stats)
+    #     When(classification='1-mlb', then=5),
+    #     # Lowest priority: Any other record
+    #     default=6,
+    #     output_field=IntegerField()
+    # )
     
-    # Get all records with priority annotation, ordered by priority
-    all_records = stat_season_query.annotate(
-        priority=priority_annotation
-    ).order_by('priority', '-id')
+    # # Get all records with priority annotation, ordered by priority
+    # all_records = stat_season_query.annotate(
+    #     priority=priority_annotation
+    # ).order_by('priority', '-id')
     
-    # Deduplicate in Python: keep only the best record per player
-    seen_players = set()
-    deduplicated_records = []
+    # # Deduplicate in Python: keep only the best record per player
+    # seen_players = set()
+    # deduplicated_records = []
     
-    for record in all_records:
-        if record.player_id not in seen_players:
-            deduplicated_records.append(record)
-            seen_players.add(record.player_id)
+    # for record in all_records:
+    #     if record.player_id not in seen_players:
+    #         deduplicated_records.append(record)
+    #         seen_players.add(record.player_id)
     
-    # Sort the deduplicated records for display
-    deduplicated_records.sort(key=lambda r: (
-        r.player.position, 
-        -r.player.level_order, 
-        r.player.last_name, 
-        r.player.first_name
-    ))
-    
-    # Split into hitters and pitchers
-    context["hitters"] = [r for r in deduplicated_records if r.player.position != "P"]
-    context["pitchers"] = [r for r in deduplicated_records if "P" in r.player.position]
+    # # Sort the deduplicated records for display
+    # deduplicated_records.sort(key=lambda r: (
+    #     r.player.position, 
+    #     -r.player.level_order, 
+    #     r.player.last_name, 
+    #     r.player.first_name
+    # ))
+
+    context["hitters"] = [r for r in stat_season_query if r.player.position != "P"]
+    context["pitchers"] = [r for r in stat_season_query if "P" in r.player.position]
+
+    # # Split into hitters and pitchers
+    # context["hitters"] = [r for r in deduplicated_records if r.player.position != "P"]
+    # context["pitchers"] = [r for r in deduplicated_records if "P" in r.player.position]
     
     # Filters visible by default for advanced filtering
     context["show_filters_by_default"] = True
