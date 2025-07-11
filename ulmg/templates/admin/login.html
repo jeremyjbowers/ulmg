@@ -172,7 +172,9 @@
         <input type="submit" value="Login" class="default">
       </div>
       
+      {% if next %}
       <input type="hidden" name="next" value="{{ next }}">
+      {% endif %}
     </form>
   </div>
 

@@ -6,7 +6,7 @@ from ulmg import views
 
 urlpatterns = [
     # Custom admin login
-    path("admin/login/", views.auth.admin_login_view, name="admin:login"),
+    path("admin/login/", views.auth.admin_login_view, name="admin_login"),
     
     # Use default admin site
     path("admin/", admin.site.urls),

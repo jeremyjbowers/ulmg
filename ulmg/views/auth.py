@@ -9,6 +9,7 @@ from django.views.decorators.http import require_http_methods
 from django.contrib import messages
 from django.conf import settings
 from django.urls import reverse
+from django.middleware.csrf import get_token
 
 from ulmg import models, utils
 
@@ -20,13 +21,18 @@ def magic_login_request(request):
     View to handle both password and magic link authentication.
     """
     if request.method == 'POST':
+        # Log CSRF debugging info
+        csrf_token_from_request = request.POST.get('csrfmiddlewaretoken', 'NOT_PROVIDED')
+        csrf_token_from_session = get_token(request)
+        logger.info(f"CSRF Debug - Token from request: {csrf_token_from_request[:10]}..., Token from session: {csrf_token_from_session[:10]}...")
+        
         email = request.POST.get('email', '').strip().lower()
         password = request.POST.get('password', '')
         login_method = request.POST.get('login_method', 'password')
         
         if not email:
             messages.error(request, 'Please enter your email address.')
-            return render(request, 'registration/login.html')
+            return render(request, 'registration/login.html', {'csrf_token': get_token(request)})
         
         # Handle password authentication
         if login_method == 'password' and password:
@@ -49,7 +55,9 @@ def magic_login_request(request):
                 if authenticated_user:
                     login(request, authenticated_user)
                     messages.success(request, 'You have been logged in successfully!')
-                    next_url = request.POST.get('next', '/')
+                    next_url = request.POST.get('next', '').strip()
+                    if not next_url:
+                        next_url = '/'
                     return redirect(next_url)
                 else:
                     messages.error(request, 'Invalid email or password.')
@@ -147,7 +155,7 @@ def admin_login_view(request):
                     messages.success(request, 'You have been logged in successfully!')
                     
                     # Redirect to the admin index or the 'next' parameter
-                    next_url = request.POST.get('next') or request.GET.get('next') or '/admin/'
+                    next_url = request.POST.get('next', '').strip() or request.GET.get('next', '').strip() or '/admin/'
                     return redirect(next_url)
                 else:
                     messages.error(request, 'Invalid email or password.')
@@ -185,7 +193,9 @@ def magic_login_verify(request, token):
         messages.success(request, 'You have been logged in successfully!')
         
         # Redirect to 'next' parameter if provided, otherwise to home
-        next_url = request.GET.get('next', '/')
+        next_url = request.GET.get('next', '').strip()
+        if not next_url:
+            next_url = '/'
         logger.info(f"Successful login - User: {user.username}, Next URL: {next_url}, Mobile: {is_mobile}, Token: {token[:10]}...")
         return redirect(next_url)
     else:

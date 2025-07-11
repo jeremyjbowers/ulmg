@@ -79,7 +79,9 @@
         Login
       </button>
       
+      {% if next %}
       <input type="hidden" name="next" value="{{ next }}">
+      {% endif %}
     </form>
   </div>
 
@@ -112,7 +114,9 @@
         Send Magic Link
       </button>
       
+      {% if next %}
       <input type="hidden" name="next" value="{{ next }}">
+      {% endif %}
     </form>
 
     <div class="mt-4 text-center">
