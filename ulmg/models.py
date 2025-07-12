@@ -633,6 +633,7 @@ class Player(BaseModel):
             player=self
         ).order_by('-season', 'classification').first()
 
+    @property
     def current_mlb_org(self):
         """
         Get the current season's MLB organization for this player.
