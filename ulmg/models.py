@@ -337,7 +337,7 @@ class Player(BaseModel):
     fantrax_id = models.CharField(max_length=255, blank=True, null=True)
     baseballcube_id = models.CharField(max_length=255, blank=True, null=True)
     perfectgame_id = models.CharField(max_length=255, blank=True, null=True)
-
+    current_mlb_org = models.CharField(max_length=255, blank=True, null=True)
     mlbam_checked = models.BooleanField(default=False)
 
     # LINKS TO THE WEB
@@ -633,19 +633,18 @@ class Player(BaseModel):
             player=self
         ).order_by('-season', 'classification').first()
 
-    @property
-    def current_mlb_org(self):
+    def set_current_mlb_org(self):
         """
         Get the current season's MLB organization for this player.
         Returns None if no current season data exists.
         """
-        import datetime
-        current_season = datetime.datetime.now().year
+        current_season = settings.CURRENT_SEASON
         current_status = PlayerStatSeason.objects.filter(
             player=self, 
             season=current_season
         ).first()
-        return current_status.mlb_org if current_status else None
+        current_mlb_org = current_status.mlb_org if current_status else None
+        self.current_mlb_org = current_mlb_org
 
     def current_season_status(self):
         """
@@ -698,6 +697,7 @@ class Player(BaseModel):
         self.set_owned()
         self.set_protected()
         self.set_carded_seasons()
+        self.set_current_mlb_org()
 
         super().save(*args, **kwargs)
 

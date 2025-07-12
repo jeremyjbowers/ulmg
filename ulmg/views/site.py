@@ -228,11 +228,11 @@ def draft_admin(request, year, season, draft_type):
 
     def format_player_for_autocomplete(p):
         """Format player data for autocomplete display, handling None values gracefully."""
-        mlb_org = p.current_mlb_org
-        mlbam_id = p.mlbam_id
+        mlb_org = p.get('current_mlb_org')
+        mlbam_id = p.get('mlbam_id')
         
         # Base format: "POS Name"
-        display = f"{p.position} {p.name}"
+        display = f"{p.get('position')} {p.get('name')}"
         
         # Add team info if available
         if mlb_org:
@@ -243,7 +243,7 @@ def draft_admin(request, year, season, draft_type):
             display += f" {mlbam_id}"
         
         # Always add the Django pk at the end for reliable lookup (hidden from user)
-        display += f" | {p.id}"
+        display += f" | {p.get('id')}"
         
         return display
 
@@ -251,13 +251,13 @@ def draft_admin(request, year, season, draft_type):
         context["players"] = json.dumps(
             [
                 format_player_for_autocomplete(p)
-                for p in models.Player.objects.filter(is_owned=False, level="B")
+                for p in models.Player.objects.filter(team__isnull=True, level="B").values('current_mlb_org', 'mlbam_id', 'id', 'position', 'name')
             ]
         )
 
     if draft_type == "open":
         players = []
-        for p in models.Player.objects.filter(is_owned=False):
+        for p in models.Player.objects.filter(team__isnull=True).values('current_mlb_org', 'mlbam_id', 'id', 'position', 'name'):
             players.append(format_player_for_autocomplete(p))
 
         if season == "offseason":
@@ -278,7 +278,7 @@ def draft_admin(request, year, season, draft_type):
             ).exclude(
                 playerstatseason__season=current_season,
                 playerstatseason__is_mlb_roster=True
-            )
+            ).values('current_mlb_org', 'mlbam_id', 'id', 'position', 'name')
             
             for p in players_not_35man:
                 players.append(format_player_for_autocomplete(p))
@@ -293,7 +293,7 @@ def draft_admin(request, year, season, draft_type):
                 is_ulmg_1h_p=False,
                 is_ulmg_1h_pos=False,
                 is_ulmg_reserve=False,
-            ):
+            ).values('current_mlb_org', 'mlbam_id', 'id', 'position', 'name'):
                 players.append(format_player_for_autocomplete(p))
 
         context["players"] = json.dumps(players)
