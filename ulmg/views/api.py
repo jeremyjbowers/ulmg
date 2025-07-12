@@ -34,7 +34,7 @@ def get_wishlist_players(request):
                 "position": p.player.position,
                 "age": p.player.age,
                 "url": f"/players/{ p.player.id }/",
-                "mlb_team": p.player.current_mlb_org(),
+                "mlb_team": p.player.current_mlb_org,
                 "team": None,
                 "stats": None,
             }
