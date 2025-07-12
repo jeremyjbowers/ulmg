@@ -41,7 +41,7 @@
   <!-- Password login form -->
   <div id="password-form" class="login-form">
     <div class="border border-gray-300 p-3 mb-4 bg-gray-50">
-      <p class="text-sm">Login with your email and password.</p>
+      <p class="text-sm">Login with your username and password.</p>
     </div>
 
     <form method="post" class="space-y-4">
@@ -49,12 +49,12 @@
       <input type="hidden" name="login_method" value="password">
       
       <div>
-        <label for="email-password" class="block text-xs font-bold mb-1">Email Address</label>
+        <label for="username-password" class="block text-xs font-bold mb-1">Username</label>
         <input 
-          type="email" 
-          name="email" 
-          id="email-password"
-          placeholder="your-email@example.com" 
+          type="text" 
+          name="username" 
+          id="username-password"
+          placeholder="your-username" 
           required
           class="w-full border border-gray-300 px-2 py-1 text-sm"
         >

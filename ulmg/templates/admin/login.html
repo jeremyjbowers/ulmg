@@ -153,14 +153,14 @@
   <!-- Password login form -->
   <div id="password-form" class="login-form active">
     <div style="border: 1px solid #d1d5db; padding: 0.75rem; margin-bottom: 1rem; background-color: #f9fafb;">
-      <p style="font-size: 0.875rem; margin: 0;">Login with your email and password.</p>
+      <p style="font-size: 0.875rem; margin: 0;">Login with your username and password.</p>
     </div>
 
     <form method="post">
       {% csrf_token %}
       <div class="form-row">
-        <label for="id_email_password" class="required">Email address:</label>
-        <input type="email" name="email" id="id_email_password" class="vTextField" required>
+        <label for="id_username_password" class="required">Username:</label>
+        <input type="text" name="username" id="id_username_password" class="vTextField" required>
       </div>
       
       <div class="form-row">

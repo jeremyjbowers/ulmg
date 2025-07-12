@@ -26,48 +26,38 @@ def magic_login_request(request):
         csrf_token_from_session = get_token(request)
         logger.info(f"CSRF Debug - Token from request: {csrf_token_from_request[:10]}..., Token from session: {csrf_token_from_session[:10]}...")
         
-        email = request.POST.get('email', '').strip().lower()
         password = request.POST.get('password', '')
         login_method = request.POST.get('login_method', 'password')
         
-        if not email:
-            messages.error(request, 'Please enter your email address.')
-            return render(request, 'registration/login.html', {'csrf_token': get_token(request)})
+
         
         # Handle password authentication
         if login_method == 'password' and password:
-            # Try to find user by email
-            user = None
-            try:
-                # First try to find user by email field
-                user = User.objects.get(email=email)
-            except User.DoesNotExist:
-                # Then try to find owner by email and get associated user
-                try:
-                    owner = models.Owner.objects.get(email=email)
-                    user = owner.user
-                except models.Owner.DoesNotExist:
-                    pass
+            # Simple username/password authentication
+            username = request.POST.get('username', '').strip()
+            if not username:
+                messages.error(request, 'Please enter your username.')
+                return render(request, 'registration/login.html')
             
-            if user:
-                # Authenticate with username and password
-                authenticated_user = authenticate(request, username=user.username, password=password)
-                if authenticated_user:
-                    login(request, authenticated_user)
-                    messages.success(request, 'You have been logged in successfully!')
-                    next_url = request.POST.get('next', '').strip()
-                    if not next_url:
-                        next_url = '/'
-                    return redirect(next_url)
-                else:
-                    messages.error(request, 'Invalid email or password.')
-                    return render(request, 'registration/login.html')
+            authenticated_user = authenticate(request, username=username, password=password)
+            if authenticated_user:
+                login(request, authenticated_user)
+                messages.success(request, 'You have been logged in successfully!')
+                next_url = request.POST.get('next', '').strip()
+                if not next_url:
+                    next_url = '/'
+                return redirect(next_url)
             else:
-                messages.error(request, 'Invalid email or password.')
+                messages.error(request, 'Invalid username or password.')
                 return render(request, 'registration/login.html')
         
         # Handle magic link authentication
         elif login_method == 'magic_link':
+            email = request.POST.get('email', '').strip().lower()
+            if not email:
+                messages.error(request, 'Please enter your email address.')
+                return render(request, 'registration/login.html')
+            
             try:
                 # First try to find user by email field
                 user = User.objects.get(email=email)
@@ -119,7 +109,7 @@ The ULMG Team
             return render(request, 'registration/login.html')
         
         else:
-            messages.error(request, 'Please enter your password or request a magic link.')
+            messages.error(request, 'Please enter your username and password or request a magic link.')
             return render(request, 'registration/login.html')
     
     return render(request, 'registration/login.html')
@@ -130,39 +120,23 @@ def admin_login_view(request):
     Custom admin login view that handles both password and magic link authentication.
     """
     if request.method == 'POST':
-        email = request.POST.get('email', '').strip().lower()
+        username = request.POST.get('username', '').strip()
         password = request.POST.get('password', '')
         
-        if email and password:
-            # Handle password authentication
-            user = None
-            try:
-                # First try to find user by email field
-                user = User.objects.get(email=email)
-            except User.DoesNotExist:
-                # Then try to find owner by email and get associated user
-                try:
-                    owner = models.Owner.objects.get(email=email)
-                    user = owner.user
-                except models.Owner.DoesNotExist:
-                    pass
-            
-            if user and user.is_staff:
-                # Authenticate with username and password
-                authenticated_user = authenticate(request, username=user.username, password=password)
-                if authenticated_user:
-                    login(request, authenticated_user)
-                    messages.success(request, 'You have been logged in successfully!')
-                    
-                    # Redirect to the admin index or the 'next' parameter
-                    next_url = request.POST.get('next', '').strip() or request.GET.get('next', '').strip() or '/admin/'
-                    return redirect(next_url)
-                else:
-                    messages.error(request, 'Invalid email or password.')
+        if username and password:
+            # Simple username/password authentication
+            authenticated_user = authenticate(request, username=username, password=password)
+            if authenticated_user and authenticated_user.is_staff:
+                login(request, authenticated_user)
+                messages.success(request, 'You have been logged in successfully!')
+                
+                # Redirect to the admin index or the 'next' parameter
+                next_url = request.POST.get('next', '').strip() or request.GET.get('next', '').strip() or '/admin/'
+                return redirect(next_url)
             else:
-                messages.error(request, 'Invalid email or password.')
+                messages.error(request, 'Invalid username or password.')
         else:
-            messages.error(request, 'Please enter both email and password.')
+            messages.error(request, 'Please enter both username and password.')
     
     # For GET requests or failed authentication, show the login form
     context = {
