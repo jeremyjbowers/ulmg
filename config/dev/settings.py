@@ -201,17 +201,8 @@ CSV_COLUMNS = [
     "birthdate",
     "position",
     "level",
-    "is_carded",
     "defense",
-    "is_reserve",
-    "is_1h_pos",
-    "is_1h_p",
-    "is_1h_c",
-    "is_2h_p",
-    "is_2h_c",
-    "is_2h_pos",
-    "is_mlb_roster",
-    "is_aaa_roster",
+    "is_ulmg_midseason_unprotected",
     "team__abbreviation",
 ]
 

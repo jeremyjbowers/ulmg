@@ -17,14 +17,14 @@ def all_csv(request):
     # Get current season for PlayerStatSeason lookup
     current_season = datetime.datetime.now().year
     
-    # Get carded players by checking PlayerStatSeason
-    carded_player_ids = models.PlayerStatSeason.objects.filter(
-        season=current_season,
-        carded=True
-    ).values_list('player_id', flat=True)
+    # # Get carded players by checking PlayerStatSeason
+    # carded_player_ids = models.PlayerStatSeason.objects.filter(
+    #     season=current_season,
+    #     carded=True
+    # ).values_list('player_id', flat=True)
     
     team_players = (
-        models.Player.objects.filter(is_owned=True, id__in=carded_player_ids)
+        models.Player.objects.filter(team__isnull=False)
         .order_by(
             "team",
             "position",
