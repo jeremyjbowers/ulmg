@@ -289,10 +289,7 @@ def draft_admin(request, year, season, draft_type):
                 is_owned=True,
                 level="V",
                 team__isnull=False,
-                is_ulmg_1h_c=False,
-                is_ulmg_1h_p=False,
-                is_ulmg_1h_pos=False,
-                is_ulmg_reserve=False,
+                is_ulmg_midseason_unprotected=True
             ).values('current_mlb_org', 'mlbam_id', 'id', 'position', 'name'):
                 players.append(format_player_for_autocomplete(p))
 

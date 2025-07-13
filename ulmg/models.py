@@ -377,6 +377,7 @@ class Player(BaseModel):
     is_ulmg_mlb_roster = models.BooleanField(default=False)
     is_ulmg_aaa_roster = models.BooleanField(default=False)
     is_ulmg_trade_block = models.BooleanField(default=False)
+    is_ulmg_midseason_unprotected = models.BooleanField(default=False)
 
     # CAREER STATS (for level)
     cs_pa = models.IntegerField(blank=True, null=True)

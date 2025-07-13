@@ -173,9 +173,9 @@ class PlayerStatSeasonAdmin(admin.ModelAdmin):
             {
                 "description": "Major League Baseball status and roster information for this season.",
                 "fields": (
-                    ("is_mlb", "is_amateur"),
-                    ("is_mlb_roster", "is_aaa_roster", "is_35man_roster"),
-                    ("is_mlb40man", "mlb_org"),
+                    # ("is_umlb", "is_amateur"),
+                    ("is_ulmg_mlb_roster", "is_ulmg_aaa_roster", "is_ulmg_35man_roster"),
+                    # ("is_mlb40man", "mlb_org"),
                 ),
             },
         ),
@@ -185,8 +185,9 @@ class PlayerStatSeasonAdmin(admin.ModelAdmin):
                 "classes": ("collapse",),
                 "description": "Current roster position and role information.",
                 "fields": (
-                    ("is_starter", "is_bench", "is_player_pool"),
-                    ("is_bullpen", "role", "role_type"),
+                    # ("is_starter", "is_bench", "is_player_pool"),
+                    # ("is_bullpen", "role", "role_type"),
+                    ("role", "role_type"),
                     "roster_status",
                 ),
             },
@@ -505,11 +506,12 @@ class PlayerAdmin(admin.ModelAdmin):
             {
                 "classes": ("collapse",),
                 "fields": (
-                    ("is_reserve",),
-                    ("is_1h_p", "is_1h_c", "is_1h_pos"),
-                    ("is_2h_draft", "is_2h_p", "is_2h_c", "is_2h_pos"),
-                    ("is_protected", "cannot_be_protected", "covid_protected"),
-                    "is_trade_block",
+                    ("is_ulmg_reserve",),
+                    ("is_ulmg_1h_p", "is_ulmg_1h_c", "is_ulmg_1h_pos"),
+                    ('is_ulmg_midseason_unprotected'),
+                    ("is_ulmg_2h_draft", "is_ulmg_2h_p", "is_ulmg_2h_c", "is_ulmg_2h_pos"),
+                    # ("is_protected", "cannot_be_protected", "covid_protected"),
+                    # "is_trade_block",
                 ),
             },
         ),
@@ -543,7 +545,7 @@ class PlayerAdmin(admin.ModelAdmin):
                 "fields": (
                     "is_owned", 
                     "defense", 
-                    "strat_ratings"
+                    # "strat_ratings"
                 ),
             },
         ),
