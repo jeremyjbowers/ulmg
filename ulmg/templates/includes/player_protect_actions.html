@@ -259,7 +259,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 },
                 error: function(xhr, status, error) {
                     console.error('Action failed:', action, error);
-                    alert('Error performing action: ' + error);
+                    // Silent error - no alert to user
                 }
             });
         }
@@ -293,7 +293,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 },
                 error: function(xhr, status, error) {
                     console.error('Drop failed:', error);
-                    alert('Error dropping player: ' + error);
+                    // Silent error - no alert to user
                 }
             });
         }
