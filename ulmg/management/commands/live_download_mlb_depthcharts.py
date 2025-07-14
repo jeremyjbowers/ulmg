@@ -25,7 +25,7 @@ class Command(BaseCommand):
         "119": "LAD",
         "120": "WSH",
         "121": "NYM",
-        "133": "OAK",
+        "133": "ATH",
         "134": "PIT",
         "135": "SD",
         "136": "SEA",
@@ -63,7 +63,7 @@ class Command(BaseCommand):
         rookie_teams = [self.parse_players(t) for t in team_list if t['sport']['id'] == 16]            
 
     def parse_players(self, t):
-        current_season = datetime.datetime.now().year
+        current_season = settings.CURRENT_SEASON
         roster_link = f"https://statsapi.mlb.com/api/v1/teams/{t['id']}/roster/40Man"
         tr = requests.get(roster_link).json()
 
@@ -108,6 +108,10 @@ class Command(BaseCommand):
                         player_obj.name = player_dict['name']
                     if player_dict.get('position'):
                         player_obj.position = player_dict['position']
+                    if player_dict.get('mlb_org'):
+                        player_obj.current_mlb_org = player_dict['mlb_org']
+                    if player_dict.get('roster_status'):
+                        player_obj.current_mlb_roster_status = player_dict['roster_status']
                     player_obj.save()
 
                     # Get or create PlayerStatSeason for current season

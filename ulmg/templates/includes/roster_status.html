@@ -2,8 +2,8 @@
 
     <div class="roster-item">
 
-        {% if protect_tab %}<button class="button is-rounded is-large is-static">40-Man&nbsp;<span class="has-text-weight-bold">{{ 35_roster_count }}</span></button>{% endif %}
-        {% if roster_tab %}<button class="button is-rounded is-large is-static">MLB roster&nbsp;<span class="has-text-weight-bold">{{ mlb_roster_count }}</span></button>{% endif %}
+        {% if protect_tab %}<button>40-Man&nbsp;<span>{{ 35_roster_count }}</span></button>{% endif %}
+        {% if mlb_roster_count is not None %}<button>MLB Roster:&nbsp;<span>{{ mlb_roster_count }}</span></button>{% endif %}
     </div>
 
 </div>

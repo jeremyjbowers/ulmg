@@ -3,7 +3,7 @@
 {% load ulmg_tags %}
 
 {% block prenav %}
-        {% if own_team %}{% include "includes/roster_status.html" %}{% endif %}
+        {% if own_team or mlb_roster_count is not None %}{% include "includes/roster_status.html" %}{% endif %}
 {% endblock %}
 
 
@@ -89,6 +89,11 @@
                 {% if p.is_ulmg_2h_c %}C {% endif %}
             </td>
             {% include "includes/hitter_stat_cells_player.html" %}
+            {% if own_team and roster_tab %}
+            <td class="text-center py-1">
+                {% include "includes/player_protect_actions.html" %}
+            </td>
+            {% endif %}
             {% if own_team and protect_tab %}
             <td class="text-center py-1">
                 {% if p.is_ulmg_protected %}
@@ -140,6 +145,11 @@
                 {% if p.is_ulmg_2h_p %}P {% endif %}
             </td>
             {% include "includes/pitcher_stat_cells_player.html" %}
+            {% if own_team and roster_tab %}
+            <td class="text-center py-1">
+                {% include "includes/player_protect_actions.html" %}
+            </td>
+            {% endif %}
             {% if own_team and protect_tab %}
             <td class="text-center py-1">
                 {% if p.is_ulmg_protected %}
@@ -186,7 +196,7 @@ $(function(){
             url: '/api/v1/player/' + playerid + '/' +  action + '/',
             success: function(response){
                 console.log(response);
-                window.location.reload();
+                // Page reload removed - async button updates handled by includes/player_protect_actions.html
             }
         });
     }

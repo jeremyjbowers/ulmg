@@ -731,14 +731,15 @@ class PlayerStatSeason(BaseModel):
     role = models.CharField(max_length=255, null=True, blank=True)
     role_type = models.CharField(max_length=255, null=True, blank=True)
     roster_status = models.CharField(max_length=255, null=True, blank=True)
+    current_mlb_roster_status = models.CharField(max_length=255, null=True, blank=True)
     mlb_org = models.CharField(max_length=255, null=True, blank=True)
     is_mlb40man = models.BooleanField(default=False)
     is_bullpen = models.BooleanField(default=False)
     is_mlb = models.BooleanField(default=False)
     is_amateur = models.BooleanField(default=False)
     is_ulmg_mlb_roster = models.BooleanField(default=False)
-    is_aaa_roster = models.BooleanField(default=False)
-    is_35man_roster = models.BooleanField(default=False)
+    is_ulmg_aaa_roster = models.BooleanField(default=False)
+    is_ulmg35man_roster = models.BooleanField(default=False)
 
     def __unicode__(self):
         return f"{self.player} @ {self.season} @ {self.classification}"
@@ -892,9 +893,9 @@ class PlayerStatSeason(BaseModel):
             models.Index(fields=['season', 'player']),  # Season + player lookup (already exists but ensuring)
             
             # Protection and roster status queries
-            models.Index(fields=['season', 'is_35man_roster']),
+            models.Index(fields=['season', 'is_ulmg35man_roster']),
             models.Index(fields=['season', 'is_ulmg_mlb_roster']),
-            models.Index(fields=['season', 'owned', 'is_35man_roster']),
+            models.Index(fields=['season', 'owned', 'is_ulmg35man_roster']),
             
             # READ-HEAVY OPTIMIZATIONS (perfect for low-write workloads)
             # Covering indexes - include frequently accessed columns to avoid table lookups
@@ -911,7 +912,7 @@ class PlayerStatSeason(BaseModel):
             models.Index(fields=['season', 'classification'], condition=models.Q(pitch_stats__isnull=False), name='idx_pitchers_with_stats'),
             
             # Roster status optimizations (frequently queried in team views)
-            models.Index(fields=['season', 'is_ulmg_mlb_roster', 'is_aaa_roster']),
+            models.Index(fields=['season', 'is_ulmg_mlb_roster', 'is_ulmg_aaa_roster']),
             models.Index(fields=['season', 'roster_status']),
             models.Index(fields=['season', 'mlb_org']),
             

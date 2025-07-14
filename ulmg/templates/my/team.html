@@ -3,7 +3,7 @@
 {% load ulmg_tags %}
 
 {% block prenav %}
-        {% if protect_tab or roster_tab %}{% include "includes/roster_status.html" %}{% endif %}
+        {% if protect_tab or roster_tab or mlb_roster_count is not None %}{% include "includes/roster_status.html" %}{% endif %}
 {% endblock %}
 
 {% block content %}
@@ -243,7 +243,8 @@ $(function(){
             type: "POST",
             url: '/api/v1/player/' + playerid + '/' +  action + '/',
             success: function(response){
-                window.location.reload();
+                // No longer reload - let the new async button handler manage UI updates
+                console.log('Legacy handler - action completed:', action, response);
             }
         });
     }

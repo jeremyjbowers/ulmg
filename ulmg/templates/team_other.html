@@ -1,5 +1,9 @@
 {% extends "base.html" %}
 
+{% block prenav %}
+        {% if mlb_roster_count is not None %}{% include "includes/roster_status.html" %}{% endif %}
+{% endblock %}
+
 {% block content %}
 {% include 'includes/team_topper.html' %}
 

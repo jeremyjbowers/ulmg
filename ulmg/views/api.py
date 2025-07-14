@@ -192,7 +192,7 @@ def player_action(request, playerid, action):
         p.is_1h_pos = False
         p.is_protected = True
         p.save()
-        _update_player_stat_season(p, is_35man_roster=True)
+        _update_player_stat_season(p, is_ulmg35man_roster=True)
         return HttpResponse("ok")
 
     if action == "unprotect":
@@ -200,123 +200,146 @@ def player_action(request, playerid, action):
         p.is_1h_c = False
         p.is_1h_p = False
         p.is_1h_pos = False
-        # p.is_2h_c = False
-        # p.is_2h_p = False
-        # p.is_2h_pos = False
+        p.is_ulmg_2h_c = False
+        p.is_ulmg_2h_p = False
+        p.is_ulmg_2h_pos = False
         p.is_protected = False
+        # Update Player model roster status
+        p.is_ulmg_mlb_roster = False
+        p.is_ulmg_aaa_roster = False
         p.save()
         _update_player_stat_season(p, 
-            is_35man_roster=False,
-            is_mlb_roster=False,
-            is_aaa_roster=False
+            is_ulmg35man_roster=False,
+            is_ulmg_mlb_roster=False,
+            is_ulmg_aaa_roster=False
         )
         return HttpResponse("ok")
 
-    if action == "is_reserve":
-        old = models.Player.objects.filter(team=p.team, is_reserve=True).update(
-            is_reserve=False
+    if action == "is_ulmg_reserve":
+        old = models.Player.objects.filter(team=p.team, is_ulmg_reserve=True).update(
+            is_ulmg_reserve=False
         )
-        p.is_reserve = True
-        p.is_1h_c = False
-        p.is_1h_p = False
-        p.is_1h_pos = False
+        p.is_ulmg_reserve = True
+        p.is_ulmg_1h_c = False
+        p.is_ulmg_1h_p = False
+        p.is_ulmg_1h_pos = False
         p.save()
         _update_player_stat_season(p, 
-            is_35man_roster=False,
-            is_mlb_roster=False,
-            is_aaa_roster=False
+            is_ulmg35man_roster=False,
+            is_ulmg_mlb_roster=False,
+            is_ulmg_aaa_roster=False
         )
         return HttpResponse("ok")
 
-    # if action == "is_2h_p":
-    #     old = models.Player.objects.filter(team=p.team, is_2h_p=True).update(
-    #         is_2h_p=False
-    #     )
-    #     p.is_reserve = False
-    #     p.is_2h_c = False
-    #     p.is_2h_p = False
-    #     p.is_2h_pos = False
-    #     p.is_2h_p = True
-    #     p.is_mlb_roster = False
-    #     p.is_aaa_roster = False
-    #     p.save()
-    #     return HttpResponse("ok")
-
-    # if action == "is_2h_c":
-    #     old = models.Player.objects.filter(team=p.team, is_2h_c=True).update(
-    #         is_2h_c=False
-    #     )
-    #     p.is_reserve = False
-    #     p.is_2h_c = False
-    #     p.is_2h_p = False
-    #     p.is_2h_pos = False
-    #     p.is_2h_c = True
-    #     p.is_mlb_roster = False
-    #     p.is_aaa_roster = False
-    #     p.save()
-    #     return HttpResponse("ok")
-
-    # if action == "is_2h_pos":
-    #     old = models.Player.objects.filter(team=p.team, is_2h_pos=True).update(
-    #         is_2h_pos=False
-    #     )
-    #     p.is_reserve = False
-    #     p.is_2h_c = False
-    #     p.is_2h_p = False
-    #     p.is_2h_pos = False
-    #     p.is_2h_pos = True
-    #     p.is_mlb_roster = False
-    #     p.is_aaa_roster = False
-    #     p.save()
-    #     return HttpResponse("ok")
-
-    if action == "is_1h_p":
-        old = models.Player.objects.filter(team=p.team, is_1h_p=True).update(
-            is_1h_p=False
+    if action == "is_ulmg_2h_p":
+        # Prevent 2H protections for 2H draft players (they must stay on rosters full 2H)
+        if p.is_ulmg_2h_draft:
+            return HttpResponse("error: 2H draft players cannot be protected")
+        
+        old = models.Player.objects.filter(team=p.team, is_ulmg_2h_p=True).update(
+            is_ulmg_2h_p=False
         )
-        p.is_reserve = False
-        p.is_1h_c = False
-        p.is_1h_p = True
-        p.is_1h_pos = False
+        p.is_ulmg_reserve = False
+        p.is_ulmg_2h_c = False
+        p.is_ulmg_2h_p = True
+        p.is_ulmg_2h_pos = False
         p.save()
         _update_player_stat_season(p, 
-            is_35man_roster=False,
-            is_mlb_roster=False,
-            is_aaa_roster=False
+            is_ulmg35man_roster=False,
+            is_ulmg_mlb_roster=False,
+            is_ulmg_aaa_roster=False
         )
         return HttpResponse("ok")
 
-    if action == "is_1h_c":
-        old = models.Player.objects.filter(team=p.team, is_1h_c=True).update(
-            is_1h_c=False
+    if action == "is_ulmg_2h_c":
+        # Prevent 2H protections for 2H draft players (they must stay on rosters full 2H)
+        if p.is_ulmg_2h_draft:
+            return HttpResponse("error: 2H draft players cannot be protected")
+        
+        old = models.Player.objects.filter(team=p.team, is_ulmg_2h_c=True).update(
+            is_ulmg_2h_c=False
         )
-        p.is_reserve = False
-        p.is_1h_c = True
-        p.is_1h_p = False
-        p.is_1h_pos = False
+        p.is_ulmg_reserve = False
+        p.is_ulmg_2h_c = True
+        p.is_ulmg_2h_p = False
+        p.is_ulmg_2h_pos = False
         p.save()
         _update_player_stat_season(p, 
-            is_35man_roster=False,
-            is_mlb_roster=False,
-            is_aaa_roster=False
+            is_ulmg35man_roster=False,
+            is_ulmg_mlb_roster=False,
+            is_ulmg_aaa_roster=False
         )
         return HttpResponse("ok")
 
-    if action == "is_1h_pos":
-        old = models.Player.objects.filter(team=p.team, is_1h_pos=True).update(
-            is_1h_pos=False
+    if action == "is_ulmg_2h_pos":
+        # Prevent 2H protections for 2H draft players (they must stay on rosters full 2H)
+        if p.is_ulmg_2h_draft:
+            return HttpResponse("error: 2H draft players cannot be protected")
+        
+        old = models.Player.objects.filter(team=p.team, is_ulmg_2h_pos=True).update(
+            is_ulmg_2h_pos=False
         )
-        p.is_reserve = False
-        p.is_1h_c = False
-        p.is_1h_p = False
-        p.is_1h_pos = True
+        p.is_ulmg_reserve = False
+        p.is_ulmg_2h_c = False
+        p.is_ulmg_2h_p = False
+        p.is_ulmg_2h_pos = True
         p.save()
         _update_player_stat_season(p, 
-            is_35man_roster=False,
-            is_mlb_roster=False,
-            is_aaa_roster=False
+            is_ulmg35man_roster=False,
+            is_ulmg_mlb_roster=False,
+            is_ulmg_aaa_roster=False
         )
         return HttpResponse("ok")
+
+    if action == "is_ulmg_1h_p":
+        old = models.Player.objects.filter(team=p.team, is_ulmg_1h_p=True).update(
+            is_ulmg_1h_p=False
+        )
+        p.is_ulmg_reserve = False
+        p.is_ulmg_1h_c = False
+        p.is_ulmg_1h_p = True
+        p.is_ulmg_1h_pos = False
+        p.save()
+        _update_player_stat_season(p, 
+            is_ulmg35man_roster=False,
+            is_ulmg_mlb_roster=False,
+            is_ulmg_aaa_roster=False
+        )
+        return HttpResponse("ok")
+
+    if action == "is_ulmg_1h_c":
+        old = models.Player.objects.filter(team=p.team, is_ulmg_1h_c=True).update(
+            is_ulmg_1h_c=False
+        )
+        p.is_ulmg_reserve = False
+        p.is_ulmg_1h_c = True
+        p.is_ulmg_1h_p = False
+        p.is_ulmg_1h_pos = False
+        p.save()
+        _update_player_stat_season(p, 
+            is_ulmg35man_roster=False,
+            is_ulmg_mlb_roster=False,
+            is_ulmg_aaa_roster=False
+        )
+        return HttpResponse("ok")
+
+    if action == "is_ulmg_1h_pos":
+        old = models.Player.objects.filter(team=p.team, is_ulmg_1h_pos=True).update(
+            is_ulmg_1h_pos=False
+        )
+        p.is_ulmg_reserve = False
+        p.is_ulmg_1h_c = False
+        p.is_ulmg_1h_p = False
+        p.is_ulmg_1h_pos = True
+        p.save()
+        _update_player_stat_season(p, 
+            is_ulmg35man_roster=False,
+            is_ulmg_mlb_roster=False,
+            is_ulmg_aaa_roster=False
+        )
+        return HttpResponse("ok")
+
+
 
     if action == "to_mlb":
         p.is_reserve = False
@@ -326,10 +349,13 @@ def player_action(request, playerid, action):
         p.is_2h_c = False
         p.is_2h_p = False
         p.is_2h_pos = False
+        # Update Player model roster status
+        p.is_ulmg_mlb_roster = True
+        p.is_ulmg_aaa_roster = False
         p.save()
         _update_player_stat_season(p, 
-            is_mlb_roster=True,
-            is_aaa_roster=False
+            is_ulmg_mlb_roster=True,
+            is_ulmg_aaa_roster=False
         )
         return HttpResponse("ok")
 
@@ -341,10 +367,13 @@ def player_action(request, playerid, action):
         p.is_2h_c = False
         p.is_2h_p = False
         p.is_2h_pos = False
+        # Update Player model roster status
+        p.is_ulmg_mlb_roster = False
+        p.is_ulmg_aaa_roster = True
         p.save()
         _update_player_stat_season(p, 
-            is_mlb_roster=False,
-            is_aaa_roster=True
+            is_ulmg_mlb_roster=False,
+            is_ulmg_aaa_roster=True
         )
         return HttpResponse("ok")
 
@@ -356,10 +385,13 @@ def player_action(request, playerid, action):
         p.is_2h_c = False
         p.is_2h_p = False
         p.is_2h_pos = False
+        # Update Player model roster status
+        p.is_ulmg_mlb_roster = False
+        p.is_ulmg_aaa_roster = False
         p.save()
         _update_player_stat_season(p, 
-            is_mlb_roster=False,
-            is_aaa_roster=False
+            is_ulmg_mlb_roster=False,
+            is_ulmg_aaa_roster=False
         )
         return HttpResponse("ok")
 
@@ -374,10 +406,13 @@ def player_action(request, playerid, action):
         p.is_2h_p = False
         p.is_2h_pos = False
         p.is_protected = False
+        # Update Player model roster status
+        p.is_ulmg_mlb_roster = False
+        p.is_ulmg_aaa_roster = False
         p.save()
         _update_player_stat_season(p, 
-            is_mlb_roster=False,
-            is_aaa_roster=False,
+            is_ulmg_mlb_roster=False,
+            is_ulmg_aaa_roster=False,
             owned=False
         )
         return HttpResponse("ok")

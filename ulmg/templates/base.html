@@ -184,6 +184,32 @@
         .wishlist-btn-active:active {
             transform: scale(0.95);
         }
+        
+        /* Floating roster status - pinned to top right */
+        .top-right-sticky {
+            position: fixed;
+            top: 90px; /* Below the fixed header */
+            right: 1rem;
+            z-index: 50;
+        }
+        
+        .roster-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .roster-item button {
+            background-color: #16a34a; /* green-600 */
+            color: #fff;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 1.5rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            text-decoration: underline;
+            cursor: default;
+        }
     </style>
     
     {% block extrahead %}{% endblock %}

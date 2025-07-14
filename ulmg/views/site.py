@@ -207,6 +207,15 @@ def team_other(request, abbreviation):
         .annotate(Count("level_order"))
     )
     context["num_owned"] = models.Player.objects.filter(team=team).count()
+    
+    # Add MLB roster count for floating nav display
+    context["mlb_roster_count"] = models.Player.objects.filter(
+        team=context["team"],
+        is_ulmg_mlb_roster=True, 
+        is_ulmg_aaa_roster=False,
+        is_ulmg_reserve=False
+    ).count()
+    
     context["trades"] = models.Trade.objects.filter(teams=team).order_by("-date")
     context["picks"] = models.DraftPick.objects.filter(team=team).order_by(
         "-year", "season", "draft_type", "draft_round", "pick_number"
