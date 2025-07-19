@@ -792,87 +792,113 @@ def player_owned(request):
         return HttpResponse("Not a POST.")
 
 
-"""
-Konnor Griffin  OF
-Samuel Cozart   P
-Dean Moss   OF
-Carter Smith    IF
-Jacob Kendall   IF
-Luis Ayden Almeyda  IF
-John Lash   P
-Xavier Neyens   IF
-Cam Caminiti    OF
-Sean Gamble IF
-Derek Curiel    OF
-Chase Mobley    Paul
-Cade Arrambide  C
-Bryce Rainer    IF
-Theodore Gillen IF
-Michael Mullinax    OF
-Jackson Sanders P
-Jack Frankel    P
-George Wolkow   IF
-Andre Modugno   IF
-Deion Cole  IF
-Rouselle Shepard    IF
-Quentin Young   IF
-Grady Emerson   IF
-Kevin Roberts Jr    IF
-Grant Mehrhoff  P
-Alex Harrington IF
-Beau Peterson   C
-Ryan Harwood    IF
-Andrew Costello C
-"""
-
-
 @csrf_exempt
 def player_bulk_action(request):
+
+    def _prep_url_param(param):
+        if param.strip() == '':
+            return None
+        return param
+
     payload = {"players": []}
 
+
+    # Get player list from bulk field
     if request.method == "POST":
         if request.POST.get("players", None):
-
             player_list = request.POST.get("players").split("\n")
 
             for p in player_list:
-
+                
+                # Prepare each object in the player list for processing
                 if "\t" in p:
                     player = p.split("\t")
 
                 elif "," in p:
                     player = p.split(",")
 
-                if len(player) > 1:
+                if len(player) == 8:
 
-                    name = player[0]
-                    position = player[1]
+                    name = _prep_url_param(player[0].strip())
+                    position = _prep_url_param(player[1].strip())
+                    mlbam_id = _prep_url_param(player[2].strip())
+                    fg_id = _prep_url_param(player[3].strip())
+                    ulmg_id = _prep_url_param(player[4].strip())
+                    birthdate = _prep_url_param(player[5].strip())
+                    school = _prep_url_param(player[6].strip())
+                    draft_year = _prep_url_param(player[7].strip())
+
                     ply = {
                         "name": name,
                         "position": position,
-                        "ulmg_id": None,
-                        "created": False,
+                        "mlbam_id": mlbam_id,
+                        "fg_id": fg_id,
+                        "birthdate": birthdate,
+                        "school": school,
+                        "ulmg_id": ulmg_id,
+                        "draft_year": draft_year,
+                        "created": False
                     }
 
-                    plyrz = utils.fuzzy_find_player(name)
+                    print(ply)
 
-                    if len(plyrz) == 1:
-                        ply["ulmg_id"] = plyrz[0].id
+                    # Process each player
+                    # Find if this player exists via one of the IDs
+                    obj = None
 
-                    elif len(plyrz) == 0:
-                        p = models.Player(
+                    # try a ULMG ID if we are so lucky
+                    if not obj:
+                        if ulmg_id:
+                            try:
+                                obj = models.Player.objects.get(id=ulmg_id)
+                            except models.Player.DoesNotExist:
+                                pass
+
+                        # Many college players have FGIDs already
+                        elif fg_id:
+                            try:
+                                obj = models.Player.objects.get(fg_id=fg_id)
+                            except models.Player.DoesNotExist:
+                                pass
+
+                        # Some HS and some college players have MLBAM IDs
+                        elif mlbam_id:
+                            try:
+                                obj = models.Player.objects.get(mlbam_id=mlbam_id)
+                            except models.Player.DoesNotExist:
+                                pass
+
+                    if not obj:
+                        obj = models.Player(
                             name=name,
                             level="B",
                             is_prospect=True,
-                            is_amateur=True,
                             position=position
                         )
-                        p.save()
-                        ply["ulmg_id"] = p.id
+                        # Update the JSON output we will return
                         ply["created"] = True
+                            
 
+                    # Update player object now that we have one
+                    if obj:
+                        obj.level = "B"
+                        obj.is_prospect = True
+                        obj.position = position
+                        obj.mlbam_id = mlbam_id
+                        obj.fg_id = fg_id
+                        obj.birthdate = birthdate
+                        obj.school = school
+                        obj.draft_year = draft_year
+                        if not obj.amateur_seasons:
+                            obj.amateur_seasons = []
+                        obj.amateur_seasons.append(settings.CURRENT_SEASON)
+                        obj.save()
+                        ply["ulmg_id"] = obj.id
+
+                    # Add this player to the payload for returning via JSON
                     payload["players"].append(ply)
 
+    # Return the payload
     return JsonResponse(payload)
 
 

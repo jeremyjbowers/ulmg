@@ -339,6 +339,8 @@ class Player(BaseModel):
     perfectgame_id = models.CharField(max_length=255, blank=True, null=True)
     current_mlb_org = models.CharField(max_length=255, blank=True, null=True)
     mlbam_checked = models.BooleanField(default=False)
+    school = models.CharField(max_length=255, blank=True, null=True)
+    draft_year = models.CharField(max_length=255, blank=True, null=True)
 
     # LINKS TO THE WEB
     ba_url = models.CharField(max_length=255, blank=True, null=True)
@@ -353,16 +355,15 @@ class Player(BaseModel):
     notes = models.TextField(blank=True, null=True)
 
     # STATUS AND SUCH
-    is_owned = models.BooleanField(default=False)  # ULMG ownership stays on Player
+
     
     # SEASON-SPECIFIC FIELDS - MOVED TO PlayerStatSeason
-    # is_carded = models.BooleanField(default=False)
-    # is_amateur = models.BooleanField(default=False)
     league = models.CharField(
         max_length=255, blank=True, null=True, choices=OTHER_PRO_LEAGUES
     )
 
     # ULMG STATUS
+    is_owned = models.BooleanField(default=False)  # ULMG ownership stays on Player
     is_ulmg_reserve = models.BooleanField(default=False)
     is_ulmg_1h_p = models.BooleanField(default=False)
     is_ulmg_1h_c = models.BooleanField(default=False)
@@ -390,6 +391,7 @@ class Player(BaseModel):
 
     # Track seasons a player has been carded for as an array of integers.
     carded_seasons = ArrayField(models.IntegerField(), blank=True, null=True)
+    amateur_seasons = ArrayField(models.IntegerField(), blank=True, null=True)
 
     class Meta:
         ordering = ["last_name", "first_name", "level", "position"]
@@ -639,25 +641,30 @@ class Player(BaseModel):
         Get the current season's MLB organization for this player.
         Returns None if no current season data exists.
         """
-        current_season = settings.CURRENT_SEASON
-        current_status = PlayerStatSeason.objects.filter(
-            player=self, 
-            season=current_season
-        ).first()
-        current_mlb_org = current_status.mlb_org if current_status else None
-        self.current_mlb_org = current_mlb_org
+        try:
+            current_season = settings.CURRENT_SEASON
+            current_status = PlayerStatSeason.objects.filter(
+                player=self, 
+                season=current_season
+            ).first()
+            current_mlb_org = current_status.mlb_org if current_status else None
+            self.current_mlb_org = current_mlb_org
+        except ValueError:
+            pass
 
     def current_season_status(self):
         """
         Get the current season's PlayerStatSeason for this player.
         Returns None if no current season data exists.
         """
-        import datetime
-        current_season = datetime.datetime.now().year
-        return PlayerStatSeason.objects.filter(
-            player=self, 
-            season=current_season
-        ).first()
+        try:
+            current_season = settings.CURRENT_SEASON
+            return PlayerStatSeason.objects.filter(
+                player=self, 
+                season=current_season
+            ).first()
+        except ValueError:
+            pass
 
     def is_carded(self):
         """
@@ -682,9 +689,12 @@ class Player(BaseModel):
         if not self.carded_seasons:
             self.carded_seasons = []
 
-        for pss in PlayerStatSeason.objects.filter(player=self):
-            if pss.classification == "1-mlb":
-                self.carded_seasons.append(pss.season)
+        try:
+            for pss in PlayerStatSeason.objects.filter(player=self):
+                if pss.classification == "1-mlb":
+                    self.carded_seasons.append(pss.season)
+        except ValueError:
+            pass
 
     def save(self, *args, **kwargs):
         """
