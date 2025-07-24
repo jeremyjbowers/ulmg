@@ -373,7 +373,6 @@ class Player(BaseModel):
     is_ulmg_2h_pos = models.BooleanField(default=False)
     is_ulmg_2h_draft = models.BooleanField(default=False)
     is_ulmg_protected = models.BooleanField(default=False)
-    is_ulmg_trade_block = models.BooleanField(default=False)
     is_ulmg_35man_roster = models.BooleanField(default=False)
     is_ulmg_mlb_roster = models.BooleanField(default=False)
     is_ulmg_aaa_roster = models.BooleanField(default=False)

@@ -204,6 +204,19 @@ CSV_COLUMNS = [
     "defense",
     "is_ulmg_midseason_unprotected",
     "team__abbreviation",
+    "is_ulmg_reserve",
+    "is_ulmg_1h_p",
+    "is_ulmg_1h_c",
+    "is_ulmg_1h_pos",
+    "is_ulmg_2h_p",
+    "is_ulmg_2h_c",
+    "is_ulmg_2h_pos",
+    "is_ulmg_2h_draft",
+    "is_ulmg_protected",
+    "is_ulmg_35man_roster",
+    "is_ulmg_mlb_roster",
+    "is_ulmg_aaa_roster",
+    "is_ulmg_midseason_unprotected",
 ]
 
 DRAFTS = [
