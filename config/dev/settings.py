@@ -202,7 +202,6 @@ CSV_COLUMNS = [
     "position",
     "level",
     "defense",
-    "is_ulmg_midseason_unprotected",
     "team__abbreviation",
     "is_ulmg_reserve",
     "is_ulmg_1h_p",
