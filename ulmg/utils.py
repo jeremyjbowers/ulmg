@@ -286,7 +286,7 @@ def build_context(request):
     context = {}
 
     # to build the nav
-    context["teamnav"] = models.Team.objects.all().values("abbreviation")
+    context["teamnav"] = models.Team.objects.all().order_by("division", "abbreviation")
     context["draftnav"] = settings.DRAFTS
     context["mlb_roster_size"] = settings.MLB_ROSTER_SIZE
     context["roster_tab"] = settings.TEAM_ROSTER_TAB

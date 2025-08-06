@@ -22,9 +22,15 @@
         <!-- Teams dropdown -->
         <div class="nav-dropdown">
             <span class="underline cursor-pointer font-bold">Teams ▼</span>
-            <div class="nav-dropdown-content min-w-32">
-                {% for team in teamnav %}
-                <a href="/teams/{{ team.abbreviation|lower }}/{% if value %}?value=true{% endif %}" class="block underline text-sm py-1">{{ team.abbreviation }}</a>
+            <div class="nav-dropdown-content min-w-48">
+                {% regroup teamnav by division as division_teams %}
+                {% for division in division_teams %}
+                    {% if division.grouper %}
+                    <div class="text-xs font-bold text-gray-600 px-2 py-1 border-b border-gray-200">{{ division.grouper }}</div>
+                    {% endif %}
+                    {% for team in division.list %}
+                    <a href="/teams/{{ team.abbreviation|lower }}/{% if value %}?value=true{% endif %}" class="block underline text-sm py-1 pl-2">{{ team.abbreviation }}</a>
+                    {% endfor %}
                 {% endfor %}
             </div>
         </div>

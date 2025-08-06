@@ -26,7 +26,32 @@ def trade_block(request):
 
 def index(request):
     context = utils.build_context(request)
-    context["teams"] = models.Team.objects.all()
+    
+    # Get teams with player counts by position and level
+    from django.db.models import Count, Q, Case, When, IntegerField
+    
+    teams = models.Team.objects.select_related('owner_obj').annotate(
+        # Count players by specific positions
+        c_count=Count('player', filter=Q(player__position='C')),
+        if_count=Count('player', filter=Q(player__position='IF')),
+        of_count=Count('player', filter=Q(player__position='OF')),
+        p_count=Count('player', filter=Q(player__position='P')),
+        
+        # Count multi-position players
+        if_of_count=Count('player', filter=Q(player__position='IF-OF')),
+        p_of_count=Count('player', filter=Q(player__position='OF-P')),
+        p_if_count=Count('player', filter=Q(player__position='IF-P')),
+        
+        # Count players by level
+        v_level_count=Count('player', filter=Q(player__level='V')),
+        a_level_count=Count('player', filter=Q(player__level='A')),
+        b_level_count=Count('player', filter=Q(player__level='B')),
+        
+        # Total player count
+        total_players=Count('player')
+    ).order_by('division', 'abbreviation')
+    
+    context["teams"] = teams
 
     season = settings.CURRENT_SEASON
 
