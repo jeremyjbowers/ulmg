@@ -10,7 +10,7 @@
 <!-- Simple tab navigation -->
 <div class="border-b border-gray-300 mb-4">
     <div class="flex space-x-4 pb-2">
-        <a href="/teams/{{ team.abbreviation|lower }}/" class="underline">Roster{% if num_owned %} ({{ num_owned }}){% endif %}</a>
+        <a href="/teams/{{ team.abbreviation|lower }}/" class="underline">Roster{% if num_owned and (roster_tab or protect_tab) %} ({{ num_owned }}){% endif %}</a>
         <span class="font-bold">Trades & picks</span>
         {% if own_team %}
         <a href="/my/wishlist/draft/beta/" class="underline">AA Draft</a>
