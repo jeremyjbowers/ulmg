@@ -457,24 +457,23 @@ def player_available_offseason(request):
 def search_by_name(request):
     """
     Search for players by name only.
-    Uses PlayerStatSeason objects for consistent performance with filter search.
+    Returns Player objects that use get_best_stat_season() method for stats display.
     """
     context = utils.build_context(request)
     
-    # Start with PlayerStatSeason for current season (2025) with optimized relationships
-    current_season = settings.CURRENT_SEASON
-    query = models.PlayerStatSeason.objects.filter(season=current_season).select_related('player')
+    # Start with Player objects directly
+    query = models.Player.objects.all()
     
-    # Handle name search through player relationship
+    # Handle name search
     if request.GET.get("name", None):
         name = request.GET["name"].strip()
         if name:
-            query = query.filter(player__name__icontains=name)
+            query = query.filter(name__icontains=name)
             context["name"] = name
     
     # Split into hitters and pitchers for the template, order by player fields
-    context["hitters"] = query.exclude(player__position="P").order_by("player__position", "-player__level_order", "player__last_name", "player__first_name")
-    context["pitchers"] = query.filter(player__position__icontains="P").order_by("-player__level_order", "player__last_name", "player__first_name")
+    context["hitters"] = query.exclude(position="P").order_by("position", "-level_order", "last_name", "first_name")
+    context["pitchers"] = query.filter(position__icontains="P").order_by("-level_order", "last_name", "first_name")
     
     # Filters hidden by default for simple name search
     context["show_filters_by_default"] = False

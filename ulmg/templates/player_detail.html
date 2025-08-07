@@ -6,6 +6,15 @@
 <!-- Player Header -->
 <div class="mb-6 pb-4 border-b border-gray-300">
     <h1 class="text-2xl font-bold mb-2">
+        {% if user.is_authenticated %}
+            {% if p.team %}
+                {% if p.team.owner_obj.user != user %}
+                    <span id="player-{{ p.id }}" class="action-add-wishlist wishlist-btn" data-playerid="{{ p.id }}">+</span>
+                {% endif %}
+            {% else %}
+                <span id="player-{{ p.id }}" class="action-add-wishlist wishlist-btn" data-playerid="{{ p.id }}">+</span>
+            {% endif %}
+        {% endif %}
         {% if p.position %}{{ p.position }} {% endif %}{{ p.name }}
         {% if p.is_trade_block %}<span class="text-xs font-normal text-red">[Trade Block]</span>{% endif %}
     </h1>
@@ -32,10 +41,10 @@
 
 <!-- Player Details -->
 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 text-xs">
-    {% if p.mlb_org %}
+    {% if p.current_mlb_org %}
     <div>
         <span class="font-bold">MLB Organization:</span><br>
-        {{ p.mlb_org }}
+        {{ p.current_mlb_org }}
     </div>
     {% endif %}
     {% if p.role %}
@@ -264,4 +273,8 @@
 </div>
 {% endif %}
 
+{% endblock %}
+
+{% block extrascript %}
+{% include "includes/my/wishlistjs.html" %}
 {% endblock %}

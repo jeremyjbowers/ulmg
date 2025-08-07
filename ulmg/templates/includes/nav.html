@@ -36,11 +36,10 @@
         </div>
         
         <!-- Player Search -->
-        <div class="search-dropdown">
-            <input type="text" id="player-search" placeholder="find a player" autocomplete="off" 
+        <form action="/search/name/" method="GET" class="inline">
+            <input type="text" name="name" placeholder="find a player" autocomplete="off" 
                    class="border border-gray-300 px-2 py-1 text-xs w-32">
-            <div class="search-results hidden" id="search-results"></div>
-        </div>
+        </form>
     </div>
 
     <div class="flex items-center space-x-2">
@@ -68,71 +67,3 @@
     </div>
 </nav>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const searchInput = document.getElementById('player-search');
-    const searchResults = document.getElementById('search-results');
-    let searchTimeout;
-
-    searchInput.addEventListener('input', function() {
-        const query = this.value.trim();
-        
-        clearTimeout(searchTimeout);
-        
-        if (query.length < 2) {
-            searchResults.classList.add('hidden');
-            return;
-        }
-        
-        searchTimeout = setTimeout(() => {
-            performSearch(query);
-        }, 300);
-    });
-
-    searchInput.addEventListener('focus', function() {
-        if (this.value.trim().length >= 2 && searchResults.children.length > 0) {
-            searchResults.classList.remove('hidden');
-        }
-    });
-
-    document.addEventListener('click', function(event) {
-        if (!searchInput.contains(event.target) && !searchResults.contains(event.target)) {
-            searchResults.classList.add('hidden');
-        }
-    });
-
-    function performSearch(query) {
-        fetch(`/api/v1/player/autocomplete/?q=${encodeURIComponent(query)}`)
-            .then(response => response.json())
-            .then(data => {
-                searchResults.innerHTML = '';
-                
-                if (data.players && data.players.length > 0) {
-                    data.players.forEach(player => {
-                        const item = document.createElement('div');
-                        item.className = 'search-result-item';
-                        item.innerHTML = `
-                            <div class="font-bold">${player.name}</div>
-                            <div class="text-xs text-gray-600">${player.team || 'FA'} • ${player.position || ''} • ${player.level || ''}</div>
-                        `;
-                        item.addEventListener('click', () => {
-                            window.location.href = `/players/${player.id}/`;
-                        });
-                        searchResults.appendChild(item);
-                    });
-                } else {
-                    const noResults = document.createElement('div');
-                    noResults.className = 'p-2 text-gray-500 italic';
-                    noResults.textContent = 'No players found';
-                    searchResults.appendChild(noResults);
-                }
-                
-                searchResults.classList.remove('hidden');
-            })
-            .catch(error => {
-                console.error('Search error:', error);
-                searchResults.classList.add('hidden');
-            });
-    }
-});
-</script>

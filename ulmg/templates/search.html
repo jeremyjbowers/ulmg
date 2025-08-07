@@ -38,8 +38,7 @@
         <thead>
             <tr class="border-b border-gray-300">
                 <th class="text-left py-1 sortable" data-sortable-type="alpha">Name</th>
-                <th class="text-center py-1 sortable">MLB</th>
-                <th class="text-center py-1 sortable" data-sortable-type="alpha">Team</th>
+                <th class="text-center py-1 sortable" data-sortable-type="alpha">ULMG</th>
                 <th class="text-center py-1 sortable" data-sortable-type="numeric">Age</th>
                 <th class="text-center py-1 sortable" data-sortable-type="alpha">Lvl</th>
                 <th class="text-center py-1 sortable" data-sortable-type="alpha">Status</th>
@@ -48,7 +47,11 @@
         </thead>
         <tbody>
         {% for p in position.list %}
-        <tr class="level-{{ p.clean_classification }} border-b border-gray-100">
+        {% if p.get_best_stat_season %}
+        <tr class="level-{{ p.get_best_stat_season.clean_classification }} border-b border-gray-100">
+        {% else %}
+        <tr class="border-b border-gray-100">
+        {% endif %}
             <td class="py-1">
                 {% if user.is_authenticated %}
                     {% if p.player %}
@@ -67,7 +70,6 @@
                 <a href="/players/{{ p.id }}/" class="underline">{{ p.name }}</a>
                 {% endif %}
             </td>
-            <td class="text-center py-1">{% if p.player %}{{ p.player.mlb_org|default_if_none:"-" }}{% else %}{{ p.mlb_org|default_if_none:"-" }}{% endif %}</td>
             <td class="text-center py-1">
                 {% if p.player %}
                     {% if p.player.team %}<a href="/teams/{{ p.player.team.abbreviation }}/" class="underline">{{ p.player.team|default_if_none:"-" }}</a>{% else %}-{% endif %}
@@ -78,7 +80,11 @@
             <td class="text-center py-1">{% if p.player %}{{ p.player.age|default_if_none:"-" }}{% else %}{{ p.age|default_if_none:"-" }}{% endif %}</td>
             <td class="text-center py-1">{% if p.player %}{{ p.player.level|default_if_none:"" }}{% else %}{{ p.level|default_if_none:"" }}{% endif %}</td>
             <td class="text-center py-1">{% if p.player %}{{ p.player.roster_status|default_if_none:"" }}{% else %}{{ p.roster_status|default_if_none:"" }}{% endif %}</td>
-            {% include "includes/hitter_stat_cells.html" %}
+            {% if p.season %}
+                {% include "includes/hitter_stat_cells.html" %}
+            {% else %}
+                {% include "includes/hitter_stat_cells_player.html" %}
+            {% endif %}
         </tr>
         {% endfor %}
         </tbody>
@@ -98,8 +104,7 @@
         <thead>
             <tr class="border-b border-gray-300">
                 <th class="text-left py-1 sortable" data-sortable-type="alpha">Name</th>
-                <th class="text-center py-1 sortable">MLB</th>
-                <th class="text-center py-1 sortable" data-sortable-type="alpha">Team</th>
+                <th class="text-center py-1 sortable" data-sortable-type="alpha">ULMG</th>
                 <th class="text-center py-1 sortable" data-sortable-type="numeric">Age</th>
                 <th class="text-center py-1 sortable" data-sortable-type="alpha">Lvl</th>
                 <th class="text-center py-1 sortable" data-sortable-type="alpha">Status</th>
@@ -108,7 +113,11 @@
         </thead>
         <tbody>
         {% for p in pitchers %}
-        <tr class="level-{{ p.clean_classification }} border-b border-gray-100">
+        {% if p.get_best_stat_season %}
+        <tr class="level-{{ p.get_best_stat_season.clean_classification }} border-b border-gray-100">
+        {% else %}
+        <tr class="border-b border-gray-100">
+        {% endif %}
             <td class="py-1">
                 {% if user.is_authenticated %}
                     {% if p.player %}
@@ -127,7 +136,6 @@
                 <a href="/players/{{ p.id }}/" class="underline">{{ p.name }}</a>
                 {% endif %}
             </td>
-            <td class="text-center py-1">{% if p.player %}{{ p.player.mlb_org|default_if_none:"-" }}{% else %}{{ p.mlb_org|default_if_none:"-" }}{% endif %}</td>
             <td class="text-center py-1">
                 {% if p.player %}
                     {% if p.player.team %}<a href="/teams/{{ p.player.team.abbreviation }}/" class="underline">{{ p.player.team|default_if_none:"-" }}</a>{% else %}-{% endif %}
@@ -138,7 +146,11 @@
             <td class="text-center py-1">{% if p.player %}{{ p.player.age|default_if_none:"-" }}{% else %}{{ p.age|default_if_none:"-" }}{% endif %}</td>
             <td class="text-center py-1">{% if p.player %}{{ p.player.level|default_if_none:"" }}{% else %}{{ p.level|default_if_none:"" }}{% endif %}</td>
             <td class="text-center py-1">{% if p.player %}{{ p.player.roster_status|default_if_none:"" }}{% else %}{{ p.roster_status|default_if_none:"" }}{% endif %}</td>
-            {% include "includes/pitcher_stat_cells.html" %}
+            {% if p.season %}
+                {% include "includes/pitcher_stat_cells.html" %}
+            {% else %}
+                {% include "includes/pitcher_stat_cells_player.html" %}
+            {% endif %}
         </tr>
         {% endfor %}
         </tbody>
