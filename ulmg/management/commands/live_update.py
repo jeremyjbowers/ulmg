@@ -48,15 +48,15 @@ class Command(BaseCommand):
                 print(f'ERROR fixing duplicates: {e}')
                 results['failed'].append(f'Fix duplicates: {e}')
 
-            # # download mlb depth charts
-            # # this also sets status in realtime but doesn't create players
-            # try:
-            #     print('LIVE: Download MLB depth charts')
-            #     call_command('live_download_mlb_depthcharts')
-            #     results['success'].append('Download MLB depth charts')
-            # except Exception as e:
-            #     print(f'ERROR downloading MLB depth charts: {e}')
-            #     results['failed'].append(f'Download MLB depth charts: {e}')
+            # download mlb depth charts
+            # this also sets status in realtime but doesn't create players
+            try:
+                print('LIVE: Download MLB depth charts')
+                call_command('live_download_mlb_depthcharts')
+                results['success'].append('Download MLB depth charts')
+            except Exception as e:
+                print(f'ERROR downloading MLB depth charts: {e}')
+                results['failed'].append(f'Download MLB depth charts: {e}')
 
             # download fg stats
             try:
@@ -67,31 +67,31 @@ class Command(BaseCommand):
                 print(f'ERROR downloading FG stats: {e}')
                 results['failed'].append(f'Download FG stats: {e}')
 
-        # # use roster files to update players who have fg_ids with mlb_ids
-        # try:
-        #     print('LIVE: Crosswalk FGIDs to MLBIDs')
-        #     call_command('live_crosswalk_ids')
-        #     results['success'].append('Crosswalk FGIDs to MLBIDs')
-        # except Exception as e:
-        #     print(f'ERROR crosswalking IDs: {e}')
-        #     results['failed'].append(f'Crosswalk FGIDs to MLBIDs: {e}')
+        # use roster files to update players who have fg_ids with mlb_ids
+        try:
+            print('LIVE: Crosswalk FGIDs to MLBIDs')
+            call_command('live_crosswalk_ids')
+            results['success'].append('Crosswalk FGIDs to MLBIDs')
+        except Exception as e:
+            print(f'ERROR crosswalking IDs: {e}')
+            results['failed'].append(f'Crosswalk FGIDs to MLBIDs: {e}')
             
-        # try:
-        #     call_command('fix_dupes')
-        #     results['success'].append('Fix duplicates (post-crosswalk)')
-        # except Exception as e:
-        #     print(f'ERROR fixing duplicates (post-crosswalk): {e}')
-        #     results['failed'].append(f'Fix duplicates (post-crosswalk): {e}')
+        try:
+            call_command('fix_dupes')
+            results['success'].append('Fix duplicates (post-crosswalk)')
+        except Exception as e:
+            print(f'ERROR fixing duplicates (post-crosswalk): {e}')
+            results['failed'].append(f'Fix duplicates (post-crosswalk): {e}')
 
-        # # use roster files to update all player status
-        # # creates new players from FG with appropriate IDs
-        # try:
-        #     print('LIVE: Update status from FG rosters')
-        #     call_command('live_update_status_from_fg_rosters')
-        #     results['success'].append('Update status from FG rosters')
-        # except Exception as e:
-        #     print(f'ERROR updating status from FG rosters: {e}')
-        #     results['failed'].append(f'Update status from FG rosters: {e}')
+        # use roster files to update all player status
+        # creates new players from FG with appropriate IDs
+        try:
+            print('LIVE: Update status from FG rosters')
+            call_command('live_update_status_from_fg_rosters')
+            results['success'].append('Update status from FG rosters')
+        except Exception as e:
+            print(f'ERROR updating status from FG rosters: {e}')
+            results['failed'].append(f'Update status from FG rosters: {e}')
 
         # use fg stats to update all player stats
         try:
