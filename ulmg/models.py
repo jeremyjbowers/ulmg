@@ -812,13 +812,15 @@ class PlayerStatSeason(BaseModel):
 
     def role_type_class(self):
         """Determine CSS class based on role_type for background colors."""
+        # Highest priority: any IL indication in roster_status, role, or role_type
+        for field in [self.roster_status, self.role, self.role_type]:
+            if field and 'IL' in field.upper():
+                return 'player-role-il'
+
         if self.role_type:
             role_type_upper = self.role_type.upper()
-            # Check for IL first (highest priority)
-            if 'IL' in role_type_upper:
-                return 'player-role-il'
             # Check for MiLB
-            elif 'MILB' in role_type_upper:
+            if 'MILB' in role_type_upper:
                 return 'player-role-milb'
             else:
                 # Has role_type but not IL or MiLB

@@ -152,10 +152,13 @@ class Command(BaseCommand):
                                 player_obj.save()
                             
                             # Update PlayerStatSeason with roster status
+                            # Prefer FanGraphs "type" (e.g., mlb-sl, milb-bn) for role_type
+                            fg_type = player_data.get('type', '')
+
                             season_data = {
                                 'roster_status': roster_status,
                                 'role': role,
-                                'role_type': mlevel,
+                                'role_type': fg_type or mlevel,
                                 'mlb_org': player_data.get('dbTeam', ''),
                                 'is_mlb': is_mlb,
                                 'minors': is_minors,

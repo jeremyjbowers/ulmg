@@ -8,8 +8,14 @@
 </td> -->
 
 {% with best_stats=p.get_best_stat_season %}
-<td data-value="{{ p.role_type|default_if_none:"-" }}">
-    {{ p.role_type|default_if_none:"-" }}
+<td data-value="{% if best_stats and best_stats.roster_status and 'IL' in best_stats.roster_status %}{{ best_stats.roster_status }}{% elif best_stats and best_stats.role_type %}{{ best_stats.role_type }}{% elif best_stats and best_stats.role %}{{ best_stats.role }}{% else %}-{% endif %}">
+    {% if best_stats and best_stats.roster_status and 'IL' in best_stats.roster_status %}
+        {{ best_stats.roster_status }}
+    {% elif best_stats and best_stats.role_type %}
+        {{ best_stats.role_type }}
+    {% elif best_stats and best_stats.role %}
+        {{ best_stats.role }}
+    {% else %}-{% endif %}
 </td>
 
 <td data-value="{{ p.role|default_if_none:"-" }}">

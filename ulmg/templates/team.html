@@ -71,7 +71,7 @@
         </thead>
         <tbody>
         {% for p in position.list %}
-        <tr class="level-{{ p.get_best_stat_season.clean_classification }} border-b border-gray-100">
+        <tr class="level-{{ p.get_best_stat_season.clean_classification }} {% if p.get_best_stat_season %}{{ p.get_best_stat_season.role_type_class }}{% endif %} border-b border-gray-100">
             <td class="py-1">
                 <a href="/players/{{ p.id }}/" class="underline">{{ p.name }}</a>
             </td>
@@ -129,7 +129,7 @@
         </thead>
         <tbody>
         {% for p in pitchers %}
-        <tr class="level-{{ p.get_best_stat_season.clean_classification }} border-b border-gray-100">
+        <tr class="level-{{ p.get_best_stat_season.clean_classification }} {% if p.get_best_stat_season %}{{ p.get_best_stat_season.role_type_class }}{% endif %} border-b border-gray-100">
             <td class="py-1">
                 <a href="/players/{{ p.id }}/" class="underline">{{ p.name }}</a>
             </td>

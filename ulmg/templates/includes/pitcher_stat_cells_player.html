@@ -5,8 +5,16 @@
     {% if p.roster_status %}{{ p.roster_status|default_if_none:"-" }}{% else %}-{% endif %}
 </td> -->
 
-<td data-value="{{ p.role_type|default_if_none:"-" }}">
-    {{ p.role_type|default_if_none:"-" }}
+<td data-value="{% with best_stats=p.get_best_stat_season %}{% if best_stats and best_stats.roster_status and 'IL' in best_stats.roster_status %}{{ best_stats.roster_status }}{% elif best_stats and best_stats.role_type %}{{ best_stats.role_type }}{% elif best_stats and best_stats.role %}{{ best_stats.role }}{% else %}-{% endif %}{% endwith %}">
+    {% with best_stats=p.get_best_stat_season %}
+        {% if best_stats and best_stats.roster_status and 'IL' in best_stats.roster_status %}
+            {{ best_stats.roster_status }}
+        {% elif best_stats and best_stats.role_type %}
+            {{ best_stats.role_type }}
+        {% elif best_stats and best_stats.role %}
+            {{ best_stats.role }}
+        {% else %}-{% endif %}
+    {% endwith %}
 </td>
 
 {% with best_stats=p.get_best_stat_season %}
