@@ -19,9 +19,8 @@ from ulmg import models, utils
 class Command(BaseCommand):
     def get_or_create_player_stat_season(self, player, season, **kwargs):
         """Get or create PlayerStatSeason for a player and season with given updates"""
-        # Use 1-mlb as default classification for FG roster data
-        classification = kwargs.pop('classification', '1-mlb')
-        
+        classification = kwargs.pop('classification')
+
         with transaction.atomic():
             player_stat_season, created = models.PlayerStatSeason.objects.get_or_create(
                 player=player,
@@ -29,13 +28,13 @@ class Command(BaseCommand):
                 classification=classification,
                 defaults=kwargs
             )
-            
+
             if not created:
                 # Update existing record with provided data
                 for key, value in kwargs.items():
                     setattr(player_stat_season, key, value)
                 player_stat_season.save()
-                
+
         return player_stat_season
 
     def map_fg_role_to_status(self, role, mlevel):
@@ -135,6 +134,17 @@ class Command(BaseCommand):
                             role = player_data.get('role', '')
                             mlevel = player_data.get('mlevel', '')
                             roster_status = self.map_fg_role_to_status(role, mlevel)
+
+                            # Determine correct classification from mlevel
+                            mlevel_upper = mlevel.upper() if mlevel else ""
+                            if mlevel_upper == 'MLB':
+                                classification = '1-mlb'
+                                is_mlb = True
+                                is_minors = False
+                            else:
+                                classification = '2-milb'
+                                is_mlb = False
+                                is_minors = True
                             
                             # Update player-level organization field
                             if player_data.get('dbTeam'):
@@ -147,14 +157,27 @@ class Command(BaseCommand):
                                 'role': role,
                                 'role_type': mlevel,
                                 'mlb_org': player_data.get('dbTeam', ''),
-                                'is_mlb': mlevel.upper() == 'MLB' if mlevel else False,
+                                'is_mlb': is_mlb,
+                                'minors': is_minors,
                                 'is_injured': 'IL' in roster_status or 'INJ' in roster_status,
                                 'is_mlb40man': player_data.get('roster40', '').upper() == 'Y',
                             }
-                            
-                            self.get_or_create_player_stat_season(
-                                player_obj, current_season, **season_data
+
+                            pss = self.get_or_create_player_stat_season(
+                                player_obj, current_season, classification=classification, **season_data
                             )
+
+                            # If this is a minors record, clean up any incorrect 1-mlb record without stats
+                            if classification == '2-milb':
+                                wrong_mlb = models.PlayerStatSeason.objects.filter(
+                                    player=player_obj,
+                                    season=current_season,
+                                    classification='1-mlb',
+                                    hit_stats__isnull=True,
+                                    pitch_stats__isnull=True,
+                                )
+                                if wrong_mlb.exists():
+                                    wrong_mlb.delete()
                             
                             print(f"Updated {player_obj.name} - Status: {roster_status}, Org: {season_data['mlb_org']}")
                             team_players_processed += 1

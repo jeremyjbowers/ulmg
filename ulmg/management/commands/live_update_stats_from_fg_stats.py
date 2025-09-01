@@ -119,6 +119,21 @@ class Command(BaseCommand):
                                 pass
 
                     if p_obj:
+                        # Guard: Only create 1-mlb records if there are actual MLB stats
+                        if league == "mlb":
+                            has_stats = False
+                            if side == "bat":
+                                has_stats = (stat_dict.get('pa') or 0) > 0
+                            if side == "pit":
+                                # Accept either IP > 0 or Games > 0 as evidence of MLB appearance
+                                ip_val = stat_dict.get('ip') or 0
+                                g_val = stat_dict.get('g') or 0
+                                has_stats = (ip_val > 0) or (g_val > 0)
+
+                            if not has_stats:
+                                # Skip creating an MLB classification for players without MLB appearances
+                                continue
+
                         pss_obj, created = models.PlayerStatSeason.objects.get_or_create(season=season, classification=classification, player=p_obj)
 
                         pss_obj.mlb_org = stat_dict.get('mlb_org')

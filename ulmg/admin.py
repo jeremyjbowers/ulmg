@@ -174,7 +174,7 @@ class PlayerStatSeasonAdmin(admin.ModelAdmin):
                 "description": "Major League Baseball status and roster information for this season.",
                 "fields": (
                     # ("is_umlb", "is_amateur"),
-                    ("is_ulmg_mlb_roster", "is_ulmg_aaa_roster", "is_ulmg_35man_roster"),
+                    ("is_ulmg_mlb_roster", "is_ulmg_aaa_roster", "is_ulmg35man_roster"),
                     # ("is_mlb40man", "mlb_org"),
                 ),
             },
