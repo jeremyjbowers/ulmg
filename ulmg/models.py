@@ -441,13 +441,13 @@ class Player(BaseModel):
         return self.name
 
     def latest_hit_stats(self):
-        stats = PlayerStatSeason.objects.filter(player=self).first()
+        stats = PlayerStatSeason.objects.filter(player=self, is_career=False).first()
         if stats:
             return stats.hit_stats
         return None
 
     def latest_pit_stats(self):
-        stats = PlayerStatSeason.objects.filter(player=self).first()
+        stats = PlayerStatSeason.objects.filter(player=self, is_career=False).first()
         if stats:
             return stats.pitch_stats
         return None
@@ -632,7 +632,8 @@ class Player(BaseModel):
         Returns None if no stat seasons exist.
         """
         return PlayerStatSeason.objects.filter(
-            player=self
+            player=self,
+            is_career=False,
         ).order_by('-season', 'classification').first()
 
     def set_current_mlb_org(self):
@@ -644,7 +645,8 @@ class Player(BaseModel):
             current_season = settings.CURRENT_SEASON
             current_status = PlayerStatSeason.objects.filter(
                 player=self, 
-                season=current_season
+                season=current_season,
+                is_career=False,
             ).first()
             current_mlb_org = current_status.mlb_org if current_status else None
             self.current_mlb_org = current_mlb_org
@@ -660,7 +662,8 @@ class Player(BaseModel):
             current_season = settings.CURRENT_SEASON
             return PlayerStatSeason.objects.filter(
                 player=self, 
-                season=current_season
+                season=current_season,
+                is_career=False,
             ).first()
         except ValueError:
             pass
@@ -689,7 +692,7 @@ class Player(BaseModel):
             self.carded_seasons = []
 
         try:
-            for pss in PlayerStatSeason.objects.filter(player=self):
+            for pss in PlayerStatSeason.objects.filter(player=self, is_career=False):
                 if pss.classification == "1-mlb":
                     self.carded_seasons.append(pss.season)
         except ValueError:
@@ -1439,7 +1442,8 @@ class WishlistPlayer(BaseModel):
         # Get pitching stats from PlayerStatSeason for this player
         stat_seasons = PlayerStatSeason.objects.filter(
             player=self.player,
-            pitch_stats__isnull=False
+            pitch_stats__isnull=False,
+            is_career=False,
         ).order_by('-season', 'classification')
         
         for stat_season in stat_seasons:
@@ -1454,7 +1458,8 @@ class WishlistPlayer(BaseModel):
         # Get hitting stats from PlayerStatSeason for this player
         stat_seasons = PlayerStatSeason.objects.filter(
             player=self.player,
-            hit_stats__isnull=False
+            hit_stats__isnull=False,
+            is_career=False,
         ).order_by('-season', 'classification')
         
         for stat_season in stat_seasons:

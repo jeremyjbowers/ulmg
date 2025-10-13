@@ -60,7 +60,8 @@ def index(request):
     base_stats = models.PlayerStatSeason.objects.filter(
         season=season,
         classification="1-mlb",  # MLB major league only (excludes NPB, KBO, NCAA, minors)
-        player__team__isnull=True    # Unowned only - uses partial index idx_unowned_mlb
+        player__team__isnull=True,   # Unowned only - uses partial index idx_unowned_mlb
+        is_career=False,
     )
 
     # Split into hitters and pitchers by position
@@ -123,7 +124,8 @@ def player(request, playerid):
     
     # Get all PlayerStatSeason records for this player, sorted by year desc, then classification
     player_stats = models.PlayerStatSeason.objects.filter(
-        player_id=playerid
+        player_id=playerid,
+        is_career=False,
     ).order_by('-season', 'classification')
     
     # Split into hitters and pitchers based on player position
@@ -169,7 +171,7 @@ def team_detail(request, abbreviation):
         # Prefetch current season PlayerStatSeason data (ordered by classification)
         Prefetch(
             'playerstatseason_set',
-            queryset=models.PlayerStatSeason.objects.filter(season=season).order_by('classification'),
+            queryset=models.PlayerStatSeason.objects.filter(season=season, is_career=False).order_by('classification'),
             to_attr='current_season_stats'
         )
     )
@@ -376,7 +378,8 @@ def player_available_midseason(request):
         season=current_season,
         classification="1-mlb",
         player__team__isnull=True,
-        hit_stats__pa__gte=1
+        hit_stats__pa__gte=1,
+        is_career=False,
     ).select_related('player')
     
     # Combine queries for hitters
@@ -405,7 +408,8 @@ def player_available_midseason(request):
         classification="1-mlb",
         player__team__isnull=True,
         pitch_stats__ip__gte=1,
-        player__position__icontains="P"
+        player__position__icontains="P",
+        is_career=False,
     ).select_related('player')
     
     for stat_season in unowned_pitchers_with_mlb_stats:
@@ -495,7 +499,8 @@ def filter_players(request):
     
     # Start with PlayerStatSeason for indexed filtering with optimized select_related
     # Include player in select_related to avoid N+1 queries
-    stat_season_query = models.PlayerStatSeason.objects.select_related('player')
+    # Exclude career rows from all search results
+    stat_season_query = models.PlayerStatSeason.objects.select_related('player').filter(is_career=False)
     
     # Default season for filtering
     search_season = settings.CURRENT_SEASON
