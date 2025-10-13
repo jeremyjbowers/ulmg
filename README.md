@@ -1,382 +1,176 @@
-# The ULMG (Ultimate League Manager's Guide)
+ULMG: Strat-O-Matic League Manager for Django
 
-A comprehensive fantasy baseball league management system built for Strat-O-Matic leagues. ULMG provides advanced player tracking, draft management, trade processing, and statistical analysis capabilities that go far beyond what standard fantasy platforms offer.
+ULMG is a Django application for running a Strat-O-Matic style dynasty league. It models teams, players, drafts, trades, and season-by-season statistics across MLB, MiLB, and international/amateur leagues. This README focuses on the core concepts a Django-savvy developer needs to understand how the app loads data, processes it, and represents it in the UI.
 
-## What is ULMG?
+## Core concepts
 
-ULMG manages a unique fantasy baseball league structure with several distinctive features:
+- **League model in brief**: Teams manage rosters across three tiers (Major League, AAA, AA) with league-specific rules for protections, drafts, and transactions. The league constitution provides the authoritative rules; ULMG enforces and visualizes them.
+- **Player levels (V/A/B)**: A `Player` carries a level indicating veteran status or prospect tier. Protection and draft eligibility key off these.
+- **Seasons and classification**: Season-by-season stats live in `PlayerStatSeason`, keyed by `(player, season, classification)` where classification is one of `"1-mlb"`, `"2-milb"`, `"3-npb"`, `"4-kbo"`, `"5-college"`.
+- **Carded (Strat-O-Matic)**: If a player has MLB appearances in a season, their `PlayerStatSeason.carded` is set true for that year. `Player.is_carded()` reads the current season's status.
+- **Defense (Strat-O-Matic)**: `Player.defense` stores the player's Strat defensive ratings; `defense_display()` formats them for templates.
+- **Ownership and rosters**: Long-lived ownership lives on `Player` (`team`, `is_owned`). Season-specific roster/role flags (IL, MLB/AAA assignment, role type) live on `PlayerStatSeason`.
 
-### Multi-Level Player System
-- **V-Level (Veterans)**: Established MLB players who can be protected during each half-season
-- **A-Level**: Quality MLB players, part of the 40-man protected roster during Open Drafts
-- **B-Level**: Future prospects including minor leaguers, high school/college players, and international prospects
-- Each level has different protection rules and draft eligibility
+These choices keep long-lived identity on `Player` and isolate seasonal, league-classified data on `PlayerStatSeason` for performance and clarity.
 
-### Advanced Draft System
-- **Open Drafts**: Players not on 40-man protected rosters (excludes Type V and Type A players)
-- **AA Drafts**: B-level prospects and developing players, includes special 76th roster spot in midseason
-- **Offseason Drafts** (March): Both Open and AA drafts, cut to 75 players afterward
-- **Midseason Drafts** (July): Both Open and AA drafts, unprotected V-level players on AAA rosters exposed
-- Real-time draft administration with pick tracking and trade integration
+## Data model (how we represent the league)
 
-### Comprehensive Player Data
-- Live MLB statistics updated throughout the season
-- Historical performance across multiple seasons and leagues (MLB, MiLB, NPB, KBO, NCAA)
-- Prospect rankings from multiple sources (Baseball America, FanGraphs, etc.)
-- Strat-O-Matic card ratings and defensive assignments
-- Custom league-specific fields (protection status, roster assignments)
+- `ulmg/models.py`
+  - `Player`: canonical person; level (V/A/B), position, crosswalk IDs (MLBAM, FanGraphs, BRef, etc.), ownership (`team`, `is_owned`), defense ratings, and derived helpers like `is_carded()`.
+  - `PlayerStatSeason`: season- and classification-scoped stats and status. Fields include `hit_stats` and `pitch_stats` (JSON), `carded`, `owned`, roster/role flags (IL, MLB/AAA assignment, role type, `mlb_org`). Unique on `(player, season, classification)` and heavily indexed for common queries.
+  - `Team`: owner/identity plus "live" rollups used in dashboards.
+  - `DraftPick`: supports AA/Open drafts across offseason/midseason, with helpers to maintain slugs and overall pick numbers; saving a pick updates a player's team when appropriate.
+  - `Trade` and `TradeReceipt`: multi-team trades of players and picks, with cached summaries for rendering.
 
-## User-Facing Features
+Key invariants:
+- Long-lived ownership stays on `Player`; anything that varies by season lives on `PlayerStatSeason`.
+- We only create an MLB `PlayerStatSeason` when the player actually appears (PA > 0 for hitters; IP > 0 or G > 0 for pitchers). This prevents phantom MLB rows.
 
-### Player Search and Discovery
-- Advanced multi-criteria filtering by season, player classification (V/A/B), ownership status, and statistical thresholds
-- Visual player level classification system with colored backgrounds (green for minor league, light blue for amateur, white for MLB)
-- Real-time statistical leaderboards and sortable statistics tables
-- Position-based player organization with comprehensive hitting and pitching statistics
-- One-click access to external player profiles (MLB.com, FanGraphs, Baseball Reference)
-- Robust player search with name, team, and position filtering
+## Data pipeline (how data gets in)
 
-### Wishlist Management
-- Large, accessible wishlist buttons with clear visual states (yellow "+" for add, green checkmark when added)
-- Personal prospect tracking with custom notes and rankings
-- Tier-based organization for draft preparation
-- Future value assessments and scouting reports
-- Mobile-friendly interface with proper touch targets
+Primary sources
+- FanGraphs JSON endpoints for MLB, MiLB, NPB, KBO, and NCAA.
+- MLB StatsAPI for current-season stats by MLBAM ID.
 
-### Team Management Interface
-- Clean, organized team roster displays with three-tier system (Major League, AAA, AA)
-- Individual player detail pages with comprehensive statistics and biographical information
-- Trade block functionality for showcasing available players
-- Real-time roster composition analysis and rule compliance checking
-- Historical team performance tracking and statistics
+Storage and distribution
+- Local files under `data/<season>/fg_*.json`.
+- Optional S3-compatible cache (DigitalOcean Spaces) managed by `ulmg.utils.S3DataManager`, with local-first reads and best-effort uploads.
 
-### Draft Tools
-- Live draft interface with real-time pick tracking and player availability
-- Integrated player search during draft sessions
-- Draft preparation tools with customizable prospect rankings
-- Pick trading and compensatory pick management
-- Draft history and recap functionality
+Commands (happy path)
+- Download FanGraphs data (local-only or local+S3):
+  - `python manage.py live_download_fg_stats [--local-only]`
+- Ingest FanGraphs data into `PlayerStatSeason` (reads local or S3-hosted FG files):
+  - `python manage.py live_update_stats_from_fg_stats`
+- Load MLB StatsAPI for players with `mlbam_id`:
+  - `python manage.py load_mlb_stats --season 2025`
+- Clean up duplicates if any import scripts evolve:
+  - `python manage.py deduplicate_playerstatseason`
 
-### Trade System
-- Intuitive multi-player, multi-pick trade creation interface
-- Trade validation with automatic roster compliance checking
-- Historical trade tracking with detailed summaries and analysis
-- Trade impact assessment and roster optimization suggestions
+What the import does
+- Matches FG/MLB rows to existing `Player` via `fg_id` or `mlbam_id` (we do not create new players from FG rows; they can be incomplete). If matched, we create/update a `PlayerStatSeason` for `(season, classification)` and attach `hit_stats`/`pitch_stats` JSON.
+- For MLB rows, `carded=True` is set when there are appearances. Carded status and roster flags are consumed by team and draft views.
 
-### Statistics and Analytics
-- Season-specific statistical displays with league context
-- Performance trending and year-over-year comparisons
-- Advanced sabermetric integration (wRC+, FIP, xwOBA, etc.)
-- Injury tracking and roster status monitoring
-- Prospect development tracking with ETA and organizational rankings
+Where to look in code
+- `ulmg/management/commands/` for import/update scripts.
+- `ulmg/utils.py` for S3 handling, stat thresholds, and helper functions.
+- `ulmg/constants.py` for stat field name mappings and thresholds.
 
-### Administrative Tools
-- Comprehensive league management dashboard
-- Automated draft pick generation and order management
-- Bulk roster operations and rule enforcement
-- Trade processing with audit trails
-- Player status updates and roster maintenance
+## Quickstart (development)
 
-## Technical Architecture
-
-### Database Design
-The application uses an optimized database structure with comprehensive constraints and indexing:
-
-#### Core Models
-- **Player Model**: Core player information, identifiers, V/A/B classifications, and league-specific data
-- **PlayerStatSeason**: Season-specific statistics and roster information with unique constraints
-- **Team Management**: Three-tier roster assignments (Major League, AAA, AA) and ownership tracking
-- **Draft System**: Open and AA draft pick management with protection rule enforcement
-- **Trade Processing**: Multi-party transactions including players and draft picks
-
-#### Database Constraints and Integrity
-- **Unique Constraints**: PlayerStatSeason records enforce uniqueness on (player, season, classification) to prevent duplicates
-- **Foreign Key Relationships**: Comprehensive referential integrity across all player, team, and transaction data
-- **Index Optimization**: Strategic database indexes on frequently queried combinations
-- **Data Validation**: Model-level validation for league rules and roster requirements
-
-### Performance Optimizations
-- **Efficient Query Patterns**: Direct PlayerStatSeason queries avoid expensive Player model conversions
-- **Composite Database Indexes**: Optimized for common filter combinations (season + ownership + classification)
-- **Template Optimization**: PlayerStatSeason objects passed directly to templates without conversion overhead
-- **S3 Data Caching**: External data cached in S3 for improved reliability and performance
-- **Lazy Loading**: Deferred loading of heavy statistics data until needed
-
-### Data Infrastructure
-
-#### S3 Data Sharing System
-ULMG implements a robust S3-compatible data sharing system for external statistics and roster data:
-
-- **Automated Data Pipeline**: Download commands automatically upload data to DigitalOcean Spaces
-- **Fallback Architecture**: Commands attempt local files first, then S3 if local unavailable
-- **Environment Flexibility**: Production server downloads from APIs, development reads from S3
-- **Data Persistence**: Historical statistics and roster snapshots preserved in cloud storage
-- **API Rate Limiting Protection**: Reduces external API calls by sharing cached data
-
-#### S3 Data Manager Features
-- **Automatic Upload**: Downloaded FanGraphs and MLB data automatically uploaded to S3
-- **Smart Fallback**: Local development reads from S3 when FanGraphs blocks access
-- **File Verification**: Content validation and existence checking before processing
-- **Error Handling**: Graceful degradation when S3 or source APIs unavailable
-
-### Data Sources and Integrations
-
-#### Primary Data Sources
-- **FanGraphs**: Comprehensive MLB, MiLB, NPB, KBO, and college statistics and projections
-- **MLB.com**: Official player data, roster information, and depth charts
-- **Baseball America**: Prospect rankings and scouting reports
-- **Python MLB Stats API**: Real-time player statistics and biographical data
-
-#### Update Frequency
-- **Live Statistics**: Daily updates during active season (March-October)
-- **Roster Information**: Real-time updates for trades, signings, and roster moves
-- **Prospect Rankings**: Updated during ranking publication cycles
-- **Historical Data**: Archived and preserved for comparative analysis
-
-## Local Development
-
-### Prerequisites
+Prereqs
 - Python 3.8+ 
 - PostgreSQL 12+
-- Node.js (for frontend assets)
-- Git
-- S3-compatible storage access (optional for external data)
+- Optional: S3-compatible credentials (DigitalOcean Spaces)
 
-### Setup Instructions
-
-#### 1. Clone and Environment Setup
+Setup
 ```bash
 git clone https://github.com/jeremyjbowers/ulmg.git
 cd ulmg
 python -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-```
-
-#### 2. Install Dependencies
-```bash
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-pip install -r new.requirements.txt  # Additional development dependencies
-```
+pip install -r new.requirements.txt
 
-#### 3. Database Setup
-```bash
-# Create PostgreSQL database
-createdb ulmg_dev
-
-# Configure environment variables
 export DJANGO_SETTINGS_MODULE=config.dev.settings
-export DATABASE_URL=postgresql://username:password@localhost/ulmg_dev
-
-# Run migrations
+createdb ulmg_dev
 python manage.py migrate
-```
-
-#### 4. S3 Configuration (Optional)
-For S3 data sharing, configure environment variables:
-```bash
-export DO_SPACES_ACCESS_KEY_ID=your_access_key
-export DO_SPACES_SECRET_ACCESS_KEY=your_secret_key
-export DO_SPACES_ENDPOINT_URL=https://nyc3.digitaloceanspaces.com
-export DO_SPACES_BUCKET_NAME=your_bucket_name
-```
-
-See `S3_DATA_SETUP.md` for detailed S3 configuration instructions.
-
-#### 5. Load Initial Data
-```bash
-# Create superuser
 python manage.py createsuperuser
-
-# Load team and basic league data
-python manage.py loaddata teams owners
-
-# Import player statistics (if data files available)
-python manage.py migrate_stats
-
-# Clean up any duplicate PlayerStatSeason records
-python manage.py deduplicate_playerstatseason --dry-run
-python manage.py deduplicate_playerstatseason
 ```
 
-#### 6. Development Server
+S3 (optional)
 ```bash
+export AWS_ACCESS_KEY_ID=...
+export AWS_SECRET_ACCESS_KEY=...
+export AWS_S3_ENDPOINT_URL=https://nyc3.digitaloceanspaces.com
+export AWS_STORAGE_BUCKET_NAME=your-bucket
+```
+See `S3_DATA_SETUP.md` for details.
+
+Load data and run
+```bash
+python manage.py live_download_fg_stats --local-only
+python manage.py live_update_stats_from_fg_stats
 python manage.py runserver
 ```
 
-The application will be available at `http://localhost:8000`
+## Common commands
 
-### Development Commands
-
-#### Data Management
+Data
 ```bash
-# Download external statistics (uploads to S3 automatically)
-python manage.py live_download_fg_stats
-python manage.py live_download_fg_rosters
-python manage.py live_download_mlb_depthcharts
-
-# Process statistics from local files or S3
+python manage.py live_download_fg_stats [--local-only]
 python manage.py live_update_stats_from_fg_stats
-python manage.py live_update_status_from_fg_rosters
-python manage.py archive_update_stats_from_fg_stats --season 2024
-
-# Migrate player statistics with progress tracking
-python manage.py migrate_stats
-
-# Load MLB statistics via API
 python manage.py load_mlb_stats --season 2025
-
-# Set player carded status based on MLB appearances  
-python manage.py set_player_carded_status
-
-# Clean duplicate PlayerStatSeason records
 python manage.py deduplicate_playerstatseason
 ```
 
-#### League Operations
+League ops
 ```bash
-# Process trades
-python manage.py process_trade --trade-id 123
-
-# Generate draft picks
-python manage.py generate_picks --year 2025 --season midseason --draft-type open
-
-# Post-draft roster updates
+python manage.py draft_generate_picks --year 2025 --season midseason --draft-type open
 python manage.py post_offseason_draft
 python manage.py offseason
+python manage.py midseason
 ```
 
-#### Analytics and Maintenance
+Maintenance
 ```bash
-# Analyze lineup performance
 python manage.py analyze_lineups
-
-# Reset player statistics (caution: destructive)
 python manage.py reset_stats --season 2025
-```
-
-### Configuration
-
-#### Environment Variables
-- `DJANGO_SETTINGS_MODULE`: Settings module (config.dev.settings for development)
-- `DATABASE_URL`: PostgreSQL connection string
-- `SECRET_KEY`: Django secret key
-- `DEBUG`: Enable debug mode (True for development)
-- `DO_SPACES_*`: S3-compatible storage configuration (optional)
-
-#### Settings Files
-- `config/dev/settings.py`: Development configuration
-- `config/prd/settings.py`: Production configuration  
-- `config/do_app_platform/settings.py`: DigitalOcean App Platform deployment
-
-### Testing
-```bash
-# Run test suite
-python manage.py test
-
-# Run specific test modules
-python manage.py test ulmg.tests.test_utils
-```
-
-## Data Integrity and Maintenance
-
-### Database Constraints
-- **PlayerStatSeason Uniqueness**: Prevents duplicate season records for the same player/classification
-- **Foreign Key Integrity**: Maintains referential integrity across all relationships
-- **League Rule Enforcement**: Model-level validation for roster limits and draft eligibility
-
-### Maintenance Commands
-```bash
-# Identify and resolve data inconsistencies
-python manage.py deduplicate_playerstatseason
-
-# Verify database integrity
 python manage.py check
-
-# Update database indexes after model changes
-python manage.py migrate
 ```
 
-### Backup Strategy
-- **Database Backups**: Regular PostgreSQL dumps of all league data
-- **S3 Data Archival**: Historical statistics preserved in cloud storage
-- **Transaction Logging**: Complete audit trail for trades and draft actions
-- **Configuration Backups**: Environment and settings preservation
+## Configuration
+
+Env vars
+- `DJANGO_SETTINGS_MODULE` (e.g., `config.dev.settings`)
+- `DATABASE_URL` (or equivalent per your setup)
+- `SECRET_KEY`, `DEBUG`
+- Optional S3: `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_S3_ENDPOINT_URL`, `AWS_STORAGE_BUCKET_NAME`
+
+Settings modules
+- `config/dev/settings.py`
+- `config/prd/settings.py`
+- `config/do_app_platform/settings.py`
+
+## Testing
+```bash
+python manage.py test
+python manage.py test tests.test_utils
+```
+
+## Operations notes
+
+Data integrity
+- `PlayerStatSeason` is unique per `(player, season, classification)`; use `deduplicate_playerstatseason` after import changes.
+- Extensive indexes exist on `Player` and `PlayerStatSeason` for common filters (season, owned, minors, classification).
+
+Backups
+- DB backups via standard PostgreSQL dump/restore.
+- FG input files are stored under `data/` and optionally mirrored to S3 for reproducibility.
 
 ## Deployment
 
-### Production Requirements
-- PostgreSQL database with sufficient storage for historical statistics
-- S3-compatible storage for external data caching
-- SSL certificates for secure owner authentication
-- Environment variable management for API keys and database credentials
+Requirements
+- PostgreSQL
+- Optional S3-compatible storage for FG data caching
 
-### DigitalOcean App Platform Configuration
-```yaml
-# app.yaml example
-name: ulmg
-services:
-- name: web
-  source_dir: /
-  github:
-    repo: jeremyjbowers/ulmg
-    branch: main
-  run_command: gunicorn --worker-tmp-dir /dev/shm config.do_app_platform.asgi:application -k uvicorn.workers.UvicornWorker
-  environment_slug: python
-  instance_count: 1
-  instance_size_slug: basic-xxs
-  
-databases:
-- name: ulmg-db
-  engine: PG
-  version: "12"
-```
+DigitalOcean App Platform
+- See `config/do_app_platform/` for app settings. A typical command is:
+  - `gunicorn --worker-tmp-dir /dev/shm config.do_app_platform.asgi:application -k uvicorn.workers.UvicornWorker`
 
-### Key Deployment Considerations
-- **Database Indexes**: Essential for search performance at scale
-- **S3 Configuration**: Required for external data access and caching
-- **Environment Security**: Secure management of API keys and database credentials
-- **SSL/TLS**: HTTPS required for authentication and data security
-- **Monitoring**: Application performance and database query monitoring
+## Code organization
 
-## Code Organization and Development Guidelines
+- `ulmg/models.py`: `Player`, `PlayerStatSeason`, `Team`, `DraftPick`, `Trade`, etc.
+- `ulmg/management/commands/`: import/update scripts and league ops.
+- `ulmg/views/`: site and API views by area.
+- `ulmg/templates/`: pages and components.
+- `ulmg/utils.py`: S3 data manager and helper functions.
+- `ulmg/constants.py`: stat field mapping and thresholds.
 
-### Project Structure
-- `ulmg/models.py`: Core data models with comprehensive relationships
-- `ulmg/views/`: View logic organized by functionality (api, auth, csv, my, site, special)
-- `ulmg/management/commands/`: Django management commands for data processing
-- `ulmg/templates/`: HTML templates with Bulma CSS framework
-- `ulmg/utils.py`: Shared utility functions including S3DataManager
-- `ulmg/admin.py`: Django admin customizations for league management
+## Glossary
 
-### Development Best Practices
-- **PlayerStatSeason Priority**: Use PlayerStatSeason queries for statistical operations
-- **Direct Template Passing**: Return PlayerStatSeason objects directly to templates
-- **Index Awareness**: Maintain database indexes when adding filter capabilities
-- **S3 Integration**: Use S3DataManager for external data operations
-- **Error Handling**: Implement graceful degradation for external service failures
-- **Progress Reporting**: Include progress indicators for long-running commands
+- V/A/B: Player level used for protections and eligibility.
+- Carded: Eligible for a Strat card this season (derived from MLB appearances in `PlayerStatSeason`).
+- Classification: One of `1-mlb`, `2-milb`, `3-npb`, `4-kbo`, `5-college` on `PlayerStatSeason`.
+- Owned: `Player.is_owned` derived from `team` assignment.
 
-### Contributing Guidelines
-- Follow Django best practices for model design and view organization
-- Use PlayerStatSeason model for season-specific data rather than Player fields
-- Implement proper database constraints and validation
-- Include comprehensive error handling for external API integrations
-- Write management commands with --dry-run options where appropriate
-- Maintain documentation for new features and data sources
-
-## League Rules and Data Model
-
-### Roster Management Rules
-- **Team Size Limits**: 75 players maximum (76th available through AA midseason draft)
-- **Protection System**: 40-man protected roster for Open Drafts
-- **Veteran Protections**: One V-level pitcher, catcher, and position player per half-season
-- **Prospect Requirements**: Minimum 20 B-level prospects on AA roster
-- **Tier Assignments**: Major League (active), AAA (call-up eligible), AA (prospects)
-
-### Draft Eligibility
-- **Open Draft**: Unprotected players (excludes V and A levels)
-- **AA Draft**: B-level prospects and developing players
-- **Protection Rules**: V-level players on AAA rosters become unprotected at midseason
-- **Draft Order**: Determined by league standings and previous draft history
-
-For questions about league rules, data sources, or development setup, contact the project maintainers.
+Refer to the league constitution for official rules; this application enforces and exposes those rules in draft, roster, and report views.
