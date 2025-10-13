@@ -715,6 +715,8 @@ class Player(BaseModel):
 class PlayerStatSeason(BaseModel):
     player = models.ForeignKey(Player, on_delete=models.SET_NULL, blank=True, null=True)
     season = models.IntegerField(blank=True, null=True)
+    # When True, this row represents an aggregated "career" season for the player
+    is_career = models.BooleanField(default=False)
     CLASSIFICATION_CHOICES = (
         ("1-mlb", "1-mlb"),
         ("2-milb", "2-milb"),
@@ -751,7 +753,8 @@ class PlayerStatSeason(BaseModel):
     is_ulmg35man_roster = models.BooleanField(default=False)
 
     def __unicode__(self):
-        return f"{self.player} @ {self.season} @ {self.classification}"
+        label = "career" if self.is_career else self.season
+        return f"{self.player} @ {label} @ {self.classification}"
 
     def save(self, *args, **kwargs):
         self.set_previous_carded()
@@ -870,8 +873,11 @@ class PlayerStatSeason(BaseModel):
 
     class Meta:
         ordering = ['season', 'classification']
-        # Prevent duplicate records for the same player/season/classification combination
-        unique_together = [['player', 'season', 'classification']]
+        # Prevent duplicate records for the same player/season/classification combination,
+        # and allow a single distinct career row per player/classification.
+        unique_together = [
+            ['player', 'season', 'classification'],
+        ]
         indexes = [
             # Single field indexes for common filters
             models.Index(fields=['season']),  # Most common filter
@@ -888,6 +894,8 @@ class PlayerStatSeason(BaseModel):
             # Search optimization indexes
             models.Index(fields=['minors', 'owned', 'carded']),  # Filter combinations
             models.Index(fields=['season', 'classification']),   # Already in ordering, but explicit
+            models.Index(fields=['is_career', 'classification']),
+            models.Index(fields=['player', 'is_career']),
             models.Index(fields=['classification']),  # Individual classification filtering
             models.Index(fields=['level']),  # Individual level filtering (AAA, AA, etc.)
             
@@ -929,6 +937,14 @@ class PlayerStatSeason(BaseModel):
             
             # Injury list optimization
             models.Index(fields=['season'], condition=models.Q(roster_status__startswith='IL-'), name='idx_injured_players'),
+        ]
+        constraints = [
+            # Enforce at most one career row per player+classification
+            models.UniqueConstraint(
+                fields=['player', 'classification'],
+                condition=models.Q(is_career=True),
+                name='unique_career_pss_per_player_classification',
+            ),
         ]
 
 class DraftPick(BaseModel):

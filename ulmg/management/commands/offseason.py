@@ -24,13 +24,13 @@ class Command(BaseCommand):
             # Set carded=True for players with MLB stats in that season
             models.PlayerStatSeason.objects.filter(
                 season=season,
-                classification="1-majors",
+                classification="1-mlb",
                 hit_stats__isnull=False
             ).update(carded=True)
             
             models.PlayerStatSeason.objects.filter(
                 season=season,
-                classification="1-majors",
+                classification="1-mlb",
                 pitch_stats__isnull=False
             ).update(carded=True)
         else:
@@ -40,27 +40,27 @@ class Command(BaseCommand):
     def reset_rosters(self, *args, **options):
         if not options.get("dry_run", None):
             # Reset Player model roster statuses that are still there
-            models.Player.objects.filter(is_1h_c=True).update(is_1h_c=False)
-            models.Player.objects.filter(is_1h_p=True).update(is_1h_p=False)
-            models.Player.objects.filter(is_1h_pos=True).update(is_1h_pos=False)
-            models.Player.objects.filter(is_reserve=True).update(is_reserve=False)
+            models.Player.objects.filter(is_ulmg_1h_c=True).update(is_ulmg_1h_c=False)
+            models.Player.objects.filter(is_ulmg_1h_p=True).update(is_ulmg_1h_p=False)
+            models.Player.objects.filter(is_ulmg_1h_pos=True).update(is_ulmg_1h_pos=False)
+            models.Player.objects.filter(is_ulmg_reserve=True).update(is_ulmg_reserve=False)
 
-            models.Player.objects.filter(is_2h_c=True).update(is_2h_c=False)
-            models.Player.objects.filter(is_2h_p=True).update(is_2h_p=False)
-            models.Player.objects.filter(is_2h_pos=True).update(is_2h_pos=False)
-            models.Player.objects.filter(is_2h_draft=True).update(is_2h_draft=False)
+            models.Player.objects.filter(is_ulmg_2h_c=True).update(is_ulmg_2h_c=False)
+            models.Player.objects.filter(is_ulmg_2h_p=True).update(is_ulmg_2h_p=False)
+            models.Player.objects.filter(is_ulmg_2h_pos=True).update(is_ulmg_2h_pos=False)
+            models.Player.objects.filter(is_ulmg_2h_draft=True).update(is_ulmg_2h_draft=False)
 
             # Reset PlayerStatSeason roster statuses for current season
             season = utils.get_current_season()
             models.PlayerStatSeason.objects.filter(season=season).update(
-                is_mlb_roster=False,
-                is_aaa_roster=False,
-                is_35man_roster=False
+                is_ulmg_mlb_roster=False,
+                is_ulmg_aaa_roster=False,
+                is_ulmg35man_roster=False
             )
 
             # Unprotect all V and A players prior to the 35-man roster.
             models.Player.objects.filter(is_owned=True, level__in=["A", "V"]).update(
-                is_protected=False
+                is_ulmg_protected=False
             )
             
             # Get non-carded players for protection logic
@@ -73,7 +73,7 @@ class Command(BaseCommand):
                 is_owned=True, 
                 level__in=["A", "V"],
                 id__in=non_carded_player_ids
-            ).update(is_protected=True)
+            ).update(is_ulmg_protected=True)
 
 
     def load_career_hit(self, *args, **options):
@@ -87,33 +87,66 @@ class Command(BaseCommand):
 
         print(f"{timestamp}\tcareer\tload_career_hit")
 
+        # Reset existing career rows to avoid stale or mis-mapped data
+        if not options.get("dry_run", None):
+            models.PlayerStatSeason.objects.filter(is_career=True, classification="1-mlb").delete()
+
+        updated = 0
         with open("data/career/hit.csv", "r") as readfile:
             players = csv.DictReader(readfile)
             for row in [dict(z) for z in players]:
                 try:
-                    p = models.Player.objects.get(fg_id=row["playerid"])
-                    if not p.stats.get("career", None):
-                        p.stats["career"] = {}
-                        p.stats["career"]["pa"] = None
-
-                    p.stats["career"]["year"] = "career"
-                    p.stats["career"]["type"] = "majors"
-                    p.stats["career"]["timestamp"] = timestamp
-                    p.stats["career"]["level"] = "mlb"
-                    p.stats["career"]["side"] = "pitch"
-                    p.stats["career"]["script"] = scriptname
-                    p.stats["career"]["host"] = hostname
-                    p.stats["career"][
-                        "slug"
-                    ] = f"{ p.stats['career']['year']}_{ p.stats['career']['type']}"
-
-                    p.stats["career"]["pa"] = int(row["PA"])
-
+                    player_obj = None
+                    fg_id = (row.get("playerid") or "").strip()
+                    mlbam_id = (row.get("mlbamid") or "").strip()
+                    if fg_id:
+                        try:
+                            player_obj = models.Player.objects.get(fg_id=fg_id)
+                        except models.Player.DoesNotExist:
+                            player_obj = None
+                    if not player_obj and mlbam_id:
+                        try:
+                            player_obj = models.Player.objects.get(mlbam_id=mlbam_id)
+                        except models.Player.DoesNotExist:
+                            player_obj = None
+                    if not player_obj:
+                        continue
+                    p = player_obj
+                    # Only load career MLB if the player already has an MLB stat season (handles legacy labels)
+                    has_mlb = models.PlayerStatSeason.objects.filter(
+                        player=p,
+                        classification__in=["1-mlb", "1-majors"],
+                    ).exists()
+                    if not has_mlb:
+                        continue
+                    # Upsert a career PlayerStatSeason (MLB classification)
+                    pss, _ = models.PlayerStatSeason.objects.get_or_create(
+                        player=p,
+                        classification="1-mlb",
+                        is_career=True,
+                        defaults={"season": None},
+                    )
+                    # Initialize or update hitting stats
+                    hit_stats = pss.hit_stats or {}
+                    # Minimum fields needed for level calculations
+                    if "PA" in row and row["PA"]:
+                        try:
+                            hit_stats["pa"] = int(row["PA"])
+                        except Exception:
+                            pass
+                    if "G" in row and row["G"]:
+                        try:
+                            hit_stats["g"] = int(row["G"])
+                        except Exception:
+                            pass
+                    pss.hit_stats = hit_stats or None
                     if not options.get("dry_run", None):
-                        p.save()
+                        pss.save()
+                        updated += 1
 
                 except:
                     pass
+        print(f"career hitters updated: {updated}")
 
 
     def load_career_pitch(self, *args, **options):
@@ -127,103 +160,160 @@ class Command(BaseCommand):
 
         print(f"{timestamp}\tcareer\tload_career_pitch")
 
+        updated = 0
         with open("data/career/pitch.csv", "r") as readfile:
             players = csv.DictReader(readfile)
             for row in [dict(z) for z in players]:
                 try:
-                    p = models.Player.objects.get(fg_id=row["playerid"])
-                    if not p.stats.get("career", None):
-                        p.stats["career"] = {}
-
-                        p.stats["career"]["gs"] = None
-                        p.stats["career"]["g"] = None
-                        p.stats["career"]["ip"] = None
-
-                    p.stats["career"]["year"] = "career"
-                    p.stats["career"]["type"] = "majors"
-                    p.stats["career"]["timestamp"] = timestamp
-                    p.stats["career"]["level"] = "mlb"
-                    p.stats["career"]["side"] = "pitch"
-                    p.stats["career"]["script"] = scriptname
-                    p.stats["career"]["host"] = hostname
-                    p.stats["career"][
-                        "slug"
-                    ] = f"{ p.stats['career']['year']}_{ p.stats['career']['type']}"
-
-                    p.stats["career"]["gs"] = int(row["GS"])
-                    p.stats["career"]["g"] = int(row["G"])
-                    p.stats["career"]["ip"] = int(row["IP"].split(".")[0])
-
+                    player_obj = None
+                    fg_id = (row.get("playerid") or "").strip()
+                    mlbam_id = (row.get("mlbamid") or "").strip()
+                    if fg_id:
+                        try:
+                            player_obj = models.Player.objects.get(fg_id=fg_id)
+                        except models.Player.DoesNotExist:
+                            player_obj = None
+                    if not player_obj and mlbam_id:
+                        try:
+                            player_obj = models.Player.objects.get(mlbam_id=mlbam_id)
+                        except models.Player.DoesNotExist:
+                            player_obj = None
+                    if not player_obj:
+                        continue
+                    p = player_obj
+                    # Only load career MLB if the player already has an MLB stat season (handles legacy labels)
+                    has_mlb = models.PlayerStatSeason.objects.filter(
+                        player=p,
+                        classification__in=["1-mlb", "1-majors"],
+                    ).exists()
+                    if not has_mlb:
+                        continue
+                    # Upsert a career PlayerStatSeason (MLB classification)
+                    pss, _ = models.PlayerStatSeason.objects.get_or_create(
+                        player=p,
+                        classification="1-mlb",
+                        is_career=True,
+                        defaults={"season": None},
+                    )
+                    pitch_stats = pss.pitch_stats or {}
+                    if "GS" in row and row["GS"]:
+                        try:
+                            pitch_stats["gs"] = int(row["GS"])
+                        except Exception:
+                            pass
+                    if "G" in row and row["G"]:
+                        try:
+                            pitch_stats["g"] = int(row["G"])
+                        except Exception:
+                            pass
+                    if "IP" in row and row["IP"]:
+                        try:
+                            pitch_stats["ip"] = int(str(row["IP"]).split(".")[0])
+                        except Exception:
+                            pass
+                    pss.pitch_stats = pitch_stats or None
                     if not options.get("dry_run", None):
-                        p.save()
+                        pss.save()
+                        updated += 1
 
                 except:
                     pass
+        print(f"career pitchers updated: {updated}")
 
 
     def set_levels(self, *args, **options):
         print("--------- STARTERS B > A ---------")
-        for p in models.Player.objects.filter(
-            level="B", position="P", stats__career__gs__gte=21
-        ):
+        starter_ids = models.PlayerStatSeason.objects.filter(
+            is_career=True,
+            classification="1-mlb",
+            pitch_stats__gs__gte=21,
+        ).values_list("player_id", flat=True)
+        for p in models.Player.objects.filter(level="B", position="P", id__in=starter_ids):
             p.level = "A"
             print(p)
             if not options.get("dry_run", None):
                 p.save()
 
         print("--------- RELIEVERS B > A ---------")
-        for p in models.Player.objects.filter(
-            level="B", position="P", stats__career__g__gte=31
-        ):
+        reliever_ids = models.PlayerStatSeason.objects.filter(
+            is_career=True,
+            classification="1-mlb",
+            pitch_stats__g__gte=31,
+        ).values_list("player_id", flat=True)
+        for p in models.Player.objects.filter(level="B", position="P", id__in=reliever_ids):
             p.level = "A"
             print(p)
             if not options.get("dry_run", None):
                 p.save()
         print("--------- SWINGMEN B > A ---------")
-        for p in models.Player.objects.filter(
-            level="B", position="P", stats__career__g__gte=40, stats__career__gs__gte=15
-        ):
+        swingmen_ids = models.PlayerStatSeason.objects.filter(
+            is_career=True,
+            classification="1-mlb",
+            pitch_stats__g__gte=40,
+            pitch_stats__gs__gte=15,
+        ).values_list("player_id", flat=True)
+        for p in models.Player.objects.filter(level="B", position="P", id__in=swingmen_ids):
             p.level = "A"
             print(p)
             if not options.get("dry_run", None):
                 p.save()
 
         print("--------- HITTERS B > A ---------")
-        for p in models.Player.objects.filter(level="B", stats__career__pa__gte=300):
+        hitter_ids = models.PlayerStatSeason.objects.filter(
+            is_career=True,
+            classification="1-mlb",
+            hit_stats__pa__gte=300,
+        ).values_list("player_id", flat=True)
+        for p in models.Player.objects.filter(level="B").exclude(position="P").filter(id__in=hitter_ids):
             p.level = "A"
             print(p)
             if not options.get("dry_run", None):
                 p.save()
 
         print("--------- STARTERS A > V ---------")
-        for p in models.Player.objects.filter(
-            level="A", position="P", stats__career__gs__gte=126
-        ):
+        starter_ids = models.PlayerStatSeason.objects.filter(
+            is_career=True,
+            classification="1-mlb",
+            pitch_stats__gs__gte=126,
+        ).values_list("player_id", flat=True)
+        for p in models.Player.objects.filter(level="A", position="P", id__in=starter_ids):
             p.level = "V"
             print(p)
             if not options.get("dry_run", None):
                 p.save()
 
         print("--------- RELIEVERS A > V ---------")
-        for p in models.Player.objects.filter(
-            level="A", position="P", stats__career__g__gte=201
-        ):
+        reliever_ids = models.PlayerStatSeason.objects.filter(
+            is_career=True,
+            classification="1-mlb",
+            pitch_stats__g__gte=201,
+        ).values_list("player_id", flat=True)
+        for p in models.Player.objects.filter(level="A", position="P", id__in=reliever_ids):
             p.level = "V"
             print(p)
             if not options.get("dry_run", None):
                 p.save()
 
         print("--------- SWINGMEN A > V ---------")
-        for p in models.Player.objects.filter(
-            level="A", position="P", stats__career__g__gte=220, stats__career__gs__gte=30
-        ):
+        swingmen_ids = models.PlayerStatSeason.objects.filter(
+            is_career=True,
+            classification="1-mlb",
+            pitch_stats__g__gte=220,
+            pitch_stats__gs__gte=30,
+        ).values_list("player_id", flat=True)
+        for p in models.Player.objects.filter(level="A", position="P", id__in=swingmen_ids):
             p.level = "V"
             print(p)
             if not options.get("dry_run", None):
                 p.save()
 
         print("--------- HITTERS A > V ---------")
-        for p in models.Player.objects.filter(level="A", stats__career__pa__gte=2500):
+        hitter_ids = models.PlayerStatSeason.objects.filter(
+            is_career=True,
+            classification="1-mlb",
+            hit_stats__pa__gte=2500,
+        ).values_list("player_id", flat=True)
+        for p in models.Player.objects.filter(level="A").exclude(position="P").filter(id__in=hitter_ids):
             p.level = "V"
             print(p)
             if not options.get("dry_run", None):
