@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    {% load static %}
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}The ULMG{% endblock %}</title>
@@ -16,179 +17,11 @@
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Theme CSS -->
+    <link rel="stylesheet" href="{% static 'css/theme.css' %}">
     
     <!-- Sortable tables -->
     <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/sortable/0.8.0/css/sortable-theme-minimal.min.css">
-    
-    <style>
-        /* Minimal custom styles for functionality */
-        .sortable th:hover {
-            background-color: #f3f4f6;
-            cursor: pointer;
-        }
-        
-        /* Row highlighting for different player statuses - UPDATED */
-        tr.unprotected td {
-            background-color: #fef2f2;
-        }
-        
-        /* UPDATED: Player background colors based on role_type */
-        /* Default/Other: white background (no special styling) */
-        .level-mlb, .level-mlb td {
-            background-color: #ffffff; /* white */
-        }
-        
-        /* MiLB players: light green background */
-        .level-milb, .level-milb td {
-            background-color: #dcfce7; /* light green */
-        }
-        
-        /* Blank/empty role_type: light blue background */
-        .level-college, .level-none, .level-npb, .level-kbo, .level-, .level-college td, .level-none td, .level-npb td, .level-kbo td, .level- td {
-            background-color: #dbeafe; /* light blue */
-        }        
-        
-        /* Injured List (IL) players: light pink - HIGHEST PRIORITY */
-        .player-role-il, .player-role-il td {
-            background-color: #fce7f3 !important; /* light pink - overrides other backgrounds */
-        }
-        
-        /* Hide elements */
-        .hidden {
-            display: none;
-        }
-        
-        /* Simple status colors */
-        .text-green { color: #16a34a; }
-        .text-red { color: #dc2626; }
-        
-        /* Navigation dropdown fixes */
-        .nav-dropdown {
-            position: relative;
-        }
-        .nav-dropdown-content {
-            position: absolute;
-            top: 100%;
-            left: 0;
-            background: white;
-            border: 1px solid #d1d5db;
-            padding: 0.5rem;
-            z-index: 1000;
-            display: none;
-        }
-        .nav-dropdown:hover .nav-dropdown-content {
-            display: block;
-        }
-        .nav-dropdown-content a {
-            display: block;
-            padding: 0.25rem 0;
-            text-decoration: underline;
-            font-size: 0.875rem;
-        }
-        
-
-        
-        /* Fixed header and filter section */
-        .fixed-header {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            z-index: 100;
-            background: white;
-        }
-        
-        /* Account for fixed header height */
-        .content-with-fixed-header {
-            margin-top: 80px; /* Initial fallback, dynamically adjusted by JavaScript */
-        }
-
-        .visually-hidden {
-            display: none;
-        }
-        
-        /* Wishlist button styling */
-        .wishlist-btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            background-color: #fbbf24; /* yellow-400 */
-            color: white;
-            font-weight: bold;
-            font-size: 12px;
-            margin-right: 6px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            border: none;
-            text-decoration: none;
-        }
-        
-        .wishlist-btn:hover {
-            background-color: #f59e0b; /* yellow-500 */
-            transform: scale(1.1);
-        }
-        
-        .wishlist-btn:active {
-            transform: scale(0.95);
-        }
-        
-        /* Wishlist button when player is already on wishlist - GREEN CIRCLE */
-        .wishlist-btn-active {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            background-color: #16a34a; /* green-600 */
-            color: white;
-            font-weight: bold;
-            font-size: 12px;
-            margin-right: 6px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            border: none;
-            text-decoration: none;
-        }
-        
-        .wishlist-btn-active:hover {
-            background-color: #15803d; /* green-700 */
-            transform: scale(1.1);
-        }
-        
-        .wishlist-btn-active:active {
-            transform: scale(0.95);
-        }
-        
-        /* Floating roster status - pinned to top right */
-        .top-right-sticky {
-            position: fixed;
-            top: 90px; /* Below the fixed header */
-            right: 1rem;
-            z-index: 50;
-        }
-        
-        .roster-item {
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-        }
-        
-        .roster-item button {
-            background-color: #16a34a; /* green-600 */
-            color: #fff;
-            border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 1.5rem;
-            font-size: 0.875rem;
-            font-weight: 500;
-            text-decoration: underline;
-            cursor: default;
-        }
-    </style>
     
     {% block extrahead %}{% endblock %}
 </head>

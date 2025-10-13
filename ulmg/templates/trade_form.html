@@ -1,41 +1,14 @@
 {% extends "base.html" %}
 
-{% block extrahead %}
-<style>
-    .player-option {
-        display: none;
-    }
-    .player-option.visible {
-        display: block;
-    }
-    .player-option.selected {
-        background-color: #fef3c7; /* pale yellow */
-        font-weight: bold;
-    }
-    .trade-submit-bar {
-        position: fixed;
-        width: 100%;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        padding: 10px;
-        z-index: 999;
-        background-color: #fff;
-        border-top: 1px solid #d1d5db;
-    }
-    body {
-        padding-bottom: 60px;
-    }
-</style>
-{% endblock %}
+{% block extrahead %}{% endblock %}
 
 {% block content %}
 <div class="trade-submit-bar">
     <button class="px-4 py-2 bg-gray-600 text-white hover:bg-gray-700 submit" id="trade-submit">Submit Trade</button>
-    <div id="success-message" class="text-green-600 font-bold mt-2" style="display:none;">Trade submitted successfully! Reloading...</div>
+    <div id="success-message" class="text-green-600 font-bold mt-2 hidden">Trade submitted successfully! Reloading...</div>
 </div>
 
-<div class="max-w-6xl mx-auto py-4">
+<div class="max-w-6xl mx-auto py-4 with-trade-submit">
     <h1 class="text-2xl font-bold mb-6 border-b border-gray-300 pb-2">Trade Builder</h1>
     
     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">

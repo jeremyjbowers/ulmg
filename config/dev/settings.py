@@ -50,6 +50,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "django.template.context_processors.request",
+                "ulmg.context_processors.nav",
             ],
             "libraries": {
                 "ulmg_tags": "ulmg.templatetags.ulmg_tags",

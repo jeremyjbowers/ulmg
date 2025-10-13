@@ -3,122 +3,6 @@
 
 {% block extrahead %}{{ block.super }}
 <script src="{% static 'admin/js/vendor/jquery/jquery.js' %}"></script>
-<style>
-  /* Override admin styles to match site theme */
-  body {
-    font-family: ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace !important;
-    font-size: 0.875rem !important;
-    line-height: 1.25 !important;
-  }
-  
-  #content-main {
-    max-width: 28rem;
-    margin: 2rem auto;
-    padding: 1rem;
-  }
-  
-  .form-row {
-    margin-bottom: 1rem;
-  }
-  
-  .form-row label {
-    display: block;
-    font-size: 0.75rem;
-    font-weight: bold;
-    margin-bottom: 0.25rem;
-  }
-  
-  .vTextField {
-    width: 100%;
-    border: 1px solid #d1d5db;
-    padding: 0.25rem 0.5rem;
-    font-size: 0.875rem;
-    font-family: ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
-  }
-  
-  .submit-row input {
-    width: 100%;
-    background-color: #000;
-    color: #fff;
-    padding: 0.25rem 0.75rem;
-    font-size: 0.875rem;
-    text-decoration: underline;
-    border: none;
-    cursor: pointer;
-    font-family: ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
-  }
-  
-  .submit-row input:hover {
-    background-color: #374151;
-  }
-  
-  .messagelist {
-    border: 1px solid #d1d5db;
-    padding: 0.75rem;
-    margin-bottom: 1rem;
-    background-color: #f9fafb;
-  }
-  
-  .messagelist .info {
-    font-size: 0.875rem;
-    margin: 0;
-  }
-  
-  .messagelist .error {
-    font-size: 0.875rem;
-    margin: 0;
-    color: #dc2626;
-  }
-  
-  .messagelist .success {
-    font-size: 0.875rem;
-    margin: 0;
-    color: #059669;
-  }
-  
-  h1 {
-    font-size: 1.125rem;
-    font-weight: bold;
-    margin-bottom: 1rem;
-  }
-  
-  /* Tab styles */
-  .admin-tabs {
-    display: flex;
-    border-bottom: 1px solid #d1d5db;
-    margin-bottom: 1rem;
-  }
-  
-  .admin-tab {
-    flex: 1;
-    padding: 0.5rem 1rem;
-    font-size: 0.875rem;
-    font-weight: 500;
-    text-align: center;
-    border-bottom: 2px solid transparent;
-    cursor: pointer;
-    background: none;
-    border: none;
-    font-family: ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
-  }
-  
-  .admin-tab.active {
-    border-bottom-color: #000;
-    background-color: #f9fafb;
-  }
-  
-  .admin-tab:hover {
-    background-color: #f9fafb;
-  }
-  
-  .login-form {
-    display: none;
-  }
-  
-  .login-form.active {
-    display: block;
-  }
-</style>
 {% endblock %}
 
 {% block bodyclass %}{{ block.super }} login{% endblock %}
@@ -152,8 +36,8 @@
 
   <!-- Password login form -->
   <div id="password-form" class="login-form active">
-    <div style="border: 1px solid #d1d5db; padding: 0.75rem; margin-bottom: 1rem; background-color: #f9fafb;">
-      <p style="font-size: 0.875rem; margin: 0;">Login with your username and password.</p>
+    <div class="notice-box">
+      <p>Login with your username and password.</p>
     </div>
 
     <form method="post">
@@ -180,8 +64,8 @@
 
   <!-- Magic link form -->
   <div id="magic-form" class="login-form">
-    <div style="border: 1px solid #d1d5db; padding: 0.75rem; margin-bottom: 1rem; background-color: #f9fafb;">
-      <p style="font-size: 0.875rem; margin: 0;">Enter your email address and we'll send you a magic link to access the admin panel.</p>
+    <div class="notice-box">
+      <p>Enter your email address and we'll send you a magic link to access the admin panel.</p>
     </div>
 
     <form id="magic-login-form" method="post">
@@ -196,7 +80,7 @@
       </div>
     </form>
 
-    <div id="message" style="margin-top: 20px; display: none;">
+    <div id="message" class="hidden mt-20">
       <div class="messagelist">
         <div class="info" id="message-text"></div>
       </div>

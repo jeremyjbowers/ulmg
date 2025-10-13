@@ -5,6 +5,7 @@ import datetime
 
 import requests
 from bs4 import BeautifulSoup
+import ujson as json
 
 from ulmg import models, utils
 
@@ -134,7 +135,14 @@ class Command(BaseCommand):
 
                 except models.Player.DoesNotExist:
                     # we're not creating new players from the MLB just yet
-                    pass
+                    try:
+                        # Collect untracked player for later write-out
+                        if not hasattr(self, 'untracked_players'):
+                            self.untracked_players = []
+                        self.untracked_players.append(player_dict)
+                    except Exception:
+                        # Swallow any errors while collecting; do not block main flow
+                        pass
 
     def fix_bad_player_ids(self):
         bad_ids = models.Player.objects.filter(mlbam_id__icontains="/")
@@ -142,5 +150,17 @@ class Command(BaseCommand):
         bad_ids = models.Player.objects.filter(mlbam_id__icontains="/")
 
     def handle(self, *args, **options):
+        # Initialize collection of players not found in our database
+        self.untracked_players = []
+
         self.fix_bad_player_ids()
         self.get_rosters()
+
+        # After processing all teams, dump any untracked players to file
+        try:
+            if self.untracked_players:
+                with open('data/rosters/untracked_players.json', 'w') as writefile:
+                    writefile.write(json.dumps(self.untracked_players))
+        except Exception:
+            # Non-fatal if we cannot write the file
+            pass

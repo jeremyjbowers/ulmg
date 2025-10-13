@@ -5,23 +5,6 @@
 {% block content %}
 {% include "includes/team_topper.html" %}
 
-<style>
-    p.player.level-heading {
-        font-size:20px;
-    }
-    p.player.level-title {
-        font-size:32px;
-        font-weight:bold;
-    }
-    td.prev-year {
-        background-color: #eee;
-    }
-    h1 small {
-        font-weight: normal;
-        color: #777;
-        font-size: 0.75em;
-    }
-</style>
 
 <nav class="level is-mobile">
     {% for level in level_distribution %}
@@ -40,7 +23,7 @@
             <li><a href="/my/team/">My Roster{% if num_owned %} ({{ num_owned }}){% endif %}</a></li>
             <li><a href="/teams/{{ team.abbreviation|lower }}/other/">Trades & picks</a></li>
             <li><a href="/my/offseason/draft/">Draft</a></li>
-            <li><a href="/my/wishlist/draft/beta/">AA Draft <span style="margin:0 0 0 10px;" class="tag is-rounded is-danger is-light">beta</span></a></li>
+            <li><a href="/my/wishlist/draft/beta/">AA Draft <span class="tag is-rounded is-danger is-light">beta</span></a></li>
             <!-- <li class="is-active"><a href="/my/wishlist/trade/">My Trade List</a></li> -->
         </ul>
     </div>
@@ -78,7 +61,7 @@
                 <td><a href="/teams/{{ p.player.team.abbreviation|lower }}/">{{ p.player.team }}</a></td>
                 <td>{{ p.player.mlb_org|default_if_none:"-" }}</td>
                 
-                <td style="max-width:75px;">{% if p.player.defense_display %}{{ p.player.defense_display }}{% else %}{{ p.player.position }}{% endif %}</td>
+                <td class="cell-max-75">{% if p.player.defense_display %}{{ p.player.defense_display }}{% else %}{{ p.player.position }}{% endif %}</td>
                 
                 <td data-value="{% if p.player.stats.current.year == 2024 %}{{ p.player.stats.current.level|default_if_none:"-999" }}{% else %}-999{% endif %}">
                     {% if p.player.stats.current.plate_appearances > 0 and p.player.stats.current.year == 2024 %}{{ p.player.stats.current.level }}{% else %}-{% endif %}

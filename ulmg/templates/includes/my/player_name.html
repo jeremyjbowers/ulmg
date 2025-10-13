@@ -1,4 +1,4 @@
-<td data-value="{{ p.player.name }}" style="text-align: left!important;">
+<td data-value="{{ p.player.name }}" class="text-left-important">
     {% if user.is_authenticated %}{% if p.player.team.owner_obj.user != user %}
         {% if p.player %}
             <span id="player-{{ p.player.id }}" class="icon eye action-add-wishlist has-text-grey" data-playerid="{{ p.player.id }}"><i class="fas fa-eye"></i></span>

@@ -120,7 +120,7 @@
                 <td class="text-center py-1 font-bold">{{ transaction.year|default_if_none:"—" }}</td>
                 <td class="text-center py-1">{{ transaction.type|title }}</td>
                 <td class="py-1 break-words">{{ transaction.description }}</td>
-                <td class="py-1 text-gray-600 break-words hyphens-auto" style="word-wrap: break-word; word-break: break-word;">{{ transaction.details }}</td>
+                <td class="py-1 text-gray-600 break-words hyphens-auto break-anywhere">{{ transaction.details }}</td>
             </tr>
             {% endfor %}
         </tbody>

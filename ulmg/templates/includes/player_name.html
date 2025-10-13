@@ -1,4 +1,4 @@
-<td data-value="{% if p.player %}{{ p.player.name }}{% else %}{{ p.name }}{% endif %}" style="text-align: left!important;">
+<td data-value="{% if p.player %}{{ p.player.name }}{% else %}{{ p.name }}{% endif %}" class="text-left-important">
     {% if user.is_authenticated %}
         {% if p.player %}
             {% if p.player.team.owner_obj.user != user %}
