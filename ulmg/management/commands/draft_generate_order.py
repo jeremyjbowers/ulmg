@@ -6,7 +6,7 @@ DRAFT_MAPS = {"offseason": {"aa": 5, "open": 5}, "midseason": {"open": 3, "aa": 
 
 class Command(BaseCommand):
     """
-    django-admin draft_generate_order 2025 midseason aa data/ulmg/2025-midseason-aa-order.txt
+    django-admin draft_generate_order 2026 midseason aa data/ulmg/2026-midseason-aa-order.txt
     this relies on picks having been created with the generate_draft_picks management command.
     this command simply adds pick order to existing picks. helps with midseason drafts.
     also lets us assign picks years in advance (helpful for trades).
