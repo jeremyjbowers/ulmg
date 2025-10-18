@@ -49,7 +49,7 @@ class Owner(BaseModel):
 class MagicLinkToken(BaseModel):
     """
     Stores magic link tokens for passwordless authentication.
-    Tokens are valid for 60 days.
+    Tokens are valid for 6 months.
     """
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     token = models.CharField(max_length=255, unique=True)
@@ -67,7 +67,7 @@ class MagicLinkToken(BaseModel):
         
         # Create new token
         token = secrets.token_urlsafe(32)
-        expires_at = timezone.now() + datetime.timedelta(days=60)
+        expires_at = timezone.now() + datetime.timedelta(days=180)
         
         return cls.objects.create(
             user=user,

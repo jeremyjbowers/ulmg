@@ -35,6 +35,9 @@ MIDDLEWARE = [
 ]
 
 SESSION_ENGINE = "django.contrib.sessions.backends.db"
+SESSION_COOKIE_AGE = 60 * 60 * 24 * 180  # 6 months
+SESSION_SAVE_EVERY_REQUEST = True        # sliding expiration on activity
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False  # persist across restarts
 
 ROOT_URLCONF = "ulmg.urls"
 

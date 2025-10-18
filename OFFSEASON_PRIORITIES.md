@@ -65,57 +65,53 @@ Milestones
 - **M3**: FanGraphs + BRef enrichment; duplicate merge tool shipped.
 - **M4**: Alerts + dashboards; >99% players enriched with MLBAM + FG IDs.
 
-### Epic 2: Better mobile experience (responsive + PWA or thin native shell)
+### Epic 2: Mobile web experience (responsive + PWA-only)
 
 Goals
-- **Make key pages useful on phones**: standings, rosters, lineups, schedules, trades, game results, player pages.
-- **Fix tables on small screens** with readable, touch-friendly layouts.
-- **Enable quick actions** (search, lineup edit, claim FA, propose trade) in 1–2 taps.
-- **Optionally ship as PWA**; evaluate thin shells for iOS/Android if needed.
+- **Excellent mobile web UX** on phones; no native app, no thin shells.
+- **Focus pages**: homepage, search/filter, team pages, player pages.
+- **Readable tables on small screens** with horizontal scroll or stacked cards.
+- **Passive experience on mobile**: hide drops/protections and admin flows; reading/browsing first.
 
 Design/implementation to-dos
 - [ ] Audit current templates and CSS
-  - [ ] Identify base layout in `ulmg/templates/` and verify `<meta name="viewport">` is correct.
-  - [ ] Inventory pages with wide tables; document per-page mobile pain points.
-- [ ] Responsive table strategies (choose per page)
-  - [ ] Horizontal scroll with sticky first column and header.
-  - [ ] Card/list layout on XS screens (stack key fields; tap to expand details).
-  - [ ] Column-priority collapse (hide low-priority columns on XS/SM).
-  - [ ] Collapsible row groups and row actions drawer.
-- [ ] Mobile UX improvements
-  - [ ] Global search with typeahead optimized for players/teams.
-  - [ ] Floating quick-action button on key pages (add to lineup, bench, propose trade).
-  - [ ] Larger tap targets, compact typography scale, motion reduced.
-  - [ ] Dark mode and high-contrast theme tokens.
+  - [ ] Verify `<meta name="viewport">` (present in `base.html`).
+  - [ ] Inventory homepage `index.html`, `search.html`, `team.html`, `player_detail.html` for mobile pain points.
+- [ ] Responsive tables (per page strategy)
+  - [ ] Wrap tables in `.overflow-x-auto` containers; enable inertial horizontal scroll on mobile.
+  - [ ] Sticky header row and sticky first column on XS/SM where helpful.
+  - [ ] Column-priority collapse on XS/SM; show only key stats; reveal more on MD+.
+  - [ ] Optional stacked cards on XS for extremely wide tables (defer if scroll works well).
+- [ ] Mobile-only visibility rules (passive UX)
+  - [ ] Hide drops/protections, bulk actions, and admin utilities on XS/SM.
+  - [ ] Keep read-only badges/state; no destructive actions on mobile.
+  - [ ] Defer interactive draft tooling; optional future "watch" star only after passive baseline.
+- [ ] Mobile navigation & search
+  - [ ] Ensure nav wraps cleanly; increase tap targets; search input full-width on XS.
+  - [ ] Add jump links within long lists (by position/section) and back-to-top shortcuts.
 - [ ] PWA foundation
-  - [ ] Add `manifest.webmanifest` (name, icons, theme, display=standalone).
-  - [ ] Add service worker for offline shell caching and basic prefetch.
-  - [ ] Cache strategies for static assets, icons, and frequently viewed pages.
-  - [ ] Installability checks and add-to-home-screen prompts.
-- [ ] Thin shell evaluation (if PWA insufficient)
-  - [ ] Spike: Capacitor shell for iOS/Android wrapping the web app.
-  - [ ] Native plugins audit (push notifications, share sheet, file access) vs web APIs.
-  - [ ] CI builds and basic store submission requirements.
+  - [ ] Add/verify `manifest.webmanifest` (name, icons, theme, display=standalone).
+  - [ ] Add service worker for offline shell and asset caching.
+  - [ ] Cache strategies for static assets/icons; consider prefetch for top pages.
 - [ ] Frontend stack upgrades (as needed)
-  - [ ] Introduce utility CSS or component library with responsive primitives.
-  - [ ] Table component with modes: scroll, stack, collapse; ARIA roles, keyboard nav.
-  - [ ] Form controls with mobile-friendly inputs and validation.
+  - [ ] Lightweight responsive table utilities; ARIA roles and keyboard nav.
+  - [ ] Form controls tuned for mobile inputs (where applicable).
 - [ ] Analytics and QoS
-  - [ ] Measure mobile CWV (LCP/CLS/INP); asset budgets; image optimization.
+  - [ ] Measure mobile CWV (LCP/CLS/INP); image/asset budgets.
   - [ ] Error tracking for client-side JS; feature flags to iterate safely.
 - [ ] Tests and QA
   - [ ] Visual snapshots for key mobile breakpoints.
-  - [ ] E2E flows on device simulators for trade, lineup edits, and player search.
+  - [ ] Manual device runs for homepage, search/filter, team, player pages.
 
 Decision points
-- **PWA vs thin shell** based on push needs, deep links, and app store value.
-- **Table rendering approach** per page: readability vs density trade-offs.
+- **Per-page table approach**: horizontal scroll vs stacked cards on XS.
+- **Which actions (if any) allowed on mobile** once passive baseline is solid (e.g., "watch").
 
 Milestones
-- **M1**: Baseline responsive layout + table components shipped to 1–2 pages.
-- **M2**: PWA manifest + service worker; add-to-home-screen viable.
-- **M3**: All key pages responsive with quick actions; mobile CWV thresholds met.
-- **M4**: Thin shell spike decision; implement if warranted.
+- **M1**: Passive baseline on homepage + search/filter: readable, scrollable tables.
+- **M2**: Team and player pages mobile-optimized; actions hidden on XS/SM.
+- **M3**: PWA manifest + service worker; A2HS viable; mobile CWV targets met.
+- **M4**: Optional "watch" star evaluation; keep destructive/admin flows desktop-only.
 
 ### Epic 3: AI integration (trades, roster evaluations, draft prep)
 

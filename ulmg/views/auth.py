@@ -90,7 +90,7 @@ def magic_login_request(request):
                 text=f"""
 Hi there,
 
-Click the link below to log in to ULMG. This link will work for 60 days.
+Click the link below to log in to ULMG. This link will work for 6 months.
 
 {magic_url}
 
@@ -225,7 +225,7 @@ def admin_magic_login_request(request):
         text=f"""
 Hi {user.first_name or user.username},
 
-Click the link below to log in to the ULMG admin. This link will work for 60 days.
+Click the link below to log in to the ULMG admin. This link will work for 6 months.
 
 {magic_url}
 

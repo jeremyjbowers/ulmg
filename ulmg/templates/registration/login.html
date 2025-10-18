@@ -23,14 +23,14 @@
     <div class="flex border-b border-gray-300">
       <button 
         id="password-tab" 
-        class="flex-1 py-2 px-4 text-sm font-medium text-center border-b-2 border-black bg-gray-50"
+        class="flex-1 py-2 px-4 text-sm font-medium text-center border-b-2 border-transparent hover:bg-gray-50"
         onclick="switchTab('password')"
       >
         Password
       </button>
       <button 
         id="magic-tab" 
-        class="flex-1 py-2 px-4 text-sm font-medium text-center border-b-2 border-transparent hover:bg-gray-50"
+        class="flex-1 py-2 px-4 text-sm font-medium text-center border-b-2 border-black bg-gray-50"
         onclick="switchTab('magic')"
       >
         Magic Link
@@ -39,7 +39,7 @@
   </div>
 
   <!-- Password login form -->
-  <div id="password-form" class="login-form">
+  <div id="password-form" class="login-form hidden">
     <div class="border border-gray-300 p-3 mb-4 bg-gray-50">
       <p class="text-sm">Login with your username and password.</p>
     </div>
@@ -86,7 +86,7 @@
   </div>
 
   <!-- Magic link form -->
-  <div id="magic-form" class="login-form hidden">
+  <div id="magic-form" class="login-form">
     <div class="border border-gray-300 p-3 mb-4 bg-gray-50">
       <p class="text-sm">We'll send you a magic link to log in. No password required!</p>
     </div>
@@ -120,7 +120,7 @@
     </form>
 
     <div class="mt-4 text-center">
-      <p class="text-xs text-gray-600">The magic link will be valid for 60 days and can be used multiple times.</p>
+      <p class="text-xs text-gray-600">The magic link will be valid for 6 months and can be used multiple times.</p>
     </div>
   </div>
 </div>
