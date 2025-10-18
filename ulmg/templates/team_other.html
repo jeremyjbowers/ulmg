@@ -5,16 +5,17 @@
 {% endblock %}
 
 {% block content %}
+<a id="top"></a>
 {% include 'includes/team_topper.html' %}
 
 <!-- Simple tab navigation -->
 <div class="border-b border-gray-300 mb-4">
-    <div class="flex space-x-4 pb-2">
+    <div class="flex flex-wrap gap-4 pb-2 text-sm">
         <a href="/teams/{{ team.abbreviation|lower }}/" class="underline">Roster{% if num_owned %} ({{ num_owned }}){% endif %}</a>
         <span class="font-bold">Trades & picks</span>
         {% if own_team %}
-        <a href="/my/wishlist/draft/beta/" class="underline">AA Draft</a>
-        <a href="/my/midseason/draft/" class="underline">Open Draft</a>
+        <a href="/my/wishlist/draft/beta/" class="underline hidden md:inline">AA Draft</a>
+        <a href="/my/midseason/draft/" class="underline hidden md:inline">Open Draft</a>
         {% endif %}
     </div>
 </div>
@@ -26,10 +27,11 @@
     <div class="mb-6">
         <h2 class="text-lg font-bold mb-2 border-b border-gray-300 pb-1">
             {{ year.grouper }} trades ({{ year.list|length }})
+            <a href="#top" class="text-xs font-normal underline ml-2">↑ top</a>
         </h2>
-        
-        <table class="w-full text-xs border-collapse mb-4">
-            <thead>
+        <div class="overflow-x-auto mb-4">
+        <table class="w-full text-xs border-collapse min-w-max">
+            <thead class="sticky top-0 bg-white z-10">
                 <tr class="border-b border-gray-300">
                     <th class="text-left py-1">Date</th>
                     <th class="text-left py-1">Team</th>
@@ -94,6 +96,7 @@
                 {% endfor %}
             </tbody>
         </table>
+        </div>
     </div>
     {% endfor %}
 </div>
@@ -109,7 +112,7 @@
         {% regroup year.list by season as season_picks %}
         {% for season in season_picks %}
             <div>
-                <h3 class="text-base font-bold mb-2">{{ season.grouper|capfirst }} draft picks ({{ season.list|length }})</h3>
+                <h3 class="text-base font-bold mb-2">{{ season.grouper|capfirst }} draft picks ({{ season.list|length }}) <a href="#top" class="text-xs font-normal underline ml-2">↑ top</a></h3>
                 {% regroup season.list by draft_type as type_picks %}
                 {% for pick in type_picks %}
                 <div class="mb-4">
@@ -119,8 +122,9 @@
                     <h4 class="text-sm font-bold mb-1">{{ pick.grouper|title }} draft</h4>
                     {% endif %}
                     
-                    <table class="w-full text-xs border-collapse">
-                        <thead>
+                    <div class="overflow-x-auto">
+                    <table class="w-full text-xs border-collapse min-w-max">
+                        <thead class="sticky top-0 bg-white z-10">
                             <tr class="border-b border-gray-300">
                                 <th class="text-left py-1">Rnd</th>
                                 <th class="text-left py-1">Pick</th>
@@ -153,6 +157,7 @@
                         {% endfor %}
                         </tbody>
                     </table>
+                    </div>
                 </div>
                 {% endfor %}
             </div>

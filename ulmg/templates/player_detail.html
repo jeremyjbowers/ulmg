@@ -9,10 +9,10 @@
         {% if user.is_authenticated %}
             {% if p.team %}
                 {% if p.team.owner_obj.user != user %}
-                    <span id="player-{{ p.id }}" class="action-add-wishlist wishlist-btn" data-playerid="{{ p.id }}">+</span>
+                    <span id="player-{{ p.id }}" class="action-add-wishlist wishlist-btn hidden sm:inline-flex" data-playerid="{{ p.id }}">+</span>
                 {% endif %}
             {% else %}
-                <span id="player-{{ p.id }}" class="action-add-wishlist wishlist-btn" data-playerid="{{ p.id }}">+</span>
+                <span id="player-{{ p.id }}" class="action-add-wishlist wishlist-btn hidden sm:inline-flex" data-playerid="{{ p.id }}">+</span>
             {% endif %}
         {% endif %}
         {% if p.position %}{{ p.position }} {% endif %}{{ p.name }}
@@ -99,7 +99,8 @@
 {% if transactions %}
 <div class="mb-6">
     <h2 class="text-lg font-bold mb-2 border-b border-gray-300 pb-1">Transaction History</h2>
-    <table class="w-full text-xs border-collapse table-fixed">
+    <div class="overflow-x-auto">
+    <table class="w-full text-xs border-collapse table-fixed min-w-max">
         <colgroup>
             <col class="w-16">  <!-- Year column -->
             <col class="w-16">  <!-- Type column -->
@@ -125,6 +126,7 @@
             {% endfor %}
         </tbody>
     </table>
+    </div>
 </div>
 {% endif %}
 
@@ -132,8 +134,9 @@
 {% if hitter_stats %}
 <div class="mb-6">
     <h2 class="text-lg font-bold mb-2 border-b border-gray-300 pb-1">Hitting Stats</h2>
-    <table class="w-full text-xs border-collapse" data-sortable>
-        <thead>
+    <div class="overflow-x-auto">
+    <table class="w-full text-xs border-collapse min-w-max" data-sortable>
+        <thead class="sticky top-0 bg-white z-10">
             <tr class="border-b border-gray-300">
                 <th class="text-center py-1 sortable" data-sortable-type="numeric">Year</th>
                 <th class="text-center py-1 sortable" data-sortable-type="alpha">Level</th>
@@ -196,14 +199,16 @@
         {% endfor %}
         </tbody>
     </table>
+    </div>
 </div>
 {% endif %}
 
 {% if pitcher_stats %}
 <div class="mb-6">
     <h2 class="text-lg font-bold mb-2 border-b border-gray-300 pb-1">Pitching Stats</h2>
-    <table class="w-full text-xs border-collapse" data-sortable>
-        <thead>
+    <div class="overflow-x-auto">
+    <table class="w-full text-xs border-collapse min-w-max" data-sortable>
+        <thead class="sticky top-0 bg-white z-10">
             <tr class="border-b border-gray-300">
                 <th class="text-center py-1 sortable" data-sortable-type="numeric">Year</th>
                 <th class="text-center py-1 sortable" data-sortable-type="alpha">Level</th>
@@ -270,6 +275,7 @@
         {% endfor %}
         </tbody>
     </table>
+    </div>
 </div>
 {% endif %}
 

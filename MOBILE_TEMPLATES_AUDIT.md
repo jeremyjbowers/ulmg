@@ -59,6 +59,25 @@ Scope focuses on mobile web (no native app), prioritizing readable tables and br
   - Hide columns and cells for protect/roster actions on XS/SM regardless of `own_team`.
   - Wrap tables in `.overflow-x-auto`; sticky name column.
   - For summary grids, ensure two-column layout on XS with readable text size.
+  - Hide AA/Open Draft planner tabs on XS/SM; show only on MD+ until mobile-ready.
+
+---
+
+### Team (Trades & picks): `ulmg/templates/team_other.html`
+- Current:
+  - Tab nav: link back to Roster; shows AA/Open Draft links if `own_team`.
+  - Trades grouped by season; table columns Date, Team, Received, Sent with links to players and picks.
+  - Draft picks grouped by Year → Season → Type; links to draft page anchors.
+- Issues on mobile:
+  - Trades table can overflow; Received/Sent lists are long and dense; small tap targets.
+  - No sticky header; no in-page jump/back-to-top; sections can be very long.
+- Recommendations:
+  - Wrap trades table in `.overflow-x-auto` with `min-w-max`; make header sticky on XS.
+  - Allow Received/Sent to wrap; consider stacked layout or chip-style items on XS.
+  - Add jump links to years and a back-to-top anchor for both Trades and Picks.
+  - Collapse picks by Year/Season on XS (accordion); default-expand current year.
+  - Keep passive: hide any actions; ensure comfortable tap targets.
+  - Hide AA/Open Draft planner tabs on XS/SM; show only on MD+ until mobile-ready.
 
 ---
 
@@ -96,7 +115,8 @@ Scope focuses on mobile web (no native app), prioritizing readable tables and br
 ---
 
 ### Passive constraints and actions
-- Hide on mobile (XS/SM): drops, protections, bulk actions, admin utilities.
+- Hide on mobile (XS/SM): drops, protections, roster/move buttons, bulk actions, admin utilities.
+- Hide AA/Open Draft planner tabs on XS/SM regardless of settings/feature flags.
 - Keep read-only badges and status indicators.
 - Optional later: lightweight "watch" star; for now, keep disabled/hidden on XS.
 
@@ -114,3 +134,4 @@ Scope focuses on mobile web (no native app), prioritizing readable tables and br
 - Hide action columns and controls on XS/SM for team and player pages.
 - Adjust nav layout for XS: larger tap targets, full-width search.
 - Add/verify manifest and basic service worker.
+ - Hide AA/Open Draft planner tabs on XS/SM until those pages are mobile-friendly.

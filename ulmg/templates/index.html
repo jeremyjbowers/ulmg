@@ -67,6 +67,7 @@
 {% endblock %}
 
 {% block content %}
+<a id="top"></a>
 <!-- Team Cards Section -->
 <div class="mb-8 mt-6">
     <h1 class="text-2xl font-bold mb-6">League Overview</h1>
@@ -158,10 +159,11 @@
 {% for position in position_players %}
 <div class="mb-8">
     <h2 class="text-lg font-bold mb-2 border-b border-gray-300 pb-1">{{ position.grouper }} ({{ position.list|length }})</h2>
-    <table class="w-full text-xs border-collapse" data-sortable>
-        <thead>
+    <div class="overflow-x-auto">
+    <table class="w-full text-xs border-collapse min-w-max" data-sortable>
+        <thead class="sticky top-0 bg-white z-10">
             <tr class="border-b border-gray-300">
-                <th class="text-left py-1 sortable" data-sortable-type="alpha">Name</th>
+                <th class="text-left py-1 sortable sticky left-0 bg-white z-20" data-sortable-type="alpha">Name</th>
                 <th class="text-center py-1 sortable" data-sortable-type="numeric">Age</th>
                 <th class="text-center py-1 sortable" data-sortable-type="alpha">Lvl</th>
                 {% include "includes/hitter_stat_headers.html" %}
@@ -170,9 +172,9 @@
         <tbody>
         {% for p in position.list %}
         <tr class="level-{{ p.clean_classification }} border-b border-gray-100">
-            <td class="py-1">
+            <td class="py-1 sticky left-0 bg-white border-r z-10">
                 {% if user.is_authenticated %}
-                    <span id="player-{{ p.player.id }}" class="action-add-wishlist wishlist-btn" data-playerid="{{ p.player.id }}">+</span>
+                    <span id="player-{{ p.player.id }}" class="action-add-wishlist wishlist-btn hidden sm:inline-flex" data-playerid="{{ p.player.id }}">+</span>
                 {% endif %}
                 <a href="/players/{{ p.player.id }}/" class="underline">{{ p.player.name }}</a>
             </td>
@@ -183,6 +185,7 @@
         {% endfor %}
         </tbody>
     </table>
+    </div>
 </div>
 {% endfor %}
 
@@ -190,10 +193,11 @@
 {% if pitchers %}
 <div class="mb-8">
     <h2 class="text-lg font-bold mb-2 border-b border-gray-300 pb-1">P ({{ pitchers|length }})</h2>
-    <table class="w-full text-xs border-collapse" data-sortable>
-        <thead>
+    <div class="overflow-x-auto">
+    <table class="w-full text-xs border-collapse min-w-max" data-sortable>
+        <thead class="sticky top-0 bg-white z-10">
             <tr class="border-b border-gray-300">
-                <th class="text-left py-1 sortable" data-sortable-type="alpha">Name</th>
+                <th class="text-left py-1 sortable sticky left-0 bg-white z-20" data-sortable-type="alpha">Name</th>
                 <th class="text-center py-1 sortable" data-sortable-type="numeric">Age</th>
                 <th class="text-center py-1 sortable" data-sortable-type="alpha">Lvl</th>
                 {% include "includes/pitcher_stat_headers.html" %}
@@ -202,9 +206,9 @@
         <tbody>
         {% for p in pitchers %}
         <tr class="level-{{ p.clean_classification }} border-b border-gray-100">
-            <td class="py-1">
+            <td class="py-1 sticky left-0 bg-white border-r z-10">
                 {% if user.is_authenticated %}
-                    <span id="player-{{ p.player.id }}" class="action-add-wishlist wishlist-btn" data-playerid="{{ p.player.id }}">+</span>
+                    <span id="player-{{ p.player.id }}" class="action-add-wishlist wishlist-btn hidden sm:inline-flex" data-playerid="{{ p.player.id }}">+</span>
                 {% endif %}
                 <a href="/players/{{ p.player.id }}/" class="underline">{{ p.player.name }}</a>
             </td>
@@ -215,6 +219,7 @@
         {% endfor %}
         </tbody>
     </table>
+    </div>
 </div>
 {% endif %}
 

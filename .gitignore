@@ -21,3 +21,8 @@ app-id.txt
 static/
 public/*
 !public/.gitkeep
+
+# Local Spaces env (gitignored). Keep example file tracked.
+bin/env.spaces.local.sh
+bin/env.spaces.prod.sh
+!bin/env.spaces.local.example.sh

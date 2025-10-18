@@ -119,7 +119,7 @@
                     </div>
                     
                     <div>
-                        <button type="submit" class="w-full bg-black text-white px-3 py-1 text-sm underline hover:bg-gray-800">Filter</button>
+                        <button type="submit" class="w-full bg-black text-white px-3 py-1 text-sm underline hover:bg-gray-800 sticky bottom-0">Filter</button>
                     </div>
                 </div>
             </form>
@@ -179,5 +179,12 @@
     </script>
     
     {% block extrascript %}{% endblock %}
+    <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('/sw.js').catch(function(err){ console.log('SW reg failed', err); });
+      });
+    }
+    </script>
 </body>
 </html>

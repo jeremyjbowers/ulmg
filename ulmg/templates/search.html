@@ -4,6 +4,8 @@
 
 {% block content %}
 
+<a id="top"></a>
+
 {% if hitters %}{% regroup hitters by player.position as position_players %}
 
 <!-- Position navigation -->
@@ -34,10 +36,11 @@
         <a href="#top" class="text-xs font-normal underline ml-2">↑ top</a>
     </h2>
     
-    <table class="w-full text-xs border-collapse" data-sortable>
-        <thead>
+    <div class="overflow-x-auto">
+    <table class="w-full text-xs border-collapse min-w-max" data-sortable>
+        <thead class="sticky top-0 bg-white z-10">
             <tr class="border-b border-gray-300">
-                <th class="text-left py-1 sortable" data-sortable-type="alpha">Name</th>
+                <th class="text-left py-1 sortable sticky left-0 bg-white z-20" data-sortable-type="alpha">Name</th>
                 <th class="text-center py-1 sortable" data-sortable-type="alpha">ULMG</th>
                 <th class="text-center py-1 sortable" data-sortable-type="numeric">Age</th>
                 <th class="text-center py-1 sortable" data-sortable-type="alpha">Lvl</th>
@@ -52,15 +55,15 @@
         {% else %}
         <tr class="border-b border-gray-100">
         {% endif %}
-            <td class="py-1">
+            <td class="py-1 sticky left-0 bg-white border-r z-10">
                 {% if user.is_authenticated %}
                     {% if p.player %}
                         {% if p.player.team.owner_obj.user != user %}
-                            <span id="player-{{ p.player.id }}" class="action-add-wishlist wishlist-btn" data-playerid="{{ p.player.id }}">+</span>
+                            <span id="player-{{ p.player.id }}" class="action-add-wishlist wishlist-btn hidden sm:inline-flex" data-playerid="{{ p.player.id }}">+</span>
                         {% endif %}
                     {% else %}
                         {% if p.team.owner_obj.user != user %}
-                            <span id="player-{{ p.id }}" class="action-add-wishlist wishlist-btn" data-playerid="{{ p.id }}">+</span>
+                            <span id="player-{{ p.id }}" class="action-add-wishlist wishlist-btn hidden sm:inline-flex" data-playerid="{{ p.id }}">+</span>
                         {% endif %}
                     {% endif %}
                 {% endif %}
@@ -89,6 +92,7 @@
         {% endfor %}
         </tbody>
     </table>
+    </div>
 </div>
 {% endfor %}
 
@@ -100,10 +104,11 @@
         <a href="#top" class="text-xs font-normal underline ml-2">↑ top</a>
     </h2>
     
-    <table class="w-full text-xs border-collapse" data-sortable>
-        <thead>
+    <div class="overflow-x-auto">
+    <table class="w-full text-xs border-collapse min-w-max" data-sortable>
+        <thead class="sticky top-0 bg-white z-10">
             <tr class="border-b border-gray-300">
-                <th class="text-left py-1 sortable" data-sortable-type="alpha">Name</th>
+                <th class="text-left py-1 sortable sticky left-0 bg-white z-20" data-sortable-type="alpha">Name</th>
                 <th class="text-center py-1 sortable" data-sortable-type="alpha">ULMG</th>
                 <th class="text-center py-1 sortable" data-sortable-type="numeric">Age</th>
                 <th class="text-center py-1 sortable" data-sortable-type="alpha">Lvl</th>
@@ -118,15 +123,15 @@
         {% else %}
         <tr class="border-b border-gray-100">
         {% endif %}
-            <td class="py-1">
+            <td class="py-1 sticky left-0 bg-white border-r z-10">
                 {% if user.is_authenticated %}
                     {% if p.player %}
                         {% if p.player.team.owner_obj.user != user %}
-                            <span id="player-{{ p.player.id }}" class="action-add-wishlist wishlist-btn" data-playerid="{{ p.player.id }}">+</span>
+                            <span id="player-{{ p.player.id }}" class="action-add-wishlist wishlist-btn hidden sm:inline-flex" data-playerid="{{ p.player.id }}">+</span>
                         {% endif %}
                     {% else %}
                         {% if p.team.owner_obj.user != user %}
-                            <span id="player-{{ p.id }}" class="action-add-wishlist wishlist-btn" data-playerid="{{ p.id }}">+</span>
+                            <span id="player-{{ p.id }}" class="action-add-wishlist wishlist-btn hidden sm:inline-flex" data-playerid="{{ p.id }}">+</span>
                         {% endif %}
                     {% endif %}
                 {% endif %}
@@ -155,6 +160,7 @@
         {% endfor %}
         </tbody>
     </table>
+    </div>
 </div>
 {% endif %}
 

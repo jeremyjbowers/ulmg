@@ -12,12 +12,12 @@
 
 <!-- Simple tab navigation -->
 <div class="border-b border-gray-300 mb-4">
-    <div class="flex space-x-4 pb-2">
+    <div class="flex flex-wrap gap-4 pb-2 text-sm">
         <span class="font-bold">Roster{% if num_owned %} ({{ num_owned }}){% endif %}</span>
         <a href="/teams/{{ team.abbreviation|lower }}/other/" class="underline">Trades & picks</a>
         {% if own_team %}
-        <a href="/my/wishlist/draft/beta/" class="underline">AA Draft</a>
-        <a href="/my/midseason/draft/" class="underline">Open Draft</a>
+        <a href="/my/wishlist/draft/beta/" class="underline hidden md:inline">AA Draft</a>
+        <a href="/my/midseason/draft/" class="underline hidden md:inline">Open Draft</a>
         {% endif %}
     </div>
 </div>
@@ -56,23 +56,24 @@
 <div class="mb-8">
     <h2 class="text-lg font-bold mb-2 border-b border-gray-300 pb-1">{{ position.grouper }} ({{ position.list|length }})</h2>
     
-    <table class="w-full text-xs border-collapse" data-sortable>
-        <thead>
+    <div class="overflow-x-auto">
+    <table class="w-full text-xs border-collapse min-w-max" data-sortable>
+        <thead class="sticky top-0 bg-white z-10">
             <tr class="border-b border-gray-300">
-                <th class="text-left py-1 sortable" data-sortable-type="alpha">Name</th>
+                <th class="text-left py-1 sortable sticky left-0 bg-white z-20" data-sortable-type="alpha">Name</th>
                 <th class="text-center py-1 sortable" data-sortable-type="numeric">Age</th>
                 <th class="text-center py-1 sortable" data-sortable-type="alpha">Lvl</th>
                 <th class="text-center py-1">ULMG</th>
                 {% include "includes/hitter_stat_headers.html" %}
                 {% if own_team and protect_tab %}
-                <th class="text-center py-1">Protect</th>
+                <th class="text-center py-1 hidden sm:table-cell">Protect</th>
                 {% endif %}
             </tr>
         </thead>
         <tbody>
         {% for p in position.list %}
         <tr class="level-{{ p.get_best_stat_season.clean_classification }} {% if p.get_best_stat_season %}{{ p.get_best_stat_season.role_type_class }}{% endif %} border-b border-gray-100">
-            <td class="py-1">
+            <td class="py-1 sticky left-0 bg-white border-r z-10">
                 <a href="/players/{{ p.id }}/" class="underline">{{ p.name }}</a>
             </td>
             <td class="text-center py-1">{{ p.age|default_if_none:"-" }}</td>
@@ -90,12 +91,12 @@
             </td>
             {% include "includes/hitter_stat_cells_player.html" %}
             {% if own_team and roster_tab %}
-            <td class="text-center py-1">
+            <td class="text-center py-1 hidden sm:table-cell">
                 {% include "includes/player_protect_actions.html" %}
             </td>
             {% endif %}
             {% if own_team and protect_tab %}
-            <td class="text-center py-1">
+            <td class="text-center py-1 hidden sm:table-cell">
                 {% if p.is_ulmg_protected %}
                 <a href="#" class="text-red underline player-action" data-action="unprotect" data-playerid="{{ p.id }}">✗</a>
                 {% else %}
@@ -107,6 +108,7 @@
         {% endfor %}
         </tbody>
     </table>
+    </div>
 </div>
 {% endfor %}
 
@@ -114,23 +116,24 @@
 <div class="mb-8">
     <h2 class="text-lg font-bold mb-2 border-b border-gray-300 pb-1">P ({{ pitchers|length }})</h2>
     
-    <table class="w-full text-xs border-collapse" data-sortable>
-        <thead>
+    <div class="overflow-x-auto">
+    <table class="w-full text-xs border-collapse min-w-max" data-sortable>
+        <thead class="sticky top-0 bg-white z-10">
             <tr class="border-b border-gray-300">
-                <th class="text-left py-1 sortable" data-sortable-type="alpha">Name</th>
+                <th class="text-left py-1 sortable sticky left-0 bg-white z-20" data-sortable-type="alpha">Name</th>
                 <th class="text-center py-1 sortable" data-sortable-type="numeric">Age</th>
                 <th class="text-center py-1 sortable" data-sortable-type="alpha">Lvl</th>
                 <th class="text-center py-1">ULMG</th>
                 {% include "includes/pitcher_stat_headers.html" %}
                 {% if own_team and protect_tab %}
-                <th class="text-center py-1">Protect</th>
+                <th class="text-center py-1 hidden sm:table-cell">Protect</th>
                 {% endif %}
             </tr>
         </thead>
         <tbody>
         {% for p in pitchers %}
         <tr class="level-{{ p.get_best_stat_season.clean_classification }} {% if p.get_best_stat_season %}{{ p.get_best_stat_season.role_type_class }}{% endif %} border-b border-gray-100">
-            <td class="py-1">
+            <td class="py-1 sticky left-0 bg-white border-r z-10">
                 <a href="/players/{{ p.id }}/" class="underline">{{ p.name }}</a>
             </td>
             <td class="text-center py-1">{{ p.age|default_if_none:"-" }}</td>
@@ -146,12 +149,12 @@
             </td>
             {% include "includes/pitcher_stat_cells_player.html" %}
             {% if own_team and roster_tab %}
-            <td class="text-center py-1">
+            <td class="text-center py-1 hidden sm:table-cell">
                 {% include "includes/player_protect_actions.html" %}
             </td>
             {% endif %}
             {% if own_team and protect_tab %}
-            <td class="text-center py-1">
+            <td class="text-center py-1 hidden sm:table-cell">
                 {% if p.is_ulmg_protected %}
                 <a href="#" class="text-red underline player-action" data-action="unprotect" data-playerid="{{ p.id }}">✗</a>
                 {% else %}
@@ -163,6 +166,7 @@
         {% endfor %}
         </tbody>
     </table>
+    </div>
 </div>
 
 {% if own_team %}

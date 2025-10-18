@@ -1,6 +1,6 @@
 <!-- Simple text-based navigation -->
 <nav class="flex flex-wrap items-center justify-between">
-    <div class="flex items-center space-x-4">
+    <div class="flex items-center space-x-4 w-full sm:w-auto">
         <a href="/" class="font-bold text-lg">THE ULMG</a>
         <a href="https://docs.google.com/document/d/e/2PACX-1vQmtw4gpA19fxNIFbSQZrF22z92eYbbhWPd_11PmH9fr2_vCUjTrMqZh_J2ySre0qrxKv_qtK-E9BTh/pub" target="_blank" class="underline">Constitution</a>
         <!-- <a href="/players/trade-block/" class="underline">Trade Block</a> -->
@@ -36,16 +36,16 @@
         </div>
         
         <!-- Player Search -->
-        <form action="/search/name/" method="GET" class="inline">
+        <form action="/search/name/" method="GET" class="inline flex-1 sm:flex-none">
             <input type="text" name="name" placeholder="find a player" autocomplete="off" 
-                   class="border border-gray-300 px-2 py-1 text-xs w-32">
+                   class="border border-gray-300 px-2 py-1 text-xs w-full sm:w-48">
         </form>
     </div>
 
-    <div class="flex items-center space-x-2">
+    <div class="flex items-center space-x-2 w-full sm:w-auto justify-end mt-2 sm:mt-0">
         {% if user.is_authenticated and user.is_staff %}
         <!-- Admin dropdown -->
-        <div class="nav-dropdown">
+        <div class="nav-dropdown hidden sm:block">
             <span class="underline cursor-pointer">Utilities ▼</span>
             <div class="nav-dropdown-content min-w-48 dropdown-right">
                 <a href="/special/trades/" class="block underline text-sm py-1">Trades: Process</a>
