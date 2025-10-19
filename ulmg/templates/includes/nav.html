@@ -2,14 +2,18 @@
 <nav class="flex flex-wrap items-center justify-between">
     <div class="flex items-center space-x-4 w-full sm:w-auto">
         <a href="/" class="font-bold text-lg">THE ULMG</a>
-        <a href="https://docs.google.com/document/d/e/2PACX-1vQmtw4gpA19fxNIFbSQZrF22z92eYbbhWPd_11PmH9fr2_vCUjTrMqZh_J2ySre0qrxKv_qtK-E9BTh/pub" target="_blank" class="underline">Constitution</a>
-        <!-- <a href="/players/trade-block/" class="underline">Trade Block</a> -->
-        <a href="/trades/" class="underline">Trades</a>
         
-        <!-- Drafts dropdown -->
-        <div class="nav-dropdown">
+        <!-- Mobile: menu button -->
+        <button id="mobile-menu-button" class="sm:hidden border px-2 py-1 text-xs" aria-controls="mobile-menu" aria-expanded="false">Menu</button>
+
+        <!-- Desktop links -->
+        <a href="https://docs.google.com/document/d/e/2PACX-1vQmtw4gpA19fxNIFbSQZrF22z92eYbbhWPd_11PmH9fr2_vCUjTrMqZh_J2ySre0qrxKv_qtK-E9BTh/pub" target="_blank" class="underline hidden sm:inline">Constitution</a>
+        <a href="/trades/" class="underline hidden sm:inline">Trades</a>
+        
+        <!-- Drafts dropdown (desktop) -->
+        <div class="nav-dropdown hidden sm:block">
             <span class="underline cursor-pointer">Drafts ▼</span>
-            <div class="nav-dropdown-content min-w-48">
+            <div class="nav-dropdown-content min-w-48 dropdown-right">
                 {% for draft in draftnav %}
                 <a href="{{ draft.url }}" class="block underline text-sm py-1">{{ draft.title }}</a>
                 {% endfor %}
@@ -17,12 +21,10 @@
             </div>
         </div>
         
-
-        
-        <!-- Teams dropdown -->
-        <div class="nav-dropdown">
+        <!-- Teams dropdown (desktop) -->
+        <div class="nav-dropdown hidden sm:block">
             <span class="underline cursor-pointer font-bold">Teams ▼</span>
-            <div class="nav-dropdown-content min-w-48">
+            <div class="nav-dropdown-content min-w-48 dropdown-right">
                 {% regroup teamnav by division as division_teams %}
                 {% for division in division_teams %}
                     {% if division.grouper %}
@@ -36,9 +38,9 @@
         </div>
         
         <!-- Player Search -->
-        <form action="/search/name/" method="GET" class="inline flex-1 sm:flex-none">
+        <form action="/search/name/" method="GET" class="hidden sm:inline">
             <input type="text" name="name" placeholder="find a player" autocomplete="off" 
-                   class="border border-gray-300 px-2 py-1 text-xs w-full sm:w-48">
+                   class="border border-gray-300 px-2 py-1 text-xs w-48">
         </form>
     </div>
 
@@ -66,9 +68,89 @@
         {% endif %}
     </div>
 </nav>
+
+<!-- Mobile search dropdown (below main nav on XS only) -->
+<div class="sm:hidden border-b border-gray-200 p-2">
+  <button id="mobile-search-toggle" class="underline text-sm" aria-controls="mobile-search" aria-expanded="false">Search ▼</button>
+  <div id="mobile-search" class="hidden mt-2">
+    <form action="/search/name/" method="GET">
+      <input type="text" name="name" placeholder="find a player" autocomplete="off" 
+             class="border border-gray-300 px-2 py-2 text-sm w-full">
+    </form>
+  </div>
+  </div>
+
+<!-- Mobile full-screen menu -->
+<div id="mobile-menu" class="fixed inset-0 bg-white z-50 hidden overflow-y-auto">
+  <div class="p-4 space-y-4">
+    <div class="flex items-center justify-between">
+      <div class="font-bold text-lg">Menu</div>
+      <button id="mobile-menu-close" class="border px-2 py-1 text-xs">Close</button>
+    </div>
+
+    <div class="space-y-2">
+      <a href="https://docs.google.com/document/d/e/2PACX-1vQmtw4gpA19fxNIFbSQZrF22z92eYbbhWPd_11PmH9fr2_vCUjTrMqZh_J2ySre0qrxKv_qtK-E9BTh/pub" target="_blank" class="underline block">Constitution</a>
+      <a href="/trades/" class="underline block">Trades</a>
+      <div>
+        <div class="font-bold mb-1">Drafts</div>
+        <div class="grid grid-cols-1 gap-1">
+          {% for draft in draftnav %}
+          <a href="{{ draft.url }}" class="underline text-sm">{{ draft.title }}</a>
+          {% endfor %}
+          <a href="https://ulmg.wordpress.com/category/draft/" target="_blank" class="underline text-sm">Archived drafts</a>
+        </div>
+      </div>
+      <div>
+        <div class="font-bold mb-1">Teams</div>
+        <div class="grid grid-cols-4 gap-2 text-sm">
+          {% for t in teamnav %}
+            <a href="/teams/{{ t.abbreviation|lower }}/{% if value %}?value=true{% endif %}" class="underline">{{ t.abbreviation }}</a>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="pt-2">
+        {% if user.is_authenticated %}
+        <a href="/teams/{{ my_team.abbreviation|lower }}/" class="underline font-bold mr-4">My Team</a>
+        <a href="/accounts/logout/" class="underline">Log out</a>
+        {% else %}
+        <a href="/accounts/login/" class="underline">Log in</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
 <script>
   // Enable tap-to-toggle for dropdowns on mobile
   document.addEventListener('DOMContentLoaded', function() {
+    // Mobile search toggle
+    const mobileSearchToggle = document.getElementById('mobile-search-toggle');
+    const mobileSearch = document.getElementById('mobile-search');
+    if (mobileSearchToggle && mobileSearch) {
+      mobileSearchToggle.addEventListener('click', function(e){
+        e.preventDefault();
+        const isHidden = mobileSearch.classList.contains('hidden');
+        if (isHidden) {
+          mobileSearch.classList.remove('hidden');
+          mobileSearchToggle.setAttribute('aria-expanded','true');
+        } else {
+          mobileSearch.classList.add('hidden');
+          mobileSearchToggle.setAttribute('aria-expanded','false');
+        }
+        // Trigger header margin recalculation in base template
+        window.dispatchEvent(new Event('resize'));
+      });
+    }
+    // Mobile menu open/close
+    const menuBtn = document.getElementById('mobile-menu-button');
+    const menu = document.getElementById('mobile-menu');
+    const menuClose = document.getElementById('mobile-menu-close');
+    if (menuBtn && menu) {
+      menuBtn.addEventListener('click', function(){ menu.classList.remove('hidden'); });
+    }
+    if (menuClose && menu) {
+      menuClose.addEventListener('click', function(){ menu.classList.add('hidden'); });
+    }
+
     document.querySelectorAll('.nav-dropdown > span').forEach(function(trigger) {
       trigger.addEventListener('click', function(e) {
         e.preventDefault();
