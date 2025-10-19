@@ -1,6 +1,6 @@
 <!-- Simple text-based navigation -->
-<nav class="flex flex-wrap items-center justify-between">
-    <div class="flex items-center space-x-4 w-full sm:w-auto">
+<nav class="flex items-center justify-between">
+    <div class="flex items-center space-x-3">
         <a href="/" class="font-bold text-lg">THE ULMG</a>
         
         <!-- Mobile: menu button -->
@@ -44,7 +44,7 @@
         </form>
     </div>
 
-    <div class="flex items-center space-x-2 w-full sm:w-auto justify-end mt-2 sm:mt-0">
+    <div class="flex items-center space-x-3">
         {% if user.is_authenticated and user.is_staff %}
         <!-- Admin dropdown -->
         <div class="nav-dropdown hidden sm:block">
