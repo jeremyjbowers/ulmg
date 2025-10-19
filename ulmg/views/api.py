@@ -808,95 +808,118 @@ def player_bulk_action(request):
         if request.POST.get("players", None):
             player_list = request.POST.get("players").split("\n")
 
-            for p in player_list:
-                
+            for raw_line in player_list:
+                line = (raw_line or "").strip()
+                if not line:
+                    # Skip blank lines safely
+                    continue
+
                 # Prepare each object in the player list for processing
-                if "\t" in p:
-                    player = p.split("\t")
+                if "\t" in line:
+                    parts = [c.strip() for c in line.split("\t")]
+                elif "," in line:
+                    parts = [c.strip() for c in line.split(",")]
+                else:
+                    # If no delimiter detected, treat as a name-only row
+                    parts = [line]
 
-                elif "," in p:
-                    player = p.split(",")
+                # Pad or trim to exactly 8 fields expected by the API
+                # name, position, mlbam_id, fg_id, ulmg_id, birthdate, school, draft_year
+                if len(parts) < 8:
+                    parts = parts + ([""] * (8 - len(parts)))
+                else:
+                    parts = parts[:8]
 
-                if len(player) == 8:
+                name = _prep_url_param(parts[0])
+                position = _prep_url_param(parts[1])
+                mlbam_id = _prep_url_param(parts[2])
+                fg_id = _prep_url_param(parts[3])
+                ulmg_id = _prep_url_param(parts[4])
+                birthdate_str = _prep_url_param(parts[5])
+                school = _prep_url_param(parts[6])
+                draft_year = _prep_url_param(parts[7])
 
-                    name = _prep_url_param(player[0].strip())
-                    position = _prep_url_param(player[1].strip())
-                    mlbam_id = _prep_url_param(player[2].strip())
-                    fg_id = _prep_url_param(player[3].strip())
-                    ulmg_id = _prep_url_param(player[4].strip())
-                    birthdate = _prep_url_param(player[5].strip())
-                    school = _prep_url_param(player[6].strip())
-                    draft_year = _prep_url_param(player[7].strip())
+                # Try to coerce birthdate into a proper date if provided
+                birthdate = None
+                if birthdate_str:
+                    try:
+                        # Accept common formats like YYYY-MM-DD, MM/DD/YYYY, etc.
+                        from dateutil import parser as date_parser
+                        birthdate = date_parser.parse(birthdate_str).date()
+                    except Exception:
+                        # Leave as None if parsing fails
+                        birthdate = None
 
-                    ply = {
-                        "name": name,
-                        "position": position,
-                        "mlbam_id": mlbam_id,
-                        "fg_id": fg_id,
-                        "birthdate": birthdate,
-                        "school": school,
-                        "ulmg_id": ulmg_id,
-                        "draft_year": draft_year,
-                        "created": False
-                    }
+                ply = {
+                    "name": name,
+                    "position": position,
+                    "mlbam_id": mlbam_id,
+                    "fg_id": fg_id,
+                    "birthdate": birthdate if birthdate else birthdate_str,
+                    "school": school,
+                    "ulmg_id": ulmg_id,
+                    "draft_year": draft_year,
+                    "created": False,
+                }
 
-                    print(ply)
+                # Process each player
+                # Find if this player exists via one of the IDs
+                obj = None
 
-                    # Process each player
-                    # Find if this player exists via one of the IDs
-                    obj = None
+                # try a ULMG ID if we are so lucky
+                if not obj:
+                    if ulmg_id:
+                        try:
+                            obj = models.Player.objects.get(id=ulmg_id)
+                        except models.Player.DoesNotExist:
+                            pass
 
-                    # try a ULMG ID if we are so lucky
-                    if not obj:
-                        if ulmg_id:
-                            try:
-                                obj = models.Player.objects.get(id=ulmg_id)
-                            except models.Player.DoesNotExist:
-                                pass
+                    # Many college players have FGIDs already
+                    if not obj and fg_id:
+                        try:
+                            obj = models.Player.objects.get(fg_id=fg_id)
+                        except models.Player.DoesNotExist:
+                            pass
 
-                        # Many college players have FGIDs already
-                        elif fg_id:
-                            try:
-                                obj = models.Player.objects.get(fg_id=fg_id)
-                            except models.Player.DoesNotExist:
-                                pass
+                    # Some HS and some college players have MLBAM IDs
+                    if not obj and mlbam_id:
+                        try:
+                            obj = models.Player.objects.get(mlbam_id=mlbam_id)
+                        except models.Player.DoesNotExist:
+                            pass
 
-                        # Some HS and some college players have MLBAM IDs
-                        elif mlbam_id:
-                            try:
-                                obj = models.Player.objects.get(mlbam_id=mlbam_id)
-                            except models.Player.DoesNotExist:
-                                pass
+                if not obj:
+                    obj = models.Player(
+                        name=name,
+                        level="B",
+                        is_prospect=True,
+                        position=position,
+                    )
+                    # Update the JSON output we will return
+                    ply["created"] = True
 
-                    if not obj:
-                        obj = models.Player(
-                            name=name,
-                            level="B",
-                            is_prospect=True,
-                            position=position
-                        )
-                        # Update the JSON output we will return
-                        ply["created"] = True
-                            
-
-                    # Update player object now that we have one
-                    if obj:
-                        obj.level = "B"
-                        obj.is_prospect = True
-                        obj.position = position
-                        obj.mlbam_id = mlbam_id
-                        obj.fg_id = fg_id
-                        obj.birthdate = birthdate
-                        obj.school = school
-                        obj.draft_year = draft_year
-                        if not obj.amateur_seasons:
-                            obj.amateur_seasons = []
+                # Update player object now that we have one
+                try:
+                    obj.level = "B"
+                    obj.is_prospect = True
+                    obj.position = position
+                    obj.mlbam_id = mlbam_id
+                    obj.fg_id = fg_id
+                    obj.birthdate = birthdate
+                    obj.school = school
+                    obj.draft_year = draft_year
+                    if not obj.amateur_seasons:
+                        obj.amateur_seasons = []
+                    if settings.CURRENT_SEASON not in (obj.amateur_seasons or []):
                         obj.amateur_seasons.append(settings.CURRENT_SEASON)
-                        obj.save()
-                        ply["ulmg_id"] = obj.id
+                    obj.save()
+                    ply["ulmg_id"] = obj.id
+                except Exception as e:
+                    # Surface the error for this row but continue processing others
+                    ply["error"] = f"save_failed: {e}"
 
-                    # Add this player to the payload for returning via JSON
-                    payload["players"].append(ply)
+                # Add this player to the payload for returning via JSON
+                payload["players"].append(ply)
 
     # Return the payload
     return JsonResponse(payload)
