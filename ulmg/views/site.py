@@ -256,6 +256,12 @@ def trades(request):
     return render(request, "trade_list.html", context)
 
 
+def draft_list(request):
+    """Simple draft index page listing all drafts from settings.DRAFTS."""
+    context = utils.build_context(request)
+    return render(request, "draft_list.html", context)
+
+
 def draft_admin(request, year, season, draft_type):
     context = utils.build_context(request)
     context["picks"] = models.DraftPick.objects.filter(

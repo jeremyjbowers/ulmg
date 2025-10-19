@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+  <h1 class="text-2xl font-bold mb-4">Drafts</h1>
+  <div class="grid grid-cols-1 gap-2 text-sm">
+    {% for d in DRAFTS %}
+    <a href="{{ d.url }}" class="underline py-2 border-b border-gray-200">{{ d.title }}</a>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
+
+

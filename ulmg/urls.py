@@ -54,6 +54,7 @@ urlpatterns = [
     path("teams/<str:abbreviation>/other/", views.site.team_other),
     path("teams/<str:abbreviation>/", views.site.team_detail),
     path("trades/", views.site.trades),
+    path("drafts/", views.site.draft_list, name="draft_list"),
 
     path("special/players/", views.special.player_util),
     path("special/trades/", views.special.trade_util),
