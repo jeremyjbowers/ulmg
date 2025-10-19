@@ -66,4 +66,26 @@
         {% endif %}
     </div>
 </nav>
+<script>
+  // Enable tap-to-toggle for dropdowns on mobile
+  document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.nav-dropdown > span').forEach(function(trigger) {
+      trigger.addEventListener('click', function(e) {
+        e.preventDefault();
+        const parent = trigger.closest('.nav-dropdown');
+        const isOpen = parent.classList.contains('open');
+        // Close all
+        document.querySelectorAll('.nav-dropdown.open').forEach(function(dd){ dd.classList.remove('open'); });
+        // Toggle current
+        if (!isOpen) parent.classList.add('open');
+      });
+    });
+    // Click outside to close
+    document.addEventListener('click', function(e){
+      if (!e.target.closest('.nav-dropdown')) {
+        document.querySelectorAll('.nav-dropdown.open').forEach(function(dd){ dd.classList.remove('open'); });
+      }
+    });
+  });
+  </script>
 
