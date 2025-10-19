@@ -93,7 +93,12 @@
       <a href="/trades/" class="underline block">Trades</a>
       <div>
         <div class="font-bold mb-1">Drafts</div>
-        <a href="/drafts/" class="underline block">See all drafts</a>
+        <div class="grid grid-cols-4 gap-2 text-xs">
+          {% for draft in draftnav|slice:":8" %}
+            <a href="{{ draft.url }}" class="underline">{{ draft.title }}</a>
+          {% endfor %}
+        </div>
+        <a href="/drafts/" class="underline block mt-2">More drafts</a>
       </div>
       <div>
         <div class="font-bold mb-1">Teams</div>
