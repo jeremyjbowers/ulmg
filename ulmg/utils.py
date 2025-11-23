@@ -86,7 +86,7 @@ def get_fg_birthdate(player):
 
 
 def get_ulmg_season(date):
-    if date.month >= 11:
+    if date.month >= 10:
         return int(date.year) + 1
     return date.year
 
