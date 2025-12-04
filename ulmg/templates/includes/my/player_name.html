@@ -1,13 +1,17 @@
 <td data-value="{{ p.player.name }}" class="text-left-important">
-    {% if user.is_authenticated %}{% if p.player.team.owner_obj.user != user %}
-        {% if p.player %}
+    {% if wishlist_draft_view %}
+        {% if user.is_authenticated and p.player %}
+            <!-- On draft wishlist views, show a small red X to remove from wishlist -->
+            <span id="player-{{ p.player.id }}" class="action-remove-wishlist text-red-600 hover:text-red-800 cursor-pointer mr-1" data-playerid="{{ p.player.id }}">✕</span>
+        {% endif %}
+    {% else %}
+        {% if user.is_authenticated and p.player and p.player.team and p.player.team.owner_obj and p.player.team.owner_obj.user != user %}
             <span id="player-{{ p.player.id }}" class="icon eye action-add-wishlist has-text-grey" data-playerid="{{ p.player.id }}"><i class="fas fa-eye"></i></span>
         {% endif %}
-
-    {% endif %}{% endif %}
+    {% endif %}
 
     {% if p.player %}
-    <a class="has-text-weight-semibold" href="/players/{{ p.player.id }}/" target="_blank">{{ p.player.name }}</a></span>
+        <a class="has-text-weight-semibold" href="/players/{{ p.player.id }}/" target="_blank">{{ p.player.name }}</a>
     {% else %}
         {{ p.player_name }}
     {% endif %}

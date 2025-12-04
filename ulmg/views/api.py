@@ -120,14 +120,26 @@ def wishlist_bulk_action(request):
     if len(wl) > 0:
         wishlist = wl[0]
 
+    updated = 0
+
     for raw_json_string, _ in request.POST.items():
         players = json.loads(raw_json_string)
         for p in players:
-            models.WishlistPlayer.objects.filter(wishlist=wishlist, player__id=p["playerid"]).update(
-                rank=p["rank"]
-            )
+            update_fields = {}
+            # Rank is optional so we can support tier-only updates
+            if "rank" in p:
+                update_fields["rank"] = p["rank"]
+            # Tier is optional and used for the tier board drag-and-drop
+            if "tier" in p:
+                update_fields["tier"] = p["tier"]
 
-    return JsonResponse({"success": True, "updated": len(players)})
+            if update_fields:
+                models.WishlistPlayer.objects.filter(
+                    wishlist=wishlist, player__id=p["playerid"]
+                ).update(**update_fields)
+                updated += 1
+
+    return JsonResponse({"success": True, "updated": updated})
 
 
 @login_required

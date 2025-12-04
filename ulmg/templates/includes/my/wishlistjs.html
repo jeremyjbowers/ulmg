@@ -2,6 +2,8 @@
 <script type="text/javascript">
 $(function(){
 
+    var isDraftPage = (window.WISHLIST_DRAFT_PAGE === true);
+
     var toggle_classes = function($el) {
         $el.toggleClass('action-remove-wishlist')
         $el.toggleClass('action-add-wishlist')
@@ -11,6 +13,10 @@ $(function(){
     }
 
     var toggle_symbol = function($el) {
+        if (isDraftPage) {
+            // On draft wishlist pages we always show a red X; do not toggle symbol
+            return;
+        }
         var currentText = $el.text();
         if (currentText === '+') {
             $el.text('✓');
@@ -20,6 +26,10 @@ $(function(){
     }
 
     var load_wishlist = function() {
+        if (isDraftPage) {
+            // On draft wishlist pages, all rows are already wishlisted; skip auto-toggling.
+            return;
+        }
         $.ajax({
             type: "GET",
             url: '/api/v1/wishlist/players/',
@@ -61,8 +71,14 @@ $(function(){
             type: "GET",
             url: '/api/v1/wishlist/' + playerid + '/?remove=true',
             success: function(response){
-                toggle_classes($el)
-                toggle_symbol($el)
+                if (isDraftPage) {
+                    // On draft wishlist views, remove row from UI
+                    var $row = $el.closest('tr.list-group-item');
+                    $row.remove();
+                } else {
+                    toggle_classes($el)
+                    toggle_symbol($el)
+                }
             }
         });
     }

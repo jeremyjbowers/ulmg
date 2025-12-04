@@ -19,6 +19,10 @@
         font-weight: bold;
         background-color: lightyellow;
     }
+    /* Make tier drop targets larger, especially when empty */
+    tbody.tier-list {
+        min-height: 3rem;
+    }
 </style>
 
 <!-- Simple tab navigation -->
@@ -40,87 +44,92 @@
 </div>
 
 <div class="flex gap-4">
-    <!-- Tag filters sidebar -->
-    {% if tags %}
-    <div class="w-48 flex-shrink-0">
-        <h3 class="text-sm font-bold mb-2">Filter by tag</h3>
-        <p class="text-xs mb-3 text-gray-600">Click tags to filter. Reload page to see new tags.</p>
-        <div class="space-y-1">
-            {% for t in tags %}
-            <span class="inline-block px-2 py-1 text-xs border border-gray-300 cursor-pointer hover:bg-gray-100 filter" filter-type="tags">{{ t }}</span>
+    <!-- Tier board -->
+    <div class="flex-1 overflow-x-auto">
+        <div class="mb-2 flex justify-between items-center">
+            <h3 class="text-sm font-bold">Tier board (drag between tiers; order within tier is fine-grained rank)</h3>
+            <div class="text-xs text-gray-600">
+                <span class="mr-4">Draft: {{ draft_year }} {{ draft_season }} {{ draft_type|upper }}</span>
+                <label>
+                    <input type="checkbox" id="hide-drafted-toggle" class="mr-1" checked>
+                    Hide drafted players
+                </label>
+            </div>
+        </div>
+        <div id="tier-board" class="grid grid-cols-5 gap-3">
+            {% for tier in tiers %}
+            <div class="border border-gray-300 rounded bg-gray-50 flex flex-col min-h-[200px]">
+                <div class="px-2 py-1 border-b border-gray-300 bg-gray-100 flex items-center justify-between">
+                    <span class="text-xs font-semibold">{{ tier.label }}</span>
+                    <span class="text-[10px] text-gray-600" data-tier-count="{{ tier.id }}">({{ tier.players|length }})</span>
+                </div>
+                <div class="overflow-y-auto max-h-[75vh]">
+                    <table class="w-full text-[11px] border-collapse">
+                        <thead>
+                            <tr class="border-b border-gray-200">
+                                <th class="text-left py-1 px-1">#</th>
+                                <th class="text-left py-1 px-1">Player</th>
+                                <th class="text-center py-1 px-1">Age</th>
+                                <th class="text-center py-1 px-1">Lvl</th>
+                                <th class="text-center py-1 px-1">Pos</th>
+                                <th class="text-center py-1 px-1">Org</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tier-{{ tier.id }}-players" class="tier-list" data-tier="{{ tier.id }}">
+                            {% for p in tier.players %}
+                            <tr data-playername="{{ p.player.name }}" data-playerid="{{ p.player.id }}"
+                                class="list-group-item border-b border-gray-100 level-{{ p.player.get_best_stat_season.clean_classification }}">
+                                <td id="rank-{{ p.player.id }}" class="py-1 px-1 align-top">
+                                    <span>{% if p.rank == 0 %}-{% else %}{{ p.rank }}{% endif %}</span>
+                                    <span class="pickowner text-[10px] text-gray-500 block"></span>
+                                </td>
+                                {% include "includes/my/player_name.html" %}
+                                <td class="text-center py-1 px-1 align-top">{{ p.player.age|default_if_none:"-" }}</td>
+                                <td class="text-center py-1 px-1 align-top">{{ p.player.level }}</td>
+                                <td class="text-center py-1 px-1 align-top">{{ p.player.position }}</td>
+                                <td class="text-center py-1 px-1 align-top">{{ p.player.mlb_org|default_if_none:"-" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
             {% endfor %}
         </div>
-    </div>
-    {% endif %}
-    
-    <!-- Main table -->
-    <div class="flex-1 overflow-x-auto">
-        <table class="w-full text-xs border-collapse">
-            <thead>
-                <tr class="border-b border-gray-300">
-                    <th class="text-left py-1">Rank</th>
-                    <th class="text-left py-1">Player</th>
-                    <th class="text-center py-1">Age</th>
-                    <th class="text-center py-1">Level</th>
-                    <th class="text-center py-1">Pos</th>
-                    <th class="text-center py-1">Team</th>
-                    <th class="text-center py-1">Yr</th>
-                    <th class="text-center py-1">Lvl</th>
-                    <th class="text-center py-1">PA</th>
-                    <th class="text-center py-1">wRC+</th>
-                    <th class="text-center py-1">BABIP</th>
-                    <th class="text-center py-1">GS</th>
-                    <th class="text-center py-1">IP</th>
-                    <th class="text-center py-1">FIP</th>
-                    <th class="text-center py-1">ERA</th>
-                    <th class="text-left py-1">Tags</th>
-                </tr>
-            </thead>
-            <tbody id="players" class="list-group">
-                {% for p in players %}
+
+        {% if untiered_players %}
+        <div class="mt-4">
+            <h3 class="text-xs font-bold mb-1">Untiered players (drag into a tier)</h3>
+            <table class="w-full text-[11px] border-collapse">
+                <thead>
+                    <tr class="border-b border-gray-300">
+                        <th class="text-left py-1 px-1">Rank</th>
+                        <th class="text-left py-1 px-1">Player</th>
+                        <th class="text-center py-1 px-1">Age</th>
+                        <th class="text-center py-1 px-1">Level</th>
+                        <th class="text-center py-1 px-1">Pos</th>
+                        <th class="text-center py-1 px-1">Org</th>
+                    </tr>
+                </thead>
+                <tbody id="untiered-players" class="tier-list" data-tier="0">
+                    {% for p in untiered_players %}
                     <tr data-playername="{{ p.player.name }}" data-playerid="{{ p.player.id }}"
-                    class="list-group-item border-b border-gray-100 
-                    level-{{ p.player.get_best_stat_season.clean_classification }}{% if forloop.counter in my_picks %} my-pick{% endif %}
-                    ">
-                        <td id="rank-{{ p.pk }}" class="py-1{% if forloop.counter in my_picks %} my-pick{% endif %}">
+                        class="list-group-item border-b border-gray-100 level-{{ p.player.get_best_stat_season.clean_classification }}">
+                        <td id="rank-{{ p.player.id }}" class="py-1 px-1">
                             <span>{% if p.rank == 0 %}-{% else %}{{ p.rank }}{% endif %}</span>
-                            <span class="pickowner"></span>
+                            <span class="pickowner text-[10px] text-gray-500 block"></span>
                         </td>
                         {% include "includes/my/player_name.html" %}
-                        <td class="text-center py-1">{{ p.player.age|default_if_none:"-" }}</td>
-                        <td class="text-center py-1">{{ p.player.level }}</td>
-                        <td class="text-center py-1">{{ p.player.position }}</td>
-                        <td class="text-center py-1">{{ p.player.mlb_org|default_if_none:"-" }}</td>
-                        <td class="text-center py-1">{% if p.player.get_best_stat_season.season %}{{ p.player.get_best_stat_season.season }}{% else %}-{% endif %}</td>
-                        <td class="text-center py-1">
-                            {% if p.player.get_best_stat_season.clean_classification %}{{ p.player.get_best_stat_season.clean_classification|default_if_none:"amateur" }}{% else %}amateur{% endif %}
-                        </td>
-                        <td class="text-center py-1">
-                            {% if p.latest_hit_stats and p.player.position != "P" %}{% if p.latest_hit_stats.pa %}{{ p.latest_hit_stats.pa|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
-                        </td>
-                        <td class="text-center py-1">
-                            {% if p.latest_hit_stats and p.player.position != "P" %}{% if p.latest_hit_stats.wrc_plus %}{{ p.latest_hit_stats.wrc_plus|floatformat:"0"|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
-                        </td>
-                        <td class="text-center py-1">
-                            {% if p.latest_hit_stats and p.player.position != "P" %}{% if p.latest_hit_stats.babip %}{{ p.latest_hit_stats.babip|floatformat:3|slice:"1:"|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
-                        </td>
-                        <td class="text-center py-1">
-                            {% if p.latest_pit_stats and p.player.position == "P" %}{% if p.latest_pit_stats.gs %}{{ p.latest_pit_stats.gs|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
-                        </td>
-                        <td class="text-center py-1">
-                            {% if p.latest_pit_stats and p.player.position == "P" %}{% if p.latest_pit_stats.ip %}{{ p.latest_pit_stats.ip|floatformat:1|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
-                        </td>
-                        <td class="text-center py-1">
-                            {% if p.latest_pit_stats and p.player.position == "P" %}{% if p.latest_pit_stats.fip %}{{ p.latest_pit_stats.fip|floatformat:2|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
-                        </td>
-                        <td class="text-center py-1">
-                            {% if p.latest_pit_stats and p.player.position == "P" %}{% if p.latest_pit_stats.era %}{{ p.latest_pit_stats.era|floatformat:2|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
-                        </td>
-                        <td class="py-1 tag-cell">{% include "includes/my/tagchooser.html" %}</td>
+                        <td class="text-center py-1 px-1">{{ p.player.age|default_if_none:"-" }}</td>
+                        <td class="text-center py-1 px-1">{{ p.player.level }}</td>
+                        <td class="text-center py-1 px-1">{{ p.player.position }}</td>
+                        <td class="text-center py-1 px-1">{{ p.player.mlb_org|default_if_none:"-" }}</td>
                     </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
     </div>
 </div>
 
@@ -133,146 +142,87 @@
 
 {% if user.is_authenticated %}
 <script type="text/javascript">
-$(function(){
-
-    var tag_delete_handler = function(el) {
-        $el = $(this);
-        var tagname = $el.attr('data-tagname');
-        var playerid = $el.attr('data-playerid');
-
-        // Remove the tag span and handle comma separation
-        var $tagSpan = $el.parent('span.user-tag');
-        var $container = $tagSpan.parent();
-        
-        // Check if this tag has a following comma and space
-        var nextText = $tagSpan.get(0).nextSibling;
-        if (nextText && nextText.nodeType === 3 && nextText.textContent.trim() === ',') {
-            nextText.remove();
-        } else {
-            // Check if this tag has a preceding comma and space
-            var prevText = $tagSpan.get(0).previousSibling;
-            if (prevText && prevText.nodeType === 3 && prevText.textContent.trim() === ',') {
-                prevText.remove();
-            }
-        }
-        
-        $tagSpan.remove();
-
-        $.ajax({
-            type: "POST",
-            data: {tagname: tagname},
-            url: '/api/v1/wishlist/tags/delete/' + playerid + '/',
-            success: function(response){
-                client_tag_handler(el);
-            }
-        });
-
-    }
-
-    var client_tag_handler = function(el) {
-        var $el = $(el);
-        console.log($el);
-    }
-
-    var show_tag_input_handler = function(el) {
-
-        el.preventDefault();
-        var $el = $(this);
-
-        var $input = $el.siblings('input.tag-input');
-
-        $input.removeClass('hidden').focus();
-    }
-
-    var submit_tag_handler = function(el) {
-        var $el = $(el);
-
-        var playerid = $el.attr('data-playerid')
-        var tagname = $el.val();
-
-        $el.addClass('hidden');
-        $el.val('');
-        
-        // Find the tag container for this row and add the new tag
-        var $tagContainer = $el.siblings('div');
-        var existingTags = $tagContainer.html().trim();
-        
-        // Add comma separator if there are existing tags
-        var separator = existingTags ? ', ' : '';
-        
-        $tagContainer.append(separator + '<span class="user-tag">' + tagname + ' <button data-tagname="' + tagname + '" data-playerid="' + playerid + '" class="text-red-600 hover:text-red-800 cursor-pointer">×</button></span>');
-
-        $.ajax({
-            type: "POST",
-            data: {tagname: tagname},
-            url: '/api/v1/wishlist/tags/add/' + playerid + '/',
-            success: function(response){
-                client_tag_handler(el);
-            }
-        });
-    }
-
-    $('body').on('click', 'span.action-add-tag', show_tag_input_handler);
-    $('body').on('click', 'button.delete', tag_delete_handler);
-
-    $('input.tag-input').keypress(function(event){
-        var keycode = (event.keyCode ? event.keyCode : event.which);
-        var $target = $(event.target);
-        if(keycode == '13'){
-            submit_tag_handler($target);
-        }
-    });
-
-});
+    // Flag used by wishlistjs to alter behaviour on draft wishlist pages
+    window.WISHLIST_DRAFT_PAGE = true;
 </script>
-
 <script type="text/javascript">
 $(function(){
-    const players = document.getElementById('players');
-
-    var update_server = function(evt, update_list) {
+    // Tiered drag-and-drop using Sortable across multiple tier lists
+    var update_server = function(update_list) {
+        if (update_list.length === 0) {
+            return;
+        }
         $.ajax({
             method: "POST",
             url: '/api/v1/wishlist/bulk/',
             data: JSON.stringify(update_list),
             success: function(response){
-                console.log(response);
+                console.log("Wishlist bulk update:", response);
             }
         });
-    }
+    };
 
-    var update_client = function(el) {
-        var $el = $(el);
-        var update_list = []
+    var recompute_all_ranks = function() {
+        var update_list = [];
 
-        $el.children('tr.list-group-item').each(function(idx, ply){
-            idx = idx+1
-            var $ply = $(ply);
-            var plyspan = $ply.find('span')[0];
-            var $plyspan = $(plyspan);
-            var playerid = $ply.attr('data-playerid');
-            var name = $ply.attr('data-playername');
+        $('.tier-list').each(function(){
+            var $tierBody = $(this);
+            var tier = parseInt($tierBody.data('tier')) || 0;
+            var idx = 0;
 
-            $ply.attr('data-rank', idx);
-            $plyspan.html(idx);
-            $('#rank-' + $ply.attr('data-playerid')).html(idx);
+            $tierBody.children('tr.list-group-item').each(function(){
+                var $row = $(this);
+                var playerid = $row.data('playerid');
+                var name = $row.data('playername');
 
-            update_list.push({
-                'playerid': playerid,
-                'rank': idx,
-                'name': name
+                // Only tier 1-5 get ranked within a tier; untiered (0) keep global rank display but no tier
+                var rankCell = $('#rank-' + playerid + ' span').first();
+                if (tier >= 1 && tier <= 5) {
+                    idx += 1;
+                    $row.attr('data-rank', idx);
+                    if (rankCell.length) {
+                        rankCell.text(idx);
+                    }
+                    update_list.push({
+                        'playerid': playerid,
+                        'rank': idx,
+                        'tier': tier,
+                        'name': name
+                    });
+                } else {
+                    // Untiered: keep tier null/0, preserve existing rank display
+                    update_list.push({
+                        'playerid': playerid,
+                        'tier': null,
+                        'name': name
+                    });
+                }
             });
+
+            // Update tier counts in headers if present
+            if (tier >= 1 && tier <= 5) {
+                var $countEl = $('[data-tier-count="' + tier + '"]');
+                if ($countEl.length) {
+                    $countEl.text('(' + idx + ')');
+                }
+            }
         });
-    
-        return update_list
-    }
 
-    var update_handler = function(evt, el) {
-        update_list = update_client(el);
-        update_server(evt, update_list);
-    }
+        update_server(update_list);
+    };
 
-    Sortable.create(players, { onEnd: function(evt) { update_handler(evt, players); } });
+    var on_sort_end = function(evt) {
+        recompute_all_ranks();
+    };
+
+    // Initialize Sortable on each tier list (including untiered, but untiered has tier 0)
+    $('.tier-list').each(function(){
+        Sortable.create(this, {
+            group: 'wishlist-tiers',
+            animation: 150,
+            onEnd: on_sort_end
+        });
+    });
 });
 </script>
 
@@ -329,44 +279,72 @@ $(function(){
 </script>
 
 <script type="text/javascript">
-    var filter_handler = function(el) {
-        $('#players tr').removeClass('hide');
+    $(function(){
+        // Poll draft status and mark drafted players dynamically
+        var draftYear = {{ draft_year }};
+        var draftSeason = "{{ draft_season }}";
+        var draftType = "{{ draft_type }}";
+        var draftedPlayers = {};
 
-        el.preventDefault();
-        $el = $(this);
-        $el.toggleClass('selected-tag');
-
-        var filter_text = []
-
-        $('span.filter.selected-tag').each(function(idx,el){
-            filter_text.push($(el).text());
-        });
-
-        var rows = $('#players tr')
-
-        rows.each(function(idx, el){
-            var $row = $(el)
-            var match = false
-            var tags = $(el).children('td.tag-cell').children('div').children('p.control').children('span.user-tag')
-
-            $.each(tags, function(idx, el){
-                $.each(filter_text, function(i, tag_text){
-                    if ($(el).text().trim() == tag_text) {
-                        match = true;
-                    }
-                });
-            });
-
-            if (match != true) {
-                $row.addClass('hide')
+        var apply_drafted_state = function(playerId, teamAbbr) {
+            var selector = 'tr.list-group-item[data-playerid="' + playerId + '"]';
+            var $rows = $(selector);
+            if ($rows.length === 0) {
+                return;
             }
 
-            if (filter_text.length == 0) { $('#players tr').removeClass('hide'); }
+            $rows.addClass('drafted');
+            $rows.each(function(){
+                var $row = $(this);
+                var $ownerSpan = $row.find('.pickowner');
+                if ($ownerSpan.length && teamAbbr) {
+                    $ownerSpan.text(teamAbbr.toUpperCase());
+                }
+            });
+
+            if ($('#hide-drafted-toggle').is(':checked')) {
+                $rows.addClass('hide');
+            }
+        };
+
+        var refresh_hide_toggle = function() {
+            var hide = $('#hide-drafted-toggle').is(':checked');
+            $('tr.list-group-item.drafted').each(function(){
+                if (hide) {
+                    $(this).addClass('hide');
+                } else {
+                    $(this).removeClass('hide');
+                }
+            });
+        };
+
+        $('#hide-drafted-toggle').on('change', function(){
+            refresh_hide_toggle();
         });
 
-    }
-    $('body').on('click', 'span.filter', filter_handler);
+        var poll_draft_status = function() {
+            var url = '/api/v1/draft/watch/' + draftYear + '/' + draftSeason + '/' + draftType + '/';
+            $.ajax({
+                type: "GET",
+                url: url,
+                success: function(response){
+                    if (!response.made_picks) {
+                        return;
+                    }
+                    $.each(response.made_picks, function(idx, pick){
+                        if (pick.player_id && !draftedPlayers[pick.player_id]) {
+                            draftedPlayers[pick.player_id] = true;
+                            apply_drafted_state(pick.player_id, pick.team);
+                        }
+                    });
+                }
+            });
+        };
 
+        // Initial poll and then repeat every 15 seconds
+        poll_draft_status();
+        setInterval(poll_draft_status, 15000);
+    });
 </script>
 {% endif %}
 
