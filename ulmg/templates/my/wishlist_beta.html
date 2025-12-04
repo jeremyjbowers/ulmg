@@ -99,24 +99,25 @@
 
         {% if untiered_players %}
         <div class="mt-4">
-            <h3 class="text-xs font-bold mb-1">Untiered players (drag into a tier)</h3>
+            <h3 class="text-xs font-bold mb-1">Untiered players (drag into a tier or send directly to a tier)</h3>
             <table class="w-full text-[11px] border-collapse">
-                <thead>
-                    <tr class="border-b border-gray-300">
+            <thead>
+                <tr class="border-b border-gray-300">
                         <th class="text-left py-1 px-1">Rank</th>
                         <th class="text-left py-1 px-1">Player</th>
                         <th class="text-center py-1 px-1">Age</th>
                         <th class="text-center py-1 px-1">Level</th>
                         <th class="text-center py-1 px-1">Pos</th>
                         <th class="text-center py-1 px-1">Org</th>
-                    </tr>
-                </thead>
+                        <th class="text-center py-1 px-1">Tier</th>
+                </tr>
+            </thead>
                 <tbody id="untiered-players" class="tier-list" data-tier="0">
                     {% for p in untiered_players %}
                     <tr data-playername="{{ p.player.name }}" data-playerid="{{ p.player.id }}"
                         class="list-group-item border-b border-gray-100 level-{{ p.player.get_best_stat_season.clean_classification }}">
                         <td id="rank-{{ p.player.id }}" class="py-1 px-1">
-                            <span>{% if p.rank == 0 %}-{% else %}{{ p.rank }}{% endif %}</span>
+                            <span>-</span>
                             <span class="pickowner text-[10px] text-gray-500 block"></span>
                         </td>
                         {% include "includes/my/player_name.html" %}
@@ -124,10 +125,17 @@
                         <td class="text-center py-1 px-1">{{ p.player.level }}</td>
                         <td class="text-center py-1 px-1">{{ p.player.position }}</td>
                         <td class="text-center py-1 px-1">{{ p.player.mlb_org|default_if_none:"-" }}</td>
+                        <td class="text-center py-1 px-1">
+                            <button type="button" class="tier-assign-btn text-[10px] px-1 py-0.5 border border-gray-300 rounded mx-0.5" data-playerid="{{ p.player.id }}" data-tier="1">1</button>
+                            <button type="button" class="tier-assign-btn text-[10px] px-1 py-0.5 border border-gray-300 rounded mx-0.5" data-playerid="{{ p.player.id }}" data-tier="2">2</button>
+                            <button type="button" class="tier-assign-btn text-[10px] px-1 py-0.5 border border-gray-300 rounded mx-0.5" data-playerid="{{ p.player.id }}" data-tier="3">3</button>
+                            <button type="button" class="tier-assign-btn text-[10px] px-1 py-0.5 border border-gray-300 rounded mx-0.5" data-playerid="{{ p.player.id }}" data-tier="4">4</button>
+                            <button type="button" class="tier-assign-btn text-[10px] px-1 py-0.5 border border-gray-300 rounded mx-0.5" data-playerid="{{ p.player.id }}" data-tier="5">5</button>
+                        </td>
                     </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                {% endfor %}
+            </tbody>
+        </table>
         </div>
         {% endif %}
     </div>
@@ -183,9 +191,9 @@ $(function(){
                     if (rankCell.length) {
                         rankCell.text(idx);
                     }
-                    update_list.push({
-                        'playerid': playerid,
-                        'rank': idx,
+            update_list.push({
+                'playerid': playerid,
+                'rank': idx,
                         'tier': tier,
                         'name': name
                     });
@@ -194,7 +202,7 @@ $(function(){
                     update_list.push({
                         'playerid': playerid,
                         'tier': null,
-                        'name': name
+                'name': name
                     });
                 }
             });
@@ -215,13 +223,46 @@ $(function(){
         recompute_all_ranks();
     };
 
-    // Initialize Sortable on each tier list (including untiered, but untiered has tier 0)
+    // Initialize Sortable on tier lists only (exclude untiered, which has data-tier="0")
     $('.tier-list').each(function(){
+        var $body = $(this);
+        var tier = parseInt($body.data('tier')) || 0;
+        if (tier < 1 || tier > 5) {
+            return; // skip untiered pool
+        }
         Sortable.create(this, {
             group: 'wishlist-tiers',
             animation: 150,
             onEnd: on_sort_end
         });
+    });
+
+    // Quick tier assignment from untiered pool: send directly to bottom of target tier
+    $('body').on('click', '.tier-assign-btn', function(e){
+        e.preventDefault();
+        var $btn = $(this);
+        var playerid = $btn.data('playerid');
+        var tier = parseInt($btn.data('tier')) || 0;
+
+        if (!tier || tier < 1 || tier > 5) {
+            return;
+        }
+
+        var $row = $('#untiered-players tr.list-group-item[data-playerid="' + playerid + '"]');
+        if ($row.length === 0) {
+            return;
+        }
+
+        var $targetBody = $('#tier-' + tier + '-players');
+        if ($targetBody.length === 0) {
+            return;
+        }
+
+        // Move the row to the bottom of the selected tier
+        $row.appendTo($targetBody);
+
+        // Recompute ranks and persist to server
+        recompute_all_ranks();
     });
 });
 </script>
