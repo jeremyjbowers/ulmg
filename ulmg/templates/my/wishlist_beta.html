@@ -23,6 +23,10 @@
     tbody.tier-list {
         min-height: 3rem;
     }
+    /* Hide tier assignment buttons once a player has been moved into a tier */
+    tbody[id^="tier-"] .tier-assign-cell {
+        display: none;
+    }
 </style>
 
 <!-- Simple tab navigation -->
@@ -87,7 +91,15 @@
                                 <td class="text-center py-1 px-1 align-top">{{ p.player.age|default_if_none:"-" }}</td>
                                 <td class="text-center py-1 px-1 align-top">{{ p.player.level }}</td>
                                 <td class="text-center py-1 px-1 align-top">{{ p.player.position }}</td>
-                                <td class="text-center py-1 px-1 align-top">{{ p.player.mlb_org|default_if_none:"-" }}</td>
+                                <td class="text-center py-1 px-1 align-top">
+                                    {% if p.player.current_mlb_org %}
+                                        {{ p.player.current_mlb_org }}
+                                    {% elif p.player.get_best_stat_season and p.player.get_best_stat_season.mlb_org %}
+                                        {{ p.player.get_best_stat_season.mlb_org }}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -124,8 +136,16 @@
                         <td class="text-center py-1 px-1">{{ p.player.age|default_if_none:"-" }}</td>
                         <td class="text-center py-1 px-1">{{ p.player.level }}</td>
                         <td class="text-center py-1 px-1">{{ p.player.position }}</td>
-                        <td class="text-center py-1 px-1">{{ p.player.mlb_org|default_if_none:"-" }}</td>
                         <td class="text-center py-1 px-1">
+                            {% if p.player.current_mlb_org %}
+                                {{ p.player.current_mlb_org }}
+                            {% elif p.player.get_best_stat_season and p.player.get_best_stat_season.mlb_org %}
+                                {{ p.player.get_best_stat_season.mlb_org }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="text-center py-1 px-1 tier-assign-cell">
                             <button type="button" class="tier-assign-btn text-[10px] px-1 py-0.5 border border-gray-300 rounded mx-0.5" data-playerid="{{ p.player.id }}" data-tier="1">1</button>
                             <button type="button" class="tier-assign-btn text-[10px] px-1 py-0.5 border border-gray-300 rounded mx-0.5" data-playerid="{{ p.player.id }}" data-tier="2">2</button>
                             <button type="button" class="tier-assign-btn text-[10px] px-1 py-0.5 border border-gray-300 rounded mx-0.5" data-playerid="{{ p.player.id }}" data-tier="3">3</button>
