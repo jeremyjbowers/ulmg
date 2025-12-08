@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="grid grid-cols-1 md:grid-cols-3 gap-8 py-4">
+<div class="grid grid-cols-1 md:grid-cols-4 gap-8 py-4">
     <div>
         <h2 class="text-lg font-bold mb-4 border-b border-gray-300 pb-1">No IDs ({{ no_ids|length }})</h2>
         <table class="w-full text-sm border-collapse">
@@ -60,6 +60,31 @@
                     <td class="py-1"><a href="/admin/ulmg/player/{{ p.id }}/change/" target="_blank" class="underline">{{ p.name }}</a></td>
                     <td class="py-1">{{ p.team|default_if_none:"-" }}</td>
                     <td class="py-1">{{ p.birthdate }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div>
+        <h2 class="text-lg font-bold mb-4 border-b border-gray-300 pb-1">Possibly retired ({{ possibly_retired|length }})</h2>
+        <table class="w-full text-sm border-collapse">
+            <thead>
+                <tr class="border-b border-gray-300">
+                    <th class="text-left py-1">Player</th>
+                    <th class="text-left py-1">Team</th>
+                    <th class="text-left py-1">Last season</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in possibly_retired %}
+                <tr class="border-b border-gray-100">
+                    <td class="py-1">
+                        <a href="/admin/ulmg/player/{{ p.id }}/change/" target="_blank" class="underline">
+                            {{ p.name }}
+                        </a>
+                    </td>
+                    <td class="py-1">{{ p.team|default_if_none:"-" }}</td>
+                    <td class="py-1">{{ p.last_stat_season }}</td>
                 </tr>
                 {% endfor %}
             </tbody>

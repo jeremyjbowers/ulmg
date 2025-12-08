@@ -32,34 +32,70 @@ def player_util(request):
         models.Player.objects.filter(
             fg_id__isnull=True, bref_id__isnull=True, mlbam_id__isnull=True
         )
-        .filter(is_amateur=False)
         .annotate(
             team_order=Case(
                 When(team__isnull=True, then=1),
                 default=0,
-                output_field=IntegerField()
+                output_field=IntegerField(),
             )
         )
         .order_by("team_order", "-created")
     )
-    context["no_birthdates"] = models.Player.objects.filter(
-        birthdate__isnull=True
-    ).annotate(
-        team_order=Case(
-            When(team__isnull=True, then=1),
-            default=0,
-            output_field=IntegerField()
+
+    context["no_birthdates"] = (
+        models.Player.objects.filter(birthdate__isnull=True)
+        .annotate(
+            team_order=Case(
+                When(team__isnull=True, then=1),
+                default=0,
+                output_field=IntegerField(),
+            )
         )
-    ).order_by("team_order", "-created")
-    context["suspect_birthdates"] = models.Player.objects.filter(
-        birthdate_qa=False, birthdate__day=1
-    ).annotate(
-        team_order=Case(
-            When(team__isnull=True, then=1),
-            default=0,
-            output_field=IntegerField()
+        .order_by("team_order", "-created")
+    )
+
+    context["suspect_birthdates"] = (
+        models.Player.objects.filter(birthdate_qa=False, birthdate__day=1)
+        .annotate(
+            team_order=Case(
+                When(team__isnull=True, then=1),
+                default=0,
+                output_field=IntegerField(),
+            )
         )
-    ).order_by("team_order", "-birthdate")
+        .order_by("team_order", "-birthdate")
+    )
+
+    current_season = settings.CURRENT_SEASON
+
+    # Players whose last non‑NPB/KBO stat season was two years ago,
+    # and who have no NPB/KBO seasons at all.
+    context["possibly_retired"] = (
+        models.Player.objects
+        .annotate(
+            last_stat_season=Max(
+                "playerstatseason__season",
+                filter=Q(
+                    playerstatseason__classification__in=[
+                        "1-mlb",      # MLB
+                        "2-milb",     # MiLB
+                        "5-college",  # college/amateur
+                    ]
+                ),
+            )
+        )
+        .filter(last_stat_season=current_season - 2)
+        .exclude(playerstatseason__classification__in=["3-npb", "4-kbo"])
+        .annotate(
+            team_order=Case(
+                When(team__isnull=True, then=1),
+                default=0,
+                output_field=IntegerField(),
+            )
+        )
+        .order_by("team_order", "-last_stat_season", "last_name", "first_name")
+    )
+
     return render(request, "player_util.html", context)
 
 
