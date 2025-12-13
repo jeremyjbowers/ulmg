@@ -1,7 +1,7 @@
 {% load ulmg_tags %}
 <td>{{ p.player.current_mlb_org|default_if_none:"-" }}</td>
 
-<td class="cell-max-75">{% if p.player.defense_display %}{{ p.player.defense_display }}{% else %}{{ p.player.position }}{% endif %}</td>
+<td class="cell-max-75">{% with best_stats=p.player.get_best_stat_season %}{% if best_stats and best_stats.defense_display %}{{ best_stats.defense_display }}{% else %}{{ p.player.position|default_if_none:"—" }}{% endif %}{% endwith %}</td>
 
 <!-- <td data-value="{% if p.player.roster_status != "" %}{{ p.player.roster_status|default_if_none:"-" }}{% else %}-{% endif %}">
     {% if p.player.roster_status != "" %}{{ p.player.roster_status|default_if_none:"-" }}{% else %}-{% endif %}

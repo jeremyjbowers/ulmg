@@ -605,8 +605,17 @@ def player_list(request):
     if is_owned:
         query = query.filter(is_owned=utils.str_to_bool(is_owned))
 
-    payload = [
-        {
+    payload = []
+    for p in query:
+        best_stat_season = p.get_best_stat_season()
+        defense_display = None
+        if best_stat_season and best_stat_season.defense_display():
+            defense_display = best_stat_season.defense_display()
+        else:
+            # Show position if no defense in PlayerStatSeason
+            defense_display = p.position
+        
+        payload.append({
             "name": p.name,
             "fg_id": p.fg_id,
             "is_carded": p.is_carded,
@@ -614,12 +623,10 @@ def player_list(request):
             "level": p.level,
             "age": p.age,
             "position": p.position,
-            "def": p.defense_display(),
+            "def": defense_display,
             "team": p.team_display(),
             "amateur": p.is_amateur,
-        }
-        for p in query
-    ]
+        })
 
     return JsonResponse(payload, safe=False)
 

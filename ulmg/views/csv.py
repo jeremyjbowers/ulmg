@@ -40,19 +40,30 @@ def all_csv(request):
     )
     writer = csv.DictWriter(response, fieldnames=settings.CSV_COLUMNS)
     writer.writeheader()
-    for p in team_players:
-        for k, v in p.items():
+    for p_dict in team_players:
+        # Get the actual Player object to access get_best_stat_season
+        player = models.Player.objects.get(id=p_dict["id"])
+        best_stat_season = player.get_best_stat_season()
+        
+        # Use defense from PlayerStatSeason only, no fallback to Player
+        if best_stat_season and best_stat_season.defense:
+            defense_list = best_stat_season.defense
+        else:
+            defense_list = []
+        
+        for k, v in p_dict.items():
             if v == True:
-                p[k] = "x"
+                p_dict[k] = "x"
             if v == False:
-                p[k] = ""
-        if p["defense"]:
-            p["defense"] = ",".join(
-                [f"{d.split('-')[0]}{d.split('-')[2]}" for d in p["defense"]]
+                p_dict[k] = ""
+        
+        if defense_list:
+            p_dict["defense"] = ",".join(
+                [f"{d.split('-')[0]}{d.split('-')[2]}" for d in defense_list]
             )
         else:
-            p["defense"] = ""
-        writer.writerow(p)
+            p_dict["defense"] = ""
+        writer.writerow(p_dict)
     return response
 
 
@@ -76,17 +87,28 @@ def team_csv(request, abbreviation):
     )
     writer = csv.DictWriter(response, fieldnames=settings.CSV_COLUMNS)
     writer.writeheader()
-    for p in team_players:
-        for k, v in p.items():
+    for p_dict in team_players:
+        # Get the actual Player object to access get_best_stat_season
+        player = models.Player.objects.get(id=p_dict["id"])
+        best_stat_season = player.get_best_stat_season()
+        
+        # Use defense from PlayerStatSeason only, no fallback to Player
+        if best_stat_season and best_stat_season.defense:
+            defense_list = best_stat_season.defense
+        else:
+            defense_list = []
+        
+        for k, v in p_dict.items():
             if v == True:
-                p[k] = "x"
+                p_dict[k] = "x"
             if v == False:
-                p[k] = ""
-        if p["defense"]:
-            p["defense"] = ",".join(
-                [f"{d.split('-')[0]}{d.split('-')[2]}" for d in p["defense"]]
+                p_dict[k] = ""
+        
+        if defense_list:
+            p_dict["defense"] = ",".join(
+                [f"{d.split('-')[0]}{d.split('-')[2]}" for d in defense_list]
             )
         else:
-            p["defense"] = ""
-        writer.writerow(p)
+            p_dict["defense"] = ""
+        writer.writerow(p_dict)
     return response

@@ -1,0 +1,160 @@
+year,name,reason,player_id,player_name,lg,tm,first,last,use,b_p,c,1b,2b,3b,ss,lf,cf,rf
+2019,D.J. Stewart,No MLB PlayerStatSeason found for 2019,23531,D.J. Stewart,AL,BO,D.J.,Stewart,REG,BAT,,,,,,4,,4
+2019,Carlos Gonzalez,No MLB PlayerStatSeason found for 2019,37621,Carlos Gonzalez,AL,CI,Carlos,Gonzalez,ADD,BAT,,,,,,3,,3
+2019,Hanley Ramirez,No MLB PlayerStatSeason found for 2019,40133,Hanley Ramirez,AL,CI,Hanley,Ramirez,COMP,BAT,,,,,,,,
+2019,Jose Ramirez,No MLB PlayerStatSeason found for 2019,38959,Jose Ramirez,AL,CI,Jose,Ramirez,REG,BAT,,,,1(B2),,,,
+2019,Giovanny Urshela,No player found,,,AL,NY,Giovanny,Urshela,REG,BAT,,4,,2,5,,,
+2019,Dee Gordon,No player found,,,AL,SM,Dee,Gordon,REG,BAT,,,2,,4,,,
+2019,Donnie Walton,No player found,,,AL,SM,Donnie,Walton,COMP,BAT,,,4,,4,,,
+2019,Michael Brosseau,No player found,,,AL,TB,Michael,Brosseau,ADD,BAT,,4,4,3,,4,,4
+2019,Johnny Davis,No player found,,,AL,TB,Johnny,Davis,COMP,BAT,,,,,,,4,
+2019,Matt Duffy,No MLB PlayerStatSeason found for 2019,36823,Matt Duffy,AL,TB,Matt,Duffy,ADD,BAT,,,,3,4,,,
+2019,Isiah Kiner,No player found,,,AL,TE,Isiah,Kiner-Falefa,REG,BAT,4,,,3,,,,
+2019,Nick Castellanos,No player found,,,NL,CC,Nick,Castellanos,REG,BAT,,,,,,5(B4),,5(B4)
+2019,Carlos Gonzalez,No MLB PlayerStatSeason found for 2019,37621,Carlos Gonzalez,NL,CC,Carlos,Gonzalez,COMP,BAT,,,,,,3,,3
+2019,Christian Colon,No MLB PlayerStatSeason found for 2019,40003,Christian Colon,NL,CN,Christian,Colon,COMP,BAT,,,3,,,,,
+2019,J.T. Riddle,No player found,,,NL,MI,J.T.,Riddle,ADD,BAT,,,,,4,,4,
+2019,Cesar Hernandez,No MLB PlayerStatSeason found for 2019,37050,Cesar Hernandez,NL,PH,Cesar,Hernandez,REG,BAT,,,3,,,,,
+2019,Jose Martinez,No MLB PlayerStatSeason found for 2019,33188,Jose Martinez,NL,SC,Jose,Martinez,REG,BAT,,,,,,5(B4),,5(B4)
+2019,Seth Mejias,No player found,,,NL,SD,Seth,Mejias-Brean,COMP,BAT,,4,,4,4,,,
+2019,Juan Soto,No MLB PlayerStatSeason found for 2019,25780,Juan Soto,NL,WN,Juan,Soto,REG,BAT,,,,,,2,,
+2020,Luis Gonzalez,No MLB PlayerStatSeason found for 2020,37736,Luis Gonzalez,,CH,Luis,Gonzalez,COMP,B,,,,,,,4,
+2020,Cesar Hernandez,No MLB PlayerStatSeason found for 2020,37050,Cesar Hernandez,,CI,Cesar,Hernandez,REG,B,,,1(B2),,,,,
+2020,Jose Ramirez,No MLB PlayerStatSeason found for 2020,38959,Jose Ramirez,,CI,Jose,Ramirez,REG,B,,,,2(B3),,,,
+2020,Oscar Hernandez,No MLB PlayerStatSeason found for 2020,27300,Oscar Hernandez,,KC,Oscar,Hernandez,COMP,B,3,,,,,,,
+2020,Dee Strange,No player found,,,,SM,Dee,Strange-Gordon,REG,B,,,2,,3,4,,
+2020,Nate Lowe,No player found,,,,TB,Nate,Lowe,ADD,B,,4,,5,,,,
+2020,Jose Martinez,No MLB PlayerStatSeason found for 2020,33188,Jose Martinez,,TB,Jose,Martinez-1,MIX,B,,5,,,,,,
+2020,Isiah Kiner,No player found,,,,TE,Isiah,Kiner-Falefa,REG,B,,,,1(B2),3,,,
+2020,Jose Martinez,No MLB PlayerStatSeason found for 2020,33188,Jose Martinez,,CC,Jose,Martinez-2,ADD,B,,,,,,,,
+2020,Christian Colon,No MLB PlayerStatSeason found for 2020,40003,Christian Colon,,CN,Christian,Colon,ADD,B,,4,3,,,,,
+2020,Jose Garcia,No MLB PlayerStatSeason found for 2020,22703,Jose A. Garcia,,CN,Jose ,Garcia,REG,B,,,,,3,,,
+2020,Kike Hernandez,No player found,,,,LD,Kike,Hernandez,REG,B,,4,2(B3),,4,2,3,2
+2020,Juan Soto,No MLB PlayerStatSeason found for 2020,25780,Juan Soto,,WN,Juan,Soto,REG,B,,,,,,3,,3
+2021,D.J. Stewart,No MLB PlayerStatSeason found for 2021,23531,D.J. Stewart,AL,BO,D.J.,Stewart,REG,BAT,,,,,,4,,4
+2021,Kike Hernandez,No player found,,,AL,BR,Kike,Hernandez,REG,BAT,,,3,,4,,2,
+2021,Luis Gonzalez,No MLB PlayerStatSeason found for 2021,37736,Luis Gonzalez,AL,CH,Luis,Gonzalez,COMP,BAT,,,,,,4,,4
+2021,Cesar Hernandez,No MLB PlayerStatSeason found for 2021,37050,Cesar Hernandez,AL,CH,Cesar,Hernandez,REG,BAT,,,3,,4,,,
+2021,Jose Ramirez,No MLB PlayerStatSeason found for 2021,38959,Jose Ramirez,AL,CI,Jose,Ramirez,REG,BAT,,,,1(B2),,,,
+2021,Jose Rojas,No MLB PlayerStatSeason found for 2021,38197,Jose Rojas,AL,LA,Jose,Rojas-1,REG,BAT,,4,4,4,4,,,4
+2021,Eric Campbell,No player found,,,AL,SM,Eric,Campbell,COMP,BAT,,4,,4,,,,
+2021,Isiah Kiner,No player found,,,AL,TE,Isiah,Kiner-Falefa,REG,BAT,,,,,2,,,
+2021,Nate Lowe,No player found,,,AL,TE,Nate,Lowe,REG,BAT,,4,,5,,,,
+2021,Jared Hoying,No player found,,,AL,TO,Jared,Hoying,COMP,BAT,,,,,,4,,
+2021,Henry Ramos,No MLB PlayerStatSeason found for 2021,34758,Henry Ramos,NL,AR,Henry,Ramos,COMP,BAT,,,,,,4,,4
+2021,Matt Duffy,No MLB PlayerStatSeason found for 2021,36823,Matt Duffy,NL,CC,Matt,Duffy,REG,BAT,,4,3,2,4,4,,
+2021,Tyler Ladendorf,No player found,,,NL,CC,Tyler,Ladendorf,COMP,BAT,,,,,,,,
+2021,Nick Castellanos,No player found,,,NL,CN,Nick,Castellanos,REG,BAT,,,,,,,,4(B3)
+2021,Jose Devers,No MLB PlayerStatSeason found for 2021,35476,Jose Devers,NL,MI,Jose,Devers,COMP,BAT,,,3,,4,,,
+2021,Hunter Owen,No MLB PlayerStatSeason found for 2021,36956,Hunter Owen,NL,PI,Hunter,Owen,COMP,BAT,,,,,,,,4
+2021,Hoy Park,No player found,,,NL,PI,Hoy,Park-2,COMP,BAT,,,3,4,4,4,4,4
+2021,Juan Soto,No MLB PlayerStatSeason found for 2021,25780,Juan Soto,NL,WN,Juan,Soto,REG,BAT,,,,,,,,3
+2022,Richie Palacios,No player found,,,,CI,Richie,Palacios,REG,BAT,,,5,,,4,,
+2022,Jose Ramirez,No MLB PlayerStatSeason found for 2022,38959,Jose Ramirez,,CI,Jose,Ramirez,REG,BAT,,,,2,,,,
+2022,Jake Meyers,No MLB PlayerStatSeason found for 2022,26814,Jake Meyer,,HA,Jake,Meyers,ADD,BAT,,,,,,,2,
+2022,Jeremy Pena,No MLB PlayerStatSeason found for 2022,38536,Jeremy Pena,,HA,Jeremy,Pena,REG,BAT,,,,,1(B2),,,
+2022,Nate Eaton,No player found,,,,KR,Nate,Eaton,REG,BAT,,,,4,,3,3(B2),3(B2)
+2022,Michael Massey,No MLB PlayerStatSeason found for 2022,39297,Michael Massey,,KR,Michael,Massey,REG,BAT,,,3,4,,,,
+2022,Matt Duffy,No MLB PlayerStatSeason found for 2022,36823,Matt Duffy,,LA,Matt,Duffy,REG,BAT,,3,3,3,,,,
+2022,Jose Rojas,No MLB PlayerStatSeason found for 2022,38197,Jose Rojas,,LA,Jose,Rojas,COMP,BAT,,,,5,,5,,5
+2022,Isiah Kiner,No player found,,,,NY,Isiah,Kiner-Falefa,REG,BAT,,,,3,2,,,
+2022,Julio Rodriguez,No MLB PlayerStatSeason found for 2022,30383,Julio Rodriguez,,SM,Julio,Rodriguez,REG,BAT,,,,,,,2,
+2022,C. Bethancourt,No player found,,,,TB,C.,Bethancourt,REG,BAT,4,4,,,,,,
+2022,Josh Smith,No MLB PlayerStatSeason found for 2022,28660,Josh Smith,,TE,Josh,Smith,REG,BAT,,,4,4(B3),4,4,,
+2022,Jackson Frazier,No player found,,,,CC,Jackson,Frazier,COMP,BAT,,,,,,4,,4
+2022,Miguel Vargas,No MLB PlayerStatSeason found for 2022,25891,Miguel Vargas,,LD,Miguel,Vargas,COMP,BAT,,4,,4,,4,,
+2022,Nick Castellanos,No player found,,,,PH,Nick,Castellanos,REG,BAT,,,,,,5(B4),,4(B3)
+2022,Hoy Park,No player found,,,,PI,Hoy,Park,COMP,BAT,,,3,4,4,,,4
+2022,Canaan Smith,No player found,,,,PI,Canaan,Smith-Njigba,COMP,BAT,,,,,,4,,
+2022,Juan Soto,No MLB PlayerStatSeason found for 2022,25780,Juan Soto,,SD,Juan,Soto,REG,BAT,,,,,,,,3
+2022,Luis Gonzalez,No MLB PlayerStatSeason found for 2022,37736,Luis Gonzalez,,SF,Luis,Gonzalez,REG,BAT,,,,,,4,4,4(B3)
+2022,Cesar Hernandez,No MLB PlayerStatSeason found for 2022,37050,Cesar Hernandez,,WN,Cesar,Hernandez,REG,BAT,,,4(B3),4,,4,,
+2022,Dee Strange,No player found,,,,WN,Dee,Strange-Gordon,ADD,BAT,,,,,4,4,4,
+2023,Jose Ramirez,No MLB PlayerStatSeason found for 2023,38959,Jose Ramirez,,CI,Jose,Ramirez,REG,BAT,,,,2,,,,
+2023,Jeremy Pena,No MLB PlayerStatSeason found for 2023,38536,Jeremy Pena,,HA,Jeremy,Pena,REG,BAT,,,,,1,,,
+2023,Matt Duffy,No MLB PlayerStatSeason found for 2023,36823,Matt Duffy,,KR,Matt,Duffy,REG,BAT,,3,3(B4),3,,,,
+2023,Nate Eaton,No player found,,,,KR,Nate,Eaton,COMP,BAT,,,,4,,2,4,3
+2023,Michael Massey,No MLB PlayerStatSeason found for 2023,39297,Michael Massey,,KR,Michael,Massey,REG,BAT,,,3(B2),,,,,
+2023,Isiah Kiner,No player found,,,,NY,Isiah,Kiner-Falefa,REG,BAT,,,3,2,3,3,4,4
+2023,Julio Rodriguez,No MLB PlayerStatSeason found for 2023,30383,Julio Rodriguez,,SM,Julio,Rodriguez,REG,BAT,,,,,,,1,
+2023,Cam Eden,No player found,,,,TO,Cam,Eden,COMP,BAT,,,,,,4,,
+2023,Pete Crow,No player found,,,,CC,Pete,Crow-Armstrong,COMP,BAT,,,,,,,2,
+2023,Henry Ramos,No MLB PlayerStatSeason found for 2023,34758,Henry Ramos,,CN,Henry,Ramos,ADD,BAT,,,,,,4,,4
+2023,Miguel Vargas,No MLB PlayerStatSeason found for 2023,25891,Miguel Vargas,,LD,Miguel,Vargas,REG,BAT,,4,5(B4),,,,,
+2023,Canaan Smith,No player found,,,,PI,Canaan,Smith-Njigba,COMP,BAT,,,,,,4,,4
+2023,Jose Fermin,No MLB PlayerStatSeason found for 2023,36941,Jose Fermin,,SC,Jose,Fermin,COMP,BAT,,,4,,4,,,
+2023,Richie Palacios,No player found,,,,SC,Richie,Palacios,ADD,BAT,,,4,,,3,3,3
+2023,Michael Siani,No player found,,,,SC,Michael,Siani,COMP,BAT,,,,,,,3,
+2023,Juan Soto,No MLB PlayerStatSeason found for 2023,25780,Juan Soto,,SD,Juan,Soto,REG,BAT,,,,,,4(B3),,
+2023,AJ Pollock,No player found,,,,SF,AJ,Pollock,COMP,BAT,,,,,,3,3,3
+2023,Andrew Millas,No player found,,,,WN,Andrew,Millas,COMP,BAT,3,,,,,,,
+2023,Isan Díaz,No player found,,,,,Isan,Díaz,COMP,BAT,,,,,,,,
+2023,AJ Pollock,No player found,,,,,AJ,Pollock,ADD,BAT,,,,,,,,
+2023,Luis Urías,No player found,,,,,Luis,Urías,ADD,BAT,,,,,,,,
+2023,Nelson Velázquez,No player found,,,,,Nelson,Velázquez,ADD,BAT,,,,,,,,
+2024,David Ba�uelos,No player found,,,AL,BAL,David,Ba�uelos,COMP,BAT,,,,,,,,
+2024,Eloy Jim�nez,No player found,,,AL,BAL,Eloy,Jim�nez,MIX,BAT,,,,,,,,5
+2024,Romy Gonzlez,No player found,,,AL,BOS,Romy,Gonzlez,REG,BAT,,4,3(B4),4,4,4,4,4
+2024,Miguel Vargas,No MLB PlayerStatSeason found for 2024,25891,Miguel Vargas,AL,CHW,Miguel,Vargas,REG,BAT,,,,4,,5,,
+2024,Jose Ramirez,No MLB PlayerStatSeason found for 2024,38959,Jose Ramirez,AL,CLE,Jose,Ramirez,REG,BAT,,,,1,,,,
+2024,Wenceel Perez,No player found,,,AL,DET,Wenceel,Perez,REG,BAT,,,,,,3,4,3
+2024,Mauricio Dub�n,No player found,,,AL,HOU,Mauricio,Dub�n,REG,BAT,,4,2,3,4,2(B3),2(B3),3
+2024,Jake Meyers,No MLB PlayerStatSeason found for 2024,26814,Jake Meyer,AL,HOU,Jake,Meyers,REG,BAT,,,,,,,1,
+2024,Jeremy Pena,No MLB PlayerStatSeason found for 2024,38536,Jeremy Pena,AL,HOU,Jeremy,Pena,REG,BAT,,,,,2,,,
+2024,Michael Massey,No MLB PlayerStatSeason found for 2024,39297,Michael Massey,AL,KCR,Michael,Massey,REG,BAT,,,3,,,,,
+2024,Juan Soto,No MLB PlayerStatSeason found for 2024,25780,Juan Soto,AL,NYY,Juan,Soto,REG,BAT,,,,,,3(B2),,3(B2)
+2024,Armando Alvarez,No player found,,,AL,OAK,Armando,Alvarez,COMP,BAT,,4,4,4,,4,,
+2024,Jacob Wilson,No MLB PlayerStatSeason found for 2024,24405,Jacob Wilson,AL,OAK,Jacob,Wilson,REG,BAT,,,,,3,,,
+2024,Julio Rodriguez,No MLB PlayerStatSeason found for 2024,30383,Julio Rodriguez,AL,SEA,Julio,Rodriguez,REG,BAT,,,,,,,1(B2),
+2024,Richie Palacios,No player found,,,AL,TBR,Richie,Palacios,REG,BAT,,,2(B3),4,5,3(B2),,3(B2)
+2024,Matt Duffy,No MLB PlayerStatSeason found for 2024,36823,Matt Duffy,AL,TEX,Matt,Duffy,COMP,BAT,,,,3,,,,
+2024,Ezequiel Dur�n,No player found,,,AL,TEX,Ezequiel,Dur�n,REG,BAT,,4,3,3,3,4(B3),,4(B3)
+2024,Josh Smith,No MLB PlayerStatSeason found for 2024,28660,Josh Smith,AL,TEX,Josh,Smith,REG,BAT,,,4,2,3,4,,4
+2024,Isiah Kiner,No player found,,,AL,TOR,Isiah,Kiner-Falefa,MIX,BAT,,,2,2,3,,4,
+2024,Eugenio Su�rez,No player found,,,NL,ARI,Eugenio,Su�rez,REG,BAT,,,,2,,,,
+2024,Nacho Alvarez Jr.,No player found,,,NL,ATL,Nacho,Alvarez Jr.,COMP,BAT,,,4,4,,,,
+2024,Ram�n Laureano,No player found,,,NL,ATL,Ram�n,Laureano,REG,BAT,,,,,,3(B2),3,3(B2)
+2024,Pete Crow,No player found,,,NL,CHC,Pete,Crow-Armstrong,REG,BAT,,,,,,,1,
+2024,Edwin R�os,No player found,,,NL,CIN,Edwin,R�os,COMP,BAT,,5,,,,,,
+2024,Kike Hern�ndez,No player found,,,NL,LAD,Kike,Hern�ndez,REG,BAT,,4,4,4,4,3,3,
+2024,Miguel Vargas,No MLB PlayerStatSeason found for 2024,25891,Miguel Vargas,NL,LAD,Miguel,Vargas,ADD,BAT,,,,,,5(B4),,
+2024,Jose Devers,No MLB PlayerStatSeason found for 2024,35476,Jose Devers,NL,MIA,Jose,Devers,COMP,BAT,,4,3,,,,,
+2024,Omar Narv�ez,No player found,,,NL,NYM,Omar,Narv�ez,ADD,BAT,3,,,,,,,
+2024,Nick Castellanos,No player found,,,NL,PHI,Nick,Castellanos,REG,BAT,,,,,,,,4(B3)
+2024,Isiah Kiner,No player found,,,NL,PIT,Isiah,Kiner-Falefa,REG,BAT,,,2,2,3,,,
+2024,Jose Fermin,No MLB PlayerStatSeason found for 2024,36941,Jose Fermin,NL,STL,Jose,Fermin,ADD,BAT,,,4,4,,5,,
+2024,Pedro Pag�s,No player found,,,NL,STL,Pedro,Pag�s,REG,BAT,3,5,,,,,,
+2024,Michael Siani,No player found,,,NL,STL,Michael,Siani,REG,BAT,,,,,,2(B1),1,2(B1)
+2024,Andres Chaparro,No player found,,,NL,WSN,Andres,Chaparro,ADD,BAT,,4,,,,,,
+2024,Luis Garc�a Jr.,No player found,,,NL,WSN,Luis,Garc�a Jr.,REG,BAT,,,3,,,,,
+2024,Nasim Nunez,No player found,,,NL,WSN,Nasim,Nunez,REG,BAT,,,4,,3,,,
+2024,V�ctor Robles,No player found,,,NL,WSN,V�ctor,Robles,COMP,BAT,,,,,,,2,2
+2025,Nate Eaton,No player found,,,,BR,Nate,Eaton,ADD,B,,,,4,,3,4,3
+2025,Miguel Vargas,No MLB PlayerStatSeason found for 2025,25891,Miguel Vargas,,CH,Miguel,Vargas,REG,B,,3,,3,,5,,
+2025,Chase DeLauter,No MLB PlayerStatSeason found for 2025,23731,Chase DeLauter,,CI,Chase,DeLauter,ADD,B,,,,,,,4,4
+2025,Wenceel Perez,No player found,,,,DT,Wenceel,Perez,REG,B,,,,,,3,4,2
+2025,Jake Meyers,No MLB PlayerStatSeason found for 2025,26814,Jake Meyer,,HA,Jake,Meyers,REG,B,,,,,,,1,
+2025,Jeremy Pena,No MLB PlayerStatSeason found for 2025,38536,Jeremy Pena,,HA,Jeremy,Pena,REG,B,,,,,1,,,
+2025,Michael Massey,No MLB PlayerStatSeason found for 2025,39297,Michael Massey,,KR,Michael,Massey,REG,B,,,3(B2),,,4,,
+2025,M.J. Melendez,No player found,,,,KR,M.J.,Melendez,ADD,B,,,,,,4,,4
+2025,D.J. LeMahieu,No player found,,,,NY,D.J.,LeMahieu,ADD,B,,,3(B2),,,,,
+2025,C.J. Alexander,No player found,,,,OA,C.J.,Alexander,COMP,B,,4,,4,,4,,4
+2025,Jacob Wilson,No MLB PlayerStatSeason found for 2025,24405,Jacob Wilson,,OA,Jacob,Wilson,REG,B,,,,,3,,,
+2025,Julio Rodriguez,No MLB PlayerStatSeason found for 2025,30383,Julio Rodriguez,,SM,Julio,Rodriguez,REG,B,,,,,,,1,
+2025,Richie Palacios,No player found,,,,TB,Richie,Palacios,COMP,B,,5,2,,,3,,3
+2025,Josh Smith,No MLB PlayerStatSeason found for 2025,28660,Josh Smith,,TE,Josh,Smith,REG,B,,3,4,3(B2),3,4,4,4
+2025,Isiah Kiner,No player found,,,,TO,Isiah,Kiner-Falefa,COMP,B,,,2,2,3,,,
+2025,Nacho Alvarez,No player found,,,,AT,Nacho,Alvarez,REG,B,,,,3,,,,
+2025,Pete Crow,No player found,,,,CC,Pete,Crow-Armstrong,REG,B,,,,,,,1,
+2025,C. Encarnacion,No player found,,,,CN,C.,Encarnacion,ADD,B,,4,,4,,,,
+2025,T.J. Friedl,No player found,,,,CN,T.J.,Friedl,REG,B,,,,,,,2,
+2025,Will Smith,No MLB PlayerStatSeason found for 2025,2426,Will Smith,,LD,Will,Smith,REG,B,3,,,,,,,
+2025,Victor Mesa,No MLB PlayerStatSeason found for 2025,28859,Victor Mesa,,MI,Victor,Mesa,COMP,B,,,,,,3,3,3
+2025,Nick Castellanos,No player found,,,,PH,Nick,Castellanos,REG,B,,,,,,,,4(B3)
+2025,Isiah Kiner,No player found,,,,PI,Isiah,Kiner-Falefa,MIX,B,,,,2,3,,,
+2025,Cesar Prieto,No player found,,,,SC,Cesar,Prieto,COMP,B,,,4,,,,,
+2025,Michael Siani,No player found,,,,SC,Michael,Siani,COMP,B,,,,,,,2,
+2025,Bryson Eldridge,No player found,,,,SF,Bryson,Eldridge,COMP,B,,5,,,,,,
+2025,C.J. Abrams,No player found,,,,WN,C.J.,Abrams,REG,B,,,,,3,,,
+2025,Andres Chaparro,No player found,,,,WN,Andres,Chaparro,REG,B,,3,,,,,,
+2025,Nasim Nunez,No player found,,,,WN,Nasim,Nunez,ADD,B,,,2,,2,,4,

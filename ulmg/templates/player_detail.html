@@ -77,12 +77,14 @@
         {{ p.fg_eta }}
     </div>
     {% endif %}
-    {% if p.defense %}
+    {% with best_stats=p.get_best_stat_season %}
+    {% if best_stats and best_stats.defense_display %}
     <div>
-        <span class="font-bold">Defense:</span><br>
-        {{ p.defense_display|default_if_none:"—" }}
+        <span class="font-bold">Defense ({{ best_stats.season }}):</span><br>
+        {{ best_stats.defense_display|default_if_none:"—" }}
     </div>
     {% endif %}
+    {% endwith %}
 </div>
 
 <!-- External Links -->
@@ -140,6 +142,7 @@
             <tr class="border-b border-gray-300">
                 <th class="text-center py-1 sortable" data-sortable-type="numeric">Year</th>
                 <th class="text-center py-1 sortable" data-sortable-type="alpha">Level</th>
+                <th class="text-center py-1 sortable" data-sortable-type="alpha">Defense</th>
                 <th class="text-center py-1 sortable" data-sortable-type="numeric">PA</th>
                 <th class="text-center py-1 sortable" data-sortable-type="numeric">AVG</th>
                 <th class="text-center py-1 sortable" data-sortable-type="numeric">OBP</th>
@@ -159,6 +162,7 @@
         <tr class="level-{{ p.clean_classification }} border-b border-gray-100">
             <td class="text-center py-1 font-bold">{{ p.season }}</td>
             <td class="text-center py-1">{{ p.clean_classification|default_if_none:"-" }}</td>
+            <td class="text-center py-1 text-xs">{% if p.defense_display %}{{ p.defense_display }}{% else %}-{% endif %}</td>
             <td class="text-center py-1">
                 {% if p.hit_stats %}{% if p.hit_stats.pa > 0 %}{{ p.hit_stats.pa|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
             </td>

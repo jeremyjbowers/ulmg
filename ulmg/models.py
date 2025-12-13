@@ -310,6 +310,7 @@ class Player(BaseModel):
     name = models.CharField(max_length=255)
     last_name = models.CharField(max_length=255, null=True)
     first_name = models.CharField(max_length=255, null=True)
+    strat_name = models.CharField(max_length=255, blank=True, null=True, help_text="Name as it appears in Strat-O-Matic files for matching")
     position = models.CharField(
         max_length=255, null=True, choices=PLAYER_POSITION_CHOICES
     )
@@ -736,6 +737,9 @@ class PlayerStatSeason(BaseModel):
     previous_carded = models.BooleanField(default=False)
     owned = models.BooleanField(default=False)
     
+    # DEFENSE (season-specific defensive ratings)
+    defense = ArrayField(models.CharField(max_length=10), blank=True, null=True)
+    
     # SEASON-SPECIFIC ROSTER STATUS (moved from Player model)
     is_starter = models.BooleanField(default=False)
     is_bench = models.BooleanField(default=False)
@@ -873,6 +877,21 @@ class PlayerStatSeason(BaseModel):
         """Check if player has substantial innings pitched"""
         ip = self.get_pitching_stat('INNINGS_PITCHED')
         return ip is not None and ip >= STAT_THRESHOLDS['MIN_INNINGS_PITCHED']
+
+    def defense_display(self):
+        """Display defense ratings in a formatted string, same format as Player.defense_display()"""
+        if self.defense:
+            sortdef = [
+                {
+                    "display": f"{d.split('-')[0]}{d.split('-')[2]}",
+                    "sort": f"{d.split('-')[1]}{d.split('-')[2]}",
+                }
+                for d in self.defense
+            ]
+            return ", ".join(
+                [x["display"] for x in sorted(sortdef, key=lambda x: x["sort"])]
+            )
+        return None
 
     class Meta:
         ordering = ['season', 'classification']
