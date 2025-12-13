@@ -442,6 +442,7 @@ class PlayerAdmin(admin.ModelAdmin):
     list_display = [
         "last_name",
         "first_name",
+        "strat_name",
         "is_owned",
         "team",
         "level",
@@ -462,7 +463,7 @@ class PlayerAdmin(admin.ModelAdmin):
         CurrentSeasonInjuredFilter,
         CurrentSeasonMLBOrgFilter,
     ]
-    list_editable = ['mlbam_id','fg_id', 'birthdate']
+    list_editable = ['mlbam_id','fg_id', 'birthdate', 'strat_name']
     readonly_fields = ["name", "age"]
     search_fields = ["name", 'mlbam_id', 'fg_id', 'birthdate']
     autocomplete_fields = ["team"]
@@ -473,6 +474,7 @@ class PlayerAdmin(admin.ModelAdmin):
                 "fields": (
                     "name",
                     ("first_name", "last_name"),
+                    "strat_name",
                     ("birthdate", "raw_age"),
                     "position",
                     "level",
