@@ -111,7 +111,8 @@ class Command(BaseCommand):
 
             for player_row in players:
                 # Extract name from CSV
-                last = player_row["LAST"].split("-")[0].strip()
+                # Keep full last name including hyphens (e.g., "Kiner-Falefa", "Crow-Armstrong")
+                last = player_row["LAST"].strip()
                 first = player_row["FIRST"].strip()
                 name_string = f"{first} {last}"
 
