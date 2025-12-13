@@ -1,10 +1,10 @@
 LG,TM,FIRST,LAST,USE,B/P,C,1B,2B,3B,SS,LF,CF,RF
-AL,BAL,David,Ba�uelos,COMP,BAT,,,,,,,,
+AL,BAL,David,Banuelos,COMP,BAT,,,,,,,,
 AL,BAL,Colton,Cowser,REG,BAT,,,,,,2,3(B2),2
 AL,BAL,Austin,Hays,ADD,BAT,,,,,,3,,3
 AL,BAL,Gunnar,Henderson,REG,BAT,,,,,2,,,
 AL,BAL,Jackson,Holliday,REG,BAT,,,3,,4,,,
-AL,BAL,Eloy,Jim�nez,MIX,BAT,,,,,,,,5
+AL,BAL,Eloy,Jimenez,MIX,BAT,,,,,,,,5
 AL,BAL,Daniel,Johnson,COMP,BAT,,,,,,,,4
 AL,BAL,Tony,Kemp,COMP,BAT,,,3,,,4,,
 AL,BAL,Heston,Kjerstad,REG,BAT,,,,,,4,,4
@@ -181,7 +181,7 @@ AL,CLE,Josh,Naylor,REG,BAT,,3,,,,,,
 AL,CLE,Jhonkensy,Noel,REG,BAT,,4,,,,,,4(B3)
 AL,CLE,Jose,Ramirez,REG,BAT,,,,1,,,,
 AL,CLE,Brayan,Rocchio,REG,BAT,,,,,2,,,
-AL,CLE,Johnathan,Rodr�guez,COMP,BAT,,,,,,,,4
+AL,CLE,Johnathan,Rodriguez,COMP,BAT,,,,,,,,4
 AL,CLE,Daniel,Schneemann,REG,BAT,,,4,3,4,4,4,4
 AL,CLE,Myles,Straw,COMP,BAT,,,,,,,1,
 AL,CLE,Jose,Tena,COMP,BAT,,,,4,,,,
@@ -269,7 +269,7 @@ AL,HOU,Victor,Caratini,REG,BAT,3,4,,,,,,
 AL,HOU,Zach,Dezenzo,ADD,BAT,,4,,5,,,,
 AL,HOU,Aledmys,Diaz,COMP,BAT,,4,4,4,4,,,
 AL,HOU,Yainer,Diaz,REG,BAT,3,4,,,,,,
-AL,HOU,Mauricio,Dub�n,REG,BAT,,4,2,3,4,2(B3),2(B3),3
+AL,HOU,Mauricio,Dubon,REG,BAT,,4,2,3,4,2(B3),2(B3),3
 AL,HOU,Ben,Gamel,REG,BAT,,,,,,3,,3
 AL,HOU,Jason,Heyward,REG,BAT,,,,,,3,3,2
 AL,HOU,Cooper,Hummel,COMP,BAT,,,,,,4,,
@@ -440,7 +440,7 @@ AL,MIN,Manuel,Margot,REG,BAT,,,,,,4,4,4
 AL,MIN,Austin,Martin,REG,BAT,,,4,,,3,4(B3),
 AL,MIN,Jose,Miranda,REG,BAT,,4,,4,5,,,
 AL,MIN,Carlos,Santana,REG,BAT,,1,,,,,,
-AL,MIN,Christian,V�zquez,REG,BAT,2,4,,5,,,,
+AL,MIN,Christian,Vazquez,REG,BAT,2,4,,5,,,,
 AL,MIN,Matt,Wallner,MIX,BAT,,,,,,4(B3),,4(B3)
 AL,MIN,Jorge,Alcala,REG,PIT,,,,,,,,
 AL,MIN,Scott,Blewett,ADD,PIT,,,,,,,,
@@ -635,7 +635,7 @@ AL,TBR,Christopher,Morel,REG,BAT,,,4,,,4,,
 AL,TBR,Richie,Palacios,REG,BAT,,,2(B3),4,5,3(B2),,3(B2)
 AL,TBR,Isaac,Paredes,MIX,BAT,,3,,3,,,,
 AL,TBR,Rene,Pinto,COMP,BAT,4,,,,,,,
-AL,TBR,Harold,Ram�rez,ADD,BAT,,,,,,5,,5
+AL,TBR,Harold,Ramirez,ADD,BAT,,,,,,5,,5
 AL,TBR,Ben,Rortvedt,REG,BAT,3,,,,,,,
 AL,TBR,Amed,Rosario,MIX,BAT,,,3,4,4,,,4
 AL,TBR,Austin,Shenton,COMP,BAT,,4,,,,,,
@@ -788,7 +788,7 @@ NL,ARI,Joc,Pederson,REG,BAT,,,,,,,,
 NL,ARI,Geraldo,Perdomo,REG,BAT,,,,,2,,,
 NL,ARI,Jace,Peterson,COMP,BAT,,,4,4,4,,,
 NL,ARI,Pavin,Smith,ADD,BAT,,4,,,,4,,4
-NL,ARI,Eugenio,Su�rez,REG,BAT,,,,2,,,,
+NL,ARI,Eugenio,Suarez,REG,BAT,,,,2,,,,
 NL,ARI,Alek,Thomas,ADD,BAT,,,,,,,1,
 NL,ARI,Christian,Walker,REG,BAT,,1,,,,,,
 NL,ARI,Logan,Allen,ADD,PIT,,,,,,,,
@@ -832,7 +832,7 @@ NL,ATL,Adam,Duvall,REG,BAT,,,,,,3,,3
 NL,ATL,David,Fletcher,COMP,BAT,,,3,,,,,
 NL,ATL,Michael,Harris II,REG,BAT,,,,,,,1,
 NL,ATL,Jarred,Kelenic,REG,BAT,,,,,,2,3,
-NL,ATL,Ram�n,Laureano,REG,BAT,,,,,,3(B2),3,3(B2)
+NL,ATL,Ramon,Laureano,REG,BAT,,,,,,3(B2),3,3(B2)
 NL,ATL,J.P.,Martinez,COMP,BAT,,,,,,,3,3
 NL,ATL,Whit,Merrifield,REG,BAT,,,3,3,,4,,
 NL,ATL,Sean,Murphy,REG,BAT,2,,,,,,,
@@ -946,9 +946,9 @@ NL,CIN,Jacob,Hurtubise,ADD,BAT,,,,,,4,,4
 NL,CIN,Jonathan,India,REG,BAT,,,4(B3),,,,,
 NL,CIN,Levi,Jordan,COMP,BAT,,,4,,,4,,4
 NL,CIN,Luke,Maile,REG,BAT,2,,,,,,,
-NL,CIN,Noelvi,Mart�,REG,BAT,,,4,3(B4),,,,
+NL,CIN,Noelvi,Marte,REG,BAT,,,4,3(B4),,,,
 NL,CIN,Nick,Martini,ADD,BAT,,,,,,4,,4
-NL,CIN,Edwin,R�os,COMP,BAT,,5,,,,,,
+NL,CIN,Edwin,Rios,COMP,BAT,,5,,,,,,
 NL,CIN,Amed,Rosario,COMP,BAT,,,3,4,4,,,4
 NL,CIN,Austin,Slater,ADD,BAT,,,,,,2,3,2
 NL,CIN,Dominic,Smith,COMP,BAT,,3,,,,,,
@@ -1044,8 +1044,8 @@ NL,LAD,Mookie,Betts,REG,BAT,,,3,,3,,,1(B2)
 NL,LAD,Tommy,Edman,REG,BAT,,,3,,3,,2,
 NL,LAD,Hunter,Feduccia,COMP,BAT,4,,,,,,,
 NL,LAD,Freddie,Freeman,REG,BAT,,2,,,,,,
-NL,LAD,Kike,Hern�ndez,REG,BAT,,4,4,4,4,3,3,
-NL,LAD,Teoscar,Hern�ndez,REG,BAT,,,,,,4(B3),,4(B3)
+NL,LAD,Kike,Hernandez,REG,BAT,,4,4,4,4,3,3,
+NL,LAD,Teoscar,Hernandez,REG,BAT,,,,,,4(B3),,4(B3)
 NL,LAD,Jason,Heyward,ADD,BAT,,,,,,,,2
 NL,LAD,Kevin,Kiermaier,COMP,BAT,,,,,,,1,
 NL,LAD,Gavin,Lux,REG,BAT,,,3,,4,,,
@@ -1102,7 +1102,7 @@ NL,MIA,Griffin,Conine,ADD,BAT,,,,,,3,,3
 NL,MIA,Jose,Devers,COMP,BAT,,4,3,,,,,
 NL,MIA,Xavier,Edwards,REG,BAT,,,4,,4,,,
 NL,MIA,Nick,Fortes,REG,BAT,2,,,,,,,
-NL,MIA,Avisail,Garc�a,ADD,BAT,,,,,,,,3
+NL,MIA,Avisail,Garcia,ADD,BAT,,,,,,,,3
 NL,MIA,Nick,Gordon,REG,BAT,,,4,,,3,4,
 NL,MIA,Tristan,Gray,COMP,BAT,,,,3,,,,
 NL,MIA,David,Hensley,ADD,BAT,,4,,4,,4,,4
@@ -1218,7 +1218,7 @@ NL,NYM,Francisco,Lindor,REG,BAT,,,,,1,,,
 NL,NYM,Starling,Marte,REG,BAT,,,,,,,,3
 NL,NYM,J.D.,Martinez,REG,BAT,,,,,,,,
 NL,NYM,Jeff,McNeil,REG,BAT,,,2,,,3,,3
-NL,NYM,Omar,Narv�ez,ADD,BAT,3,,,,,,,
+NL,NYM,Omar,Narvaez,ADD,BAT,3,,,,,,,
 NL,NYM,Brandon,Nimmo,REG,BAT,,,,,,2,3,
 NL,NYM,Pablo,Reyes,COMP,BAT,,,,,,,,
 NL,NYM,DJ,Stewart,ADD,BAT,,4,,,,4,,4
@@ -1359,7 +1359,7 @@ NL,PIT,Joey,Wentz,COMP,PIT,,,,,,,,
 NL,PIT,Jake,Woodford,COMP,PIT,,,,,,,,
 NL,SDP,Nick,Ahmed,ADD,BAT,,,3,,2,,,
 NL,SDP,Luis,Arraez,REG,BAT,,4,4,,,,,
-NL,SDP,Jos�,Azocar,ADD,BAT,,,,,,2,3,2
+NL,SDP,Jose,Azocar,ADD,BAT,,,,,,2,3,2
 NL,SDP,Matthew,Batten,COMP,BAT,,4,,,,,,
 NL,SDP,Xander,Bogaerts,REG,BAT,,,3,,4,,,
 NL,SDP,Luis,Campusano,REG,BAT,4,5,,,,,,
@@ -1412,7 +1412,7 @@ NL,SFG,Mark,Canha,COMP,BAT,,4,,5,,4,,4
 NL,SFG,Curt,Casali,REG,BAT,3,,,,,,,
 NL,SFG,Matt,Chapman,REG,BAT,,,,1,,,,
 NL,SFG,Michael,Conforto,REG,BAT,,,,,,4(B3),,
-NL,SFG,Jerar,Encarnaci�n,ADD,BAT,,5,,,,4,,4
+NL,SFG,Jerar,Encarnacion,ADD,BAT,,5,,,,4,,4
 NL,SFG,Thairo,Estrada,REG,BAT,,,2,,,,,
 NL,SFG,Tyler,Fitzgerald,REG,BAT,,4,4,,3,4,4,
 NL,SFG,Wilmer,Flores,REG,BAT,,3,,4,,,,
@@ -1469,7 +1469,7 @@ NL,STL,Paul,Goldschmidt,REG,BAT,,2,,,,,,
 NL,STL,Nolan,Gorman,REG,BAT,,,4,4,,,,
 NL,STL,Ivan,Herrera,REG,BAT,4,,,,,,,
 NL,STL,Lars,Nootbaar,REG,BAT,,,,,,2,4,2
-NL,STL,Pedro,Pag�s,REG,BAT,3,5,,,,,,
+NL,STL,Pedro,Pages,REG,BAT,3,5,,,,,,
 NL,STL,Tommy,Pham,COMP,BAT,,,,,,4,,4
 NL,STL,Thomas,Saggese,ADD,BAT,,,3,4,4,,,
 NL,STL,Victor,Scott II,ADD,BAT,,,,,,3,3,3
@@ -1507,14 +1507,14 @@ NL,WSN,Alex,Call,ADD,BAT,,,,,,3,3,3
 NL,WSN,Andres,Chaparro,ADD,BAT,,4,,,,,,
 NL,WSN,Dylan,Crews,REG,BAT,,,,,,,3,2
 NL,WSN,Joey,Gallo,REG,BAT,,2,,,,3,,3
-NL,WSN,Luis,Garc�a Jr.,REG,BAT,,,3,,,,,
+NL,WSN,Luis,Garcia Jr.,REG,BAT,,,3,,,,,
 NL,WSN,Stone,Garrett,COMP,BAT,,,,,,,,
 NL,WSN,Trey,Lipscomb,REG,BAT,,4,4,2,,,,
 NL,WSN,Joey,Meneses,REG,BAT,,4(B3),,,,,,
 NL,WSN,Drew,Millas,ADD,BAT,3,,,,,,,
 NL,WSN,Nasim,Nunez,REG,BAT,,,4,,3,,,
 NL,WSN,Harold,Ramirez,COMP,BAT,,,,,,,,
-NL,WSN,V�ctor,Robles,COMP,BAT,,,,,,,2,2
+NL,WSN,Victor,Robles,COMP,BAT,,,,,,,2,2
 NL,WSN,Keibert,Ruiz,REG,BAT,4,,,,,,,
 NL,WSN,Nick,Senzel,ADD,BAT,,,,4,,,,
 NL,WSN,Jose,Tena,COMP,BAT,,,4,4(B5),,,,
@@ -1545,4 +1545,5 @@ NL,WSN,Jackson,Rutledge,COMP,PIT,,,,,,,,
 NL,WSN,Eduardo,Salazar,REG,PIT,,,,,,,,
 NL,WSN,Jordan,Weems,REG,PIT,,,,,,,,
 NL,WSN,Trevor,Williams,REG,PIT,,,,,,,,
+
 NL,WSN,Amos,Willingham,COMP,PIT,,,,,,,,
