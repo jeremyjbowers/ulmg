@@ -62,7 +62,7 @@ AL,BOS,Bobby,Dalbec,ADD,BAT,,3,,3,,,,4
 AL,BOS,Rafael,Devers,REG,BAT,,,,4,,,,
 AL,BOS,Jarren,Duran,REG,BAT,,,,,,2,2,
 AL,BOS,Mickey,Gasper,COMP,BAT,,4,4,,,,,
-AL,BOS,Romy,Gonzlez,REG,BAT,,4,3(B4),4,4,4,4,4
+AL,BOS,Romy,Gonzalez,REG,BAT,,4,3(B4),4,4,4,4,4
 AL,BOS,Vaughn,Grissom,ADD,BAT,,,4,,,,,
 AL,BOS,David,Hamilton,REG,BAT,,,4,,4,,,
 AL,BOS,Danny,Jansen,REG,BAT,2(B3),,,,,,,
@@ -1547,4 +1547,5 @@ NL,WSN,Jordan,Weems,REG,PIT,,,,,,,,
 NL,WSN,Trevor,Williams,REG,PIT,,,,,,,,
 
 NL,WSN,Amos,Willingham,COMP,PIT,,,,,,,,
+
 
