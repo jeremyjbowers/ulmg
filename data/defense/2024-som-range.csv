@@ -823,7 +823,7 @@ NL,ARI,Thyago,Vieira,ADD,PIT,,,,,,,,
 NL,ARI,Blake,Walston,COMP,PIT,,,,,,,,
 NL,ATL,Ronald,Acuna Jr.,MIX,BAT,,,,,,,,3
 NL,ATL,Ozzie,Albies,REG,BAT,,,3(B2),,,,,
-NL,ATL,Nacho,Alvarez Jr.,COMP,BAT,,,4,4,,,,
+NL,ATL,Nacho,Alvarez,COMP,BAT,,,4,4,,,,
 NL,ATL,Brian,Anderson,COMP,BAT,,,,2,,,,3
 NL,ATL,Orlando,Arcia,REG,BAT,,,,,2,,,
 NL,ATL,Cavan,Biggio,COMP,BAT,,4,3,4(B5),,,,4
@@ -1507,7 +1507,7 @@ NL,WSN,Alex,Call,ADD,BAT,,,,,,3,3,3
 NL,WSN,Andres,Chaparro,ADD,BAT,,4,,,,,,
 NL,WSN,Dylan,Crews,REG,BAT,,,,,,,3,2
 NL,WSN,Joey,Gallo,REG,BAT,,2,,,,3,,3
-NL,WSN,Luis,Garcia Jr.,REG,BAT,,,3,,,,,
+NL,WSN,Luis,Garcia,REG,BAT,,,3,,,,,
 NL,WSN,Stone,Garrett,COMP,BAT,,,,,,,,
 NL,WSN,Trey,Lipscomb,REG,BAT,,4,4,2,,,,
 NL,WSN,Joey,Meneses,REG,BAT,,4(B3),,,,,,
@@ -1547,3 +1547,4 @@ NL,WSN,Jordan,Weems,REG,PIT,,,,,,,,
 NL,WSN,Trevor,Williams,REG,PIT,,,,,,,,
 
 NL,WSN,Amos,Willingham,COMP,PIT,,,,,,,,
+
