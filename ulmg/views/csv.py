@@ -38,7 +38,9 @@ def all_csv(request):
     response["Content-Disposition"] = 'attachment; filename="all-teams-%s.csv"' % (
         datetime.datetime.now().isoformat().split(".")[0]
     )
-    writer = csv.DictWriter(response, fieldnames=settings.CSV_COLUMNS)
+    # Create fieldnames list with mlb_id instead of mlbam_id for CSV headers
+    csv_fieldnames = [f.replace("mlbam_id", "mlb_id") for f in settings.CSV_COLUMNS]
+    writer = csv.DictWriter(response, fieldnames=csv_fieldnames)
     writer.writeheader()
     for p_dict in team_players:
         # Get the actual Player object to access get_best_stat_season
@@ -65,6 +67,9 @@ def all_csv(request):
             p_dict["defense"] = ""
         # Remove 'id' from dict before writing to CSV (it's only needed for Player lookup)
         p_dict.pop("id", None)
+        # Rename mlbam_id to mlb_id for CSV output
+        if "mlbam_id" in p_dict:
+            p_dict["mlb_id"] = p_dict.pop("mlbam_id")
         writer.writerow(p_dict)
     return response
 
@@ -87,7 +92,9 @@ def team_csv(request, abbreviation):
         abbreviation,
         datetime.datetime.now().isoformat().split(".")[0],
     )
-    writer = csv.DictWriter(response, fieldnames=settings.CSV_COLUMNS)
+    # Create fieldnames list with mlb_id instead of mlbam_id for CSV headers
+    csv_fieldnames = [f.replace("mlbam_id", "mlb_id") for f in settings.CSV_COLUMNS]
+    writer = csv.DictWriter(response, fieldnames=csv_fieldnames)
     writer.writeheader()
     for p_dict in team_players:
         # Get the actual Player object to access get_best_stat_season
@@ -114,5 +121,8 @@ def team_csv(request, abbreviation):
             p_dict["defense"] = ""
         # Remove 'id' from dict before writing to CSV (it's only needed for Player lookup)
         p_dict.pop("id", None)
+        # Rename mlbam_id to mlb_id for CSV output
+        if "mlbam_id" in p_dict:
+            p_dict["mlb_id"] = p_dict.pop("mlbam_id")
         writer.writerow(p_dict)
     return response

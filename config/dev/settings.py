@@ -213,6 +213,8 @@ CSV_COLUMNS = [
     "level",
     "defense",
     "team__abbreviation",
+    "fg_id",
+    "mlbam_id",
     "is_ulmg_reserve",
     "is_ulmg_1h_p",
     "is_ulmg_1h_c",
