@@ -32,7 +32,7 @@ def all_csv(request):
             "last_name",
             "first_name",
         )
-        .values(*settings.CSV_COLUMNS)
+        .values("id", *settings.CSV_COLUMNS)
     )
     response = HttpResponse(content_type="text/csv")
     response["Content-Disposition"] = 'attachment; filename="all-teams-%s.csv"' % (
@@ -63,6 +63,8 @@ def all_csv(request):
             )
         else:
             p_dict["defense"] = ""
+        # Remove 'id' from dict before writing to CSV (it's only needed for Player lookup)
+        p_dict.pop("id", None)
         writer.writerow(p_dict)
     return response
 
@@ -77,7 +79,7 @@ def team_csv(request, abbreviation):
             "last_name",
             "first_name",
         )
-        .values(*settings.CSV_COLUMNS)
+        .values("id", *settings.CSV_COLUMNS)
     )
 
     response = HttpResponse(content_type="text/csv")
@@ -110,5 +112,7 @@ def team_csv(request, abbreviation):
             )
         else:
             p_dict["defense"] = ""
+        # Remove 'id' from dict before writing to CSV (it's only needed for Player lookup)
+        p_dict.pop("id", None)
         writer.writerow(p_dict)
     return response
