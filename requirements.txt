@@ -10,7 +10,7 @@ cloudscraper==1.2.71
 dateparser==1.2.2
 distlib==0.4.0
 dj-database-url==3.0.1
-django==5.2.7
+django==5.2.8
 django-prettyjson==0.4.1
 django-storages==1.14.6
 filelock==3.20.0
