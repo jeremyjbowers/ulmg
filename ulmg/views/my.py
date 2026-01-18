@@ -6,7 +6,7 @@ from django.db.models.expressions import OrderBy
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import render, get_object_or_404, redirect
-from django.db.models import Count, Avg, Sum, Max, Min, Q
+from django.db.models import Count, Avg, Sum, Max, Min, Q, Prefetch
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.http import JsonResponse
 from django.conf import settings
@@ -42,9 +42,19 @@ def my_wishlist_beta(request):
     # Flag for templates to customize wishlist controls
     context['wishlist_draft_view'] = True
 
+    # Get current season for PlayerStatSeason queries
+    season = settings.CURRENT_SEASON
+
     # All AA-eligible wishlist players for this owner
+    # Prefetch PlayerStatSeason data to avoid N+1 queries and ensure we use current stats
     base_qs = models.WishlistPlayer.objects.filter(
         wishlist=context["wishlist"], player__team__isnull=True, player__level="B"
+    ).select_related('player').prefetch_related(
+        Prefetch(
+            'player__playerstatseason_set',
+            queryset=models.PlayerStatSeason.objects.filter(is_career=False).order_by('-season', 'classification'),
+            to_attr='all_stat_seasons'
+        )
     ).order_by("rank")
 
     # Keep flat list for any legacy uses
@@ -96,21 +106,31 @@ def my_draft_prep(request, list_type):
     context['my_picks'] = [p.overall_pick_number for p in models.DraftPick.objects.filter(team=context['team'], year=2025, season="midseason", draft_type="open")]
     context['all_picks'] = models.DraftPick.objects.filter(year=2025, season="midseason", draft_type="open").values('overall_pick_number', 'team__abbreviation')
  
+    # Get current season for PlayerStatSeason queries
+    season = settings.CURRENT_SEASON
+
     context['players'] = []
+
+    # Prefetch PlayerStatSeason data to avoid N+1 queries and ensure we use current stats
+    prefetch_stats = Prefetch(
+        'player__playerstatseason_set',
+        queryset=models.PlayerStatSeason.objects.filter(is_career=False).order_by('-season', 'classification'),
+        to_attr='all_stat_seasons'
+    )
 
     if list_type == "offseason":
         base_qs = models.WishlistPlayer.objects.filter(
             wishlist=context["wishlist"],
             player__team__isnull=True,
             player__level__in=["A", "V"],
-        ).order_by("rank")
+        ).select_related('player').prefetch_related(prefetch_stats).order_by("rank")
 
     elif list_type == "midseason":
         base_qs = models.WishlistPlayer.objects.filter(
             wishlist=context["wishlist"],
             player__team__isnull=True,
             player__carded_seasons__contains=[2024],
-        ).order_by("rank")
+        ).select_related('player').prefetch_related(prefetch_stats).order_by("rank")
     else:
         base_qs = models.WishlistPlayer.objects.none()
 

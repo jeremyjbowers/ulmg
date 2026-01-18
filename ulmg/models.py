@@ -631,7 +631,19 @@ class Player(BaseModel):
         Get the best PlayerStatSeason for this player, sorted by newest season 
         and highest classification (1-mlb is highest, 5-college is lowest).
         Returns None if no stat seasons exist.
+        
+        If prefetched data is available (via 'all_stat_seasons' attribute),
+        uses that instead of querying the database.
         """
+        # Check if prefetched stat seasons are available (from prefetch_related)
+        if hasattr(self, 'all_stat_seasons') and self.all_stat_seasons:
+            # Filter out career stats and return the best one
+            non_career = [s for s in self.all_stat_seasons if not s.is_career]
+            if non_career:
+                # Sort by season desc, then classification (1-mlb is highest)
+                return sorted(non_career, key=lambda x: (-x.season or 0, x.classification or ''))[0]
+        
+        # Fall back to database query if no prefetched data
         return PlayerStatSeason.objects.filter(
             player=self,
             is_career=False,
