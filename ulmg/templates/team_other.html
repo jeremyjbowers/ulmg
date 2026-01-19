@@ -15,7 +15,7 @@
         <span class="font-bold">Trades & picks</span>
         {% if own_team %}
         <a href="/my/wishlist/draft/beta/" class="underline hidden md:inline">AA Draft</a>
-        <a href="/my/midseason/draft/" class="underline hidden md:inline">Open Draft</a>
+        <a href="/my/{{ current_season_type }}/draft/" class="underline hidden md:inline">Open Draft</a>
         {% endif %}
     </div>
 </div>

@@ -8,6 +8,7 @@ def nav(request):
         "teamnav": models.Team.objects.all().order_by("division", "abbreviation"),
         "draftnav": getattr(settings, "DRAFTS", []),
         "my_team": None,
+        "current_season_type": getattr(settings, "CURRENT_SEASON_TYPE", "offseason"),
     }
     if request.user.is_authenticated:
         try:
