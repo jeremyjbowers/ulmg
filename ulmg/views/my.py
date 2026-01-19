@@ -53,6 +53,7 @@ def my_wishlist_beta(request):
 
     # All AA-eligible wishlist players for this owner
     # Prefetch PlayerStatSeason data to avoid N+1 queries and ensure we use current stats
+    # Exclude owned players (player__team__isnull=True) - players disappear when drafted
     base_qs = models.WishlistPlayer.objects.filter(
         wishlist=context["wishlist"], player__team__isnull=True, player__level="B"
     ).select_related('player').prefetch_related(
@@ -144,18 +145,22 @@ def my_draft_prep(request, list_type):
     if list_type == "offseason":
         # Offseason open draft: show everyone (no level filter)
         # All unowned players are eligible, regardless of level
+        # Exclude owned players (player__team__isnull=True) - players disappear when drafted
         base_qs = models.WishlistPlayer.objects.filter(
             wishlist=context["wishlist"],
-            player__team__isnull=True,
+            player__team__isnull=True,  # Only unowned players
         ).select_related('player').prefetch_related(prefetch_stats).order_by("rank")
 
     elif list_type == "midseason":
-        # Midseason open draft: only show A and V level players
-        # These are the players eligible for midseason drafts
+        # Midseason open draft: show players who were carded in the previous season
+        # For example, 2026 midseason draft shows players carded in 2025
+        # All levels (B/A/V) are available, but must be carded in previous season
+        # Exclude owned players (player__team__isnull=True) - players disappear when drafted
+        carded_season = draft_year - 1
         base_qs = models.WishlistPlayer.objects.filter(
             wishlist=context["wishlist"],
-            player__team__isnull=True,
-            player__level__in=["A", "V"],
+            player__team__isnull=True,  # Only unowned players
+            player__carded_seasons__contains=[carded_season],
         ).select_related('player').prefetch_related(prefetch_stats).order_by("rank")
     else:
         base_qs = models.WishlistPlayer.objects.none()
