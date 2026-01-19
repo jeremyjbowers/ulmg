@@ -28,16 +28,22 @@ def my_team(request):
 def my_wishlist_beta(request):
     context = utils.build_context(request)
 
-    # AA draft metadata
+    # AA draft metadata - always offseason, use settings to determine year
+    # If we're in midseason, next draft is CURRENT_SEASON + 1 offseason
+    # If we're in offseason, current draft is CURRENT_SEASON offseason
+    draft_year = settings.CURRENT_SEASON
+    if settings.CURRENT_SEASON_TYPE == "midseason":
+        draft_year = settings.CURRENT_SEASON + 1
+    
     context['draft_type'] = "aa"
-    context['draft_year'] = 2025
+    context['draft_year'] = draft_year
     context['draft_season'] = "offseason"
 
     context["team"] = get_object_or_404(models.Team, owner_obj=context["owner"])
     context["wishlist"] = models.Wishlist.objects.get(owner=context["owner"])
 
-    context['my_aa_picks'] = models.DraftPick.objects.filter(team=context['team'], year=2025, season="offseason", draft_type="aa")
-    context['all_aa_picks'] = models.DraftPick.objects.filter(year=2025, season="offseason", draft_type="aa").values('overall_pick_number', 'team__abbreviation')
+    context['my_aa_picks'] = models.DraftPick.objects.filter(team=context['team'], year=str(draft_year), season="offseason", draft_type="aa")
+    context['all_aa_picks'] = models.DraftPick.objects.filter(year=str(draft_year), season="offseason", draft_type="aa").values('overall_pick_number', 'team__abbreviation')
  
     # Flag for templates to customize wishlist controls
     context['wishlist_draft_view'] = True
@@ -94,17 +100,34 @@ def my_wishlist_beta(request):
 def my_draft_prep(request, list_type):
     context = utils.build_context(request)
 
-    # Open draft metadata
+    # Open draft metadata - use settings and list_type to determine draft year and season
+    # list_type determines which draft we're preparing for (offseason or midseason)
+    if list_type == "offseason":
+        # Offseason draft: if we're in midseason, next draft is CURRENT_SEASON + 1 offseason
+        # If we're in offseason, current draft is CURRENT_SEASON offseason
+        draft_year = settings.CURRENT_SEASON
+        if settings.CURRENT_SEASON_TYPE == "midseason":
+            draft_year = settings.CURRENT_SEASON + 1
+        draft_season = "offseason"
+    elif list_type == "midseason":
+        # Midseason draft: always CURRENT_SEASON midseason
+        draft_year = settings.CURRENT_SEASON
+        draft_season = "midseason"
+    else:
+        # Default fallback
+        draft_year = settings.CURRENT_SEASON
+        draft_season = settings.CURRENT_SEASON_TYPE
+
     context['draft_type'] = "open"
-    context['draft_year'] = 2025
-    context['draft_season'] = "midseason"
+    context['draft_year'] = draft_year
+    context['draft_season'] = draft_season
 
     context["team"] = get_object_or_404(models.Team, owner_obj=context["owner"])
     context['wishlist_draft_view'] = True
     context["wishlist"] = models.Wishlist.objects.get(owner=context["owner"])
 
-    context['my_picks'] = [p.overall_pick_number for p in models.DraftPick.objects.filter(team=context['team'], year=2025, season="midseason", draft_type="open")]
-    context['all_picks'] = models.DraftPick.objects.filter(year=2025, season="midseason", draft_type="open").values('overall_pick_number', 'team__abbreviation')
+    context['my_picks'] = [p.overall_pick_number for p in models.DraftPick.objects.filter(team=context['team'], year=str(draft_year), season=draft_season, draft_type="open")]
+    context['all_picks'] = models.DraftPick.objects.filter(year=str(draft_year), season=draft_season, draft_type="open").values('overall_pick_number', 'team__abbreviation')
  
     # Get current season for PlayerStatSeason queries
     season = settings.CURRENT_SEASON
@@ -126,10 +149,13 @@ def my_draft_prep(request, list_type):
         ).select_related('player').prefetch_related(prefetch_stats).order_by("rank")
 
     elif list_type == "midseason":
+        # For midseason drafts, filter by players carded in the previous season
+        # Use CURRENT_SEASON - 1 to get the previous carded season
+        previous_season = settings.CURRENT_SEASON - 1
         base_qs = models.WishlistPlayer.objects.filter(
             wishlist=context["wishlist"],
             player__team__isnull=True,
-            player__carded_seasons__contains=[2024],
+            player__carded_seasons__contains=[previous_season],
         ).select_related('player').prefetch_related(prefetch_stats).order_by("rank")
     else:
         base_qs = models.WishlistPlayer.objects.none()
