@@ -142,20 +142,20 @@ def my_draft_prep(request, list_type):
     )
 
     if list_type == "offseason":
+        # Offseason open draft: show everyone (no level filter)
+        # All unowned players are eligible, regardless of level
+        base_qs = models.WishlistPlayer.objects.filter(
+            wishlist=context["wishlist"],
+            player__team__isnull=True,
+        ).select_related('player').prefetch_related(prefetch_stats).order_by("rank")
+
+    elif list_type == "midseason":
+        # Midseason open draft: only show A and V level players
+        # These are the players eligible for midseason drafts
         base_qs = models.WishlistPlayer.objects.filter(
             wishlist=context["wishlist"],
             player__team__isnull=True,
             player__level__in=["A", "V"],
-        ).select_related('player').prefetch_related(prefetch_stats).order_by("rank")
-
-    elif list_type == "midseason":
-        # For midseason drafts, filter by players carded in the previous season
-        # Use CURRENT_SEASON - 1 to get the previous carded season
-        previous_season = settings.CURRENT_SEASON - 1
-        base_qs = models.WishlistPlayer.objects.filter(
-            wishlist=context["wishlist"],
-            player__team__isnull=True,
-            player__carded_seasons__contains=[previous_season],
         ).select_related('player').prefetch_related(prefetch_stats).order_by("rank")
     else:
         base_qs = models.WishlistPlayer.objects.none()
