@@ -27,6 +27,13 @@
     tbody[id^="tier-"] .tier-assign-cell {
         display: none;
     }
+    /* Visual indicator for full tiers */
+    .tier-full {
+        border-color: #dc2626;
+    }
+    .tier-full tbody.tier-list {
+        background-color: #fef2f2;
+    }
 </style>
 
 <!-- Simple tab navigation -->
@@ -51,7 +58,7 @@
     <!-- Tier board -->
     <div class="flex-1 overflow-x-auto">
         <div class="mb-2 flex justify-between items-center">
-            <h3 class="text-sm font-bold">Tier board (drag between tiers; order within tier is fine-grained rank)</h3>
+            <h3 class="text-sm font-bold">Tier board (drag between tiers; max 20 players per tier)</h3>
             <div class="text-xs text-gray-600">
                 <span class="mr-4">Draft: {{ draft_year }} {{ draft_season }} {{ draft_type|upper }}</span>
                 <label>
@@ -62,16 +69,15 @@
         </div>
         <div id="tier-board" class="grid grid-cols-5 gap-3">
             {% for tier in tiers %}
-            <div class="border border-gray-300 rounded bg-gray-50 flex flex-col min-h-[200px]">
-                <div class="px-2 py-1 border-b border-gray-300 bg-gray-100 flex items-center justify-between">
+            <div class="border border-gray-300 rounded bg-gray-50 flex flex-col min-h-[200px] {% if tier.players|length >= 20 %}tier-full{% endif %}" data-tier-id="{{ tier.id }}">
+                <div class="px-2 py-1 border-b border-gray-300 bg-gray-100 flex items-center justify-between {% if tier.players|length >= 20 %}bg-red-100 border-red-300{% endif %}">
                     <span class="text-xs font-semibold">{{ tier.label }}</span>
-                    <span class="text-[10px] text-gray-600" data-tier-count="{{ tier.id }}">({{ tier.players|length }})</span>
+                    <span class="text-[10px] {% if tier.players|length >= 20 %}text-red-600 font-bold{% else %}text-gray-600{% endif %}" data-tier-count="{{ tier.id }}">{{ tier.players|length }}/20</span>
                 </div>
                 <div class="overflow-y-auto max-h-[75vh]">
                     <table class="w-full text-[11px] border-collapse">
                         <thead>
                             <tr class="border-b border-gray-200">
-                                <th class="text-left py-1 px-1">#</th>
                                 <th class="text-left py-1 px-1">Player</th>
                                 <th class="text-center py-1 px-1">Age</th>
                                 <th class="text-center py-1 px-1">Lvl</th>
@@ -79,14 +85,10 @@
                                 <th class="text-center py-1 px-1">Org</th>
                             </tr>
                         </thead>
-                        <tbody id="tier-{{ tier.id }}-players" class="tier-list" data-tier="{{ tier.id }}">
+                        <tbody id="tier-{{ tier.id }}-players" class="tier-list" data-tier="{{ tier.id }}" data-max-size="20">
                             {% for p in tier.players %}
                             <tr data-playername="{{ p.player.name }}" data-playerid="{{ p.player.id }}"
                                 class="list-group-item border-b border-gray-100 level-{{ p.player.get_best_stat_season.clean_classification }}">
-                                <td id="rank-{{ p.player.id }}" class="py-1 px-1 align-top">
-                                    <span>{% if p.rank == 0 %}-{% else %}{{ p.rank }}{% endif %}</span>
-                                    <span class="pickowner text-[10px] text-gray-500 block"></span>
-                                </td>
                                 {% include "includes/my/player_name.html" %}
                                 <td class="text-center py-1 px-1 align-top">{{ p.player.age|default_if_none:"-" }}</td>
                                 <td class="text-center py-1 px-1 align-top">{{ p.player.level }}</td>
@@ -111,11 +113,10 @@
 
         {% if untiered_players %}
         <div class="mt-4">
-            <h3 class="text-xs font-bold mb-1">Untiered players (drag into a tier or send directly to a tier)</h3>
+            <h3 class="text-xs font-bold mb-1">Tracked players (drag into a tier or use quick-add buttons)</h3>
             <table class="w-full text-[11px] border-collapse">
             <thead>
                 <tr class="border-b border-gray-300">
-                        <th class="text-left py-1 px-1">Rank</th>
                         <th class="text-left py-1 px-1">Player</th>
                         <th class="text-center py-1 px-1">Age</th>
                         <th class="text-center py-1 px-1">Level</th>
@@ -128,10 +129,6 @@
                     {% for p in untiered_players %}
                     <tr data-playername="{{ p.player.name }}" data-playerid="{{ p.player.id }}"
                         class="list-group-item border-b border-gray-100 level-{{ p.player.get_best_stat_season.clean_classification }}">
-                        <td id="rank-{{ p.player.id }}" class="py-1 px-1">
-                            <span>-</span>
-                            <span class="pickowner text-[10px] text-gray-500 block"></span>
-                        </td>
                         {% include "includes/my/player_name.html" %}
                         <td class="text-center py-1 px-1">{{ p.player.age|default_if_none:"-" }}</td>
                         <td class="text-center py-1 px-1">{{ p.player.level }}</td>
@@ -146,11 +143,11 @@
                             {% endif %}
                         </td>
                         <td class="text-center py-1 px-1 tier-assign-cell">
-                            <button type="button" class="tier-assign-btn text-[10px] px-1 py-0.5 border border-gray-300 rounded mx-0.5" data-playerid="{{ p.player.id }}" data-tier="1">1</button>
-                            <button type="button" class="tier-assign-btn text-[10px] px-1 py-0.5 border border-gray-300 rounded mx-0.5" data-playerid="{{ p.player.id }}" data-tier="2">2</button>
-                            <button type="button" class="tier-assign-btn text-[10px] px-1 py-0.5 border border-gray-300 rounded mx-0.5" data-playerid="{{ p.player.id }}" data-tier="3">3</button>
-                            <button type="button" class="tier-assign-btn text-[10px] px-1 py-0.5 border border-gray-300 rounded mx-0.5" data-playerid="{{ p.player.id }}" data-tier="4">4</button>
-                            <button type="button" class="tier-assign-btn text-[10px] px-1 py-0.5 border border-gray-300 rounded mx-0.5" data-playerid="{{ p.player.id }}" data-tier="5">5</button>
+                            <button type="button" class="tier-assign-btn text-[10px] px-1 py-0.5 border border-gray-300 rounded mx-0.5 hover:bg-gray-200" data-playerid="{{ p.player.id }}" data-tier="1">1</button>
+                            <button type="button" class="tier-assign-btn text-[10px] px-1 py-0.5 border border-gray-300 rounded mx-0.5 hover:bg-gray-200" data-playerid="{{ p.player.id }}" data-tier="2">2</button>
+                            <button type="button" class="tier-assign-btn text-[10px] px-1 py-0.5 border border-gray-300 rounded mx-0.5 hover:bg-gray-200" data-playerid="{{ p.player.id }}" data-tier="3">3</button>
+                            <button type="button" class="tier-assign-btn text-[10px] px-1 py-0.5 border border-gray-300 rounded mx-0.5 hover:bg-gray-200" data-playerid="{{ p.player.id }}" data-tier="4">4</button>
+                            <button type="button" class="tier-assign-btn text-[10px] px-1 py-0.5 border border-gray-300 rounded mx-0.5 hover:bg-gray-200" data-playerid="{{ p.player.id }}" data-tier="5">5</button>
                         </td>
                     </tr>
                 {% endfor %}
@@ -175,6 +172,34 @@
 </script>
 <script type="text/javascript">
 $(function(){
+    // Initialize tier counts and visual states on page load
+    function initialize_tier_counts() {
+        $('.tier-list').each(function(){
+            var $tierBody = $(this);
+            var tier = parseInt($tierBody.data('tier')) || 0;
+            if (tier >= 1 && tier <= 5) {
+                var count = $tierBody.children('tr.list-group-item').length;
+                var $countEl = $('[data-tier-count="' + tier + '"]');
+                if ($countEl.length) {
+                    $countEl.text(count + '/20');
+                    var $tierContainer = $('[data-tier-id="' + tier + '"]');
+                    var $header = $tierContainer.find('.bg-gray-100, .bg-red-100');
+                    if (count >= 20) {
+                        $tierContainer.addClass('tier-full');
+                        $header.removeClass('bg-gray-100').addClass('bg-red-100 border-red-300');
+                        $countEl.removeClass('text-gray-600').addClass('text-red-600 font-bold');
+                    } else {
+                        $tierContainer.removeClass('tier-full');
+                        $header.removeClass('bg-red-100 border-red-300').addClass('bg-gray-100');
+                        $countEl.removeClass('text-red-600 font-bold').addClass('text-gray-600');
+                    }
+                }
+            }
+        });
+    }
+    
+    // Run on page load
+    initialize_tier_counts();
     // Tiered drag-and-drop using Sortable across multiple tier lists
     var update_server = function(update_list) {
         if (update_list.length === 0) {
@@ -192,6 +217,7 @@ $(function(){
 
     var recompute_all_ranks = function() {
         var update_list = [];
+        var MAX_TIER_SIZE = 20;
 
         $('.tier-list').each(function(){
             var $tierBody = $(this);
@@ -203,35 +229,43 @@ $(function(){
                 var playerid = $row.data('playerid');
                 var name = $row.data('playername');
 
-                // Only tier 1-5 get ranked within a tier; untiered (0) keep global rank display but no tier
-                var rankCell = $('#rank-' + playerid + ' span').first();
+                // Only tier 1-5 get ranked within a tier; untiered (0) don't get ranks
                 if (tier >= 1 && tier <= 5) {
                     idx += 1;
                     $row.attr('data-rank', idx);
-                    if (rankCell.length) {
-                        rankCell.text(idx);
-                    }
-            update_list.push({
-                'playerid': playerid,
-                'rank': idx,
+                    update_list.push({
+                        'playerid': playerid,
+                        'rank': idx,
                         'tier': tier,
                         'name': name
                     });
                 } else {
-                    // Untiered: keep tier null/0, preserve existing rank display
+                    // Untiered: keep tier null/0, no rank needed
                     update_list.push({
                         'playerid': playerid,
                         'tier': null,
-                'name': name
+                        'name': name
                     });
                 }
             });
 
-            // Update tier counts in headers if present
+            // Update tier counts in headers if present (show X/20 format)
             if (tier >= 1 && tier <= 5) {
                 var $countEl = $('[data-tier-count="' + tier + '"]');
                 if ($countEl.length) {
-                    $countEl.text('(' + idx + ')');
+                    $countEl.text(idx + '/20');
+                    // Update visual state based on count
+                    var $tierContainer = $('[data-tier-id="' + tier + '"]');
+                    var $header = $tierContainer.find('.bg-gray-100');
+                    if (idx >= MAX_TIER_SIZE) {
+                        $tierContainer.addClass('tier-full');
+                        $header.removeClass('bg-gray-100').addClass('bg-red-100 border-red-300');
+                        $countEl.removeClass('text-gray-600').addClass('text-red-600 font-bold');
+                    } else {
+                        $tierContainer.removeClass('tier-full');
+                        $header.removeClass('bg-red-100 border-red-300').addClass('bg-gray-100');
+                        $countEl.removeClass('text-red-600 font-bold').addClass('text-gray-600');
+                    }
                 }
             }
         });
@@ -241,6 +275,34 @@ $(function(){
 
     var on_sort_end = function(evt) {
         recompute_all_ranks();
+    };
+
+    var can_move_to_tier = function(tier, currentPlayerId, fromElement) {
+        if (tier < 1 || tier > 5) {
+            return true; // Can always move to untiered
+        }
+        var $targetBody = $('#tier-' + tier + '-players');
+        if ($targetBody.length === 0) {
+            return false;
+        }
+        var currentCount = $targetBody.children('tr.list-group-item').length;
+        var maxSize = parseInt($targetBody.data('max-size')) || 20;
+        
+        // If player is already in this tier, allow the move (reordering within tier)
+        var $existingRow = $targetBody.find('tr[data-playerid="' + currentPlayerId + '"]');
+        if ($existingRow.length > 0) {
+            return true;
+        }
+        
+        // Also check if we're moving from the same tier (reordering)
+        if (fromElement) {
+            var fromTier = parseInt($(fromElement).closest('.tier-list').data('tier')) || 0;
+            if (fromTier === tier) {
+                return true; // Reordering within same tier is always allowed
+            }
+        }
+        
+        return currentCount < maxSize;
     };
 
     // Initialize Sortable on tier lists only (exclude untiered, which has data-tier="0")
@@ -253,7 +315,12 @@ $(function(){
         Sortable.create(this, {
             group: 'wishlist-tiers',
             animation: 150,
-            onEnd: on_sort_end
+            onEnd: on_sort_end,
+            onMove: function(evt, originalEvent) {
+                var targetTier = parseInt($(evt.to).data('tier')) || 0;
+                var playerId = $(evt.dragged).data('playerid');
+                return can_move_to_tier(targetTier, playerId, evt.from);
+            }
         });
     });
 
@@ -270,11 +337,21 @@ $(function(){
 
         var $row = $('#untiered-players tr.list-group-item[data-playerid="' + playerid + '"]');
         if ($row.length === 0) {
+            // Also check if player is in another tier (allow moving between tiers)
+            $row = $('.tier-list tr.list-group-item[data-playerid="' + playerid + '"]');
+        }
+        if ($row.length === 0) {
             return;
         }
 
         var $targetBody = $('#tier-' + tier + '-players');
         if ($targetBody.length === 0) {
+            return;
+        }
+
+        // Check if tier is full
+        if (!can_move_to_tier(tier, playerid)) {
+            alert('Tier ' + tier + ' is full (20/20). Remove a player first or choose another tier.');
             return;
         }
 
