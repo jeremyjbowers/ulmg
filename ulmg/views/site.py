@@ -299,7 +299,7 @@ def draft_admin(request, year, season, draft_type):
 
     if draft_type == "open":
         players = []
-        for p in models.Player.objects.filter(team__isnull=True).values('current_mlb_org', 'mlbam_id', 'id', 'position', 'name'):
+        for p in models.Player.objects.filter(team__isnull=True).exclude(level="B").values('current_mlb_org', 'mlbam_id', 'id', 'position', 'name'):
             players.append(format_player_for_autocomplete(p))
 
         if season == "offseason":
