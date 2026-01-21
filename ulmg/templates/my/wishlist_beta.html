@@ -80,7 +80,9 @@
                             <tr class="border-b border-gray-200">
                                 <th class="text-left py-1 px-1">Player</th>
                                 <th class="text-center py-1 px-1">Age</th>
+                                {% if draft_type != "aa" %}
                                 <th class="text-center py-1 px-1">Lvl</th>
+                                {% endif %}
                                 <th class="text-center py-1 px-1">Pos</th>
                                 <th class="text-center py-1 px-1">Org</th>
                             </tr>
@@ -91,7 +93,9 @@
                                 class="list-group-item border-b border-gray-100 level-{{ p.player.get_best_stat_season.clean_classification }}">
                                 {% include "includes/my/player_name.html" %}
                                 <td class="text-center py-1 px-1 align-top">{{ p.player.age|default_if_none:"-" }}</td>
+                                {% if draft_type != "aa" %}
                                 <td class="text-center py-1 px-1 align-top">{{ p.player.level }}</td>
+                                {% endif %}
                                 <td class="text-center py-1 px-1 align-top">{{ p.player.position }}</td>
                                 <td class="text-center py-1 px-1 align-top">
                                     {% if p.player.current_mlb_org %}
@@ -119,7 +123,9 @@
                 <tr class="border-b border-gray-300">
                         <th class="text-left py-1 px-1">Player</th>
                         <th class="text-center py-1 px-1">Age</th>
+                        {% if draft_type != "aa" %}
                         <th class="text-center py-1 px-1">Level</th>
+                        {% endif %}
                         <th class="text-center py-1 px-1">Pos</th>
                         <th class="text-center py-1 px-1">Org</th>
                         <th class="text-center py-1 px-1">Tier</th>
@@ -131,7 +137,9 @@
                         class="list-group-item border-b border-gray-100 level-{{ p.player.get_best_stat_season.clean_classification }}">
                         {% include "includes/my/player_name.html" %}
                         <td class="text-center py-1 px-1">{{ p.player.age|default_if_none:"-" }}</td>
+                        {% if draft_type != "aa" %}
                         <td class="text-center py-1 px-1">{{ p.player.level }}</td>
+                        {% endif %}
                         <td class="text-center py-1 px-1">{{ p.player.position }}</td>
                         <td class="text-center py-1 px-1">
                             {% if p.player.current_mlb_org %}
