@@ -32,7 +32,7 @@
             <li><a href="/my/team/">Roster{% if num_owned %} ({{ num_owned }}){% endif %}</a></li>
             <li><a href="/teams/{{ team.abbreviation|lower }}/other/">Trades & picks</a></li>
             <li><a href="/my/wishlist/draft/beta/">AA Draft</a></li>
-            <li class="is-active"><a href="/my/offseason/draft/">Open Draft</a></li>
+            <li class="is-active"><a href="/my/{{ current_season_type }}/draft/">Open Draft</a></li>
             <!-- <li><a href="/my/wishlist/trade/">My Trade List</a></li> -->
         </ul>
     </div>
