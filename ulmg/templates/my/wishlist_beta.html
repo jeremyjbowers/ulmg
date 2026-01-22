@@ -99,6 +99,7 @@
                                 {% endif %}
                                 <th class="text-center py-1 px-1">Pos</th>
                                 <th class="text-center py-1 px-1">Org</th>
+                                <th class="text-center py-1 px-1">Stats</th>
                             </tr>
                         </thead>
                         <tbody id="tier-{{ tier.id }}-players" class="tier-list" data-tier="{{ tier.id }}" data-max-size="20">
@@ -119,6 +120,25 @@
                                     {% else %}
                                         -
                                     {% endif %}
+                                </td>
+                                <td class="text-center py-1 px-1 align-top text-[10px]">
+                                    {% with best_stats=p.player.get_best_stat_season %}
+                                        {% if p.player.position == "P" %}
+                                            {% if best_stats and best_stats.pitch_stats and best_stats.pitch_stats.ip %}
+                                                {{ best_stats.pitch_stats.ip|floatformat:1|default_if_none:"-" }} IP
+                                                {% if best_stats.pitch_stats.era %}/ {{ best_stats.pitch_stats.era|floatformat:2|default_if_none:"-" }} ERA{% endif %}
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        {% else %}
+                                            {% if best_stats and best_stats.hit_stats and best_stats.hit_stats.pa %}
+                                                {{ best_stats.hit_stats.pa|default_if_none:"-" }} PA
+                                                {% if best_stats.hit_stats.wrc_plus %}/ {{ best_stats.hit_stats.wrc_plus|floatformat:0|default_if_none:"-" }} wRC+{% endif %}
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        {% endif %}
+                                    {% endwith %}
                                 </td>
                             </tr>
                             {% endfor %}
@@ -142,6 +162,7 @@
                         {% endif %}
                         <th class="text-center py-1 px-1">Pos</th>
                         <th class="text-center py-1 px-1">Org</th>
+                        <th class="text-center py-1 px-1">Stats</th>
                         <th class="text-center py-1 px-1">Tier</th>
                 </tr>
             </thead>
@@ -163,6 +184,25 @@
                             {% else %}
                                 -
                             {% endif %}
+                        </td>
+                        <td class="text-center py-1 px-1 text-[10px]">
+                            {% with best_stats=p.player.get_best_stat_season %}
+                                {% if p.player.position == "P" %}
+                                    {% if best_stats and best_stats.pitch_stats and best_stats.pitch_stats.ip %}
+                                        {{ best_stats.pitch_stats.ip|floatformat:1|default_if_none:"-" }} IP
+                                        {% if best_stats.pitch_stats.era %}/ {{ best_stats.pitch_stats.era|floatformat:2|default_if_none:"-" }} ERA{% endif %}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                {% else %}
+                                    {% if best_stats and best_stats.hit_stats and best_stats.hit_stats.pa %}
+                                        {{ best_stats.hit_stats.pa|default_if_none:"-" }} PA
+                                        {% if best_stats.hit_stats.wrc_plus %}/ {{ best_stats.hit_stats.wrc_plus|floatformat:0|default_if_none:"-" }} wRC+{% endif %}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                {% endif %}
+                            {% endwith %}
                         </td>
                         <td class="text-center py-1 px-1 tier-assign-cell">
                             <button type="button" class="tier-assign-btn text-[10px] px-1 py-0.5 border border-gray-300 rounded mx-0.5 hover:bg-gray-200" data-playerid="{{ p.player.id }}" data-tier="1">1</button>
