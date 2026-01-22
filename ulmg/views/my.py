@@ -143,24 +143,27 @@ def my_draft_prep(request, list_type):
     )
 
     if list_type == "offseason":
-        # Offseason open draft: show everyone (no level filter)
-        # All unowned players are eligible, regardless of level
+        # Offseason open draft: show A/V level players only (B-level players are for AA draft)
         # Exclude owned players (player__team__isnull=True) - players disappear when drafted
         base_qs = models.WishlistPlayer.objects.filter(
             wishlist=context["wishlist"],
             player__team__isnull=True,  # Only unowned players
+        ).exclude(
+            player__level="B"  # B-level players are for AA draft, not Open draft
         ).select_related('player').prefetch_related(prefetch_stats).order_by("rank")
 
     elif list_type == "midseason":
         # Midseason open draft: show players who were carded in the previous season
         # For example, 2026 midseason draft shows players carded in 2025
-        # All levels (B/A/V) are available, but must be carded in previous season
+        # A/V levels only (B-level players are for AA draft)
         # Exclude owned players (player__team__isnull=True) - players disappear when drafted
         carded_season = draft_year - 1
         base_qs = models.WishlistPlayer.objects.filter(
             wishlist=context["wishlist"],
             player__team__isnull=True,  # Only unowned players
             player__carded_seasons__contains=[carded_season],
+        ).exclude(
+            player__level="B"  # B-level players are for AA draft, not Open draft
         ).select_related('player').prefetch_related(prefetch_stats).order_by("rank")
     else:
         base_qs = models.WishlistPlayer.objects.none()
