@@ -129,8 +129,8 @@
             {% endfor %}
         </div>
 
-        <!-- Watched players section - always present but hidden when empty -->
-        <div class="mt-4" id="watched-section" {% if not untiered_players %}style="display: none;"{% endif %}>
+        <!-- Watched players section - always present and visible (even when empty) so players can be dragged into it -->
+        <div class="mt-4" id="watched-section">
             <h3 class="text-xs font-bold mb-1">Watched players (drag here to remove from tiers, or drag into a tier)</h3>
             <table class="w-full text-[11px] border-collapse">
             <thead>
@@ -218,14 +218,8 @@ $(function(){
             }
         });
         
-        // Initialize watched section visibility
-        var watchedCount = $('#untiered-players tr.list-group-item').length;
-        var $watchedSection = $('#watched-section');
-        if (watchedCount > 0) {
-            $watchedSection.show();
-        } else {
-            $watchedSection.hide();
-        }
+        // Watched section is always visible (even when empty) so players can be dragged into it
+        // No initialization needed
     }
     
     // Run on page load
@@ -300,14 +294,8 @@ $(function(){
             }
         });
 
-        // Show/hide watched section based on whether it has players
-        var $watchedSection = $('#watched-section');
-        var watchedCount = $('#untiered-players tr.list-group-item').length;
-        if (watchedCount > 0) {
-            $watchedSection.show();
-        } else {
-            $watchedSection.hide();
-        }
+        // Watched section is always visible (even when empty) so players can be dragged into it
+        // No need to show/hide it
 
         update_server(update_list);
     };
