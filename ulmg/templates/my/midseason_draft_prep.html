@@ -10,7 +10,7 @@
         <ul>
             <li><a href="/my/team/">My Roster{% if num_owned %} ({{ num_owned }}){% endif %}</a></li>
             <li><a href="/teams/{{ team.abbreviation|lower }}/other/">Trades & picks</a></li>
-            <li class="is-active"><a href="/my/midseason/draft/">My Midseason Draft</a></li>
+            <li class="is-active"><a href="/my/{{ current_season_type }}/draft/">My {{ current_season_type|title }} Draft</a></li>
             <!-- <li><a href="/my/wishlist/draft/beta/">My Draft List <span class="tag is-rounded is-danger is-light">beta</span></a></li>
             <li><a href="/my/wishlist/trade/">My Trade List</a></li> -->
         </ul>
