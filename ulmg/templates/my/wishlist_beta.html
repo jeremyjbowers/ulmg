@@ -34,6 +34,20 @@
     .tier-full tbody.tier-list {
         background-color: #fef2f2;
     }
+    /* Make watched section drop target more visible when empty */
+    #watched-section tbody.tier-list {
+        min-height: 3rem;
+        background-color: #f9fafb;
+    }
+    #watched-section tbody.tier-list:empty::after {
+        content: "Drop players here to remove from tiers";
+        display: block;
+        padding: 1rem;
+        text-align: center;
+        color: #9ca3af;
+        font-style: italic;
+        font-size: 10px;
+    }
 </style>
 
 <!-- Simple tab navigation -->
@@ -115,9 +129,9 @@
             {% endfor %}
         </div>
 
-        {% if untiered_players %}
-        <div class="mt-4">
-            <h3 class="text-xs font-bold mb-1">Tracked players (drag into a tier or use quick-add buttons)</h3>
+        <!-- Watched players section - always present but hidden when empty -->
+        <div class="mt-4" id="watched-section" {% if not untiered_players %}style="display: none;"{% endif %}>
+            <h3 class="text-xs font-bold mb-1">Watched players (drag here to remove from tiers, or drag into a tier)</h3>
             <table class="w-full text-[11px] border-collapse">
             <thead>
                 <tr class="border-b border-gray-300">
@@ -162,7 +176,6 @@
             </tbody>
         </table>
         </div>
-        {% endif %}
     </div>
 </div>
 
@@ -204,6 +217,15 @@ $(function(){
                 }
             }
         });
+        
+        // Initialize watched section visibility
+        var watchedCount = $('#untiered-players tr.list-group-item').length;
+        var $watchedSection = $('#watched-section');
+        if (watchedCount > 0) {
+            $watchedSection.show();
+        } else {
+            $watchedSection.hide();
+        }
     }
     
     // Run on page load
@@ -278,6 +300,15 @@ $(function(){
             }
         });
 
+        // Show/hide watched section based on whether it has players
+        var $watchedSection = $('#watched-section');
+        var watchedCount = $('#untiered-players tr.list-group-item').length;
+        if (watchedCount > 0) {
+            $watchedSection.show();
+        } else {
+            $watchedSection.hide();
+        }
+
         update_server(update_list);
     };
 
@@ -313,13 +344,11 @@ $(function(){
         return currentCount < maxSize;
     };
 
-    // Initialize Sortable on tier lists only (exclude untiered, which has data-tier="0")
+    // Initialize Sortable on all tier lists (including watched/untiered with data-tier="0")
     $('.tier-list').each(function(){
         var $body = $(this);
         var tier = parseInt($body.data('tier')) || 0;
-        if (tier < 1 || tier > 5) {
-            return; // skip untiered pool
-        }
+        
         Sortable.create(this, {
             group: 'wishlist-tiers',
             animation: 150,
