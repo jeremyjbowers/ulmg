@@ -53,9 +53,10 @@ def index(request):
     
     context["teams"] = teams
 
-    season = settings.CURRENT_SEASON
+    # Use get_current_season() to get previous year's stats during preseason/offseason
+    season = utils.get_current_season()
 
-    # Get PlayerStatSeason objects for unowned 2025 MLB major league players WITH ACTUAL STATS
+    # Get PlayerStatSeason objects for unowned MLB major league players WITH ACTUAL STATS
     # READ-HEAVY OPTIMIZATION: Use select_related to preload player data and avoid N+1 queries
     base_stats = models.PlayerStatSeason.objects.filter(
         season=season,
@@ -508,8 +509,8 @@ def filter_players(request):
     # Exclude career rows from all search results
     stat_season_query = models.PlayerStatSeason.objects.select_related('player').filter(is_career=False)
     
-    # Default season for filtering
-    search_season = settings.CURRENT_SEASON
+    # Default season for filtering - use get_current_season() to get previous year's stats during preseason/offseason
+    search_season = utils.get_current_season()
     
     # Handle season selection first (most selective filter)
     if request.GET.get("season", None):
