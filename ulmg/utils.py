@@ -285,6 +285,9 @@ def parse_fg_fv(raw_fv_str):
 def build_context(request):
     context = {}
 
+    # Season for stat display (2025 during offseason when CURRENT_SEASON=2026, 2026 during midseason)
+    context["stats_season"] = get_current_season()
+
     # to build the nav
     context["teamnav"] = models.Team.objects.all().order_by("division", "abbreviation")
     context["draftnav"] = settings.DRAFTS

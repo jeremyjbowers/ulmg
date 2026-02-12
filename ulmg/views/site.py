@@ -77,6 +77,7 @@ def index(request):
 
     context["hitters"] = hitter_stats
     context["pitchers"] = pitcher_stats
+    context["season"] = season
 
     return render(request, "index.html", context)
 
@@ -161,8 +162,8 @@ def team_detail(request, abbreviation):
     if request.user.is_superuser:
         context["own_team"] = True
 
-    # Get current season for PlayerStatSeason queries
-    season = settings.CURRENT_SEASON
+    # Get current season for PlayerStatSeason queries (2025 during offseason, 2026 during midseason)
+    season = utils.get_current_season()
 
     # Get team players with current season data efficiently
     # This gets all players on the team, whether they have current season data or not
