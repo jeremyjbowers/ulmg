@@ -21,8 +21,6 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 class Command(BaseCommand):
     help = 'Download current season FanGraphs stats data and save both locally and to S3'
-    
-    season = 2025
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -146,8 +144,9 @@ class Command(BaseCommand):
                 self.stdout.write(f"Saved KBO {k} data to {local_path} and uploaded to S3")
 
     def handle(self, *args, **options):
+        self.season = utils.get_current_season()
         self.local_only = options.get('local_only', False)
-        
+
         if self.local_only:
             self.stdout.write("Running in local-only mode, will not upload to S3")
         elif not utils.s3_manager.s3_client:

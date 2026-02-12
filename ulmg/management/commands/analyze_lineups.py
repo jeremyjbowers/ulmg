@@ -41,16 +41,17 @@ class Command(BaseCommand):
                 },
             }
             
-            # Get team players with 2025 major league hitting stats and >= 5 PA
+            # Get team players with current season major league hitting stats and >= 5 PA
+            season = utils.get_current_season()
             team_players = models.Player.objects.filter(team=team)
-            
+
             for bucket, data in wrc_buckets.items():
                 wrc_threshold = data['wrc_threshold']
-                
-                # Find PlayerStatSeason objects for 2025 majors hitting with sufficient PA and wRC+
+
+                # Find PlayerStatSeason objects for current season majors hitting with sufficient PA and wRC+
                 qualifying_stat_seasons = models.PlayerStatSeason.objects.filter(
                     player__team=team,
-                    season=2025,
+                    season=season,
                     classification='1-mlb',
                     hit_stats__pa__gte=5,
                     hit_stats__wrc_plus__gte=wrc_threshold

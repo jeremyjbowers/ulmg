@@ -49,9 +49,9 @@ class Command(BaseCommand):
         dry_run = options.get('dry_run')
         
         if not season:
-            # Default to current year if no season specified
-            from datetime import datetime
-            season = datetime.now().year
+            # Default to get_current_season() - uses previous year during offseason
+            from ulmg import utils
+            season = utils.get_current_season()
         
         self.stdout.write(f'Loading MLB stats for season {season}')
         if dry_run:

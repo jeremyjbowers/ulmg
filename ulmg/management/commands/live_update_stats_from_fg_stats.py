@@ -62,7 +62,7 @@ class Command(BaseCommand):
 
 
     def handle(self, *args, **options):
-        season = 2025
+        season = utils.get_current_season()
         leagues = ['mlb', 'milb', 'npb', 'kbo', 'college']
         sides = ['bat', 'pit']
 
