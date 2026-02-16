@@ -24,6 +24,7 @@ from ulmg.models import (
     MagicLinkToken,
     TradeSummary,
     Transaction,
+    DuplicatePlayerCandidate,
 )
 
 # Configure admin site
@@ -557,3 +558,11 @@ class MagicLinkTokenAdmin(admin.ModelAdmin):
     list_filter = ["used", "active", "expires_at"]
     readonly_fields = ["token", "created", "last_modified"]
     search_fields = ["user__email", "user__username"]
+
+
+@admin.register(DuplicatePlayerCandidate)
+class DuplicatePlayerCandidateAdmin(admin.ModelAdmin):
+    list_display = ["id", "player1", "player2", "status", "match_reason", "created", "resolved_at"]
+    list_filter = ["status"]
+    readonly_fields = ["created", "last_modified", "resolved_at", "resolved_by"]
+    raw_id_fields = ["player1", "player2", "resolved_by"]

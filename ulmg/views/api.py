@@ -1,5 +1,6 @@
 import csv
 import datetime
+import logging
 
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -193,8 +194,11 @@ def wishlist_player_action(request, playerid):
 @login_required
 @csrf_exempt
 def player_action(request, playerid, action):
-    p = models.Player.objects.get(id=playerid)
-    current_season = datetime.datetime.now().year
+    try:
+        p = models.Player.objects.get(id=playerid)
+    except models.Player.DoesNotExist:
+        return JsonResponse({"error": "Player not found"}, status=404)
+    current_season = utils.get_current_season()
     
     def _update_player_stat_season(player, **kwargs):
         """Update or create PlayerStatSeason with roster status fields."""
@@ -223,25 +227,30 @@ def player_action(request, playerid, action):
         return player_stat_season
 
     if action == "to_35_man":
-        p.is_reserve = False
-        p.is_1h_c = False
-        p.is_1h_p = False
-        p.is_1h_pos = False
-        p.is_protected = True
-        p.save()
-        _update_player_stat_season(p, is_ulmg35man_roster=True)
+        try:
+            p.is_ulmg_reserve = False
+            p.is_ulmg_1h_c = False
+            p.is_ulmg_1h_p = False
+            p.is_ulmg_1h_pos = False
+            p.is_ulmg_protected = True
+            p.is_ulmg_35man_roster = True
+            p.save()
+            _update_player_stat_season(p, is_ulmg35man_roster=True)
+        except Exception as e:
+            logger.exception("to_35_man failed for player %s", playerid)
+            return JsonResponse({"error": str(e)}, status=500)
         return HttpResponse("ok")
 
     if action == "unprotect":
-        p.is_reserve = False
-        p.is_1h_c = False
-        p.is_1h_p = False
-        p.is_1h_pos = False
+        p.is_ulmg_reserve = False
+        p.is_ulmg_1h_c = False
+        p.is_ulmg_1h_p = False
+        p.is_ulmg_1h_pos = False
         p.is_ulmg_2h_c = False
         p.is_ulmg_2h_p = False
         p.is_ulmg_2h_pos = False
-        p.is_protected = False
-        # Update Player model roster status
+        p.is_ulmg_protected = False
+        p.is_ulmg_35man_roster = False
         p.is_ulmg_mlb_roster = False
         p.is_ulmg_aaa_roster = False
         p.save()
@@ -379,14 +388,13 @@ def player_action(request, playerid, action):
 
 
     if action == "to_mlb":
-        p.is_reserve = False
-        p.is_1h_c = False
-        p.is_1h_p = False
-        p.is_1h_pos = False
-        p.is_2h_c = False
-        p.is_2h_p = False
-        p.is_2h_pos = False
-        # Update Player model roster status
+        p.is_ulmg_reserve = False
+        p.is_ulmg_1h_c = False
+        p.is_ulmg_1h_p = False
+        p.is_ulmg_1h_pos = False
+        p.is_ulmg_2h_c = False
+        p.is_ulmg_2h_p = False
+        p.is_ulmg_2h_pos = False
         p.is_ulmg_mlb_roster = True
         p.is_ulmg_aaa_roster = False
         p.save()
@@ -397,14 +405,13 @@ def player_action(request, playerid, action):
         return HttpResponse("ok")
 
     if action == "to_aaa":
-        p.is_reserve = False
-        p.is_1h_c = False
-        p.is_1h_p = False
-        p.is_1h_pos = False
-        p.is_2h_c = False
-        p.is_2h_p = False
-        p.is_2h_pos = False
-        # Update Player model roster status
+        p.is_ulmg_reserve = False
+        p.is_ulmg_1h_c = False
+        p.is_ulmg_1h_p = False
+        p.is_ulmg_1h_pos = False
+        p.is_ulmg_2h_c = False
+        p.is_ulmg_2h_p = False
+        p.is_ulmg_2h_pos = False
         p.is_ulmg_mlb_roster = False
         p.is_ulmg_aaa_roster = True
         p.save()
@@ -415,14 +422,13 @@ def player_action(request, playerid, action):
         return HttpResponse("ok")
 
     if action == "off_roster":
-        p.is_reserve = False
-        p.is_1h_c = False
-        p.is_1h_p = False
-        p.is_1h_pos = False
-        p.is_2h_c = False
-        p.is_2h_p = False
-        p.is_2h_pos = False
-        # Update Player model roster status
+        p.is_ulmg_reserve = False
+        p.is_ulmg_1h_c = False
+        p.is_ulmg_1h_p = False
+        p.is_ulmg_1h_pos = False
+        p.is_ulmg_2h_c = False
+        p.is_ulmg_2h_p = False
+        p.is_ulmg_2h_pos = False
         p.is_ulmg_mlb_roster = False
         p.is_ulmg_aaa_roster = False
         p.save()
@@ -435,15 +441,15 @@ def player_action(request, playerid, action):
     if action == "drop":
         p.team = None
         p.is_owned = False
-        p.is_reserve = False
-        p.is_1h_c = False
-        p.is_1h_p = False
-        p.is_1h_pos = False
-        p.is_2h_c = False
-        p.is_2h_p = False
-        p.is_2h_pos = False
-        p.is_protected = False
-        # Update Player model roster status
+        p.is_ulmg_reserve = False
+        p.is_ulmg_1h_c = False
+        p.is_ulmg_1h_p = False
+        p.is_ulmg_1h_pos = False
+        p.is_ulmg_2h_c = False
+        p.is_ulmg_2h_p = False
+        p.is_ulmg_2h_pos = False
+        p.is_ulmg_protected = False
+        p.is_ulmg_35man_roster = False
         p.is_ulmg_mlb_roster = False
         p.is_ulmg_aaa_roster = False
         p.save()
@@ -561,7 +567,7 @@ def draft_action(request, pickid):
     if playerid:
         draftpick.player = get_object_or_404(models.Player, pk=playerid)
         draftpick.player.team = draftpick.team
-        draftpick.player.is_mlb_roster = True
+        draftpick.player.is_ulmg_mlb_roster = True
         draftpick.player.save()
         draftpick.save()
 
@@ -592,7 +598,7 @@ def draft_action(request, pickid):
         if len(ps) == 1:
             draftpick.player = ps[0]
             draftpick.player.team = draftpick.team
-            draftpick.player.is_mlb_roster = True
+            draftpick.player.is_ulmg_mlb_roster = True
             draftpick.player.save()
         else:
             draftpick.player_name = name
@@ -601,7 +607,7 @@ def draft_action(request, pickid):
     if not name and not playerid:
         if draftpick.player:
             draftpick.player.team = None
-            draftpick.player.is_mlb_roster = False
+            draftpick.player.is_ulmg_mlb_roster = False
             draftpick.player.save()
             draftpick.player = None
 
@@ -692,7 +698,7 @@ def search(request):
                     Q(is_1h_pos=False),
                     Q(is_reserve=False),
                 ).exclude(
-                    Q(playerstatseason__season=current_season, playerstatseason__is_35man_roster=True)
+                    Q(playerstatseason__season=current_season, playerstatseason__is_ulmg35man_roster=True)
                 )
             else:
                 # Get players that ARE protected
@@ -701,7 +707,7 @@ def search(request):
                     | Q(is_1h_p=True)
                     | Q(is_1h_pos=True)
                     | Q(is_reserve=True)
-                    | Q(playerstatseason__season=current_season, playerstatseason__is_35man_roster=True)
+                    | Q(playerstatseason__season=current_season, playerstatseason__is_ulmg35man_roster=True)
                 )
 
             context["protected"] = protected

@@ -37,19 +37,19 @@
         <!-- 2H Pitcher Protection - only for pitchers without 1H pitcher protection and not 2H draft players -->
         {% if p.position == "P" and p.level == "V" and not p.is_ulmg_1h_p and not p.is_ulmg_reserve and not p.is_ulmg_2h_draft %}
             <a class="player-action text-xs px-1.5 py-0.5 border {% if p.is_ulmg_2h_p %}bg-yellow-400 border-yellow-400 text-black{% else %}border-yellow-400 text-yellow-600 hover:bg-yellow-50{% endif %} rounded" 
-               data-playerid="{{ p.id }}" data-action="{% if p.is_ulmg_2h_p %}unprotect{% else %}is_ulmg_2h_p{% endif %}">P</a>
+               data-playerid="{{ p.id }}" data-action="{% if p.is_ulmg_2h_p %}unprotect{% else %}is_ulmg_2h_p{% endif %}" data-roster-type="2h_p">P</a>
         {% endif %}
         
         <!-- 2H Catcher Protection - only for catchers without 1H catcher protection and not 2H draft players -->
         {% if p.position == "C" and p.level == "V" and not p.is_ulmg_1h_c and not p.is_ulmg_reserve and not p.is_ulmg_2h_draft %}
             <a class="player-action text-xs px-1.5 py-0.5 border {% if p.is_ulmg_2h_c %}bg-yellow-400 border-yellow-400 text-black{% else %}border-yellow-400 text-yellow-600 hover:bg-yellow-50{% endif %} rounded" 
-               data-playerid="{{ p.id }}" data-action="{% if p.is_ulmg_2h_c %}unprotect{% else %}is_ulmg_2h_c{% endif %}">C</a>
+               data-playerid="{{ p.id }}" data-action="{% if p.is_ulmg_2h_c %}unprotect{% else %}is_ulmg_2h_c{% endif %}" data-roster-type="2h_c">C</a>
         {% endif %}
         
         <!-- 2H Position Protection - only for hitters without 1H position protection and not 2H draft players -->
         {% if p.position != "P" and p.position != "C" and p.level == "V" and not p.is_ulmg_1h_pos and not p.is_ulmg_reserve and not p.is_ulmg_2h_draft %}
             <a class="player-action text-xs px-1.5 py-0.5 border {% if p.is_ulmg_2h_pos %}bg-yellow-400 border-yellow-400 text-black{% else %}border-yellow-400 text-yellow-600 hover:bg-yellow-50{% endif %} rounded" 
-               data-playerid="{{ p.id }}" data-action="{% if p.is_ulmg_2h_pos %}unprotect{% else %}is_ulmg_2h_pos{% endif %}">HIT</a>
+               data-playerid="{{ p.id }}" data-action="{% if p.is_ulmg_2h_pos %}unprotect{% else %}is_ulmg_2h_pos{% endif %}" data-roster-type="2h_pos">HIT</a>
         {% endif %}
     </div>
 </td>
@@ -60,10 +60,10 @@
     <div class="flex space-x-1">
         {% if p.is_ulmg_35man_roster or p.is_ulmg_reserve or p.is_ulmg_1h_p or p.is_ulmg_1h_c or p.is_ulmg_1h_pos %}
             <a class="player-action text-xs px-1.5 py-0.5 border bg-green-600 border-green-600 text-white rounded" 
-               data-playerid="{{ p.id }}" data-action="unprotect">40</a>
+               data-playerid="{{ p.id }}" data-action="unprotect" data-roster-type="40man">40</a>
         {% elif not 35_roster_count == 40 and not p.level == "B" %}
             <a class="player-action text-xs px-1.5 py-0.5 border border-green-600 text-green-600 hover:bg-green-50 rounded" 
-               data-playerid="{{ p.id }}" data-action="to_35_man">40</a>
+               data-playerid="{{ p.id }}" data-action="to_35_man" data-roster-type="40man">40</a>
         {% endif %}
     </div>
 </td>
@@ -71,240 +71,6 @@
 
 {% if protect_tab or roster_tab %}
 <td>
-    <!-- Drop Button - requires confirmation modal -->
     <a class="drop-button text-xs px-1.5 py-0.5 border border-red-500 text-red-600 hover:bg-red-50 rounded" 
        data-playerid="{{ p.id }}" data-playername="{{ p.name }}">×</a>
 </td>{% endif %}
-
-<!-- Drop Confirmation Modal -->
-<div id="drop-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden" 
-     data-mlb-roster-count="{{ mlb_roster_count|default:0 }}" 
-     data-mlb-roster-size="{{ mlb_roster_size|default:30 }}">
-    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-        <div class="mt-3 text-center">
-            <h3 class="text-lg font-medium text-gray-900">Confirm Player Drop</h3>
-            <div class="mt-4">
-                <p class="text-sm text-gray-600">
-                    Are you sure you want to drop <strong id="drop-player-name"></strong>?
-                </p>
-                <p class="text-sm text-red-600 mt-2">
-                    This action is irreversible - the player will be removed from your team permanently.
-                </p>
-            </div>
-            <div class="flex justify-center space-x-4 mt-6">
-                <button id="cancel-drop" class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400">
-                    Cancel
-                </button>
-                <button id="confirm-drop" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">
-                    Drop Player
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const modal = document.getElementById('drop-modal');
-    const playerNameSpan = document.getElementById('drop-player-name');
-    const cancelBtn = document.getElementById('cancel-drop');
-    const confirmBtn = document.getElementById('confirm-drop');
-    let currentPlayerId = null;
-    
-    // Track MLB roster count dynamically
-    let mlbRosterCount = parseInt(modal.dataset.mlbRosterCount) || 0;
-    const mlbRosterSize = parseInt(modal.dataset.mlbRosterSize) || 30;
-    
-    function updateRosterDisplay() {
-        // Update the floating roster status display
-        const rosterDisplay = document.querySelector('.roster-item button:last-child span');
-        if (rosterDisplay) {
-            rosterDisplay.textContent = mlbRosterCount;
-        }
-    }
-    
-    function updateMlbButtonVisibility() {
-        // Show/hide MLB buttons based on roster count
-        document.querySelectorAll('[data-action="to_mlb"]').forEach(btn => {
-            if (mlbRosterCount >= mlbRosterSize) {
-                btn.style.display = 'none';
-            } else {
-                btn.style.display = 'inline-block';
-            }
-        });
-    }
-    
-    // Initialize button visibility on page load
-    updateMlbButtonVisibility();
-
-    // Async button state updater
-    function updateButtonStates(playerId, action) {
-        const playerRow = document.querySelector(`[data-playerid="${playerId}"]`).closest('tr');
-        
-        // Find all buttons for this player
-        const mlbBtn = playerRow.querySelector('[data-action="to_mlb"], [data-action="off_roster"][data-playerid="' + playerId + '"]');
-        const aaaBtn = playerRow.querySelector('[data-action="to_aaa"], [data-action="off_roster"][data-playerid="' + playerId + '"]');
-        const p2hBtn = playerRow.querySelector('[data-action="is_ulmg_2h_p"], [data-action="unprotect"][data-playerid="' + playerId + '"]');
-        const c2hBtn = playerRow.querySelector('[data-action="is_ulmg_2h_c"], [data-action="unprotect"][data-playerid="' + playerId + '"]');
-        const pos2hBtn = playerRow.querySelector('[data-action="is_ulmg_2h_pos"], [data-action="unprotect"][data-playerid="' + playerId + '"]');
-        const protect40Btn = playerRow.querySelector('[data-action="to_35_man"], [data-action="unprotect"][data-playerid="' + playerId + '"]');
-        
-        // Helper function to update button appearance
-        function setButtonState(btn, active, action, text, activeClasses, inactiveClasses) {
-            if (!btn) return;
-            btn.setAttribute('data-action', action);
-            btn.textContent = text;
-            btn.className = `player-action text-xs px-1.5 py-0.5 border rounded ${active ? activeClasses : inactiveClasses}`;
-        }
-        
-                 // Update based on action
-        switch(action) {
-            case 'to_mlb':
-                setButtonState(mlbBtn, true, 'off_roster', 'MLB', 'bg-black border-black text-white', '');
-                mlbRosterCount++;
-                updateRosterDisplay();
-                updateMlbButtonVisibility();
-                break;
-                
-            case 'to_aaa':
-                setButtonState(aaaBtn, true, 'off_roster', 'AAA', 'bg-blue-400 border-blue-400 text-white', '');
-                break;
-                
-            case 'off_roster':
-                // Reset MLB button
-                if (mlbBtn && mlbBtn.textContent === 'MLB' && mlbBtn.classList.contains('bg-black')) {
-                    setButtonState(mlbBtn, false, 'to_mlb', 'MLB', '', 'border-black text-black hover:bg-gray-50');
-                    mlbRosterCount--;
-                    updateRosterDisplay();
-                    updateMlbButtonVisibility();
-                }
-                // Reset AAA button
-                if (aaaBtn && aaaBtn.textContent === 'AAA' && aaaBtn.classList.contains('bg-blue-400')) {
-                    setButtonState(aaaBtn, false, 'to_aaa', 'AAA', '', 'border-blue-400 text-blue-600 hover:bg-blue-50');
-                }
-                break;
-                
-            case 'is_ulmg_2h_p':
-                setButtonState(p2hBtn, true, 'unprotect', 'P', 'bg-yellow-400 border-yellow-400 text-black', '');
-                break;
-                
-            case 'is_ulmg_2h_c':
-                setButtonState(c2hBtn, true, 'unprotect', 'C', 'bg-yellow-400 border-yellow-400 text-black', '');
-                break;
-                
-            case 'is_ulmg_2h_pos':
-                setButtonState(pos2hBtn, true, 'unprotect', 'HIT', 'bg-yellow-400 border-yellow-400 text-black', '');
-                break;
-                
-            case 'unprotect':
-                // Check if player was on MLB roster before clearing
-                const wasOnMlbRoster = mlbBtn && mlbBtn.classList.contains('bg-black');
-                
-                // Reset all protection buttons to inactive state
-                setButtonState(p2hBtn, false, 'is_ulmg_2h_p', 'P', '', 'border-yellow-400 text-yellow-600 hover:bg-yellow-50');
-                setButtonState(c2hBtn, false, 'is_ulmg_2h_c', 'C', '', 'border-yellow-400 text-yellow-600 hover:bg-yellow-50');
-                setButtonState(pos2hBtn, false, 'is_ulmg_2h_pos', 'HIT', '', 'border-yellow-400 text-yellow-600 hover:bg-yellow-50');
-                
-                // Reset roster buttons
-                setButtonState(mlbBtn, false, 'to_mlb', 'MLB', '', 'border-black text-black hover:bg-gray-50');
-                setButtonState(aaaBtn, false, 'to_aaa', 'AAA', '', 'border-blue-400 text-blue-600 hover:bg-blue-50');
-                
-                // Update MLB roster count if player was removed
-                if (wasOnMlbRoster) {
-                    mlbRosterCount--;
-                    updateRosterDisplay();
-                    updateMlbButtonVisibility();
-                }
-                
-                // Reset 40-man protection
-                if (protect40Btn && protect40Btn.classList.contains('bg-green-600')) {
-                    setButtonState(protect40Btn, false, 'to_35_man', '40', '', 'border-green-600 text-green-600 hover:bg-green-50');
-                }
-                break;
-                
-            case 'to_35_man':
-                setButtonState(protect40Btn, true, 'unprotect', '40', 'bg-green-600 border-green-600 text-white', '');
-                break;
-                
-            case 'drop':
-                // Check if player was on MLB roster before dropping
-                const playerWasOnMlbRoster = mlbBtn && mlbBtn.classList.contains('bg-black');
-                
-                // Remove the entire row
-                playerRow.remove();
-                
-                // Update MLB roster count if dropped player was on roster
-                if (playerWasOnMlbRoster) {
-                    mlbRosterCount--;
-                    updateRosterDisplay();
-                    updateMlbButtonVisibility();
-                }
-                break;
-        }
-    }
-
-    // Handle all player action button clicks
-    document.addEventListener('click', function(e) {
-        if (e.target.classList.contains('player-action')) {
-            e.preventDefault();
-            const playerId = e.target.dataset.playerid;
-            const action = e.target.dataset.action;
-            
-            $.ajax({
-                type: "POST",
-                url: '/api/v1/player/' + playerId + '/' + action + '/',
-                success: function(response) {
-                    console.log('Action successful:', action, response);
-                    updateButtonStates(playerId, action);
-                },
-                error: function(xhr, status, error) {
-                    console.error('Action failed:', action, error);
-                    // Silent error - no alert to user
-                }
-            });
-        }
-        
-        // Handle drop button clicks
-        if (e.target.classList.contains('drop-button')) {
-            e.preventDefault();
-            currentPlayerId = e.target.dataset.playerid;
-            playerNameSpan.textContent = e.target.dataset.playername;
-            modal.classList.remove('hidden');
-        }
-    });
-
-    // Handle cancel
-    cancelBtn.addEventListener('click', function() {
-        modal.classList.add('hidden');
-        currentPlayerId = null;
-    });
-
-    // Handle confirm drop
-    confirmBtn.addEventListener('click', function() {
-        if (currentPlayerId) {
-            $.ajax({
-                type: "POST",
-                url: '/api/v1/player/' + currentPlayerId + '/drop/',
-                success: function(response){
-                    console.log('Drop successful:', response);
-                    updateButtonStates(currentPlayerId, 'drop');
-                    modal.classList.add('hidden');
-                    currentPlayerId = null;
-                },
-                error: function(xhr, status, error) {
-                    console.error('Drop failed:', error);
-                    // Silent error - no alert to user
-                }
-            });
-        }
-    });
-
-    // Close modal when clicking outside
-    modal.addEventListener('click', function(e) {
-        if (e.target === modal) {
-            modal.classList.add('hidden');
-            currentPlayerId = null;
-        }
-    });
-});
-</script>

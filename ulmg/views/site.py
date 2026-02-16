@@ -212,6 +212,7 @@ def team_detail(request, abbreviation):
 
     context["hitters"] = hitters
     context["pitchers"] = pitchers
+    context["compact_roster"] = True  # Hide Role and Stats columns for roster button space
     return render(request, "team.html", context)
 
 
@@ -318,10 +319,10 @@ def draft_admin(request, year, season, draft_type):
                 is_ulmg_reserve=False,
             ).exclude(
                 playerstatseason__season=current_season,
-                playerstatseason__is_35man_roster=True
+                playerstatseason__is_ulmg35man_roster=True
             ).exclude(
                 playerstatseason__season=current_season,
-                playerstatseason__is_mlb_roster=True
+                playerstatseason__is_ulmg_mlb_roster=True
             ).values('current_mlb_org', 'mlbam_id', 'id', 'position', 'name')
             
             for p in players_not_35man:
@@ -449,7 +450,7 @@ def player_available_offseason(request):
         level__in=["A", "V"]
     ).exclude(
         playerstatseason__season=current_season,
-        playerstatseason__is_35man_roster=True
+        playerstatseason__is_ulmg35man_roster=True
     )
     
     context["hitters"] = available_players.exclude(position="P").order_by(

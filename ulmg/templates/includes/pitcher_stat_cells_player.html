@@ -5,7 +5,7 @@
     {% if p.roster_status %}{{ p.roster_status|default_if_none:"-" }}{% else %}-{% endif %}
 </td> -->
 
-<td data-value="{% with best_stats=p.get_best_stat_season %}{% if best_stats and best_stats.roster_status and 'IL' in best_stats.roster_status %}{{ best_stats.roster_status }}{% elif best_stats and best_stats.role_type %}{{ best_stats.role_type }}{% elif best_stats and best_stats.role %}{{ best_stats.role }}{% else %}-{% endif %}{% endwith %}">
+{% if not compact_roster %}<td data-value="{% with best_stats=p.get_best_stat_season %}{% if best_stats and best_stats.roster_status and 'IL' in best_stats.roster_status %}{{ best_stats.roster_status }}{% elif best_stats and best_stats.role_type %}{{ best_stats.role_type }}{% elif best_stats and best_stats.role %}{{ best_stats.role }}{% else %}-{% endif %}{% endwith %}">
     {% with best_stats=p.get_best_stat_season %}
         {% if best_stats and best_stats.roster_status and 'IL' in best_stats.roster_status %}
             {{ best_stats.roster_status }}
@@ -17,8 +17,8 @@
     {% endwith %}
 </td>
 
-{% with best_stats=p.get_best_stat_season %}
-<td data-value="{% if best_stats and best_stats.pitch_stats.level %}2{% else %}{% if best_stats and best_stats.clean_classification == "mlb" %}1{% elif best_stats and best_stats.clean_classification == "npb" %}3{% elif best_stats and best_stats.clean_classification == "kbo" %}4{% elif best_stats and best_stats.clean_classification == "college" %}5{% else %}6{% endif %}{% endif %}">
+{% endif %}{% with best_stats=p.get_best_stat_season %}
+{% if not compact_roster %}<td data-value="{% if best_stats and best_stats.pitch_stats.level %}2{% else %}{% if best_stats and best_stats.clean_classification == "mlb" %}1{% elif best_stats and best_stats.clean_classification == "npb" %}3{% elif best_stats and best_stats.clean_classification == "kbo" %}4{% elif best_stats and best_stats.clean_classification == "college" %}5{% else %}6{% endif %}{% endif %}">
     {% if best_stats %}
         {% if best_stats.pitch_stats.level %}
             {{ best_stats.pitch_stats.level }}
@@ -43,6 +43,7 @@
 <td data-value="{% if best_stats %}{% if best_stats.clean_classification %}{{ best_stats.season }} {{ best_stats.clean_classification|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}">
     {% if best_stats %}{% if best_stats.clean_classification %}{{ best_stats.season }} {{ best_stats.clean_classification|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
 </td>
+{% endif %}
 
 <td data-value="{% if best_stats and best_stats.pitch_stats %}{% if best_stats.pitch_stats.ip > 0 %}{{ best_stats.pitch_stats.g|default_if_none:"-999" }}{% else %}-999{% endif %}{% else %}-999{% endif %}">{% if best_stats and best_stats.pitch_stats %}{% if best_stats.pitch_stats.ip > 0 %}{{ best_stats.pitch_stats.g|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}</td>
 <td data-value="{% if best_stats and best_stats.pitch_stats %}{% if best_stats.pitch_stats.ip > 0 %}{{ best_stats.pitch_stats.gs|default_if_none:"-999" }}{% else %}-999{% endif %}{% else %}-999{% endif %}">{% if best_stats and best_stats.pitch_stats %}{% if best_stats.pitch_stats.ip > 0 %}{{ best_stats.pitch_stats.gs|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}</td>

@@ -17,21 +17,28 @@ class Command(BaseCommand):
     def reset_rosters(self):
         print(".... resetting rosters")
         # Reset Player model roster statuses that are still there
-        models.Player.objects.filter(is_1h_c=True).update(is_1h_c=False)
-        models.Player.objects.filter(is_1h_p=True).update(is_1h_p=False)
-        models.Player.objects.filter(is_1h_pos=True).update(is_1h_pos=False)
-        models.Player.objects.filter(is_2h_c=True).update(is_2h_c=False)
-        models.Player.objects.filter(is_2h_p=True).update(is_2h_p=False)
-        models.Player.objects.filter(is_2h_pos=True).update(is_2h_pos=False)
-        models.Player.objects.filter(is_reserve=True).update(is_reserve=False)
+        models.Player.objects.filter(is_ulmg_1h_c=True).update(is_ulmg_1h_c=False)
+        models.Player.objects.filter(is_ulmg_1h_p=True).update(is_ulmg_1h_p=False)
+        models.Player.objects.filter(is_ulmg_1h_pos=True).update(is_ulmg_1h_pos=False)
+        models.Player.objects.filter(is_ulmg_2h_c=True).update(is_ulmg_2h_c=False)
+        models.Player.objects.filter(is_ulmg_2h_p=True).update(is_ulmg_2h_p=False)
+        models.Player.objects.filter(is_ulmg_2h_pos=True).update(is_ulmg_2h_pos=False)
+        models.Player.objects.filter(is_ulmg_reserve=True).update(is_ulmg_reserve=False)
         
         # Reset PlayerStatSeason roster statuses for current season
-        from datetime import datetime
-        current_season = datetime.now().year
+        from ulmg import utils
+        current_season = utils.get_current_season()
         models.PlayerStatSeason.objects.filter(season=current_season).update(
-            is_mlb_roster=False,
-            is_aaa_roster=False,
-            is_35man_roster=False
+            is_ulmg_mlb_roster=False,
+            is_ulmg_aaa_roster=False,
+            is_ulmg35man_roster=False,
+            roster_status=None,
+            mlb_org=None,
+        )
+        models.Player.objects.filter(is_owned=True).update(
+            is_ulmg_35man_roster=False,
+            is_ulmg_mlb_roster=False,
+            is_ulmg_aaa_roster=False,
         )
 
     def handle(self, *args, **options):

@@ -55,7 +55,15 @@ class Command(BaseCommand):
             models.PlayerStatSeason.objects.filter(season=season).update(
                 is_ulmg_mlb_roster=False,
                 is_ulmg_aaa_roster=False,
-                is_ulmg35man_roster=False
+                is_ulmg35man_roster=False,
+                roster_status=None,
+                mlb_org=None,
+            )
+            # Reset Player model 40-man roster so managers can set protections fresh
+            models.Player.objects.filter(is_owned=True).update(
+                is_ulmg_35man_roster=False,
+                is_ulmg_mlb_roster=False,
+                is_ulmg_aaa_roster=False,
             )
 
             # Unprotect all V and A players prior to the 35-man roster.

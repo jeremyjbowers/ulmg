@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="py-4 max-w-3xl">
+    <h1 class="text-xl font-bold mb-4 border-b border-gray-300 pb-2">Duplicate Review: {{ candidate.match_reason|default:"Name match" }}</h1>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <div class="border border-gray-300 p-4 rounded">
+            <h2 class="font-bold mb-2">Player 1</h2>
+            <p class="font-bold">{{ player1_info.name }}</p>
+            <p class="text-sm">ID: {{ player1_info.id }} | Pos: {{ player1_info.position }} | Level: {{ player1_info.level }}</p>
+            <p class="text-sm">Birthdate: {{ player1_info.birthdate }}</p>
+            <p class="text-sm">IDs: {{ player1_info.ids }}</p>
+            <p class="text-sm">Team: {{ player1_info.team }} | Owned: {{ player1_info.is_owned|yesno:"Yes,No" }}</p>
+            <a href="/admin/ulmg/player/{{ player1_info.id }}/change/" target="_blank" class="text-xs underline">Edit in admin</a>
+        </div>
+        <div class="border border-gray-300 p-4 rounded">
+            <h2 class="font-bold mb-2">Player 2</h2>
+            <p class="font-bold">{{ player2_info.name }}</p>
+            <p class="text-sm">ID: {{ player2_info.id }} | Pos: {{ player2_info.position }} | Level: {{ player2_info.level }}</p>
+            <p class="text-sm">Birthdate: {{ player2_info.birthdate }}</p>
+            <p class="text-sm">IDs: {{ player2_info.ids }}</p>
+            <p class="text-sm">Team: {{ player2_info.team }} | Owned: {{ player2_info.is_owned|yesno:"Yes,No" }}</p>
+            <a href="/admin/ulmg/player/{{ player2_info.id }}/change/" target="_blank" class="text-xs underline">Edit in admin</a>
+        </div>
+    </div>
+
+    <div class="space-y-4">
+        <h2 class="font-bold">Actions</h2>
+
+        <form method="post" id="merge-form" class="border border-gray-200 p-4 rounded">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="merge">
+            <p class="mb-2 font-bold">Merge (delete stub, keep the other):</p>
+            <p class="text-sm text-gray-600 mb-2">Keep the player with IDs; delete the stub. All references (stats, drafts, trades, wishlists) transfer to the keeper.</p>
+            <div class="flex flex-wrap gap-4 items-center">
+                <label class="flex items-center gap-2">
+                    <input type="radio" name="keep_id" value="{{ player1_info.id }}" required>
+                    Keep Player 1 ({{ player1_info.name }})
+                </label>
+                <label class="flex items-center gap-2">
+                    <input type="radio" name="keep_id" value="{{ player2_info.id }}">
+                    Keep Player 2 ({{ player2_info.name }})
+                </label>
+                <input type="hidden" name="delete_id" id="delete_id" value="">
+                <button type="submit" class="border border-gray-400 px-3 py-1 bg-gray-100 hover:bg-gray-200">Merge</button>
+            </div>
+        </form>
+
+        <form method="post" class="border border-gray-200 p-4 rounded">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="not_duplicate">
+            <p class="mb-2 font-bold">Not duplicate (disambiguate):</p>
+            <p class="text-sm text-gray-600 mb-2">These are different people. Mark as resolved so they won't show again.</p>
+            <button type="submit" class="border border-gray-400 px-3 py-1 bg-gray-100 hover:bg-gray-200">Mark as Not Duplicate</button>
+        </form>
+    </div>
+
+    <p class="mt-6">
+        <a href="{% url 'duplicate_players_list' %}" class="underline">← Back to list</a>
+    </p>
+</div>
+
+<script>
+document.getElementById('merge-form').addEventListener('submit', function(e) {
+    var keepRadio = document.querySelector('input[name=keep_id]:checked');
+    if (!keepRadio) {
+        e.preventDefault();
+        alert('Select which player to keep.');
+        return;
+    }
+    var keepId = keepRadio.value;
+    var deleteId = keepId === '{{ player1_info.id }}' ? '{{ player2_info.id }}' : '{{ player1_info.id }}';
+    document.getElementById('delete_id').value = deleteId;
+});
+</script>
+{% endblock %}

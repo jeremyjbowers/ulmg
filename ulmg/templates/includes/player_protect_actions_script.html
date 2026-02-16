@@ -1,0 +1,188 @@
+{% if protect_tab or roster_tab %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('drop-modal');
+    const playerNameSpan = document.getElementById('drop-player-name');
+    const cancelBtn = document.getElementById('cancel-drop');
+    const confirmBtn = document.getElementById('confirm-drop');
+    let currentPlayerId = null;
+    
+    let mlbRosterCount = modal ? parseInt(modal.dataset.mlbRosterCount) || 0 : 0;
+    const mlbRosterSize = modal ? parseInt(modal.dataset.mlbRosterSize) || 30 : 30;
+    
+    let fortyManCount = parseInt(document.getElementById('roster-40-count')?.textContent || '0', 10);
+    
+    function update40ManDisplay() {
+        const el = document.getElementById('roster-40-count');
+        if (el) el.textContent = fortyManCount;
+    }
+    
+    function updateRosterDisplay() {
+        const rosterDisplay = document.querySelector('.roster-item button:last-child span');
+        if (rosterDisplay) rosterDisplay.textContent = mlbRosterCount;
+    }
+    
+    function updateMlbButtonVisibility() {
+        document.querySelectorAll('[data-action="to_mlb"]').forEach(btn => {
+            if (mlbRosterCount >= mlbRosterSize) btn.style.display = 'none';
+            else btn.style.display = 'inline-block';
+        });
+    }
+    
+    updateMlbButtonVisibility();
+
+    function updateButtonStates(playerId, action) {
+        const el = document.querySelector('[data-playerid="' + playerId + '"]');
+        if (!el) return;
+        const playerRow = el.closest('tr');
+        if (!playerRow) return;
+        
+        const mlbBtn = playerRow.querySelector('[data-action="to_mlb"], [data-action="off_roster"][data-playerid="' + playerId + '"]');
+        const aaaBtn = playerRow.querySelector('[data-action="to_aaa"], [data-action="off_roster"][data-playerid="' + playerId + '"]');
+        const p2hBtn = playerRow.querySelector('[data-action="is_ulmg_2h_p"], [data-action="unprotect"][data-roster-type="2h_p"]');
+        const c2hBtn = playerRow.querySelector('[data-action="is_ulmg_2h_c"], [data-action="unprotect"][data-roster-type="2h_c"]');
+        const pos2hBtn = playerRow.querySelector('[data-action="is_ulmg_2h_pos"], [data-action="unprotect"][data-roster-type="2h_pos"]');
+        const protect40Btn = playerRow.querySelector('[data-roster-type="40man"]');
+        
+        function setButtonState(btn, active, action, text, activeClasses, inactiveClasses) {
+            if (!btn) return;
+            btn.setAttribute('data-action', action);
+            btn.textContent = text;
+            btn.className = 'player-action text-xs px-1.5 py-0.5 border rounded ' + (active ? activeClasses : inactiveClasses);
+        }
+        
+        switch(action) {
+            case 'to_mlb':
+                setButtonState(mlbBtn, true, 'off_roster', 'MLB', 'bg-black border-black text-white', '');
+                mlbRosterCount++;
+                updateRosterDisplay();
+                updateMlbButtonVisibility();
+                break;
+            case 'to_aaa':
+                setButtonState(aaaBtn, true, 'off_roster', 'AAA', 'bg-blue-400 border-blue-400 text-white', '');
+                break;
+            case 'off_roster':
+                if (mlbBtn && mlbBtn.textContent === 'MLB' && mlbBtn.classList.contains('bg-black')) {
+                    setButtonState(mlbBtn, false, 'to_mlb', 'MLB', '', 'border-black text-black hover:bg-gray-50');
+                    mlbRosterCount--;
+                    updateRosterDisplay();
+                    updateMlbButtonVisibility();
+                }
+                if (aaaBtn && aaaBtn.textContent === 'AAA' && aaaBtn.classList.contains('bg-blue-400')) {
+                    setButtonState(aaaBtn, false, 'to_aaa', 'AAA', '', 'border-blue-400 text-blue-600 hover:bg-blue-50');
+                }
+                break;
+            case 'is_ulmg_2h_p':
+                setButtonState(p2hBtn, true, 'unprotect', 'P', 'bg-yellow-400 border-yellow-400 text-black', '');
+                break;
+            case 'is_ulmg_2h_c':
+                setButtonState(c2hBtn, true, 'unprotect', 'C', 'bg-yellow-400 border-yellow-400 text-black', '');
+                break;
+            case 'is_ulmg_2h_pos':
+                setButtonState(pos2hBtn, true, 'unprotect', 'HIT', 'bg-yellow-400 border-yellow-400 text-black', '');
+                break;
+            case 'unprotect':
+                const wasOnMlbRoster = mlbBtn && mlbBtn.classList.contains('bg-black');
+                setButtonState(p2hBtn, false, 'is_ulmg_2h_p', 'P', '', 'border-yellow-400 text-yellow-600 hover:bg-yellow-50');
+                setButtonState(c2hBtn, false, 'is_ulmg_2h_c', 'C', '', 'border-yellow-400 text-yellow-600 hover:bg-yellow-50');
+                setButtonState(pos2hBtn, false, 'is_ulmg_2h_pos', 'HIT', '', 'border-yellow-400 text-yellow-600 hover:bg-yellow-50');
+                setButtonState(mlbBtn, false, 'to_mlb', 'MLB', '', 'border-black text-black hover:bg-gray-50');
+                setButtonState(aaaBtn, false, 'to_aaa', 'AAA', '', 'border-blue-400 text-blue-600 hover:bg-blue-50');
+                if (wasOnMlbRoster) {
+                    mlbRosterCount--;
+                    updateRosterDisplay();
+                    updateMlbButtonVisibility();
+                }
+                if (protect40Btn && protect40Btn.classList.contains('bg-green-600')) {
+                    setButtonState(protect40Btn, false, 'to_35_man', '40', '', 'border-green-600 text-green-600 hover:bg-green-50');
+                    fortyManCount--;
+                    update40ManDisplay();
+                    var span40 = playerRow.querySelector('.ulmg-40man');
+                    if (span40) span40.textContent = '';
+                }
+                break;
+            case 'to_35_man':
+                setButtonState(protect40Btn, true, 'unprotect', '40', 'bg-green-600 border-green-600 text-white', '');
+                fortyManCount++;
+                update40ManDisplay();
+                var span40 = playerRow.querySelector('.ulmg-40man');
+                if (span40) span40.textContent = '40-man ';
+                break;
+            case 'drop':
+                const playerWasOnMlbRoster = mlbBtn && mlbBtn.classList.contains('bg-black');
+                const playerWasOn40Man = protect40Btn && protect40Btn.classList.contains('bg-green-600');
+                playerRow.remove();
+                if (playerWasOnMlbRoster) {
+                    mlbRosterCount--;
+                    updateRosterDisplay();
+                    updateMlbButtonVisibility();
+                }
+                if (playerWasOn40Man) {
+                    fortyManCount--;
+                    update40ManDisplay();
+                }
+                break;
+        }
+    }
+
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('player-action')) {
+            e.preventDefault();
+            e.stopPropagation();
+            const playerId = e.target.dataset.playerid;
+            const action = e.target.dataset.action;
+            
+            $.ajax({
+                type: "POST",
+                url: '/api/v1/player/' + playerId + '/' + action + '/',
+                success: function(response) {
+                    updateButtonStates(playerId, action);
+                },
+                error: function(xhr, status, error) {
+                    console.error('Action failed:', action, error);
+                }
+            });
+        }
+        
+        if (e.target.classList.contains('drop-button')) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (modal && playerNameSpan) {
+                currentPlayerId = e.target.dataset.playerid;
+                playerNameSpan.textContent = e.target.dataset.playername;
+                modal.classList.remove('hidden');
+            }
+        }
+    });
+
+    if (cancelBtn) cancelBtn.addEventListener('click', function() {
+        if (modal) modal.classList.add('hidden');
+        currentPlayerId = null;
+    });
+
+    if (confirmBtn) confirmBtn.addEventListener('click', function() {
+        if (currentPlayerId) {
+            $.ajax({
+                type: "POST",
+                url: '/api/v1/player/' + currentPlayerId + '/drop/',
+                success: function(response){
+                    updateButtonStates(currentPlayerId, 'drop');
+                    if (modal) modal.classList.add('hidden');
+                    currentPlayerId = null;
+                },
+                error: function(xhr, status, error) {
+                    console.error('Drop failed:', error);
+                }
+            });
+        }
+    });
+
+    if (modal) modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            modal.classList.add('hidden');
+            currentPlayerId = null;
+        }
+    });
+});
+</script>
+{% endif %}

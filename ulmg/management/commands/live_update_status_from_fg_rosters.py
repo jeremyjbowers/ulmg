@@ -1,3 +1,5 @@
+# ABOUTME: Updates player roster status from FanGraphs roster JSON files.
+# ABOUTME: Creates missing players when FG ID or MLB ID is available.
 import csv
 import json
 import os
@@ -37,6 +39,33 @@ class Command(BaseCommand):
 
         return player_stat_season
 
+    def create_player_from_fg_roster(self, player_data, fg_id, mlbam_id):
+        """
+        Create a Player when one cannot be found. Requires at least fg_id or mlbam_id.
+        Returns the created Player or None on error.
+        """
+        if not fg_id and not mlbam_id:
+            return None
+
+        name = player_data.get('player', '').strip()
+        if not name:
+            return None
+
+        position_raw = player_data.get('position') or player_data.get('position1', '')
+        position = utils.normalize_pos(position_raw) if position_raw else 'DH'
+
+        with transaction.atomic():
+            player = models.Player(
+                name=name,
+                position=position,
+                level=models.Player.B_LEVEL,
+                fg_id=fg_id or None,
+                mlbam_id=mlbam_id or None,
+                current_mlb_org=player_data.get('dbTeam') or None,
+            )
+            player.save()
+        return player
+
     def map_fg_role_to_status(self, role, mlevel):
         """Map FanGraphs role and mlevel to our roster status"""
         if not role:
@@ -73,7 +102,7 @@ class Command(BaseCommand):
         teams = settings.ROSTER_TEAM_IDS
         
         # Track successes and failures
-        results = {'success': [], 'failed': [], 'players_processed': 0, 'players_failed': 0}
+        results = {'success': [], 'failed': [], 'players_processed': 0, 'players_created': 0, 'players_failed': 0}
         
         print(f"Processing FG roster status updates for {current_season} season...")
 
@@ -128,6 +157,13 @@ class Command(BaseCommand):
                                 player_obj = models.Player.objects.get(mlbam_id=mlbam_id)
                             except models.Player.DoesNotExist:
                                 pass
+
+                        # Create player if not found but we have FG ID or MLB ID
+                        if not player_obj and (fg_id or mlbam_id):
+                            player_obj = self.create_player_from_fg_roster(player_data, fg_id, mlbam_id)
+                            if player_obj:
+                                results['players_created'] += 1
+                                print(f"Created player: {player_obj.name} (FG: {fg_id}, MLB: {mlbam_id})")
                         
                         if player_obj:
                             # Map FG data to our fields
@@ -186,10 +222,12 @@ class Command(BaseCommand):
                             team_players_processed += 1
                             results['players_processed'] += 1
                         else:
-                            # Player not found - this is expected for some players not in our system
+                            # Player not found: either missing IDs (cannot create) or create failed
                             player_name = player_data.get('player', 'Unknown')
                             if fg_id or mlbam_id:
-                                print(f"Player not found: {player_name} (FG: {fg_id}, MLB: {mlbam_id})")
+                                print(f"Player not found (create failed): {player_name} (FG: {fg_id}, MLB: {mlbam_id})")
+                            else:
+                                print(f"Player skipped (no FG/MLB ID to create): {player_name}")
                         
                     except Exception as e:
                         player_name = player_data.get('player', 'Unknown') if isinstance(player_data, dict) else 'Unknown'
@@ -210,6 +248,7 @@ class Command(BaseCommand):
         print('FG ROSTER STATUS UPDATE SUMMARY')
         print('='*50)
         print(f'Players processed: {results["players_processed"]}')
+        print(f'Players created: {results["players_created"]}')
         print(f'Players failed: {results["players_failed"]}')
         print(f'\n✓ Successful teams ({len(results["success"])}):')
         for item in results['success']:

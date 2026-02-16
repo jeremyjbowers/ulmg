@@ -2,9 +2,8 @@
 <div class="top-right-sticky">
 
     <div class="roster-item">
-
-        {% if protect_tab %}<button>40-Man&nbsp;<span>{{ 35_roster_count }}</span></button>{% endif %}
-        {% if mlb_roster_count is not None %}<button>MLB Roster:&nbsp;<span>{{ mlb_roster_count }}</span></button>{% endif %}
+        {% if protect_tab %}<button>40-Man&nbsp;<span id="roster-40-count">{{ 35_roster_count }}</span></button>{% endif %}
+        {% if roster_tab and mlb_roster_count is not None %}<button>MLB Roster:&nbsp;<span>{{ mlb_roster_count }}</span></button>{% endif %}
     </div>
 
 </div>

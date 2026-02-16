@@ -506,8 +506,8 @@ class Player(BaseModel):
             "is_carded": self.is_carded(),
             "is_amateur": current_status.is_amateur if current_status else False,
             "is_ulmg_mlb_roster": current_status.is_ulmg_mlb_roster if current_status else False,
-            "is_aaa_roster": current_status.is_aaa_roster if current_status else False,
-            "is_35man_roster": current_status.is_35man_roster if current_status else False,
+            "is_aaa_roster": current_status.is_ulmg_aaa_roster if current_status else False,
+            "is_35man_roster": current_status.is_ulmg35man_roster if current_status else False,
             "is_ulmg_reserve": self.is_ulmg_reserve,
             "is_ulmg_1h_p": self.is_ulmg_1h_p,
             "is_ulmg_1h_c": self.is_ulmg_1h_c,
@@ -1318,9 +1318,9 @@ class TradeReceipt(BaseModel):
                     obj.is_ulmg_2h_c = False
                     obj.is_ulmg_2h_p = False
                     obj.is_ulmg_2h_pos = False
-                    obj.is_35man_roster = False
-                    obj.is_mlb = False
-                    obj.is_aaa_roster = False
+                    obj.is_ulmg_35man_roster = False
+                    obj.is_ulmg_mlb_roster = False
+                    obj.is_ulmg_aaa_roster = False
                     obj.is_ulmg_protected = False
                     obj.is_owned = True
                     obj.team = instance.team
@@ -1570,3 +1570,43 @@ class Occurrence(BaseModel):
         self.set_season()
 
         super().save(*args, **kwargs)
+
+
+class DuplicatePlayerCandidate(BaseModel):
+    """
+    Tracks pairs of players that may be duplicates for admin review.
+    Used for hand-added stubs vs FG/MLB entries, or name matches needing disambiguation.
+    """
+    PENDING = "pending"
+    MERGED_DELETED_STUB = "merged_deleted_stub"
+    NOT_DUPLICATE = "not_duplicate"
+
+    STATUS_CHOICES = (
+        (PENDING, "Pending review"),
+        (MERGED_DELETED_STUB, "Merged (stub deleted)"),
+        (NOT_DUPLICATE, "Not duplicate (disambiguated)"),
+    )
+
+    player1 = models.ForeignKey(
+        Player, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="duplicate_candidates_as_player1"
+    )
+    player2 = models.ForeignKey(
+        Player, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="duplicate_candidates_as_player2"
+    )
+    status = models.CharField(
+        max_length=32, choices=STATUS_CHOICES, default=PENDING
+    )
+    match_reason = models.CharField(max_length=255, blank=True, null=True)
+    resolved_at = models.DateTimeField(blank=True, null=True)
+    resolved_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True, related_name="resolved_duplicates"
+    )
+
+    class Meta:
+        unique_together = [["player1", "player2"]]
+        ordering = ["-created"]
+
+    def __unicode__(self):
+        return f"{self.player1.name} / {self.player2.name} ({self.status})"

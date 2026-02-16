@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="py-4">
+    <h1 class="text-xl font-bold mb-4 border-b border-gray-300 pb-2">Duplicate Player Candidates</h1>
+    <p class="text-sm text-gray-600 mb-4">
+        Run <code class="bg-gray-100 px-1">django-admin find_duplicate_players</code> to populate.
+        Use <code class="bg-gray-100 px-1">--dry-run</code> to preview without creating records.
+    </p>
+
+    {% if not candidates %}
+    <p class="text-gray-600">No pending duplicate candidates.</p>
+    {% else %}
+    <table class="w-full text-sm border-collapse">
+        <thead>
+            <tr class="border-b border-gray-300">
+                <th class="text-left py-2">Player 1</th>
+                <th class="text-left py-2">Player 2</th>
+                <th class="text-left py-2">Match reason</th>
+                <th class="text-left py-2">Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in candidates %}
+            <tr class="border-b border-gray-100">
+                <td class="py-2">
+                    <a href="/admin/ulmg/player/{{ item.player1_info.id }}/change/" target="_blank" class="underline">
+                        {{ item.player1_info.name }}
+                    </a>
+                    <span class="text-gray-500 text-xs">(id={{ item.player1_info.id }})</span>
+                    <br><span class="text-xs">{{ item.player1_info.ids }}</span>
+                </td>
+                <td class="py-2">
+                    <a href="/admin/ulmg/player/{{ item.player2_info.id }}/change/" target="_blank" class="underline">
+                        {{ item.player2_info.name }}
+                    </a>
+                    <span class="text-gray-500 text-xs">(id={{ item.player2_info.id }})</span>
+                    <br><span class="text-xs">{{ item.player2_info.ids }}</span>
+                </td>
+                <td class="py-2">{{ item.candidate.match_reason|default:"-" }}</td>
+                <td class="py-2">
+                    <a href="{% url 'duplicate_players_detail' item.candidate.id %}" class="underline font-bold">Review</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+</div>
+{% endblock %}

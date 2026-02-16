@@ -8,7 +8,7 @@
 </td> -->
 
 {% with best_stats=p.get_best_stat_season %}
-<td data-value="{% if best_stats and best_stats.roster_status and 'IL' in best_stats.roster_status %}{{ best_stats.roster_status }}{% elif best_stats and best_stats.role_type %}{{ best_stats.role_type }}{% elif best_stats and best_stats.role %}{{ best_stats.role }}{% else %}-{% endif %}">
+{% if not compact_roster %}<td data-value="{% if best_stats and best_stats.roster_status and 'IL' in best_stats.roster_status %}{{ best_stats.roster_status }}{% elif best_stats and best_stats.role_type %}{{ best_stats.role_type }}{% elif best_stats and best_stats.role %}{{ best_stats.role }}{% else %}-{% endif %}">
     {% if best_stats and best_stats.roster_status and 'IL' in best_stats.roster_status %}
         {{ best_stats.roster_status }}
     {% elif best_stats and best_stats.role_type %}
@@ -43,6 +43,7 @@
 <td data-value="{% if best_stats %}{% if best_stats.clean_classification %}{{ best_stats.season }} {{ best_stats.clean_classification|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}">
     {% if best_stats %}{% if best_stats.clean_classification %}{{ best_stats.season }} {{ best_stats.clean_classification|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
 </td>
+{% endif %}
 
 <td data-value="{% if best_stats and best_stats.hit_stats %}{{ best_stats.hit_stats.pa|default_if_none:"-999" }}{% else %}-999{% endif %}">
     {% if best_stats and best_stats.hit_stats %}{% if best_stats.hit_stats.pa > 0 %}{{ best_stats.hit_stats.pa|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
