@@ -49,7 +49,6 @@ class Command(BaseCommand):
                 results['failed'].append(f'Fix duplicates: {e}')
 
             # download mlb depth charts
-            # this also sets status in realtime but doesn't create players
             try:
                 print('LIVE: Download MLB depth charts')
                 call_command('live_download_mlb_depthcharts')
@@ -57,6 +56,15 @@ class Command(BaseCommand):
             except Exception as e:
                 print(f'ERROR downloading MLB depth charts: {e}')
                 results['failed'].append(f'Download MLB depth charts: {e}')
+
+            # fetch MLB rosters and write all_mlb_rosters.json for downstream ingest
+            try:
+                print('LIVE: Load MLB rosters')
+                call_command('load_mlb_rosters')
+                results['success'].append('Load MLB rosters')
+            except Exception as e:
+                print(f'ERROR loading MLB rosters: {e}')
+                results['failed'].append(f'Load MLB rosters: {e}')
 
             # download fg stats
             try:
@@ -92,6 +100,15 @@ class Command(BaseCommand):
         except Exception as e:
             print(f'ERROR updating status from FG rosters: {e}')
             results['failed'].append(f'Update status from FG rosters: {e}')
+
+        # create new players from MLB rosters and update roster status
+        try:
+            print('LIVE: Update status from MLB depth charts')
+            call_command('live_update_status_from_mlb_depthcharts')
+            results['success'].append('Update status from MLB depth charts')
+        except Exception as e:
+            print(f'ERROR updating status from MLB depth charts: {e}')
+            results['failed'].append(f'Update status from MLB depth charts: {e}')
 
         # use fg stats to update all player stats
         try:
