@@ -200,7 +200,7 @@ $(function(){
         $.ajax({
             method: "POST",
             url: '/api/v1/wishlist/bulk/',
-            data: JSON.stringify(update_list),
+            data: { players: JSON.stringify(update_list) },
             success: function(response){
                 console.log(response);
             }
