@@ -73,7 +73,8 @@
     <div class="flex-1 overflow-x-auto">
         <div class="mb-2 flex justify-between items-center">
             <h3 class="text-sm font-bold">Tier board (drag between tiers; max 20 players per tier)</h3>
-            <div class="text-xs text-gray-600">
+            <div class="text-xs text-gray-600 flex items-center gap-2">
+                <button type="button" id="empty-all-tiers-btn" class="px-2 py-1 border border-gray-400 rounded hover:bg-gray-200 text-[10px]">Empty all tiers</button>
                 <span class="mr-4">Draft: {{ draft_year }} {{ draft_season }} {{ draft_type|upper }}</span>
                 <label>
                     <input type="checkbox" id="hide-drafted-toggle" class="mr-1" checked>
@@ -86,7 +87,10 @@
             <div class="border border-gray-300 rounded bg-gray-50 flex flex-col min-h-[200px] {% if tier.players|length >= 20 %}tier-full{% endif %}" data-tier-id="{{ tier.id }}">
                 <div class="px-2 py-1 border-b border-gray-300 bg-gray-100 flex items-center justify-between {% if tier.players|length >= 20 %}bg-red-100 border-red-300{% endif %}">
                     <span class="text-xs font-semibold">{{ tier.label }}</span>
-                    <span class="text-[10px] {% if tier.players|length >= 20 %}text-red-600 font-bold{% else %}text-gray-600{% endif %}" data-tier-count="{{ tier.id }}">{{ tier.players|length }}/20</span>
+                    <span class="flex items-center gap-1">
+                        <button type="button" class="empty-tier-btn px-1 py-0.5 border border-gray-400 rounded hover:bg-gray-200 text-[9px]" data-tier="{{ tier.id }}">Empty</button>
+                        <span class="text-[10px] {% if tier.players|length >= 20 %}text-red-600 font-bold{% else %}text-gray-600{% endif %}" data-tier-count="{{ tier.id }}">{{ tier.players|length }}/20</span>
+                    </span>
                 </div>
                 <div class="overflow-y-auto max-h-[75vh]">
                     <table class="w-full text-[11px] border-collapse">
@@ -424,6 +428,44 @@ $(function(){
         $row.appendTo($targetBody);
 
         // Recompute ranks and persist to server
+        recompute_all_ranks();
+    });
+
+    // Add tier-assign-cell to a row (for untiered section)
+    var add_tier_assign_cell = function($row) {
+        if ($row.find('.tier-assign-cell').length > 0) return;
+        var playerid = $row.data('playerid');
+        var $cell = $('<td class="text-center py-1 px-1 tier-assign-cell"></td>');
+        for (var t = 1; t <= 5; t++) {
+            $cell.append('<button type="button" class="tier-assign-btn text-[10px] px-1 py-0.5 border border-gray-300 rounded mx-0.5 hover:bg-gray-200" data-playerid="' + playerid + '" data-tier="' + t + '">' + t + '</button>');
+        }
+        $row.append($cell);
+    };
+
+    // Empty this tier: move all players to watched
+    $('body').on('click', '.empty-tier-btn', function(e){
+        e.preventDefault();
+        var tier = parseInt($(this).data('tier')) || 0;
+        if (tier < 1 || tier > 5) return;
+        var $tierBody = $('#tier-' + tier + '-players');
+        var $rows = $tierBody.children('tr.list-group-item');
+        if ($rows.length === 0) return;
+        $rows.each(function(){ add_tier_assign_cell($(this)); });
+        $rows.appendTo('#untiered-players');
+        initialize_tier_counts();
+        recompute_all_ranks();
+    });
+
+    // Empty all tiers: move all players to watched
+    $('#empty-all-tiers-btn').on('click', function(e){
+        e.preventDefault();
+        var $untiered = $('#untiered-players');
+        for (var tier = 1; tier <= 5; tier++) {
+            var $rows = $('#tier-' + tier + '-players').children('tr.list-group-item');
+            $rows.each(function(){ add_tier_assign_cell($(this)); });
+            $rows.appendTo($untiered);
+        }
+        initialize_tier_counts();
         recompute_all_ranks();
     });
 });
