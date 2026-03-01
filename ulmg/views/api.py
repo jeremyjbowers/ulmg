@@ -121,49 +121,41 @@ def wishlist_bulk_action(request):
     if len(wl) > 0:
         wishlist = wl[0]
 
-    updated = 0
-    MAX_TIER_SIZE = 20  # Maximum players per tier
+    if not wishlist:
+        return JsonResponse({"success": True, "updated": 0})
 
-    for raw_json_string, _ in request.POST.items():
+    raw_json_string = request.POST.get("players")
+    if not raw_json_string:
+        return JsonResponse({"success": True, "updated": 0})
+
+    try:
         players = json.loads(raw_json_string)
-        for p in players:
-            update_fields = {}
-            # Rank is optional so we can support tier-only updates
-            if "rank" in p:
-                update_fields["rank"] = p["rank"]
-            # Tier is optional and used for the tier board drag-and-drop
-            if "tier" in p:
-                new_tier = p["tier"]
-                # Enforce tier size limit: only allow tier assignment if tier is None/null
-                # or if the target tier has fewer than MAX_TIER_SIZE players
-                if new_tier is not None and new_tier >= 1 and new_tier <= 5:
-                    current_count = models.WishlistPlayer.objects.filter(
-                        wishlist=wishlist,
-                        tier=new_tier
-                    ).count()
-                    # If this player is already in this tier, don't count them twice
-                    existing_player = models.WishlistPlayer.objects.filter(
-                        wishlist=wishlist,
-                        player__id=p["playerid"]
-                    ).first()
-                    if existing_player and existing_player.tier == new_tier:
-                        # Player is already in this tier, allow the update
-                        update_fields["tier"] = new_tier
-                    elif current_count >= MAX_TIER_SIZE:
-                        # Tier is full, reject this update
-                        continue
-                    else:
-                        # Tier has space, allow the update
-                        update_fields["tier"] = new_tier
-                else:
-                    # Setting tier to None/null is always allowed (removing from tier)
-                    update_fields["tier"] = new_tier
+    except (ValueError, TypeError) as e:
+        logging.warning("wishlist_bulk_action: invalid JSON: %s", e)
+        return JsonResponse({"success": False, "error": "Invalid JSON"}, status=400)
 
-            if update_fields:
-                models.WishlistPlayer.objects.filter(
-                    wishlist=wishlist, player__id=p["playerid"]
-                ).update(**update_fields)
-                updated += 1
+    if not isinstance(players, list):
+        return JsonResponse({"success": True, "updated": 0})
+
+    updated = 0
+
+    for p in players:
+        if "playerid" not in p:
+            continue
+        update_fields = {}
+        # Tier assignment - no server-side size limit (client may enforce for new data)
+        if "tier" in p:
+            update_fields["tier"] = p["tier"] if p["tier"] else None
+
+        # Rank is optional; only add when we're doing an update
+        if update_fields and "rank" in p:
+            update_fields["rank"] = p["rank"]
+
+        if update_fields:
+            models.WishlistPlayer.objects.filter(
+                wishlist=wishlist, player__id=p["playerid"]
+            ).update(**update_fields)
+            updated += 1
 
     return JsonResponse({"success": True, "updated": updated})
 

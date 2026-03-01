@@ -79,10 +79,11 @@ $(function(){
         update_server(evt, update_list);
     }
 
-    Sortable.create(aa_hitters, { onEnd: function(evt) { update_handler(evt, aa_hitters); } });
-    Sortable.create(aa_pitchers, { onEnd: function(evt) { update_handler(evt, aa_pitchers); } });
-    Sortable.create(op_hitters, { onEnd: function(evt) { update_handler(evt, op_hitters); } });
-    Sortable.create(op_pitchers, { onEnd: function(evt) { update_handler(evt, op_pitchers); } });
+    [aa_hitters, aa_pitchers, op_hitters, op_pitchers].forEach(function(el) {
+        if (el) {
+            Sortable.create(el, { onEnd: function(evt) { update_handler(evt, el); } });
+        }
+    });
 });
 </script>
 {% endif %}
