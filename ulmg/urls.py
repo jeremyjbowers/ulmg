@@ -61,6 +61,7 @@ urlpatterns = [
     path("special/players/bulk/", views.special.special_bulk_add_players),
     path("special/duplicates/", views.special.duplicate_players_list, name="duplicate_players_list"),
     path("special/duplicates/<int:candidate_id>/", views.special.duplicate_players_detail, name="duplicate_players_detail"),
+    path("special/cache/", views.site.cache_admin, name="cache_admin"),
     path("players/trade-block/", views.site.trade_block),
     path("players/available/offseason/", views.site.player_available_offseason),
     path("players/available/midseason/", views.site.player_available_midseason),

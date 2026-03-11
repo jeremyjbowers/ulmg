@@ -97,6 +97,21 @@ AUTH_PASSWORD_VALIDATORS = [
 
 DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 
+# CACHE - Valkey (Redis-compatible) for query caching
+# VALKEY_URL should be set in development and production (e.g. valkey://127.0.0.1:6379/0)
+# When unset or invalid, IGNORE_EXCEPTIONS ensures cache ops fail gracefully and queries run uncached.
+CACHE_TTL = 60 * 60 * 12  # 12 hours
+CACHES = {
+    "default": {
+        "BACKEND": "django_valkey.cache.ValkeyCache",
+        "LOCATION": os.environ.get("VALKEY_URL") or "valkey://127.0.0.1:6379/0",
+        "OPTIONS": {
+            "KEY_PREFIX": "ulmg",
+            "IGNORE_EXCEPTIONS": True,
+        },
+    }
+}
+
 # LOGIN STUFF
 LOGIN_REDIRECT_URL = "/"
 LOGIN_URL = "/accounts/login/"

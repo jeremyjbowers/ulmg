@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="py-4">
+    <h1 class="text-xl font-bold mb-4 border-b border-gray-300 pb-2">Cache Admin (Valkey)</h1>
+    <p class="text-sm text-gray-600 mb-4">
+        Status: {% if valkey_active %}<span class="text-green-600 font-bold">Active</span>{% else %}<span class="text-amber-600 font-bold">Inactive</span>{% endif %}
+    </p>
+
+    {% if messages %}
+    <ul class="mb-4">
+        {% for message in messages %}
+        <li class="text-sm {% if message.tags == 'error' %}text-red-600{% else %}text-green-600{% endif %}">{{ message }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+
+    {% if not valkey_active %}
+    <p class="text-gray-600">Valkey is not connected. Set VALKEY_URL to enable caching.</p>
+    {% elif not cache_keys %}
+    <p class="text-gray-600">No cache keys found.</p>
+    {% else %}
+    <p class="text-sm text-gray-600 mb-2">{{ cache_keys|length }} key(s)</p>
+    <table class="w-full text-sm border-collapse">
+        <thead>
+            <tr class="border-b border-gray-300">
+                <th class="text-left py-2">Key</th>
+                <th class="text-left py-2 w-24">Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for key in cache_keys %}
+            <tr class="border-b border-gray-100">
+                <td class="py-2 font-mono text-xs break-all">{{ key }}</td>
+                <td class="py-2">
+                    <form method="POST" action="{% url 'cache_admin' %}" class="inline">
+                        {% csrf_token %}
+                        <input type="hidden" name="key" value="{{ key }}">
+                        <button type="submit" class="underline text-amber-600 hover:text-amber-800">Purge</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+</div>
+{% endblock %}

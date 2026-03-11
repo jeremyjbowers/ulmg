@@ -1,5 +1,6 @@
 from django.conf import settings
 from ulmg import models
+from ulmg.cache_utils import is_valkey_active
 
 
 def nav(request):
@@ -9,6 +10,7 @@ def nav(request):
         "draftnav": getattr(settings, "DRAFTS", []),
         "my_team": None,
         "current_season_type": getattr(settings, "CURRENT_SEASON_TYPE", "offseason"),
+        "valkey_active": is_valkey_active(),
     }
     if request.user.is_authenticated:
         try:

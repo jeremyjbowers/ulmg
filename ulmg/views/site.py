@@ -3,17 +3,26 @@ import datetime
 import itertools
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from django.db.models import Count, Avg, Sum, Max, Min, Q, Prefetch, Case, When, IntegerField, OuterRef, Subquery
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.http import JsonResponse
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
+from django.contrib.admin.views.decorators import staff_member_required
+from django.contrib import messages
 
 import ujson as json
 from datetime import datetime
 
 from ulmg import models, utils
+from ulmg.cache_utils import (
+    cache_key,
+    get_cached_or_compute,
+    get_all_cache_keys,
+    delete_cache_key_for_admin,
+    is_valkey_active,
+)
 
 
 def trade_block(request):
@@ -26,57 +35,49 @@ def trade_block(request):
 
 def index(request):
     context = utils.build_context(request)
-    
-    # Get teams with player counts by position and level
-    from django.db.models import Count, Q, Case, When, IntegerField
-    
-    teams = models.Team.objects.select_related('owner_obj').annotate(
-        # Count players by specific positions
-        c_count=Count('player', filter=Q(player__position='C')),
-        if_count=Count('player', filter=Q(player__position='IF')),
-        of_count=Count('player', filter=Q(player__position='OF')),
-        p_count=Count('player', filter=Q(player__position='P')),
-        
-        # Count multi-position players
-        if_of_count=Count('player', filter=Q(player__position='IF-OF')),
-        p_of_count=Count('player', filter=Q(player__position='OF-P')),
-        p_if_count=Count('player', filter=Q(player__position='IF-P')),
-        
-        # Count players by level
-        v_level_count=Count('player', filter=Q(player__level='V')),
-        a_level_count=Count('player', filter=Q(player__level='A')),
-        b_level_count=Count('player', filter=Q(player__level='B')),
-        
-        # Total player count
-        total_players=Count('player')
-    ).order_by('division', 'abbreviation')
-    
-    context["teams"] = teams
-
-    # Use get_current_season() to get previous year's stats during preseason/offseason
     season = utils.get_current_season()
 
-    # Get PlayerStatSeason objects for unowned MLB major league players WITH ACTUAL STATS
-    # READ-HEAVY OPTIMIZATION: Use select_related to preload player data and avoid N+1 queries
-    base_stats = models.PlayerStatSeason.objects.filter(
-        season=season,
-        classification="1-mlb",  # MLB major league only (excludes NPB, KBO, NCAA, minors)
-        player__team__isnull=True,   # Unowned only - uses partial index idx_unowned_mlb
-        is_career=False,
-    )
+    def _get_teams():
+        from django.db.models import Count, Q
+        return list(models.Team.objects.select_related('owner_obj').annotate(
+            c_count=Count('player', filter=Q(player__position='C')),
+            if_count=Count('player', filter=Q(player__position='IF')),
+            of_count=Count('player', filter=Q(player__position='OF')),
+            p_count=Count('player', filter=Q(player__position='P')),
+            if_of_count=Count('player', filter=Q(player__position='IF-OF')),
+            p_of_count=Count('player', filter=Q(player__position='OF-P')),
+            p_if_count=Count('player', filter=Q(player__position='IF-P')),
+            v_level_count=Count('player', filter=Q(player__level='V')),
+            a_level_count=Count('player', filter=Q(player__level='A')),
+            b_level_count=Count('player', filter=Q(player__level='B')),
+            total_players=Count('player')
+        ).order_by('division', 'abbreviation'))
 
-    # Split into hitters and pitchers by position
-    # NOTE: Can also use new QuerySet methods: base_stats.with_hitting_stats() or base_stats.with_pitching_stats()
-    hitter_stats = base_stats.exclude(player__position="P").filter(hit_stats__pa__gte=1).order_by(
-        "player__position", "-player__level_order", "player__last_name", "player__first_name"
-    )
-    
-    pitcher_stats = base_stats.filter(player__position__icontains="P").filter(pitch_stats__g__gte=1).order_by(
-        "-player__level_order", "player__last_name", "player__first_name"
-    )
+    def _get_hitter_stats():
+        base_stats = models.PlayerStatSeason.objects.filter(
+            season=season,
+            classification="1-mlb",
+            player__team__isnull=True,
+            is_career=False,
+        )
+        return list(base_stats.exclude(player__position="P").filter(hit_stats__pa__gte=1).select_related('player').order_by(
+            "player__position", "-player__level_order", "player__last_name", "player__first_name"
+        ))
 
-    context["hitters"] = hitter_stats
-    context["pitchers"] = pitcher_stats
+    def _get_pitcher_stats():
+        base_stats = models.PlayerStatSeason.objects.filter(
+            season=season,
+            classification="1-mlb",
+            player__team__isnull=True,
+            is_career=False,
+        )
+        return list(base_stats.filter(player__position__icontains="P").filter(pitch_stats__g__gte=1).select_related('player').order_by(
+            "-player__level_order", "player__last_name", "player__first_name"
+        ))
+
+    context["teams"] = get_cached_or_compute(cache_key("index", "teams", season), _get_teams)
+    context["hitters"] = get_cached_or_compute(cache_key("index", "hitters", season), _get_hitter_stats)
+    context["pitchers"] = get_cached_or_compute(cache_key("index", "pitchers", season), _get_pitcher_stats)
     context["season"] = season
 
     return render(request, "index.html", context)
@@ -84,75 +85,62 @@ def index(request):
 
 def player(request, playerid):
     context = utils.build_context(request)
-    context["p"] = models.Player.objects.get(id=playerid)
-    
-    # Get transaction history - trades and drafts
-    trades = models.TradeReceipt.objects.filter(
-        players__id=playerid
-    ).select_related('trade', 'team').order_by("-trade__date")
-    
-    draft_picks = models.DraftPick.objects.filter(
-        player__id=playerid
-    ).select_related('team').order_by("-year", "-season")
-    
-    # Combine transactions into a single chronological list
-    transactions = []
-    
-    # Add trades
-    for trade in trades:
-        transactions.append({
-            'type': 'trade',
-            'date': trade.trade.date if trade.trade else None,
-            'year': trade.trade.date.year if trade.trade and trade.trade.date else None,
-            'description': f"Traded to {trade.team.abbreviation}",
-            'team': trade.team,
-            'details': trade.trade.summary() if trade.trade else "Trade details not available"
-        })
-    
-    # Add drafts
-    for pick in draft_picks:
-        transactions.append({
-            'type': 'draft',
-            'date': None,  # Draft picks don't have specific dates
-            'year': int(pick.year) if pick.year else None,
-            'description': f"Drafted by {pick.team.abbreviation}" if pick.team else "Drafted",
-            'team': pick.team,
-            'details': f"{pick.season.title()} {pick.draft_type.upper()} Draft - Round {pick.draft_round}, Pick {pick.pick_number}" if pick.draft_round and pick.pick_number else f"{pick.season.title()} {pick.draft_type.upper()} Draft"
-        })
-    
-    # Sort by year (most recent first), then by type (trades before drafts for same year)
-    transactions.sort(key=lambda x: (x['year'] or 0, x['type'] == 'draft'), reverse=True)
-    context["transactions"] = transactions
-    
-    # Get all PlayerStatSeason records for this player, sorted by year desc, then classification
-    player_stats = models.PlayerStatSeason.objects.filter(
-        player_id=playerid,
-        is_career=False,
-    ).order_by('-season', 'classification')
-    
-    # Split into hitters and pitchers based on player position
-    player = context["p"]
-    if player.position == "P":
-        # Pitcher - only show pitching stats
-        context["pitcher_stats"] = player_stats.filter(pitch_stats__isnull=False)
-        context["hitter_stats"] = None
-    else:
-        # Hitter - only show hitting stats  
-        context["hitter_stats"] = player_stats.filter(hit_stats__isnull=False)
-        context["pitcher_stats"] = None
-    
+
+    def _get_player_data():
+        p = models.Player.objects.get(id=playerid)
+        trades = models.TradeReceipt.objects.filter(players__id=playerid).select_related('trade', 'team').order_by("-trade__date")
+        draft_picks = models.DraftPick.objects.filter(player__id=playerid).select_related('team').order_by("-year", "-season")
+        transactions = []
+        for trade in trades:
+            transactions.append({
+                'type': 'trade',
+                'date': trade.trade.date if trade.trade else None,
+                'year': trade.trade.date.year if trade.trade and trade.trade.date else None,
+                'description': f"Traded to {trade.team.abbreviation}",
+                'team': trade.team,
+                'details': trade.trade.summary() if trade.trade else "Trade details not available"
+            })
+        for pick in draft_picks:
+            transactions.append({
+                'type': 'draft',
+                'date': None,
+                'year': int(pick.year) if pick.year else None,
+                'description': f"Drafted by {pick.team.abbreviation}" if pick.team else "Drafted",
+                'team': pick.team,
+                'details': f"{pick.season.title()} {pick.draft_type.upper()} Draft - Round {pick.draft_round}, Pick {pick.pick_number}" if pick.draft_round and pick.pick_number else f"{pick.season.title()} {pick.draft_type.upper()} Draft"
+            })
+        transactions.sort(key=lambda x: (x['year'] or 0, x['type'] == 'draft'), reverse=True)
+        player_stats = models.PlayerStatSeason.objects.filter(player_id=playerid, is_career=False).order_by('-season', 'classification')
+        if p.position == "P":
+            pitcher_stats = list(player_stats.filter(pitch_stats__isnull=False))
+            hitter_stats = None
+        else:
+            hitter_stats = list(player_stats.filter(hit_stats__isnull=False))
+            pitcher_stats = None
+        return {
+            "p": p,
+            "transactions": transactions,
+            "hitter_stats": hitter_stats,
+            "pitcher_stats": pitcher_stats,
+        }
+
+    player_data = get_cached_or_compute(cache_key("player", playerid), _get_player_data)
+    context["p"] = player_data["p"]
+    context["transactions"] = player_data["transactions"]
+    context["hitter_stats"] = player_data["hitter_stats"]
+    context["pitcher_stats"] = player_data["pitcher_stats"]
+
     return render(request, "player_detail.html", context)
 
 
 def team_detail(request, abbreviation):
     context = utils.build_context(request)
-    context["team"] = get_object_or_404(
-        models.Team, abbreviation__icontains=abbreviation
-    )
+    team = get_object_or_404(models.Team, abbreviation__icontains=abbreviation)
+    context["team"] = team
 
     if request.user.is_authenticated:
         owner = models.Owner.objects.get(user=request.user)
-        if owner.team() == context["team"]:
+        if owner.team() == team:
             context["own_team"] = True
         else:
             context["own_team"] = False
@@ -162,57 +150,44 @@ def team_detail(request, abbreviation):
     if request.user.is_superuser:
         context["own_team"] = True
 
-    # Get current season for PlayerStatSeason queries (2025 during offseason, 2026 during midseason)
     season = utils.get_current_season()
+    team_abbr = team.abbreviation.upper()
 
-    # Get team players with current season data efficiently
-    # This gets all players on the team, whether they have current season data or not
-    team_players = models.Player.objects.filter(
-        team=context["team"]
-    ).select_related('team').prefetch_related(
-        # Prefetch current season PlayerStatSeason data (ordered by classification)
-        Prefetch(
-            'playerstatseason_set',
-            queryset=models.PlayerStatSeason.objects.filter(season=season, is_career=False).order_by('classification'),
-            to_attr='current_season_stats'
+    def _get_team_roster_data():
+        team_players = models.Player.objects.filter(team=team).select_related('team').prefetch_related(
+            Prefetch(
+                'playerstatseason_set',
+                queryset=models.PlayerStatSeason.objects.filter(season=season, is_career=False).order_by('classification'),
+                to_attr='current_season_stats'
+            )
         )
-    )
-    
-    # Count roster statuses using optimized PlayerStatSeason queries
-    # Use direct queries for better performance
-    context["35_roster_count"] = models.Player.objects.filter(
-        team=context["team"], 
-        is_ulmg_35man_roster=True
-    ).count()
-    
-    context["mlb_roster_count"] = models.Player.objects.filter(
-        team=context["team"],
-        is_ulmg_mlb_roster=True, 
-        is_ulmg_aaa_roster=False,
-        is_ulmg_reserve=False
-    ).count()
-    
-    # Use optimized aggregation for level distribution
-    context["level_distribution"] = (
-        team_players.values("level_order")
-        .annotate(Count("level_order"))
-        .order_by("level_order")
-    )
-    context["num_owned"] = team_players.count()
+        roster_35 = models.Player.objects.filter(team=team, is_ulmg_35man_roster=True).count()
+        mlb_count = models.Player.objects.filter(
+            team=team,
+            is_ulmg_mlb_roster=True,
+            is_ulmg_aaa_roster=False,
+            is_ulmg_reserve=False
+        ).count()
+        level_dist = list(team_players.values("level_order").annotate(Count("level_order")).order_by("level_order"))
+        hitters = list(team_players.exclude(position="P").order_by("position", "-level_order", "last_name", "first_name"))
+        pitchers = list(team_players.filter(position__icontains="P").order_by("-level_order", "last_name", "first_name"))
+        return {
+            "35_roster_count": roster_35,
+            "mlb_roster_count": mlb_count,
+            "level_distribution": level_dist,
+            "num_owned": len(hitters) + len(pitchers),
+            "hitters": hitters,
+            "pitchers": pitchers,
+        }
 
-    # Query for players directly with optimized ordering
-    # Split into hitters and pitchers, then sort as desired
-    hitters = team_players.exclude(position="P").order_by(
-        "position", "-level_order", "last_name", "first_name"
-    )
-    
-    pitchers = team_players.filter(position__icontains="P").order_by(
-        "-level_order", "last_name", "first_name"
-    )
-
-    context["hitters"] = hitters
-    context["pitchers"] = pitchers
-    context["compact_roster"] = True  # Hide Role and Stats columns for roster button space
+    roster_data = get_cached_or_compute(cache_key("team", team_abbr, "roster", season), _get_team_roster_data)
+    context["35_roster_count"] = roster_data["35_roster_count"]
+    context["mlb_roster_count"] = roster_data["mlb_roster_count"]
+    context["level_distribution"] = roster_data["level_distribution"]
+    context["num_owned"] = roster_data["num_owned"]
+    context["hitters"] = roster_data["hitters"]
+    context["pitchers"] = roster_data["pitchers"]
+    context["compact_roster"] = True
     return render(request, "team.html", context)
 
 
@@ -223,33 +198,39 @@ def team_other(request, abbreviation):
 
     if request.user.is_authenticated:
         owner = models.Owner.objects.get(user=request.user)
-        if owner.team() == context["team"]:
+        if owner.team() == team:
             context["own_team"] = True
         else:
             context["own_team"] = False
     else:
         context["own_team"] = False
 
-    team_players = models.Player.objects.filter(team=context["team"])
-    context["level_distribution"] = (
-        team_players.order_by("level_order")
-        .values("level_order")
-        .annotate(Count("level_order"))
-    )
-    context["num_owned"] = models.Player.objects.filter(team=team).count()
-    
-    # Add MLB roster count for floating nav display
-    context["mlb_roster_count"] = models.Player.objects.filter(
-        team=context["team"],
-        is_ulmg_mlb_roster=True, 
-        is_ulmg_aaa_roster=False,
-        is_ulmg_reserve=False
-    ).count()
-    
-    context["trades"] = models.Trade.objects.filter(teams=team).order_by("-date")
-    context["picks"] = models.DraftPick.objects.filter(team=team).order_by(
-        "-year", "season", "draft_type", "draft_round", "pick_number"
-    )
+    team_abbr = team.abbreviation.upper()
+
+    def _get_team_other_data():
+        team_players = models.Player.objects.filter(team=team)
+        level_dist = list(team_players.order_by("level_order").values("level_order").annotate(Count("level_order")))
+        trades = list(models.Trade.objects.filter(teams=team).order_by("-date"))
+        picks = list(models.DraftPick.objects.filter(team=team).order_by("-year", "season", "draft_type", "draft_round", "pick_number"))
+        return {
+            "level_distribution": level_dist,
+            "num_owned": team_players.count(),
+            "mlb_roster_count": models.Player.objects.filter(
+                team=team,
+                is_ulmg_mlb_roster=True,
+                is_ulmg_aaa_roster=False,
+                is_ulmg_reserve=False
+            ).count(),
+            "trades": trades,
+            "picks": picks,
+        }
+
+    other_data = get_cached_or_compute(cache_key("team", team_abbr, "other"), _get_team_other_data)
+    context["level_distribution"] = other_data["level_distribution"]
+    context["num_owned"] = other_data["num_owned"]
+    context["mlb_roster_count"] = other_data["mlb_roster_count"]
+    context["trades"] = other_data["trades"]
+    context["picks"] = other_data["picks"]
     return render(request, "team_other.html", context)
 
 def trades(request):
@@ -257,6 +238,26 @@ def trades(request):
     context["archived_trades"] = models.TradeSummary.objects.all()
     context["trades"] = models.Trade.objects.all().order_by("-date")
     return render(request, "trade_list.html", context)
+
+
+@staff_member_required
+@login_required
+def cache_admin(request):
+    """Admin page to view all cache keys and purge individual keys."""
+    context = utils.build_context(request)
+    context["valkey_active"] = is_valkey_active()
+    context["cache_keys"] = get_all_cache_keys() if context["valkey_active"] else []
+
+    if request.method == "POST" and request.POST.get("key"):
+        key_to_delete = request.POST.get("key")
+        if context["valkey_active"] and key_to_delete in context["cache_keys"]:
+            if delete_cache_key_for_admin(key_to_delete):
+                messages.success(request, f"Purged cache key: {key_to_delete}")
+            else:
+                messages.success(request, f"Key {key_to_delete} purged or already expired")
+        return redirect("cache_admin")
+
+    return render(request, "cache_admin.html", context)
 
 
 def draft_list(request):
