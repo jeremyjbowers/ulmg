@@ -20,217 +20,263 @@
     </div>
 </div>
 
-<!-- Trades section -->
+<!-- Trades section: single gridded table, wide trades expand vertically -->
 <div class="mb-8">
-    {% regroup trades by season as year_trades %}
-    {% for year in year_trades %}
-    <div class="mb-6">
-        <h2 class="text-lg font-bold mb-2 border-b border-gray-300 pb-1">
-            {{ year.grouper }} trades ({{ year.list|length }})
-            <a href="#top" class="text-xs font-normal underline ml-2">↑ top</a>
-        </h2>
-        <!-- Desktop/tablet view -->
-        <div class="hidden md:block overflow-x-auto mb-4">
-        <table class="w-full text-xs border-collapse min-w-max">
-            <thead class="sticky top-0 bg-white z-10">
-                <tr class="border-b border-gray-300">
-                    <th class="text-left py-1">Date</th>
-                    <th class="text-left py-1">Team</th>
-                    <th class="text-left py-1">Received</th>
-                    <th class="text-left py-1">Sent</th>
-                </tr>
-            </thead>
+    <!-- Desktop/tablet: gridded table -->
+    <div class="hidden sm:block overflow-x-auto">
+        <table class="w-full text-xs border-collapse border border-gray-200" style="table-layout: fixed;">
+            <colgroup>
+                <col style="width: 3.5rem;">
+                <col style="width: 3.5rem;">
+                <col style="width: 45%;">
+                <col style="width: 45%;">
+            </colgroup>
             <tbody>
+            {% regroup trades by season as year_trades %}
+            {% for year in year_trades %}
+                <tr class="bg-gray-50 border-b border-gray-200">
+                    <td colspan="4" class="py-3 px-1 font-bold text-base">
+                        {{ year.grouper }} trades ({{ year.list|length }})
+                        <a href="#top" class="text-sm font-normal underline ml-2">↑ top</a>
+                    </td>
+                </tr>
+                <tr class="border-b border-gray-300 bg-gray-50/50">
+                    <th class="text-left py-1 px-1 border-r border-gray-200 font-semibold">Date</th>
+                    <th class="text-left py-1 px-1 border-r border-gray-200 font-semibold">Team</th>
+                    <th class="text-left py-1 px-1 border-r border-gray-200 font-semibold">Received</th>
+                    <th class="text-left py-1 px-1 font-semibold">Sent</th>
+                </tr>
                 {% for t in year.list %}
-                <tr class="border-b border-gray-100">
-                    <td class="py-1">{{ t.date.month }}/{{ t.date.day }}</td>
+                <tr class="border-b border-gray-100 hover:bg-gray-50/50">
+                    <td class="py-1 px-1 align-top border-r border-gray-100 whitespace-nowrap">{{ t.date.month }}/{{ t.date.day }}</td>
                     {% if t.trade_cache.t1_abbr == team.abbreviation %}
-                        <td class="py-1"><a href="/teams/{{ t.trade_cache.t2_abbr|lower }}/" class="underline">{{ t.trade_cache.t2_abbr }}</a></td>
-                        <td class="py-1">
-                        {% for p in t.trade_cache.t2_players %}
-                            <a href="/players/{{ p.id }}/" class="underline">{{p.pos }} {{ p.name }}</a>{% if not forloop.last %}, {% else %}{% if t.trade_cache.t2_picks %}, {% endif %}{% endif %}
-                        {% endfor %}{% for pick in t.trade_cache.t2_picks %}
-                            {% if pick.team_abbr %}
-                                <a href="/draft/{{ pick.year }}/{{ pick.season }}/{{ pick.draft_type }}/#pick-{{ pick.id }}" class="underline">{{ pick.team_abbr }} {{ pick.year }} {{ pick.season|title }} {{ pick.draft_type|upper }}{{ pick.round }}</a>{% if pick.player %} (<a href="/players/{{ pick.player.id }}/" class="underline">{{ pick.player.position }} {{ pick.player.name }}</a>){% endif %}{% if not forloop.last %}, {% endif %}
-                            {% else %}
-                                {{ pick }}{% if not forloop.last %}, {% endif %}
-                            {% endif %}
-                        {% endfor %}
+                        <td class="py-1 px-1 align-top border-r border-gray-100"><a href="/teams/{{ t.trade_cache.t2_abbr|lower }}/" class="underline">{{ t.trade_cache.t2_abbr }}</a></td>
+                        <td class="py-1 px-1 align-top border-r border-gray-100 break-words">
+                            {% for p in t.trade_cache.t2_players %}
+                            <a href="/players/{{ p.id }}/" class="underline">{{ p.pos }} {{ p.name }}</a>{% if not forloop.last %}, {% else %}{% if t.trade_cache.t2_picks %}, {% endif %}{% endif %}
+                            {% endfor %}{% for pick in t.trade_cache.t2_picks %}
+                            {% if pick.team_abbr %}<a href="/draft/{{ pick.year }}/{{ pick.season }}/{{ pick.draft_type }}/#pick-{{ pick.id }}" class="underline">{{ pick.team_abbr }} {{ pick.year }} {{ pick.season|title }} {{ pick.draft_type|upper }}{{ pick.round }}</a>{% if pick.player %} (<a href="/players/{{ pick.player.id }}/" class="underline">{{ pick.player.position }} {{ pick.player.name }}</a>){% endif %}{% else %}{{ pick }}{% endif %}{% if not forloop.last %}, {% endif %}
+                            {% endfor %}
                         </td>
-                        <td class="py-1">
-                        {% for p in t.trade_cache.t1_players %}
-                            <a href="/players/{{ p.id }}/" class="underline">{{p.pos }} {{ p.name }}</a>{% if not forloop.last %}, {% else %}{% if t.trade_cache.t1_picks %}, {% endif %}{% endif %}
-                        {% endfor %}{% for pick in t.trade_cache.t1_picks %}
-                            {% if pick.team_abbr %}
-                                <a href="/draft/{{ pick.year }}/{{ pick.season }}/{{ pick.draft_type }}/#pick-{{ pick.id }}" class="underline">{{ pick.team_abbr }} {{ pick.year }} {{ pick.season|title }} {{ pick.draft_type|upper }}{{ pick.round }}</a>{% if pick.player %} (<a href="/players/{{ pick.player.id }}/" class="underline">{{ pick.player.position }} {{ pick.player.name }}</a>){% endif %}{% if not forloop.last %}, {% endif %}
-                            {% else %}
-                                {{ pick }}{% if not forloop.last %}, {% endif %}
-                            {% endif %}
-                        {% endfor %}
+                        <td class="py-1 px-1 align-top break-words">
+                            {% for p in t.trade_cache.t1_players %}
+                            <a href="/players/{{ p.id }}/" class="underline">{{ p.pos }} {{ p.name }}</a>{% if not forloop.last %}, {% else %}{% if t.trade_cache.t1_picks %}, {% endif %}{% endif %}
+                            {% endfor %}{% for pick in t.trade_cache.t1_picks %}
+                            {% if pick.team_abbr %}<a href="/draft/{{ pick.year }}/{{ pick.season }}/{{ pick.draft_type }}/#pick-{{ pick.id }}" class="underline">{{ pick.team_abbr }} {{ pick.year }} {{ pick.season|title }} {{ pick.draft_type|upper }}{{ pick.round }}</a>{% if pick.player %} (<a href="/players/{{ pick.player.id }}/" class="underline">{{ pick.player.position }} {{ pick.player.name }}</a>){% endif %}{% else %}{{ pick }}{% endif %}{% if not forloop.last %}, {% endif %}
+                            {% endfor %}
                         </td>
                     {% else %}
-                        <td class="py-1"><a href="/teams/{{ t.trade_cache.t1_abbr|lower }}/" class="underline">{{ t.trade_cache.t1_abbr }}</a></td>
-                        <td class="py-1">
+                        <td class="py-1 px-1 align-top border-r border-gray-100"><a href="/teams/{{ t.trade_cache.t1_abbr|lower }}/" class="underline">{{ t.trade_cache.t1_abbr }}</a></td>
+                        <td class="py-1 px-1 align-top border-r border-gray-100 break-words">
                             {% for p in t.trade_cache.t1_players %}
-                                <a href="/players/{{ p.id }}/" class="underline">{{p.pos }} {{ p.name }}</a>{% if not forloop.last %}, {% else %}{% if t.trade_cache.t1_picks %}, {% endif %}{% endif %}
+                            <a href="/players/{{ p.id }}/" class="underline">{{ p.pos }} {{ p.name }}</a>{% if not forloop.last %}, {% else %}{% if t.trade_cache.t1_picks %}, {% endif %}{% endif %}
                             {% endfor %}{% for pick in t.trade_cache.t1_picks %}
-                                {% if pick.team_abbr %}
-                                    <a href="/draft/{{ pick.year }}/{{ pick.season }}/{{ pick.draft_type }}/#pick-{{ pick.id }}" class="underline">{{ pick.team_abbr }} {{ pick.year }} {{ pick.season|title }} {{ pick.draft_type|upper }}{{ pick.round }}</a>{% if pick.player %} (<a href="/players/{{ pick.player.id }}/" class="underline">{{ pick.player.position }} {{ pick.player.name }}</a>){% endif %}{% if not forloop.last %}, {% endif %}
-                                {% else %}
-                                    {{ pick }}{% if not forloop.last %}, {% endif %}
-                                {% endif %}
+                            {% if pick.team_abbr %}<a href="/draft/{{ pick.year }}/{{ pick.season }}/{{ pick.draft_type }}/#pick-{{ pick.id }}" class="underline">{{ pick.team_abbr }} {{ pick.year }} {{ pick.season|title }} {{ pick.draft_type|upper }}{{ pick.round }}</a>{% if pick.player %} (<a href="/players/{{ pick.player.id }}/" class="underline">{{ pick.player.position }} {{ pick.player.name }}</a>){% endif %}{% else %}{{ pick }}{% endif %}{% if not forloop.last %}, {% endif %}
                             {% endfor %}
-                            </td>
-                            <td class="py-1">
+                        </td>
+                        <td class="py-1 px-1 align-top break-words">
                             {% for p in t.trade_cache.t2_players %}
-                                <a href="/players/{{ p.id }}/" class="underline">{{p.pos }} {{ p.name }}</a>{% if not forloop.last %}, {% else %}{% if t.trade_cache.t2_picks %}, {% endif %}{% endif %}
+                            <a href="/players/{{ p.id }}/" class="underline">{{ p.pos }} {{ p.name }}</a>{% if not forloop.last %}, {% else %}{% if t.trade_cache.t2_picks %}, {% endif %}{% endif %}
                             {% endfor %}{% for pick in t.trade_cache.t2_picks %}
-                                {% if pick.team_abbr %}
-                                    <a href="/draft/{{ pick.year }}/{{ pick.season }}/{{ pick.draft_type }}/#pick-{{ pick.id }}" class="underline">{{ pick.team_abbr }} {{ pick.year }} {{ pick.season|title }} {{ pick.draft_type|upper }}{{ pick.round }}</a>{% if pick.player %} (<a href="/players/{{ pick.player.id }}/" class="underline">{{ pick.player.position }} {{ pick.player.name }}</a>){% endif %}{% if not forloop.last %}, {% endif %}
-                                {% else %}
-                                    {{ pick }}{% if not forloop.last %}, {% endif %}
-                                {% endif %}
+                            {% if pick.team_abbr %}<a href="/draft/{{ pick.year }}/{{ pick.season }}/{{ pick.draft_type }}/#pick-{{ pick.id }}" class="underline">{{ pick.team_abbr }} {{ pick.year }} {{ pick.season|title }} {{ pick.draft_type|upper }}{{ pick.round }}</a>{% if pick.player %} (<a href="/players/{{ pick.player.id }}/" class="underline">{{ pick.player.position }} {{ pick.player.name }}</a>){% endif %}{% else %}{{ pick }}{% endif %}{% if not forloop.last %}, {% endif %}
                             {% endfor %}
-                            </td>
+                        </td>
                     {% endif %}
-                    </tr>
+                </tr>
                 {% endfor %}
+            {% endfor %}
             </tbody>
         </table>
-        </div>
-
-        <!-- Mobile stacked view -->
-        <div class="md:hidden space-y-3">
-            {% for t in year.list %}
-            <div class="border border-gray-200 rounded p-3 text-sm">
-                <div class="flex justify-between text-xs text-gray-500 mb-1">
-                    <span>{{ t.date.month }}/{{ t.date.day }}</span>
-                    {% if t.trade_cache.t1_abbr == team.abbreviation %}
-                        <a href="/teams/{{ t.trade_cache.t2_abbr|lower }}/" class="underline">{{ t.trade_cache.t2_abbr }}</a>
-                    {% else %}
-                        <a href="/teams/{{ t.trade_cache.t1_abbr|lower }}/" class="underline">{{ t.trade_cache.t1_abbr }}</a>
-                    {% endif %}
-                </div>
-
-                <div class="mb-2 break-words break-anywhere hyphens-auto">
-                    <span class="font-bold">Received:</span>
-                    {% if t.trade_cache.t1_abbr == team.abbreviation %}
-                        {% for p in t.trade_cache.t2_players %}
-                            <a href="/players/{{ p.id }}/" class="underline">{{p.pos }} {{ p.name }}</a>{% if not forloop.last %}, {% else %}{% if t.trade_cache.t2_picks %}, {% endif %}{% endif %}
-                        {% endfor %}{% for pick in t.trade_cache.t2_picks %}
-                            {% if pick.team_abbr %}
-                                <a href="/draft/{{ pick.year }}/{{ pick.season }}/{{ pick.draft_type }}/#pick-{{ pick.id }}" class="underline">{{ pick.team_abbr }} {{ pick.year }} {{ pick.season|title }} {{ pick.draft_type|upper }}{{ pick.round }}</a>{% if pick.player %} (<a href="/players/{{ pick.player.id }}/" class="underline">{{ pick.player.position }} {{ pick.player.name }}</a>){% endif %}{% if not forloop.last %}, {% endif %}
-                            {% else %}
-                                {{ pick }}{% if not forloop.last %}, {% endif %}
-                            {% endif %}
-                        {% endfor %}
-                    {% else %}
-                        {% for p in t.trade_cache.t1_players %}
-                            <a href="/players/{{ p.id }}/" class="underline">{{p.pos }} {{ p.name }}</a>{% if not forloop.last %}, {% else %}{% if t.trade_cache.t1_picks %}, {% endif %}{% endif %}
-                        {% endfor %}{% for pick in t.trade_cache.t1_picks %}
-                            {% if pick.team_abbr %}
-                                <a href="/draft/{{ pick.year }}/{{ pick.season }}/{{ pick.draft_type }}/#pick-{{ pick.id }}" class="underline">{{ pick.team_abbr }} {{ pick.year }} {{ pick.season|title }} {{ pick.draft_type|upper }}{{ pick.round }}</a>{% if pick.player %} (<a href="/players/{{ pick.player.id }}/" class="underline">{{ pick.player.position }} {{ pick.player.name }}</a>){% endif %}{% if not forloop.last %}, {% endif %}
-                            {% else %}
-                                {{ pick }}{% if not forloop.last %}, {% endif %}
-                            {% endif %}
-                        {% endfor %}
-                    {% endif %}
-                </div>
-
-                <div class="break-words break-anywhere hyphens-auto">
-                    <span class="font-bold">Sent:</span>
-                    {% if t.trade_cache.t1_abbr == team.abbreviation %}
-                        {% for p in t.trade_cache.t1_players %}
-                            <a href="/players/{{ p.id }}/" class="underline">{{p.pos }} {{ p.name }}</a>{% if not forloop.last %}, {% else %}{% if t.trade_cache.t1_picks %}, {% endif %}{% endif %}
-                        {% endfor %}{% for pick in t.trade_cache.t1_picks %}
-                            {% if pick.team_abbr %}
-                                <a href="/draft/{{ pick.year }}/{{ pick.season }}/{{ pick.draft_type }}/#pick-{{ pick.id }}" class="underline">{{ pick.team_abbr }} {{ pick.year }} {{ pick.season|title }} {{ pick.draft_type|upper }}{{ pick.round }}</a>{% if pick.player %} (<a href="/players/{{ pick.player.id }}/" class="underline">{{ pick.player.position }} {{ pick.player.name }}</a>){% endif %}{% if not forloop.last %}, {% endif %}
-                            {% else %}
-                                {{ pick }}{% if not forloop.last %}, {% endif %}
-                            {% endif %}
-                        {% endfor %}
-                    {% else %}
-                        {% for p in t.trade_cache.t2_players %}
-                            <a href="/players/{{ p.id }}/" class="underline">{{p.pos }} {{ p.name }}</a>{% if not forloop.last %}, {% else %}{% if t.trade_cache.t2_picks %}, {% endif %}{% endif %}
-                        {% endfor %}{% for pick in t.trade_cache.t2_picks %}
-                            {% if pick.team_abbr %}
-                                <a href="/draft/{{ pick.year }}/{{ pick.season }}/{{ pick.draft_type }}/#pick-{{ pick.id }}" class="underline">{{ pick.team_abbr }} {{ pick.year }} {{ pick.season|title }} {{ pick.draft_type|upper }}{{ pick.round }}</a>{% if pick.player %} (<a href="/players/{{ pick.player.id }}/" class="underline">{{ pick.player.position }} {{ pick.player.name }}</a>){% endif %}{% if not forloop.last %}, {% endif %}
-                            {% else %}
-                                {{ pick }}{% if not forloop.last %}, {% endif %}
-                            {% endif %}
-                        {% endfor %}
-                    {% endif %}
-                </div>
-            </div>
-            {% endfor %}
-        </div>
     </div>
-    {% endfor %}
-</div>
 
-<!-- Draft picks section -->
-<div>
-    {% regroup picks by year as year_picks %}
-    {% for year in year_picks %}
-    <div class="mb-8">
-        <h2 class="text-lg font-bold mb-4 border-b border-gray-300 pb-1">{{ year.grouper }}</h2>
-        
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {% regroup year.list by season as season_picks %}
-        {% for season in season_picks %}
-            <div>
-                <h3 class="text-base font-bold mb-2">{{ season.grouper|capfirst }} draft picks ({{ season.list|length }}) <a href="#top" class="text-xs font-normal underline ml-2">↑ top</a></h3>
-                {% regroup season.list by draft_type as type_picks %}
-                {% for pick in type_picks %}
-                <div class="mb-4">
-                    {% if pick.grouper == "aa"%}
-                    <h4 class="text-sm font-bold mb-1">{{ pick.grouper|upper }} draft</h4>
-                    {% else %}
-                    <h4 class="text-sm font-bold mb-1">{{ pick.grouper|title }} draft</h4>
-                    {% endif %}
-                    
-                    <div class="overflow-x-auto">
-                    <table class="w-full text-xs border-collapse min-w-max">
-                        <thead class="sticky top-0 bg-white z-10">
-                            <tr class="border-b border-gray-300">
-                                <th class="text-left py-1">Rnd</th>
-                                <th class="text-left py-1">Pick</th>
-                                <th class="text-left py-1">Overall</th>
-                                <th class="text-left py-1">Via</th>
-                                <th class="text-left py-1">Pos</th>
-                                <th class="text-left py-1">Player</th>
-                                <th class="text-left py-1">Links</th>
-                                <th class="text-left py-1">Lvl</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                        {% for p in pick.list %}
-                            <tr class="border-b border-gray-100">
-                                <td class="py-1">{{ p.draft_round }}</td>
-                                <td class="py-1">{{ p.pick_number|default_if_none:"-" }}</td>
-                                <td class="py-1">{{ p.overall_pick_number|default_if_none:"-" }}</td>
-                                <td class="py-1">{% if p.original_team != p.team %}{{ p.original_team }}{% else %}-{% endif %}</td>
-                                <td class="py-1">{% if p.player %}{{ p.player.position }}{% endif %}</td>
-                                <td class="py-1">{% if p.player %}<a class="underline font-bold" href="/players/{{ p.player.id }}/">{{ p.player.name }}</a>{% elif p.player_name %}{{ p.player_name }}{% else %}{% if p.skipped %}<em>skipped</em>{% else %}-{% endif %}{% endif %}</td>
-                                <td class="py-1">
-                                {% if p.player %}
-                                    <a href="/admin/ulmg/player/{{ p.player.id }}/change/" class="underline hidden sm:inline">Edit</a>
-                                    {% if p.player.bref_url %} • <a class="underline" target="_blank" href="{{ p.player.bref_url }}">BBR</a>{% endif %}
-                                    {% if p.player.fg_url %} • <a class="underline" target="_blank" href="{{ p.player.fg_url }}">FG</a>{% endif %}
+    <!-- Mobile: compact stacked rows (same gridded structure, stacked vertically) -->
+    <div class="sm:hidden space-y-4">
+        {% regroup trades by season as year_trades %}
+        {% for year in year_trades %}
+        <div>
+            <h2 class="text-sm font-bold mb-2 border-b border-gray-200 pb-1">
+                {{ year.grouper }} trades ({{ year.list|length }})
+                <a href="#top" class="text-xs font-normal underline ml-2">↑ top</a>
+            </h2>
+            <div class="space-y-3">
+                {% for t in year.list %}
+                <div class="border border-gray-200 rounded p-2 text-xs">
+                    <div class="grid grid-cols-2 gap-x-2 gap-y-1 mb-2">
+                        <span class="text-gray-500">Date</span>
+                        <span class="text-gray-500">Team</span>
+                        <span>{{ t.date.month }}/{{ t.date.day }}</span>
+                        {% if t.trade_cache.t1_abbr == team.abbreviation %}
+                        <span><a href="/teams/{{ t.trade_cache.t2_abbr|lower }}/" class="underline">{{ t.trade_cache.t2_abbr }}</a></span>
+                        {% else %}
+                        <span><a href="/teams/{{ t.trade_cache.t1_abbr|lower }}/" class="underline">{{ t.trade_cache.t1_abbr }}</a></span>
+                        {% endif %}
+                    </div>
+                    <div class="space-y-2">
+                        <div>
+                            <div class="text-gray-500 font-medium mb-0.5">Received</div>
+                            <div class="break-words">
+                                {% if t.trade_cache.t1_abbr == team.abbreviation %}
+                                    {% for p in t.trade_cache.t2_players %}
+                                    <a href="/players/{{ p.id }}/" class="underline">{{ p.pos }} {{ p.name }}</a>{% if not forloop.last %}, {% else %}{% if t.trade_cache.t2_picks %}, {% endif %}{% endif %}
+                                    {% endfor %}{% for pick in t.trade_cache.t2_picks %}
+                                    {% if pick.team_abbr %}<a href="/draft/{{ pick.year }}/{{ pick.season }}/{{ pick.draft_type }}/#pick-{{ pick.id }}" class="underline">{{ pick.team_abbr }} {{ pick.year }} {{ pick.season|title }} {{ pick.draft_type|upper }}{{ pick.round }}</a>{% if pick.player %} (<a href="/players/{{ pick.player.id }}/" class="underline">{{ pick.player.position }} {{ pick.player.name }}</a>){% endif %}{% else %}{{ pick }}{% endif %}{% if not forloop.last %}, {% endif %}
+                                    {% endfor %}
+                                {% else %}
+                                    {% for p in t.trade_cache.t1_players %}
+                                    <a href="/players/{{ p.id }}/" class="underline">{{ p.pos }} {{ p.name }}</a>{% if not forloop.last %}, {% else %}{% if t.trade_cache.t1_picks %}, {% endif %}{% endif %}
+                                    {% endfor %}{% for pick in t.trade_cache.t1_picks %}
+                                    {% if pick.team_abbr %}<a href="/draft/{{ pick.year }}/{{ pick.season }}/{{ pick.draft_type }}/#pick-{{ pick.id }}" class="underline">{{ pick.team_abbr }} {{ pick.year }} {{ pick.season|title }} {{ pick.draft_type|upper }}{{ pick.round }}</a>{% if pick.player %} (<a href="/players/{{ pick.player.id }}/" class="underline">{{ pick.player.position }} {{ pick.player.name }}</a>){% endif %}{% else %}{{ pick }}{% endif %}{% if not forloop.last %}, {% endif %}
+                                    {% endfor %}
                                 {% endif %}
-                                </td>
-                                <td class="py-1">{% if p.player %}{{ p.player.level }}{% endif %}</td>
-                            </tr>
-                        {% endfor %}
-                        </tbody>
-                    </table>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="text-gray-500 font-medium mb-0.5">Sent</div>
+                            <div class="break-words">
+                                {% if t.trade_cache.t1_abbr == team.abbreviation %}
+                                    {% for p in t.trade_cache.t1_players %}
+                                    <a href="/players/{{ p.id }}/" class="underline">{{ p.pos }} {{ p.name }}</a>{% if not forloop.last %}, {% else %}{% if t.trade_cache.t1_picks %}, {% endif %}{% endif %}
+                                    {% endfor %}{% for pick in t.trade_cache.t1_picks %}
+                                    {% if pick.team_abbr %}<a href="/draft/{{ pick.year }}/{{ pick.season }}/{{ pick.draft_type }}/#pick-{{ pick.id }}" class="underline">{{ pick.team_abbr }} {{ pick.year }} {{ pick.season|title }} {{ pick.draft_type|upper }}{{ pick.round }}</a>{% if pick.player %} (<a href="/players/{{ pick.player.id }}/" class="underline">{{ pick.player.position }} {{ pick.player.name }}</a>){% endif %}{% else %}{{ pick }}{% endif %}{% if not forloop.last %}, {% endif %}
+                                    {% endfor %}
+                                {% else %}
+                                    {% for p in t.trade_cache.t2_players %}
+                                    <a href="/players/{{ p.id }}/" class="underline">{{ p.pos }} {{ p.name }}</a>{% if not forloop.last %}, {% else %}{% if t.trade_cache.t2_picks %}, {% endif %}{% endif %}
+                                    {% endfor %}{% for pick in t.trade_cache.t2_picks %}
+                                    {% if pick.team_abbr %}<a href="/draft/{{ pick.year }}/{{ pick.season }}/{{ pick.draft_type }}/#pick-{{ pick.id }}" class="underline">{{ pick.team_abbr }} {{ pick.year }} {{ pick.season|title }} {{ pick.draft_type|upper }}{{ pick.round }}</a>{% if pick.player %} (<a href="/players/{{ pick.player.id }}/" class="underline">{{ pick.player.position }} {{ pick.player.name }}</a>){% endif %}{% else %}{{ pick }}{% endif %}{% if not forloop.last %}, {% endif %}
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                        </div>
                     </div>
                 </div>
                 {% endfor %}
             </div>
-        {% endfor %}
         </div>
+        {% endfor %}
     </div>
-    {% endfor %}
+</div>
+
+<!-- Draft picks section: gridded layout matching trades -->
+<div class="mb-8">
+    <!-- Desktop/tablet: gridded table -->
+    <div class="hidden sm:block overflow-x-auto">
+        <table class="w-full text-xs border-collapse border border-gray-200" style="table-layout: fixed;">
+            <colgroup>
+                <col style="width: 2.5rem;">
+                <col style="width: 2.5rem;">
+                <col style="width: 2.5rem;">
+                <col style="width: 2.5rem;">
+                <col style="width: 2rem;">
+                <col style="width: 35%;">
+                <col style="width: 6rem;">
+                <col style="width: 2rem;">
+            </colgroup>
+            <tbody>
+            {% regroup picks by year as year_picks %}
+            {% for year in year_picks %}
+                <tr class="bg-gray-50 border-b border-gray-200">
+                    <td colspan="8" class="py-3 px-1 font-bold text-base">
+                        {{ year.grouper }}
+                        <a href="#top" class="text-sm font-normal underline ml-2">↑ top</a>
+                    </td>
+                </tr>
+                {% regroup year.list by season as season_picks %}
+                {% for season in season_picks %}
+                {% regroup season.list by draft_type as type_picks %}
+                {% for pick in type_picks %}
+                <tr class="bg-gray-50/70 border-b border-gray-200">
+                    <td colspan="8" class="py-2 px-1 font-semibold text-sm">
+                        {{ year.grouper }} {{ season.grouper|capfirst }} {% if pick.grouper == "aa" %}{{ pick.grouper|upper }}{% else %}{{ pick.grouper|title }}{% endif %} draft ({{ pick.list|length }})
+                    </td>
+                </tr>
+                <tr class="border-b border-gray-300 bg-gray-50/50">
+                    <th class="text-left py-1 px-1 border-r border-gray-200 font-semibold">Rnd</th>
+                    <th class="text-left py-1 px-1 border-r border-gray-200 font-semibold">Pick</th>
+                    <th class="text-left py-1 px-1 border-r border-gray-200 font-semibold">Overall</th>
+                    <th class="text-left py-1 px-1 border-r border-gray-200 font-semibold">Via</th>
+                    <th class="text-left py-1 px-1 border-r border-gray-200 font-semibold">Pos</th>
+                    <th class="text-left py-1 px-1 border-r border-gray-200 font-semibold">Player</th>
+                    <th class="text-left py-1 px-1 border-r border-gray-200 font-semibold">Links</th>
+                    <th class="text-left py-1 px-1 font-semibold">Lvl</th>
+                </tr>
+                {% for p in pick.list %}
+                <tr class="border-b border-gray-100 hover:bg-gray-50/50">
+                    <td class="py-1 px-1 border-r border-gray-100">{{ p.draft_round }}</td>
+                    <td class="py-1 px-1 border-r border-gray-100">{{ p.pick_number|default_if_none:"-" }}</td>
+                    <td class="py-1 px-1 border-r border-gray-100">{{ p.overall_pick_number|default_if_none:"-" }}</td>
+                    <td class="py-1 px-1 border-r border-gray-100">{% if p.original_team != p.team %}{{ p.original_team }}{% else %}-{% endif %}</td>
+                    <td class="py-1 px-1 border-r border-gray-100">{% if p.player %}{{ p.player.position }}{% endif %}</td>
+                    <td class="py-1 px-1 border-r border-gray-100 break-words">{% if p.player %}<a class="underline font-bold" href="/players/{{ p.player.id }}/">{{ p.player.name }}</a>{% elif p.player_name %}{{ p.player_name }}{% else %}{% if p.skipped %}<em>skipped</em>{% else %}-{% endif %}{% endif %}</td>
+                    <td class="py-1 px-1 border-r border-gray-100">
+                    {% if p.player %}
+                        <a href="/admin/ulmg/player/{{ p.player.id }}/change/" class="underline hidden sm:inline">Edit</a>
+                        {% if p.player.bref_url %} • <a class="underline" target="_blank" href="{{ p.player.bref_url }}">BBR</a>{% endif %}
+                        {% if p.player.fg_url %} • <a class="underline" target="_blank" href="{{ p.player.fg_url }}">FG</a>{% endif %}
+                    {% endif %}
+                    </td>
+                    <td class="py-1 px-1">{% if p.player %}{{ p.player.level }}{% endif %}</td>
+                </tr>
+                {% endfor %}
+                {% endfor %}
+                {% endfor %}
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Mobile: compact stacked rows -->
+    <div class="sm:hidden space-y-4">
+        {% regroup picks by year as year_picks %}
+        {% for year in year_picks %}
+        <div>
+            <h2 class="text-base font-bold py-3 border-b border-gray-200">
+                {{ year.grouper }}
+                <a href="#top" class="text-sm font-normal underline ml-2">↑ top</a>
+            </h2>
+            {% regroup year.list by season as season_picks %}
+            {% for season in season_picks %}
+            {% regroup season.list by draft_type as type_picks %}
+            {% for pick in type_picks %}
+            <div class="mt-4">
+                <h3 class="text-sm font-semibold py-2 border-b border-gray-200">
+                    {{ year.grouper }} {{ season.grouper|capfirst }} {% if pick.grouper == "aa" %}{{ pick.grouper|upper }}{% else %}{{ pick.grouper|title }}{% endif %} draft ({{ pick.list|length }})
+                </h3>
+                <div class="space-y-2 mt-2">
+                    {% for p in pick.list %}
+                    <div class="border border-gray-200 rounded p-2 text-xs">
+                        <div class="grid grid-cols-2 gap-x-2 gap-y-1">
+                            <span class="text-gray-500">Rnd</span>
+                            <span>{{ p.draft_round }}</span>
+                            <span class="text-gray-500">Pick</span>
+                            <span>{{ p.pick_number|default_if_none:"-" }}</span>
+                            <span class="text-gray-500">Overall</span>
+                            <span>{{ p.overall_pick_number|default_if_none:"-" }}</span>
+                            <span class="text-gray-500">Via</span>
+                            <span>{% if p.original_team != p.team %}{{ p.original_team }}{% else %}-{% endif %}</span>
+                            <span class="text-gray-500">Pos</span>
+                            <span>{% if p.player %}{{ p.player.position }}{% else %}-{% endif %}</span>
+                            <span class="text-gray-500">Lvl</span>
+                            <span>{% if p.player %}{{ p.player.level }}{% else %}-{% endif %}</span>
+                        </div>
+                        <div class="mt-1">
+                            <span class="text-gray-500">Player: </span>{% if p.player %}<a class="underline font-bold" href="/players/{{ p.player.id }}/">{{ p.player.name }}</a>{% elif p.player_name %}{{ p.player_name }}{% else %}{% if p.skipped %}<em>skipped</em>{% else %}-{% endif %}{% endif %}
+                        </div>
+                        {% if p.player %}
+                        <div class="mt-1 pt-1 border-t border-gray-100">
+                            <a href="/admin/ulmg/player/{{ p.player.id }}/change/" class="underline">Edit</a>
+                            {% if p.player.bref_url %} • <a class="underline" target="_blank" href="{{ p.player.bref_url }}">BBR</a>{% endif %}
+                            {% if p.player.fg_url %} • <a class="underline" target="_blank" href="{{ p.player.fg_url }}">FG</a>{% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+            {% endfor %}
+        </div>
+        {% endfor %}
+    </div>
 </div>
 {% endblock %}
