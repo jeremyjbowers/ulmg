@@ -39,6 +39,9 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const mlbBtn = playerRow.querySelector('[data-action="to_mlb"], [data-action="off_roster"][data-playerid="' + playerId + '"]');
         const aaaBtn = playerRow.querySelector('[data-action="to_aaa"], [data-action="off_roster"][data-playerid="' + playerId + '"]');
+        const p1hBtn = playerRow.querySelector('[data-roster-type="1h_p"]');
+        const c1hBtn = playerRow.querySelector('[data-roster-type="1h_c"]');
+        const pos1hBtn = playerRow.querySelector('[data-roster-type="1h_pos"]');
         const p2hBtn = playerRow.querySelector('[data-action="is_ulmg_2h_p"], [data-action="unprotect"][data-roster-type="2h_p"]');
         const c2hBtn = playerRow.querySelector('[data-action="is_ulmg_2h_c"], [data-action="unprotect"][data-roster-type="2h_c"]');
         const pos2hBtn = playerRow.querySelector('[data-action="is_ulmg_2h_pos"], [data-action="unprotect"][data-roster-type="2h_pos"]');
@@ -60,6 +63,28 @@ document.addEventListener('DOMContentLoaded', function() {
                 break;
             case 'to_aaa':
                 setButtonState(aaaBtn, true, 'off_roster', 'AAA', 'bg-blue-400 border-blue-400 text-white', '');
+                break;
+            case 'is_ulmg_reserve':
+            case 'unprotect_reserve':
+                window.location.reload();
+                break;
+            case 'is_ulmg_1h_p':
+                setButtonState(p1hBtn, true, 'unprotect_1h_p', 'P', 'bg-amber-500 border-amber-500 text-black', '');
+                break;
+            case 'is_ulmg_1h_c':
+                setButtonState(c1hBtn, true, 'unprotect_1h_c', 'C', 'bg-amber-500 border-amber-500 text-black', '');
+                break;
+            case 'is_ulmg_1h_pos':
+                setButtonState(pos1hBtn, true, 'unprotect_1h_pos', 'HIT', 'bg-amber-500 border-amber-500 text-black', '');
+                break;
+            case 'unprotect_1h_p':
+                setButtonState(p1hBtn, false, 'is_ulmg_1h_p', 'P', '', 'border-amber-500 text-amber-600 hover:bg-amber-50');
+                break;
+            case 'unprotect_1h_c':
+                setButtonState(c1hBtn, false, 'is_ulmg_1h_c', 'C', '', 'border-amber-500 text-amber-600 hover:bg-amber-50');
+                break;
+            case 'unprotect_1h_pos':
+                setButtonState(pos1hBtn, false, 'is_ulmg_1h_pos', 'HIT', '', 'border-amber-500 text-amber-600 hover:bg-amber-50');
                 break;
             case 'off_roster':
                 if (mlbBtn && mlbBtn.textContent === 'MLB' && mlbBtn.classList.contains('bg-black')) {
@@ -139,6 +164,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     updateButtonStates(playerId, action);
                 },
                 error: function(xhr, status, error) {
+                    if (xhr.status === 400 && xhr.responseJSON && xhr.responseJSON.error) {
+                        alert(xhr.responseJSON.error);
+                    }
                     console.error('Action failed:', action, error);
                 }
             });

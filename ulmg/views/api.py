@@ -255,6 +255,11 @@ def player_action(request, playerid, action):
         return HttpResponse("ok")
 
     if action == "is_ulmg_reserve":
+        if p.level != "V":
+            return JsonResponse(
+                {"error": "ASR (All Season Reserve) is for V-level players only"},
+                status=400,
+            )
         old = models.Player.objects.filter(team=p.team, is_ulmg_reserve=True).update(
             is_ulmg_reserve=False
         )
@@ -268,6 +273,11 @@ def player_action(request, playerid, action):
             is_ulmg_mlb_roster=False,
             is_ulmg_aaa_roster=False
         )
+        return HttpResponse("ok")
+
+    if action == "unprotect_reserve":
+        p.is_ulmg_reserve = False
+        p.save()
         return HttpResponse("ok")
 
     if action == "is_ulmg_2h_p":
@@ -331,6 +341,11 @@ def player_action(request, playerid, action):
         return HttpResponse("ok")
 
     if action == "is_ulmg_1h_p":
+        if p.level != "V":
+            return JsonResponse(
+                {"error": "1H protection is for V-level players only"},
+                status=400,
+            )
         old = models.Player.objects.filter(team=p.team, is_ulmg_1h_p=True).update(
             is_ulmg_1h_p=False
         )
@@ -347,6 +362,11 @@ def player_action(request, playerid, action):
         return HttpResponse("ok")
 
     if action == "is_ulmg_1h_c":
+        if p.level != "V":
+            return JsonResponse(
+                {"error": "1H protection is for V-level players only"},
+                status=400,
+            )
         old = models.Player.objects.filter(team=p.team, is_ulmg_1h_c=True).update(
             is_ulmg_1h_c=False
         )
@@ -363,6 +383,11 @@ def player_action(request, playerid, action):
         return HttpResponse("ok")
 
     if action == "is_ulmg_1h_pos":
+        if p.level != "V":
+            return JsonResponse(
+                {"error": "1H protection is for V-level players only"},
+                status=400,
+            )
         old = models.Player.objects.filter(team=p.team, is_ulmg_1h_pos=True).update(
             is_ulmg_1h_pos=False
         )
@@ -378,9 +403,30 @@ def player_action(request, playerid, action):
         )
         return HttpResponse("ok")
 
+    if action == "unprotect_1h_p":
+        p.is_ulmg_1h_p = False
+        p.save()
+        return HttpResponse("ok")
 
+    if action == "unprotect_1h_c":
+        p.is_ulmg_1h_c = False
+        p.save()
+        return HttpResponse("ok")
+
+    if action == "unprotect_1h_pos":
+        p.is_ulmg_1h_pos = False
+        p.save()
+        return HttpResponse("ok")
 
     if action == "to_mlb":
+        previous_season = settings.CURRENT_SEASON - 1
+        if not models.PlayerStatSeason.objects.filter(
+            player=p, season=previous_season, carded=True
+        ).exists():
+            return JsonResponse(
+                {"error": "Only carded players (MLB experience last season) can be placed on MLB roster"},
+                status=400,
+            )
         p.is_ulmg_reserve = False
         p.is_ulmg_1h_c = False
         p.is_ulmg_1h_p = False
@@ -398,6 +444,14 @@ def player_action(request, playerid, action):
         return HttpResponse("ok")
 
     if action == "to_aaa":
+        previous_season = settings.CURRENT_SEASON - 1
+        if not models.PlayerStatSeason.objects.filter(
+            player=p, season=previous_season, carded=True
+        ).exists():
+            return JsonResponse(
+                {"error": "Only carded players (MLB experience last season) can be placed on AAA roster"},
+                status=400,
+            )
         p.is_ulmg_reserve = False
         p.is_ulmg_1h_c = False
         p.is_ulmg_1h_p = False

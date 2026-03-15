@@ -1,7 +1,32 @@
 {% if roster_tab %}
-<td class="text-right-important">
+<td class="text-center py-1">
     <div class="flex space-x-1 justify-end">
-        <!-- MLB Roster Button - for players carded last season -->
+        <!-- ASR (All Season Reserve) - V-level only, one per team -->
+        {% if p.level == "V" and not p.is_ulmg_2h_draft %}
+            {% if p.is_ulmg_reserve %}
+                <a class="player-action text-xs px-1.5 py-0.5 border bg-emerald-600 border-emerald-600 text-white rounded" 
+                   data-playerid="{{ p.id }}" data-action="unprotect_reserve" data-roster-type="asr">ASR</a>
+            {% elif not team_has_asr %}
+                <a class="player-action text-xs px-1.5 py-0.5 border border-emerald-600 text-emerald-600 hover:bg-emerald-50 rounded" 
+                   data-playerid="{{ p.id }}" data-action="is_ulmg_reserve" data-roster-type="asr">ASR</a>
+            {% endif %}
+        {% endif %}
+        
+        <!-- 1H Protection - V-level only -->
+        {% if p.level == "V" and not p.is_ulmg_reserve and not p.is_ulmg_2h_draft %}
+            {% if p.position == "P" %}
+                <a class="player-action text-xs px-1.5 py-0.5 border {% if p.is_ulmg_1h_p %}bg-amber-500 border-amber-500 text-black{% else %}border-amber-500 text-amber-600 hover:bg-amber-50{% endif %} rounded" 
+                   data-playerid="{{ p.id }}" data-action="{% if p.is_ulmg_1h_p %}unprotect_1h_p{% else %}is_ulmg_1h_p{% endif %}" data-roster-type="1h_p">P</a>
+            {% elif p.position == "C" %}
+                <a class="player-action text-xs px-1.5 py-0.5 border {% if p.is_ulmg_1h_c %}bg-amber-500 border-amber-500 text-black{% else %}border-amber-500 text-amber-600 hover:bg-amber-50{% endif %} rounded" 
+                   data-playerid="{{ p.id }}" data-action="{% if p.is_ulmg_1h_c %}unprotect_1h_c{% else %}is_ulmg_1h_c{% endif %}" data-roster-type="1h_c">C</a>
+            {% elif p.position != "P" and p.position != "C" %}
+                <a class="player-action text-xs px-1.5 py-0.5 border {% if p.is_ulmg_1h_pos %}bg-amber-500 border-amber-500 text-black{% else %}border-amber-500 text-amber-600 hover:bg-amber-50{% endif %} rounded" 
+                   data-playerid="{{ p.id }}" data-action="{% if p.is_ulmg_1h_pos %}unprotect_1h_pos{% else %}is_ulmg_1h_pos{% endif %}" data-roster-type="1h_pos">HIT</a>
+            {% endif %}
+        {% endif %}
+        
+        <!-- MLB Roster Button - only for players carded last season (MLB experience) -->
         {% if not p.is_ulmg_1h_draft and not p.is_ulmg_reserve %}
             {% if previous_season in p.carded_seasons %}
                 {% if not p.is_ulmg_mlb_roster and mlb_roster_count < mlb_roster_size %}
@@ -14,7 +39,7 @@
             {% endif %}
         {% endif %}
         
-        <!-- AAA Roster Button - for players carded last season -->
+        <!-- AAA Roster Button - only for players carded last season (MLB experience) -->
         {% if not p.is_ulmg_1h_draft and not p.is_ulmg_reserve and not p.is_ulmg_2h_draft %}
             {% if previous_season in p.carded_seasons %}
                 {% if not p.is_ulmg_aaa_roster %}
@@ -27,50 +52,8 @@
             {% endif %}
         {% endif %}
         
-
-    </div>
-</td>
-<td class="text-left-important">
-    <div class="flex space-x-1">
-        <!-- SECOND HALF PROTECTIONS - Level V only, not if 1H protection active -->
-        
-        <!-- 2H Pitcher Protection - only for pitchers without 1H pitcher protection and not 2H draft players -->
-        {% if p.position == "P" and p.level == "V" and not p.is_ulmg_1h_p and not p.is_ulmg_reserve and not p.is_ulmg_2h_draft %}
-            <a class="player-action text-xs px-1.5 py-0.5 border {% if p.is_ulmg_2h_p %}bg-yellow-400 border-yellow-400 text-black{% else %}border-yellow-400 text-yellow-600 hover:bg-yellow-50{% endif %} rounded" 
-               data-playerid="{{ p.id }}" data-action="{% if p.is_ulmg_2h_p %}unprotect{% else %}is_ulmg_2h_p{% endif %}" data-roster-type="2h_p">P</a>
-        {% endif %}
-        
-        <!-- 2H Catcher Protection - only for catchers without 1H catcher protection and not 2H draft players -->
-        {% if p.position == "C" and p.level == "V" and not p.is_ulmg_1h_c and not p.is_ulmg_reserve and not p.is_ulmg_2h_draft %}
-            <a class="player-action text-xs px-1.5 py-0.5 border {% if p.is_ulmg_2h_c %}bg-yellow-400 border-yellow-400 text-black{% else %}border-yellow-400 text-yellow-600 hover:bg-yellow-50{% endif %} rounded" 
-               data-playerid="{{ p.id }}" data-action="{% if p.is_ulmg_2h_c %}unprotect{% else %}is_ulmg_2h_c{% endif %}" data-roster-type="2h_c">C</a>
-        {% endif %}
-        
-        <!-- 2H Position Protection - only for hitters without 1H position protection and not 2H draft players -->
-        {% if p.position != "P" and p.position != "C" and p.level == "V" and not p.is_ulmg_1h_pos and not p.is_ulmg_reserve and not p.is_ulmg_2h_draft %}
-            <a class="player-action text-xs px-1.5 py-0.5 border {% if p.is_ulmg_2h_pos %}bg-yellow-400 border-yellow-400 text-black{% else %}border-yellow-400 text-yellow-600 hover:bg-yellow-50{% endif %} rounded" 
-               data-playerid="{{ p.id }}" data-action="{% if p.is_ulmg_2h_pos %}unprotect{% else %}is_ulmg_2h_pos{% endif %}" data-roster-type="2h_pos">HIT</a>
-        {% endif %}
+        <a class="drop-button text-xs px-1.5 py-0.5 border border-red-500 text-red-600 hover:bg-red-50 rounded" 
+           data-playerid="{{ p.id }}" data-playername="{{ p.name }}">×</a>
     </div>
 </td>
 {% endif %}
-
-{% if protect_tab %}
-<td>
-    <div class="flex space-x-1">
-        {% if p.is_ulmg_35man_roster or p.is_ulmg_reserve or p.is_ulmg_1h_p or p.is_ulmg_1h_c or p.is_ulmg_1h_pos %}
-            <a class="player-action text-xs px-1.5 py-0.5 border bg-green-600 border-green-600 text-white rounded" 
-               data-playerid="{{ p.id }}" data-action="unprotect" data-roster-type="40man">40</a>
-        {% elif not 35_roster_count == 40 and not p.level == "B" %}
-            <a class="player-action text-xs px-1.5 py-0.5 border border-green-600 text-green-600 hover:bg-green-50 rounded" 
-               data-playerid="{{ p.id }}" data-action="to_35_man" data-roster-type="40man">40</a>
-        {% endif %}
-    </div>
-</td>
-{% endif %}
-
-{% if protect_tab or roster_tab %}
-<td>
-    <a class="drop-button text-xs px-1.5 py-0.5 border border-red-500 text-red-600 hover:bg-red-50 rounded" 
-       data-playerid="{{ p.id }}" data-playername="{{ p.name }}">×</a>
-</td>{% endif %}

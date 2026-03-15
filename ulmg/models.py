@@ -709,15 +709,16 @@ class Player(BaseModel):
             self.position = "DH"  # Default for unknown positions
 
     def set_carded_seasons(self):
-        if not self.carded_seasons:
-            self.carded_seasons = []
-
+        seasons = []
         try:
-            for pss in PlayerStatSeason.objects.filter(player=self, is_career=False):
-                if pss.classification == "1-mlb":
-                    self.carded_seasons.append(pss.season)
-        except ValueError:
-            pass
+            for season in PlayerStatSeason.objects.filter(
+                player=self, is_career=False, classification="1-mlb", carded=True
+            ).values_list("season", flat=True).distinct():
+                if season and season not in seasons:
+                    seasons.append(season)
+            self.carded_seasons = sorted(seasons) if seasons else []
+        except (ValueError, TypeError):
+            self.carded_seasons = self.carded_seasons or []
 
     def save(self, *args, **kwargs):
         """

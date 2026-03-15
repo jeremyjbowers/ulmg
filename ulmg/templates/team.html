@@ -65,8 +65,8 @@
                 <th class="text-center py-1 sortable" data-sortable-type="alpha">Lvl</th>
                 <th class="text-center py-1">ULMG</th>
                 {% include "includes/hitter_stat_headers.html" %}
-                {% if own_team and protect_tab or own_team and roster_tab %}
-                <th class="text-center py-1 hidden sm:table-cell">Protect</th>
+                {% if own_team and roster_tab %}
+                <th class="text-center py-1 hidden sm:table-cell">Roster</th>
                 {% endif %}
             </tr>
         </thead>
@@ -90,7 +90,7 @@
                 {% if p.is_ulmg_2h_c %}C {% endif %}
             </td>
             {% include "includes/hitter_stat_cells_player.html" %}
-            {% if own_team and protect_tab or own_team and roster_tab %}
+            {% if own_team and roster_tab %}
             <td class="text-center py-1 hidden sm:table-cell">
                 {% include "includes/player_protect_actions.html" %}
             </td>
@@ -116,8 +116,8 @@
                 <th class="text-center py-1 sortable" data-sortable-type="alpha">Lvl</th>
                 <th class="text-center py-1">ULMG</th>
                 {% include "includes/pitcher_stat_headers.html" %}
-                {% if own_team and protect_tab or own_team and roster_tab %}
-                <th class="text-center py-1 hidden sm:table-cell">Protect</th>
+                {% if own_team and roster_tab %}
+                <th class="text-center py-1 hidden sm:table-cell">Roster</th>
                 {% endif %}
             </tr>
         </thead>
@@ -139,7 +139,7 @@
                 {% if p.is_ulmg_2h_p %}P {% endif %}
             </td>
             {% include "includes/pitcher_stat_cells_player.html" %}
-            {% if own_team and protect_tab or own_team and roster_tab %}
+            {% if own_team and roster_tab %}
             <td class="text-center py-1 hidden sm:table-cell">
                 {% include "includes/player_protect_actions.html" %}
             </td>

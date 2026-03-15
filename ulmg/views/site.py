@@ -173,12 +173,14 @@ def team_detail(request, abbreviation):
             is_ulmg_aaa_roster=False,
             is_ulmg_reserve=False
         ).count()
+        team_has_asr = models.Player.objects.filter(team=team, is_ulmg_reserve=True).exists()
         level_dist = list(team_players.values("level_order").annotate(Count("level_order")).order_by("level_order"))
         hitters = list(team_players.exclude(position="P").order_by("position", "-level_order", "last_name", "first_name"))
         pitchers = list(team_players.filter(position__icontains="P").order_by("-level_order", "last_name", "first_name"))
         return {
             "35_roster_count": roster_35,
             "mlb_roster_count": mlb_count,
+            "team_has_asr": team_has_asr,
             "level_distribution": level_dist,
             "num_owned": len(hitters) + len(pitchers),
             "hitters": hitters,
@@ -189,6 +191,7 @@ def team_detail(request, abbreviation):
     roster_data = _get_team_roster_data()
     context["35_roster_count"] = roster_data["35_roster_count"]
     context["mlb_roster_count"] = roster_data["mlb_roster_count"]
+    context["team_has_asr"] = roster_data["team_has_asr"]
     context["level_distribution"] = roster_data["level_distribution"]
     context["num_owned"] = roster_data["num_owned"]
     context["hitters"] = roster_data["hitters"]
