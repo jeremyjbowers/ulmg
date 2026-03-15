@@ -562,8 +562,6 @@ def draft_action(request, pickid):
 
     if playerid:
         draftpick.player = get_object_or_404(models.Player, pk=playerid)
-        if draftpick.player.team and draftpick.player.team != draftpick.team:
-            draftpick.losing_team = draftpick.player.team
         draftpick.player.team = draftpick.team
         draftpick.player.is_ulmg_mlb_roster = True
         draftpick.player.save()
@@ -595,8 +593,6 @@ def draft_action(request, pickid):
             ps = models.Player.objects.filter(name__icontains=name)
         if len(ps) == 1:
             draftpick.player = ps[0]
-            if draftpick.player.team and draftpick.player.team != draftpick.team:
-                draftpick.losing_team = draftpick.player.team
             draftpick.player.team = draftpick.team
             draftpick.player.is_ulmg_mlb_roster = True
             draftpick.player.save()

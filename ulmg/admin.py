@@ -339,7 +339,7 @@ class DraftPickAdmin(admin.ModelAdmin):
     list_display = ["year", "season", "slug", "overall_pick_number", "team"]
     list_filter = ["team", "year", "season"]
     list_editable = []
-    autocomplete_fields = ["player", "team", "original_team", "losing_team"]
+    autocomplete_fields = ["player", "team", "original_team"]
     search_fields = [
         "player__name",
         "team__city",
@@ -359,7 +359,6 @@ class DraftPickAdmin(admin.ModelAdmin):
                     ("player", "player_name"),
                     "skipped",
                     ("draft_round", "overall_pick_number", "pick_number"),
-                    ("losing_team", "compensatory_for"),
                 ),
             },
         ),
