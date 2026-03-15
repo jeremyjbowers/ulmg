@@ -1026,6 +1026,23 @@ class DraftPick(BaseModel):
         related_name="original_team",
     )
     skipped = models.BooleanField(default=False)
+    # When a player is taken from another team, that team gets a compensatory pick at end of round
+    losing_team = models.ForeignKey(
+        Team,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="draftpick_losing_team",
+        help_text="Team that lost the player (for compensatory pick)",
+    )
+    compensatory_for = models.ForeignKey(
+        "self",
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="compensatory_picks",
+        help_text="If this is a compensatory pick, the pick that triggered it",
+    )
 
     class Meta:
         ordering = ["-year", "-season", "draft_type", "draft_round", "pick_number"]
@@ -1104,7 +1121,50 @@ class DraftPick(BaseModel):
         if self.player:
             self.player_name = self.player.name
 
+    def _ensure_compensatory_pick(self, losing_team):
+        """
+        Create compensatory picks for all picks in this round that took a player from
+        another team, in the order those picks were made. Ensures correct ordering
+        even if picks are saved out of order.
+        """
+        if self.compensatory_picks.exists():
+            return
+        round_filters = dict(
+            year=self.year,
+            season=self.season,
+            draft_type=self.draft_type,
+            draft_round=self.draft_round,
+        )
+        already_compensated = DraftPick.objects.filter(
+            **round_filters, compensatory_for__isnull=False
+        ).values_list("compensatory_for_id", flat=True)
+        picks_needing_comp = DraftPick.objects.filter(
+            **round_filters, losing_team__isnull=False
+        ).exclude(pk__in=already_compensated).order_by("pick_number")
+
+        next_pick_number = 16 + len(already_compensated)
+        for trigger_pick in picks_needing_comp:
+            next_pick_number += 1
+            DraftPick.objects.create(
+                year=trigger_pick.year,
+                season=trigger_pick.season,
+                draft_type=trigger_pick.draft_type,
+                draft_round=trigger_pick.draft_round,
+                original_team=trigger_pick.losing_team,
+                team=trigger_pick.losing_team,
+                pick_number=next_pick_number,
+                compensatory_for=trigger_pick,
+            )
+
     def save(self, *args, **kwargs):
+        # Capture losing team BEFORE we update the player (for compensatory pick creation)
+        losing_team = None
+        if self.player and self.team and self.player.team and self.player.team != self.team:
+            losing_team = self.player.team
+            self.losing_team = losing_team
+        elif not self.player:
+            self.losing_team = None
+
         ## Need to comment this part out if saving archived draft picks
         ## that have a player name only but not a player object
         ## so that players are not swapped to a different team.
@@ -1123,6 +1183,10 @@ class DraftPick(BaseModel):
         self.set_player_name()
 
         super().save(*args, **kwargs)
+
+        # Create compensatory pick when a player is taken from another team (open draft only)
+        if losing_team and self.draft_type == self.OPEN_TYPE and self.draft_round and self.year and self.season:
+            self._ensure_compensatory_pick(losing_team)
 
 
 class Trade(BaseModel):

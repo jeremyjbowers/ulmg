@@ -317,25 +317,17 @@ def draft_admin(request, year, season, draft_type):
             players.append(format_player_for_autocomplete(p))
 
         if season == "offseason":
-            # 35-man roster is a form of protection for offseason drafts?
+            # Unprotected A/V players: owned but not on 35-man roster (same logic as /players/unprotected/)
             current_season = settings.CURRENT_SEASON
-            # Get players not on 35-man roster via PlayerStatSeason
             players_not_35man = models.Player.objects.filter(
                 is_owned=True,
-                level__in=["V","A"],
+                level__in=["V", "A"],
                 team__isnull=False,
-                is_ulmg_1h_c=False,
-                is_ulmg_1h_p=False,
-                is_ulmg_1h_pos=False,
-                is_ulmg_reserve=False,
             ).exclude(
                 playerstatseason__season=current_season,
-                playerstatseason__is_ulmg35man_roster=True
-            ).exclude(
-                playerstatseason__season=current_season,
-                playerstatseason__is_ulmg_mlb_roster=True
-            ).values('current_mlb_org', 'mlbam_id', 'id', 'position', 'name')
-            
+                playerstatseason__is_ulmg35man_roster=True,
+            ).distinct().values('current_mlb_org', 'mlbam_id', 'id', 'position', 'name')
+
             for p in players_not_35man:
                 players.append(format_player_for_autocomplete(p))
 
