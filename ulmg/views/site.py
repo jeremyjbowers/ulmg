@@ -313,15 +313,15 @@ def draft_admin(request, year, season, draft_type):
 
     if draft_type == "open":
         players = []
-        for p in models.Player.objects.filter(team__isnull=True).exclude(level="B").values('current_mlb_org', 'mlbam_id', 'id', 'position', 'name'):
+        for p in models.Player.objects.filter(team__isnull=True).values('current_mlb_org', 'mlbam_id', 'id', 'position', 'name'):
             players.append(format_player_for_autocomplete(p))
 
         if season == "offseason":
-            # Unprotected A/V players: owned but not on 35-man roster (same logic as /players/unprotected/)
+            # Unprotected A/V/B players: owned but not on 35-man roster (same logic as /players/unprotected/)
             current_season = settings.CURRENT_SEASON
             players_not_35man = models.Player.objects.filter(
                 is_owned=True,
-                level__in=["V", "A"],
+                level__in=["V", "A", "B"],
                 team__isnull=False,
             ).exclude(
                 playerstatseason__season=current_season,
