@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% load ulmg_tags %}
+
+{% block content %}
+<div class="pt-24 md:pt-32">
+<div class="container mx-auto px-4 py-6">
+
+<h1 class="text-2xl font-bold mb-4">Unprotected A/V Players</h1>
+<p class="text-sm text-gray-600 mb-6">Owned A and V level players not on the 35-man protected roster. These players are eligible for the Open Draft.</p>
+
+{% if hitters %}
+{% regroup hitters by position as position_players %}
+{% for position in position_players %}
+<div class="mb-8">
+    <h2 class="text-lg font-bold mb-2 border-b border-gray-300 pb-1">{{ position.grouper }} ({{ position.list|length }})</h2>
+    <div class="overflow-x-auto">
+    <table class="w-full text-xs border-collapse min-w-max" data-sortable>
+        <thead class="sticky top-0 bg-white z-10">
+            <tr class="border-b border-gray-300">
+                <th class="text-left py-1 sortable sticky left-0 bg-white z-20" data-sortable-type="alpha">Name</th>
+                <th class="text-center py-1 sortable" data-sortable-type="alpha">ULMG</th>
+                <th class="text-center py-1 sortable" data-sortable-type="numeric">Age</th>
+                <th class="text-center py-1 sortable" data-sortable-type="alpha">Lvl</th>
+                {% include "includes/hitter_stat_headers.html" %}
+            </tr>
+        </thead>
+        <tbody>
+        {% for p in position.list %}
+        <tr class="border-b border-gray-100">
+            {% include "includes/player_name.html" %}
+            <td class="text-center py-1">{% if p.team %}<a href="/teams/{{ p.team.abbreviation|lower }}/" class="underline">{{ p.team.abbreviation }}</a>{% else %}-{% endif %}</td>
+            <td class="text-center py-1">{{ p.age|default_if_none:"-" }}</td>
+            <td class="text-center py-1">{{ p.level|default_if_none:"" }}</td>
+            {% include "includes/hitter_stat_cells_player.html" %}
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</div>
+{% endfor %}
+{% endif %}
+
+{% if pitchers %}
+<div class="mb-8">
+    <h2 class="text-lg font-bold mb-2 border-b border-gray-300 pb-1">P ({{ pitchers|length }})</h2>
+    <div class="overflow-x-auto">
+    <table class="w-full text-xs border-collapse min-w-max" data-sortable>
+        <thead class="sticky top-0 bg-white z-10">
+            <tr class="border-b border-gray-300">
+                <th class="text-left py-1 sortable sticky left-0 bg-white z-20" data-sortable-type="alpha">Name</th>
+                <th class="text-center py-1 sortable" data-sortable-type="alpha">ULMG</th>
+                <th class="text-center py-1 sortable" data-sortable-type="numeric">Age</th>
+                <th class="text-center py-1 sortable" data-sortable-type="alpha">Lvl</th>
+                {% include "includes/pitcher_stat_headers.html" %}
+            </tr>
+        </thead>
+        <tbody>
+        {% for p in pitchers %}
+        <tr class="border-b border-gray-100">
+            {% include "includes/player_name.html" %}
+            <td class="text-center py-1">{% if p.team %}<a href="/teams/{{ p.team.abbreviation|lower }}/" class="underline">{{ p.team.abbreviation }}</a>{% else %}-{% endif %}</td>
+            <td class="text-center py-1">{{ p.age|default_if_none:"-" }}</td>
+            <td class="text-center py-1">{{ p.level|default_if_none:"" }}</td>
+            {% include "includes/pitcher_stat_cells_player.html" %}
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</div>
+{% endif %}
+
+{% if not hitters and not pitchers %}
+<p class="text-gray-600">No unprotected A/V players at this time.</p>
+{% endif %}
+
+</div>
+</div>
+{% endblock %}

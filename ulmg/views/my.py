@@ -12,11 +12,13 @@ from django.http import JsonResponse
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
+from django.views.decorators.cache import never_cache
 import ujson as json
 
 from ulmg import models, utils
 
 
+@never_cache
 @login_required
 def my_team(request):
     context = utils.build_context(request)
@@ -24,6 +26,7 @@ def my_team(request):
     return redirect(f"/teams/{ team.abbreviation }/")
 
 
+@never_cache
 @login_required
 def my_wishlist_beta(request):
     context = utils.build_context(request)
@@ -97,6 +100,7 @@ def my_wishlist_beta(request):
     return render(request, "my/wishlist_beta.html", context)
 
 
+@never_cache
 @login_required
 def my_draft_prep(request, list_type):
     context = utils.build_context(request)

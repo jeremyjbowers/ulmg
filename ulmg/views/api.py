@@ -9,6 +9,7 @@ from django.db.models import Count, Avg, Sum, Max, Min, Q
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
+from django.views.decorators.cache import never_cache
 from django.conf import settings
 import ujson as json
 
@@ -455,6 +456,7 @@ def player_action(request, playerid, action):
     return HttpResponse("error")
 
 
+@never_cache
 @login_required
 def draft_api(request, year, season, draft_type):
     context = {}
@@ -471,6 +473,7 @@ def draft_api(request, year, season, draft_type):
     return JsonResponse(context)
 
 
+@never_cache
 @login_required
 def draft_watch_status(request, year, season, draft_type):
     """
@@ -533,6 +536,7 @@ def draft_watch_status(request, year, season, draft_type):
     return JsonResponse(response_data)
 
 
+@never_cache
 @login_required
 @csrf_exempt
 def draft_action(request, pickid):
@@ -807,6 +811,30 @@ def player_detail(request):
     return None
 
 
+@never_cache
+@csrf_exempt
+def owned_players(request):
+    """
+    API endpoint returning owned players from the Player model.
+    Returns name, level, position, mlbid, fg_id. No stats.
+    """
+    if request.method != "GET":
+        return JsonResponse({"error": "Method not allowed"}, status=405)
+    players = models.Player.objects.filter(is_owned=True).order_by("last_name", "first_name")
+    payload = [
+        {
+            "name": p.name,
+            "level": p.level,
+            "position": p.position,
+            "mlbid": p.mlbam_id,
+            "fg_id": p.fg_id,
+        }
+        for p in players
+    ]
+    return JsonResponse({"players": payload})
+
+
+@never_cache
 @csrf_exempt
 def player_owned(request):
     if request.method == "POST":

@@ -11,20 +11,20 @@ from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib import messages
+from django.views.decorators.cache import never_cache
 
 import ujson as json
 from datetime import datetime
 
 from ulmg import models, utils
 from ulmg.cache_utils import (
-    cache_key,
-    get_cached_or_compute,
     get_all_cache_keys,
     delete_cache_key_for_admin,
     is_valkey_active,
 )
 
 
+@never_cache
 def trade_block(request):
     context = utils.build_context(request)
     context['hitters'] = models.Player.objects.filter(team__isnull=False, is_trade_block=True).exclude(position="P").order_by('position')
@@ -33,6 +33,7 @@ def trade_block(request):
     return render(request, "trade_block.html", context)
 
 
+@never_cache
 def index(request):
     context = utils.build_context(request)
     season = utils.get_current_season()
@@ -75,14 +76,16 @@ def index(request):
             "-player__level_order", "player__last_name", "player__first_name"
         ))
 
-    context["teams"] = get_cached_or_compute(cache_key("index", "teams", season), _get_teams)
-    context["hitters"] = get_cached_or_compute(cache_key("index", "hitters", season), _get_hitter_stats)
-    context["pitchers"] = get_cached_or_compute(cache_key("index", "pitchers", season), _get_pitcher_stats)
+    # Real-time: no cache for index (unowned lists change during drafts)
+    context["teams"] = _get_teams()
+    context["hitters"] = _get_hitter_stats()
+    context["pitchers"] = _get_pitcher_stats()
     context["season"] = season
 
     return render(request, "index.html", context)
 
 
+@never_cache
 def player(request, playerid):
     context = utils.build_context(request)
 
@@ -124,7 +127,8 @@ def player(request, playerid):
             "pitcher_stats": pitcher_stats,
         }
 
-    player_data = get_cached_or_compute(cache_key("player", playerid), _get_player_data)
+    # Real-time: no cache for player (ownership changes during drafts)
+    player_data = _get_player_data()
     context["p"] = player_data["p"]
     context["transactions"] = player_data["transactions"]
     context["hitter_stats"] = player_data["hitter_stats"]
@@ -133,6 +137,7 @@ def player(request, playerid):
     return render(request, "player_detail.html", context)
 
 
+@never_cache
 def team_detail(request, abbreviation):
     context = utils.build_context(request)
     team = get_object_or_404(models.Team, abbreviation__icontains=abbreviation)
@@ -180,7 +185,8 @@ def team_detail(request, abbreviation):
             "pitchers": pitchers,
         }
 
-    roster_data = get_cached_or_compute(cache_key("team", team_abbr, "roster", season), _get_team_roster_data)
+    # Real-time: no cache for team roster (used by /my/team and changes during drafts)
+    roster_data = _get_team_roster_data()
     context["35_roster_count"] = roster_data["35_roster_count"]
     context["mlb_roster_count"] = roster_data["mlb_roster_count"]
     context["level_distribution"] = roster_data["level_distribution"]
@@ -191,6 +197,7 @@ def team_detail(request, abbreviation):
     return render(request, "team.html", context)
 
 
+@never_cache
 def team_other(request, abbreviation):
     context = utils.build_context(request)
     team = get_object_or_404(models.Team, abbreviation__icontains=abbreviation)
@@ -225,7 +232,8 @@ def team_other(request, abbreviation):
             "picks": picks,
         }
 
-    other_data = get_cached_or_compute(cache_key("team", team_abbr, "other"), _get_team_other_data)
+    # Real-time: no cache for team other (trades/picks change during drafts)
+    other_data = _get_team_other_data()
     context["level_distribution"] = other_data["level_distribution"]
     context["num_owned"] = other_data["num_owned"]
     context["mlb_roster_count"] = other_data["mlb_roster_count"]
@@ -260,12 +268,14 @@ def cache_admin(request):
     return render(request, "cache_admin.html", context)
 
 
+@never_cache
 def draft_list(request):
     """Simple draft index page listing all drafts from settings.DRAFTS."""
     context = utils.build_context(request)
     return render(request, "draft_list.html", context)
 
 
+@never_cache
 def draft_admin(request, year, season, draft_type):
     context = utils.build_context(request)
     context["picks"] = models.DraftPick.objects.filter(
@@ -348,6 +358,7 @@ def draft_admin(request, year, season, draft_type):
     return render(request, "draft_admin.html", context)
 
 
+@never_cache
 def draft_watch(request, year, season, draft_type):
     context = utils.build_context(request)
     context["made_picks"] = (
@@ -367,6 +378,7 @@ def draft_watch(request, year, season, draft_type):
     return render(request, "draft_watch.html", context)
 
 
+@never_cache
 def draft_recap(request, year, season, draft_type):
     context = utils.build_context(request)
     context["picks"] = models.DraftPick.objects.filter(
@@ -379,6 +391,7 @@ def draft_recap(request, year, season, draft_type):
     return render(request, "draft_recap.html", context)
 
 
+@never_cache
 def player_available_midseason(request):
     context = utils.build_context(request)
     current_season = settings.CURRENT_SEASON
@@ -441,6 +454,36 @@ def player_available_midseason(request):
     return render(request, "search.html", context)
 
 
+@never_cache
+def unprotected_players(request):
+    """
+    Owned A and V level players not on the 35-man protected roster.
+    These are players owners chose not to protect for the Open Draft.
+    """
+    context = utils.build_context(request)
+    current_season = settings.CURRENT_SEASON
+
+    available_players = models.Player.objects.filter(
+        is_owned=True,
+        level__in=["A", "V"],
+        team__isnull=False,
+    ).exclude(
+        playerstatseason__season=current_season,
+        playerstatseason__is_ulmg35man_roster=True,
+    ).distinct()
+
+    context["hitters"] = available_players.exclude(position="P").order_by(
+        "position", "-level_order", "last_name", "first_name"
+    )
+    context["pitchers"] = available_players.filter(position__icontains="P").order_by(
+        "-level_order", "last_name", "first_name"
+    )
+    context["season"] = current_season
+
+    return render(request, "players_unprotected.html", context)
+
+
+@never_cache
 def player_available_offseason(request):
     context = utils.build_context(request)
     current_season = settings.CURRENT_SEASON
@@ -468,6 +511,7 @@ def player_available_offseason(request):
     return render(request, "search.html", context)
 
 
+@never_cache
 def search_by_name(request):
     """
     Search for players by name only.
@@ -495,6 +539,7 @@ def search_by_name(request):
     return render(request, "search.html", context)
 
 
+@never_cache
 def filter_players(request):
     """
     Filter players by various criteria (level, position, ownership status, stats, etc.).

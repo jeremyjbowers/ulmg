@@ -64,5 +64,9 @@ class LoginRequiredMiddleware:
             request.path.startswith('/media/') or
             request.path.startswith('/favicon.ico')):
             return True
+
+        # Exempt API endpoints (may need public access for external consumers)
+        if request.path.startswith('/api/'):
+            return True
             
         return False 
