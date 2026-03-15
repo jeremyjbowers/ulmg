@@ -563,7 +563,8 @@ def draft_action(request, pickid):
     if playerid:
         draftpick.player = get_object_or_404(models.Player, pk=playerid)
         draftpick.player.team = draftpick.team
-        draftpick.player.is_ulmg_mlb_roster = True
+        if draftpick.season == "midseason" and draftpick.draft_type == "open":
+            draftpick.player.is_ulmg_mlb_roster = True
         draftpick.player.save()
         draftpick.save()
 
@@ -594,7 +595,8 @@ def draft_action(request, pickid):
         if len(ps) == 1:
             draftpick.player = ps[0]
             draftpick.player.team = draftpick.team
-            draftpick.player.is_ulmg_mlb_roster = True
+            if draftpick.season == "midseason" and draftpick.draft_type == "open":
+                draftpick.player.is_ulmg_mlb_roster = True
             draftpick.player.save()
         else:
             draftpick.player_name = name
