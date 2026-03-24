@@ -141,7 +141,7 @@ TEAM_WISHLIST_TAB = False
 
 TEAM_SEASON_HALF = "1h"
 CURRENT_SEASON = 2026
-CURRENT_SEASON_TYPE = "offseason"
+CURRENT_SEASON_TYPE = "midseason"
 
 ROSTER_TEAM_IDS = [
     ("1", "LAA", "Los Angeles Angels"),
@@ -246,6 +246,8 @@ CSV_COLUMNS = [
 ]
 
 DRAFTS = [
+    {"title": "2026 Midseason AA", "url": "/draft/2026/midseason/aa/"},
+    {"title": "2026 Midseason Open", "url": "/draft/2026/midseason/open/"},
     {"title": "2026 Offseason AA", "url": "/draft/2026/offseason/aa/"},
     {"title": "2026 Offseason Open", "url": "/draft/2026/offseason/open/"},
     {"title": "2025 Midseason AA", "url": "/draft/2025/midseason/aa/"},

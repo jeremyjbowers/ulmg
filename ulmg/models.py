@@ -630,7 +630,7 @@ class Player(BaseModel):
         """
         Get the best PlayerStatSeason for this player, sorted by newest season
         and highest classification (1-mlb is highest, 5-college is lowest).
-        Caps at get_current_season() so we show 2025 during offseason, 2026 during midseason.
+        Caps at get_current_season() (prior calendar year during offseason, CURRENT_SEASON during midseason).
         Returns None if no stat seasons exist.
 
         If prefetched data is available (via 'all_stat_seasons' attribute),

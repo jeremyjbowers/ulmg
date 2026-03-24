@@ -1,4 +1,5 @@
-from django.test import TestCase
+from django.test import TestCase, override_settings
+
 from ulmg import utils
 
 
@@ -25,3 +26,11 @@ class UtilsTestCase(TestCase):
 
         for b in ["nope", "yup", "yessir", 12345, True]:
             self.assertEqual(utils.str_to_bool(b), None)
+
+    @override_settings(CURRENT_SEASON=2026, CURRENT_SEASON_TYPE="offseason")
+    def test_get_current_season_offseason_is_prior_year_for_stats(self):
+        self.assertEqual(utils.get_current_season(), 2025)
+
+    @override_settings(CURRENT_SEASON=2026, CURRENT_SEASON_TYPE="midseason")
+    def test_get_current_season_midseason_matches_current_season(self):
+        self.assertEqual(utils.get_current_season(), 2026)
