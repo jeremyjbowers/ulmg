@@ -5,8 +5,8 @@
 <td data-value="{% if best_stats %}{{ best_stats.season }}{% else %}-1{% endif %}">
     {% if best_stats %}{{ best_stats.season }}{% else %}-{% endif %}
 </td>
-<td data-value="{% if best_stats and best_stats.roster_status %}{{ best_stats.roster_status }}{% else %}-{% endif %}">
-    {% if best_stats and best_stats.roster_status %}{{ best_stats.roster_status }}{% else %}-{% endif %}
+<td data-value="{% if best_stats and best_stats.role_type %}{{ best_stats.role_type }}{% else %}-{% endif %}">
+    {% if best_stats and best_stats.role_type %}{{ best_stats.role_type }}{% else %}-{% endif %}
 </td>
 {% if not compact_roster %}
 <td data-value="{% if best_stats and best_stats.pitch_stats.level %}2{% else %}{% if best_stats and best_stats.clean_classification == "mlb" %}1{% elif best_stats and best_stats.clean_classification == "npb" %}3{% elif best_stats and best_stats.clean_classification == "kbo" %}4{% elif best_stats and best_stats.clean_classification == "college" %}5{% else %}6{% endif %}{% endif %}">
