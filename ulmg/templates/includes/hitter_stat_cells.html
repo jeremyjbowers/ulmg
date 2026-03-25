@@ -3,14 +3,12 @@
 
 <td class="cell-max-75">{% with best_stats=p.player.get_best_stat_season %}{% if best_stats and best_stats.defense_display %}{{ best_stats.defense_display }}{% else %}{{ p.player.position|default_if_none:"—" }}{% endif %}{% endwith %}</td>
 
-<!-- <td data-value="{% if p.player.roster_status != "" %}{{ p.player.roster_status|default_if_none:"-" }}{% else %}-{% endif %}">
-    {% if p.player.roster_status != "" %}{{ p.player.roster_status|default_if_none:"-" }}{% else %}-{% endif %}
-</td> -->
-
-<td data-value="{{ p.player.role_type|default_if_none:"-" }}">
-    {{ p.player.role_type|default_if_none:"-" }}
+<td data-value="{{ p.season|default_if_none:'-1' }}">{{ p.season|default_if_none:"-" }}</td>
+<td data-value="{% if p.roster_status %}{{ p.roster_status }}{% else %}-{% endif %}">
+    {% if p.roster_status %}{{ p.roster_status }}{% else %}-{% endif %}
 </td>
 
+{% if not compact_roster %}
 <td data-value="{% if p.hit_stats.level %}2{% else %}{% if p.clean_classification == "mlb" %}1{% elif p.clean_classification == "npb" %}3{% elif p.clean_classification == "kbo" %}4{% elif p.clean_classification == "college" %}5{% else %}6{% endif %}{% endif %}">
     {% if p.hit_stats.level %}
         {{ p.hit_stats.level }}
@@ -30,8 +28,9 @@
 </td>
 
 <td data-value="{% if p.clean_classification %}{{ p.season }} {{ p.clean_classification|default_if_none:"-" }}{% else %}-{% endif %}">
-    {% if p.clean_classification %}{{ p.season }} {{ p.clean_classification|default_if_none:"-" }}{% else %}-{% endif %}
+    {% if p.clean_classification %}{{ p.clean_classification }}{% else %}-{% endif %}
 </td>
+{% endif %}
 
 <td data-value="{% if p.hit_stats %}{{ p.hit_stats.pa|default_if_none:"-999" }}{% else %}-999{% endif %}">
     {% if p.hit_stats %}{% if p.hit_stats.pa > 0 %}{{ p.hit_stats.pa|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}

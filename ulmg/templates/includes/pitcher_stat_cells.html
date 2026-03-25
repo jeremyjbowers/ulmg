@@ -1,14 +1,12 @@
 {% load ulmg_tags %}
 <td>{{ p.player.current_mlb_org|default_if_none:"-" }}</td>
 
-<!-- <td data-value="{% if p.player.roster_status %}{{ p.player.roster_status|default_if_none:"-" }}{% else %}-{% endif %}">
-    {% if p.player.roster_status %}{{ p.player.roster_status|default_if_none:"-" }}{% else %}-{% endif %}
-</td> -->
-
-<td data-value="{{ p.player.role_type|default_if_none:"-" }}">
-    {{ p.player.role_type|default_if_none:"-" }}
+<td data-value="{{ p.season|default_if_none:'-1' }}">{{ p.season|default_if_none:"-" }}</td>
+<td data-value="{% if p.roster_status %}{{ p.roster_status }}{% else %}-{% endif %}">
+    {% if p.roster_status %}{{ p.roster_status }}{% else %}-{% endif %}
 </td>
 
+{% if not compact_roster %}
 <td data-value="{% if p.pitch_stats.level %}2{% else %}{% if p.clean_classification == "mlb" %}1{% elif p.clean_classification == "npb" %}3{% elif p.clean_classification == "kbo" %}4{% elif p.clean_classification == "college" %}5{% else %}6{% endif %}{% endif %}">
     {% if p.pitch_stats.level %}
         {{ p.pitch_stats.level }}
@@ -28,8 +26,9 @@
 </td>
 
 <td data-value="{% if p.clean_classification %}{{ p.season }} {{ p.clean_classification|default_if_none:"-" }}{% else %}-{% endif %}">
-    {% if p.clean_classification %}{{ p.season }} {{ p.clean_classification|default_if_none:"-" }}{% else %}-{% endif %}
+    {% if p.clean_classification %}{{ p.clean_classification }}{% else %}-{% endif %}
 </td>
+{% endif %}
 
 <td data-value="{% if p.pitch_stats %}{% if p.pitch_stats.ip > 0 %}{{ p.pitch_stats.g|default_if_none:"-999" }}{% else %}-999{% endif %}{% else %}-999{% endif %}">{% if p.pitch_stats %}{% if p.pitch_stats.ip > 0 %}{{ p.pitch_stats.g|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}</td>
 <td data-value="{% if p.pitch_stats %}{% if p.pitch_stats.ip > 0 %}{{ p.pitch_stats.gs|default_if_none:"-999" }}{% else %}-999{% endif %}{% else %}-999{% endif %}">{% if p.pitch_stats %}{% if p.pitch_stats.ip > 0 %}{{ p.pitch_stats.gs|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}</td>

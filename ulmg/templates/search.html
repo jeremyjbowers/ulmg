@@ -44,7 +44,6 @@
                 <th class="text-center py-1 sortable" data-sortable-type="alpha">ULMG</th>
                 <th class="text-center py-1 sortable" data-sortable-type="numeric">Age</th>
                 <th class="text-center py-1 sortable" data-sortable-type="alpha">Lvl</th>
-                <th class="text-center py-1 sortable" data-sortable-type="alpha">Status</th>
                 {% include "includes/hitter_stat_headers.html" %}
             </tr>
         </thead>
@@ -82,7 +81,6 @@
             </td>
             <td class="text-center py-1">{% if p.player %}{{ p.player.age|default_if_none:"-" }}{% else %}{{ p.age|default_if_none:"-" }}{% endif %}</td>
             <td class="text-center py-1">{% if p.player %}{{ p.player.level|default_if_none:"" }}{% else %}{{ p.level|default_if_none:"" }}{% endif %}</td>
-            <td class="text-center py-1">{% if p.player %}{{ p.player.roster_status|default_if_none:"" }}{% else %}{{ p.roster_status|default_if_none:"" }}{% endif %}</td>
             {% if p.season %}
                 {% include "includes/hitter_stat_cells.html" %}
             {% else %}
@@ -112,7 +110,6 @@
                 <th class="text-center py-1 sortable" data-sortable-type="alpha">ULMG</th>
                 <th class="text-center py-1 sortable" data-sortable-type="numeric">Age</th>
                 <th class="text-center py-1 sortable" data-sortable-type="alpha">Lvl</th>
-                <th class="text-center py-1 sortable" data-sortable-type="alpha">Status</th>
                 {% include "includes/pitcher_stat_headers.html" %}
             </tr>
         </thead>
@@ -150,7 +147,6 @@
             </td>
             <td class="text-center py-1">{% if p.player %}{{ p.player.age|default_if_none:"-" }}{% else %}{{ p.age|default_if_none:"-" }}{% endif %}</td>
             <td class="text-center py-1">{% if p.player %}{{ p.player.level|default_if_none:"" }}{% else %}{{ p.level|default_if_none:"" }}{% endif %}</td>
-            <td class="text-center py-1">{% if p.player %}{{ p.player.roster_status|default_if_none:"" }}{% else %}{{ p.roster_status|default_if_none:"" }}{% endif %}</td>
             {% if p.season %}
                 {% include "includes/pitcher_stat_cells.html" %}
             {% else %}
