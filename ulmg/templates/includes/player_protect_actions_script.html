@@ -18,8 +18,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function updateRosterDisplay() {
-        const rosterDisplay = document.querySelector('.roster-item button:last-child span');
-        if (rosterDisplay) rosterDisplay.textContent = mlbRosterCount;
+        const el = document.getElementById('roster-mlb-count');
+        if (el) el.textContent = mlbRosterCount;
     }
     
     function updateMlbButtonVisibility() {
