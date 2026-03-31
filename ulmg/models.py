@@ -626,17 +626,26 @@ class Player(BaseModel):
         else:
             self.is_ulmg_protected = False
 
+    @property
+    def is_ulmg_active_mlb_roster(self):
+        """True when the player counts toward the league MLB (30-man) roster in ULMG."""
+        return (
+            self.is_ulmg_mlb_roster
+            and not self.is_ulmg_aaa_roster
+            and not self.is_ulmg_reserve
+        )
+
     def get_best_stat_season(self):
         """
         Get the best PlayerStatSeason for this player, sorted by newest season
         and highest classification (1-mlb is highest, 5-college is lowest).
-        Caps at get_current_season() (prior calendar year during offseason, CURRENT_SEASON during midseason).
+        Caps at utils.get_stats_display_season_cap() (see STATS_DISPLAY_SEASON_CAP).
         Returns None if no stat seasons exist.
 
         If prefetched data is available (via 'all_stat_seasons' attribute),
         uses that instead of querying the database.
         """
-        stats_season = utils.get_current_season()
+        stats_season = utils.get_stats_display_season_cap()
 
         # Check if prefetched stat seasons are available (from prefetch_related)
         if hasattr(self, 'all_stat_seasons') and self.all_stat_seasons:

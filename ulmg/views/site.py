@@ -155,14 +155,14 @@ def team_detail(request, abbreviation):
     if request.user.is_superuser:
         context["own_team"] = True
 
-    season = utils.get_current_season()
+    stat_season = utils.get_stats_display_season_cap()
     team_abbr = team.abbreviation.upper()
 
     def _get_team_roster_data():
         team_players = models.Player.objects.filter(team=team).select_related('team').prefetch_related(
             Prefetch(
                 'playerstatseason_set',
-                queryset=models.PlayerStatSeason.objects.filter(season=season, is_career=False).order_by('classification'),
+                queryset=models.PlayerStatSeason.objects.filter(season=stat_season, is_career=False).order_by('classification'),
                 to_attr='current_season_stats'
             )
         )

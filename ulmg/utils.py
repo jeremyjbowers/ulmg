@@ -98,6 +98,23 @@ def get_current_season():
     return season
 
 
+def get_stats_display_season_cap():
+    """
+    Latest calendar year used when choosing PlayerStatSeason rows for display (see Player.get_best_stat_season).
+    Defaults to get_current_season(). When STATS_DISPLAY_SEASON_CAP is set (e.g. 2025), display never uses a
+    later year than that value or than get_current_season(), whichever is lower.
+    """
+    natural = get_current_season()
+    cap = getattr(settings, "STATS_DISPLAY_SEASON_CAP", None)
+    if cap is None:
+        return natural
+    try:
+        cap_int = int(cap)
+    except (TypeError, ValueError):
+        return natural
+    return min(cap_int, natural)
+
+
 def get_strat_season():
     today = datetime.today()
     return get_ulmg_season(today) - 1
@@ -285,8 +302,8 @@ def parse_fg_fv(raw_fv_str):
 def build_context(request):
     context = {}
 
-    # Season for stat display (2025 during offseason when CURRENT_SEASON=2026, 2026 during midseason)
-    context["stats_season"] = get_current_season()
+    # Season for stat display (honors STATS_DISPLAY_SEASON_CAP when set)
+    context["stats_season"] = get_stats_display_season_cap()
 
     # to build the nav
     context["teamnav"] = models.Team.objects.all().order_by("division", "abbreviation")

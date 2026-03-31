@@ -63,6 +63,7 @@
                 <th class="text-left py-1 sortable sticky left-0 bg-white z-20" data-sortable-type="alpha">Name</th>
                 <th class="text-center py-1 sortable" data-sortable-type="numeric">Age</th>
                 <th class="text-center py-1 sortable" data-sortable-type="alpha">Lvl</th>
+                <th class="text-center py-1 sortable" data-sortable-type="alpha" title="ULMG MLB (30-man) roster">30</th>
                 {% include "includes/hitter_stat_headers.html" %}
             </tr>
         </thead>
@@ -74,6 +75,7 @@
             </td>
             <td class="text-center py-1">{{ p.age|default_if_none:"-" }}</td>
             <td class="text-center py-1">{{ p.level|default_if_none:"" }}</td>
+            <td class="text-center py-1">{% if p.is_ulmg_active_mlb_roster %}On{% else %}Off{% endif %}</td>
             {% include "includes/hitter_stat_cells_player.html" %}
         </tr>
         {% endfor %}
@@ -94,6 +96,7 @@
                 <th class="text-left py-1 sortable sticky left-0 bg-white z-20" data-sortable-type="alpha">Name</th>
                 <th class="text-center py-1 sortable" data-sortable-type="numeric">Age</th>
                 <th class="text-center py-1 sortable" data-sortable-type="alpha">Lvl</th>
+                <th class="text-center py-1 sortable" data-sortable-type="alpha" title="ULMG MLB (30-man) roster">30</th>
                 {% include "includes/pitcher_stat_headers.html" %}
             </tr>
         </thead>
@@ -105,6 +108,7 @@
             </td>
             <td class="text-center py-1">{{ p.age|default_if_none:"-" }}</td>
             <td class="text-center py-1">{{ p.level|default_if_none:"" }}</td>
+            <td class="text-center py-1">{% if p.is_ulmg_active_mlb_roster %}On{% else %}Off{% endif %}</td>
             {% include "includes/pitcher_stat_cells_player.html" %}
         </tr>
         {% endfor %}

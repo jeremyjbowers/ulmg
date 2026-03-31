@@ -1,5 +1,5 @@
-# ABOUTME: Tests for MLB roster count badge visibility on team roster pages.
-# ABOUTME: Badge is offseason-only; midseason uses CURRENT_SEASON_TYPE from settings.
+# ABOUTME: Tests for MLB roster UI on team roster pages and the 30-man column.
+# ABOUTME: Covers sticky badge (offseason + roster_tab) and per-row On/Off display.
 
 from django.contrib.auth.models import User
 from django.test import Client, TestCase, override_settings
@@ -42,3 +42,28 @@ class TeamRosterStatusDisplayTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "MLB Roster")
         self.assertContains(response, 'id="roster-mlb-count"')
+
+    def test_team_page_shows_30_man_column_on_off(self):
+        models.Player.objects.create(
+            name="On Thirty",
+            position="IF",
+            level="A",
+            team=self.team,
+            is_ulmg_mlb_roster=True,
+            is_ulmg_aaa_roster=False,
+            is_ulmg_reserve=False,
+        )
+        models.Player.objects.create(
+            name="Off Thirty",
+            position="IF",
+            level="A",
+            team=self.team,
+            is_ulmg_mlb_roster=False,
+        )
+        self.client.login(username="mgr", password="secret")
+        response = self.client.get("/teams/tst/")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'title="ULMG MLB (30-man) roster"')
+        content = response.content.decode()
+        self.assertGreaterEqual(content.count(">On</td>"), 1)
+        self.assertGreaterEqual(content.count(">Off</td>"), 1)
