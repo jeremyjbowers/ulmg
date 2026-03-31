@@ -75,7 +75,7 @@
             </td>
             <td class="text-center py-1">{{ p.age|default_if_none:"-" }}</td>
             <td class="text-center py-1">{{ p.level|default_if_none:"" }}</td>
-            <td class="text-center py-1">{% if p.is_ulmg_active_mlb_roster %}On{% else %}Off{% endif %}</td>
+            <td class="text-center py-1">{% if p.is_ulmg_active_mlb_roster %}✅ on{% endif %}</td>
             {% include "includes/hitter_stat_cells_player.html" %}
         </tr>
         {% endfor %}
@@ -108,7 +108,7 @@
             </td>
             <td class="text-center py-1">{{ p.age|default_if_none:"-" }}</td>
             <td class="text-center py-1">{{ p.level|default_if_none:"" }}</td>
-            <td class="text-center py-1">{% if p.is_ulmg_active_mlb_roster %}On{% else %}Off{% endif %}</td>
+            <td class="text-center py-1">{% if p.is_ulmg_active_mlb_roster %}✅ on{% endif %}</td>
             {% include "includes/pitcher_stat_cells_player.html" %}
         </tr>
         {% endfor %}

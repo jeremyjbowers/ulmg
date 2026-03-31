@@ -64,6 +64,6 @@ class TeamRosterStatusDisplayTestCase(TestCase):
         response = self.client.get("/teams/tst/")
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'title="ULMG MLB (30-man) roster"')
+        self.assertContains(response, "✅ on")
         content = response.content.decode()
-        self.assertGreaterEqual(content.count(">On</td>"), 1)
-        self.assertGreaterEqual(content.count(">Off</td>"), 1)
+        self.assertGreaterEqual(content.count("✅ on"), 1)
