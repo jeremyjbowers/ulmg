@@ -5,7 +5,7 @@ from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.shortcuts import render, get_object_or_404, redirect
-from django.db.models import Count, Avg, Sum, Max, Min, Q, Case, When, IntegerField
+from django.db.models import Count, Avg, Sum, Max, Min, Q, Case, When, IntegerField, Prefetch
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.http import JsonResponse
 from django.conf import settings
@@ -158,13 +158,25 @@ def my_team(request, abbreviation):
     )
     context["num_owned"] = team_players.count()
 
-    # Query for players directly instead of PlayerStatSeason objects
-    # Split into hitters and pitchers using Player objects
-    hitters = team_players.exclude(position="P").order_by(
-        "position", "-level_order", "last_name", "first_name"
+    stat_season = utils.get_stats_display_season_cap()
+    roster_players = team_players.select_related("team").prefetch_related(
+        Prefetch(
+            "playerstatseason_set",
+            queryset=models.PlayerStatSeason.objects.filter(
+                season=stat_season, is_career=False
+            ).order_by("classification"),
+            to_attr="current_season_stats",
+        )
     )
-    pitchers = team_players.filter(position="P").order_by(
-        "-level_order", "last_name", "first_name"
+    hitters = list(
+        roster_players.exclude(position="P").order_by(
+            "position", "-level_order", "last_name", "first_name"
+        )
+    )
+    pitchers = list(
+        roster_players.filter(position="P").order_by(
+            "-level_order", "last_name", "first_name"
+        )
     )
 
     context["hitters"] = hitters

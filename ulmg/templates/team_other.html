@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block prenav %}
-        {% if mlb_roster_count is not None %}{% include "includes/roster_status.html" %}{% endif %}
+        {% if own_team and protect_tab or own_team and roster_tab %}{% include "includes/roster_status.html" %}{% endif %}
 {% endblock %}
 
 {% block content %}

@@ -1,3 +1,4 @@
+from django.db.models import Prefetch
 from django.test import TestCase, override_settings
 
 from ulmg import models, utils
@@ -103,3 +104,116 @@ class PlayerUlmgActiveMlbRosterTestCase(TestCase):
         p.is_ulmg_reserve = True
         p.save()
         self.assertFalse(p.is_ulmg_active_mlb_roster)
+
+
+class PlayerStatSeasonDisplayRowTestCase(TestCase):
+    @override_settings(
+        CURRENT_SEASON=2026,
+        CURRENT_SEASON_TYPE="midseason",
+        STATS_DISPLAY_SEASON_CAP=None,
+    )
+    def test_stat_season_roster_resource_status_uses_roster_status_when_no_role(self):
+        p = models.Player.objects.create(name="Status Test", position="IF", level="A")
+        models.PlayerStatSeason.objects.create(
+            player=p,
+            season=2026,
+            classification="1-mlb",
+            roster_status="MINORS",
+            is_career=False,
+        )
+        self.assertEqual(p.stat_season_roster_resource_status, "MINORS")
+
+    @override_settings(
+        CURRENT_SEASON=2026,
+        CURRENT_SEASON_TYPE="midseason",
+        STATS_DISPLAY_SEASON_CAP=None,
+    )
+    def test_stat_season_roster_resource_status_prefers_role_over_roster_status(self):
+        p = models.Player.objects.create(name="Role Test", position="IF", level="A")
+        models.PlayerStatSeason.objects.create(
+            player=p,
+            season=2026,
+            classification="1-mlb",
+            role="Bench",
+            roster_status="MLB",
+            is_career=False,
+        )
+        self.assertEqual(p.stat_season_roster_resource_status, "Bench")
+
+    @override_settings(
+        CURRENT_SEASON=2026,
+        CURRENT_SEASON_TYPE="midseason",
+        STATS_DISPLAY_SEASON_CAP=None,
+    )
+    def test_stat_season_display_uses_prefetch_when_present(self):
+        p = models.Player.objects.create(name="Prefetch", position="IF", level="A")
+        models.PlayerStatSeason.objects.create(
+            player=p,
+            season=2026,
+            classification="1-mlb",
+            roster_status="MLB",
+            level="MLB",
+            is_career=False,
+        )
+        p2 = models.Player.objects.prefetch_related(
+            Prefetch(
+                "playerstatseason_set",
+                queryset=models.PlayerStatSeason.objects.filter(
+                    season=2026, is_career=False
+                ).order_by("classification"),
+                to_attr="current_season_stats",
+            ),
+        ).get(pk=p.pk)
+        self.assertEqual(p2.stat_season_roster_resource_status, "MLB")
+        self.assertEqual(p2.stat_season_level, "MLB")
+
+    @override_settings(
+        CURRENT_SEASON=2026,
+        CURRENT_SEASON_TYPE="midseason",
+        STATS_DISPLAY_SEASON_CAP=None,
+    )
+    def test_stat_season_roster_resource_status_falls_back_to_current_mlb_roster_status(self):
+        p = models.Player.objects.create(name="Alt Field", position="IF", level="A")
+        models.PlayerStatSeason.objects.create(
+            player=p,
+            season=2026,
+            classification="1-mlb",
+            roster_status=None,
+            current_mlb_roster_status="IL-7",
+            is_career=False,
+        )
+        self.assertEqual(p.stat_season_roster_resource_status, "IL-7")
+
+    @override_settings(
+        CURRENT_SEASON=2026,
+        CURRENT_SEASON_TYPE="midseason",
+        STATS_DISPLAY_SEASON_CAP=None,
+    )
+    def test_stat_season_level_falls_back_to_player_level(self):
+        p = models.Player.objects.create(name="No PSS Level", position="IF", level="B")
+        models.PlayerStatSeason.objects.create(
+            player=p,
+            season=2026,
+            classification="1-mlb",
+            level=None,
+            roster_status="MLB",
+            is_career=False,
+        )
+        self.assertEqual(p.stat_season_level, "B")
+
+    @override_settings(
+        CURRENT_SEASON=2026,
+        CURRENT_SEASON_TYPE="midseason",
+        STATS_DISPLAY_SEASON_CAP=None,
+    )
+    def test_stat_season_level_from_stat_row(self):
+        p = models.Player.objects.create(name="AAA Guy", position="IF", level="B")
+        models.PlayerStatSeason.objects.create(
+            player=p,
+            season=2026,
+            classification="2-milb",
+            level="AAA",
+            roster_status="MINORS",
+            is_career=False,
+        )
+        self.assertEqual(p.stat_season_level, "AAA")

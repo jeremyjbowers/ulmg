@@ -195,6 +195,7 @@ class Command(BaseCommand):
                                 'roster_status': roster_status,
                                 'role': role,
                                 'role_type': fg_type or mlevel,
+                                'level': mlevel or None,
                                 'mlb_org': player_data.get('dbTeam', ''),
                                 'is_mlb': is_mlb,
                                 'minors': is_minors,

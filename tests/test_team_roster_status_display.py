@@ -1,5 +1,4 @@
-# ABOUTME: Tests for MLB roster UI on team roster pages and the 30-man column.
-# ABOUTME: Covers sticky badge (offseason + roster_tab) and per-row On/Off display.
+# ABOUTME: Tests for roster UI on team pages: sticky badges when tabs are on, MLB status column.
 
 from django.contrib.auth.models import User
 from django.test import Client, TestCase, override_settings
@@ -43,27 +42,29 @@ class TeamRosterStatusDisplayTestCase(TestCase):
         self.assertContains(response, "MLB Roster")
         self.assertContains(response, 'id="roster-mlb-count"')
 
-    def test_team_page_shows_30_man_column_on_off(self):
-        models.Player.objects.create(
-            name="On Thirty",
+    def test_team_page_shows_level_and_roster_resource_from_stat_season(self):
+        p = models.Player.objects.create(
+            name="Big Leaguer",
             position="IF",
             level="A",
             team=self.team,
-            is_ulmg_mlb_roster=True,
-            is_ulmg_aaa_roster=False,
-            is_ulmg_reserve=False,
         )
-        models.Player.objects.create(
-            name="Off Thirty",
-            position="IF",
-            level="A",
-            team=self.team,
-            is_ulmg_mlb_roster=False,
+        models.PlayerStatSeason.objects.create(
+            player=p,
+            season=2026,
+            classification="1-mlb",
+            level="MLB",
+            role="10-Day IL",
+            roster_status="IL-10",
+            is_career=False,
         )
         self.client.login(username="mgr", password="secret")
         response = self.client.get("/teams/tst/")
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'title="ULMG MLB (30-man) roster"')
-        self.assertContains(response, "✅ on")
-        content = response.content.decode()
-        self.assertGreaterEqual(content.count("✅ on"), 1)
+        self.assertContains(
+            response, 'title="Roster resource status: role, IL, bench, starter, etc."'
+        )
+        self.assertContains(response, "10-Day IL")
+        self.assertContains(response, "MLB")
+        self.assertNotContains(response, "✅ on")
+        self.assertNotContains(response, "ULMG MLB (30-man)")

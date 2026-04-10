@@ -2,6 +2,7 @@ import datetime
 import os
 import secrets
 import logging
+from functools import cached_property
 
 from dateutil.relativedelta import *
 from django.contrib.auth.models import User
@@ -634,6 +635,56 @@ class Player(BaseModel):
             and not self.is_ulmg_aaa_roster
             and not self.is_ulmg_reserve
         )
+
+    @cached_property
+    def stat_season_display_row(self):
+        """
+        Primary PlayerStatSeason row for the stats display year (see get_stats_display_season_cap):
+        same ordering as the team roster prefetch (classification ascending, e.g. 1-mlb before 2-milb).
+        """
+        rows = getattr(self, "current_season_stats", None)
+        if rows:
+            return rows[0]
+        stats_season = utils.get_stats_display_season_cap()
+        return PlayerStatSeason.objects.filter(
+            player=self,
+            season=stats_season,
+            is_career=False,
+        ).order_by("classification").first()
+
+    @property
+    def stat_season_level(self):
+        """League / org level from the display-season stat row (e.g. MLB, AAA); falls back to ULMG V/A/B."""
+        row = self.stat_season_display_row
+        if row and row.level:
+            return row.level
+        return self.level
+
+    @property
+    def stat_season_roster_resource_status(self):
+        """
+        Roster-resource style line: FanGraphs ``role`` when present (bench, rotation, IL, etc.),
+        else MLB depth-chart style ``current_mlb_roster_status``, else ``roster_status``,
+        else short labels from roster flags.
+        """
+        row = self.stat_season_display_row
+        if not row:
+            return None
+        if row.role and row.role.strip():
+            return row.role.strip()
+        if row.current_mlb_roster_status and row.current_mlb_roster_status.strip():
+            return row.current_mlb_roster_status.strip()
+        if row.roster_status and row.roster_status.strip():
+            return row.roster_status.strip()
+        if row.is_injured:
+            return "Injured"
+        if row.is_starter:
+            return "Starter"
+        if row.is_bench:
+            return "Bench"
+        if row.is_bullpen:
+            return "Bullpen"
+        return None
 
     def get_best_stat_season(self):
         """

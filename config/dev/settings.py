@@ -143,8 +143,8 @@ TEAM_WISHLIST_TAB = False
 TEAM_SEASON_HALF = "1h"
 CURRENT_SEASON = 2026
 CURRENT_SEASON_TYPE = "midseason"
-# Cap stat rows to this year until 2026 data is ready; set to None to use get_current_season() only.
-STATS_DISPLAY_SEASON_CAP = 2025
+# Set to an int to cap stat display to that year (e.g. prior year in preseason). None uses get_current_season().
+STATS_DISPLAY_SEASON_CAP = None
 
 ROSTER_TEAM_IDS = [
     ("1", "LAA", "Los Angeles Angels"),
