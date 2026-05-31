@@ -316,7 +316,16 @@ def draft_admin(request, year, season, draft_type):
 
     if draft_type == "open":
         players = []
-        for p in models.Player.objects.filter(team__isnull=True).values('current_mlb_org', 'mlbam_id', 'id', 'position', 'name'):
+        if season == "midseason":
+            carded_season = utils.get_midseason_open_carded_season(year)
+            unowned = models.Player.objects.filter(
+                team__isnull=True,
+                carded_seasons__contains=[carded_season],
+            )
+        else:
+            unowned = models.Player.objects.filter(team__isnull=True)
+
+        for p in unowned.values('current_mlb_org', 'mlbam_id', 'id', 'position', 'name'):
             players.append(format_player_for_autocomplete(p))
 
         if season == "offseason":
@@ -335,12 +344,13 @@ def draft_admin(request, year, season, draft_type):
                 players.append(format_player_for_autocomplete(p))
 
         if season == "midseason":
-            # have to have been previously protected.
+            carded_season = utils.get_midseason_open_carded_season(year)
             for p in models.Player.objects.filter(
                 is_owned=True,
                 level="V",
                 team__isnull=False,
-                is_ulmg_midseason_unprotected=True
+                is_ulmg_midseason_unprotected=True,
+                carded_seasons__contains=[carded_season],
             ).values('current_mlb_org', 'mlbam_id', 'id', 'position', 'name'):
                 players.append(format_player_for_autocomplete(p))
 
@@ -460,7 +470,7 @@ def unprotected_players(request):
     current_season = settings.CURRENT_SEASON
 
     if settings.CURRENT_SEASON_TYPE == "midseason":
-        carded_season = current_season - 1
+        carded_season = utils.get_midseason_open_carded_season(current_season)
         available_players = models.Player.objects.filter(
             is_owned=True,
             level="V",

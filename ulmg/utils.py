@@ -115,6 +115,13 @@ def get_stats_display_season_cap():
     return min(cap_int, natural)
 
 
+def get_midseason_open_carded_season(draft_year=None):
+    """Prior MLB season whose card qualifies a player for the midseason Open draft."""
+    if draft_year is None:
+        draft_year = settings.CURRENT_SEASON
+    return int(draft_year) - 1
+
+
 def get_draft_prep_year_season(draft_type, list_type=None):
     """
     Return (year, season) for manager draft prep pages.

@@ -62,6 +62,11 @@ class UtilsTestCase(TestCase):
         self.assertEqual(utils.get_stats_display_season_cap(), 2025)
 
     @override_settings(CURRENT_SEASON=2026, CURRENT_SEASON_TYPE="midseason")
+    def test_get_midseason_open_carded_season(self):
+        self.assertEqual(utils.get_midseason_open_carded_season(), 2025)
+        self.assertEqual(utils.get_midseason_open_carded_season(2026), 2025)
+
+    @override_settings(CURRENT_SEASON=2026, CURRENT_SEASON_TYPE="midseason")
     def test_get_draft_prep_year_season_midseason_active_drafts(self):
         self.assertEqual(utils.get_draft_prep_year_season("aa"), (2026, "midseason"))
         self.assertEqual(utils.get_draft_prep_year_season("open"), (2026, "midseason"))

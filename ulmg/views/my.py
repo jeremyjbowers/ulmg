@@ -140,17 +140,14 @@ def my_draft_prep(request, list_type):
         ).select_related('player').prefetch_related(prefetch_stats).order_by("rank")
 
     elif list_type == "midseason":
-        # Midseason open draft: carded in the prior MLB season (e.g. 2025 for a 2026 draft)
-        # A/V levels only (B-level players are for AA draft)
+        # Midseason open: V/A/B with a prior-year MLB card (played in an MLB game that season)
         # Exclude owned players (player__team__isnull=True) - players disappear when drafted
-        carded_season = draft_year - 1
+        carded_season = utils.get_midseason_open_carded_season(draft_year)
         context["open_carded_season"] = carded_season
         base_qs = models.WishlistPlayer.objects.filter(
             wishlist=context["wishlist"],
-            player__team__isnull=True,  # Only unowned players
+            player__team__isnull=True,
             player__carded_seasons__contains=[carded_season],
-        ).exclude(
-            player__level="B"  # B-level players are for AA draft, not Open draft
         ).select_related('player').prefetch_related(prefetch_stats).order_by("rank")
     else:
         base_qs = models.WishlistPlayer.objects.none()
