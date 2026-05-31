@@ -61,6 +61,37 @@ class UtilsTestCase(TestCase):
         self.assertEqual(utils.get_current_season(), 2025)
         self.assertEqual(utils.get_stats_display_season_cap(), 2025)
 
+    @override_settings(CURRENT_SEASON=2026, CURRENT_SEASON_TYPE="midseason")
+    def test_get_draft_prep_year_season_midseason_active_drafts(self):
+        self.assertEqual(utils.get_draft_prep_year_season("aa"), (2026, "midseason"))
+        self.assertEqual(utils.get_draft_prep_year_season("open"), (2026, "midseason"))
+
+    @override_settings(CURRENT_SEASON=2026, CURRENT_SEASON_TYPE="midseason")
+    def test_get_draft_prep_year_season_midseason_open_explicit(self):
+        self.assertEqual(
+            utils.get_draft_prep_year_season("open", list_type="midseason"),
+            (2026, "midseason"),
+        )
+
+    @override_settings(CURRENT_SEASON=2026, CURRENT_SEASON_TYPE="midseason")
+    def test_get_draft_prep_year_season_midseason_offseason_open_is_next_year(self):
+        self.assertEqual(
+            utils.get_draft_prep_year_season("open", list_type="offseason"),
+            (2027, "offseason"),
+        )
+
+    @override_settings(CURRENT_SEASON=2026, CURRENT_SEASON_TYPE="offseason")
+    def test_get_draft_prep_year_season_offseason_active_drafts(self):
+        self.assertEqual(utils.get_draft_prep_year_season("aa"), (2026, "offseason"))
+        self.assertEqual(utils.get_draft_prep_year_season("open"), (2026, "offseason"))
+
+    @override_settings(CURRENT_SEASON=2026, CURRENT_SEASON_TYPE="offseason")
+    def test_get_draft_prep_year_season_offseason_open_explicit(self):
+        self.assertEqual(
+            utils.get_draft_prep_year_season("open", list_type="offseason"),
+            (2026, "offseason"),
+        )
+
 
 class PlayerBestStatSeasonCapTestCase(TestCase):
     @override_settings(

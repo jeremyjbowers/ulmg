@@ -5,8 +5,13 @@
 <div class="pt-24 md:pt-32">
 <div class="container mx-auto px-4 py-6">
 
+{% if current_season_type == "midseason" %}
+<h1 class="text-2xl font-bold mb-4">Midseason Open: Unprotected Veterans</h1>
+<p class="text-sm text-gray-600 mb-6">Owned V-level players left unprotected for the midseason Open Draft. Must have a {{ open_carded_season }} card. No compensation when taken.</p>
+{% else %}
 <h1 class="text-2xl font-bold mb-4">Unprotected A/V Players</h1>
 <p class="text-sm text-gray-600 mb-6">Owned A and V level players not on the 35-man protected roster. These players are eligible for the Open Draft.</p>
+{% endif %}
 
 {% if hitters %}
 {% regroup hitters by position as position_players %}
@@ -72,7 +77,7 @@
 {% endif %}
 
 {% if not hitters and not pitchers %}
-<p class="text-gray-600">No unprotected A/V players at this time.</p>
+<p class="text-gray-600">No unprotected players at this time.</p>
 {% endif %}
 
 </div>

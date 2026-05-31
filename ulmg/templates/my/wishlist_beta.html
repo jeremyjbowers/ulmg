@@ -56,26 +56,46 @@
         <a href="/teams/{{ team.abbreviation|lower }}/" class="underline">Roster{% if num_owned %} ({{ num_owned }}){% endif %}</a>
         <a href="/teams/{{ team.abbreviation|lower }}/other/" class="underline">Trades & picks</a>
         {% if draft_type == "aa" %}
-        <span class="font-bold">AA Draft</span>
+        <span class="font-bold">AA Draft{% if draft_season == "midseason" %} (76th){% endif %}</span>
         {% else %}
         <a href="/my/wishlist/draft/beta/" class="underline">AA Draft</a>
         {% endif %}
         {% if draft_type == "open" %}
-        <span class="font-bold">Open Draft</span>
+        <span class="font-bold">Open Draft{% if draft_season == "midseason" and open_carded_season %} ({{ open_carded_season }} card){% endif %}</span>
         {% else %}
         <a href="/my/{{ current_season_type }}/draft/" class="underline">Open Draft</a>
         {% endif %}
     </div>
+    {% if draft_season == "midseason" %}
+    <p class="text-xs text-gray-600 mt-2 mb-1">
+        Browse eligible players:
+        {% if draft_type == "open" %}
+        <a href="/search/filter/?carded={{ open_carded_season|default:previous_season }}&owned=false&classification=&level=&position=h&pa_cutoff=&ip_cutoff=&gs_cutoff=" class="underline">hitters</a>,
+        <a href="/search/filter/?carded={{ open_carded_season|default:previous_season }}&owned=false&classification=&level=&position=p&pa_cutoff=&ip_cutoff=&gs_cutoff=" class="underline">pitchers</a>
+        ({{ open_carded_season|default:previous_season }} card);
+        <a href="/players/unprotected/" class="underline">unprotected veterans</a>
+        {% else %}
+        <a href="/search/filter/?carded=&owned=false&classification=&level=B&position=&pa_cutoff=&ip_cutoff=&gs_cutoff=" class="underline">B-level free agents</a>
+        {% endif %}
+    </p>
+    {% endif %}
 </div>
 
 <div class="flex gap-4">
     <!-- Tier board -->
     <div class="flex-1 overflow-x-auto">
         <div class="mb-2 flex justify-between items-center">
-            <h3 class="text-sm font-bold">Tier board (drag between tiers; max 20 players per tier)</h3>
+            <h3 class="text-sm font-bold">
+                Tier board (drag between tiers; max 20 players per tier)
+                {% if draft_type == "aa" and draft_season == "midseason" %}
+                <span class="font-normal text-gray-600">— B-level 76th player, 1 round</span>
+                {% elif draft_type == "open" and draft_season == "midseason" %}
+                <span class="font-normal text-gray-600">— carded {{ open_carded_season }} only, 3 rounds</span>
+                {% endif %}
+            </h3>
             <div class="text-xs text-gray-600 flex items-center gap-2">
                 <button type="button" id="empty-all-tiers-btn" class="px-2 py-1 border border-gray-400 rounded hover:bg-gray-200 text-[10px]">Empty all tiers</button>
-                <span class="mr-4">Draft: {{ draft_year }} {{ draft_season }} {{ draft_type|upper }}</span>
+                <span class="mr-4">Draft: {{ draft_year }} {{ draft_season|title }} {{ draft_type|upper }}</span>
                 <label>
                     <input type="checkbox" id="hide-drafted-toggle" class="mr-1" checked>
                     Hide drafted players

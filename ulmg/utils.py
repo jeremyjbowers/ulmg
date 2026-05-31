@@ -115,6 +115,26 @@ def get_stats_display_season_cap():
     return min(cap_int, natural)
 
 
+def get_draft_prep_year_season(draft_type, list_type=None):
+    """
+    Return (year, season) for manager draft prep pages.
+
+    draft_type: "open" or "aa"
+    list_type: for open draft only, "offseason" or "midseason"; when omitted, uses
+        the active league period (CURRENT_SEASON_TYPE).
+    """
+    if draft_type == "open" and list_type == "offseason":
+        draft_year = settings.CURRENT_SEASON
+        if settings.CURRENT_SEASON_TYPE == "midseason":
+            draft_year = settings.CURRENT_SEASON + 1
+        return draft_year, "offseason"
+    if draft_type == "open" and list_type == "midseason":
+        return settings.CURRENT_SEASON, "midseason"
+    if settings.CURRENT_SEASON_TYPE == "midseason":
+        return settings.CURRENT_SEASON, "midseason"
+    return settings.CURRENT_SEASON, "offseason"
+
+
 def get_strat_season():
     today = datetime.today()
     return get_ulmg_season(today) - 1

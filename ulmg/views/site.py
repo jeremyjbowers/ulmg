@@ -452,20 +452,32 @@ def player_available_midseason(request):
 @never_cache
 def unprotected_players(request):
     """
-    Owned A and V level players not on the 35-man protected roster.
-    These are players owners chose not to protect for the Open Draft.
+    Players eligible to be taken in the Open Draft from other teams' rosters.
+    Offseason: owned A/V not on the 35-man protected roster.
+    Midseason: owned V left unprotected (is_ulmg_midseason_unprotected), carded prior season.
     """
     context = utils.build_context(request)
     current_season = settings.CURRENT_SEASON
 
-    available_players = models.Player.objects.filter(
-        is_owned=True,
-        level__in=["A", "V"],
-        team__isnull=False,
-    ).exclude(
-        playerstatseason__season=current_season,
-        playerstatseason__is_ulmg35man_roster=True,
-    ).distinct()
+    if settings.CURRENT_SEASON_TYPE == "midseason":
+        carded_season = current_season - 1
+        available_players = models.Player.objects.filter(
+            is_owned=True,
+            level="V",
+            team__isnull=False,
+            is_ulmg_midseason_unprotected=True,
+            carded_seasons__contains=[carded_season],
+        ).distinct()
+        context["open_carded_season"] = carded_season
+    else:
+        available_players = models.Player.objects.filter(
+            is_owned=True,
+            level__in=["A", "V"],
+            team__isnull=False,
+        ).exclude(
+            playerstatseason__season=current_season,
+            playerstatseason__is_ulmg35man_roster=True,
+        ).distinct()
 
     context["hitters"] = available_players.exclude(position="P").order_by(
         "position", "-level_order", "last_name", "first_name"
