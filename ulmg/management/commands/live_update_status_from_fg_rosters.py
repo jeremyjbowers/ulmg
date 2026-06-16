@@ -191,6 +191,12 @@ class Command(BaseCommand):
                             # Prefer FanGraphs "type" (e.g., mlb-sl, milb-bn) for role_type
                             fg_type = player_data.get('type', '')
 
+                            fg_positions = utils.parse_fg_position1(
+                                utils.fg_position1_from_roster(player_data)
+                            )
+                            if player_obj.position == "P":
+                                fg_positions = []
+
                             season_data = {
                                 'roster_status': roster_status,
                                 'role': role,
@@ -201,6 +207,7 @@ class Command(BaseCommand):
                                 'minors': is_minors,
                                 'is_injured': 'IL' in roster_status or 'INJ' in roster_status,
                                 'is_mlb40man': player_data.get('roster40', '').upper() == 'Y',
+                                'fg_positions': fg_positions or None,
                             }
 
                             pss = self.get_or_create_player_stat_season(

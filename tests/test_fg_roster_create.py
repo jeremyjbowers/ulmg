@@ -110,3 +110,4 @@ class LiveUpdateStatusFromFgRostersCreateTestCase(TestCase):
         self.assertEqual(pss.roster_status, 'MLB')
         self.assertEqual(pss.classification, '1-mlb')
         self.assertEqual(pss.mlb_org, 'SFG')
+        self.assertEqual(pss.fg_positions, ['2B'])

@@ -659,6 +659,12 @@ def filter_players(request):
             else:
                 stat_season_query = stat_season_query.filter(player__position__icontains=position)
             context["position"] = position
+
+    if request.GET.get("qualified_at", None):
+        qualified_at = request.GET["qualified_at"].strip().upper()
+        if qualified_at in utils.FG_QUALIFIED_POSITIONS:
+            stat_season_query = stat_season_query.filter(fg_positions__contains=[qualified_at])
+            context["qualified_at"] = qualified_at
     
     stat_season_query = stat_season_query.order_by('player__position', '-player__level_order', 'player__last_name', 'player__first_name')
 

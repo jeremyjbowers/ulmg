@@ -342,6 +342,7 @@ def build_context(request):
     
     # Add previous season for roster eligibility checks
     context["previous_season"] = settings.CURRENT_SEASON - 1
+    context["fg_qualified_positions"] = FG_QUALIFIED_POSITIONS
 
     # for search
     queries_without_page = dict(request.GET)
@@ -371,6 +372,56 @@ def write_csv(path, payload):
         writer.writeheader()
         for p in payload:
             writer.writerow(p)
+
+
+FG_PITCHER_POSITIONS = {"SP", "RP", "P"}
+FG_QUALIFIED_POSITIONS = ["C", "1B", "2B", "3B", "SS", "LF", "CF", "RF", "DH"]
+FG_POSITION_SORT_ORDER = {
+    "C": 1,
+    "1B": 2,
+    "2B": 3,
+    "3B": 4,
+    "SS": 5,
+    "LF": 6,
+    "CF": 7,
+    "RF": 8,
+    "DH": 9,
+}
+
+
+def parse_fg_position1(position1):
+    """
+    Parse FanGraphs roster position1 into hitter position tokens.
+    Returns an empty list for pitcher-only profiles.
+    """
+    if not position1:
+        return []
+
+    positions = []
+    seen = set()
+    for part in str(position1).strip().split("/"):
+        pos = part.strip().upper()
+        if not pos or pos in FG_PITCHER_POSITIONS or pos in seen:
+            continue
+        positions.append(pos)
+        seen.add(pos)
+    return positions
+
+
+def format_fg_positions_display(positions):
+    """Format parsed FanGraphs positions for display."""
+    if not positions:
+        return None
+    sorted_positions = sorted(
+        positions,
+        key=lambda pos: (FG_POSITION_SORT_ORDER.get(pos, 99), pos),
+    )
+    return ", ".join(sorted_positions)
+
+
+def fg_position1_from_roster(player_data):
+    """Extract position1 from a FanGraphs roster resource row."""
+    return player_data.get("position1") or player_data.get("position") or ""
 
 
 # covered

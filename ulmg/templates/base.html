@@ -100,6 +100,16 @@
                             <option value="P"{% if position == "P" %} selected{% endif %}>P</option>
                         </select>
                     </div>
+
+                    <div>
+                        <label class="block text-xs font-bold mb-1">Qualified At</label>
+                        <select name="qualified_at" class="w-full border border-gray-300 px-2 py-1 text-sm">
+                            <option value="">All</option>
+                            {% for pos in fg_qualified_positions %}
+                            <option value="{{ pos }}"{% if qualified_at == pos %} selected{% endif %}>{{ pos }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
                 </div>
                 
                 <!-- Bottom row: Statistical filters -->

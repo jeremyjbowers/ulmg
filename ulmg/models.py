@@ -820,6 +820,12 @@ class PlayerStatSeason(BaseModel):
     
     # DEFENSE (season-specific defensive ratings)
     defense = ArrayField(models.CharField(max_length=10), blank=True, null=True)
+    fg_positions = ArrayField(
+        models.CharField(max_length=10),
+        blank=True,
+        null=True,
+        help_text="FanGraphs roster position1 tokens when Strat defense is unavailable",
+    )
     
     # SEASON-SPECIFIC ROSTER STATUS (moved from Player model)
     is_starter = models.BooleanField(default=False)
@@ -973,6 +979,22 @@ class PlayerStatSeason(BaseModel):
                 [x["display"] for x in sorted(sortdef, key=lambda x: x["sort"])]
             )
         return None
+
+    def fg_positions_display(self):
+        """Display FanGraphs roster position1 tokens for hitters."""
+        return utils.format_fg_positions_display(self.fg_positions)
+
+    def position_display(self):
+        """
+        Primary position display for a stat season: Strat defense when loaded,
+        otherwise FanGraphs position1 tokens for position players.
+        """
+        strat = self.defense_display()
+        if strat:
+            return strat
+        if self.player and self.player.position == "P":
+            return None
+        return self.fg_positions_display()
 
     class Meta:
         ordering = ['season', 'classification']

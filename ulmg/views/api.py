@@ -692,8 +692,8 @@ def player_list(request):
     for p in query:
         best_stat_season = p.get_best_stat_season()
         defense_display = None
-        if best_stat_season and best_stat_season.defense_display():
-            defense_display = best_stat_season.defense_display()
+        if best_stat_season and best_stat_season.position_display():
+            defense_display = best_stat_season.position_display()
         else:
             # Show position if no defense in PlayerStatSeason
             defense_display = p.position
