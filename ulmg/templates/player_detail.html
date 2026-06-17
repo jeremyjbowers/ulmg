@@ -27,6 +27,7 @@
         {% endif %}
         • Level {{ p.level|default_if_none:"?" }}
         {% if p.age %} • {{ p.age }} years old{% endif %}
+        {% if p.position == "P" and p.throwing_arm_display %} • {{ p.throwing_arm_display }} arm{% elif p.bats_throws_display %} • {{ p.bats_throws_display }}{% endif %}
     </p>
     
     <!-- Player tags/status -->
@@ -63,6 +64,21 @@
     <div>
         <span class="font-bold">Birthdate:</span><br>
         {{ p.birthdate|date:"M j, Y" }}
+    </div>
+    {% endif %}
+    {% if p.position == "P" and p.throwing_arm_display %}
+    <div>
+        <span class="font-bold">Throwing Arm:</span><br>
+        {{ p.throwing_arm_display }}
+    </div>
+    {% elif p.bats or p.throws %}
+    <div>
+        <span class="font-bold">Bats:</span><br>
+        {{ p.bats|default:"—" }}
+    </div>
+    <div>
+        <span class="font-bold">Throws:</span><br>
+        {{ p.throws|default:"—" }}
     </div>
     {% endif %}
     {% if p.is_prospect and p.fg_fv %}

@@ -63,6 +63,11 @@ class Command(BaseCommand):
                 mlbam_id=mlbam_id or None,
                 current_mlb_org=player_data.get('dbTeam') or None,
             )
+            hands = utils.hands_from_fg_roster(player_data)
+            if hands["bats"]:
+                player.bats = hands["bats"]
+            if hands["throws"]:
+                player.throws = hands["throws"]
             player.save()
         return player
 
@@ -185,6 +190,13 @@ class Command(BaseCommand):
                             # Update player-level organization field
                             if player_data.get('dbTeam'):
                                 player_obj.current_mlb_org = player_data['dbTeam']
+
+                            hands = utils.hands_from_fg_roster(player_data)
+                            if hands["bats"]:
+                                player_obj.bats = hands["bats"]
+                            if hands["throws"]:
+                                player_obj.throws = hands["throws"]
+                            if player_data.get('dbTeam') or hands["bats"] or hands["throws"]:
                                 player_obj.save()
                             
                             # Update PlayerStatSeason with roster status

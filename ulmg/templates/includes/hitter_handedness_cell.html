@@ -1,0 +1,7 @@
+<td class="text-center py-1">
+    {% if p.player %}
+        {{ p.player.bats_throws_display|default:"—" }}
+    {% else %}
+        {{ p.bats_throws_display|default:"—" }}
+    {% endif %}
+</td>

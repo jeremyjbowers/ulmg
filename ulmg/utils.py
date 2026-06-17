@@ -424,6 +424,36 @@ def fg_position1_from_roster(player_data):
     return player_data.get("position1") or player_data.get("position") or ""
 
 
+def normalize_hand(value):
+    """Normalize a roster handedness token to L, R, S, or None."""
+    if value is None:
+        return None
+    token = str(value).strip().upper()
+    if not token:
+        return None
+    if token in ("L", "R", "S"):
+        return token
+    if token.startswith("L"):
+        return "L"
+    if token.startswith("R"):
+        return "R"
+    if token.startswith("S"):
+        return "S"
+    return None
+
+
+def hands_from_fg_roster(player_data):
+    """
+    Extract bats and throws from a FanGraphs roster resource row.
+    Pitchers may only have ``handed``; that value maps to throws when throws is absent.
+    """
+    bats = normalize_hand(player_data.get("bats"))
+    throws = normalize_hand(player_data.get("throws")) or normalize_hand(
+        player_data.get("handed")
+    )
+    return {"bats": bats, "throws": throws}
+
+
 # covered
 def normalize_pos(pos):
     """

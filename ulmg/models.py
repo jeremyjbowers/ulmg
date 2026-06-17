@@ -340,6 +340,8 @@ class Player(BaseModel):
     baseballcube_id = models.CharField(max_length=255, blank=True, null=True)
     perfectgame_id = models.CharField(max_length=255, blank=True, null=True)
     current_mlb_org = models.CharField(max_length=255, blank=True, null=True)
+    bats = models.CharField(max_length=1, blank=True, null=True)
+    throws = models.CharField(max_length=1, blank=True, null=True)
     mlbam_checked = models.BooleanField(default=False)
     school = models.CharField(max_length=255, blank=True, null=True)
     draft_year = models.CharField(max_length=255, blank=True, null=True)
@@ -659,6 +661,22 @@ class Player(BaseModel):
         if row and row.level:
             return row.level
         return self.level
+
+    @property
+    def bats_throws_display(self):
+        """Bats/throws for hitters, e.g. L/R or S/L."""
+        if self.position == self.PITCHER:
+            return None
+        if self.bats and self.throws:
+            return f"{self.bats}/{self.throws}"
+        return self.bats or self.throws
+
+    @property
+    def throwing_arm_display(self):
+        """Throwing hand for pitchers."""
+        if self.position != self.PITCHER:
+            return None
+        return self.throws
 
     @property
     def stat_season_roster_resource_status(self):

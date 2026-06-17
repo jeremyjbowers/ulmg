@@ -1,0 +1,7 @@
+<td class="text-center py-1">
+    {% if p.player %}
+        {{ p.player.throwing_arm_display|default:"—" }}
+    {% else %}
+        {{ p.throwing_arm_display|default:"—" }}
+    {% endif %}
+</td>

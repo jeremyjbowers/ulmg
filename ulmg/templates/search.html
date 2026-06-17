@@ -43,6 +43,7 @@
                 <th class="text-left py-1 sortable sticky left-0 bg-white z-20" data-sortable-type="alpha">Name</th>
                 <th class="text-center py-1 sortable" data-sortable-type="alpha">ULMG</th>
                 <th class="text-center py-1 sortable" data-sortable-type="numeric">Age</th>
+                <th class="text-center py-1 sortable" data-sortable-type="alpha" title="Bats / throws">B/T</th>
                 <th class="text-center py-1 sortable" data-sortable-type="alpha">Lvl</th>
                 {% include "includes/hitter_stat_headers.html" %}
             </tr>
@@ -80,6 +81,7 @@
                 {% endif %}
             </td>
             <td class="text-center py-1">{% if p.player %}{{ p.player.age|default_if_none:"-" }}{% else %}{{ p.age|default_if_none:"-" }}{% endif %}</td>
+            {% include "includes/hitter_handedness_cell.html" %}
             <td class="text-center py-1">{% if p.player %}{{ p.player.level|default_if_none:"" }}{% else %}{{ p.level|default_if_none:"" }}{% endif %}</td>
             {% if p.season %}
                 {% include "includes/hitter_stat_cells.html" %}
@@ -109,6 +111,7 @@
                 <th class="text-left py-1 sortable sticky left-0 bg-white z-20" data-sortable-type="alpha">Name</th>
                 <th class="text-center py-1 sortable" data-sortable-type="alpha">ULMG</th>
                 <th class="text-center py-1 sortable" data-sortable-type="numeric">Age</th>
+                <th class="text-center py-1 sortable" data-sortable-type="alpha" title="Throwing arm">Arm</th>
                 <th class="text-center py-1 sortable" data-sortable-type="alpha">Lvl</th>
                 {% include "includes/pitcher_stat_headers.html" %}
             </tr>
@@ -146,6 +149,7 @@
                 {% endif %}
             </td>
             <td class="text-center py-1">{% if p.player %}{{ p.player.age|default_if_none:"-" }}{% else %}{{ p.age|default_if_none:"-" }}{% endif %}</td>
+            {% include "includes/pitcher_throwing_arm_cell.html" %}
             <td class="text-center py-1">{% if p.player %}{{ p.player.level|default_if_none:"" }}{% else %}{{ p.level|default_if_none:"" }}{% endif %}</td>
             {% if p.season %}
                 {% include "includes/pitcher_stat_cells.html" %}
