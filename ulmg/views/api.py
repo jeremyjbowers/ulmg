@@ -19,7 +19,9 @@ from ulmg import models, utils
 @login_required
 @csrf_exempt
 def get_wishlist_players(request):
-    owner = models.Owner.objects.get(user=request.user)
+    owner = utils.get_owner_for_user(request.user)
+    if owner is None:
+        return JsonResponse({"players": []})
     w = models.Wishlist.objects.filter(owner=owner)
     wishlist = None
     wishlist_players = []
@@ -1099,22 +1101,15 @@ def add_tag_to_wishlistplayer(request, playerid):
 
 @csrf_exempt
 def add_note_to_wishlistplayer(request, playerid):
-    context = {}
-    context["owner"] = None
-    if request.user.is_authenticated:
-        owner = models.Owner.objects.get(user=request.user)
-        context["owner"] = owner
+    owner = utils.get_owner_for_user(request.user)
 
-    if request.method == "POST":
-        if request.POST.get("note", None):
-
-            note = request.POST.get("note")
-
-            w = models.WishlistPlayer.objects.get(
-                player__id=playerid, wishlist__owner=context["owner"]
-            )
-            w.note = note
-            w.save()
+    if request.method == "POST" and owner is not None and request.POST.get("note", None):
+        note = request.POST.get("note")
+        w = models.WishlistPlayer.objects.get(
+            player__id=playerid, wishlist__owner=owner
+        )
+        w.note = note
+        w.save()
 
     return JsonResponse({"message": "ok"})
 

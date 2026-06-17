@@ -143,14 +143,8 @@ def team_detail(request, abbreviation):
     team = get_object_or_404(models.Team, abbreviation__icontains=abbreviation)
     context["team"] = team
 
-    if request.user.is_authenticated:
-        owner = models.Owner.objects.get(user=request.user)
-        if owner.team() == team:
-            context["own_team"] = True
-        else:
-            context["own_team"] = False
-    else:
-        context["own_team"] = False
+    owner = utils.get_owner_for_user(request.user)
+    context["own_team"] = owner is not None and owner.team() == team
 
     if request.user.is_superuser:
         context["own_team"] = True
@@ -206,14 +200,8 @@ def team_other(request, abbreviation):
     team = get_object_or_404(models.Team, abbreviation__icontains=abbreviation)
     context["team"] = team
 
-    if request.user.is_authenticated:
-        owner = models.Owner.objects.get(user=request.user)
-        if owner.team() == team:
-            context["own_team"] = True
-        else:
-            context["own_team"] = False
-    else:
-        context["own_team"] = False
+    owner = utils.get_owner_for_user(request.user)
+    context["own_team"] = owner is not None and owner.team() == team
 
     team_abbr = team.abbreviation.upper()
 

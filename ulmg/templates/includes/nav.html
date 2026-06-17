@@ -64,7 +64,7 @@
         {% endif %}
         
         {% if user.is_authenticated %}
-        <a href="/teams/{{ my_team.abbreviation|lower }}/" class="underline font-bold">My Team</a>
+        {% if my_team %}<a href="/teams/{{ my_team.abbreviation|lower }}/" class="underline font-bold">My Team</a>{% endif %}
         <a href="/accounts/logout/" class="underline">Log out</a>
         {% else %}
         <a href="/accounts/login/" class="underline">Log in</a>
@@ -113,7 +113,7 @@
       </div>
       <div class="pt-2">
         {% if user.is_authenticated %}
-        <a href="/teams/{{ my_team.abbreviation|lower }}/" class="underline font-bold mr-4">My Team</a>
+        {% if my_team %}<a href="/teams/{{ my_team.abbreviation|lower }}/" class="underline font-bold mr-4">My Team</a>{% endif %}
         <a href="/accounts/logout/" class="underline">Log out</a>
         {% else %}
         <a href="/accounts/login/" class="underline">Log in</a>

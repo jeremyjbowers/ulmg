@@ -44,7 +44,7 @@ class Owner(BaseModel):
         return f"{self.name}, {self.email}"
 
     def team(self):
-        return Team.objects.get(owner_obj=self)
+        return Team.objects.filter(owner_obj=self).first()
 
 
 class MagicLinkToken(BaseModel):

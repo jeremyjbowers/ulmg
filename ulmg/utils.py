@@ -326,6 +326,20 @@ def parse_fg_fv(raw_fv_str):
         return None
 
 
+def get_owner_for_user(user):
+    """Return the Owner linked to a Django user, or None."""
+    if not user.is_authenticated:
+        return None
+    return models.Owner.objects.filter(user=user).first()
+
+
+def get_team_for_owner(owner):
+    """Return the Team managed by an Owner, or None."""
+    if owner is None:
+        return None
+    return models.Team.objects.filter(owner_obj=owner).first()
+
+
 def build_context(request):
     context = {}
 
@@ -352,15 +366,8 @@ def build_context(request):
         ["%s=%s" % (k, v[-1]) for k, v in queries_without_page.items()]
     )
 
-    # add the owner to the page
-    context["owner"] = None
-    if request.user.is_authenticated:
-        owner = models.Owner.objects.get(user=request.user)
-        context["owner"] = owner
-
-    context['my_team'] = None
-    if context['owner']:
-        context['my_team'] = models.Team.objects.get(owner_obj=context['owner'])
+    context["owner"] = get_owner_for_user(request.user)
+    context["my_team"] = get_team_for_owner(context["owner"])
 
     return context
 
