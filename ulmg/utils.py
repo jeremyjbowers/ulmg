@@ -10,7 +10,7 @@ from bs4 import BeautifulSoup
 from dateutil.parser import parse
 from django.apps import apps
 from django.db import connection
-from django.db.models import Avg, Sum, Count
+from django.db.models import Avg, Sum, Count, Q
 from django.contrib.postgres.search import TrigramSimilarity
 from django.core.management import call_command
 from django.core.management.base import BaseCommand, CommandError
@@ -96,6 +96,19 @@ def get_current_season():
     if settings.CURRENT_SEASON_TYPE == "offseason":
         season = season - 1
     return season
+
+
+def mlb_appearances_q(prefix=""):
+    """Return a Q object matching PlayerStatSeason rows with MLB hitting or pitching appearances."""
+    field = f"{prefix}__" if prefix else ""
+    hit_stats = f"{field}hit_stats"
+    pitch_stats = f"{field}pitch_stats"
+    return (
+        Q(**{f"{hit_stats}__pa__gt": 0})
+        | Q(**{f"{pitch_stats}__ip__gt": 0})
+        | Q(**{f"{hit_stats}__g__gt": 0})
+        | Q(**{f"{pitch_stats}__g__gt": 0})
+    )
 
 
 def get_stats_display_season_cap():

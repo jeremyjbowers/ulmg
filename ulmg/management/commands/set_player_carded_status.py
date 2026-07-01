@@ -1,8 +1,7 @@
 from django.core.management.base import BaseCommand, CommandError
-from django.db.models import Q
 from django.db import transaction
 
-from ulmg import models
+from ulmg import models, utils
 
 
 class Command(BaseCommand):
@@ -26,7 +25,7 @@ class Command(BaseCommand):
 
         # Base queryset for PlayerStatSeason records
         queryset = models.PlayerStatSeason.objects.filter(
-            classification='1-majors'  # Only look at MLB-level records
+            classification__in=["1-mlb", "1-majors"]
         )
 
         if season:
@@ -39,26 +38,14 @@ class Command(BaseCommand):
             self.stdout.write(self.style.WARNING("DRY RUN MODE - No changes will be made"))
 
         # Find PlayerStatSeason records that should be marked as carded
-        # A player is "carded" if they had any MLB appearances (PA or IP)
         carded_records = queryset.filter(
-            Q(hit_stats__pa__gt=0) |  # Had plate appearances
-            Q(pitch_stats__ip__gt=0) |  # Had innings pitched
-            Q(hit_stats__g__gt=0) |  # Had games played
-            Q(pitch_stats__g__gt=0)  # Had games pitched
-        ).exclude(carded=True)  # Only update records not already marked as carded
+            utils.mlb_appearances_q()
+        ).exclude(carded=True)
 
         # Find PlayerStatSeason records that should NOT be marked as carded
-        # A player is NOT carded if they had NO MLB appearances (PA, IP, or G are null or 0)
         not_carded_records = queryset.filter(
-            (
-                # All null stats
-                (Q(hit_stats__pa__isnull=True) & Q(pitch_stats__ip__isnull=True) &
-                 Q(hit_stats__g__isnull=True) & Q(pitch_stats__g__isnull=True)) |
-                # OR all zero stats
-                (Q(hit_stats__pa=0) & Q(pitch_stats__ip=0) &
-                 Q(hit_stats__g=0) & Q(pitch_stats__g=0))
-            ) &
-            Q(carded=True)  # Only update records currently marked as carded
+            utils.mlb_appearances_q().negated(),
+            carded=True,
         )
 
         self.stdout.write(f"Found {carded_records.count()} records to mark as carded")

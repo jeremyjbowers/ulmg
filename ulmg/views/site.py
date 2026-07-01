@@ -608,7 +608,9 @@ def filter_players(request):
             context["owned"] = owned
     
     if carded_year is not None:
-        stat_season_query = stat_season_query.filter(player__carded_seasons__contains=[carded_year])
+        stat_season_query = stat_season_query.filter(
+            classification="1-mlb",
+        ).filter(utils.mlb_appearances_q())
     
     # Handle level filter (uses level index)
     if request.GET.get("level", None):

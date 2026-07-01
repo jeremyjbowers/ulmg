@@ -21,18 +21,11 @@ class Command(BaseCommand):
             # Reset carded status in PlayerStatSeason for the season
             models.PlayerStatSeason.objects.filter(season=season).update(carded=False)
             
-            # Set carded=True for players with MLB stats in that season
+            # Set carded=True for players with MLB appearances in that season
             models.PlayerStatSeason.objects.filter(
                 season=season,
                 classification="1-mlb",
-                hit_stats__isnull=False
-            ).update(carded=True)
-            
-            models.PlayerStatSeason.objects.filter(
-                season=season,
-                classification="1-mlb",
-                pitch_stats__isnull=False
-            ).update(carded=True)
+            ).filter(utils.mlb_appearances_q()).update(carded=True)
         else:
             print(models.PlayerStatSeason.objects.filter(season=season).count())
 

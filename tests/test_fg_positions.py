@@ -192,3 +192,75 @@ class FilterPlayersByCardedYearTestCase(TestCase):
         self.assertIn("Carded Hitter", content)
         self.assertIn("512", content)
         self.assertNotIn(">42<", content)
+
+    def test_carded_year_filter_excludes_players_without_appearances(self):
+        ghost = models.Player.objects.create(
+            name="Ghost Card",
+            position="IF",
+            carded_seasons=[2025],
+        )
+        models.PlayerStatSeason.objects.create(
+            player=ghost,
+            season=2025,
+            classification="1-mlb",
+            carded=True,
+            hit_stats={"pa": 0, "g": 0, "k_pct": 0, "bb_pct": 0},
+        )
+        models.PlayerStatSeason.objects.create(
+            player=ghost,
+            season=2025,
+            classification="2-milb",
+            hit_stats={"pa": 0, "g": 0, "k_pct": 0, "bb_pct": 0},
+        )
+
+        response = self.client.get("/search/filter/", {"carded": "2025"})
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        self.assertNotIn("Ghost Card", content)
+
+
+class PlayerStatSeasonCardedTestCase(TestCase):
+    def test_has_mlb_appearances_requires_pa_ip_or_g(self):
+        with_stats = models.PlayerStatSeason(
+            classification="1-mlb",
+            hit_stats={"pa": 10},
+        )
+        without_stats = models.PlayerStatSeason(
+            classification="1-mlb",
+            hit_stats={"pa": 0, "g": 0},
+            pitch_stats={"ip": 0, "g": 0},
+        )
+        self.assertTrue(with_stats.has_mlb_appearances())
+        self.assertFalse(without_stats.has_mlb_appearances())
+
+    def test_save_sets_carded_from_appearances(self):
+        player = models.Player.objects.create(name="Auto Card", position="IF")
+        pss = models.PlayerStatSeason.objects.create(
+            player=player,
+            season=2025,
+            classification="1-mlb",
+            hit_stats={"pa": 25, "g": 8},
+        )
+        self.assertTrue(pss.carded)
+        pss.hit_stats = {"pa": 0, "g": 0}
+        pss.save()
+        self.assertFalse(pss.carded)
+
+    @override_settings(CURRENT_SEASON=2026, CURRENT_SEASON_TYPE="midseason")
+    def test_set_carded_seasons_uses_appearances_not_carded_flag(self):
+        player = models.Player.objects.create(name="Seasons Guy", position="IF")
+        models.PlayerStatSeason.objects.create(
+            player=player,
+            season=2025,
+            classification="1-mlb",
+            carded=True,
+            hit_stats={"pa": 0, "g": 0},
+        )
+        models.PlayerStatSeason.objects.create(
+            player=player,
+            season=2024,
+            classification="1-mlb",
+            hit_stats={"pa": 100, "g": 30},
+        )
+        player.save()
+        self.assertEqual(player.carded_seasons, [2024])

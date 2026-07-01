@@ -770,10 +770,12 @@ class Player(BaseModel):
     def is_carded(self):
         """
         Check if player is carded in the current season.
-        Returns False if no current season data exists.
+        Carded means an MLB appearance (PA, IP, or G) in the current season.
         """
         current_status = self.current_season_status()
-        return current_status.carded if current_status else False
+        if not current_status or current_status.classification != "1-mlb":
+            return False
+        return current_status.has_mlb_appearances()
 
     def team_display(self):
         if self.team:
@@ -790,8 +792,10 @@ class Player(BaseModel):
         seasons = []
         try:
             for season in PlayerStatSeason.objects.filter(
-                player=self, is_career=False, classification="1-mlb", carded=True
-            ).values_list("season", flat=True).distinct():
+                player=self,
+                is_career=False,
+                classification="1-mlb",
+            ).filter(utils.mlb_appearances_q()).values_list("season", flat=True).distinct():
                 if season and season not in seasons:
                     seasons.append(season)
             self.carded_seasons = sorted(seasons) if seasons else []
@@ -869,8 +873,32 @@ class PlayerStatSeason(BaseModel):
         return f"{self.player} @ {label} @ {self.classification}"
 
     def save(self, *args, **kwargs):
+        if self.classification == "1-mlb" and not self.is_career:
+            self.carded = self.has_mlb_appearances()
         self.set_previous_carded()
         super().save(*args, **kwargs)
+
+    def has_mlb_appearances(self):
+        """True when this row reflects actual MLB hitting or pitching appearances."""
+        if self.hit_stats:
+            pa = self.hit_stats.get("pa") or self.hit_stats.get("plate_appearances") or 0
+            games = self.hit_stats.get("g") or 0
+            try:
+                if int(pa) > 0 or int(games) > 0:
+                    return True
+            except (TypeError, ValueError):
+                pass
+
+        if self.pitch_stats:
+            ip = self.pitch_stats.get("ip") or 0
+            games = self.pitch_stats.get("g") or 0
+            try:
+                if float(ip) > 0 or int(games) > 0:
+                    return True
+            except (TypeError, ValueError):
+                pass
+
+        return False
 
     def set_previous_carded(self):
         try:

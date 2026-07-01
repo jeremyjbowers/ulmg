@@ -278,9 +278,6 @@ class Command(BaseCommand):
     def _save_player_stats(self, player, season, stats_data):
         """Save stats to PlayerStatSeason model."""
         with transaction.atomic():
-            # Determine if player should be marked as carded (true for 2025 stats)
-            is_carded = season >= 2025
-            
             # Get or create PlayerStatSeason record
             stat_season, created = PlayerStatSeason.objects.get_or_create(
                 player=player,
@@ -289,14 +286,10 @@ class Command(BaseCommand):
                 defaults={
                     'level': 'MLB',
                     'minors': False,
-                    'carded': is_carded,
+                    'carded': False,
                     'owned': player.is_owned,
                 }
             )
-            
-            # Update the carded status if this is an existing record
-            if not created:
-                stat_season.carded = is_carded
             
             # Update hitting stats if available
             if stats_data['hitting'] and any(v is not None for v in stats_data['hitting'].values()):
@@ -305,13 +298,13 @@ class Command(BaseCommand):
             # Update pitching stats if available
             if stats_data['pitching'] and any(v is not None for v in stats_data['pitching'].values()):
                 stat_season.pitch_stats = stats_data['pitching']
-            
-            # Also update the player's is_carded field if loading 2025+ stats
-            if is_carded and not player.is_carded:
+
+            stat_season.carded = stat_season.has_mlb_appearances()
+            stat_season.save()
+
+            if stat_season.carded and not player.is_carded:
                 player.is_carded = True
                 player.save(update_fields=['is_carded'])
-            
-            stat_season.save()
 
     def _safe_int(self, value):
         """Safely convert value to int."""
