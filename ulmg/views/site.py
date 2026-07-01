@@ -564,6 +564,8 @@ def filter_players(request):
     
     # Default season for filtering - use get_current_season() to get previous year's stats during preseason/offseason
     search_season = utils.get_current_season()
+    explicit_season = False
+    carded_year = None
     
     # Handle season selection first (most selective filter)
     if request.GET.get("season", None):
@@ -572,8 +574,21 @@ def filter_players(request):
             try:
                 search_season = int(season)
                 context['season'] = f"{search_season}"
+                explicit_season = True
             except ValueError:
                 pass  # Invalid year, use default
+    
+    if request.GET.get("carded", None):
+        carded = request.GET["carded"].strip()
+        if carded:
+            try:
+                carded_year = int(carded)
+                context["carded"] = carded
+                if not explicit_season:
+                    search_season = carded_year
+                    context['season'] = f"{search_season}"
+            except ValueError:
+                pass  # Invalid year, skip carded filter
     
     # Filter by season first (uses index and is most selective)
     stat_season_query = stat_season_query.filter(season=search_season)
@@ -592,11 +607,8 @@ def filter_players(request):
             stat_season_query = stat_season_query.exclude(player__team__isnull=to_bool(owned))
             context["owned"] = owned
     
-    if request.GET.get("carded", None):
-        carded = request.GET["carded"].strip()
-        if carded:
-            stat_season_query = stat_season_query.filter(player__carded_seasons__contains=[int(carded)])
-            context["carded"] = carded
+    if carded_year is not None:
+        stat_season_query = stat_season_query.filter(player__carded_seasons__contains=[carded_year])
     
     # Handle level filter (uses level index)
     if request.GET.get("level", None):

@@ -152,3 +152,43 @@ class FilterPlayersByQualifiedAtTestCase(TestCase):
         content = response.content.decode()
         self.assertIn("Shortstop Guy", content)
         self.assertNotIn("Outfield Guy", content)
+
+
+@override_settings(CURRENT_SEASON=2026, CURRENT_SEASON_TYPE="midseason")
+class FilterPlayersByCardedYearTestCase(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_user(username="mgr", password="secret")
+        owner = models.Owner.objects.create(user=self.user, name="Manager")
+        models.Team.objects.create(
+            city="Test City",
+            abbreviation="TST",
+            nickname="Testers",
+            owner_obj=owner,
+        )
+        self.client.login(username="mgr", password="secret")
+        self.player = models.Player.objects.create(
+            name="Carded Hitter",
+            position="IF",
+            carded_seasons=[2024],
+        )
+        models.PlayerStatSeason.objects.create(
+            player=self.player,
+            season=2024,
+            classification="1-mlb",
+            hit_stats={"pa": 512, "avg": 0.285, "k_pct": 0.18, "bb_pct": 0.09},
+        )
+        models.PlayerStatSeason.objects.create(
+            player=self.player,
+            season=2026,
+            classification="1-mlb",
+            hit_stats={"pa": 42, "avg": 0.190, "k_pct": 0.25, "bb_pct": 0.05},
+        )
+
+    def test_carded_year_filter_shows_that_years_stats(self):
+        response = self.client.get("/search/filter/", {"carded": "2024"})
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        self.assertIn("Carded Hitter", content)
+        self.assertIn("512", content)
+        self.assertNotIn(">42<", content)
