@@ -128,6 +128,60 @@ def get_stats_display_season_cap():
     return min(cap_int, natural)
 
 
+STAT_CLASSIFICATION_CHOICES = (
+    "1-mlb",
+    "2-milb",
+    "3-npb",
+    "4-kbo",
+    "5-college",
+)
+
+
+def get_stat_season_year_choices():
+    """Years offered in team-page and search stat-season pickers."""
+    current = get_current_season()
+    years = [current]
+    if current >= 2026:
+        years.append(2025)
+    years.extend([2024, 2023, 2022, 2021, 2020])
+    seen = set()
+    ordered = []
+    for year in years:
+        if year not in seen:
+            seen.add(year)
+            ordered.append(year)
+    return ordered
+
+
+def parse_team_roster_stat_filters(request):
+    """
+    Parse team roster stat display filters from GET params.
+
+    When season is omitted, uses get_current_season() (exact match, no prior-year fallback).
+    When classification is omitted, callers should prefer higher stat levels (1-mlb first).
+    """
+    season_param = request.GET.get("season", "").strip()
+    allowed_years = set(get_stat_season_year_choices())
+    current = get_current_season()
+    allowed_years.add(current)
+
+    if season_param:
+        try:
+            stat_season = int(season_param)
+            if stat_season not in allowed_years:
+                stat_season = current
+        except ValueError:
+            stat_season = current
+    else:
+        stat_season = current
+
+    classification = request.GET.get("classification", "").strip()
+    if classification not in STAT_CLASSIFICATION_CHOICES:
+        classification = None
+
+    return stat_season, classification
+
+
 def get_midseason_open_carded_season(draft_year=None):
     """Prior MLB season whose card qualifies a player for the midseason Open draft."""
     if draft_year is None:

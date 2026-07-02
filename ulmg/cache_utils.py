@@ -29,6 +29,23 @@ def cache_key(*parts):
     return ":".join([CACHE_PREFIX] + [str(p) for p in parts])
 
 
+def team_roster_cache_key(team_abbr, stat_season, classification=None):
+    """
+    Bounded cache key for team roster stat queries.
+
+    Only whitelisted filter dimensions are included (team, season, classification).
+    Unknown GET params must not affect this key.
+    """
+    classification_part = classification if classification else "all"
+    return cache_key(
+        "team",
+        str(team_abbr).upper(),
+        "roster",
+        stat_season,
+        classification_part,
+    )
+
+
 def get_cached_or_compute(key, compute_fn, timeout=CACHE_TTL):
     """
     Get value from cache or compute and store it.

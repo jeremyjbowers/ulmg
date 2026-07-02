@@ -10,6 +10,34 @@
 {% block content %}
 {% include 'includes/team_topper.html' %}
 
+<div class="mb-6 border border-gray-300 p-4 bg-gray-50">
+    <form method="GET" action="/teams/{{ team.abbreviation|lower }}/" class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+        <div>
+            <label class="block text-xs font-bold mb-1">Stats Year</label>
+            <select name="season" class="w-full border border-gray-300 px-2 py-1 text-sm">
+                <option value="">Current ({{ current_stat_season }})</option>
+                {% for year in team_stat_season_choices %}
+                <option value="{{ year }}"{% if team_stat_season_selected == year|stringformat:"s" %} selected{% endif %}>{{ year }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label class="block text-xs font-bold mb-1">Stats Level</label>
+            <select name="classification" class="w-full border border-gray-300 px-2 py-1 text-sm">
+                <option value="">All</option>
+                <option value="1-mlb"{% if classification == "1-mlb" %} selected{% endif %}>Majors</option>
+                <option value="2-milb"{% if classification == "2-milb" %} selected{% endif %}>Minors</option>
+                <option value="3-npb"{% if classification == "3-npb" %} selected{% endif %}>NPB</option>
+                <option value="4-kbo"{% if classification == "4-kbo" %} selected{% endif %}>KBO</option>
+                <option value="5-college"{% if classification == "5-college" %} selected{% endif %}>College</option>
+            </select>
+        </div>
+        <div>
+            <button type="submit" class="w-full bg-black text-white px-3 py-1 text-sm underline hover:bg-gray-800">Show Stats</button>
+        </div>
+    </form>
+</div>
+
 <!-- Simple tab navigation -->
 <div class="border-b border-gray-300 mb-4">
     <div class="flex flex-wrap gap-4 pb-2 text-sm">
@@ -70,7 +98,7 @@
         </thead>
         <tbody>
         {% for p in position.list %}
-        <tr class="level-{{ p.get_best_stat_season.clean_classification }} {% if p.get_best_stat_season %}{{ p.get_best_stat_season.role_type_class }}{% endif %} border-b border-gray-100">
+        <tr class="{% if p.get_best_stat_season %}level-{{ p.get_best_stat_season.clean_classification }} {{ p.get_best_stat_season.role_type_class }}{% endif %} border-b border-gray-100">
             <td class="py-1 sticky left-0 bg-white border-r z-10">
                 <a href="/players/{{ p.id }}/" class="underline">{{ p.name }}</a>
             </td>
@@ -105,7 +133,7 @@
         </thead>
         <tbody>
         {% for p in pitchers %}
-        <tr class="level-{{ p.get_best_stat_season.clean_classification }} {% if p.get_best_stat_season %}{{ p.get_best_stat_season.role_type_class }}{% endif %} border-b border-gray-100">
+        <tr class="{% if p.get_best_stat_season %}level-{{ p.get_best_stat_season.clean_classification }} {{ p.get_best_stat_season.role_type_class }}{% endif %} border-b border-gray-100">
             <td class="py-1 sticky left-0 bg-white border-r z-10">
                 <a href="/players/{{ p.id }}/" class="underline">{{ p.name }}</a>
             </td>

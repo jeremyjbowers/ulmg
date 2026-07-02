@@ -20,7 +20,9 @@ from ulmg import models, utils
 from ulmg.cache_utils import (
     get_all_cache_keys,
     delete_cache_key_for_admin,
+    get_cached_or_compute,
     is_valkey_active,
+    team_roster_cache_key,
 )
 
 
@@ -149,14 +151,28 @@ def team_detail(request, abbreviation):
     if request.user.is_superuser:
         context["own_team"] = True
 
-    stat_season = utils.get_stats_display_season_cap()
+    stat_season, classification = utils.parse_team_roster_stat_filters(request)
+    stat_season_queryset = models.PlayerStatSeason.objects.filter(
+        season=stat_season,
+        is_career=False,
+    )
+    if classification:
+        stat_season_queryset = stat_season_queryset.filter(classification=classification)
+    stat_season_queryset = stat_season_queryset.order_by("classification")
+
+    context["team_stat_season"] = stat_season
+    context["current_stat_season"] = utils.get_current_season()
+    context["team_stat_season_selected"] = request.GET.get("season", "").strip()
+    context["team_stat_season_choices"] = utils.get_stat_season_year_choices()
+    context["classification"] = classification or ""
+
     team_abbr = team.abbreviation.upper()
 
     def _get_team_roster_data():
         team_players = models.Player.objects.filter(team=team).select_related('team').prefetch_related(
             Prefetch(
                 'playerstatseason_set',
-                queryset=models.PlayerStatSeason.objects.filter(season=stat_season, is_career=False).order_by('classification'),
+                queryset=stat_season_queryset,
                 to_attr='current_season_stats'
             )
         )
@@ -181,8 +197,10 @@ def team_detail(request, abbreviation):
             "pitchers": pitchers,
         }
 
-    # Real-time: no cache for team roster (used by /my/team and changes during drafts)
-    roster_data = _get_team_roster_data()
+    # Query cache: key is bounded to team + whitelisted stat filters (season, classification).
+    # Full HTML stays @never_cache because own_team and roster badges are user-specific.
+    roster_cache_key = team_roster_cache_key(team_abbr, stat_season, classification)
+    roster_data = get_cached_or_compute(roster_cache_key, _get_team_roster_data)
     context["35_roster_count"] = roster_data["35_roster_count"]
     context["mlb_roster_count"] = roster_data["mlb_roster_count"]
     context["team_has_asr"] = roster_data["team_has_asr"]

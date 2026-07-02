@@ -644,9 +644,9 @@ class Player(BaseModel):
         Primary PlayerStatSeason row for the stats display year (see get_stats_display_season_cap):
         same ordering as the team roster prefetch (classification ascending, e.g. 1-mlb before 2-milb).
         """
-        rows = getattr(self, "current_season_stats", None)
-        if rows:
-            return rows[0]
+        if hasattr(self, "current_season_stats"):
+            rows = self.current_season_stats
+            return rows[0] if rows else None
         stats_season = utils.get_stats_display_season_cap()
         return PlayerStatSeason.objects.filter(
             player=self,
@@ -658,7 +658,9 @@ class Player(BaseModel):
     def stat_season_level(self):
         """League / org level from the display-season stat row (e.g. MLB, AAA); falls back to ULMG V/A/B."""
         row = self.stat_season_display_row
-        if row and row.level:
+        if not row:
+            return None
+        if row.level:
             return row.level
         return self.level
 
@@ -711,9 +713,13 @@ class Player(BaseModel):
         Caps at utils.get_stats_display_season_cap() (see STATS_DISPLAY_SEASON_CAP).
         Returns None if no stat seasons exist.
 
-        If prefetched data is available (via 'all_stat_seasons' attribute),
+        If prefetched data is available (via 'current_season_stats' or 'all_stat_seasons'),
         uses that instead of querying the database.
         """
+        if hasattr(self, "current_season_stats"):
+            rows = self.current_season_stats
+            return rows[0] if rows else None
+
         stats_season = utils.get_stats_display_season_cap()
 
         # Check if prefetched stat seasons are available (from prefetch_related)
