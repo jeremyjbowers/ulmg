@@ -127,21 +127,57 @@ class CurrentSeasonMLBOrgFilter(admin.SimpleListFilter):
             ).distinct()
 
 
+class ThirtyFiveManFilter(admin.SimpleListFilter):
+    title = '35-man roster'
+    parameter_name = 'thirty_five_man'
+
+    def lookups(self, request, model_admin):
+        return (
+            ('yes', 'On 35-man'),
+            ('no', 'Not on 35-man'),
+            ('v_no', 'V-level, not on 35-man'),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value() == 'yes':
+            return queryset.filter(is_ulmg_35man_roster=True)
+        if self.value() == 'no':
+            return queryset.filter(is_ulmg_35man_roster=False)
+        if self.value() == 'v_no':
+            return queryset.filter(level='V', is_ulmg_35man_roster=False)
+        return queryset
+
+
 @admin.register(PlayerStatSeason)
 class PlayerStatSeasonAdmin(admin.ModelAdmin):
     model = PlayerStatSeason
-    list_display = ["player", "season", "classification", "level", "carded", "owned", "is_mlb", "mlb_org"]
+    list_display = [
+        "player",
+        "season",
+        "classification",
+        "level",
+        "carded",
+        "owned",
+        "is_ulmg_mlb_roster",
+        "is_ulmg_aaa_roster",
+        "is_ulmg35man_roster",
+        "is_mlb",
+        "mlb_org",
+    ]
     list_filter = [
-        "season", 
-        "classification", 
-        "level", 
-        "carded", 
-        "owned", 
-        "is_mlb", 
-        "is_injured", 
+        "season",
+        "classification",
+        "level",
+        "carded",
+        "owned",
+        "is_ulmg_mlb_roster",
+        "is_ulmg_aaa_roster",
+        "is_ulmg35man_roster",
+        "is_mlb",
+        "is_injured",
         "mlb_org",
         "is_starter",
-        "is_bench"
+        "is_bench",
     ]
     search_fields = ["player__name", "season", "classification", "level", "mlb_org"]
     autocomplete_fields = ["player"]
@@ -170,13 +206,11 @@ class PlayerStatSeasonAdmin(admin.ModelAdmin):
             },
         ),
         (
-            "MLB Status",
+            "ULMG Roster Status",
             {
-                "description": "Major League Baseball status and roster information for this season.",
+                "description": "Season-specific ULMG roster placement. The web UI mirrors these from Player when managers set MLB/AAA/35-man status.",
                 "fields": (
-                    # ("is_umlb", "is_amateur"),
                     ("is_ulmg_mlb_roster", "is_ulmg_aaa_roster", "is_ulmg35man_roster"),
-                    # ("is_mlb40man", "mlb_org"),
                 ),
             },
         ),
@@ -186,10 +220,11 @@ class PlayerStatSeasonAdmin(admin.ModelAdmin):
                 "classes": ("collapse",),
                 "description": "Current roster position and role information.",
                 "fields": (
-                    # ("is_starter", "is_bench", "is_player_pool"),
-                    # ("is_bullpen", "role", "role_type"),
                     ("role", "role_type"),
                     "roster_status",
+                    "current_mlb_roster_status",
+                    "mlb_org",
+                    ("is_mlb", "is_mlb40man", "is_amateur"),
                 ),
             },
         ),
@@ -395,16 +430,17 @@ class PlayerStatSeasonInline(admin.TabularInline):
     extra = 0
     readonly_fields = ["created", "last_modified"]
     fields = [
-        "season", 
-        "classification", 
-        "level", 
-        "carded", 
-        "owned", 
-        "is_mlb", 
-        "is_injured", 
+        "season",
+        "classification",
+        "level",
+        "carded",
+        "owned",
+        "is_ulmg_mlb_roster",
+        "is_ulmg_aaa_roster",
+        "is_ulmg35man_roster",
+        "is_mlb",
+        "is_injured",
         "mlb_org",
-        "is_starter",
-        "is_bench"
     ]
     
     def get_queryset(self, request):
@@ -443,15 +479,16 @@ class PlayerAdmin(admin.ModelAdmin):
     list_display = [
         "last_name",
         "first_name",
-        "strat_name",
         "is_owned",
         "team",
         "level",
+        "is_ulmg_mlb_roster",
+        "is_ulmg_aaa_roster",
+        "is_ulmg_35man_roster",
+        "is_ulmg_midseason_unprotected",
         "current_season_carded",
         "current_season_mlb_org",
         "current_season_injured",
-        'mlbam_id',
-        'fg_id',
         'birthdate'
     ]
     list_filter = [
@@ -459,12 +496,20 @@ class PlayerAdmin(admin.ModelAdmin):
         "team",
         "level",
         "position",
+        ThirtyFiveManFilter,
+        "is_ulmg_mlb_roster",
+        "is_ulmg_aaa_roster",
+        "is_ulmg_midseason_unprotected",
+        "is_ulmg_protected",
         CurrentSeasonMLBFilter,
         CurrentSeasonCardedFilter,
         CurrentSeasonInjuredFilter,
         CurrentSeasonMLBOrgFilter,
     ]
-    list_editable = ['mlbam_id','fg_id', 'birthdate', 'strat_name']
+    list_editable = [
+        'birthdate',
+        'is_ulmg_midseason_unprotected',
+    ]
     readonly_fields = ["name", "age"]
     search_fields = ["name", 'mlbam_id', 'fg_id', 'birthdate']
     autocomplete_fields = ["team"]
@@ -480,6 +525,17 @@ class PlayerAdmin(admin.ModelAdmin):
                     "position",
                     "level",
                     "team",
+                ),
+            },
+        ),
+        (
+            "ULMG Ownership & Roster",
+            {
+                "description": "Ownership lives on Player. Roster placement (MLB/AAA/35-man) is also written here by the web UI and mirrored to PlayerStatSeason. Midseason unprotected is Player-only and controls /players/unprotected/ during midseason.",
+                "fields": (
+                    ("is_owned", "is_ulmg_trade_block"),
+                    ("is_ulmg_mlb_roster", "is_ulmg_aaa_roster", "is_ulmg_35man_roster"),
+                    ("is_ulmg_protected", "is_ulmg_midseason_unprotected"),
                 ),
             },
         ),
@@ -511,10 +567,7 @@ class PlayerAdmin(admin.ModelAdmin):
                 "fields": (
                     ("is_ulmg_reserve",),
                     ("is_ulmg_1h_p", "is_ulmg_1h_c", "is_ulmg_1h_pos"),
-                    ('is_ulmg_midseason_unprotected'),
                     ("is_ulmg_2h_draft", "is_ulmg_2h_p", "is_ulmg_2h_c", "is_ulmg_2h_pos"),
-                    # ("is_protected", "cannot_be_protected", "covid_protected"),
-                    # "is_trade_block",
                 ),
             },
         ),
@@ -542,9 +595,7 @@ class PlayerAdmin(admin.ModelAdmin):
             {
                 "classes": ("collapse",),
                 "fields": (
-                    "is_owned", 
-                    "defense", 
-                    # "strat_ratings"
+                    "defense",
                 ),
             },
         ),
