@@ -101,8 +101,25 @@ class SecondHalfProtectionUITestCase(TestCase):
         content = response.content.decode()
         draft_idx = content.find("2H Draft Pick")
         self.assertNotEqual(draft_idx, -1)
-        row_chunk = content[draft_idx : draft_idx + 800]
+        row_chunk = content[draft_idx : draft_idx + 2500]
         self.assertNotIn('data-action="is_ulmg_2h_p"', row_chunk)
+
+    def test_2h_draft_players_have_locked_mlb_not_off_roster(self):
+        self.draft_pick.is_ulmg_mlb_roster = True
+        self.draft_pick.carded_seasons = [2025]
+        self.draft_pick.save()
+        cache.clear()
+        self.client.login(username="mgr", password="secret")
+        response = self.client.get("/teams/tst/")
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        draft_idx = content.find("2H Draft Pick")
+        self.assertNotEqual(draft_idx, -1)
+        row_chunk = content[draft_idx : draft_idx + 2500]
+        self.assertIn("2h-draft-locked-mlb", row_chunk)
+        self.assertNotIn('data-action="off_roster"', row_chunk)
+        self.assertNotIn('data-action="to_aaa"', row_chunk)
+        self.assertIn("drop-button", row_chunk)
 
     def test_a_level_players_do_not_get_2h_protect_buttons(self):
         self.client.login(username="mgr", password="secret")
@@ -168,6 +185,7 @@ class SecondHalfProtectionAPITestCase(TestCase):
             team=self.team,
             is_owned=True,
             is_ulmg_2h_draft=True,
+            is_ulmg_mlb_roster=True,
         )
         self.client.login(username="mgr", password="secret")
 
@@ -188,6 +206,60 @@ class SecondHalfProtectionAPITestCase(TestCase):
         self.assertIn(b"error", response.content)
         self.draft_pick.refresh_from_db()
         self.assertFalse(self.draft_pick.is_ulmg_2h_p)
+
+    def test_api_rejects_off_roster_for_2h_draft_pick(self):
+        response = self.client.post(
+            f"/api/v1/player/{self.draft_pick.id}/off_roster/"
+        )
+        self.assertEqual(response.status_code, 400)
+        self.draft_pick.refresh_from_db()
+        self.assertTrue(self.draft_pick.is_ulmg_mlb_roster)
+        self.assertTrue(self.draft_pick.is_ulmg_2h_draft)
+
+    def test_api_rejects_to_aaa_for_2h_draft_pick(self):
+        models.PlayerStatSeason.objects.create(
+            player=self.draft_pick,
+            season=2025,
+            classification="1-mlb",
+            carded=True,
+            is_career=False,
+        )
+        response = self.client.post(
+            f"/api/v1/player/{self.draft_pick.id}/to_aaa/"
+        )
+        self.assertEqual(response.status_code, 400)
+        self.draft_pick.refresh_from_db()
+        self.assertTrue(self.draft_pick.is_ulmg_mlb_roster)
+        self.assertFalse(self.draft_pick.is_ulmg_aaa_roster)
+
+    def test_api_drop_releases_2h_draft_pick(self):
+        response = self.client.post(
+            f"/api/v1/player/{self.draft_pick.id}/drop/"
+        )
+        self.assertEqual(response.status_code, 200)
+        self.draft_pick.refresh_from_db()
+        self.assertIsNone(self.draft_pick.team)
+        self.assertFalse(self.draft_pick.is_owned)
+        self.assertFalse(self.draft_pick.is_ulmg_mlb_roster)
+        self.assertFalse(self.draft_pick.is_ulmg_2h_draft)
+
+    def test_api_allows_off_roster_for_non_open_draft_player(self):
+        """AA / regular players without is_ulmg_2h_draft may leave the MLB roster."""
+        aa_player = models.Player.objects.create(
+            name="AA Pick",
+            position="P",
+            level="B",
+            team=self.team,
+            is_owned=True,
+            is_ulmg_mlb_roster=True,
+            is_ulmg_2h_draft=False,
+        )
+        response = self.client.post(
+            f"/api/v1/player/{aa_player.id}/off_roster/"
+        )
+        self.assertEqual(response.status_code, 200)
+        aa_player.refresh_from_db()
+        self.assertFalse(aa_player.is_ulmg_mlb_roster)
 
     def test_api_2h_slot_is_exclusive_per_team(self):
         other = models.Player.objects.create(

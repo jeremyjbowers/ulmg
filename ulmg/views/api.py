@@ -186,6 +186,61 @@ def wishlist_player_action(request, playerid):
     return JsonResponse({"success": False, "player": w})
 
 
+def update_player_stat_season_roster(player, season=None, **kwargs):
+    """Update or create PlayerStatSeason roster status fields for a player."""
+    current_season = season if season is not None else utils.get_current_season()
+    player_stat_season = models.PlayerStatSeason.objects.filter(
+        player=player,
+        season=current_season,
+    ).first()
+
+    if not player_stat_season:
+        player_stat_season = models.PlayerStatSeason.objects.create(
+            player=player,
+            season=current_season,
+            classification="1-mlb",
+            owned=player.is_owned,
+            carded=False,
+        )
+
+    for field, value in kwargs.items():
+        if hasattr(player_stat_season, field):
+            setattr(player_stat_season, field, value)
+
+    player_stat_season.save()
+    return player_stat_season
+
+
+def assign_midseason_open_draft_player(player, team):
+    """Place a midseason Open pick on the drafting team's MLB roster for 2H."""
+    player.team = team
+    player.is_ulmg_mlb_roster = True
+    player.is_ulmg_aaa_roster = False
+    player.is_ulmg_2h_draft = True
+    player.save()
+    update_player_stat_season_roster(
+        player,
+        is_ulmg_mlb_roster=True,
+        is_ulmg_aaa_roster=False,
+        owned=True,
+    )
+    return player
+
+
+def clear_midseason_open_draft_player(player):
+    """Undo midseason Open roster placement when a pick is cleared."""
+    player.team = None
+    player.is_ulmg_mlb_roster = False
+    player.is_ulmg_2h_draft = False
+    player.save()
+    update_player_stat_season_roster(
+        player,
+        is_ulmg_mlb_roster=False,
+        owned=False,
+    )
+    return player
+
+
 @login_required
 @csrf_exempt
 def player_action(request, playerid, action):
@@ -193,33 +248,9 @@ def player_action(request, playerid, action):
         p = models.Player.objects.get(id=playerid)
     except models.Player.DoesNotExist:
         return JsonResponse({"error": "Player not found"}, status=404)
-    current_season = utils.get_current_season()
-    
+
     def _update_player_stat_season(player, **kwargs):
-        """Update or create PlayerStatSeason with roster status fields."""
-        # Get or create the most recent PlayerStatSeason for this player
-        player_stat_season = models.PlayerStatSeason.objects.filter(
-            player=player,
-            season=current_season
-        ).first()
-        
-        if not player_stat_season:
-            # Create a new PlayerStatSeason for the current season
-            player_stat_season = models.PlayerStatSeason.objects.create(
-                player=player,
-                season=current_season,
-                classification='1-mlb',  # Default, will be corrected by stats updates
-                owned=player.is_owned,
-                carded=False  # Will be set by separate command
-            )
-        
-        # Update the roster status fields
-        for field, value in kwargs.items():
-            if hasattr(player_stat_season, field):
-                setattr(player_stat_season, field, value)
-        
-        player_stat_season.save()
-        return player_stat_season
+        return update_player_stat_season_roster(player, **kwargs)
 
     if action == "to_35_man":
         try:
@@ -446,6 +477,13 @@ def player_action(request, playerid, action):
         return HttpResponse("ok")
 
     if action == "to_aaa":
+        if p.is_ulmg_2h_draft:
+            return JsonResponse(
+                {
+                    "error": "Midseason Open picks must stay on the MLB roster or be released"
+                },
+                status=400,
+            )
         previous_season = settings.CURRENT_SEASON - 1
         if not models.PlayerStatSeason.objects.filter(
             player=p, season=previous_season, carded=True
@@ -471,6 +509,13 @@ def player_action(request, playerid, action):
         return HttpResponse("ok")
 
     if action == "off_roster":
+        if p.is_ulmg_2h_draft:
+            return JsonResponse(
+                {
+                    "error": "Midseason Open picks must stay on the MLB roster or be released"
+                },
+                status=400,
+            )
         p.is_ulmg_reserve = False
         p.is_ulmg_1h_c = False
         p.is_ulmg_1h_p = False
@@ -497,6 +542,7 @@ def player_action(request, playerid, action):
         p.is_ulmg_2h_c = False
         p.is_ulmg_2h_p = False
         p.is_ulmg_2h_pos = False
+        p.is_ulmg_2h_draft = False
         p.is_ulmg_protected = False
         p.is_ulmg_35man_roster = False
         p.is_ulmg_mlb_roster = False
@@ -604,7 +650,7 @@ def draft_action(request, pickid):
         name = request.GET["name"]
 
     if request.GET.get("playerid", None):
-        playerid = request.GET("playerid")
+        playerid = request.GET.get("playerid")
 
     if request.GET.get("skipped", None):
         skipped = True
@@ -618,10 +664,11 @@ def draft_action(request, pickid):
 
     if playerid:
         draftpick.player = get_object_or_404(models.Player, pk=playerid)
-        draftpick.player.team = draftpick.team
         if draftpick.season == "midseason" and draftpick.draft_type == "open":
-            draftpick.player.is_ulmg_mlb_roster = True
-        draftpick.player.save()
+            assign_midseason_open_draft_player(draftpick.player, draftpick.team)
+        else:
+            draftpick.player.team = draftpick.team
+            draftpick.player.save()
         draftpick.save()
 
     if name:
@@ -650,19 +697,23 @@ def draft_action(request, pickid):
             ps = models.Player.objects.filter(name__icontains=name)
         if len(ps) == 1:
             draftpick.player = ps[0]
-            draftpick.player.team = draftpick.team
             if draftpick.season == "midseason" and draftpick.draft_type == "open":
-                draftpick.player.is_ulmg_mlb_roster = True
-            draftpick.player.save()
+                assign_midseason_open_draft_player(draftpick.player, draftpick.team)
+            else:
+                draftpick.player.team = draftpick.team
+                draftpick.player.save()
         else:
             draftpick.player_name = name
         draftpick.save()
 
     if not name and not playerid:
         if draftpick.player:
-            draftpick.player.team = None
-            draftpick.player.is_ulmg_mlb_roster = False
-            draftpick.player.save()
+            if draftpick.season == "midseason" and draftpick.draft_type == "open":
+                clear_midseason_open_draft_player(draftpick.player)
+            else:
+                draftpick.player.team = None
+                draftpick.player.is_ulmg_mlb_roster = False
+                draftpick.player.save()
             draftpick.player = None
 
         if draftpick.player_name:
