@@ -420,6 +420,7 @@ def build_context(request):
     context["roster_tab"] = settings.TEAM_ROSTER_TAB
     context["protect_tab"] = settings.TEAM_PROTECT_TAB
     context["live_tab"] = settings.TEAM_LIVE_TAB
+    context["season_half"] = settings.TEAM_SEASON_HALF
     
     # Add previous season for roster eligibility checks
     context["previous_season"] = settings.CURRENT_SEASON - 1

@@ -1,6 +1,7 @@
 # ABOUTME: Tests for roster UI on team pages: sticky badges when tabs are on, MLB status column.
 
 from django.contrib.auth.models import User
+from django.core.cache import cache
 from django.test import Client, TestCase, override_settings
 
 from ulmg import models
@@ -9,6 +10,7 @@ from ulmg import models
 @override_settings(CURRENT_SEASON=2026)
 class TeamRosterStatusDisplayTestCase(TestCase):
     def setUp(self):
+        cache.clear()
         self.client = Client()
         self.user = User.objects.create_user(username="mgr", password="secret")
         self.owner = models.Owner.objects.create(user=self.user, name="Manager")
@@ -28,7 +30,7 @@ class TeamRosterStatusDisplayTestCase(TestCase):
         ):
             response = self.client.get("/teams/tst/")
         self.assertEqual(response.status_code, 200)
-        self.assertNotContains(response, "MLB Roster")
+        self.assertNotContains(response, "MLB Roster:")
 
     def test_team_page_shows_mlb_roster_badge_in_offseason_when_roster_tab_on(self):
         self.client.login(username="mgr", password="secret")
@@ -58,6 +60,7 @@ class TeamRosterStatusDisplayTestCase(TestCase):
             roster_status="IL-10",
             is_career=False,
         )
+        cache.clear()
         self.client.login(username="mgr", password="secret")
         response = self.client.get("/teams/tst/")
         self.assertEqual(response.status_code, 200)

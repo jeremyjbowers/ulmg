@@ -135,12 +135,12 @@ MLB_ROSTER_SIZE = 30
 PROTECT_ROSTER_SIZE = 40
 
 TEAM_PROTECT_TAB = False
-# Off while managers maintain 30-man in Strat; set True to restore sticky MLB roster controls.
-TEAM_ROSTER_TAB = False
+# On for second-half V-slot protections (2H P/C/HIT) and roster actions on team player rows.
+TEAM_ROSTER_TAB = True
 TEAM_LIVE_TAB = False
 TEAM_WISHLIST_TAB = False
 
-TEAM_SEASON_HALF = "1h"
+TEAM_SEASON_HALF = "2h"
 CURRENT_SEASON = 2026
 CURRENT_SEASON_TYPE = "midseason"
 # Set to an int to cap stat display to that year (e.g. prior year in preseason). None uses get_current_season().

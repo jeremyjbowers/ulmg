@@ -11,7 +11,8 @@
                    data-playerid="{{ p.id }}" data-action="is_ulmg_reserve" data-roster-type="asr">ASR</a>
             {% endif %}
         {% endif %}
-        
+
+        {% if season_half == "1h" %}
         <!-- 1H Protection - V-level only -->
         {% if p.level == "V" and not p.is_ulmg_reserve and not p.is_ulmg_2h_draft %}
             {% if p.position == "P" %}
@@ -25,9 +26,24 @@
                    data-playerid="{{ p.id }}" data-action="{% if p.is_ulmg_1h_pos %}unprotect_1h_pos{% else %}is_ulmg_1h_pos{% endif %}" data-roster-type="1h_pos">HIT</a>
             {% endif %}
         {% endif %}
+        {% else %}
+        <!-- 2H Protection - V-level only; blocked for ASR, matching 1H slot, and 2H draft picks -->
+        {% if p.level == "V" and not p.is_ulmg_reserve and not p.is_ulmg_2h_draft %}
+            {% if p.position == "P" and not p.is_ulmg_1h_p %}
+                <a class="player-action text-xs px-1.5 py-0.5 border {% if p.is_ulmg_2h_p %}bg-yellow-400 border-yellow-400 text-black{% else %}border-yellow-400 text-yellow-600 hover:bg-yellow-50{% endif %} rounded"
+                   data-playerid="{{ p.id }}" data-action="{% if p.is_ulmg_2h_p %}unprotect{% else %}is_ulmg_2h_p{% endif %}" data-roster-type="2h_p">P</a>
+            {% elif p.position == "C" and not p.is_ulmg_1h_c %}
+                <a class="player-action text-xs px-1.5 py-0.5 border {% if p.is_ulmg_2h_c %}bg-yellow-400 border-yellow-400 text-black{% else %}border-yellow-400 text-yellow-600 hover:bg-yellow-50{% endif %} rounded"
+                   data-playerid="{{ p.id }}" data-action="{% if p.is_ulmg_2h_c %}unprotect{% else %}is_ulmg_2h_c{% endif %}" data-roster-type="2h_c">C</a>
+            {% elif p.position != "P" and p.position != "C" and not p.is_ulmg_1h_pos %}
+                <a class="player-action text-xs px-1.5 py-0.5 border {% if p.is_ulmg_2h_pos %}bg-yellow-400 border-yellow-400 text-black{% else %}border-yellow-400 text-yellow-600 hover:bg-yellow-50{% endif %} rounded"
+                   data-playerid="{{ p.id }}" data-action="{% if p.is_ulmg_2h_pos %}unprotect{% else %}is_ulmg_2h_pos{% endif %}" data-roster-type="2h_pos">HIT</a>
+            {% endif %}
+        {% endif %}
+        {% endif %}
         
         <!-- MLB Roster Button - only for players carded last season (MLB experience) -->
-        {% if not p.is_ulmg_1h_draft and not p.is_ulmg_reserve %}
+        {% if not p.is_ulmg_reserve %}
             {% if previous_season in p.carded_seasons %}
                 {% if not p.is_ulmg_mlb_roster and mlb_roster_count < mlb_roster_size %}
                     <a class="player-action text-xs px-1.5 py-0.5 border border-black text-black hover:bg-gray-50 rounded" 
@@ -40,7 +56,7 @@
         {% endif %}
         
         <!-- AAA Roster Button - only for players carded last season (MLB experience) -->
-        {% if not p.is_ulmg_1h_draft and not p.is_ulmg_reserve and not p.is_ulmg_2h_draft %}
+        {% if not p.is_ulmg_reserve and not p.is_ulmg_2h_draft %}
             {% if previous_season in p.carded_seasons %}
                 {% if not p.is_ulmg_aaa_roster %}
                     <a class="player-action text-xs px-1.5 py-0.5 border border-blue-400 text-blue-600 hover:bg-blue-50 rounded" 
