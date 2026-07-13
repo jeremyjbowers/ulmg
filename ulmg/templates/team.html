@@ -92,9 +92,10 @@
                 <th class="text-center py-1 sortable" data-sortable-type="numeric">Age</th>
                 <th class="text-center py-1 sortable" data-sortable-type="alpha" title="Bats / throws">B/T</th>
                 <th class="text-center py-1 sortable" data-sortable-type="alpha" title="ULMG player level (V, A, or B)">Lvl</th>
+                {% if not compact_roster %}
                 <th class="text-center py-1 sortable" data-sortable-type="alpha" title="League / org level from stat season (e.g. MLB, AAA)">Org</th>
                 <th class="text-center py-1 sortable" data-sortable-type="alpha" title="Roster resource status: role, IL, bench, starter, etc.">Roster</th>
-                <th class="text-center py-1 sortable" data-sortable-type="alpha" title="ULMG MLB (30-man) roster">30</th>
+                {% endif %}
                 {% include "includes/hitter_stat_headers.html" %}
                 {% if own_team %}{% include "includes/player_protect_headers.html" %}{% endif %}
             </tr>
@@ -108,9 +109,10 @@
             <td class="text-center py-1">{{ p.age|default_if_none:"-" }}</td>
             <td class="text-center py-1">{{ p.bats_throws_display|default:"—" }}</td>
             <td class="text-center py-1">{{ p.level|default_if_none:"" }}</td>
+            {% if not compact_roster %}
             <td class="text-center py-1">{{ p.stat_season_level|default_if_none:"" }}</td>
             <td class="text-center py-1">{{ p.stat_season_roster_resource_status|default:"—" }}</td>
-            <td class="text-center py-1">{% if p.is_ulmg_active_mlb_roster %}✅ on{% endif %}</td>
+            {% endif %}
             {% include "includes/hitter_stat_cells_player.html" %}
             {% if own_team %}{% include "includes/player_protect_actions.html" %}{% endif %}
         </tr>
@@ -133,9 +135,10 @@
                 <th class="text-center py-1 sortable" data-sortable-type="numeric">Age</th>
                 <th class="text-center py-1 sortable" data-sortable-type="alpha" title="Throwing arm">Arm</th>
                 <th class="text-center py-1 sortable" data-sortable-type="alpha" title="ULMG player level (V, A, or B)">Lvl</th>
+                {% if not compact_roster %}
                 <th class="text-center py-1 sortable" data-sortable-type="alpha" title="League / org level from stat season (e.g. MLB, AAA)">Org</th>
                 <th class="text-center py-1 sortable" data-sortable-type="alpha" title="Roster resource status: role, IL, bench, starter, etc.">Roster</th>
-                <th class="text-center py-1 sortable" data-sortable-type="alpha" title="ULMG MLB (30-man) roster">30</th>
+                {% endif %}
                 {% include "includes/pitcher_stat_headers.html" %}
                 {% if own_team %}{% include "includes/player_protect_headers.html" %}{% endif %}
             </tr>
@@ -149,9 +152,10 @@
             <td class="text-center py-1">{{ p.age|default_if_none:"-" }}</td>
             <td class="text-center py-1">{{ p.throwing_arm_display|default:"—" }}</td>
             <td class="text-center py-1">{{ p.level|default_if_none:"" }}</td>
+            {% if not compact_roster %}
             <td class="text-center py-1">{{ p.stat_season_level|default_if_none:"" }}</td>
             <td class="text-center py-1">{{ p.stat_season_roster_resource_status|default:"—" }}</td>
-            <td class="text-center py-1">{% if p.is_ulmg_active_mlb_roster %}✅ on{% endif %}</td>
+            {% endif %}
             {% include "includes/pitcher_stat_cells_player.html" %}
             {% if own_team %}{% include "includes/player_protect_actions.html" %}{% endif %}
         </tr>

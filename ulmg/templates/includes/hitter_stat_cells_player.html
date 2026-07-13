@@ -1,5 +1,5 @@
 {% load ulmg_tags %}
-<td>{% if p.current_mlb_org %}{{ p.current_mlb_org }}{% elif p.get_best_stat_season and p.get_best_stat_season.mlb_org %}{{ p.get_best_stat_season.mlb_org }}{% else %}-{% endif %}</td>
+{% if not compact_roster %}<td>{% if p.current_mlb_org %}{{ p.current_mlb_org }}{% elif p.get_best_stat_season and p.get_best_stat_season.mlb_org %}{{ p.get_best_stat_season.mlb_org }}{% else %}-{% endif %}</td>{% endif %}
 
 <td class="cell-max-75">{% with best_stats=p.get_best_stat_season %}{% if best_stats and best_stats.position_display %}{{ best_stats.position_display }}{% else %}{{ p.position|default_if_none:"—" }}{% endif %}{% endwith %}</td>
 

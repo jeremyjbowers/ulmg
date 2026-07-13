@@ -46,13 +46,14 @@ class TeamRosterStatusDisplayTestCase(TestCase):
         self.assertContains(response, "MLB Roster")
         self.assertContains(response, 'id="roster-mlb-count"')
 
-    def test_team_page_shows_ulmg_level_org_level_and_mlb_column(self):
+    def test_team_page_shows_ulmg_level_without_thirty_man_column(self):
         p = models.Player.objects.create(
             name="Big Leaguer",
             position="IF",
             level="A",
             team=self.team,
             is_ulmg_mlb_roster=True,
+            carded_seasons=[2025],
         )
         models.PlayerStatSeason.objects.create(
             player=p,
@@ -61,30 +62,76 @@ class TeamRosterStatusDisplayTestCase(TestCase):
             level="MLB",
             role="10-Day IL",
             roster_status="IL-10",
+            mlb_org="NYY",
+            is_career=False,
+        )
+        cache.clear()
+        self.client.login(username="mgr", password="secret")
+        with override_settings(TEAM_ROSTER_TAB=True):
+            response = self.client.get("/teams/tst/")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'title="ULMG player level (V, A, or B)"')
+        self.assertNotContains(response, 'title="ULMG MLB (30-man) roster"')
+        self.assertNotContains(response, "✅ on")
+        self.assertNotContains(
+            response, 'title="League / org level from stat season (e.g. MLB, AAA)"'
+        )
+        self.assertNotContains(
+            response, 'title="Roster resource status: role, IL, bench, starter, etc."'
+        )
+        self.assertNotContains(response, ">MLB</th>")
+        self.assertNotContains(response, "10-Day IL")
+        content = response.content.decode()
+        player_idx = content.find("Big Leaguer")
+        self.assertNotEqual(player_idx, -1)
+        row_chunk = content[player_idx : player_idx + 2500]
+        self.assertIn(">A<", row_chunk)
+        self.assertNotIn(">NYY<", row_chunk)
+        self.assertIn('data-action="off_roster"', row_chunk)
+
+    def test_team_page_hides_pitcher_g_and_fip_columns_when_compact(self):
+        p = models.Player.objects.create(
+            name="Compact Ace",
+            position="P",
+            level="V",
+            team=self.team,
+        )
+        models.PlayerStatSeason.objects.create(
+            player=p,
+            season=2026,
+            classification="1-mlb",
+            pitch_stats={
+                "g": 45,
+                "gs": 32,
+                "ip": 200,
+                "era": 3.25,
+                "whip": 1.05,
+                "k_9": 9.5,
+                "bb_9": 2.1,
+                "hr_9": 1.0,
+                "fip": 3.10,
+                "xfip": 3.20,
+                "siera": 3.15,
+            },
             is_career=False,
         )
         cache.clear()
         self.client.login(username="mgr", password="secret")
         response = self.client.get("/teams/tst/")
         self.assertEqual(response.status_code, 200)
-        self.assertContains(
-            response, 'title="ULMG player level (V, A, or B)"'
-        )
-        self.assertContains(
-            response, 'title="League / org level from stat season (e.g. MLB, AAA)"'
-        )
-        self.assertContains(
-            response, 'title="Roster resource status: role, IL, bench, starter, etc."'
-        )
-        self.assertContains(response, 'title="ULMG MLB (30-man) roster"')
-        self.assertContains(response, "10-Day IL")
-        self.assertContains(response, "✅ on")
         content = response.content.decode()
-        player_idx = content.find("Big Leaguer")
-        self.assertNotEqual(player_idx, -1)
-        row_chunk = content[player_idx : player_idx + 800]
-        self.assertIn(">A<", row_chunk)
-        self.assertIn(">MLB<", row_chunk)
+        pitcher_idx = content.find("Compact Ace")
+        self.assertNotEqual(pitcher_idx, -1)
+        header_chunk = content[pitcher_idx - 1200 : pitcher_idx]
+        self.assertNotIn(">G</th>", header_chunk)
+        self.assertNotIn(">FIP</th>", header_chunk)
+        self.assertIn(">GS</th>", header_chunk)
+        self.assertIn(">xFIP</th>", header_chunk)
+        row_chunk = content[pitcher_idx : pitcher_idx + 1200]
+        self.assertNotIn(">45<", row_chunk)
+        self.assertIn(">32<", row_chunk)
+        self.assertNotIn(">3.10<", row_chunk)
+        self.assertIn(">3.20<", row_chunk)
 
     def test_team_page_collapses_hitter_stats_into_actual_and_expected_columns(self):
         p = models.Player.objects.create(
