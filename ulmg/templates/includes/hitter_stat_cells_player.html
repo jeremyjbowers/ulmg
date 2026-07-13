@@ -41,6 +41,11 @@
 <td data-value="{% if best_stats and best_stats.hit_stats %}{{ best_stats.hit_stats.pa|default_if_none:"-999" }}{% else %}-999{% endif %}">
     {% if best_stats and best_stats.hit_stats %}{% if best_stats.hit_stats.pa > 0 %}{{ best_stats.hit_stats.pa|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
 </td>
+{% if compact_roster %}
+<td class="whitespace-nowrap" data-value="{% if best_stats and best_stats.hit_stats %}{{ best_stats.hit_stats.slg|default_if_none:"-999" }}{% else %}-999{% endif %}">
+    {% if best_stats and best_stats.hit_stats and best_stats.hit_stats.pa > 0 %}{{ best_stats.hit_stats.avg|floatformat:3|kill_leading_zero|default_if_none:"-" }}/{{ best_stats.hit_stats.obp|floatformat:3|kill_leading_zero|default_if_none:"-" }}/{{ best_stats.hit_stats.slg|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
+</td>
+{% else %}
 <td data-value="{% if best_stats and best_stats.hit_stats %}{{ best_stats.hit_stats.avg|default_if_none:"-999" }}{% else %}-999{% endif %}">
     {% if best_stats and best_stats.hit_stats %}{% if best_stats.hit_stats.pa > 0 %}{{ best_stats.hit_stats.avg|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
 </td>
@@ -50,6 +55,7 @@
 <td data-value="{% if best_stats and best_stats.hit_stats %}{{ best_stats.hit_stats.slg|default_if_none:"-999" }}{% else %}-999{% endif %}">
     {% if best_stats and best_stats.hit_stats %}{% if best_stats.hit_stats.pa > 0 %}{{ best_stats.hit_stats.slg|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
 </td>
+{% endif %}
 <td data-value="{% if best_stats and best_stats.hit_stats %}{{ best_stats.hit_stats.hr|default_if_none:"-999" }}{% else %}-999{% endif %}">
     {% if best_stats and best_stats.hit_stats %}{% if best_stats.hit_stats.pa > 0 %}{{ best_stats.hit_stats.hr|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
 </td>
@@ -65,6 +71,11 @@
 <td data-value="{% if best_stats and best_stats.hit_stats %}{{ best_stats.hit_stats.wrc_plus|default_if_none:"-999" }}{% else %}-999{% endif %}">
     {% if best_stats and best_stats.hit_stats %}{% if best_stats.hit_stats.pa > 0 %}{{ best_stats.hit_stats.wrc_plus|floatformat:"0"|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
 </td>
+{% if compact_roster %}
+<td class="whitespace-nowrap" data-value="{% if best_stats and best_stats.hit_stats %}{{ best_stats.hit_stats.xslg|default_if_none:"-999" }}{% else %}-999{% endif %}">
+    {% if best_stats and best_stats.hit_stats and best_stats.hit_stats.pa > 0 and best_stats.hit_stats.xavg and best_stats.hit_stats.xwoba and best_stats.hit_stats.xslg %}{{ best_stats.hit_stats.xavg|floatformat:3|kill_leading_zero|default_if_none:"-" }}/{{ best_stats.hit_stats.xwoba|floatformat:3|kill_leading_zero|default_if_none:"-" }}/{{ best_stats.hit_stats.xslg|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
+</td>
+{% else %}
 <td data-value="{% if best_stats and best_stats.hit_stats %}{{ best_stats.hit_stats.xavg|default_if_none:"-999" }}{% else %}-999{% endif %}">
     {% if best_stats and best_stats.hit_stats %}{% if best_stats.hit_stats.pa > 0 and best_stats.hit_stats.xavg %}{{ best_stats.hit_stats.xavg|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
 </td>
@@ -74,4 +85,5 @@
 <td data-value="{% if best_stats and best_stats.hit_stats %}{{ best_stats.hit_stats.xslg|default_if_none:"-999" }}{% else %}-999{% endif %}">
     {% if best_stats and best_stats.hit_stats %}{% if best_stats.hit_stats.pa > 0 and best_stats.hit_stats.xslg %}{{ best_stats.hit_stats.xslg|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
 </td>
+{% endif %}
 {% endwith %}

@@ -7,7 +7,7 @@ from functools import cached_property
 from dateutil.relativedelta import *
 from django.contrib.auth.models import User
 from django.db import models
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.contrib.postgres.fields import JSONField, ArrayField
 from django.db.models.signals import post_save, m2m_changed
 from django.dispatch import receiver
@@ -782,6 +782,25 @@ class Player(BaseModel):
         if not current_status or current_status.classification != "1-mlb":
             return False
         return current_status.has_mlb_appearances()
+
+    def is_carded_for_season(self, season):
+        """True when the player had a card (MLB experience) in the given season."""
+        if season in (self.carded_seasons or []):
+            return True
+        stat_rows = PlayerStatSeason.objects.filter(
+            player=self,
+            season=season,
+            is_career=False,
+        )
+        if stat_rows.filter(carded=True).exists():
+            return True
+        return stat_rows.filter(classification="1-mlb").filter(
+            utils.mlb_appearances_q()
+        ).exists()
+
+    @property
+    def is_carded_for_previous_season(self):
+        return self.is_carded_for_season(settings.CURRENT_SEASON - 1)
 
     def team_display(self):
         if self.team:

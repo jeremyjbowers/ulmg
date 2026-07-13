@@ -3,7 +3,7 @@
 
     <div class="roster-item">
         {% if protect_tab %}<button>40-Man&nbsp;<span id="roster-40-count">{{ 35_roster_count }}</span></button>{% endif %}
-        {% if roster_tab and current_season_type == "offseason" and mlb_roster_count is not None %}<button>MLB Roster:&nbsp;<span id="roster-mlb-count">{{ mlb_roster_count }}</span></button>{% endif %}
+        {% if roster_tab and mlb_roster_count is not None %}<button>MLB Roster:&nbsp;<span id="roster-mlb-count">{{ mlb_roster_count }}</span>/{{ mlb_roster_size }}</button>{% endif %}
     </div>
 
 </div>

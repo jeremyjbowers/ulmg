@@ -453,9 +453,7 @@ def player_action(request, playerid, action):
 
     if action == "to_mlb":
         previous_season = settings.CURRENT_SEASON - 1
-        if not models.PlayerStatSeason.objects.filter(
-            player=p, season=previous_season, carded=True
-        ).exists():
+        if not p.is_carded_for_season(previous_season):
             return JsonResponse(
                 {"error": "Only carded players (MLB experience last season) can be placed on MLB roster"},
                 status=400,
@@ -485,9 +483,7 @@ def player_action(request, playerid, action):
                 status=400,
             )
         previous_season = settings.CURRENT_SEASON - 1
-        if not models.PlayerStatSeason.objects.filter(
-            player=p, season=previous_season, carded=True
-        ).exists():
+        if not p.is_carded_for_season(previous_season):
             return JsonResponse(
                 {"error": "Only carded players (MLB experience last season) can be placed on AAA roster"},
                 status=400,

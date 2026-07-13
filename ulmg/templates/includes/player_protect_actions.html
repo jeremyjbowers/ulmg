@@ -47,7 +47,7 @@
             <span class="2h-draft-locked-mlb text-xs px-1.5 py-0.5 border bg-black border-black text-white rounded"
                   title="Midseason Open pick: must stay on MLB roster or be released">MLB</span>
         {% elif not p.is_ulmg_reserve %}
-            {% if previous_season in p.carded_seasons %}
+            {% if p.is_carded_for_previous_season %}
                 {% if not p.is_ulmg_mlb_roster and mlb_roster_count < mlb_roster_size %}
                     <a class="player-action text-xs px-1.5 py-0.5 border border-black text-black hover:bg-gray-50 rounded" 
                        data-playerid="{{ p.id }}" data-action="to_mlb">MLB</a>
@@ -60,7 +60,7 @@
         
         <!-- AAA Roster Button - only for players carded last season (MLB experience) -->
         {% if not p.is_ulmg_reserve and not p.is_ulmg_2h_draft %}
-            {% if previous_season in p.carded_seasons %}
+            {% if p.is_carded_for_previous_season %}
                 {% if not p.is_ulmg_aaa_roster %}
                     <a class="player-action text-xs px-1.5 py-0.5 border border-blue-400 text-blue-600 hover:bg-blue-50 rounded" 
                        data-playerid="{{ p.id }}" data-action="to_aaa">AAA</a>
