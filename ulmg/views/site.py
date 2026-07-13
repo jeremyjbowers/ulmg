@@ -20,9 +20,7 @@ from ulmg import models, utils
 from ulmg.cache_utils import (
     get_all_cache_keys,
     delete_cache_key_for_admin,
-    get_cached_or_compute,
     is_valkey_active,
-    team_roster_cache_key,
 )
 
 
@@ -197,10 +195,8 @@ def team_detail(request, abbreviation):
             "pitchers": pitchers,
         }
 
-    # Query cache: key is bounded to team + whitelisted stat filters (season, classification).
-    # Full HTML stays @never_cache because own_team and roster badges are user-specific.
-    roster_cache_key = team_roster_cache_key(team_abbr, stat_season, classification)
-    roster_data = get_cached_or_compute(roster_cache_key, _get_team_roster_data)
+    # Real-time roster queries while managers set protections and MLB roster slots.
+    roster_data = _get_team_roster_data()
     context["35_roster_count"] = roster_data["35_roster_count"]
     context["mlb_roster_count"] = roster_data["mlb_roster_count"]
     context["team_has_asr"] = roster_data["team_has_asr"]

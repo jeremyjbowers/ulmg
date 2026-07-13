@@ -64,31 +64,46 @@ class TeamRosterQueryCacheTestCase(TestCase):
             is_career=False,
         )
 
-    def test_junk_query_params_do_not_create_extra_cache_entries(self):
+    def test_junk_query_params_do_not_create_roster_cache_entries(self):
         self.client.login(username="mgr", password="secret")
         self.client.get("/teams/tst/?season=2025&foo=bar&baz=qux")
         self.client.get("/teams/tst/?season=2025&other=junk")
 
         key = team_roster_cache_key("TST", 2025, None)
-        self.assertIsNotNone(cache.get(key))
+        self.assertIsNone(cache.get(key))
         self.assertIsNone(cache.get(team_roster_cache_key("TST", 2025, "foo")))
 
-    def test_invalid_season_reuses_current_season_cache_key(self):
+    def test_invalid_season_does_not_create_roster_cache_entry(self):
         self.client.login(username="mgr", password="secret")
         self.client.get("/teams/tst/?season=1999")
         self.client.get("/teams/tst/")
 
         current_key = team_roster_cache_key("TST", 2026, None)
-        self.assertIsNotNone(cache.get(current_key))
+        self.assertIsNone(cache.get(current_key))
         self.assertIsNone(cache.get(team_roster_cache_key("TST", 1999, None)))
 
-    def test_explicit_season_uses_separate_cache_entry(self):
+    def test_explicit_season_does_not_create_roster_cache_entry(self):
         self.client.login(username="mgr", password="secret")
         self.client.get("/teams/tst/")
         self.client.get("/teams/tst/?season=2025")
 
-        self.assertIsNotNone(cache.get(team_roster_cache_key("TST", 2026, None)))
-        self.assertIsNotNone(cache.get(team_roster_cache_key("TST", 2025, None)))
+        self.assertIsNone(cache.get(team_roster_cache_key("TST", 2026, None)))
+        self.assertIsNone(cache.get(team_roster_cache_key("TST", 2025, None)))
+
+    def test_protection_change_visible_without_cache_clear(self):
+        self.player.level = "V"
+        self.player.position = "P"
+        self.player.save()
+        self.client.login(username="mgr", password="secret")
+        with override_settings(TEAM_ROSTER_TAB=True, TEAM_SEASON_HALF="2h"):
+            response = self.client.get("/teams/tst/")
+        self.assertNotContains(response, 'data-action="unprotect"')
+
+        self.player.is_ulmg_2h_p = True
+        self.player.save()
+
+        response = self.client.get("/teams/tst/")
+        self.assertContains(response, 'data-action="unprotect"')
 
 
 class ParseTeamRosterStatFiltersCacheSafetyTestCase(TestCase):
