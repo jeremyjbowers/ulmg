@@ -23,6 +23,24 @@ def kill_leading_zero(value):
     return value
 
 
+@register.filter(name="ops_plus")
+def ops_plus(hit_stats):
+    """Return OPS+ from FanGraphs hit_stats, or derive it from OBP+ and SLG+."""
+    if not hit_stats:
+        return None
+
+    if isinstance(hit_stats, dict):
+        if hit_stats.get("ops_plus") not in (None, ""):
+            return hit_stats["ops_plus"]
+
+        obp_plus = hit_stats.get("obp_plus")
+        slg_plus = hit_stats.get("slg_plus")
+        if obp_plus not in (None, "") and slg_plus not in (None, ""):
+            return float(obp_plus) + float(slg_plus) - 100
+
+    return None
+
+
 @register.filter(name="commafy")
 def commafy(n):
     r = []

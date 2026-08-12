@@ -204,7 +204,6 @@ def team_detail(request, abbreviation):
     context["num_owned"] = roster_data["num_owned"]
     context["hitters"] = roster_data["hitters"]
     context["pitchers"] = roster_data["pitchers"]
-    context["compact_roster"] = True
     return render(request, "team.html", context)
 
 

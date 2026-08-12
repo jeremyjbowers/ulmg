@@ -135,8 +135,8 @@ MLB_ROSTER_SIZE = 30
 PROTECT_ROSTER_SIZE = 40
 
 TEAM_PROTECT_TAB = False
-# On for second-half V-slot protections (2H P/C/HIT) and roster actions on team player rows.
-TEAM_ROSTER_TAB = True
+# Off: roster/protection row actions and sticky MLB roster count live on team pages when True.
+TEAM_ROSTER_TAB = False
 TEAM_LIVE_TAB = False
 TEAM_WISHLIST_TAB = False
 

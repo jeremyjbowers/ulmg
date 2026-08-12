@@ -165,7 +165,7 @@
     </div>
 </div>
 
-{% if own_team %}
+{% if own_team and roster_tab %}
 <div id="drop-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50"
      data-mlb-roster-count="{{ mlb_roster_count|default:0 }}"
      data-mlb-roster-size="{{ mlb_roster_size|default:30 }}">
@@ -189,5 +189,5 @@
 
 {% block extrascript %}
 {% include "includes/my/wishlistjs.html" %}
-{% if own_team %}{% include "includes/player_protect_actions_script.html" %}{% endif %}
+{% if own_team and roster_tab %}{% include "includes/player_protect_actions_script.html" %}{% endif %}
 {% endblock %}

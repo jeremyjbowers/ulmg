@@ -5,22 +5,12 @@
 {% if not compact_roster %}<th data-sortable-type="alpha">Level</th>
 <th data-sortable-type="alpha">Stats</th>{% endif %}
 <th data-sortable-type="numeric">PA</th>
-{% if compact_roster %}
 <th data-sortable-type="numeric">Actual</th>
-{% else %}
-<th data-sortable-type="numeric">AVG</th>
-<th data-sortable-type="numeric">OBP</th>
-<th data-sortable-type="numeric">SLG</th>
-{% endif %}
 <th data-sortable-type="numeric">HR</th>
 <th data-sortable-type="numeric">SB</th>
 <th data-sortable-type="numeric">K%</th>
 <th data-sortable-type="numeric">BB%</th>
 <th data-sortable-type="numeric">wRC+</th>
-{% if compact_roster %}
+<th data-sortable-type="numeric">OPS+</th>
+<th data-sortable-type="numeric">WAR</th>
 <th data-sortable-type="numeric">Expected</th>
-{% else %}
-<th data-sortable-type="numeric">xA</th>
-<th data-sortable-type="numeric">xO</th>
-<th data-sortable-type="numeric">xS</th>
-{% endif %}

@@ -97,13 +97,20 @@ class TeamRosterQueryCacheTestCase(TestCase):
         self.client.login(username="mgr", password="secret")
         with override_settings(TEAM_ROSTER_TAB=True, TEAM_SEASON_HALF="2h"):
             response = self.client.get("/teams/tst/")
-        self.assertNotContains(response, 'data-action="unprotect"')
+            content = response.content.decode()
+            player_idx = content.find("Cached Guy")
+            self.assertNotEqual(player_idx, -1)
+            row_chunk = content[player_idx : player_idx + 2500]
+            self.assertNotIn('data-action="unprotect"', row_chunk)
 
-        self.player.is_ulmg_2h_p = True
-        self.player.save()
+            self.player.is_ulmg_2h_p = True
+            self.player.save()
 
-        response = self.client.get("/teams/tst/")
-        self.assertContains(response, 'data-action="unprotect"')
+            response = self.client.get("/teams/tst/")
+            content = response.content.decode()
+            player_idx = content.find("Cached Guy")
+            row_chunk = content[player_idx : player_idx + 2500]
+            self.assertIn('data-action="unprotect"', row_chunk)
 
 
 class ParseTeamRosterStatFiltersCacheSafetyTestCase(TestCase):
