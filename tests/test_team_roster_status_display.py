@@ -41,7 +41,7 @@ class TeamRosterStatusDisplayTestCase(TestCase):
         self.assertContains(response, 'id="roster-mlb-count"')
         self.assertContains(response, "/30")
 
-    def test_team_page_shows_org_and_roster_stat_columns(self):
+    def test_team_page_hides_removed_metadata_columns(self):
         p = models.Player.objects.create(
             name="Big Leaguer",
             position="IF",
@@ -65,18 +65,22 @@ class TeamRosterStatusDisplayTestCase(TestCase):
         response = self.client.get("/teams/tst/")
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'title="ULMG player level (V, A, or B)"')
-        self.assertContains(
+        self.assertNotContains(
             response, 'title="League / org level from stat season (e.g. MLB, AAA)"'
         )
-        self.assertContains(
+        self.assertNotContains(
             response, 'title="Roster resource status: role, IL, bench, starter, etc."'
         )
+        self.assertNotContains(response, ">MLB</th>")
+        self.assertNotContains(response, ">Role</th>")
+        self.assertNotContains(response, ">Stats</th>")
         content = response.content.decode()
         player_idx = content.find("Big Leaguer")
         self.assertNotEqual(player_idx, -1)
         row_chunk = content[player_idx : player_idx + 2500]
         self.assertIn(">A<", row_chunk)
-        self.assertIn(">NYY<", row_chunk)
+        self.assertNotIn(">NYY<", row_chunk)
+        self.assertNotIn("10-Day IL", row_chunk)
         self.assertNotIn('data-action="off_roster"', row_chunk)
 
     def test_team_page_shows_pitcher_g_and_fip_columns(self):

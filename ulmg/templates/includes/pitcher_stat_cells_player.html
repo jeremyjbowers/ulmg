@@ -1,12 +1,8 @@
 {% load ulmg_tags %}
-{% if not compact_roster %}<td>{% if p.current_mlb_org %}{{ p.current_mlb_org }}{% elif p.get_best_stat_season and p.get_best_stat_season.mlb_org %}{{ p.get_best_stat_season.mlb_org }}{% else %}-{% endif %}</td>{% endif %}
 
 {% with best_stats=p.get_best_stat_season %}
 <td data-value="{% if best_stats %}{{ best_stats.season }}{% else %}-1{% endif %}">
     {% if best_stats %}{{ best_stats.season }}{% else %}-{% endif %}
-</td>
-<td data-value="{% if best_stats and best_stats.role_type %}{{ best_stats.role_type }}{% else %}-{% endif %}">
-    {% if best_stats and best_stats.role_type %}{{ best_stats.role_type }}{% else %}-{% endif %}
 </td>
 {% if not compact_roster %}
 <td data-value="{% if best_stats and best_stats.pitch_stats.level %}2{% else %}{% if best_stats and best_stats.clean_classification == "mlb" %}1{% elif best_stats and best_stats.clean_classification == "npb" %}3{% elif best_stats and best_stats.clean_classification == "kbo" %}4{% elif best_stats and best_stats.clean_classification == "college" %}5{% else %}6{% endif %}{% endif %}">
@@ -29,10 +25,6 @@
     {% else %}
         -
     {% endif %}
-</td>
-
-<td data-value="{% if best_stats and best_stats.clean_classification %}{{ best_stats.season }} {{ best_stats.clean_classification }}{% else %}-{% endif %}">
-    {% if best_stats and best_stats.clean_classification %}{{ best_stats.clean_classification }}{% else %}-{% endif %}
 </td>
 {% endif %}
 
