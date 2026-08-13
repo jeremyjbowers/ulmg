@@ -83,11 +83,7 @@
             <td class="text-center py-1">{% if p.player %}{{ p.player.age|default_if_none:"-" }}{% else %}{{ p.age|default_if_none:"-" }}{% endif %}</td>
             {% include "includes/hitter_handedness_cell.html" %}
             <td class="text-center py-1">{% if p.player %}{{ p.player.level|default_if_none:"" }}{% else %}{{ p.level|default_if_none:"" }}{% endif %}</td>
-            {% if p.season %}
-                {% include "includes/hitter_stat_cells.html" %}
-            {% else %}
-                {% include "includes/hitter_stat_cells_player.html" %}
-            {% endif %}
+            {% include "includes/hitter_stat_cells.html" %}
         </tr>
         {% endfor %}
         </tbody>
@@ -151,11 +147,7 @@
             <td class="text-center py-1">{% if p.player %}{{ p.player.age|default_if_none:"-" }}{% else %}{{ p.age|default_if_none:"-" }}{% endif %}</td>
             {% include "includes/pitcher_throwing_arm_cell.html" %}
             <td class="text-center py-1">{% if p.player %}{{ p.player.level|default_if_none:"" }}{% else %}{{ p.level|default_if_none:"" }}{% endif %}</td>
-            {% if p.season %}
-                {% include "includes/pitcher_stat_cells.html" %}
-            {% else %}
-                {% include "includes/pitcher_stat_cells_player.html" %}
-            {% endif %}
+            {% include "includes/pitcher_stat_cells.html" %}
         </tr>
         {% endfor %}
         </tbody>

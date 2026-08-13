@@ -1,0 +1,63 @@
+{# ABOUTME: Hitter stat <td> cells aligned with hitter_stat_headers.html. #}
+{# ABOUTME: Expects stats (PlayerStatSeason or None) and fallback_position. #}
+{% load ulmg_tags %}
+
+<td class="cell-max-75">{% if stats and stats.position_display %}{{ stats.position_display }}{% else %}{{ fallback_position|default_if_none:"—" }}{% endif %}</td>
+
+<td data-value="{% if stats %}{{ stats.season }}{% else %}-1{% endif %}">
+    {% if stats %}{{ stats.season }}{% else %}-{% endif %}
+</td>
+{% if not compact_roster %}
+<td data-value="{% if stats and stats.hit_stats.level %}2{% else %}{% if stats and stats.clean_classification == "mlb" %}1{% elif stats and stats.clean_classification == "npb" %}3{% elif stats and stats.clean_classification == "kbo" %}4{% elif stats and stats.clean_classification == "college" %}5{% else %}6{% endif %}{% endif %}">
+    {% if stats %}
+        {% if stats.hit_stats.level %}
+            {{ stats.hit_stats.level }}
+        {% else %}
+            {% if stats.clean_classification == "mlb" %}
+                MLB
+            {% elif stats.clean_classification == "npb" %}
+                NPB
+            {% elif stats.clean_classification == "kbo" %}
+                KBO
+            {% elif stats.clean_classification == "college" %}
+                NCAA
+            {% else %}
+                -
+            {% endif %}
+        {% endif %}
+    {% else %}
+        -
+    {% endif %}
+</td>
+{% endif %}
+
+<td data-value="{% if stats and stats.hit_stats %}{{ stats.hit_stats.pa|default_if_none:"-999" }}{% else %}-999{% endif %}">
+    {% if stats and stats.hit_stats %}{% if stats.hit_stats.pa > 0 %}{{ stats.hit_stats.pa|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
+</td>
+<td class="whitespace-nowrap" data-value="{% if stats and stats.hit_stats %}{{ stats.hit_stats.slg|default_if_none:"-999" }}{% else %}-999{% endif %}">
+    {% if stats and stats.hit_stats and stats.hit_stats.pa > 0 %}{{ stats.hit_stats.avg|floatformat:3|kill_leading_zero|default_if_none:"-" }}/{{ stats.hit_stats.obp|floatformat:3|kill_leading_zero|default_if_none:"-" }}/{{ stats.hit_stats.slg|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
+</td>
+<td data-value="{% if stats and stats.hit_stats %}{{ stats.hit_stats.hr|default_if_none:"-999" }}{% else %}-999{% endif %}">
+    {% if stats and stats.hit_stats %}{% if stats.hit_stats.pa > 0 %}{{ stats.hit_stats.hr|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
+</td>
+<td data-value="{% if stats and stats.hit_stats %}{{ stats.hit_stats.sb|default_if_none:"-999" }}{% else %}-999{% endif %}">
+    {% if stats and stats.hit_stats %}{% if stats.hit_stats.pa > 0 %}{{ stats.hit_stats.sb|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
+</td>
+<td data-value="{% if stats and stats.hit_stats %}{{ stats.hit_stats.k_pct|default_if_none:"-999" }}{% else %}-999{% endif %}">
+    {% if stats and stats.hit_stats %}{% if stats.hit_stats.pa > 0 %}{{ stats.hit_stats.k_pct|percents_to_hundreds|floatformat:"1"|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
+</td>
+<td data-value="{% if stats and stats.hit_stats %}{{ stats.hit_stats.bb_pct|default_if_none:"-999" }}{% else %}-999{% endif %}">
+    {% if stats and stats.hit_stats %}{% if stats.hit_stats.pa > 0 %}{{ stats.hit_stats.bb_pct|percents_to_hundreds|floatformat:"1"|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
+</td>
+<td data-value="{% if stats and stats.hit_stats %}{{ stats.hit_stats.wrc_plus|default_if_none:"-999" }}{% else %}-999{% endif %}">
+    {% if stats and stats.hit_stats %}{% if stats.hit_stats.pa > 0 %}{{ stats.hit_stats.wrc_plus|floatformat:"0"|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
+</td>
+<td data-value="{% if stats and stats.hit_stats %}{{ stats.hit_stats|ops_plus|default_if_none:"-999" }}{% else %}-999{% endif %}">
+    {% if stats and stats.hit_stats %}{% if stats.hit_stats.pa > 0 %}{{ stats.hit_stats|ops_plus|floatformat:"0"|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
+</td>
+<td data-value="{% if stats and stats.hit_stats %}{{ stats.hit_stats.war|default_if_none:"-999" }}{% else %}-999{% endif %}">
+    {% if stats and stats.hit_stats %}{% if stats.hit_stats.pa > 0 %}{{ stats.hit_stats.war|floatformat:1|default_if_none:"-" }}{% else %}-{% endif %}{% else %}-{% endif %}
+</td>
+<td class="whitespace-nowrap" data-value="{% if stats and stats.hit_stats %}{{ stats.hit_stats.xslg|default_if_none:"-999" }}{% else %}-999{% endif %}">
+    {% if stats and stats.hit_stats and stats.hit_stats.pa > 0 and stats.hit_stats.xavg and stats.hit_stats.xwoba and stats.hit_stats.xslg %}{{ stats.hit_stats.xavg|floatformat:3|kill_leading_zero|default_if_none:"-" }}/{{ stats.hit_stats.xwoba|floatformat:3|kill_leading_zero|default_if_none:"-" }}/{{ stats.hit_stats.xslg|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% else %}-{% endif %}
+</td>
