@@ -1,5 +1,5 @@
 # ABOUTME: Tests for offseason and midseason draft-prep eligibility and team-page links.
-# ABOUTME: Covers AA (B-only) vs Open (any level; midseason still requires a prior-year card).
+# ABOUTME: Covers AA (B-only) vs Open (V/A ranking board; midseason Open still requires a prior-year card).
 
 from django.contrib.auth.models import User
 from django.test import Client, TestCase, override_settings
@@ -31,10 +31,10 @@ class DraftPrepEligibilityUnitTestCase(TestCase):
             {"team__isnull": True, "level": "B"},
         )
 
-    def test_offseason_open_filters_are_unowned_any_level(self):
+    def test_offseason_open_filters_are_unowned_v_and_a(self):
         self.assertEqual(
             utils.get_draft_prep_player_filters("open", list_type="offseason"),
-            {"team__isnull": True},
+            {"team__isnull": True, "level__in": ["V", "A"]},
         )
 
     def test_midseason_open_filters_require_prior_year_card(self):
@@ -78,13 +78,13 @@ class DraftPrepViewIntegrationTestCase(TestCase):
         )
         self.client.login(username="mgr", password="secret")
 
-    def test_offseason_open_includes_any_unowned_level_without_card(self):
+    def test_offseason_open_includes_unowned_v_and_a_without_card(self):
         response = self.client.get("/my/offseason/draft/")
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Unowned Veteran")
         self.assertContains(response, "Unowned A-Level")
-        self.assertContains(response, "Uncarded B Prospect")
-        self.assertContains(response, "Carded B Prospect")
+        self.assertNotContains(response, "Uncarded B Prospect")
+        self.assertNotContains(response, "Carded B Prospect")
         self.assertNotContains(response, "Owned B Prospect")
         self.assertEqual(response.context["draft_season"], "offseason")
         self.assertEqual(response.context["draft_type"], "open")
@@ -145,7 +145,7 @@ class DraftPrepTeamPageE2ETestCase(TestCase):
 
         open_prep = self.client.get("/my/offseason/draft/")
         self.assertEqual(open_prep.status_code, 200)
-        self.assertContains(open_prep, "Offseason Eligible B")
+        self.assertNotContains(open_prep, "Offseason Eligible B")
         self.assertContains(open_prep, "Offseason Eligible V")
 
         aa_prep = self.client.get("/my/wishlist/draft/beta/")

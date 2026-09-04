@@ -77,7 +77,7 @@
         {% elif draft_type == "open" %}
         <a href="/search/filter/?carded=&owned=false&classification=&level=&position=h&pa_cutoff=&ip_cutoff=&gs_cutoff=" class="underline">hitters</a>,
         <a href="/search/filter/?carded=&owned=false&classification=&level=&position=p&pa_cutoff=&ip_cutoff=&gs_cutoff=" class="underline">pitchers</a>
-        (any level);
+        (V/A);
         <a href="/players/unprotected/" class="underline">unprotected 40-man</a>
         {% else %}
         <a href="/search/filter/?carded=&owned=false&classification=&level=B&position=&pa_cutoff=&ip_cutoff=&gs_cutoff=" class="underline">B-level free agents</a>
@@ -99,7 +99,7 @@
                 {% elif draft_type == "open" and draft_season == "midseason" %}
                 <span class="font-normal text-gray-600">— V/A/B with {{ open_carded_season }} MLB card, 3 rounds</span>
                 {% elif draft_type == "open" %}
-                <span class="font-normal text-gray-600">— any level (V/A/B), no prior-season card required, 5 rounds</span>
+                <span class="font-normal text-gray-600">— V/A only, no prior-season card required, 5 rounds</span>
                 {% endif %}
             </h3>
             <div class="text-xs text-gray-600 flex items-center gap-2">

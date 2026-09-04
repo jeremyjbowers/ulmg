@@ -214,13 +214,16 @@ def get_draft_prep_player_filters(draft_type, list_type=None):
     Player-field filters for manager draft-prep wishlists.
 
     AA: unowned B-level players.
-    Offseason open: unowned players of any level (no prior-season card required).
+    Offseason open: unowned V and A players (B ranking lives on the AA board).
     Midseason open: unowned players with a card from the prior MLB season.
     """
     season = list_type or settings.CURRENT_SEASON_TYPE
     filters = {"team__isnull": True}
     if draft_type == "aa":
         filters["level"] = "B"
+        return filters
+    if draft_type == "open" and season == "offseason":
+        filters["level__in"] = ["V", "A"]
         return filters
     if draft_type == "open" and season == "midseason":
         filters["carded_seasons__contains"] = [get_midseason_open_carded_season()]
