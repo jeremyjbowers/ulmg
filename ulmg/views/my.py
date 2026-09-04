@@ -1,3 +1,5 @@
+# ABOUTME: Owner-facing views for team home, AA draft prep, and Open draft prep wishlists.
+# ABOUTME: Draft-prep lists follow offseason/midseason eligibility (AA is B-only; Open varies).
 import csv
 import datetime
 import itertools
@@ -31,7 +33,9 @@ def my_team(request):
 def my_wishlist_beta(request):
     context = utils.build_context(request)
 
-    draft_year, draft_season = utils.get_draft_prep_year_season("aa")
+    draft_year, draft_season = utils.get_draft_prep_year_season(
+        "aa", list_type=utils.get_draft_prep_season_type()
+    )
 
     context['draft_type'] = "aa"
     context['draft_year'] = draft_year
@@ -53,11 +57,15 @@ def my_wishlist_beta(request):
     # Get current season for PlayerStatSeason queries
     season = settings.CURRENT_SEASON
 
-    # All AA-eligible wishlist players for this owner
     # Prefetch PlayerStatSeason data to avoid N+1 queries and ensure we use current stats
     # Exclude owned players (player__team__isnull=True) - players disappear when drafted
+    player_filters = {
+        f"player__{key}": value
+        for key, value in utils.get_draft_prep_player_filters("aa", list_type=draft_season).items()
+    }
     base_qs = models.WishlistPlayer.objects.filter(
-        wishlist=context["wishlist"], player__team__isnull=True, player__level="B"
+        wishlist=context["wishlist"],
+        **player_filters,
     ).select_related('player').prefetch_related(
         Prefetch(
             'player__playerstatseason_set',
@@ -129,25 +137,16 @@ def my_draft_prep(request, list_type):
         to_attr='all_stat_seasons'
     )
 
-    if list_type == "offseason":
-        # Offseason open draft: show A/V level players only (B-level players are for AA draft)
-        # Exclude owned players (player__team__isnull=True) - players disappear when drafted
+    if list_type in ("offseason", "midseason"):
+        if list_type == "midseason":
+            context["open_carded_season"] = utils.get_midseason_open_carded_season(draft_year)
+        player_filters = {
+            f"player__{key}": value
+            for key, value in utils.get_draft_prep_player_filters("open", list_type=list_type).items()
+        }
         base_qs = models.WishlistPlayer.objects.filter(
             wishlist=context["wishlist"],
-            player__team__isnull=True,  # Only unowned players
-        ).exclude(
-            player__level="B"  # B-level players are for AA draft, not Open draft
-        ).select_related('player').prefetch_related(prefetch_stats).order_by("rank")
-
-    elif list_type == "midseason":
-        # Midseason open: V/A/B with a prior-year MLB card (played in an MLB game that season)
-        # Exclude owned players (player__team__isnull=True) - players disappear when drafted
-        carded_season = utils.get_midseason_open_carded_season(draft_year)
-        context["open_carded_season"] = carded_season
-        base_qs = models.WishlistPlayer.objects.filter(
-            wishlist=context["wishlist"],
-            player__team__isnull=True,
-            player__carded_seasons__contains=[carded_season],
+            **player_filters,
         ).select_related('player').prefetch_related(prefetch_stats).order_by("rank")
     else:
         base_qs = models.WishlistPlayer.objects.none()

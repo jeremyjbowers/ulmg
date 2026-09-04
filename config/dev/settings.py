@@ -143,6 +143,8 @@ TEAM_WISHLIST_TAB = False
 TEAM_SEASON_HALF = "2h"
 CURRENT_SEASON = 2026
 CURRENT_SEASON_TYPE = "midseason"
+# Team-page Open/AA draft prep can look ahead of CURRENT_SEASON_TYPE.
+DRAFT_PREP_SEASON_TYPE = "offseason"
 # Set to an int to cap stat display to that year (e.g. prior year in preseason). None uses get_current_season().
 STATS_DISPLAY_SEASON_CAP = None
 

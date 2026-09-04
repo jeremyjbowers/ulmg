@@ -189,24 +189,42 @@ def get_midseason_open_carded_season(draft_year=None):
     return int(draft_year) - 1
 
 
+def get_draft_prep_season_type():
+    """Season type used by team-page draft prep links (Open and AA)."""
+    return getattr(settings, "DRAFT_PREP_SEASON_TYPE", None) or settings.CURRENT_SEASON_TYPE
+
+
 def get_draft_prep_year_season(draft_type, list_type=None):
     """
     Return (year, season) for manager draft prep pages.
 
     draft_type: "open" or "aa"
-    list_type: for open draft only, "offseason" or "midseason"; when omitted, uses
-        the active league period (CURRENT_SEASON_TYPE).
+    list_type: "offseason" or "midseason"; when omitted, uses CURRENT_SEASON_TYPE.
+    During midseason, explicit offseason prep targets the next calendar year.
     """
-    if draft_type == "open" and list_type == "offseason":
-        draft_year = settings.CURRENT_SEASON
-        if settings.CURRENT_SEASON_TYPE == "midseason":
-            draft_year = settings.CURRENT_SEASON + 1
-        return draft_year, "offseason"
-    if draft_type == "open" and list_type == "midseason":
-        return settings.CURRENT_SEASON, "midseason"
-    if settings.CURRENT_SEASON_TYPE == "midseason":
-        return settings.CURRENT_SEASON, "midseason"
-    return settings.CURRENT_SEASON, "offseason"
+    season = list_type or settings.CURRENT_SEASON_TYPE
+    draft_year = settings.CURRENT_SEASON
+    if season == "offseason" and settings.CURRENT_SEASON_TYPE == "midseason":
+        draft_year = settings.CURRENT_SEASON + 1
+    return draft_year, season
+
+
+def get_draft_prep_player_filters(draft_type, list_type=None):
+    """
+    Player-field filters for manager draft-prep wishlists.
+
+    AA: unowned B-level players.
+    Offseason open: unowned players of any level (no prior-season card required).
+    Midseason open: unowned players with a card from the prior MLB season.
+    """
+    season = list_type or settings.CURRENT_SEASON_TYPE
+    filters = {"team__isnull": True}
+    if draft_type == "aa":
+        filters["level"] = "B"
+        return filters
+    if draft_type == "open" and season == "midseason":
+        filters["carded_seasons__contains"] = [get_midseason_open_carded_season()]
+    return filters
 
 
 def get_strat_season():

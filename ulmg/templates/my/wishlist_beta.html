@@ -63,17 +63,22 @@
         {% if draft_type == "open" %}
         <span class="font-bold">Open Draft{% if draft_season == "midseason" and open_carded_season %} ({{ open_carded_season }} card){% endif %}</span>
         {% else %}
-        <a href="/my/{{ current_season_type }}/draft/" class="underline">Open Draft</a>
+        <a href="/my/{{ draft_prep_season }}/draft/" class="underline">Open Draft</a>
         {% endif %}
     </div>
-    {% if draft_season == "midseason" %}
+    {% if draft_season == "midseason" or draft_season == "offseason" %}
     <p class="text-xs text-gray-600 mt-2 mb-1">
         Browse eligible players:
-        {% if draft_type == "open" %}
+        {% if draft_type == "open" and draft_season == "midseason" %}
         <a href="/search/filter/?carded={{ open_carded_season|default:previous_season }}&owned=false&classification=&level=&position=h&pa_cutoff=&ip_cutoff=&gs_cutoff=" class="underline">hitters</a>,
         <a href="/search/filter/?carded={{ open_carded_season|default:previous_season }}&owned=false&classification=&level=&position=p&pa_cutoff=&ip_cutoff=&gs_cutoff=" class="underline">pitchers</a>
         ({{ open_carded_season|default:previous_season }} card);
         <a href="/players/unprotected/" class="underline">unprotected veterans</a>
+        {% elif draft_type == "open" %}
+        <a href="/search/filter/?carded=&owned=false&classification=&level=&position=h&pa_cutoff=&ip_cutoff=&gs_cutoff=" class="underline">hitters</a>,
+        <a href="/search/filter/?carded=&owned=false&classification=&level=&position=p&pa_cutoff=&ip_cutoff=&gs_cutoff=" class="underline">pitchers</a>
+        (any level);
+        <a href="/players/unprotected/" class="underline">unprotected 40-man</a>
         {% else %}
         <a href="/search/filter/?carded=&owned=false&classification=&level=B&position=&pa_cutoff=&ip_cutoff=&gs_cutoff=" class="underline">B-level free agents</a>
         {% endif %}
@@ -89,8 +94,12 @@
                 Tier board (drag between tiers; max 20 players per tier)
                 {% if draft_type == "aa" and draft_season == "midseason" %}
                 <span class="font-normal text-gray-600">— B-level 76th player, 1 round</span>
+                {% elif draft_type == "aa" %}
+                <span class="font-normal text-gray-600">— B-level only, 5 rounds</span>
                 {% elif draft_type == "open" and draft_season == "midseason" %}
                 <span class="font-normal text-gray-600">— V/A/B with {{ open_carded_season }} MLB card, 3 rounds</span>
+                {% elif draft_type == "open" %}
+                <span class="font-normal text-gray-600">— any level (V/A/B), no prior-season card required, 5 rounds</span>
                 {% endif %}
             </h3>
             <div class="text-xs text-gray-600 flex items-center gap-2">
