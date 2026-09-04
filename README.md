@@ -68,8 +68,7 @@ git clone https://github.com/jeremyjbowers/ulmg.git
 cd ulmg
 python -m venv .venv
 source .venv/bin/activate  # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
-pip install -r new.requirements.txt
+uv sync
 
 export DJANGO_SETTINGS_MODULE=config.dev.settings
 createdb ulmg_dev

@@ -82,7 +82,7 @@ The United League of Moderate Gamers is a decades old Strat-o-Matic league. The 
 # Environment setup
 python -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
+uv sync
 
 # Database setup
 export DJANGO_SETTINGS_MODULE=config.dev.settings
