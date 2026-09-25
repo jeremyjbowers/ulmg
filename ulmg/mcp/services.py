@@ -49,6 +49,7 @@ def get_team_roster(abbreviation=None, owner=None):
     players = list(
         models.Player.objects.filter(team=team)
         .select_related("team")
+        .prefetch_related(serializers.player_stat_season_prefetch())
         .order_by("position", "-level_order", "last_name", "first_name")
     )
     mlb = [
@@ -207,13 +208,15 @@ def search_players(
             if row.player_id in seen:
                 continue
             seen.add(row.player_id)
-            players.append(serializers.player_brief(row.player))
+            players.append(serializers.player_brief(row.player, stat_season=row))
             if len(players) >= limit:
                 break
         return {"season": search_season, "count": len(players), "players": players}
 
-    # Player-only path (no season/stats)
-    qs = models.Player.objects.select_related("team").all()
+    # Player-only path (no season/stats filters) — still attach best stats.
+    qs = models.Player.objects.select_related("team").prefetch_related(
+        serializers.player_stat_season_prefetch()
+    )
     owned_bool = _to_bool(owned) if owned is not None and str(owned) != "" else None
     if owned_bool is True:
         qs = qs.filter(team__isnull=False)
@@ -262,8 +265,10 @@ def list_draft_picks(
     limit=500,
 ):
     qs = models.DraftPick.objects.select_related(
-        "team", "original_team", "player"
-    ).all()
+        "team", "original_team", "player", "player__team"
+    ).prefetch_related(
+        serializers.player_stat_season_prefetch("player__playerstatseason_set")
+    )
     if team:
         qs = qs.filter(team__abbreviation__iexact=team)
     if original_team:
@@ -297,6 +302,7 @@ def list_trade_block():
     players = (
         models.Player.objects.filter(team__isnull=False, is_ulmg_trade_block=True)
         .select_related("team")
+        .prefetch_related(serializers.player_stat_season_prefetch())
         .order_by("position", "last_name", "first_name")
     )
     return {
@@ -346,7 +352,9 @@ def list_draft_pool(pool="unprotected"):
                 is_ulmg_35man_roster=False,
             ).distinct()
 
-    players = players.select_related("team").order_by(
+    players = players.select_related("team").prefetch_related(
+        serializers.player_stat_season_prefetch()
+    ).order_by(
         "position", "-level_order", "last_name", "first_name"
     )
     return {
@@ -365,6 +373,9 @@ def get_my_wishlist(owner):
     rows = (
         models.WishlistPlayer.objects.filter(wishlist=wishlist)
         .select_related("player", "player__team")
+        .prefetch_related(
+            serializers.player_stat_season_prefetch("player__playerstatseason_set")
+        )
         .order_by("tier", "rank", "player__last_name")
     )
     players = [serializers.wishlist_player_brief(wp) for wp in rows]

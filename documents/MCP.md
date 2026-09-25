@@ -105,6 +105,14 @@ calls the same JSON API:
 | `list_draft_pool` | Unprotected / available pools |
 | `get_my_wishlist` | Your tiers, ranks, notes |
 
+Every player object includes a `stats` block when a `PlayerStatSeason` exists:
+
+- `war`, `position_display`, `defense`, `fg_positions`
+- `hit` — PA, AVG/OBP/SLG, HR, SB, K%/BB%, wRC+, WAR, **xAVG / xwOBA / xSLG**, …
+- `pitch` — IP, ERA, WHIP, K/9, BB/9, FIP, **xFIP / SIERA**, WAR, …
+- `xstats` — expected-stat fields collected in one place
+- `hit_stats_raw` / `pitch_stats_raw` — full FanGraphs JSON if agents need anything else
+
 Naming for agents:
 
 - `on_mlb_30man` — Major League active roster
