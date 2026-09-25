@@ -1,3 +1,5 @@
+# ABOUTME: CSV download views for roster and trade exports.
+# ABOUTME: Builds attachment responses for teams and full trade history.
 import csv
 import datetime
 
@@ -11,6 +13,80 @@ from django.conf import settings
 import ujson as json
 
 from ulmg import models, utils
+
+
+TRADE_CSV_FIELDNAMES = [
+    "trade_id",
+    "date",
+    "season",
+    "team_1",
+    "team_1_receives_players",
+    "team_1_receives_picks",
+    "team_2",
+    "team_2_receives_players",
+    "team_2_receives_picks",
+]
+
+
+def _format_trade_players(players):
+    return ", ".join(
+        f"{p.position} {p.name}".strip() for p in players
+    )
+
+
+def _format_trade_pick(pick):
+    team_abbr = (
+        pick.original_team.abbreviation if pick.original_team else ""
+    )
+    season_label = (pick.season or "").title()
+    draft_type = (pick.draft_type or "").upper()
+    draft_round = pick.draft_round if pick.draft_round is not None else ""
+    parts = [team_abbr, str(pick.year), season_label, f"{draft_type}{draft_round}"]
+    label = " ".join(part for part in parts if part).strip()
+    if pick.player:
+        label = f"{label} ({pick.player.position} {pick.player.name})"
+    return label
+
+
+def _format_trade_picks(picks):
+    return ", ".join(_format_trade_pick(pick) for pick in picks)
+
+
+def trades_csv(request):
+    """CSV export of all trades for pattern / return analysis."""
+    response = HttpResponse(content_type="text/csv")
+    response["Content-Disposition"] = 'attachment; filename="trades-%s.csv"' % (
+        datetime.datetime.now().isoformat().split(".")[0]
+    )
+    writer = csv.DictWriter(response, fieldnames=TRADE_CSV_FIELDNAMES)
+    writer.writeheader()
+
+    trades = models.Trade.objects.order_by("-date", "-id")
+    for trade in trades:
+        receipts = list(
+            trade.reciepts()
+            .select_related("team")
+            .prefetch_related("players", "picks__original_team", "picks__player")
+        )
+        if len(receipts) < 2:
+            continue
+
+        t1, t2 = receipts[0], receipts[1]
+        writer.writerow(
+            {
+                "trade_id": trade.id,
+                "date": trade.date.isoformat() if trade.date else "",
+                "season": trade.season if trade.season is not None else "",
+                "team_1": t1.team.abbreviation if t1.team else "",
+                "team_1_receives_players": _format_trade_players(t1.players.all()),
+                "team_1_receives_picks": _format_trade_picks(t1.picks.all()),
+                "team_2": t2.team.abbreviation if t2.team else "",
+                "team_2_receives_players": _format_trade_players(t2.players.all()),
+                "team_2_receives_picks": _format_trade_picks(t2.picks.all()),
+            }
+        )
+
+    return response
 
 
 def all_csv(request):
