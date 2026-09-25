@@ -1823,3 +1823,44 @@ class OwnerAPIToken(BaseModel):
         self.revoked_at = timezone.now()
         self.active = False
         self.save(update_fields=["revoked_at", "active", "last_modified"])
+
+
+class ConstitutionCache(BaseModel):
+    """
+    Cached plain-text copy of the ULMG constitution.
+    Refreshed manually via `django-admin refresh_constitution` (rarely — once per offseason).
+    """
+
+    source_url = models.URLField(max_length=500)
+    title = models.CharField(max_length=255, blank=True, default="")
+    text = models.TextField()
+    content_sha256 = models.CharField(max_length=64, blank=True, default="")
+    fetched_at = models.DateTimeField()
+
+    class Meta:
+        ordering = ["-fetched_at", "-id"]
+        verbose_name = "Constitution cache"
+        verbose_name_plural = "Constitution cache"
+
+    def __unicode__(self):
+        when = self.fetched_at.isoformat() if self.fetched_at else "?"
+        return f"ConstitutionCache ({when}, {len(self.text)} chars)"
+
+    @classmethod
+    def current(cls):
+        return cls.objects.filter(active=True).order_by("-fetched_at", "-id").first()
+
+    @classmethod
+    def store(cls, text, source_url, title="", fetched_at=None):
+        from ulmg.constitution import content_sha256
+
+        now = fetched_at or timezone.now()
+        digest = content_sha256(text)
+        cls.objects.all().delete()
+        return cls.objects.create(
+            source_url=source_url,
+            title=title or "",
+            text=text,
+            content_sha256=digest,
+            fetched_at=now,
+        )

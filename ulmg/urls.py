@@ -66,6 +66,8 @@ urlpatterns = [
     path("api/mcp/v1/trade-block/", views.mcp.trade_block),
     path("api/mcp/v1/draft-pool/", views.mcp.draft_pool),
     path("api/mcp/v1/wishlist/", views.mcp.my_wishlist),
+    path("api/mcp/v1/constitution/", views.mcp.constitution),
+    path("api/mcp/v1/constitution/search/", views.mcp.constitution_search),
     path("teams/csv/", views.csv.all_csv),
     path("teams/<str:abbreviation>/csv/", views.csv.team_csv),
     path("teams/<str:abbreviation>/other/", views.site.team_other),

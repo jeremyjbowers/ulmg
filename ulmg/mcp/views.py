@@ -3,6 +3,7 @@
 from django.http import JsonResponse
 from django.views.decorators.http import require_GET
 
+from ulmg import models
 from ulmg.mcp.auth import require_owner_api_token
 from ulmg.mcp import services
 
@@ -139,3 +140,47 @@ def draft_pool(request):
 @require_owner_api_token
 def my_wishlist(request):
     return JsonResponse(services.get_my_wishlist(request.mcp_owner))
+
+
+@require_GET
+@require_owner_api_token
+def constitution(request):
+    try:
+        return JsonResponse(services.get_constitution())
+    except models.ConstitutionCache.DoesNotExist:
+        return JsonResponse(
+            {
+                "error": "Constitution cache is empty",
+                "detail": "Commissioner must run django-admin refresh_constitution",
+            },
+            status=404,
+        )
+
+
+@require_GET
+@require_owner_api_token
+def constitution_search(request):
+    query = request.GET.get("q") or request.GET.get("query") or ""
+    if not str(query).strip():
+        return JsonResponse(
+            {"error": "query is required", "detail": "Pass ?q=…"},
+            status=400,
+        )
+    try:
+        return JsonResponse(
+            services.search_constitution(
+                query,
+                context_chars=request.GET.get("context_chars"),
+                limit=request.GET.get("limit"),
+            )
+        )
+    except models.ConstitutionCache.DoesNotExist:
+        return JsonResponse(
+            {
+                "error": "Constitution cache is empty",
+                "detail": "Commissioner must run django-admin refresh_constitution",
+            },
+            status=404,
+        )
+    except ValueError as exc:
+        return JsonResponse({"error": str(exc)}, status=400)

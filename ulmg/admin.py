@@ -23,6 +23,7 @@ from ulmg.models import (
     PlayerStatSeason,
     MagicLinkToken,
     OwnerAPIToken,
+    ConstitutionCache,
     TradeSummary,
     Transaction,
     DuplicatePlayerCandidate,
@@ -635,6 +636,27 @@ class OwnerAPITokenAdmin(admin.ModelAdmin):
     ]
     search_fields = ["owner__name", "owner__email", "label", "token_prefix"]
     raw_id_fields = ["owner"]
+
+
+@admin.register(ConstitutionCache)
+class ConstitutionCacheAdmin(admin.ModelAdmin):
+    model = ConstitutionCache
+    list_display = [
+        "title",
+        "fetched_at",
+        "content_sha256",
+        "active",
+        "created",
+    ]
+    readonly_fields = [
+        "source_url",
+        "title",
+        "text",
+        "content_sha256",
+        "fetched_at",
+        "created",
+        "last_modified",
+    ]
 
 
 @admin.register(DuplicatePlayerCandidate)
