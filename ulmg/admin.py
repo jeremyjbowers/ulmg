@@ -22,6 +22,7 @@ from ulmg.models import (
     Venue,
     PlayerStatSeason,
     MagicLinkToken,
+    OwnerAPIToken,
     TradeSummary,
     Transaction,
     DuplicatePlayerCandidate,
@@ -609,6 +610,31 @@ class MagicLinkTokenAdmin(admin.ModelAdmin):
     list_filter = ["used", "active", "expires_at"]
     readonly_fields = ["token", "created", "last_modified"]
     search_fields = ["user__email", "user__username"]
+
+
+@admin.register(OwnerAPIToken)
+class OwnerAPITokenAdmin(admin.ModelAdmin):
+    model = OwnerAPIToken
+    list_display = [
+        "owner",
+        "label",
+        "token_prefix",
+        "active",
+        "last_used_at",
+        "revoked_at",
+        "created",
+    ]
+    list_filter = ["active"]
+    readonly_fields = [
+        "token_prefix",
+        "token_hash",
+        "last_used_at",
+        "revoked_at",
+        "created",
+        "last_modified",
+    ]
+    search_fields = ["owner__name", "owner__email", "label", "token_prefix"]
+    raw_id_fields = ["owner"]
 
 
 @admin.register(DuplicatePlayerCandidate)

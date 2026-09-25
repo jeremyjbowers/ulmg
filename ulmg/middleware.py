@@ -68,5 +68,9 @@ class LoginRequiredMiddleware:
         # Exempt API endpoints (may need public access for external consumers)
         if request.path.startswith('/api/'):
             return True
+
+        # Exempt MCP Streamable HTTP (Bearer token auth handled in ASGI middleware)
+        if request.path.startswith('/mcp'):
+            return True
             
         return False 

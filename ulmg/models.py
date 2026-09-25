@@ -1,4 +1,5 @@
 import datetime
+import hashlib
 import os
 import secrets
 import logging
@@ -1764,3 +1765,61 @@ class DuplicatePlayerCandidate(BaseModel):
 
     def __unicode__(self):
         return f"{self.player1.name} / {self.player2.name} ({self.status})"
+
+
+class OwnerAPIToken(BaseModel):
+    """
+    Long-lived API token for MCP / agent access, scoped to an Owner.
+    The plaintext token is shown once at creation; only a SHA-256 hash is stored.
+    """
+
+    owner = models.ForeignKey(
+        Owner, on_delete=models.CASCADE, related_name="api_tokens"
+    )
+    label = models.CharField(max_length=255, blank=True, default="")
+    token_prefix = models.CharField(max_length=16, db_index=True)
+    token_hash = models.CharField(max_length=64, unique=True)
+    last_used_at = models.DateTimeField(blank=True, null=True)
+    revoked_at = models.DateTimeField(blank=True, null=True)
+
+    def __unicode__(self):
+        return f"{self.owner} [{self.label or self.token_prefix}]"
+
+    @staticmethod
+    def _hash(raw_token):
+        return hashlib.sha256(raw_token.encode("utf-8")).hexdigest()
+
+    @classmethod
+    def create_token(cls, owner, label=""):
+        raw = f"ulmg_{secrets.token_urlsafe(32)}"
+        token = cls.objects.create(
+            owner=owner,
+            label=label or "",
+            token_prefix=raw[:12],
+            token_hash=cls._hash(raw),
+        )
+        return raw, token
+
+    @classmethod
+    def authenticate(cls, raw_token):
+        if not raw_token or not isinstance(raw_token, str):
+            return None
+        if not raw_token.startswith("ulmg_"):
+            return None
+        token_hash = cls._hash(raw_token)
+        try:
+            token = cls.objects.select_related("owner", "owner__user").get(
+                token_hash=token_hash,
+                revoked_at__isnull=True,
+                active=True,
+            )
+        except cls.DoesNotExist:
+            return None
+        token.last_used_at = timezone.now()
+        token.save(update_fields=["last_used_at", "last_modified"])
+        return token
+
+    def revoke(self):
+        self.revoked_at = timezone.now()
+        self.active = False
+        self.save(update_fields=["revoked_at", "active", "last_modified"])
