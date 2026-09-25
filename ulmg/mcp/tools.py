@@ -18,7 +18,9 @@ INSTRUCTIONS = (
     "Read-only ULMG league tools for roster review, draft prep, and trade "
     "analysis. Roster terms: on_mlb_30man = Major League active roster; "
     "on_40man_protect = Open Draft protected V/A list (site field "
-    "is_ulmg_35man_roster). Phase 1 is read-only — no writes or trade execution."
+    "is_ulmg_35man_roster). Use get_constitution / search_constitution (or the "
+    "ulmg://constitution resource) for league rules. Phase 1 is read-only — "
+    "no writes or trade execution."
 )
 
 
@@ -181,6 +183,30 @@ def _register_local_tools(mcp: FastMCP) -> None:
         data = await sync_to_async(services.get_my_wishlist)(owner)
         return _dump(data)
 
+    @mcp.tool()
+    async def get_constitution() -> str:
+        """Full ULMG constitution text from the server cache (not live-scraped)."""
+        data = await sync_to_async(services.get_constitution)()
+        return _dump(data)
+
+    @mcp.tool()
+    async def search_constitution(
+        query: str,
+        context_chars: int = 180,
+        limit: int = 40,
+    ) -> str:
+        """Search the cached ULMG constitution; returns excerpts with surrounding context."""
+        data = await sync_to_async(services.search_constitution)(
+            query, context_chars=context_chars, limit=limit
+        )
+        return _dump(data)
+
+    @mcp.resource("ulmg://constitution")
+    async def constitution_resource() -> str:
+        """Cached plain-text ULMG constitution (refresh via django-admin refresh_constitution)."""
+        data = await sync_to_async(services.get_constitution)()
+        return data["text"]
+
 
 def _register_remote_tools(mcp: FastMCP) -> None:
     @mcp.tool()
@@ -311,3 +337,31 @@ def _register_remote_tools(mcp: FastMCP) -> None:
     def get_my_wishlist() -> str:
         """Your wishlist with tiers and notes."""
         return _dump(_http_get("/api/mcp/v1/wishlist/"))
+
+    @mcp.tool()
+    def get_constitution() -> str:
+        """Full ULMG constitution text from the server cache."""
+        return _dump(_http_get("/api/mcp/v1/constitution/"))
+
+    @mcp.tool()
+    def search_constitution(
+        query: str,
+        context_chars: int = 180,
+        limit: int = 40,
+    ) -> str:
+        """Search the cached ULMG constitution for excerpts."""
+        return _dump(
+            _http_get(
+                "/api/mcp/v1/constitution/search/",
+                params={
+                    "q": query,
+                    "context_chars": context_chars,
+                    "limit": limit,
+                },
+            )
+        )
+
+    @mcp.resource("ulmg://constitution")
+    def constitution_resource() -> str:
+        """Cached plain-text ULMG constitution."""
+        return _http_get("/api/mcp/v1/constitution/")["text"]

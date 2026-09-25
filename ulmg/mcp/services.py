@@ -380,3 +380,57 @@ def get_my_wishlist(owner):
     )
     players = [serializers.wishlist_player_brief(wp) for wp in rows]
     return {"count": len(players), "players": players}
+
+
+def _constitution_or_raise():
+    doc = models.ConstitutionCache.current()
+    if doc is None:
+        raise models.ConstitutionCache.DoesNotExist(
+            "Constitution cache is empty — run django-admin refresh_constitution"
+        )
+    return doc
+
+
+def get_constitution():
+    """Return the full cached constitution text plus metadata."""
+    doc = _constitution_or_raise()
+    return {
+        "title": doc.title or "The ULMG Constitution",
+        "source_url": doc.source_url,
+        "fetched_at": doc.fetched_at.isoformat() if doc.fetched_at else None,
+        "content_sha256": doc.content_sha256,
+        "char_count": len(doc.text),
+        "text": doc.text,
+    }
+
+
+def search_constitution(query, *, context_chars=None, limit=None):
+    """Search the cached constitution; returns matching excerpts."""
+    from ulmg.constitution import (
+        DEFAULT_CONTEXT_CHARS,
+        MAX_SEARCH_MATCHES,
+        search_constitution_text,
+    )
+
+    q = (query or "").strip()
+    if not q:
+        raise ValueError("query is required")
+    doc = _constitution_or_raise()
+    if context_chars in (None, ""):
+        ctx = DEFAULT_CONTEXT_CHARS
+    else:
+        ctx = int(context_chars)
+    if limit in (None, ""):
+        lim = MAX_SEARCH_MATCHES
+    else:
+        lim = int(limit)
+    matches = search_constitution_text(
+        doc.text, q, context_chars=ctx, limit=lim
+    )
+    return {
+        "query": q,
+        "match_count": len(matches),
+        "fetched_at": doc.fetched_at.isoformat() if doc.fetched_at else None,
+        "source_url": doc.source_url,
+        "matches": matches,
+    }

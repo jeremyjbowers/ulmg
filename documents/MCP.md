@@ -104,6 +104,10 @@ calls the same JSON API:
 | `list_trade_block` | Trade block |
 | `list_draft_pool` | Unprotected / available pools |
 | `get_my_wishlist` | Your tiers, ranks, notes |
+| `get_constitution` | Full league constitution (cached text) |
+| `search_constitution` | Keyword search with excerpts |
+
+**Resource:** `ulmg://constitution` — same cached plain text as `get_constitution`.
 
 Every player object includes a `stats` block when a `PlayerStatSeason` exists:
 
@@ -117,6 +121,22 @@ Naming for agents:
 
 - `on_mlb_30man` — Major League active roster
 - `on_40man_protect` — Open Draft protection list (`is_ulmg_35man_roster` in the DB)
+
+## Constitution (cached)
+
+Agents read league rules from a **database cache**, not live from Google Docs.
+The pub URL is the source of truth; refresh only when the constitution changes
+(typically once per offseason):
+
+```bash
+django-admin refresh_constitution
+# or offline:
+django-admin refresh_constitution --from-file ulmg/data/constitution.txt
+django-admin refresh_constitution --dry-run
+```
+
+JSON twins: `GET /api/mcp/v1/constitution/` and
+`GET /api/mcp/v1/constitution/search/?q=30-man`.
 
 ## Deploy note (commissioner)
 
