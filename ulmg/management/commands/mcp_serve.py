@@ -10,6 +10,6 @@ class Command(BaseCommand):
     )
 
     def handle(self, *args, **options):
-        from ulmg.mcp.server import main
+        from ulmg.mcp_app.server import main
 
         main()

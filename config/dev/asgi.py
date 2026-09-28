@@ -8,6 +8,6 @@ from django.core.asgi import get_asgi_application
 
 django_app = get_asgi_application()
 
-from ulmg.mcp.http_app import create_site_asgi_application
+from ulmg.mcp_app.http_app import create_site_asgi_application
 
 application = create_site_asgi_application(django_app)

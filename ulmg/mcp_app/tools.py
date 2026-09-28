@@ -10,8 +10,8 @@ import httpx
 from asgiref.sync import sync_to_async
 from mcp.server.fastmcp import FastMCP
 
-from ulmg.mcp import services
-from ulmg.mcp.context import get_current_owner, require_current_owner
+from ulmg.mcp_app import services
+from ulmg.mcp_app.context import get_current_owner, require_current_owner
 
 
 INSTRUCTIONS = (

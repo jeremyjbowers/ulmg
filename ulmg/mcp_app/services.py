@@ -5,7 +5,7 @@ from django.db.models import Q
 from django.shortcuts import get_object_or_404
 
 from ulmg import models, utils
-from ulmg.mcp import serializers
+from ulmg.mcp_app import serializers
 
 
 def get_season_context(owner=None):

@@ -5,7 +5,7 @@ from django.test import TestCase, override_settings
 from httpx import ASGITransport, AsyncClient
 
 from ulmg import models
-from ulmg.mcp.http_app import create_mcp_http_app
+from ulmg.mcp_app.http_app import create_mcp_http_app
 
 
 @override_settings(ALLOWED_HOSTS=["*"])

@@ -89,10 +89,10 @@ dependencies = [
 ]
 
 [project.scripts]
-ulmg-mcp = "ulmg.mcp.server:main"
+ulmg-mcp = "ulmg.mcp_app.server:main"
 
 [tool.setuptools]
-packages = ["config", "ulmg", "ulmg.mcp", "ulmg.views", "ulmg.management", "ulmg.management.commands", "ulmg.templatetags"]
+packages = ["config", "ulmg", "ulmg.mcp_app", "ulmg.views", "ulmg.management", "ulmg.management.commands", "ulmg.templatetags"]
 
 [tool.setuptools.package-data]
 "*" = ["*.json", "*.txt", "*.csv", "*.html"]

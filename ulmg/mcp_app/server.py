@@ -12,7 +12,7 @@ from __future__ import annotations
 import sys
 from typing import Optional
 
-from ulmg.mcp.tools import build_mcp
+from ulmg.mcp_app.tools import build_mcp
 
 
 def main(argv: Optional[list] = None) -> None:
