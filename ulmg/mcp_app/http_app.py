@@ -15,8 +15,8 @@ from starlette.routing import Mount, Route
 from starlette.types import ASGIApp, Receive, Scope, Send
 
 from ulmg import models
-from ulmg.mcp.context import reset_current_owner, set_current_owner
-from ulmg.mcp.tools import build_mcp
+from ulmg.mcp_app.context import reset_current_owner, set_current_owner
+from ulmg.mcp_app.tools import build_mcp
 
 logger = logging.getLogger(__name__)
 

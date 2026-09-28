@@ -3,8 +3,8 @@
 from django.http import JsonResponse
 from django.views.decorators.http import require_GET
 
-from ulmg.mcp.auth import require_owner_api_token
-from ulmg.mcp import services
+from ulmg.mcp_app.auth import require_owner_api_token
+from ulmg.mcp_app import services
 
 
 @require_GET
