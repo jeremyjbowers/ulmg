@@ -1,3 +1,5 @@
+# ABOUTME: Downloads FanGraphs roster-resource JSON for each MLB org.
+# ABOUTME: Saves locally and optionally uploads to S3 for live_update.
 import csv
 import json
 import os
@@ -49,7 +51,7 @@ class Command(BaseCommand):
             try:
                 url = f"https://www.fangraphs.com/api/depth-charts/roster?teamid={team_id}"
 
-                r = requests.get(url, verify=False)
+                r = utils.fg_get(url, verify=False)
                 print(r.status_code, url)
                 if r.status_code == 200:
                     roster = r.json()

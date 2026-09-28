@@ -1,3 +1,5 @@
+# ABOUTME: Shared ULMG helpers for seasons, players, FanGraphs HTTP, and S3 data.
+# ABOUTME: Includes fg_get which uses the FanGraphs mobile okhttp User-Agent.
 import csv
 import pickle
 import os.path
@@ -29,6 +31,27 @@ import os
 import logging
 
 logger = logging.getLogger(__name__)
+
+# FanGraphs Cloudflare challenges unrecognized clients; the mobile app UA is exempt.
+FG_USER_AGENT = "okhttp/4.12.0"
+
+
+def fg_user_agent():
+    """Return the User-Agent FanGraphs accepts without a Cloudflare challenge."""
+    return FG_USER_AGENT
+
+
+def fg_get(url, **kwargs):
+    """
+    GET a FanGraphs URL with the mobile-app User-Agent.
+
+    FanGraphs serves a Cloudflare JS challenge (HTTP 403) to unrecognized
+    clients. Their mobile app uses okhttp, which is exempted, so we send that
+    User-Agent on every FanGraphs API request.
+    """
+    headers = dict(kwargs.pop("headers", None) or {})
+    headers["User-Agent"] = fg_user_agent()
+    return requests.get(url, headers=headers, **kwargs)
 
 
 def get_level_order(level):
