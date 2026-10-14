@@ -98,6 +98,7 @@ urlpatterns = [
     ),
     path("draft/<int:year>/<str:season>/<str:draft_type>/", views.site.draft_recap),
     path("my/team/", views.my.my_team),
+    path("my/api-keys/", views.my.my_api_keys, name="my_api_keys"),
     path("my/<str:list_type>/draft/", views.my.my_draft_prep),
     path("my/wishlist/draft/beta/", views.my.my_wishlist_beta),
     path("", views.site.index),

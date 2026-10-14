@@ -1,5 +1,5 @@
 # ABOUTME: Mint a long-lived OwnerAPIToken for MCP / agent access.
-# ABOUTME: Prints the plaintext token once; only a hash is stored in the database.
+# ABOUTME: Prints the token and stores it so the owner can see it on their page.
 from django.core.management.base import BaseCommand, CommandError
 
 from ulmg import models
@@ -8,7 +8,7 @@ from ulmg import models
 class Command(BaseCommand):
     help = (
         "Create an Owner API token for MCP access. "
-        "Prints the token once — store it in the owner's Cursor mcp.json."
+        "Prints the token. The owner can also see it on /my/api-keys/."
     )
 
     def add_arguments(self, parser):
@@ -24,6 +24,12 @@ class Command(BaseCommand):
             "--label",
             default="mcp",
             help="Label for this token (e.g. 'cursor laptop'). Default: mcp",
+        )
+        parser.add_argument(
+            "--scope",
+            choices=["read", "read_write"],
+            default="read",
+            help="read (lookups) or read_write (lookups and write actions). Default: read",
         )
         parser.add_argument(
             "--list-owners",
@@ -65,15 +71,16 @@ class Command(BaseCommand):
 
         owner = owners[0]
         raw, token = models.OwnerAPIToken.create_token(
-            owner, label=options["label"]
+            owner, label=options["label"], scope=options["scope"]
         )
         team = owner.team()
         self.stdout.write(self.style.SUCCESS("Created OwnerAPIToken"))
         self.stdout.write(f"Owner: {owner.name} <{owner.email}>")
         self.stdout.write(f"Team:  {team.abbreviation if team else 'none'}")
         self.stdout.write(f"Label: {token.label}")
+        self.stdout.write(f"Scope: {token.get_scope_display()}")
         self.stdout.write("")
-        self.stdout.write("Save this token now — it will not be shown again:")
+        self.stdout.write("Token (this owner can also see it on /my/api-keys/):")
         self.stdout.write(raw)
         self.stdout.write("")
         self.stdout.write(

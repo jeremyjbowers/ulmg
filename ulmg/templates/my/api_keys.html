@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block title %}API keys — The ULMG{% endblock %}
+
+{% block content %}
+<div class="py-4 max-w-3xl">
+    <h1 class="text-xl font-bold mb-4 border-b border-gray-300 pb-2">API keys</h1>
+
+    {% if messages %}
+    <ul class="mb-4">
+        {% for message in messages %}
+        <li class="text-sm {% if message.tags == 'error' %}text-red-600{% else %}text-green-600{% endif %}">{{ message }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+
+    {% if needs_owner %}
+    <p>This account is not linked to an owner, so it cannot hold an API key.</p>
+    {% else %}
+    <p class="mb-4">
+        Send the key as <span class="font-mono">Authorization: Bearer ulmg_…</span>.
+        A read key can look up league data. A read-write key can do that and is allowed
+        on write actions. You only see your own keys.
+    </p>
+
+    <form method="POST" action="{% url 'my_api_keys' %}" class="mb-6 space-y-3 border border-gray-300 p-3">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="create">
+        <div>
+            <label class="block text-xs font-bold mb-1" for="api-key-label">Label</label>
+            <input id="api-key-label" type="text" name="label" maxlength="255" placeholder="laptop, claude, …" class="border border-gray-300 px-2 py-1 text-sm w-full">
+        </div>
+        <fieldset>
+            <legend class="text-xs font-bold mb-1">Access</legend>
+            <label class="mr-4">
+                <input type="radio" name="scope" value="read" checked> Read
+            </label>
+            <label>
+                <input type="radio" name="scope" value="read_write"> Read and write
+            </label>
+        </fieldset>
+        <button type="submit" class="bg-black text-white px-3 py-1 text-sm">Generate key</button>
+    </form>
+
+    {% if not api_tokens %}
+    <p class="text-gray-600">You do not have any API keys yet.</p>
+    {% else %}
+    <table class="w-full text-sm border-collapse">
+        <thead>
+            <tr class="border-b border-gray-300">
+                <th class="text-left py-2">Label</th>
+                <th class="text-left py-2">Access</th>
+                <th class="text-left py-2">Key</th>
+                <th class="text-left py-2">Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for token in api_tokens %}
+            <tr class="border-b border-gray-100 align-top">
+                <td class="py-2 pr-2">{{ token.label|default:"—" }}</td>
+                <td class="py-2 pr-2">{{ token.get_scope_display }}</td>
+                <td class="py-2 pr-2">
+                    {% if token.token_secret %}
+                    <input type="text" readonly value="{{ token.token_secret }}" class="w-full font-mono text-xs border border-gray-300 px-2 py-1">
+                    {% else %}
+                    <span class="text-gray-600">Not stored. Generate a new key to see the text.</span>
+                    {% endif %}
+                </td>
+                <td class="py-2">
+                    {% if token.revoked_at or not token.active %}
+                    <span>Revoked</span>
+                    {% else %}
+                    <span class="block mb-1">Active</span>
+                    <form method="POST" action="{% url 'my_api_keys' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="revoke">
+                        <input type="hidden" name="token_id" value="{{ token.pk }}">
+                        <button type="submit" class="underline">Revoke</button>
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+    {% endif %}
+</div>
+{% endblock %}

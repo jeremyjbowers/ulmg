@@ -1,11 +1,13 @@
-# ABOUTME: Owner-facing views for team home, AA draft prep, and Open draft prep wishlists.
+# ABOUTME: Owner-facing views for team home, draft prep, and personal API keys.
 # ABOUTME: Draft-prep lists follow offseason/midseason eligibility (AA is B-only; Open varies).
 import csv
 import datetime
 import itertools
 from django.db.models.expressions import OrderBy
 
-from django.http import HttpResponse
+from django.contrib import messages
+from django.core.exceptions import ValidationError
+from django.http import Http404, HttpResponse, HttpResponseForbidden
 from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import render, get_object_or_404, redirect
 from django.db.models import Count, Avg, Sum, Max, Min, Q, Prefetch
@@ -181,3 +183,56 @@ def my_draft_prep(request, list_type):
     context["num_owned"] = models.Player.objects.filter(team=context["team"]).count()
 
     return render(request, "my/wishlist_beta.html", context)
+
+
+def _own_api_token(owner, raw_id):
+    """Return this owner's token, or 404 if the id is missing or someone else's."""
+    if raw_id in (None, ""):
+        raise Http404("API key not found")
+    try:
+        return models.OwnerAPIToken.objects.get(pk=raw_id, owner=owner)
+    except (models.OwnerAPIToken.DoesNotExist, ValueError, ValidationError):
+        raise Http404("API key not found")
+
+
+@never_cache
+@login_required
+def my_api_keys(request):
+    context = utils.build_context(request)
+    owner = context["owner"]
+    context["needs_owner"] = owner is None
+
+    if owner is None:
+        if request.method == "POST":
+            return HttpResponseForbidden("This account is not linked to an owner.")
+        context["api_tokens"] = []
+        return render(request, "my/api_keys.html", context)
+
+    if request.method == "POST":
+        action = request.POST.get("action")
+        if action == "create":
+            scope = request.POST.get("scope") or ""
+            label = (request.POST.get("label") or "").strip()[:255]
+            if scope not in (
+                models.OwnerAPIToken.SCOPE_READ,
+                models.OwnerAPIToken.SCOPE_READ_WRITE,
+            ):
+                messages.error(request, "Pick a read or read-write key.")
+            else:
+                models.OwnerAPIToken.create_token(owner, label=label, scope=scope)
+                messages.success(request, "API key created. It is listed below.")
+        elif action == "revoke":
+            token = _own_api_token(owner, request.POST.get("token_id"))
+            if token.revoked_at is None:
+                token.revoke()
+                messages.success(request, "API key revoked.")
+            else:
+                messages.success(request, "That API key is already revoked.")
+        else:
+            messages.error(request, "Unknown action.")
+        return redirect("my_api_keys")
+
+    context["api_tokens"] = models.OwnerAPIToken.objects.filter(owner=owner).order_by(
+        "-created", "-id"
+    )
+    return render(request, "my/api_keys.html", context)
