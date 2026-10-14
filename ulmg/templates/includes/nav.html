@@ -65,6 +65,7 @@
         
         {% if user.is_authenticated %}
         {% if my_team %}<a href="/teams/{{ my_team.abbreviation|lower }}/" class="underline font-bold">My Team</a>{% endif %}
+        <a href="{% url 'my_api_keys' %}" class="underline">API keys</a>
         <a href="/accounts/logout/" class="underline">Log out</a>
         {% else %}
         <a href="/accounts/login/" class="underline">Log in</a>
@@ -114,6 +115,7 @@
       <div class="pt-2">
         {% if user.is_authenticated %}
         {% if my_team %}<a href="/teams/{{ my_team.abbreviation|lower }}/" class="underline font-bold mr-4">My Team</a>{% endif %}
+        <a href="{% url 'my_api_keys' %}" class="underline block mt-2">API keys</a>
         <a href="/accounts/logout/" class="underline">Log out</a>
         {% else %}
         <a href="/accounts/login/" class="underline">Log in</a>

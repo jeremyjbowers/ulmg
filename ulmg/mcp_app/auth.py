@@ -16,21 +16,34 @@ def extract_bearer_token(request):
     return header.strip() or None
 
 
-def require_owner_api_token(view_func):
-    """Decorator: require a valid OwnerAPIToken; set request.mcp_token / mcp_owner."""
+def require_owner_api_token(view_func=None, *, write=False):
+    """Require a valid OwnerAPIToken. write=True refuses read-only keys."""
 
-    @wraps(view_func)
-    def wrapper(request, *args, **kwargs):
-        raw = extract_bearer_token(request)
-        token = models.OwnerAPIToken.authenticate(raw)
-        if token is None:
-            return JsonResponse(
-                {"error": "Unauthorized", "detail": "Valid ULMG API token required"},
-                status=401,
-            )
-        request.mcp_token = token
-        request.mcp_owner = token.owner
-        request.mcp_team = token.owner.team()
-        return view_func(request, *args, **kwargs)
+    def decorator(fn):
+        @wraps(fn)
+        def wrapper(request, *args, **kwargs):
+            raw = extract_bearer_token(request)
+            token = models.OwnerAPIToken.authenticate(raw)
+            if token is None:
+                return JsonResponse(
+                    {"error": "Unauthorized", "detail": "Valid ULMG API token required"},
+                    status=401,
+                )
+            if write and not token.allows_write:
+                return JsonResponse(
+                    {
+                        "error": "Forbidden",
+                        "detail": "This API key is read-only",
+                    },
+                    status=403,
+                )
+            request.mcp_token = token
+            request.mcp_owner = token.owner
+            request.mcp_team = token.owner.team()
+            return fn(request, *args, **kwargs)
 
-    return wrapper
+        return wrapper
+
+    if view_func is not None:
+        return decorator(view_func)
+    return decorator

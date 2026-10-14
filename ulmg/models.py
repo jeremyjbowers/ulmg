@@ -1769,16 +1769,28 @@ class DuplicatePlayerCandidate(BaseModel):
 
 class OwnerAPIToken(BaseModel):
     """
-    Long-lived API token for MCP / agent access, scoped to an Owner.
-    The plaintext token is shown once at creation; only a SHA-256 hash is stored.
+    Long-lived API token for MCP / agent access, scoped to one Owner.
+    The secret is stored so that owner can read it on their API keys page.
+    Authentication uses the SHA-256 hash. Other owners cannot see the secret.
     """
+
+    SCOPE_READ = "read"
+    SCOPE_READ_WRITE = "read_write"
+    SCOPE_CHOICES = (
+        (SCOPE_READ, "Read"),
+        (SCOPE_READ_WRITE, "Read and write"),
+    )
 
     owner = models.ForeignKey(
         Owner, on_delete=models.CASCADE, related_name="api_tokens"
     )
     label = models.CharField(max_length=255, blank=True, default="")
+    scope = models.CharField(
+        max_length=16, choices=SCOPE_CHOICES, default=SCOPE_READ
+    )
     token_prefix = models.CharField(max_length=16, db_index=True)
     token_hash = models.CharField(max_length=64, unique=True)
+    token_secret = models.CharField(max_length=128, blank=True, default="")
     last_used_at = models.DateTimeField(blank=True, null=True)
     revoked_at = models.DateTimeField(blank=True, null=True)
 
@@ -1790,15 +1802,30 @@ class OwnerAPIToken(BaseModel):
         return hashlib.sha256(raw_token.encode("utf-8")).hexdigest()
 
     @classmethod
-    def create_token(cls, owner, label=""):
+    def create_token(cls, owner, label="", scope=None):
+        if scope is None:
+            scope = cls.SCOPE_READ
+        valid_scopes = {choice for choice, _label in cls.SCOPE_CHOICES}
+        if scope not in valid_scopes:
+            raise ValueError(f"Unknown API token scope: {scope}")
         raw = f"ulmg_{secrets.token_urlsafe(32)}"
         token = cls.objects.create(
             owner=owner,
-            label=label or "",
+            label=(label or "")[:255],
+            scope=scope,
             token_prefix=raw[:12],
             token_hash=cls._hash(raw),
+            token_secret=raw,
         )
         return raw, token
+
+    @property
+    def allows_write(self):
+        return (
+            self.scope == self.SCOPE_READ_WRITE
+            and self.active
+            and self.revoked_at is None
+        )
 
     @classmethod
     def authenticate(cls, raw_token):

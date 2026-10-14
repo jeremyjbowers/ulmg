@@ -618,13 +618,15 @@ class OwnerAPITokenAdmin(admin.ModelAdmin):
     list_display = [
         "owner",
         "label",
+        "scope",
         "token_prefix",
         "active",
         "last_used_at",
         "revoked_at",
         "created",
     ]
-    list_filter = ["active"]
+    list_filter = ["active", "scope"]
+    exclude = ["token_secret"]
     readonly_fields = [
         "token_prefix",
         "token_hash",
