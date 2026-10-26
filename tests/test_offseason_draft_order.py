@@ -1,5 +1,5 @@
 # ABOUTME: Locks the 2027 offseason draft order to the final 2026 standings.
-# ABOUTME: Tied teams are adjacent, swap on even rounds, and the AA file mirrors Open.
+# ABOUTME: Open and AA share one order. Tied teams are adjacent and swap on even rounds.
 
 import unittest
 from pathlib import Path
@@ -13,28 +13,9 @@ AA_PATH = ROOT / "data" / "ulmg" / "2027-offseason-aa-order.txt"
 # played 162 games, so wins are a complete ranking except for two exact ties:
 # Louisville and Pittsburgh at 90-72, Peninsula and Windy City at 97-65.
 # The constitution coin-flips who leads round 1. With no flip on record, the
-# alphabetically earlier team leads odd rounds of the Open draft. The AA file
-# mirrors that pair, matching 2021, 2022, and 2025.
-OPEN_ORDER = [
-    "CHI",
-    "ADK",
-    "DET",
-    "CAR",
-    "KCB",
-    "AKS",
-    "NYH",
-    "ABQ",
-    "CLE",
-    "CIN",
-    "LOU|+",
-    "PIT|-",
-    "LNG",
-    "PEN|+",
-    "WCH|-",
-    "ATL",
-]
-
-AA_ORDER = [
+# alphabetically later team leads odd rounds. Both drafts use that same order,
+# matching the identical Open and AA files from 2023 and 2024.
+ORDER = [
     "CHI",
     "ADK",
     "DET",
@@ -76,11 +57,10 @@ def _pick_number(entry, index, draft_round):
 
 
 class OffseasonDraftOrderTest(unittest.TestCase):
-    def test_open_order_is_worst_to_first_with_tie_flips(self):
-        self.assertEqual(_lines(OPEN_PATH), OPEN_ORDER)
-
-    def test_aa_order_mirrors_open_ties(self):
-        self.assertEqual(_lines(AA_PATH), AA_ORDER)
+    def test_open_and_aa_share_the_worst_to_first_order(self):
+        self.assertEqual(_lines(OPEN_PATH), ORDER)
+        self.assertEqual(_lines(AA_PATH), ORDER)
+        self.assertEqual(_lines(OPEN_PATH), _lines(AA_PATH))
 
     def test_tied_pairs_swap_on_even_rounds_and_only_with_each_other(self):
         for path in (OPEN_PATH, AA_PATH):

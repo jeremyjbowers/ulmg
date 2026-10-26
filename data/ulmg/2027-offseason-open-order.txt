@@ -8,9 +8,9 @@ NYH
 ABQ
 CLE
 CIN
-LOU|+
-PIT|-
+PIT|+
+LOU|-
 LNG
-PEN|+
-WCH|-
+WCH|+
+PEN|-
 ATL
