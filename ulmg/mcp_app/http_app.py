@@ -71,6 +71,26 @@ class OwnerBearerMiddleware:
             reset_current_owner(ctx_token)
 
 
+class SlashlessMcpMiddleware:
+    """
+    Serve Streamable HTTP at /mcp as well as /mcp/.
+
+    Starlette Mount matches /mcp/ and /mcp/<rest>, not the exact path /mcp.
+    Claude and Codex post to the URL as typed. An internal rewrite keeps the
+    request body here; a redirect would drop the handshake.
+    """
+
+    def __init__(self, app: ASGIApp):
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] == "http" and scope.get("path") == "/mcp":
+            scope["path"] = "/mcp/"
+            if scope.get("raw_path") == b"/mcp":
+                scope["raw_path"] = b"/mcp/"
+        await self.app(scope, receive, send)
+
+
 async def mcp_health(request: Request) -> Response:
     return JSONResponse(
         {
@@ -128,5 +148,6 @@ def create_site_asgi_application(django_asgi_app: ASGIApp) -> Starlette:
             Mount("/mcp", app=mcp_app),
             Mount("/", app=django_asgi_app),
         ],
+        middleware=[Middleware(SlashlessMcpMiddleware)],
         lifespan=lifespan,
     )
