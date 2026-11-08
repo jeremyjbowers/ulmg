@@ -185,6 +185,12 @@
     </div>
     {% endif %}
     {% endwith %}
+    {% if usage %}{% include "includes/usage_remaining.html" %}{% endif %}
+</div>
+{% elif usage %}
+<!-- ULMG Usage without a generated card -->
+<div class="mb-6">
+    {% include "includes/usage_remaining.html" %}
 </div>
 {% endif %}
 

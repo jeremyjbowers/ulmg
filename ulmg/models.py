@@ -2048,3 +2048,150 @@ class ScheduleGame(BaseModel):
     @property
     def is_played(self):
         return self.home_score is not None and self.road_score is not None
+
+    @property
+    def game_number(self):
+        """This game's number inside its series, 1 through the slot's length."""
+        return self.day - self.series.slot.first_day + 1
+
+
+class UsageCounter(BaseModel):
+    """
+    One player's usage for one ULMG season, with the caps from his card
+    season's 1-mlb stats. Outs are innings in thirds. A null cap is unlimited.
+    The ledger in ulmg.usage locks this row for every update.
+    """
+
+    player = models.ForeignKey(Player, on_delete=models.CASCADE, related_name="usage_counters")
+    season = models.IntegerField()
+
+    starts = models.IntegerField(default=0)
+    outs = models.IntegerField(default=0)
+    at_bats = models.IntegerField(default=0)
+    plate_appearances = models.IntegerField(default=0)
+
+    starts_cap = models.IntegerField(default=0)
+    innings_cap_outs = models.IntegerField(null=True, blank=True)
+    # A swingman's cap while the half plan confines him to relief.
+    confined_innings_cap_outs = models.IntegerField(null=True, blank=True)
+    plate_appearances_cap = models.IntegerField(null=True, blank=True)
+    start_limit_outs = models.IntegerField(default=0)
+    relief_limit_outs = models.IntegerField(default=0)
+
+    # Set by the half plan (#162) through ulmg.usage.set_swingman_designation.
+    confined_to_relief = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ["season", "player__name"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["player", "season"], name="unique_usage_counter_player_season"
+            ),
+        ]
+
+    def __unicode__(self):
+        return f"{self.player} usage {self.season}"
+
+
+class UsageAppearance(BaseModel):
+    """
+    One player's usage in one scheduled game, as the game log is written.
+    Rest and per-game limits read these rows.
+    """
+
+    player = models.ForeignKey(Player, on_delete=models.CASCADE, related_name="usage_appearances")
+    game = models.ForeignKey(ScheduleGame, on_delete=models.CASCADE, related_name="usage_appearances")
+    started = models.BooleanField(default=False)
+    outs = models.IntegerField(default=0)
+    pitches = models.IntegerField(default=0)
+    batters_faced = models.IntegerField(default=0)
+    # Outs past a cap or per-game limit from the one play that started with an out left.
+    allowance_outs = models.IntegerField(default=0)
+    at_bats = models.IntegerField(default=0)
+    plate_appearances = models.IntegerField(default=0)
+
+    class Meta:
+        ordering = ["game__day", "player__name"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["player", "game"], name="unique_usage_appearance_player_game"
+            ),
+        ]
+
+    def __unicode__(self):
+        return f"{self.player} in {self.game}"
+
+
+class UsageOverride(BaseModel):
+    """
+    The commissioner's approval for one player, in one game, past one cap or
+    per-game limit. An owner's request has no approver until it is granted.
+    """
+
+    STARTS = "starts"
+    SEASON_INNINGS = "season_innings"
+    GAME_INNINGS = "game_innings"
+    PLATE_APPEARANCES = "plate_appearances"
+    REST = "rest"
+    CAP_CHOICES = (
+        (STARTS, "Season starts"),
+        (SEASON_INNINGS, "Season innings"),
+        (GAME_INNINGS, "Innings in this outing"),
+        (PLATE_APPEARANCES, "Season plate appearances"),
+        (REST, "Series rest"),
+    )
+
+    player = models.ForeignKey(Player, on_delete=models.CASCADE, related_name="usage_overrides")
+    game = models.ForeignKey(ScheduleGame, on_delete=models.CASCADE, related_name="usage_overrides")
+    cap = models.CharField(max_length=32, choices=CAP_CHOICES)
+    request_reason = models.TextField(blank=True)
+    reason = models.TextField(blank=True)
+    requested_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True, related_name="usage_override_requests"
+    )
+    approved_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True, related_name="usage_override_approvals"
+    )
+    approved_at = models.DateTimeField(null=True, blank=True)
+
+    # Usage recorded only because of this override.
+    starts_used = models.IntegerField(default=0)
+    outs_used = models.IntegerField(default=0)
+    plate_appearances_used = models.IntegerField(default=0)
+
+    class Meta:
+        ordering = ["-created"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["player", "game", "cap"], name="unique_usage_override_player_game_cap"
+            ),
+        ]
+
+    def __unicode__(self):
+        return f"{self.player} past {self.get_cap_display()} in {self.game}"
+
+    @property
+    def is_approved(self):
+        return self.approved_by_id is not None
+
+
+class UsagePause(BaseModel):
+    """
+    A game paused because one side has no legal pitcher. It stays open for
+    the commissioner until a roster move or an override gives the side one.
+    """
+
+    game = models.ForeignKey(ScheduleGame, on_delete=models.CASCADE, related_name="usage_pauses")
+    team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name="usage_pauses")
+    reason = models.TextField(blank=True)
+    resolved_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created"]
+
+    def __unicode__(self):
+        return f"{self.team.abbreviation} paused in {self.game}"
+
+    @property
+    def is_open(self):
+        return self.resolved_at is None
