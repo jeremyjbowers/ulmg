@@ -26,3 +26,6 @@ public/*
 bin/env.spaces.local.sh
 bin/env.spaces.prod.sh
 !bin/env.spaces.local.example.sh
+
+# Engine build output
+engine/target/

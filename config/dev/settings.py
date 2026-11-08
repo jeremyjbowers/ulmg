@@ -297,3 +297,7 @@ BOWERS_DRAFT_RANGES = ["TOP80!A1:V1000"]
 
 ## MAIL
 MAILGUN_API_KEY = os.environ.get("MAILGUN_API_KEY", None)
+
+## ENGINE
+# The stateless plate-appearance engine in engine/. Run it locally with `cargo run --bin serve`.
+ENGINE_URL = os.environ.get("ENGINE_URL", "http://127.0.0.1:41731")

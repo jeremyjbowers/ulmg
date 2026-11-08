@@ -61,4 +61,12 @@ STAT_THRESHOLDS = {
     'MIN_GAMES_PITCHED': 1,
     'MIN_INNINGS_PITCHED': 1,
     'MIN_GAMES_STARTED': 1,
-} 
+}
+
+# League alignment: each Team.division belongs to one of two conferences.
+CONFERENCE_BY_DIVISION = {
+    'Rickey': 'East',
+    'Fernandez': 'East',
+    'Ringen': 'West',
+    'Orzol': 'West',
+}

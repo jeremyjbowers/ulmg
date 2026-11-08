@@ -1925,3 +1925,100 @@ class OwnerAPIToken(BaseModel):
         self.revoked_at = timezone.now()
         self.active = False
         self.save(update_fields=["revoked_at", "active", "last_modified"])
+
+
+class ScheduleSlot(BaseModel):
+    """
+    One slot of a season's schedule. Every team plays one series of the
+    slot's length, so a slot's days are every team's game numbers.
+    """
+
+    OTHER_CONFERENCE = "other_conference"
+    OTHER_DIVISION = "other_division"
+    DIVISION = "division"
+    SLOT_TYPE_CHOICES = (
+        (OTHER_CONFERENCE, "Other conference"),
+        (OTHER_DIVISION, "Other division"),
+        (DIVISION, "Division"),
+    )
+
+    season = models.IntegerField()
+    half = models.IntegerField()
+    number = models.IntegerField()
+    slot_type = models.CharField(max_length=32, choices=SLOT_TYPE_CHOICES)
+    length = models.IntegerField()
+    first_day = models.IntegerField()
+
+    class Meta:
+        ordering = ["season", "number"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["season", "number"], name="unique_schedule_slot_number"
+            ),
+        ]
+
+    def __unicode__(self):
+        return f"{self.season} slot {self.number}"
+
+    @property
+    def last_day(self):
+        return self.first_day + self.length - 1
+
+
+class ScheduleSeries(BaseModel):
+    """
+    One series in a schedule slot: the road team visits the home team.
+    """
+
+    slot = models.ForeignKey(
+        ScheduleSlot, on_delete=models.CASCADE, related_name="series"
+    )
+    home_team = models.ForeignKey(
+        Team, on_delete=models.CASCADE, related_name="home_series"
+    )
+    road_team = models.ForeignKey(
+        Team, on_delete=models.CASCADE, related_name="road_series"
+    )
+
+    class Meta:
+        ordering = ["slot__season", "slot__number", "home_team__abbreviation"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["slot", "home_team"], name="unique_schedule_series_home"
+            ),
+            models.UniqueConstraint(
+                fields=["slot", "road_team"], name="unique_schedule_series_road"
+            ),
+        ]
+
+    def __unicode__(self):
+        return f"{self.slot}: {self.road_team.abbreviation} at {self.home_team.abbreviation}"
+
+
+class ScheduleGame(BaseModel):
+    """
+    One game of a series. Its day is both teams' game number, 1 through 162.
+    A game is played once it has a score.
+    """
+
+    series = models.ForeignKey(
+        ScheduleSeries, on_delete=models.CASCADE, related_name="games"
+    )
+    day = models.IntegerField()
+    home_score = models.IntegerField(null=True, blank=True)
+    road_score = models.IntegerField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["day", "series__home_team__abbreviation"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["series", "day"], name="unique_schedule_game_day"
+            ),
+        ]
+
+    def __unicode__(self):
+        return f"Day {self.day}: {self.series.road_team.abbreviation} at {self.series.home_team.abbreviation}"
+
+    @property
+    def is_played(self):
+        return self.home_score is not None and self.road_score is not None

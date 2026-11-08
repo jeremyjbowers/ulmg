@@ -92,6 +92,45 @@ python manage.py live_update_stats_from_fg_stats
 python manage.py runserver
 ```
 
+## Plate-appearance engine (development)
+
+The game engine is a Rust crate in `engine/`. It runs as its own stateless HTTP service: Django sends it the whole game state and a seed, and it sends back one plate appearance and the next state. It stores nothing between requests. `ulmg/engine_client.py` is the only Django code that calls it, at the address in the `ENGINE_URL` setting.
+
+Install Rust if `cargo` is not already available:
+
+```bash
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+. "$HOME/.cargo/env"
+```
+
+Run the engine in one terminal and Django in another:
+
+```bash
+# terminal 1: listens on 0.0.0.0:41731 (set PORT to change it)
+cd engine
+cargo run --bin serve
+
+# terminal 2: config.dev.settings defaults ENGINE_URL to http://127.0.0.1:41731
+export DJANGO_SETTINGS_MODULE=config.dev.settings
+django-admin runserver
+```
+
+If the engine runs elsewhere, export `ENGINE_URL` (for example `export ENGINE_URL=http://127.0.0.1:41800`) before `runserver`.
+
+Routes:
+- `POST /start` with `{"fixture": ..., "seed": ...}` returns `{"state": ...}`, the opening game state.
+- `POST /step` with `{"state": ..., "call": null, "seed": ...}` returns `{"result": ..., "state": ...}`. `call` is `null` for a normal plate appearance (the computer manager decides), or `bunt`, `intentional_walk`, `steal`, or `hit_and_run`. The same state, call, and seed always give the same result.
+- `POST /matchup` with `{"state": ...}` returns the outcome probabilities the next plate appearance will draw from, without drawing.
+- `GET /health` returns `{"status": "ok"}`.
+
+Tests:
+
+```bash
+cd engine && cargo test
+```
+
+The Django tests in `tests/test_engine_client.py` build the engine with `cargo` and start it on a free port, so `cargo` must be on `PATH` when you run `django-admin test`. Without it those tests fail with a message saying so.
+
 ## Common commands
 
 Data

@@ -58,6 +58,14 @@ class LoginRequiredMiddleware:
         # Exempt specific URL names
         if url_name in auth_exempt_urls:
             return True
+
+        # The season schedule is visible to everyone in the league, logged in or not
+        public_urls = [
+            'league_schedule',
+            'team_schedule',
+        ]
+        if url_name in public_urls:
+            return True
             
         # Exempt static files and media
         if (request.path.startswith('/static/') or 
