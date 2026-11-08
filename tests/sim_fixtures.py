@@ -14,9 +14,9 @@ STAT_CLASSIFICATIONS = ["1-mlb", "2-milb", "3-npb", "4-kbo", "5-college"]
 def create_played_season(season, home, road, player, days=3, first_day=1, slot_number=1):
     """
     One slot and series for the season, every game opened and scored, the
-    home team's half plan, and the usage ledger rows a played series leaves:
+    home team's half plan, the usage ledger rows a played series leaves:
     a counter, appearances, an override, a pause and the player's 6-ulmg
-    season line.
+    season line, and one roster move made during the first game.
     """
     slot = models.ScheduleSlot.objects.create(
         season=season,
@@ -58,6 +58,17 @@ def create_played_season(season, home, road, player, days=3, first_day=1, slot_n
         season=season,
         classification="6-ulmg",
         pitch_stats={"ip": 18},
+    )
+    sent_down = models.Player.objects.create(name=f"Sim Sent Down {season}", position="P", team=road)
+    models.RosterMove.objects.create(
+        season=season,
+        half=1,
+        team=road,
+        player_up=player,
+        player_down=sent_down,
+        stay_games=15,
+        stay_last_day=first_day + days - 1,
+        game=games[0],
     )
     return games
 
@@ -101,3 +112,11 @@ def create_kept_rows(season, team, player):
     other = models.Player.objects.create(name="Kept Duplicate")
     models.DuplicatePlayerCandidate.objects.create(player1=player, player2=other)
     models.OwnerAPIToken.create_token(owner, label="kept")
+    snapshot = models.HalfRosterSnapshot.objects.create(season=season, half=1)
+    models.HalfRosterSnapshotPlayer.objects.create(
+        snapshot=snapshot,
+        player=player,
+        team=team,
+        is_ulmg_mlb_roster=player.is_ulmg_mlb_roster,
+        is_ulmg_aaa_roster=player.is_ulmg_aaa_roster,
+    )

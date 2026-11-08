@@ -7,7 +7,7 @@ from django.apps import apps
 from django.db import transaction
 from django.db.models import Q
 
-from ulmg import models
+from ulmg import models, roster_moves
 
 
 class SimResetError(Exception):
@@ -63,6 +63,9 @@ SIM_MODELS = [
     SimModel(models.UsageCounter, "season"),
     # Only the ULMG season lines; every other classification is real stats.
     SimModel(models.PlayerStatSeason, "season", filters={"classification": "6-ulmg"}),
+    # The move log goes, and every rostered player's flags go back to the
+    # season's earliest half roster snapshot, which is kept.
+    SimModel(models.RosterMove, "season", restore=roster_moves.restore_snapshot),
     # Half plans go with the schedule; their days before the plans they hang off.
     SimModel(models.HalfPlanDay, "plan__season", schedule=True),
     SimModel(models.HalfPlan, "season", schedule=True),
@@ -98,6 +101,10 @@ KEPT_MODELS = [
     models.Occurrence,
     models.DuplicatePlayerCandidate,
     models.OwnerAPIToken,
+    # The rosters each half started with: the reset restores from them and a
+    # later playoff rule reads them. Retaken until the half starts again.
+    models.HalfRosterSnapshot,
+    models.HalfRosterSnapshotPlayer,
 ]
 
 

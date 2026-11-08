@@ -64,9 +64,9 @@ class ResetSimSeasonCommandTestCase(TestCase):
     def test_confirmed_reset_removes_only_that_seasons_sim_rows(self):
         kept_before = kept_counts()
         output = run("--season", str(SEASON), "--confirm", str(SEASON))
-        self.assertIn("1/10 UsageAppearance: deleted 3", output)
+        self.assertIn("1/11 UsageAppearance: deleted 3", output)
         self.assertIn("ScheduleGame: cleared home_score, road_score, opened_at, opening_sheet on 3", output)
-        self.assertIn("Reset 2026: deleted 7 rows and cleared 3; the schedule is kept", output)
+        self.assertIn("Reset 2026: deleted 8 rows and cleared 3; the schedule is kept", output)
         self.assertFalse(models.UsageCounter.objects.filter(season=SEASON).exists())
         self.assertEqual(played_games(SEASON), 0)
         self.assertEqual(models.ScheduleGame.objects.filter(series__slot__season=SEASON).count(), 3)

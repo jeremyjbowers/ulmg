@@ -5,7 +5,7 @@ from django.http import Http404, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.cache import never_cache
 
-from ulmg import models, plans, utils
+from ulmg import models, plans, roster_moves, utils
 from ulmg.views.schedule import _schedule_season
 
 # Empty selects the editor offers past the players already filed.
@@ -132,8 +132,14 @@ def _fields(state):
     return fields, errors
 
 
-def _roster_context(team, season):
-    roster = list(plans.thirty_man(team))
+def _roster_context(team, season, half, game=None):
+    """
+    The players the editor offers: everyone the team can play in some game
+    of the half, or, for one day, that game's roster.
+    """
+    rosters = roster_moves.HalfRosters(team, season, half)
+    ids = rosters.for_game(game) if game is not None else rosters.all
+    roster = list(models.Player.objects.filter(id__in=ids).order_by("name"))
     return {
         "pitchers": [p for p in roster if plans.can_pitch(p)],
         "hitters": [p for p in roster if not plans.is_pitcher(p)],
@@ -194,7 +200,7 @@ def team_plan(request, abbreviation, half):
 
 def _editor_context(request, team, half, season, state, errors):
     context = utils.build_context(request)
-    context.update(_roster_context(team, season))
+    context.update(_roster_context(team, season, half))
     context.update(
         {
             "team": team,
@@ -284,7 +290,7 @@ def team_plan_day(request, abbreviation, half, day):
                 return redirect(_plan_url(team, half, season, day))
 
     context = utils.build_context(request)
-    context.update(_roster_context(team, season))
+    context.update(_roster_context(team, season, half, row["game"]))
     context.update(
         {
             "team": team,
