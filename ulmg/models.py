@@ -2304,3 +2304,80 @@ class HalfPlanDay(BaseModel):
     @property
     def starter(self):
         return self.manual_starter or self.auto_starter
+
+
+class RosterMove(BaseModel):
+    """
+    One non-injury roster move: a call-up and a send-down made together, so
+    the 30-man count holds. It changes the team's roster for its own road
+    games only. stay_games is how many road games the call-up's stay held
+    when the move was made, and stay_last_day is the day of its last one;
+    the stay ends when that game is final, and ends with the half at the
+    latest. game is the team's road game in progress when the move was made.
+    ulmg.roster_moves makes and checks moves.
+    """
+
+    season = models.IntegerField()
+    half = models.IntegerField()
+    team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name="roster_moves")
+    player_up = models.ForeignKey(Player, on_delete=models.CASCADE, related_name="moves_up")
+    player_down = models.ForeignKey(Player, on_delete=models.CASCADE, related_name="moves_down")
+    made_at = models.DateTimeField(default=timezone.now)
+    made_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+    stay_games = models.IntegerField()
+    stay_last_day = models.IntegerField(null=True, blank=True)
+    game = models.ForeignKey(
+        ScheduleGame, on_delete=models.SET_NULL, null=True, blank=True, related_name="roster_moves"
+    )
+
+    class Meta:
+        ordering = ["season", "half", "team__abbreviation", "made_at", "id"]
+        indexes = [models.Index(fields=["team", "season", "half"])]
+
+    def __unicode__(self):
+        return f"{self.team.abbreviation} {self.season} half {self.half}: up {self.player_up}, down {self.player_down}"
+
+
+class HalfRosterSnapshot(BaseModel):
+    """
+    Every rostered player's roster flags at the start of one season half:
+    who was on each team's 30-man and AAA. It is taken by ulmg.roster_moves
+    when the half's first game opens or its first move is made, and retaken
+    until then. A sim reset puts the flags back to the season's earliest one.
+    """
+
+    season = models.IntegerField()
+    half = models.IntegerField()
+    taken_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        ordering = ["season", "half"]
+        constraints = [
+            models.UniqueConstraint(fields=["season", "half"], name="unique_half_roster_snapshot"),
+        ]
+
+    def __unicode__(self):
+        return f"{self.season} half {self.half} roster snapshot"
+
+
+class HalfRosterSnapshotPlayer(BaseModel):
+    """One player's team and roster flags in a half roster snapshot."""
+
+    snapshot = models.ForeignKey(HalfRosterSnapshot, on_delete=models.CASCADE, related_name="players")
+    player = models.ForeignKey(Player, on_delete=models.CASCADE, related_name="+")
+    team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name="+")
+    is_ulmg_mlb_roster = models.BooleanField(default=False)
+    is_ulmg_aaa_roster = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ["snapshot", "team__abbreviation", "player__name"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["snapshot", "player"], name="unique_half_roster_snapshot_player"
+            ),
+        ]
+
+    def __unicode__(self):
+        return f"{self.player} in {self.snapshot}"

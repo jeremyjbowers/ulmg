@@ -107,6 +107,7 @@ class ResetTestCase(TestCase):
         self.assertEqual(models.HalfPlan.objects.filter(season=OTHER_SEASON).count(), 1)
         self.assertEqual(models.HalfPlanDay.objects.filter(plan__season=OTHER_SEASON).count(), 3)
         self.assertEqual(models.UsageCounter.objects.filter(season=OTHER_SEASON).count(), 1)
+        self.assertEqual(models.RosterMove.objects.filter(season=OTHER_SEASON).count(), 1)
         self.assertEqual(
             models.UsageAppearance.objects.filter(game__series__slot__season=OTHER_SEASON).count(), 3
         )
@@ -138,6 +139,7 @@ class ResetTestCase(TestCase):
                 models.UsagePause: ("delete", 1),
                 models.UsageCounter: ("delete", 1),
                 models.PlayerStatSeason: ("delete", 1),
+                models.RosterMove: ("delete", 1),
                 models.HalfPlanDay: ("keep", 3),
                 models.HalfPlan: ("keep", 1),
                 models.ScheduleGame: ("clear", 3),
@@ -185,6 +187,7 @@ class ResetTestCase(TestCase):
 
         self.assertEqual(self.plan_by_model(steps)[models.UsageAppearance], ("delete", 3))
         self.assertFalse(models.UsageCounter.objects.filter(season=SEASON).exists())
+        self.assertFalse(models.RosterMove.objects.filter(season=SEASON).exists())
         self.assertFalse(models.UsageAppearance.objects.filter(game__series__slot__season=SEASON).exists())
         self.assertFalse(models.UsageOverride.objects.filter(game__series__slot__season=SEASON).exists())
         self.assertFalse(models.UsagePause.objects.filter(game__series__slot__season=SEASON).exists())

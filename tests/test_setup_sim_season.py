@@ -7,7 +7,7 @@ from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.test import TestCase, override_settings
 
-from ulmg import models, plans, schedule, sim_setup
+from ulmg import models, plans, roster_moves, schedule, sim_setup
 from tests.plan_fixtures import CARD_SEASON, RELIEVER_STATS, SEASON, Roster, create_hitter, create_pitcher
 from tests.schedule_fixtures import create_league_teams
 
@@ -126,11 +126,15 @@ class SetupSimSeasonCommandTestCase(TestCase):
         self.assertEqual(len(plan.bench), 2)
         self.assertEqual(len(plan.lineup_vs_lhp), 9)
         self.assertEqual(len(plan.lineup_vs_rhp), 9)
-        self.assertEqual(plans.plan_errors(team_obj, SEASON, **plans._stored_fields(plan)), [])
+        self.assertEqual(plans.plan_errors(team_obj, SEASON, half, **plans._stored_fields(plan)), [])
         days = range(1, 82) if half == 1 else range(82, 163)
         starters = plans.starters(plan)
         self.assertEqual(sorted(starters), list(days))
         self.assertTrue(all(starters.values()), msg=f"{team_obj.abbreviation} half {half}")
+        # Every day's starter is on that game's roster under the roster-move rules.
+        rosters = roster_moves.HalfRosters(team_obj, SEASON, half)
+        for day, game in plans.half_games(team_obj, SEASON, half).items():
+            self.assertIsNone(rosters.problem(starters[day], game), msg=f"{team_obj.abbreviation} day {day}")
 
     def test_full_setup_gives_every_team_162_games_and_a_complete_first_half_plan(self):
         output = run_setup()
