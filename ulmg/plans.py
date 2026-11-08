@@ -215,6 +215,45 @@ def _call_up_card_errors(team, season, half, rosters, cards):
     ]
 
 
+def rotation_errors(team, rotation, roster_ids):
+    """Rule errors for a rotation: at least one starter, each a 30-man pitcher, each once."""
+    errors = []
+    if not rotation:
+        errors.append("The rotation needs at least one starter.")
+    for player in rotation:
+        errors.append(_roster_error(player, team, roster_ids))
+        if not can_pitch(player):
+            errors.append(f"{player.name} is not a pitcher and cannot be in the rotation.")
+        if rotation.count(player) > 1:
+            errors.append(f"{player.name} is in the rotation twice.")
+    return _unique_errors([e for e in errors if e])
+
+
+def bullpen_errors(team, closer, setup, middle_long, roster_ids):
+    """Rule errors for the bullpen roles: 30-man pitchers, each in one role once."""
+    errors = []
+    bullpen = ([closer] if closer else []) + list(setup) + list(middle_long)
+    for player in bullpen:
+        errors.append(_roster_error(player, team, roster_ids))
+        if not can_pitch(player):
+            errors.append(f"{player.name} is not a pitcher and cannot be in the bullpen.")
+        if bullpen.count(player) > 1:
+            errors.append(f"{player.name} is in the bullpen twice.")
+    return _unique_errors([e for e in errors if e])
+
+
+def bench_errors(team, bench, roster_ids):
+    """Rule errors for the bench order: 30-man non-pitchers, each once."""
+    errors = []
+    for player in bench:
+        errors.append(_roster_error(player, team, roster_ids))
+        if is_pitcher(player):
+            errors.append(f"The bench is for non-pitchers; {player.name} is a pitcher.")
+        if bench.count(player) > 1:
+            errors.append(f"{player.name} is on the bench twice.")
+    return _unique_errors([e for e in errors if e])
+
+
 def plan_errors(team, season, half, *, rotation, closer, setup, middle_long, bench, lineup_vs_lhp, lineup_vs_rhp):
     """
     Every rule error in a plan's rotation, bullpen, bench and lineup cards.
@@ -224,30 +263,9 @@ def plan_errors(team, season, half, *, rotation, closer, setup, middle_long, ben
     rosters = roster_moves.HalfRosters(team, season, half)
     roster_ids = rosters.all
     errors = []
-
-    if not rotation:
-        errors.append("The rotation needs at least one starter.")
-    for player in rotation:
-        errors.append(_roster_error(player, team, roster_ids))
-        if not can_pitch(player):
-            errors.append(f"{player.name} is not a pitcher and cannot be in the rotation.")
-        if rotation.count(player) > 1:
-            errors.append(f"{player.name} is in the rotation twice.")
-
-    bullpen = ([closer] if closer else []) + list(setup) + list(middle_long)
-    for player in bullpen:
-        errors.append(_roster_error(player, team, roster_ids))
-        if not can_pitch(player):
-            errors.append(f"{player.name} is not a pitcher and cannot be in the bullpen.")
-        if bullpen.count(player) > 1:
-            errors.append(f"{player.name} is in the bullpen twice.")
-
-    for player in bench:
-        errors.append(_roster_error(player, team, roster_ids))
-        if is_pitcher(player):
-            errors.append(f"The bench is for non-pitchers; {player.name} is a pitcher.")
-        if bench.count(player) > 1:
-            errors.append(f"{player.name} is on the bench twice.")
+    errors += rotation_errors(team, rotation, roster_ids)
+    errors += bullpen_errors(team, closer, setup, middle_long, roster_ids)
+    errors += bench_errors(team, bench, roster_ids)
 
     def roster_problem(player):
         return _roster_error(player, team, roster_ids)
@@ -390,8 +408,8 @@ def _start_problem(starter, game, planned_games, rosters):
     return None if check.legal else check.reason
 
 
-def _refill(plan, rosters):
-    """Re-run auto-fill and check every day. Raises PlanError listing the days without a legal starter."""
+def _refill_problems(plan, rosters):
+    """Re-run auto-fill and check every day. Returns the errors and the days without a legal starter."""
     games = half_games(plan.team, plan.season, plan.half)
     rows = _day_rows(plan, games)
     unfilled = _auto_fill(plan, games, rows, rosters)
@@ -402,6 +420,12 @@ def _refill(plan, rosters):
             0,
             f"No legal starter for days {days}. Spot-start those days or make a roster move.",
         )
+    return errors, unfilled
+
+
+def _refill(plan, rosters):
+    """Re-run auto-fill and check every day. Raises PlanError listing the days without a legal starter."""
+    errors, unfilled = _refill_problems(plan, rosters)
     if errors:
         raise PlanError(errors, unfilled)
 
@@ -502,6 +526,73 @@ def save_plan(plan, *, rotation, closer, setup, middle_long, bench, lineup_vs_lh
         plan.save()
         _refill(plan, rosters)
         return _designate(plan)
+
+
+def fill_plan(
+    plan, *, rotation, closer, setup, middle_long, bench, lineup_vs_lhp, lineup_vs_rhp, ignore_half_lock=False
+):
+    """
+    Save as much of a half plan as is legal, for building a test season
+    (setup_sim_season). Unlike save_plan it never rejects the whole plan: a
+    rotation, bullpen, bench or lineup card that breaks a rule is saved
+    empty, auto-fill fills every day it can, and swingman designations are
+    set as save_plan sets them. Returns the problems as messages.
+
+    ignore_half_lock fills a second-half plan before the trade break. Only
+    test setup passes it; the plan pages always go through save_plan and
+    is_open.
+    """
+    if not ignore_half_lock and not is_open(plan.half):
+        raise PlanError([closed_message(plan.half)])
+    team = plan.team
+    rosters = roster_moves.HalfRosters(team, plan.season, plan.half)
+    roster_ids = rosters.all
+    rotation, setup, middle_long, bench = list(rotation), list(setup), list(middle_long), list(bench)
+    lineup_vs_lhp, lineup_vs_rhp = list(lineup_vs_lhp), list(lineup_vs_rhp)
+
+    problems = []
+    errors = rotation_errors(plan.team, rotation, roster_ids)
+    if errors:
+        problems += errors
+        rotation = []
+    errors = bullpen_errors(plan.team, closer, setup, middle_long, roster_ids)
+    if errors:
+        problems += errors
+        closer, setup, middle_long = None, [], []
+    errors = bench_errors(plan.team, bench, roster_ids)
+    if errors:
+        problems += errors
+        bench = []
+
+    def roster_problem(player):
+        return _roster_error(player, team, roster_ids)
+
+    def card_errors(entries, label):
+        return lineup_errors(team, plan.season, entries, label, roster_problem) + _call_up_card_errors(
+            team, plan.season, plan.half, rosters, [(label, entries)]
+        )
+
+    errors = card_errors(lineup_vs_lhp, "Lineup vs LHP")
+    if errors:
+        problems += errors
+        lineup_vs_lhp = []
+    errors = card_errors(lineup_vs_rhp, "Lineup vs RHP")
+    if errors:
+        problems += errors
+        lineup_vs_rhp = []
+
+    with transaction.atomic():
+        plan.rotation = [p.id for p in rotation]
+        plan.closer = closer
+        plan.setup = [p.id for p in setup]
+        plan.middle_long = [p.id for p in middle_long]
+        plan.bench = [p.id for p in bench]
+        plan.lineup_vs_lhp = stored_lineup(lineup_vs_lhp)
+        plan.lineup_vs_rhp = stored_lineup(lineup_vs_rhp)
+        plan.save()
+        errors, _ = _refill_problems(plan, rosters)
+        _designate(plan)
+    return problems + errors
 
 
 def save_day(plan, day, *, starter=None, lineup=None):
