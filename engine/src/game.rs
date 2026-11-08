@@ -12,9 +12,9 @@ use serde::{Deserialize, Serialize};
 
 use crate::fatigue::{draw_ceiling, effort_per_pitch};
 use crate::model::{
-    Bases, BatterCard, FatigueState, GameFixture, Half, LineScore, LogEntry, PaInput, PaResult,
-    PitcherCard, PlayerId, Position, PrePaCalls, Running, Score, Side, Situation, Status,
-    TeamFixture,
+    Bases, BatterCard, DefenseRating, FatigueState, GameFixture, Half, LineScore, LogEntry,
+    PaInput, PaResult, PitcherCard, PlayerId, Position, PrePaCalls, Running, Score, Side,
+    Situation, Status, TeamFixture,
 };
 
 const FIELD_POSITIONS: [Position; 8] = [
@@ -36,6 +36,7 @@ pub enum GameError {
     PitcherRequired,
     NoPitcherAvailable { team: Side },
     PitcherDoesNotHit { player: PlayerId },
+    PositionRequired { player: PlayerId },
     GameOver,
     InvalidFixture(String),
     InvalidRunning(String),
@@ -59,6 +60,12 @@ impl fmt::Display for GameError {
             }
             Self::PitcherDoesNotHit { player } => {
                 write!(f, "{player} is a pitcher and cannot hit")
+            }
+            Self::PositionRequired { player } => {
+                write!(
+                    f,
+                    "{player} needs a fielding position before the next pitch"
+                )
             }
             Self::GameOver => write!(f, "the game is over"),
             Self::InvalidFixture(msg) => write!(f, "invalid fixture: {msg}"),
@@ -88,6 +95,33 @@ pub struct Club {
     pub unavailable: Vec<PlayerId>,
     pub positions: BTreeMap<PlayerId, Position>,
     pub fatigue: BTreeMap<PlayerId, FatigueState>,
+    /// Pinch hitters and pinch runners who have no fielding position yet. Each must be
+    /// given one, or be replaced, before his club's next pitch in the field.
+    #[serde(default)]
+    pub pending: Vec<PlayerId>,
+}
+
+/// How a substitute enters a batting-order slot.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum SubstituteRole {
+    /// At the position of the player he replaces, who must not be on base.
+    #[default]
+    Replacement,
+    /// For the batter due up. He holds the replaced player's position until he is given one.
+    PinchHitter,
+    /// For a runner on base, whose base he takes. He holds a position as a pinch hitter does.
+    PinchRunner,
+    /// While his club is in the field, at the position of the player he replaces.
+    Defense,
+}
+
+/// One batting-order slot's new fielding position, with the defense rating his card has there.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct PositionChange {
+    pub index: usize,
+    pub position: Position,
+    pub defense: DefenseRating,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -309,6 +343,11 @@ impl Game {
         if self.pitcher_is_spent(fielding, &pitcher_id) {
             return Err(GameError::LeftInPastFatigue { player: pitcher_id });
         }
+        if let Some(player) = self.club(fielding).pending.first() {
+            return Err(GameError::PositionRequired {
+                player: player.clone(),
+            });
+        }
         let batter = &self.club(batting).lineup[self.club(batting).batter_index];
         if self.is_pitcher(&batter.id) {
             return Err(GameError::PitcherDoesNotHit {
@@ -513,6 +552,22 @@ impl Game {
         index: usize,
         card: BatterCard,
     ) -> Result<(), GameError> {
+        self.substitute(side, index, card, SubstituteRole::Replacement)
+    }
+
+    /// Put `card` in the batting-order slot `index` of `side`, at the position of the player he
+    /// replaces, who leaves the game and cannot re-enter. `role` says when he may enter: a pinch
+    /// hitter for the batter due up, a pinch runner for a runner on base (he takes the base), a
+    /// defensive replacement while his club is in the field, or a plain replacement. A pinch
+    /// hitter or runner for anyone but the designated hitter has no fielding position yet, and
+    /// his club cannot pitch to a batter until he is given one or replaced.
+    pub fn substitute(
+        &mut self,
+        side: Side,
+        index: usize,
+        card: BatterCard,
+        role: SubstituteRole,
+    ) -> Result<(), GameError> {
         if self.is_final() {
             return Err(GameError::GameOver);
         }
@@ -542,24 +597,76 @@ impl Game {
                 card.id, replaced.position
             )));
         }
-        let on_base = [&self.bases.first, &self.bases.second, &self.bases.third]
-            .into_iter()
-            .any(|runner| runner.as_deref() == Some(replaced.id.as_str()));
-        if on_base {
+        let on_base = self.bases_holding(&replaced.id);
+        match role {
+            SubstituteRole::PinchHitter => {
+                if side != self.batting_side() || index != self.club(side).batter_index {
+                    return Err(GameError::InvalidFixture(format!(
+                        "a pinch hitter replaces the batter due up, and {} is not due up",
+                        replaced.id
+                    )));
+                }
+            }
+            SubstituteRole::PinchRunner => {
+                if side != self.batting_side() || !on_base {
+                    return Err(GameError::InvalidFixture(format!(
+                        "a pinch runner replaces a runner on base, and {} is not on base",
+                        replaced.id
+                    )));
+                }
+            }
+            SubstituteRole::Defense => {
+                if side != self.fielding_side() {
+                    return Err(GameError::InvalidFixture(
+                        "a defensive replacement enters while his club is in the field".into(),
+                    ));
+                }
+            }
+            SubstituteRole::Replacement => {}
+        }
+        if on_base && role != SubstituteRole::PinchRunner {
             return Err(GameError::InvalidFixture(format!(
                 "{} is on base and cannot be replaced at the plate",
                 replaced.id
             )));
         }
         self.move_to_unavailable(side, &replaced.id);
-        let text = format!(
-            "{} replaces {}, batting {} and playing {:?}.",
-            card.name,
-            replaced.name,
-            index + 1,
-            card.position
+        let text = match role {
+            SubstituteRole::PinchHitter => format!(
+                "{} pinch hits for {}, batting {}.",
+                card.name,
+                replaced.name,
+                index + 1
+            ),
+            SubstituteRole::PinchRunner => {
+                format!("{} pinch runs for {}.", card.name, replaced.name)
+            }
+            SubstituteRole::Replacement | SubstituteRole::Defense => format!(
+                "{} replaces {}, batting {} and playing {:?}.",
+                card.name,
+                replaced.name,
+                index + 1,
+                card.position
+            ),
+        };
+        for base in [
+            &mut self.bases.first,
+            &mut self.bases.second,
+            &mut self.bases.third,
+        ] {
+            if base.as_deref() == Some(replaced.id.as_str()) {
+                *base = Some(card.id.clone());
+            }
+        }
+        let pinch = matches!(
+            role,
+            SubstituteRole::PinchHitter | SubstituteRole::PinchRunner
         );
         let club = self.club_mut(side);
+        club.pending.retain(|id| id != &replaced.id);
+        if pinch && card.position != Position::Dh {
+            club.pending.push(card.id.clone());
+        }
         club.in_game.push(card.id.clone());
         club.positions.insert(card.id.clone(), card.position);
         club.lineup[index] = card;
@@ -569,6 +676,93 @@ impl Game {
             text,
         });
         Ok(())
+    }
+
+    /// New fielding positions for some of the fielding club's batting-order slots, each with the
+    /// defense rating his card has there. The designated hitter stays the designated hitter and
+    /// nobody else becomes one. Afterward each of the eight field positions has one fielder.
+    /// A pinch hitter or runner given a position no longer waits for one.
+    pub fn set_positions(
+        &mut self,
+        side: Side,
+        changes: Vec<PositionChange>,
+    ) -> Result<(), GameError> {
+        if self.is_final() {
+            return Err(GameError::GameOver);
+        }
+        if side != self.fielding_side() {
+            return Err(GameError::InvalidFixture(
+                "positions change while the club is in the field".into(),
+            ));
+        }
+        if changes.is_empty() {
+            return Err(GameError::InvalidFixture("no position changes".into()));
+        }
+        let mut lineup = self.club(side).lineup.clone();
+        let mut changed = Vec::new();
+        for change in &changes {
+            if change.index >= lineup.len() || changed.contains(&change.index) {
+                return Err(GameError::InvalidFixture(
+                    "each position change names a different batting-order slot".into(),
+                ));
+            }
+            changed.push(change.index);
+            let batter = &mut lineup[change.index];
+            if batter.position == Position::Dh {
+                return Err(GameError::InvalidFixture(format!(
+                    "{} is the designated hitter and cannot move into the field",
+                    batter.id
+                )));
+            }
+            if !FIELD_POSITIONS.contains(&change.position) {
+                return Err(GameError::InvalidFixture(format!(
+                    "{} cannot move to {:?}; the designated hitter stays the designated hitter",
+                    batter.id, change.position
+                )));
+            }
+            if !change.defense.rating.is_finite() {
+                return Err(GameError::InvalidFixture(format!(
+                    "{} has a bad defense rating",
+                    batter.id
+                )));
+            }
+            batter.position = change.position;
+            batter.defense = change.defense.clone();
+        }
+        for position in FIELD_POSITIONS {
+            if lineup.iter().filter(|b| b.position == position).count() != 1 {
+                return Err(GameError::InvalidFixture(format!(
+                    "{position:?} must be played by exactly one fielder"
+                )));
+            }
+        }
+        let text = changes
+            .iter()
+            .map(|change| {
+                let batter = &lineup[change.index];
+                format!("{} plays {:?}.", batter.name, batter.position)
+            })
+            .collect::<Vec<_>>()
+            .join(" ");
+        let club = self.club_mut(side);
+        for change in &changes {
+            let id = lineup[change.index].id.clone();
+            club.positions.insert(id.clone(), change.position);
+            club.pending.retain(|pending| pending != &id);
+        }
+        club.lineup = lineup;
+        self.log.push(LogEntry {
+            inning: self.inning,
+            half: self.half,
+            text,
+        });
+        Ok(())
+    }
+
+    fn bases_holding(&self, player: &str) -> bool {
+        [&self.bases.first, &self.bases.second, &self.bases.third]
+            .into_iter()
+            .any(|runner| runner.as_deref() == Some(player))
     }
 
     /// Fixed lineup. Pitchers are rejected before any other batting-order change.
@@ -795,6 +989,7 @@ fn seat_club(team: TeamFixture, rng: &mut impl Rng) -> Club {
         unavailable: Vec::new(),
         positions,
         fatigue,
+        pending: Vec::new(),
     }
 }
 

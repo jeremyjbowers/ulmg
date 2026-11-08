@@ -136,6 +136,29 @@ class EngineClientTestCase(SimpleTestCase):
         self.assertEqual(changed["away"]["lineup"][2]["id"], "a-sub")
         self.assertIn(replaced["id"], changed["away"]["unavailable"])
 
+    def test_a_pinch_runner_takes_the_base_and_needs_a_position(self):
+        state = self.runner_on_first()[0]
+        replaced = state["away"]["lineup"][8]
+        runner = dict(replaced, id="a-pr", name="Pinch Runner")
+        changed = engine_client.substitute(state, "away", 8, runner, role="pinch_runner")
+        self.assertEqual(changed["bases"]["first"], "a-pr")
+        if replaced["position"] != "DH":
+            self.assertEqual(changed["away"]["pending"], ["a-pr"])
+
+    def test_set_positions_moves_fielders(self):
+        state = self.opening_state(seed=2)
+        lineup = state["home"]["lineup"]
+        a, b = [i for i, batter in enumerate(lineup) if batter["position"] != "DH"][:2]
+        changes = [
+            {"index": a, "position": lineup[b]["position"], "defense": {"rating": 0.5, "measured_at": lineup[b]["position"]}},
+            {"index": b, "position": lineup[a]["position"], "defense": {"rating": 0.5, "measured_at": lineup[a]["position"]}},
+        ]
+        changed = engine_client.set_positions(state, "home", changes)
+        self.assertEqual(changed["home"]["lineup"][a]["position"], lineup[b]["position"])
+        with self.assertRaises(engine_client.EngineError) as caught:
+            engine_client.set_positions(state, "home", changes[:1])
+        self.assertEqual(caught.exception.status, 422)
+
     def test_a_none_call_plays_with_no_call(self):
         state = self.opening_state(seed=2)
         self.assertEqual(engine_client.step(state, seed=9, call="none"), engine_client.step(state, seed=9, call="none"))

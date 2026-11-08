@@ -10,7 +10,7 @@ use rand::rngs::StdRng;
 use rand::SeedableRng;
 use serde::Serialize;
 
-use crate::game::{Game, GameError};
+use crate::game::{Game, GameError, PositionChange, SubstituteRole};
 use crate::governance::Governance;
 use crate::manager::ComputerManager;
 use crate::model::{
@@ -80,14 +80,25 @@ pub fn bring_in_pitcher(mut game: Game, card: PitcherCard, seed: u64) -> Result<
     Ok(game)
 }
 
-/// Replace one batting-order slot of `side`. Draws nothing.
+/// Replace one batting-order slot of `side`, entering as `role` says. Draws nothing.
 pub fn substitute(
     mut game: Game,
     side: Side,
     index: usize,
     card: BatterCard,
+    role: SubstituteRole,
 ) -> Result<Game, GameError> {
-    game.substitute_batter(side, index, card)?;
+    game.substitute(side, index, card, role)?;
+    Ok(game)
+}
+
+/// New fielding positions for the fielding club. Draws nothing.
+pub fn set_positions(
+    mut game: Game,
+    side: Side,
+    changes: Vec<PositionChange>,
+) -> Result<Game, GameError> {
+    game.set_positions(side, changes)?;
     Ok(game)
 }
 

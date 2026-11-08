@@ -44,6 +44,14 @@ CATCHER = "C"
 
 PITCHER_NEED = "pitcher"
 BATTER_NEED = "batter"
+POSITION_NEED = "position"
+
+# The engine's substitution roles (#170). A forced replacement sends none.
+PINCH_HITTER = "pinch_hitter"
+PINCH_RUNNER = "pinch_runner"
+DEFENSE = "defense"
+BASES = ("first", "second", "third")
+FIELD_POSITIONS = [p for p in plans.LINEUP_POSITIONS if p != DH]
 
 
 class GameRefused(Exception):
@@ -299,7 +307,9 @@ def apply_engine_event(state, event):
     if event.kind == Event.PITCHING_CHANGE:
         return engine_client.bring_in_pitcher(state, payload["card"], event.seed)
     if event.kind == Event.SUBSTITUTION:
-        return engine_client.substitute(state, event.side, payload["index"], payload["card"])
+        return engine_client.substitute(state, event.side, payload["index"], payload["card"], role=payload.get("role"))
+    if event.kind == Event.POSITION_CHANGE:
+        return engine_client.set_positions(state, event.side, payload["changes"])
     return state
 
 
@@ -472,10 +482,18 @@ class Play:
         problem = hitter_card_problem(player, self.card(player))
         if problem:
             return problem
-        if position == CATCHER and (self.card(player).defense or {}).get(CATCHER) is None:
-            return f"{player.name} has no catcher rating and cannot play C."
+        problem = self.position_problem(player, position)
+        if problem:
+            return problem
         check = usage.check_batter(player, self.game)
         return None if check.legal else check.reason
+
+    def position_problem(self, player, position):
+        """Why a player can't be slotted at a position, or None. Only a catcher needs a rating."""
+        card = self.card(player)
+        if position == CATCHER and (card is None or (card.defense or {}).get(CATCHER) is None):
+            return f"{player.name} has no catcher rating and cannot play C."
+        return None
 
     def pitcher_problem(self, side, player, starting=False):
         team = team_for(self.game, side)
@@ -549,6 +567,19 @@ class Play:
         problem = self.pitcher_problem(fielding, pitcher, starting=self.is_starter(fielding, pitcher))
         if problem:
             return Need(fielding, PITCHER_NEED, f"{pitcher.name} must come out before the next batter. {problem}", player=pitcher)
+        pending = self.state[fielding].get("pending") or []
+        if pending:
+            ids = [entry["id"] for entry in self.state[fielding]["lineup"]]
+            player = self.player(pending[0])
+            slot = ids.index(pending[0])
+            return Need(
+                fielding,
+                POSITION_NEED,
+                f"{player.name}, batting {ordinal(slot + 1)}, needs a fielding position before the next pitch. "
+                "Give him one, or put in a defensive replacement for him.",
+                slot=slot,
+                player=player,
+            )
         batting = batting_side(self.state)
         batter = self.player(current_batter_id(self.state))
         problem = self.batter_problem(batting, batter)
@@ -567,7 +598,11 @@ class Play:
         if need.kind == PITCHER_NEED:
             return self.pitcher_options(need.side)
         position = self.state[need.side]["lineup"][need.slot]["position"]
-        return self.bench_options(need.side, position)
+        options = self.bench_options(need.side, position)
+        if need.kind == POSITION_NEED:
+            # He can stay in at the position he holds, or give way to a defensive replacement.
+            options = [Option(need.player, self.position_problem(need.player, position))] + options
+        return options
 
 
 def ordinal(n):
@@ -622,18 +657,51 @@ def bring_in(play, side, player, *, user=None, computer=False):
     play.state = state
 
 
-def put_in_lineup(play, side, slot, player, *, user=None, computer=False):
+def put_in_lineup(play, side, slot, player, *, role=None, base=None, user=None, computer=False):
+    """
+    Put a player in a batting-order slot at the position of the player he
+    replaces. role is None for a forced replacement, or PINCH_HITTER,
+    PINCH_RUNNER (for the runner on base) or DEFENSE.
+    """
     replaced = play.state[side]["lineup"][slot]
     position = replaced["position"]
     card = batter_card(player, play.card(player), position)
-    state = engine_client.substitute(play.state, side, slot, card)
+    state = engine_client.substitute(play.state, side, slot, card, role=role)
     entered(play.game, player)
+    payload = {"index": slot, "player": player.id, "replaced": int(replaced["id"]), "position": position, "card": card}
+    if role is not None:
+        payload["role"] = role
+    if base is not None:
+        payload["base"] = base
     play.append(
         Event.SUBSTITUTION,
         side=side,
         user=user,
         computer=computer,
-        payload={"index": slot, "player": player.id, "replaced": int(replaced["id"]), "position": position, "card": card},
+        payload=payload,
+        text=f"{side_label(play.game, side)}: {new_log_text(play.state, state)}",
+    )
+    play.state = state
+
+
+def move_fielders(play, side, positions, *, user=None, computer=False):
+    """New positions for the side's fielders: positions maps batting-order slots to positions."""
+    lineup = play.state[side]["lineup"]
+    changes = []
+    for slot, position in sorted(positions.items()):
+        player = play.player(lineup[slot]["id"])
+        defense = play.card(player).sim_defense_rating(position)
+        changes.append(
+            {"index": slot, "player": player.id, "position": position, "defense": defense or {"rating": 0.0, "measured_at": position}}
+        )
+    engine_changes = [{key: c[key] for key in ("index", "position", "defense")} for c in changes]
+    state = engine_client.set_positions(play.state, side, engine_changes)
+    play.append(
+        Event.POSITION_CHANGE,
+        side=side,
+        user=user,
+        computer=computer,
+        payload={"changes": engine_changes, "players": [c["player"] for c in changes]},
         text=f"{side_label(play.game, side)}: {new_log_text(play.state, state)}",
     )
     play.state = state
@@ -669,6 +737,9 @@ def settle(play):
             continue
         if need is None:
             return
+        if need.kind == POSITION_NEED and play.fold.is_human(need.side):
+            # A human can also rearrange his whole defense, so this waits for him and never pauses.
+            return
         options = play.options_for(need)
         legal = [o.player for o in options if o.legal]
         if not legal:
@@ -690,6 +761,28 @@ def computer_move(play, need, options):
             {"need": need.kind, "chose": choice.player.id, "skipped": [[p.id, r] for p, r in choice.skipped]},
         )
         bring_in(play, need.side, choice.player, computer=True)
+    elif need.kind == POSITION_NEED:
+        position = play.state[need.side]["lineup"][need.slot]["position"]
+
+        def problem(p):
+            if p == need.player:
+                return play.position_problem(p, position)
+            return play.batter_problem(need.side, p, position)
+
+        choice = computer_manager.bench_replacement([o.player for o in options], problem)
+        stays = choice.player == need.player
+        decision(
+            play,
+            need.side,
+            f"{side_label(play.game, need.side)} computer: {need.reason} "
+            + (f"He stays in at {position}." if stays else f"{choice.player.name} replaces him at {position}.")
+            + (" " + skipped_text(choice.skipped) if choice.skipped else ""),
+            {"need": need.kind, "chose": choice.player.id, "skipped": [[p.id, r] for p, r in choice.skipped]},
+        )
+        if stays:
+            move_fielders(play, need.side, {need.slot: position}, computer=True)
+        else:
+            put_in_lineup(play, need.side, need.slot, choice.player, role=DEFENSE, computer=True)
     else:
         position = play.state[need.side]["lineup"][need.slot]["position"]
         choice = computer_manager.bench_replacement(
@@ -1023,7 +1116,9 @@ def replace_batter(log, user, side, player, expected, seeds=engine_client.new_se
         _require_in_progress(play)
         need = play.need()
         if need is None or need.kind != BATTER_NEED or need.side != side:
-            raise GameRefused("No batter of yours needs replacing. Other substitutions arrive with #170.")
+            raise GameRefused(
+                "No batter of yours needs replacing. Use a pinch hitter, pinch runner or defensive replacement instead."
+            )
         position = play.state[side]["lineup"][need.slot]["position"]
         if str(player.id) in used_ids(play.state, side):
             raise GameRefused(f"{player.name} has already been in this game.")
@@ -1031,6 +1126,135 @@ def replace_batter(log, user, side, player, expected, seeds=engine_client.new_se
         if problem:
             raise GameRefused(problem)
         put_in_lineup(play, side, need.slot, player, user=user)
+        settle(play)
+        play.save_state()
+
+
+def _begin_substitution(log, user, side, expected, seeds, *, batting):
+    """
+    The checks every substitution shares: the side's holder, a game in
+    progress and not paused, after the first pitch, with the side batting
+    (pinch hitters and runners) or in the field (defense). In the field the
+    only open need may be the side's own pending positions.
+    """
+    play = _begin(log, expected, seeds)
+    _require_seat(play, user, side)
+    _require_in_progress(play)
+    if play.fold.pause is not None:
+        raise GameRefused(f"The game is paused. {play.fold.pause['reason']}")
+    if not play.fold.first_pitch:
+        raise GameRefused("Before the first pitch, change your lineup for this game instead.")
+    if batting and batting_side(play.state) != side:
+        raise GameRefused("You can pinch hit and pinch run while your club bats.")
+    if not batting and fielding_side(play.state) != side:
+        raise GameRefused("You can make defensive changes while your club is in the field.")
+    need = play.need()
+    if need is not None and not (not batting and need.kind == POSITION_NEED and need.side == side):
+        raise GameRefused(need.reason)
+    return play
+
+
+def _substitute_problem(play, side, player, position=None):
+    """Why a player can't come off the bench into this game, or None."""
+    if str(player.id) in set(play.state[side]["unavailable"]):
+        return f"{player.name} has already come out of this game and cannot re-enter."
+    if str(player.id) in used_ids(play.state, side):
+        return f"{player.name} has already been in this game."
+    return play.batter_problem(side, player, position)
+
+
+def pinch_hit(log, user, side, player, expected, seeds=engine_client.new_seed):
+    """The side's holder sends a pinch hitter up for the batter due up. He takes that batting-order slot."""
+    with transaction.atomic():
+        play = _begin_substitution(log, user, side, expected, seeds, batting=True)
+        problem = _substitute_problem(play, side, player)
+        if problem:
+            raise GameRefused(problem)
+        put_in_lineup(play, side, play.state[side]["batter_index"], player, role=PINCH_HITTER, user=user)
+        settle(play)
+        play.save_state()
+
+
+def pinch_run(log, user, side, base, player, expected, seeds=engine_client.new_seed):
+    """The side's holder sends a pinch runner in for the runner on base. He takes the runner's batting-order slot."""
+    with transaction.atomic():
+        play = _begin_substitution(log, user, side, expected, seeds, batting=True)
+        runner = play.state["bases"].get(base) if base in BASES else None
+        if runner is None:
+            raise GameRefused(f"Nobody is on {base}.")
+        problem = _substitute_problem(play, side, player)
+        if problem:
+            raise GameRefused(problem)
+        slot = [entry["id"] for entry in play.state[side]["lineup"]].index(runner)
+        put_in_lineup(play, side, slot, player, role=PINCH_RUNNER, base=base, user=user)
+        settle(play)
+        play.save_state()
+
+
+def defensive_substitution(log, user, side, slot, player, expected, seeds=engine_client.new_seed):
+    """While his club is in the field, the side's holder puts a bench player in at a slot and its position."""
+    with transaction.atomic():
+        play = _begin_substitution(log, user, side, expected, seeds, batting=False)
+        if slot not in range(len(play.state[side]["lineup"])):
+            raise GameRefused("Pick a batting-order slot.")
+        position = play.state[side]["lineup"][slot]["position"]
+        problem = _substitute_problem(play, side, player, position)
+        if problem:
+            raise GameRefused(problem)
+        put_in_lineup(play, side, slot, player, role=DEFENSE, user=user)
+        settle(play)
+        play.save_state()
+
+
+def position_errors(play, side, positions):
+    """Why a new defensive alignment is illegal: positions maps every changed slot to its new position."""
+    lineup = play.state[side]["lineup"]
+    current = {slot: entry["position"] for slot, entry in enumerate(lineup)}
+    errors = []
+    for slot, position in positions.items():
+        player = play.player(lineup[slot]["id"])
+        if current[slot] == DH:
+            errors.append(f"{player.name} is the designated hitter and cannot move into the field.")
+        elif position not in FIELD_POSITIONS:
+            errors.append(f"{player.name} cannot move to {position}: the designated hitter stays the designated hitter.")
+        else:
+            problem = play.position_problem(player, position)
+            if problem:
+                errors.append(problem)
+    if errors:
+        return errors
+    after = {**current, **positions}
+    for position in FIELD_POSITIONS:
+        count = list(after.values()).count(position)
+        if count > 1:
+            errors.append(f"{position} is played twice.")
+        elif count == 0:
+            errors.append(f"Nobody plays {position}.")
+    return errors
+
+
+def set_positions(log, user, side, positions, expected, seeds=engine_client.new_seed):
+    """
+    While his club is in the field, the side's holder gives his players
+    positions: positions maps batting-order slots (0-8) to positions. A slot
+    whose position doesn't change is left alone, except a pinch hitter or
+    runner waiting for a position, who is given the one he holds.
+    """
+    with transaction.atomic():
+        play = _begin_substitution(log, user, side, expected, seeds, batting=False)
+        lineup = play.state[side]["lineup"]
+        pending = set(play.state[side].get("pending") or [])
+        changes = {
+            slot: position
+            for slot, position in positions.items()
+            if slot in range(len(lineup)) and (position != lineup[slot]["position"] or lineup[slot]["id"] in pending)
+        }
+        if not changes:
+            raise GameRefused("Nothing changed.")
+        errors = position_errors(play, side, changes)
+        if errors:
+            raise GameRefused(errors)
+        move_fielders(play, side, changes, user=user)
         settle(play)
         play.save_state()
 
@@ -1278,6 +1502,46 @@ def matchup(play):
     return [(label, odds["probabilities"][key] * 100) for key, label in MATCHUP_LABELS]
 
 
+def substitution_choices(play, user, need):
+    """
+    The substitution forms the page offers the user: pinch hitting and
+    running while his club bats, defensive replacements and positions while
+    it is in the field. Only after the first pitch, with no other need open.
+    """
+    state, fold = play.state, play.fold
+    if not fold.first_pitch or fold.pause is not None:
+        return {}
+    batting, fielding = batting_side(state), fielding_side(state)
+    choices = {}
+    if need is None and fold.holds(user, batting):
+        choices["pinch"] = {
+            "side": batting,
+            "batter": play.player(current_batter_id(state)),
+            "runners": [
+                (base, play.player(state["bases"][base])) for base in BASES if state["bases"].get(base)
+            ],
+            "options": play.bench_options(batting, None),
+        }
+    if fold.holds(user, fielding) and (need is None or (need.kind == POSITION_NEED and need.side == fielding)):
+        pending = set(state[fielding].get("pending") or [])
+        choices["defense"] = {
+            "side": fielding,
+            "rows": [
+                {
+                    "slot": slot,
+                    "order": slot + 1,
+                    "player": play.player(entry["id"]),
+                    "position": entry["position"],
+                    "pending": entry["id"] in pending,
+                }
+                for slot, entry in enumerate(state[fielding]["lineup"])
+            ],
+            "positions": FIELD_POSITIONS,
+            "options": play.bench_options(fielding, None),
+        }
+    return choices
+
+
 def _lineup_rows(play, side):
     """The side's current lineup in batting order, for the pregame lineup form."""
     return [
@@ -1348,9 +1612,10 @@ def page(log, user):
     offense = OFFENSE_CALLS if fold.holds(user, batting) else ()
     defense = DEFENSE_CALLS if fold.holds(user, fielding) else ()
     context["calls"] = [(call, CALL_LABELS[call]) for call in offense + defense]
-    if need is not None and fold.holds(user, need.side):
+    if need is not None and fold.holds(user, need.side) and need.kind != POSITION_NEED:
         context["need_options"] = play.options_for(need)
         context["need_mine"] = True
+    context.update(substitution_choices(play, user, need))
     if fold.holds(user, fielding) and (fold.first_pitch or (need and need.kind == PITCHER_NEED)):
         context["pitcher_options"] = play.pitcher_options(fielding)
         context["pitching_side"] = fielding
