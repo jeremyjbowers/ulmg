@@ -150,6 +150,12 @@
         <span class="font-bold">Defense runs ({{ card.primary_position }}):</span>
         {% for position, runs in card.defense_display %}{{ position }} {% if runs > 0 %}+{% endif %}{{ runs|floatformat:1 }}{% if not forloop.last %} &middot; {% endif %}{% endfor %}
     </p>
+    <p class="text-xs mb-2">
+        <span class="font-bold">Running:</span>
+        Steal success {% if card.steal_success is not None %}{{ card.steal_success|percents_to_hundreds|floatformat:"1" }}%{% else %}-{% endif %}
+        &middot; Attempts {% if card.steal_attempt_rate is not None %}{{ card.steal_attempt_rate|percents_to_hundreds|floatformat:"1" }}%{% else %}-{% endif %} of times on first
+        &middot; Spd {{ card.spd|floatformat:"1"|default:"-" }}
+    </p>
     {% endif %}
     {% endwith %}
     {% with line=card.pitcher_line %}

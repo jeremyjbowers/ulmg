@@ -35,14 +35,24 @@ def start(fixture, seed):
     return _post("/start", {"fixture": fixture, "seed": seed})["state"]
 
 
-def step(state, seed, call=None):
+def step(state, seed, call=None, runners=None, league_spd=None):
     """Resolve one plate appearance. Returns {"result": ..., "state": ...}.
 
     `call` is None for a normal plate appearance (the computer manager decides), or one of
-    "bunt", "intentional_walk", "steal", "hit_and_run". The same state, call, and seed always
-    give the same result, so record the seed with the plate appearance.
+    "bunt", "intentional_walk", "steal", "hit_and_run", "infield_in". The infield-in call is
+    honored only with a runner on third and fewer than two outs. The same state, call, seed, and
+    runner ratings always give the same result, so record them with the plate appearance.
+
+    `runners` holds the ratings of the runners on base, keyed by "first", "second", "third":
+    each is a Card.runner_rating(). `league_spd` is Card.league_spd(card season). Leave both
+    None and every runner runs at the engine's league constants.
     """
-    return _post("/step", {"state": state, "call": call, "seed": seed})
+    payload = {"state": state, "call": call, "seed": seed}
+    if runners is not None:
+        payload["runners"] = runners
+    if league_spd is not None:
+        payload["league_spd"] = league_spd
+    return _post("/step", payload)
 
 
 def matchup(state):

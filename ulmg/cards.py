@@ -1,6 +1,10 @@
-# ABOUTME: Builds engine card numbers (hitter/pitcher rates, fatigue profile, slotted defense) from FanGraphs stats.
+# ABOUTME: Builds engine card numbers (hitter/pitcher rates, running, fatigue, slotted defense) from FanGraphs stats.
 # ABOUTME: Keys match the engine's HitterRates, PitcherRates and FatigueProfile; the engine reads these and computes nothing.
 from django.conf import settings
+
+# Steal success is regressed toward a league-average base stealer with this many attempts at this rate.
+STEAL_PRIOR_ATTEMPTS = 10
+STEAL_PRIOR_SUCCESS_RATE = 0.72
 
 FULL_SEASON_INNINGS = 1300
 DEFENSE_REGRESSION_INNINGS = 600
@@ -56,6 +60,35 @@ def hitter_rates(hit_stats):
     return rates
 
 
+def steal_success(hit_stats):
+    """(SB + prior attempts * prior rate) / (SB + CS + prior attempts). The prior alone with zero attempts."""
+    if not hit_stats:
+        return None
+    sb = _number(hit_stats, "sb")
+    cs = _number(hit_stats, "cs")
+    return (sb + STEAL_PRIOR_ATTEMPTS * STEAL_PRIOR_SUCCESS_RATE) / (sb + cs + STEAL_PRIOR_ATTEMPTS)
+
+
+def steal_attempt_rate(hit_stats):
+    """Steal attempts per time reaching first: (SB + CS) / (1B + BB + HBP). None if he never reached first."""
+    if not hit_stats:
+        return None
+    times_on_first = _number(hit_stats, "1b") + _number(hit_stats, "bb") + _number(hit_stats, "hbp")
+    if times_on_first <= 0:
+        return None
+    return (_number(hit_stats, "sb") + _number(hit_stats, "cs")) / times_on_first
+
+
+def speed(hit_stats):
+    """FanGraphs Spd, or None when the payload has none."""
+    if not hit_stats or hit_stats.get("spd") in (None, ""):
+        return None
+    try:
+        return float(hit_stats["spd"])
+    except (TypeError, ValueError):
+        return None
+
+
 def pitcher_rates(pitch_stats):
     """Outcome rates per batter faced; h is hits that are not home runs. None without batters faced."""
     if not pitch_stats:
@@ -72,6 +105,21 @@ def pitcher_rates(pitch_stats):
         "hr": hr / tbf,
         "h": (_number(pitch_stats, "h") - hr) / tbf,
     }
+
+
+def batted_ball_rates(stats):
+    """
+    Ground-ball, fly-ball and line-drive shares of batted balls, from FanGraphs GB/FB/LD counts.
+    Works on hitting or pitching stats. None when the payload has no batted balls; the engine
+    then uses league rates.
+    """
+    if not stats:
+        return None
+    counts = {key: _number(stats, key) for key in ("gb", "fb", "ld")}
+    total = sum(counts.values())
+    if total <= 0:
+        return None
+    return {key: count / total for key, count in counts.items()}
 
 
 def _pitches_per_appearance(stats):

@@ -1,5 +1,5 @@
 # ABOUTME: Tests the engine client against a real engine process that the tests build and start.
-# ABOUTME: Covers start, two steps in a row, replay from a fresh process, determinism, matchup, and a down engine.
+# ABOUTME: Covers start, steps, calls, runner ratings, card batted balls, replay, determinism, matchup, and a down engine.
 import json
 
 from django.test import SimpleTestCase, override_settings
@@ -11,7 +11,14 @@ from tests.engine_process import (
     build_engine,
     find_cargo,
 )
-from ulmg import engine_client
+from tests.test_cards import (
+    FG_HITTER_ROW,
+    FG_PITCHER_ROW,
+    HITTER_BATTED_BALLS,
+    PITCHER_BATTED_BALLS,
+    processed,
+)
+from ulmg import cards, engine_client
 
 
 def load_fixture():
@@ -82,7 +89,7 @@ class EngineClientTestCase(SimpleTestCase):
 
     def test_the_same_state_call_and_seed_give_the_same_result(self):
         state = self.opening_state(seed=3)
-        for call in [None, "bunt", "intentional_walk", "steal", "hit_and_run"]:
+        for call in [None, "bunt", "intentional_walk", "steal", "hit_and_run", "infield_in"]:
             with self.subTest(call=call):
                 one = engine_client.step(state, seed=99, call=call)
                 two = engine_client.step(state, seed=99, call=call)
@@ -107,6 +114,71 @@ class EngineClientTestCase(SimpleTestCase):
         self.assertEqual(matchup["pitcher_id"], state["home"]["pitcher_slot"])
         self.assertAlmostEqual(sum(matchup["probabilities"].values()), 1.0, places=9)
         self.assertEqual(engine_client.matchup(state), matchup)
+
+    def runner_on_first(self):
+        state = self.opening_state(seed=2)
+        runner = state["away"]["lineup"][8]["id"]
+        state["bases"]["first"] = runner
+        return state, runner
+
+    def test_a_step_carries_runner_ratings(self):
+        state, runner = self.runner_on_first()
+        outcomes = [
+            (1.0, {"StolenBase": {"runner": runner, "to": "Second"}}),
+            (0.0, {"CaughtStealing": {"runner": runner, "at": "Second"}}),
+        ]
+        for steal_success, event in outcomes:
+            with self.subTest(steal_success=steal_success):
+                stepped = engine_client.step(
+                    state,
+                    seed=5,
+                    call="steal",
+                    runners={"first": {"id": runner, "steal_success": steal_success, "spd": 7.5}},
+                    league_spd=4.5,
+                )
+                self.assertIn(event, stepped["result"]["baserunning"])
+
+    def test_a_step_without_runner_ratings_sends_none(self):
+        state, _ = self.runner_on_first()
+        self.assertEqual(
+            engine_client.step(state, seed=6),
+            engine_client.step(state, seed=6, runners={}, league_spd=None),
+        )
+
+    def test_a_rating_for_the_wrong_runner_is_refused(self):
+        state, _ = self.runner_on_first()
+        with self.assertRaises(engine_client.EngineError) as caught:
+            engine_client.step(state, seed=4, runners={"first": {"id": "someone-else", "spd": 5.0}})
+        self.assertEqual(caught.exception.status, 422)
+        self.assertIn("invalid runner ratings", str(caught.exception))
+
+    def test_an_infield_in_call_holds_the_runner_on_third(self):
+        state = self.opening_state(seed=2)
+        runner = state["away"]["lineup"][8]["id"]
+        state["bases"]["third"] = runner
+        ground_outs = 0
+        for seed in range(200):
+            stepped = engine_client.step(state, seed=seed, call="infield_in")
+            if stepped["result"]["outcome"] == "ground_out":
+                ground_outs += 1
+                self.assertEqual(stepped["result"]["change"]["runs_scored"], 0)
+                self.assertEqual(stepped["state"]["bases"]["third"], runner)
+        self.assertGreater(ground_outs, 0)
+
+    def test_cards_batted_ball_rates_are_accepted_by_the_engine(self):
+        fixture = load_fixture()
+        hitter_rates = cards.batted_ball_rates(processed(FG_HITTER_ROW, **HITTER_BATTED_BALLS))
+        pitcher_rates = cards.batted_ball_rates(processed(FG_PITCHER_ROW, **PITCHER_BATTED_BALLS))
+        for team in ("away", "home"):
+            for batter in fixture[team]["lineup"]:
+                batter["batted_balls"] = hitter_rates
+            for pitcher in fixture[team]["pitchers"]:
+                pitcher["batted_balls"] = pitcher_rates
+        state = engine_client.start(fixture, seed=1)
+        self.assertEqual(state["away"]["lineup"][0]["batted_balls"], hitter_rates)
+        self.assertEqual(state["home"]["pitchers"][0]["batted_balls"], pitcher_rates)
+        stepped = engine_client.step(state, seed=5)
+        self.assertEqual(len(stepped["state"]["results"]), 1)
 
     def test_a_rejected_call_raises_the_engine_message(self):
         with self.assertRaises(engine_client.EngineError) as caught:

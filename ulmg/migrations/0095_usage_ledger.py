@@ -10,7 +10,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("ulmg", "0092_playerstatseason_fielding_stats_card"),
+        ("ulmg", "0094_card_running"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 

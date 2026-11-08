@@ -1154,7 +1154,9 @@ class Card(BaseModel):
     """
     Engine card for one player and one card season, generated from that season's 1-mlb PlayerStatSeason.
     Rate dicts use the engine's HitterRates / PitcherRates / FatigueProfile keys.
+    Batted-ball dicts use the engine's BattedBallRates keys (gb, fb, ld); None means league rates.
     Defense holds slotted runs per position to one decimal; the engine takes runs / 10.
+    Running (hitters only): regressed steal success, steal attempts per time on first, and FanGraphs Spd.
     """
     player = models.ForeignKey(Player, on_delete=models.CASCADE, related_name="cards")
     season = models.IntegerField()
@@ -1162,11 +1164,16 @@ class Card(BaseModel):
     plate_appearances = models.IntegerField(blank=True, null=True)
     wrc_plus = models.FloatField(blank=True, null=True)
     hitter_rates = models.JSONField(blank=True, null=True)
+    hitter_batted_balls = models.JSONField(blank=True, null=True)
     primary_position = models.CharField(max_length=2, blank=True, null=True)
     defense = models.JSONField(blank=True, null=True)
+    steal_success = models.FloatField(blank=True, null=True)
+    steal_attempt_rate = models.FloatField(blank=True, null=True)
+    spd = models.FloatField(blank=True, null=True)
 
     batters_faced = models.IntegerField(blank=True, null=True)
     pitcher_rates = models.JSONField(blank=True, null=True)
+    pitcher_batted_balls = models.JSONField(blank=True, null=True)
     fatigue = models.JSONField(blank=True, null=True)
 
     class Meta:
@@ -1182,6 +1189,25 @@ class Card(BaseModel):
         if runs is None:
             return None
         return {"rating": cards.sim_defense(runs), "measured_at": position}
+
+    @classmethod
+    def league_spd(cls, season):
+        """
+        League Spd for a card season: the plate-appearance-weighted mean of card Spd.
+        Cards without Spd or plate appearances do not count. None when no card counts.
+        This is the engine's `league_spd` step input.
+        """
+        totals = cls.objects.filter(season=season, spd__isnull=False, plate_appearances__gt=0).aggregate(
+            weighted=models.Sum(models.F("spd") * models.F("plate_appearances"), output_field=models.FloatField()),
+            plate_appearances=models.Sum("plate_appearances"),
+        )
+        if not totals["plate_appearances"]:
+            return None
+        return totals["weighted"] / totals["plate_appearances"]
+
+    def runner_rating(self, runner_id):
+        """The engine's RunnerRating for this card, under the id the engine knows him by."""
+        return {"id": runner_id, "steal_success": self.steal_success, "spd": self.spd}
 
     def defense_display(self):
         return [
