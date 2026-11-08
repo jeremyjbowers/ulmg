@@ -225,6 +225,89 @@ impl Bases {
     }
 }
 
+/// One runner's ratings from his card season. A missing number falls back to the league constant.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct RunnerRating {
+    pub id: PlayerId,
+    /// Chance a steal succeeds, 0 to 1.
+    #[serde(default)]
+    pub steal_success: Option<f64>,
+    /// FanGraphs Spd.
+    #[serde(default)]
+    pub spd: Option<f64>,
+}
+
+/// The ratings of the runners on base, carried beside `Bases`, which stores ids only.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
+pub struct BaseRunners {
+    #[serde(default)]
+    pub first: Option<RunnerRating>,
+    #[serde(default)]
+    pub second: Option<RunnerRating>,
+    #[serde(default)]
+    pub third: Option<RunnerRating>,
+}
+
+impl BaseRunners {
+    /// The rating carried for this runner, wherever it was given.
+    pub fn for_runner(&self, id: &str) -> Option<&RunnerRating> {
+        [&self.first, &self.second, &self.third]
+            .into_iter()
+            .flatten()
+            .find(|rating| rating.id == id)
+    }
+}
+
+/// Baserunning ratings for one plate appearance. Empty means every runner runs at the league constants.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
+pub struct Running {
+    #[serde(default)]
+    pub runners: BaseRunners,
+    /// Plate-appearance-weighted league Spd for the card season.
+    #[serde(default)]
+    pub league_spd: Option<f64>,
+}
+
+impl Running {
+    /// Each rating must name the runner on its base and hold usable numbers.
+    pub fn check(&self, bases: &Bases) -> Result<(), String> {
+        let pairs = [
+            ("first", &self.runners.first, &bases.first),
+            ("second", &self.runners.second, &bases.second),
+            ("third", &self.runners.third, &bases.third),
+        ];
+        for (base, rating, runner) in pairs {
+            let Some(rating) = rating else { continue };
+            if runner.as_deref() != Some(rating.id.as_str()) {
+                return Err(format!(
+                    "the rating on {base} is for {}, but {} is on {base}",
+                    rating.id,
+                    runner.as_deref().unwrap_or("nobody")
+                ));
+            }
+            if let Some(rate) = rating.steal_success {
+                if !(0.0..=1.0).contains(&rate) {
+                    return Err(format!("steal_success for {} must be 0 to 1", rating.id));
+                }
+            }
+            if let Some(spd) = rating.spd {
+                if !spd.is_finite() || spd < 0.0 {
+                    return Err(format!(
+                        "spd for {} must be a number of at least 0",
+                        rating.id
+                    ));
+                }
+            }
+        }
+        if let Some(league) = self.league_spd {
+            if !league.is_finite() || league <= 0.0 {
+                return Err("league_spd must be a number above 0".to_string());
+            }
+        }
+        Ok(())
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Situation {
     pub inning: u8,
@@ -256,6 +339,8 @@ pub struct PaInput {
     pub park: Park,
     pub weather: Option<String>,
     pub calls: PrePaCalls,
+    /// Ratings of the runners in `situation.bases`, and the league speed they are measured against.
+    pub running: Running,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

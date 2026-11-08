@@ -8,7 +8,7 @@
 
 use baseball_engine::{
     card_batting_average, load_json, outcome_probabilities, Bases, ComputerManager,
-    DistributionFixture, Half, PaInput, Park, PlateOutcome, PrePaCalls, Sim, Situation,
+    DistributionFixture, Half, PaInput, Park, PlateOutcome, PrePaCalls, Running, Sim, Situation,
     COMPUTER_BUNT_RATE, LEAGUE_BB, LEAGUE_H, LEAGUE_HBP, LEAGUE_HR, LEAGUE_K,
 };
 
@@ -45,6 +45,7 @@ fn input_from(fixture: &DistributionFixture, wrc_plus: f64, weather: Option<Stri
         park: fixture.park.clone(),
         weather,
         calls: PrePaCalls::default(),
+        running: Running::default(),
     }
 }
 
