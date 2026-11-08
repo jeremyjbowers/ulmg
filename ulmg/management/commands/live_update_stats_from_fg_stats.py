@@ -1,6 +1,5 @@
 import csv
 import json
-import math
 import os
 from decimal import Decimal
 
@@ -52,9 +51,9 @@ class Command(BaseCommand):
         int_keys = ['Age', 'AgeR', 'G', 'AB', 'PA', 'H', '1B', '2B', '3B', 'HR', 'R', 'RBI', 'BB', 'IBB', 'SO', 'HBP', 'SF', 'SH', 'GDP', 'SB', 'CS', 'GB', 'FB', 'LD', 'IFFB', 'Pitches', 'Balls', 'Strikes', 'IFH', 'BU', 'BUH', 'SeasonMin', 'SeasonMax', 'W', 'L', 'G', 'GS', 'QS', 'CG', 'ShO', 'SV', 'BS', 'IP', 'TBF', 'H', 'R', 'ER', 'HR', 'BB', 'IBB', 'HBP', 'WP', 'BK', 'SO', 'GB', 'FB', 'LD', 'IFFB', 'Pitches', 'Balls', 'Strikes', 'RS', 'IFH', 'BU', 'BUH']
 
         if k == 'IP':
-            # FanGraphs writes partial innings as .1 and .2; a partial inning counts as a whole one.
+            # FanGraphs writes partial innings as .1 and .2 (thirds); keep them exactly so no out is lost.
             try:
-                v = math.ceil(float(v))
+                v = float(v)
 
             except:
                 v = 0
