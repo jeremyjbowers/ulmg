@@ -59,10 +59,12 @@ class LoginRequiredMiddleware:
         if url_name in auth_exempt_urls:
             return True
 
-        # The season schedule is visible to everyone in the league, logged in or not
+        # The season schedule and every team's half plan are visible to everyone
+        # in the league, logged in or not
         public_urls = [
             'league_schedule',
             'team_schedule',
+            'team_plan',
         ]
         if url_name in public_urls:
             return True

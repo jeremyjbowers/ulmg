@@ -2072,6 +2072,10 @@ class ScheduleGame(BaseModel):
     day = models.IntegerField()
     home_score = models.IntegerField(null=True, blank=True)
     road_score = models.IntegerField(null=True, blank=True)
+    # Set by ulmg.plans.open_game: both teams' starters, lineups, bench and
+    # bullpen as their half plans had them when the game opened.
+    opened_at = models.DateTimeField(null=True, blank=True)
+    opening_sheet = models.JSONField(null=True, blank=True)
 
     class Meta:
         ordering = ["day", "series__home_team__abbreviation"]
@@ -2234,3 +2238,69 @@ class UsagePause(BaseModel):
     @property
     def is_open(self):
         return self.resolved_at is None
+
+
+class HalfPlan(BaseModel):
+    """
+    One team's plan for one half of a season: the rotation, the two lineup
+    cards, the bench order and the bullpen roles. Ordered lists hold Player
+    ids. A lineup card is a list of {"player": id, "position": code} in
+    batting order. ulmg.plans validates and saves it. The starter hook
+    (#171) belongs on this model.
+    """
+
+    team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name="half_plans")
+    season = models.IntegerField()
+    half = models.IntegerField()
+
+    rotation = ArrayField(models.IntegerField(), default=list, blank=True)
+    closer = models.ForeignKey(
+        Player, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+    setup = ArrayField(models.IntegerField(), default=list, blank=True)
+    middle_long = ArrayField(models.IntegerField(), default=list, blank=True)
+    bench = ArrayField(models.IntegerField(), default=list, blank=True)
+    lineup_vs_lhp = models.JSONField(default=list, blank=True)
+    lineup_vs_rhp = models.JSONField(default=list, blank=True)
+
+    class Meta:
+        ordering = ["season", "half", "team__abbreviation"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["team", "season", "half"], name="unique_half_plan_team_season_half"
+            ),
+        ]
+
+    def __unicode__(self):
+        return f"{self.team.abbreviation} {self.season} half {self.half} plan"
+
+
+class HalfPlanDay(BaseModel):
+    """
+    One day of a half plan. auto_starter is what rotation auto-fill chose.
+    manual_starter and manual_lineup are the manager's overrides, kept apart
+    so that a re-fill never touches them. A null override follows auto-fill.
+    """
+
+    plan = models.ForeignKey(HalfPlan, on_delete=models.CASCADE, related_name="days")
+    day = models.IntegerField()
+    auto_starter = models.ForeignKey(
+        Player, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+    manual_starter = models.ForeignKey(
+        Player, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+    manual_lineup = models.JSONField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["plan", "day"]
+        constraints = [
+            models.UniqueConstraint(fields=["plan", "day"], name="unique_half_plan_day"),
+        ]
+
+    def __unicode__(self):
+        return f"{self.plan} day {self.day}"
+
+    @property
+    def starter(self):
+        return self.manual_starter or self.auto_starter

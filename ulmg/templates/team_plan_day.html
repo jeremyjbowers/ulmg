@@ -1,0 +1,39 @@
+{# ABOUTME: One unopened day of a half plan: a spot starter and a lineup override, each optional. #}
+{# ABOUTME: Only the team's owner and the commissioner reach it; blank fields return the day to auto-fill. #}
+{% extends "base.html" %}
+
+{% block content %}
+{% include 'includes/team_topper.html' %}
+{% include 'includes/plan_tabs.html' %}
+
+<div class="max-w-xl">
+    <h2 class="text-lg font-bold mb-1">Day {{ row.day }}: {% if row.is_home %}vs{% else %}at{% endif %} {{ row.opponent.abbreviation }}</h2>
+    <p class="text-sm text-gray-600 mb-4">Auto-fill has {% if side.starter %}{{ side.starter.name }}{% else %}no one{% endif %} against {% if side.opponent_starter %}{{ side.opponent_starter.name }} ({{ side.opponent_starter.throws|default:"?" }}){% else %}an unplanned starter{% endif %}. <a href="/teams/{{ team.abbreviation|lower }}/plan/{{ half }}/?season={{ plan_season }}#day-{{ row.day }}" class="underline">Back to the plan</a></p>
+    {% include 'includes/plan_errors.html' %}
+
+    {% if not is_open %}
+    <p class="plan-closed text-sm">{{ closed_message }}</p>
+    {% elif row.locked %}
+    <p class="plan-locked text-sm">Day {{ row.day }} has opened; its plan can no longer change.</p>
+    {% else %}
+    <form method="post" class="space-y-6 text-sm">
+        {% csrf_token %}
+        <label class="block"><span class="font-bold">Starter</span>
+            <select name="starter" class="border border-gray-300 rounded px-1 py-1 w-full mt-1">
+                <option value="">Rotation auto-fill</option>
+                {% for p in pitchers %}<option value="{{ p.id }}"{% if p.id == starter_id %} selected{% endif %}>{{ p.name }}{% if p.throws %} ({{ p.throws }}){% endif %}</option>{% endfor %}
+            </select>
+            <span class="block text-xs text-gray-600 mt-1">A spot start must be rested inside the series and fit his start cap.</span>
+        </label>
+
+        <fieldset>
+            <legend class="font-bold mb-2"><label><input type="checkbox" name="override_lineup" value="1"{% if override %} checked{% endif %}> Set this day's lineup</label></legend>
+            <p class="text-xs text-gray-600 mb-2">Unchecked, the day uses the lineup card for the opposing starter's hand.</p>
+            {% with prefix="day" rows=lineup_rows %}{% include 'includes/plan_lineup_rows.html' %}{% endwith %}
+        </fieldset>
+
+        <button type="submit" class="w-full sm:w-auto bg-gray-800 text-white rounded px-4 py-2 font-bold">Save day {{ row.day }}</button>
+    </form>
+    {% endif %}
+</div>
+{% endblock %}

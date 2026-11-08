@@ -1,10 +1,10 @@
 # ABOUTME: Public season schedule pages: the league schedule by slot and day, and one team's 162 games.
-# ABOUTME: Readable without logging in; a manager's own road games are marked as the ones he plays.
+# ABOUTME: Readable without logging in; shows the half plans' starters and marks a manager's own road games.
 from django.conf import settings
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.cache import never_cache
 
-from ulmg import models, schedule, utils
+from ulmg import models, plans, schedule, utils
 
 
 def _schedule_season(request):
@@ -54,14 +54,18 @@ def team_schedule(request, abbreviation):
     own_team = owner is not None and owner.team() == team
     context["own_team"] = own_team
 
+    starters = plans.season_starters(season)
     rows = []
     for game in schedule.team_games(team, season):
         is_home = game.series.home_team_id == team.id
+        opponent = game.series.road_team if is_home else game.series.home_team
         rows.append(
             {
                 "game": game,
                 "is_home": is_home,
-                "opponent": game.series.road_team if is_home else game.series.home_team,
+                "opponent": opponent,
+                "starter": starters.get((team.id, game.day)),
+                "opponent_starter": starters.get((opponent.id, game.day)),
                 "result": _team_result(game, is_home),
                 "manager_plays": own_team and not is_home,
             }

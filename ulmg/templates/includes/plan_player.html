@@ -1,0 +1,16 @@
+{# ABOUTME: One player on a half plan: name, his card's overall line, defense at the slotted position, and usage left. #}
+{# ABOUTME: Expects `line` from ulmg.plans.player_line; a missing card shows "No card" and nothing else breaks. #}
+{% load ulmg_tags %}
+<span class="plan-player"><a href="/players/{{ line.player.id }}/" class="underline">{{ line.player.name }}</a>{% if line.player.throws and line.player.position == "P" %} ({{ line.player.throws }}){% endif %}{% if line.capped %} <span class="plan-capped font-bold text-red-700">past his PA cap</span>{% endif %}</span>
+<span class="block text-xs text-gray-600">
+    {% if line.card %}
+    {% if line.player.position == "P" %}
+    {% if line.line %}K {{ line.line.k_pct|percents_to_hundreds|floatformat:"1" }}% &middot; BB {{ line.line.bb_pct|percents_to_hundreds|floatformat:"1" }}% &middot; HR {{ line.line.hr_pct|percents_to_hundreds|floatformat:"1" }}%{% endif %}
+    {% else %}
+    {% if line.line %}{{ line.line.avg|floatformat:3|kill_leading_zero|default_if_none:"-" }}/{{ line.line.obp|floatformat:3|kill_leading_zero }}/{{ line.line.slg|floatformat:3|kill_leading_zero|default_if_none:"-" }}{% endif %}
+    {% if line.position and line.position != "DH" %} &middot; {{ line.position }} {% if line.defense is not None %}{% if line.defense > 0 %}+{% endif %}{{ line.defense|floatformat:1 }}{% else %}no rating{% endif %}{% endif %}
+    {% endif %}
+    {% else %}No card{% endif %}
+    &middot;
+    {% if line.player.position == "P" %}{{ line.usage.starts_left }} starts{% if line.usage.innings_cap %}, {{ line.usage.innings_left }} IP{% endif %} left{% else %}{% if line.usage.plate_appearances_left is None %}unlimited PA{% else %}{{ line.usage.plate_appearances_left }} PA left{% endif %}{% endif %}
+</span>

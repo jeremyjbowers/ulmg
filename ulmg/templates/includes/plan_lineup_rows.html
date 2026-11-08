@@ -1,0 +1,16 @@
+{# ABOUTME: Nine editor rows for one lineup: batting order, batter and position. #}
+{# ABOUTME: Expects `prefix`, `rows` of (order, player id, position), `hitters` and `positions`. #}
+<div class="space-y-2">
+    {% for order, player_id, position in rows %}
+    <div class="grid grid-cols-12 gap-2 items-center">
+        <input type="number" min="1" max="9" name="{{ prefix }}_order_{{ forloop.counter }}" value="{{ order|default_if_none:'' }}" class="col-span-2 border border-gray-300 rounded px-1 py-1 text-sm" aria-label="Batting order">
+        <select name="{{ prefix }}_player_{{ forloop.counter }}" class="col-span-7 border border-gray-300 rounded px-1 py-1 text-sm w-full" aria-label="Batter">
+            <option value="">-</option>
+            {% for p in hitters %}<option value="{{ p.id }}"{% if p.id == player_id %} selected{% endif %}>{{ p.name }}</option>{% endfor %}
+        </select>
+        <select name="{{ prefix }}_position_{{ forloop.counter }}" class="col-span-3 border border-gray-300 rounded px-1 py-1 text-sm w-full" aria-label="Position">
+            {% for code in positions %}<option value="{{ code }}"{% if code == position %} selected{% endif %}>{{ code }}</option>{% endfor %}
+        </select>
+    </div>
+    {% endfor %}
+</div>

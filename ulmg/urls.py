@@ -70,6 +70,13 @@ urlpatterns = [
     path("teams/<str:abbreviation>/csv/", views.csv.team_csv),
     path("teams/<str:abbreviation>/other/", views.site.team_other),
     path("teams/<str:abbreviation>/schedule/", views.schedule.team_schedule, name="team_schedule"),
+    path("teams/<str:abbreviation>/plan/<int:half>/", views.plan.team_plan, name="team_plan"),
+    path("teams/<str:abbreviation>/plan/<int:half>/edit/", views.plan.team_plan_edit, name="team_plan_edit"),
+    path(
+        "teams/<str:abbreviation>/plan/<int:half>/day/<int:day>/",
+        views.plan.team_plan_day,
+        name="team_plan_day",
+    ),
     path("teams/<str:abbreviation>/", views.site.team_detail),
     path("trades/csv/", views.csv.trades_csv),
     path("trades/", views.site.trades),
