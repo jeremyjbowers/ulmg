@@ -2420,6 +2420,7 @@ class GameEvent(BaseModel):
     PLATE_APPEARANCE = "plate_appearance"
     PITCHING_CHANGE = "pitching_change"
     SUBSTITUTION = "substitution"
+    POSITION_CHANGE = "position_change"
     ROSTER_MOVE = "roster_move"
     PAUSE = "pause"
     RESUME = "resume"
@@ -2434,6 +2435,7 @@ class GameEvent(BaseModel):
         (PLATE_APPEARANCE, "Plate appearance"),
         (PITCHING_CHANGE, "Pitching change"),
         (SUBSTITUTION, "Substitution"),
+        (POSITION_CHANGE, "Position change"),
         (ROSTER_MOVE, "Roster move"),
         (PAUSE, "Paused"),
         (RESUME, "Resumed"),

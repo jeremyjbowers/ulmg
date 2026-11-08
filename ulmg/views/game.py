@@ -44,6 +44,15 @@ def _posted_lineup(request):
     return entries
 
 
+def _posted_positions(request):
+    """Batting-order slots (0-8) to positions from the positions form's position-N for N in 1-9. A blank is no change."""
+    return {
+        order - 1: request.POST[f"position-{order}"]
+        for order in range(1, 10)
+        if request.POST.get(f"position-{order}")
+    }
+
+
 @never_cache
 @login_required
 def game_page(request, game_id):
@@ -82,6 +91,22 @@ def _act(request, game, action):
         if player is None:
             raise sim_game.GameRefused("Pick a replacement.")
         sim_game.replace_batter(log, user, _posted_side(request), player, expected)
+    elif action in ("pinch_hit", "pinch_run", "defense"):
+        player = _posted_player(request, "player")
+        if player is None:
+            raise sim_game.GameRefused("Pick a substitute.")
+        side = _posted_side(request)
+        if action == "pinch_hit":
+            sim_game.pinch_hit(log, user, side, player, expected)
+        elif action == "pinch_run":
+            sim_game.pinch_run(log, user, side, request.POST.get("base", ""), player, expected)
+        else:
+            slot = request.POST.get("slot", "")
+            if not slot.isdigit():
+                raise sim_game.GameRefused("Pick the player he replaces.")
+            sim_game.defensive_substitution(log, user, side, int(slot) - 1, player, expected)
+    elif action == "positions":
+        sim_game.set_positions(log, user, _posted_side(request), _posted_positions(request), expected)
     elif action == "lineup":
         sim_game.change_lineup(log, user, _posted_side(request), _posted_lineup(request), expected)
     elif action == "move":
