@@ -56,6 +56,11 @@
                    href="/teams/{{ team.abbreviation|lower }}/moves/new/?up={{ p.id }}">Call up</a>
             {% endif %}
         {% endif %}
+        {% if p.is_ulmg_aaa_roster and not p.is_ulmg_reserve %}
+            <!-- Taking an AAA player off the AAA roster leaves the 30-man as it is, so it stays a single action -->
+            <a class="player-action text-xs px-1.5 py-0.5 border bg-blue-400 border-blue-400 text-white rounded"
+               data-playerid="{{ p.id }}" data-action="off_roster">AAA</a>
+        {% endif %}
         {% else %}
         <!-- MLB Roster: midseason Open picks must stay on MLB or be released -->
         {% if p.is_ulmg_2h_draft %}

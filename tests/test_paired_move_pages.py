@@ -124,6 +124,30 @@ class PairedMovePagesTestCase(OwnerClients, TestCase):
                 player_down=self.starter, stay_games=0,
             )
 
+    # Taking a player off his roster
+
+    def test_an_aaa_player_keeps_his_off_roster_toggle_and_a_major_leaguer_has_none(self):
+        page = self.client_for(self.owner).get(TEAM_URL).content.decode()
+        self.assertIn(f'data-playerid="{self.prospect.id}" data-action="off_roster"', page)
+        self.assertNotIn(f'data-playerid="{self.starter.id}" data-action="off_roster"', page)
+
+    def test_an_owner_cannot_take_a_major_leaguer_off_his_roster_once_the_half_has_started(self):
+        response = self.client_for(self.owner).get(f"/api/v1/player/{self.starter.id}/off_roster/")
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("roster move", response.json()["error"])
+        self.starter.refresh_from_db()
+        self.assertTrue(self.starter.is_ulmg_mlb_roster)
+
+    def test_an_owner_can_still_take_an_aaa_player_off_his_roster(self):
+        response = self.client_for(self.owner).get(f"/api/v1/player/{self.prospect.id}/off_roster/")
+        self.assertEqual(response.content, b"ok")
+        self.prospect.refresh_from_db()
+        self.assertFalse(self.prospect.is_ulmg_aaa_roster)
+
+    def test_the_commissioner_can_still_take_a_major_leaguer_off_his_roster(self):
+        response = self.client_for(self.commish).get(f"/api/v1/player/{self.starter.id}/off_roster/")
+        self.assertEqual(response.content, b"ok")
+
     # The team page
 
     def test_the_team_page_shows_paired_controls_once_the_half_has_started(self):

@@ -427,7 +427,7 @@ def player_action(request, playerid, action):
         p.save()
         return HttpResponse("ok")
 
-    if action in ("to_mlb", "to_aaa"):
+    if action in ("to_mlb", "to_aaa") or (action == "off_roster" and p.is_ulmg_mlb_roster):
         error = roster_moves.single_move_error(request.user, settings.CURRENT_SEASON, plans.current_half())
         if error:
             return JsonResponse({"error": error}, status=400)
