@@ -1,0 +1,9 @@
+{% extends "admin/change_list.html" %}
+{% comment %}ABOUTME: The usage counter list with a link to the commissioner's sim reset page.
+ABOUTME: Adds one object tool beside the standard "Add" button.{% endcomment %}
+{% block object-tools-items %}
+  {% if request.user.is_superuser %}
+    <li><a href="{% url 'admin:ulmg_usagecounter_reset_sim_season' %}">Reset a season's sim data</a></li>
+  {% endif %}
+  {{ block.super }}
+{% endblock %}
