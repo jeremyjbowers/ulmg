@@ -91,6 +91,7 @@ fn named_call(name: &str) -> Result<PrePaCalls, HttpError> {
         "intentional_walk" => calls.intentional_walk = true,
         "steal" => calls.steal = true,
         "hit_and_run" => calls.hit_and_run = true,
+        "infield_in" => calls.infield_in = true,
         _ => return Err(HttpError::BadCall),
     }
     Ok(calls)
@@ -113,7 +114,7 @@ impl IntoResponse for HttpError {
             Self::BadRequest(message) => (StatusCode::BAD_REQUEST, message),
             Self::BadCall => (
                 StatusCode::BAD_REQUEST,
-                "The call must be bunt, intentional_walk, steal, hit_and_run, or omitted."
+                "The call must be bunt, intentional_walk, steal, hit_and_run, infield_in, or omitted."
                     .to_string(),
             ),
         };
@@ -334,6 +335,52 @@ mod tests {
         )
         .await;
         assert_eq!(status, StatusCode::OK, "{body}");
+    }
+
+    #[tokio::test]
+    async fn infield_in_holds_the_runner_on_third_on_a_ground_out() {
+        let mut opening = game(&started(2).await);
+        opening.bases.third = Some(opening.away.lineup[8].id.clone());
+        let state = serde_json::to_value(&opening).unwrap();
+        let mut ground_outs = 0;
+        for seed in 0..200u64 {
+            let (status, body) = post(
+                "/step",
+                json!({ "state": state, "call": "infield_in", "seed": seed }),
+            )
+            .await;
+            assert_eq!(status, StatusCode::OK, "{body}");
+            let outcome: PlateOutcome =
+                serde_json::from_value(body["result"]["outcome"].clone()).unwrap();
+            if outcome == PlateOutcome::GroundOut {
+                ground_outs += 1;
+                assert_eq!(body["result"]["change"]["runs_scored"], 0);
+                assert_eq!(
+                    body["state"]["bases"]["third"].as_str(),
+                    opening.bases.third.as_deref()
+                );
+            }
+        }
+        assert!(ground_outs > 0, "no ground out in 200 seeds");
+    }
+
+    #[tokio::test]
+    async fn a_fixture_without_batted_balls_plays_with_league_rates() {
+        let opening = game(&started(2).await);
+        let original: Value = serde_json::from_str(
+            &std::fs::read_to_string(format!("{}/fixtures/game.json", env!("CARGO_MANIFEST_DIR")))
+                .unwrap(),
+        )
+        .unwrap();
+        assert!(original["away"]["lineup"][0].get("batted_balls").is_none());
+        assert_eq!(
+            opening.away.lineup[0].batted_balls,
+            crate::model::BattedBallRates::default()
+        );
+        assert_eq!(
+            opening.home.pitchers[0].batted_balls,
+            crate::model::BattedBallRates::default()
+        );
     }
 
     #[tokio::test]

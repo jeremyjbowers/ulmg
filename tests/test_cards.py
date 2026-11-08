@@ -122,6 +122,35 @@ class PitcherRatesTestCase(SimpleTestCase):
         self.assertIsNone(cards.pitcher_rates(processed(FG_PITCHER_ROW, TBF=0)))
 
 
+# FanGraphs batted-ball counts (GB, FB, LD) from the same payload; the values are constructed.
+HITTER_BATTED_BALLS = {"GB": 180, "FB": 150, "LD": 90}
+PITCHER_BATTED_BALLS = {"GB": 260, "FB": 220, "LD": 120}
+
+
+class BattedBallRatesTestCase(SimpleTestCase):
+    def test_hitter_shares_are_counts_over_batted_balls(self):
+        rates = cards.batted_ball_rates(processed(FG_HITTER_ROW, **HITTER_BATTED_BALLS))
+        self.assertAlmostEqual(rates["gb"], 180 / 420)
+        self.assertAlmostEqual(rates["fb"], 150 / 420)
+        self.assertAlmostEqual(rates["ld"], 90 / 420)
+
+    def test_pitcher_shares_are_counts_over_batted_balls(self):
+        rates = cards.batted_ball_rates(processed(FG_PITCHER_ROW, **PITCHER_BATTED_BALLS))
+        self.assertAlmostEqual(rates["gb"], 260 / 600)
+        self.assertAlmostEqual(rates["fb"], 220 / 600)
+        self.assertAlmostEqual(rates["ld"], 120 / 600)
+
+    def test_shares_sum_to_one_with_engine_keys(self):
+        rates = cards.batted_ball_rates(processed(FG_HITTER_ROW, **HITTER_BATTED_BALLS))
+        self.assertEqual(list(rates.keys()), ["gb", "fb", "ld"])
+        self.assertAlmostEqual(sum(rates.values()), 1.0)
+
+    def test_no_batted_balls_gives_no_rates(self):
+        self.assertIsNone(cards.batted_ball_rates(processed(FG_HITTER_ROW)))
+        self.assertIsNone(cards.batted_ball_rates(processed(FG_HITTER_ROW, GB=0, FB=0, LD=0)))
+        self.assertIsNone(cards.batted_ball_rates(None))
+
+
 class FatigueProfileTestCase(SimpleTestCase):
     def test_starter_profile_from_card_season(self):
         fatigue = cards.fatigue_profile(processed(FG_PITCHER_ROW))
@@ -376,6 +405,27 @@ class GenerateCardsTestCase(TestCase):
         self.assertAlmostEqual(card.pitcher_rates["h"], 136 / 800)
         self.assertEqual(card.fatigue["role"], "starter")
         self.assertIsNone(card.hitter_rates)
+
+    def test_cards_store_batted_ball_rates(self):
+        self.hitter_pss.hit_stats = processed(FG_HITTER_ROW, **HITTER_BATTED_BALLS)
+        self.hitter_pss.save()
+        pitcher_pss = models.PlayerStatSeason.objects.get(player=self.pitcher, season=2025)
+        pitcher_pss.pitch_stats = processed(FG_PITCHER_ROW, **PITCHER_BATTED_BALLS)
+        pitcher_pss.save()
+        self.generate("--season", "2025")
+
+        hitter = models.Card.objects.get(player=self.hitter, season=2025)
+        self.assertAlmostEqual(hitter.hitter_batted_balls["gb"], 180 / 420)
+        self.assertIsNone(hitter.pitcher_batted_balls)
+
+        pitcher = models.Card.objects.get(player=self.pitcher, season=2025)
+        self.assertAlmostEqual(pitcher.pitcher_batted_balls["ld"], 120 / 600)
+        self.assertIsNone(pitcher.hitter_batted_balls)
+
+    def test_a_card_without_batted_ball_counts_leaves_them_empty(self):
+        self.generate("--season", "2025")
+        card = models.Card.objects.get(player=self.hitter, season=2025)
+        self.assertIsNone(card.hitter_batted_balls)
 
     def test_default_season_is_previous_mlb_season(self):
         self.generate()

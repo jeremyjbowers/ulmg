@@ -1,8 +1,8 @@
 //! Layer A. Exact state-machine cases. These do not need the simulator.
 
 use baseball_engine::{
-    load_json, play_game, Bases, ComputerManager, Game, GameError, GameFixture, Governance, Half,
-    Position, Side, Sim, Status,
+    load_json, play_game, Bases, BattedBallRates, ComputerManager, Game, GameError, GameFixture,
+    Governance, Half, PlateOutcome, Position, Side, Sim, Status,
 };
 
 fn game(postseason: bool) -> Game {
@@ -399,4 +399,59 @@ fn the_fixture_plays_one_regular_season_game() {
             .chain(&game.home.pitchers)
             .all(|pitcher| pitcher.id != result.batter_id));
     }
+}
+
+#[test]
+fn the_log_names_the_double_play_and_the_sacrifice_fly() {
+    let mut game = game(false);
+    let mut double_play = baseball_engine::harness::holding_out(&Bases::empty());
+    double_play.outcome = PlateOutcome::GroundedIntoDoublePlay;
+    double_play.change.outs_added = 2;
+    game.apply_plate_appearance(double_play).unwrap();
+    assert_eq!(game.outs, 2);
+    assert!(game
+        .log
+        .last()
+        .unwrap()
+        .text
+        .contains("grounded into a double play"));
+
+    let mut sacrifice = baseball_engine::harness::holding_out(&Bases::empty());
+    sacrifice.outcome = PlateOutcome::SacrificeFly;
+    sacrifice.change.runs_scored = 1;
+    game.outs = 0;
+    game.apply_plate_appearance(sacrifice).unwrap();
+    assert_eq!(game.score.away, 1);
+    let logged = game
+        .log
+        .iter()
+        .rev()
+        .find(|entry| entry.text.contains("sacrifice fly"))
+        .expect("the sacrifice fly is logged");
+    assert_eq!(logged.half, Half::Top);
+}
+
+#[test]
+fn a_sacrifice_fly_is_a_plate_appearance_and_not_an_at_bat() {
+    assert!(!PlateOutcome::SacrificeFly.is_at_bat());
+    assert!(PlateOutcome::GroundedIntoDoublePlay.is_at_bat());
+    assert!(PlateOutcome::GroundOut.is_at_bat());
+    assert!(PlateOutcome::FlyOut.is_at_bat());
+    assert!(PlateOutcome::LineOut.is_at_bat());
+}
+
+#[test]
+fn batted_ball_rates_that_do_not_sum_to_one_are_rejected() {
+    let mut fixture = baseball_engine::harness::scripted_fixture(false);
+    fixture.away.lineup[0].batted_balls = BattedBallRates {
+        gb: 0.5,
+        fb: 0.5,
+        ld: 0.5,
+    };
+    let err = Game::start(fixture, 1).unwrap_err();
+    assert!(matches!(err, GameError::InvalidFixture(msg) if msg.contains("batted-ball")));
+
+    let mut fixture = baseball_engine::harness::scripted_fixture(false);
+    fixture.home.pitchers[0].batted_balls.gb = -0.1;
+    assert!(Game::start(fixture, 1).is_err());
 }

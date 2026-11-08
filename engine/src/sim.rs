@@ -2,14 +2,16 @@
 //!
 //! Same inputs do not have to produce the same result. Nothing in here is stored.
 //! A bunt or an intentional walk is resolved only when that call is present.
+//! A ball-in-play out is a ground out, fly out, or line out, drawn from the batted-ball mix,
+//! and runners move by the rules on `advance_on_out`.
 
 use rand::rngs::StdRng;
 use rand::seq::SliceRandom;
 use rand::{Rng, SeedableRng};
 
 use crate::model::{
-    Base, BaseOutRunChange, BaserunningEvent, Bases, Count, Fielding, HitterRates, PaInput,
-    PaResult, Pitch, PitchKind, PitcherRates, PlateOutcome, PlayerId,
+    Base, BaseOutRunChange, BaserunningEvent, Bases, BattedBallRates, Count, Fielding, HitterRates,
+    PaInput, PaResult, Pitch, PitchKind, PitcherRates, PlateOutcome, PlayerId,
 };
 
 /// League line used as the odds-ratio baseline, per plate appearance.
@@ -19,6 +21,11 @@ pub const LEAGUE_BB: f64 = 0.084;
 pub const LEAGUE_HBP: f64 = 0.011;
 pub const LEAGUE_HR: f64 = 0.031;
 pub const LEAGUE_H: f64 = 0.192;
+
+/// League batted-ball mix, as shares of batted balls. The log5 baseline and the default card.
+pub const LEAGUE_GB: f64 = 0.43;
+pub const LEAGUE_FB: f64 = 0.36;
+pub const LEAGUE_LD: f64 = 0.21;
 
 /// Hit probability moved into a ball-in-play out, per point of defense, per plate appearance.
 pub const DEFENSE_HIT_DELTA: f64 = 0.002;
@@ -30,6 +37,20 @@ pub const BUNT_HIT_RATE: f64 = 0.15;
 pub const BUNT_SAC_RATE: f64 = 0.60;
 pub const STEAL_SUCCESS_RATE: f64 = 0.75;
 pub const HIT_AND_RUN_K_KEEP: f64 = 0.5;
+
+/// Ground out, runner on first, fewer than two outs: chance of a double play.
+/// Set so league-average games turn two on about 10% of double-play opportunities.
+pub const DP_RATE: f64 = 0.52;
+/// Ground out, fewer than two outs: chance an unforced runner on third scores.
+pub const GB_SCORE_FROM_THIRD: f64 = 0.50;
+/// Ground out, fewer than two outs: chance an unforced runner on second takes third.
+pub const GB_SECOND_TO_THIRD: f64 = 0.50;
+/// Fly out, fewer than two outs: chance the runner on third scores on a sacrifice fly.
+pub const SF_RATE: f64 = 0.60;
+/// Fly out, fewer than two outs: chance the runner on second takes third.
+pub const FLY_SECOND_TO_THIRD: f64 = 0.20;
+/// Infield in: share of ground outs that get through for a single.
+pub const INFIELD_IN_SINGLE_SHIFT: f64 = 0.10;
 
 #[derive(Debug, Clone, PartialEq, serde::Serialize)]
 pub struct OutcomeProbs {
@@ -177,6 +198,22 @@ pub fn outcome_probabilities(
     }
 }
 
+/// Ground, fly, and line shares for this matchup: log5 of each rate, rescaled to sum to 1.
+pub fn batted_ball_mix(hitter: &BattedBallRates, pitcher: &BattedBallRates) -> BattedBallRates {
+    let gb = log5(hitter.gb, pitcher.gb, LEAGUE_GB);
+    let fb = log5(hitter.fb, pitcher.fb, LEAGUE_FB);
+    let ld = log5(hitter.ld, pitcher.ld, LEAGUE_LD);
+    let total = gb + fb + ld;
+    if total <= 0.0 {
+        return BattedBallRates::default();
+    }
+    BattedBallRates {
+        gb: gb / total,
+        fb: fb / total,
+        ld: ld / total,
+    }
+}
+
 /// Halve the strikeout rate and give that mass to hits and ball-in-play outs.
 pub fn apply_hit_and_run(probs: &mut OutcomeProbs) {
     let removed = probs.k * (1.0 - HIT_AND_RUN_K_KEEP);
@@ -285,7 +322,21 @@ pub fn advance(
             next = bases.clone();
             (1, true)
         }
+        PlateOutcome::GroundOut
+        | PlateOutcome::FlyOut
+        | PlateOutcome::LineOut
+        | PlateOutcome::GroundedIntoDoublePlay
+        | PlateOutcome::SacrificeFly => {
+            return advance_on_out(
+                bases,
+                batter,
+                outcome,
+                outs_before,
+                OutAdvanceOptions::default(),
+            );
+        }
         PlateOutcome::Walk | PlateOutcome::HitByPitch | PlateOutcome::IntentionalWalk => {
+            next = bases.clone();
             if first.is_some() {
                 if second.is_some() {
                     if let Some(runner) = third.clone() {
@@ -382,6 +433,100 @@ pub fn advance(
         runs_scored: runs,
         events,
         batter_completed,
+    }
+}
+
+/// Chances the caller already rolled for runners on a batted-ball out.
+#[derive(Debug, Clone, Copy, Default)]
+pub struct OutAdvanceOptions {
+    /// An unforced runner on third scores on a ground out.
+    pub score_from_third: bool,
+    /// The runner on second takes third on a ground out or a fly out, when third is open.
+    pub second_to_third: bool,
+    /// The infield is in: the runner on third does not score on a ground out.
+    pub infield_in: bool,
+}
+
+/// How runners move on a ground out, fly out, line out, double play, or sacrifice fly.
+///
+/// With two outs the out ends the inning and nobody moves. A double play removes the
+/// runner from first. A sacrifice fly scores the runner from third.
+pub fn advance_on_out(
+    bases: &Bases,
+    batter: &str,
+    outcome: PlateOutcome,
+    outs_before: u8,
+    options: OutAdvanceOptions,
+) -> Advancement {
+    let mut next = bases.clone();
+    let mut events = Vec::new();
+    let mut runs = 0u8;
+    let mut outs_added = 1u8;
+
+    if outs_before < 2 {
+        match outcome {
+            PlateOutcome::GroundedIntoDoublePlay => {
+                next.first = None;
+                outs_added = 2;
+                if outs_before == 0 {
+                    if !options.infield_in {
+                        if let Some(runner) = next.third.take() {
+                            score(runner, &mut runs, &mut events);
+                        }
+                    }
+                    move_second_to_open_third(&mut next);
+                }
+            }
+            PlateOutcome::GroundOut => {
+                let forced_to_second = bases.first.is_some();
+                let forced_to_third = forced_to_second && bases.second.is_some();
+                let forced_home = forced_to_third && bases.third.is_some();
+                if forced_home && options.infield_in {
+                    // The play goes home: the runner from third is out and the batter is on first.
+                    next.third = next.second.take();
+                    next.second = next.first.take();
+                    next.first = Some(batter.to_string());
+                } else {
+                    if forced_home || (options.score_from_third && !options.infield_in) {
+                        if let Some(runner) = next.third.take() {
+                            score(runner, &mut runs, &mut events);
+                        }
+                    }
+                    if forced_to_third || options.second_to_third {
+                        move_second_to_open_third(&mut next);
+                    }
+                    if forced_to_second {
+                        next.second = next.first.take();
+                    }
+                }
+            }
+            PlateOutcome::SacrificeFly => {
+                if let Some(runner) = next.third.take() {
+                    score(runner, &mut runs, &mut events);
+                }
+                if options.second_to_third {
+                    move_second_to_open_third(&mut next);
+                }
+            }
+            PlateOutcome::FlyOut if options.second_to_third => {
+                move_second_to_open_third(&mut next);
+            }
+            _ => {}
+        }
+    }
+
+    Advancement {
+        bases: next,
+        outs_added,
+        runs_scored: runs,
+        events,
+        batter_completed: true,
+    }
+}
+
+fn move_second_to_open_third(bases: &mut Bases) {
+    if bases.third.is_none() {
+        bases.third = bases.second.take();
     }
 }
 
@@ -483,7 +628,23 @@ impl Sim {
         if input.calls.hit_and_run && input.situation.bases.first.is_some() {
             apply_hit_and_run(&mut probs);
         }
-        let outcome = self.draw_outcome(&probs);
+        let mut outcome = self.draw_outcome(&probs);
+        if outcome == PlateOutcome::BipOut {
+            let outs = input.situation.outs + outs_from_running;
+            let infield_in = input.calls.infield_in && bases.third.is_some() && outs < 2;
+            let mix = batted_ball_mix(&input.hitter_batted_balls, &input.pitcher_batted_balls);
+            let kind = self.draw_batted_ball_out(&mix);
+            if kind == PlateOutcome::GroundOut
+                && infield_in
+                && self.rng.gen::<f64>() < INFIELD_IN_SINGLE_SHIFT
+            {
+                outcome = PlateOutcome::Single;
+            } else {
+                let (out, options) = self.roll_runners_on_out(kind, &bases, outs, infield_in);
+                let adv = advance_on_out(&bases, &input.hitter_id, out, outs, options);
+                return self.package(input, out, merge(outs_from_running, events, adv));
+            }
+        }
         let take_extra = self.take_extra_base(outcome, &bases, input.calls.hit_and_run);
         let adv = advance(
             &bases,
@@ -509,6 +670,66 @@ impl Sim {
             return true;
         }
         self.rng.gen::<f64>() < EXTRA_BASE_RATE
+    }
+
+    fn draw_batted_ball_out(&mut self, mix: &BattedBallRates) -> PlateOutcome {
+        let roll = self.rng.gen::<f64>();
+        if roll < mix.gb {
+            PlateOutcome::GroundOut
+        } else if roll < mix.gb + mix.fb {
+            PlateOutcome::FlyOut
+        } else {
+            PlateOutcome::LineOut
+        }
+    }
+
+    /// Decide the double play, the sacrifice fly, and which unforced runners move. With two outs nothing is rolled.
+    fn roll_runners_on_out(
+        &mut self,
+        kind: PlateOutcome,
+        bases: &Bases,
+        outs: u8,
+        infield_in: bool,
+    ) -> (PlateOutcome, OutAdvanceOptions) {
+        let mut options = OutAdvanceOptions {
+            infield_in,
+            ..OutAdvanceOptions::default()
+        };
+        if outs >= 2 {
+            return (kind, options);
+        }
+        match kind {
+            PlateOutcome::GroundOut => {
+                if bases.first.is_some() {
+                    if self.rng.gen::<f64>() < DP_RATE {
+                        return (PlateOutcome::GroundedIntoDoublePlay, options);
+                    }
+                    let third_forced = bases.second.is_some();
+                    if bases.third.is_some() && !third_forced && !infield_in {
+                        options.score_from_third = self.rng.gen::<f64>() < GB_SCORE_FROM_THIRD;
+                    }
+                    return (kind, options);
+                }
+                if bases.third.is_some() && !infield_in {
+                    options.score_from_third = self.rng.gen::<f64>() < GB_SCORE_FROM_THIRD;
+                }
+                if bases.second.is_some() {
+                    options.second_to_third = self.rng.gen::<f64>() < GB_SECOND_TO_THIRD;
+                }
+                (kind, options)
+            }
+            PlateOutcome::FlyOut => {
+                let mut out = kind;
+                if bases.third.is_some() && self.rng.gen::<f64>() < SF_RATE {
+                    out = PlateOutcome::SacrificeFly;
+                }
+                if bases.second.is_some() {
+                    options.second_to_third = self.rng.gen::<f64>() < FLY_SECOND_TO_THIRD;
+                }
+                (out, options)
+            }
+            _ => (kind, options),
+        }
     }
 
     fn draw_bunt(&mut self, bases: &Bases, outs: u8) -> PlateOutcome {
@@ -553,6 +774,11 @@ impl Sim {
                 | PlateOutcome::Triple
                 | PlateOutcome::HomeRun
                 | PlateOutcome::BipOut
+                | PlateOutcome::GroundOut
+                | PlateOutcome::FlyOut
+                | PlateOutcome::LineOut
+                | PlateOutcome::GroundedIntoDoublePlay
+                | PlateOutcome::SacrificeFly
                 | PlateOutcome::BuntSingle
                 | PlateOutcome::BuntOut
                 | PlateOutcome::BuntSacrifice
@@ -811,6 +1037,36 @@ mod tests {
     }
 
     #[test]
+    fn walk_keeps_the_runners_it_does_not_force() {
+        let options = AdvanceOptions {
+            take_extra_base: false,
+        };
+        let corners = advance(
+            &on(true, false, true),
+            "batter",
+            PlateOutcome::Walk,
+            0,
+            options,
+        );
+        assert_eq!(corners.runs_scored, 0);
+        assert_eq!(corners.bases.first.as_deref(), Some("batter"));
+        assert_eq!(corners.bases.second.as_deref(), Some("r1"));
+        assert_eq!(corners.bases.third.as_deref(), Some("r3"));
+
+        let second_and_third = advance(
+            &on(false, true, true),
+            "batter",
+            PlateOutcome::Walk,
+            0,
+            options,
+        );
+        assert_eq!(second_and_third.runs_scored, 0);
+        assert_eq!(second_and_third.bases.first.as_deref(), Some("batter"));
+        assert_eq!(second_and_third.bases.second.as_deref(), Some("r2"));
+        assert_eq!(second_and_third.bases.third.as_deref(), Some("r3"));
+    }
+
+    #[test]
     fn ball_in_play_out_holds_runners() {
         let bases = Bases {
             first: Some("r1".into()),
@@ -915,6 +1171,309 @@ mod tests {
         }
     }
 
+    trait Place {
+        fn with_second(self, runner: &str) -> Self;
+        fn with_third(self, runner: &str) -> Self;
+    }
+
+    impl Place for Bases {
+        fn with_second(mut self, runner: &str) -> Self {
+            self.second = Some(runner.to_string());
+            self
+        }
+
+        fn with_third(mut self, runner: &str) -> Self {
+            self.third = Some(runner.to_string());
+            self
+        }
+    }
+
+    fn on(first: bool, second: bool, third: bool) -> Bases {
+        Bases {
+            first: first.then(|| "r1".to_string()),
+            second: second.then(|| "r2".to_string()),
+            third: third.then(|| "r3".to_string()),
+        }
+    }
+
+    fn out(
+        outcome: PlateOutcome,
+        bases: &Bases,
+        outs: u8,
+        options: OutAdvanceOptions,
+    ) -> Advancement {
+        advance_on_out(bases, "batter", outcome, outs, options)
+    }
+
+    fn rolled(score_from_third: bool, second_to_third: bool) -> OutAdvanceOptions {
+        OutAdvanceOptions {
+            score_from_third,
+            second_to_third,
+            infield_in: false,
+        }
+    }
+
+    #[test]
+    fn runner_constants_match_the_stated_defaults() {
+        assert_eq!(GB_SCORE_FROM_THIRD, 0.50);
+        assert_eq!(GB_SECOND_TO_THIRD, 0.50);
+        assert_eq!(SF_RATE, 0.60);
+        assert_eq!(FLY_SECOND_TO_THIRD, 0.20);
+        assert_eq!(INFIELD_IN_SINGLE_SHIFT, 0.10);
+        assert!((LEAGUE_GB + LEAGUE_FB + LEAGUE_LD - 1.0).abs() < 1e-12);
+    }
+
+    #[test]
+    fn double_play_with_none_out_moves_the_other_runners_up_one() {
+        let adv = out(
+            PlateOutcome::GroundedIntoDoublePlay,
+            &on(true, true, true),
+            0,
+            OutAdvanceOptions::default(),
+        );
+        assert_eq!(adv.outs_added, 2);
+        assert_eq!(adv.runs_scored, 1);
+        assert_eq!(adv.bases, on(false, false, false).with_third("r2"));
+        assert!(adv.batter_completed);
+        assert!(adv.events.contains(&BaserunningEvent::Scored {
+            runner: "r3".into()
+        }));
+    }
+
+    #[test]
+    fn double_play_with_one_out_ends_the_inning_and_nobody_scores() {
+        let adv = out(
+            PlateOutcome::GroundedIntoDoublePlay,
+            &on(true, false, true),
+            1,
+            OutAdvanceOptions::default(),
+        );
+        assert_eq!(adv.outs_added, 2);
+        assert_eq!(adv.runs_scored, 0);
+        assert!(adv.events.is_empty());
+    }
+
+    #[test]
+    fn ground_out_forces_every_runner_up_with_the_bases_loaded() {
+        let adv = out(
+            PlateOutcome::GroundOut,
+            &on(true, true, true),
+            0,
+            rolled(false, false),
+        );
+        assert_eq!(adv.outs_added, 1);
+        assert_eq!(adv.runs_scored, 1);
+        assert_eq!(
+            adv.bases,
+            on(false, true, true).with_second("r1").with_third("r2")
+        );
+    }
+
+    #[test]
+    fn ground_out_forces_the_runner_from_first_and_leaves_the_unforced_runner_on_third_to_the_roll()
+    {
+        let held = out(
+            PlateOutcome::GroundOut,
+            &on(true, false, true),
+            0,
+            rolled(false, false),
+        );
+        assert_eq!(held.runs_scored, 0);
+        assert_eq!(held.bases, on(false, false, true).with_second("r1"));
+
+        let scored = out(
+            PlateOutcome::GroundOut,
+            &on(true, false, true),
+            1,
+            rolled(true, false),
+        );
+        assert_eq!(scored.runs_scored, 1);
+        assert_eq!(scored.bases, on(false, false, false).with_second("r1"));
+    }
+
+    #[test]
+    fn ground_out_moves_an_unforced_runner_from_second_only_on_the_roll_and_only_to_an_open_base() {
+        let moved = out(
+            PlateOutcome::GroundOut,
+            &on(false, true, false),
+            0,
+            rolled(false, true),
+        );
+        assert_eq!(moved.bases, on(false, false, false).with_third("r2"));
+        assert_eq!(moved.runs_scored, 0);
+
+        let stayed = out(
+            PlateOutcome::GroundOut,
+            &on(false, true, false),
+            0,
+            rolled(false, false),
+        );
+        assert_eq!(stayed.bases, on(false, true, false));
+
+        let blocked = out(
+            PlateOutcome::GroundOut,
+            &on(false, true, true),
+            0,
+            rolled(false, true),
+        );
+        assert_eq!(blocked.bases, on(false, true, true));
+
+        let behind_the_run = out(
+            PlateOutcome::GroundOut,
+            &on(false, true, true),
+            0,
+            rolled(true, true),
+        );
+        assert_eq!(behind_the_run.runs_scored, 1);
+        assert_eq!(
+            behind_the_run.bases,
+            on(false, false, false).with_third("r2")
+        );
+    }
+
+    #[test]
+    fn sacrifice_fly_scores_the_runner_from_third_and_a_fly_out_holds_him() {
+        let sac = out(
+            PlateOutcome::SacrificeFly,
+            &on(true, false, true),
+            0,
+            rolled(false, false),
+        );
+        assert_eq!(sac.outs_added, 1);
+        assert_eq!(sac.runs_scored, 1);
+        assert_eq!(sac.bases, on(true, false, false));
+
+        let fly = out(
+            PlateOutcome::FlyOut,
+            &on(true, false, true),
+            0,
+            rolled(false, false),
+        );
+        assert_eq!(fly.runs_scored, 0);
+        assert_eq!(fly.bases, on(true, false, true));
+    }
+
+    #[test]
+    fn fly_out_moves_the_runner_from_second_on_the_roll() {
+        let tagged = out(
+            PlateOutcome::FlyOut,
+            &on(false, true, false),
+            1,
+            rolled(false, true),
+        );
+        assert_eq!(tagged.bases, on(false, false, false).with_third("r2"));
+
+        let sac = out(
+            PlateOutcome::SacrificeFly,
+            &on(false, true, true),
+            0,
+            rolled(false, true),
+        );
+        assert_eq!(sac.runs_scored, 1);
+        assert_eq!(sac.bases, on(false, false, false).with_third("r2"));
+    }
+
+    #[test]
+    fn line_out_moves_nobody() {
+        let bases = on(true, true, true);
+        let adv = out(PlateOutcome::LineOut, &bases, 0, rolled(true, true));
+        assert_eq!(adv.outs_added, 1);
+        assert_eq!(adv.runs_scored, 0);
+        assert_eq!(adv.bases, bases);
+    }
+
+    #[test]
+    fn with_two_outs_an_out_ends_the_inning_and_nobody_advances() {
+        let bases = on(true, true, true);
+        for outcome in [
+            PlateOutcome::GroundOut,
+            PlateOutcome::FlyOut,
+            PlateOutcome::LineOut,
+            PlateOutcome::SacrificeFly,
+            PlateOutcome::GroundedIntoDoublePlay,
+        ] {
+            let adv = out(outcome, &bases, 2, rolled(true, true));
+            assert_eq!(adv.outs_added, 1, "{outcome:?}");
+            assert_eq!(adv.runs_scored, 0, "{outcome:?}");
+            assert_eq!(adv.bases, bases, "{outcome:?}");
+        }
+    }
+
+    #[test]
+    fn infield_in_holds_the_runner_on_third_on_a_ground_out() {
+        let options = OutAdvanceOptions {
+            score_from_third: true,
+            second_to_third: true,
+            infield_in: true,
+        };
+        let held = out(PlateOutcome::GroundOut, &on(false, true, true), 0, options);
+        assert_eq!(held.runs_scored, 0);
+        assert_eq!(held.bases, on(false, true, true));
+
+        let double_play = out(
+            PlateOutcome::GroundedIntoDoublePlay,
+            &on(true, true, true),
+            0,
+            options,
+        );
+        assert_eq!(double_play.runs_scored, 0);
+        assert_eq!(double_play.bases, on(false, true, true));
+    }
+
+    #[test]
+    fn infield_in_with_the_bases_loaded_gets_the_force_at_home() {
+        let options = OutAdvanceOptions {
+            infield_in: true,
+            ..OutAdvanceOptions::default()
+        };
+        let adv = out(PlateOutcome::GroundOut, &on(true, true, true), 1, options);
+        assert_eq!(adv.outs_added, 1);
+        assert_eq!(adv.runs_scored, 0);
+        assert_eq!(
+            adv.bases,
+            Bases {
+                first: Some("batter".into()),
+                second: Some("r1".into()),
+                third: Some("r2".into()),
+            }
+        );
+    }
+
+    #[test]
+    fn batted_ball_mix_is_log5_against_the_league() {
+        let hitter = BattedBallRates {
+            gb: 0.50,
+            fb: 0.30,
+            ld: 0.20,
+        };
+        let league = BattedBallRates::default();
+        let even = batted_ball_mix(&hitter, &league);
+        assert!((even.gb - hitter.gb).abs() < 1e-9);
+        assert!((even.fb - hitter.fb).abs() < 1e-9);
+        assert!((even.ld - hitter.ld).abs() < 1e-9);
+
+        let sinkerballer = BattedBallRates {
+            gb: 0.55,
+            fb: 0.27,
+            ld: 0.18,
+        };
+        let mix = batted_ball_mix(&hitter, &sinkerballer);
+        assert!((mix.sum() - 1.0).abs() < 1e-9);
+        assert!(mix.gb > hitter.gb);
+        assert!(mix.fb < hitter.fb);
+    }
+
+    #[test]
+    fn the_sim_never_draws_the_runner_holding_ball_in_play_out() {
+        let mut input = sample_input(false);
+        input.situation.bases = on(true, true, true);
+        let mut sim = Sim::from_seed(17);
+        for _ in 0..2_000 {
+            let result = sim.resolve(&input);
+            assert_ne!(result.outcome, PlateOutcome::BipOut);
+        }
+    }
+
     fn sample_input(intentional_walk: bool) -> PaInput {
         PaInput {
             hitter_id: "batter".into(),
@@ -924,6 +1483,8 @@ mod tests {
             pitcher_id: "pitcher".into(),
             pitcher_name: "Pitcher".into(),
             pitcher: average_pitcher(),
+            hitter_batted_balls: BattedBallRates::default(),
+            pitcher_batted_balls: BattedBallRates::default(),
             defense: 0.0,
             situation: Situation {
                 inning: 1,

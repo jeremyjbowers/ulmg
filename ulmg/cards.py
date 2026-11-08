@@ -74,6 +74,21 @@ def pitcher_rates(pitch_stats):
     }
 
 
+def batted_ball_rates(stats):
+    """
+    Ground-ball, fly-ball and line-drive shares of batted balls, from FanGraphs GB/FB/LD counts.
+    Works on hitting or pitching stats. None when the payload has no batted balls; the engine
+    then uses league rates.
+    """
+    if not stats:
+        return None
+    counts = {key: _number(stats, key) for key in ("gb", "fb", "ld")}
+    total = sum(counts.values())
+    if total <= 0:
+        return None
+    return {key: count / total for key, count in counts.items()}
+
+
 def _pitches_per_appearance(stats):
     games = _number(stats, "g")
     pitches = _number(stats, "pitches")

@@ -39,7 +39,8 @@ def step(state, seed, call=None):
     """Resolve one plate appearance. Returns {"result": ..., "state": ...}.
 
     `call` is None for a normal plate appearance (the computer manager decides), or one of
-    "bunt", "intentional_walk", "steal", "hit_and_run". The same state, call, and seed always
+    "bunt", "intentional_walk", "steal", "hit_and_run", "infield_in". The infield-in call is
+    honored only with a runner on third and fewer than two outs. The same state, call, and seed always
     give the same result, so record the seed with the plate appearance.
     """
     return _post("/step", {"state": state, "call": call, "seed": seed})

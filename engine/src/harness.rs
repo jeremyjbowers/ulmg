@@ -1,8 +1,8 @@
 //! Constructors the tests use to drive the state machine with a known game.
 
 use crate::model::{
-    Bases, BatterCard, DefenseRating, FatigueProfile, GameFixture, HitterRates, Park, PitcherCard,
-    PitcherRates, PitcherRole, Position, TeamFixture,
+    Bases, BattedBallRates, BatterCard, DefenseRating, FatigueProfile, GameFixture, HitterRates,
+    Park, PitcherCard, PitcherRates, PitcherRole, Position, TeamFixture,
 };
 
 const POSITIONS: [Position; 9] = [
@@ -53,6 +53,7 @@ fn scripted_team(id: &str, name: &str) -> TeamFixture {
                 hr: 0.02,
                 bip_out: 0.475,
             },
+            batted_balls: BattedBallRates::default(),
         })
         .collect();
     let pitchers = vec![
@@ -90,6 +91,7 @@ fn scripted_pitcher(id: &str, name: &str, role: PitcherRole, ppa: f64) -> Pitche
             career_pitches_per_appearance: ppa,
             season_appearances: 30,
         },
+        batted_balls: BattedBallRates::default(),
     }
 }
 

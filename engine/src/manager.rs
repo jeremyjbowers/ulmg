@@ -38,6 +38,7 @@ impl ComputerManager {
             hit_and_run: roll(&mut self.rng, COMPUTER_HIT_AND_RUN_RATE),
             bunt: roll(&mut self.rng, COMPUTER_BUNT_RATE),
             intentional_walk: roll(&mut self.rng, COMPUTER_IBB_RATE),
+            infield_in: false,
         }
     }
 
