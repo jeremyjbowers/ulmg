@@ -54,6 +54,13 @@ def fg_get(url, **kwargs):
     return requests.get(url, headers=headers, **kwargs)
 
 
+def fg_post(url, **kwargs):
+    """POST to a FanGraphs URL (the splits tool takes a JSON body) with the same User-Agent as fg_get."""
+    headers = dict(kwargs.pop("headers", None) or {})
+    headers["User-Agent"] = fg_user_agent()
+    return requests.post(url, headers=headers, **kwargs)
+
+
 def get_level_order(level):
     """
     figure out how to sort stats from various levels against each other

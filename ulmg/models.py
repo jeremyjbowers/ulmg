@@ -879,6 +879,11 @@ class PlayerStatSeason(BaseModel):
         blank=True,
         help_text="FanGraphs fielding leaderboard rows keyed by position (Pos), with innings (inn) and fielding runs (frp)",
     )
+    split_stats = models.JSONField(
+        null=True,
+        blank=True,
+        help_text="FanGraphs splits-tool rows keyed by split: bat_vs_lhp, bat_vs_rhp, pit_vs_lhh, pit_vs_rhh",
+    )
 
     # SEASON-SPECIFIC ROSTER STATUS (moved from Player model)
     is_starter = models.BooleanField(default=False)
@@ -1156,6 +1161,8 @@ class Card(BaseModel):
     Rate dicts use the engine's HitterRates / PitcherRates / FatigueProfile keys.
     Batted-ball dicts use the engine's BattedBallRates keys (gb, fb, ld); None means league rates.
     Defense holds slotted runs per position to one decimal; the engine takes runs / 10.
+    The _vs_ rate dicts are platoon splits regressed toward the overall rates; the
+    counts beside them are the split's own PA or BF (0 when the split is the overall card).
     Running (hitters only): regressed steal success, steal attempts per time on first, and FanGraphs Spd.
     """
     player = models.ForeignKey(Player, on_delete=models.CASCADE, related_name="cards")
@@ -1164,6 +1171,10 @@ class Card(BaseModel):
     plate_appearances = models.IntegerField(blank=True, null=True)
     wrc_plus = models.FloatField(blank=True, null=True)
     hitter_rates = models.JSONField(blank=True, null=True)
+    plate_appearances_vs_lhp = models.IntegerField(blank=True, null=True)
+    hitter_rates_vs_lhp = models.JSONField(blank=True, null=True)
+    plate_appearances_vs_rhp = models.IntegerField(blank=True, null=True)
+    hitter_rates_vs_rhp = models.JSONField(blank=True, null=True)
     hitter_batted_balls = models.JSONField(blank=True, null=True)
     primary_position = models.CharField(max_length=2, blank=True, null=True)
     defense = models.JSONField(blank=True, null=True)
@@ -1173,6 +1184,10 @@ class Card(BaseModel):
 
     batters_faced = models.IntegerField(blank=True, null=True)
     pitcher_rates = models.JSONField(blank=True, null=True)
+    batters_faced_vs_lhh = models.IntegerField(blank=True, null=True)
+    pitcher_rates_vs_lhh = models.JSONField(blank=True, null=True)
+    batters_faced_vs_rhh = models.IntegerField(blank=True, null=True)
+    pitcher_rates_vs_rhh = models.JSONField(blank=True, null=True)
     pitcher_batted_balls = models.JSONField(blank=True, null=True)
     fatigue = models.JSONField(blank=True, null=True)
 
@@ -1228,21 +1243,45 @@ class Card(BaseModel):
             "hr_pct": hr,
         }
 
-    def hitter_line(self):
-        """AVG/OBP/SLG and K%/BB%/HR% computed from the card rates, per plate appearance."""
-        r = self.hitter_rates
+    @classmethod
+    def _hitter_line_from(cls, r):
         if not r:
             return None
         hits = r["single"] + r["double"] + r["triple"] + r["hr"]
         total_bases = r["single"] + 2 * r["double"] + 3 * r["triple"] + 4 * r["hr"]
-        return self._slash_line(hits, total_bases, r["bb"], r["hbp"], r["k"], r["hr"])
+        return cls._slash_line(hits, total_bases, r["bb"], r["hbp"], r["k"], r["hr"])
+
+    @classmethod
+    def _pitcher_line_from(cls, r):
+        if not r:
+            return None
+        return cls._slash_line(r["h"] + r["hr"], None, r["bb"], r["hbp"], r["k"], r["hr"])
+
+    def hitter_line(self):
+        """AVG/OBP/SLG and K%/BB%/HR% computed from the card rates, per plate appearance."""
+        return self._hitter_line_from(self.hitter_rates)
 
     def pitcher_line(self):
         """The same line allowed, per batter faced. The pitcher card has no extra-base split, so no SLG."""
-        r = self.pitcher_rates
-        if not r:
-            return None
-        return self._slash_line(r["h"] + r["hr"], None, r["bb"], r["hbp"], r["k"], r["hr"])
+        return self._pitcher_line_from(self.pitcher_rates)
+
+    def hitter_lines(self):
+        """(label, PA, line) for the overall card, then versus left- and right-handed pitchers."""
+        rows = [
+            ("Overall", self.plate_appearances, self.hitter_rates),
+            ("vs LHP", self.plate_appearances_vs_lhp, self.hitter_rates_vs_lhp),
+            ("vs RHP", self.plate_appearances_vs_rhp, self.hitter_rates_vs_rhp),
+        ]
+        return [(label, count, self._hitter_line_from(rates)) for label, count, rates in rows if rates]
+
+    def pitcher_lines(self):
+        """(label, BF, line) for the overall card, then versus left- and right-handed batters."""
+        rows = [
+            ("Overall", self.batters_faced, self.pitcher_rates),
+            ("vs LHH", self.batters_faced_vs_lhh, self.pitcher_rates_vs_lhh),
+            ("vs RHH", self.batters_faced_vs_rhh, self.pitcher_rates_vs_rhh),
+        ]
+        return [(label, count, self._pitcher_line_from(rates)) for label, count, rates in rows if rates]
 
 
 class DraftPick(BaseModel):
