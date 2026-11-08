@@ -302,6 +302,47 @@ class PlanEligibilityTestCase(RosterMoveTestCase):
         self.assertTrue(any(starters[d] == up for d in road_days))
         self.assertFalse(any(starters[d] == up for d in home_days))
 
+    def fill_fields(self, **kwargs):
+        fields = {
+            "rotation": self.roster.starters,
+            "closer": self.roster.relievers[0],
+            "setup": [],
+            "middle_long": [self.roster.swingman],
+            "bench": [self.roster.bench[0]],
+            "lineup_vs_lhp": self.roster.lineup(),
+            "lineup_vs_rhp": self.roster.lineup(),
+        }
+        fields.update(kwargs)
+        return fields
+
+    def test_fill_plan_auto_fills_a_called_up_starter_into_road_games_only(self):
+        up = self.call_ups[0]
+        self.move(up, self.roster.relievers[1])
+        rotation = [up] + self.roster.starters[1:]
+        self.assertEqual(plans.fill_plan(self.plan, **self.fill_fields(rotation=rotation)), [])
+        starters = plans.starters(self.plan)
+        self.assertTrue(any(starters[g.day] == up for g in road_games(self.atl)))
+        self.assertFalse(any(starters[g.day] == up for g in home_games(self.atl)))
+
+    def test_fill_plan_leaves_a_lineup_card_with_a_call_up_empty(self):
+        hitter_up = create_hitter(self.atl, "ATL Called Hitter", defense={"LF": 1.0}, roster=False)
+        self.move(hitter_up, self.roster.bench[1])
+        lineup = self.roster.lineup()
+        lineup[5] = {"order": 6, "player": hitter_up, "position": lineup[5]["position"]}
+
+        problems = plans.fill_plan(self.plan, **self.fill_fields(lineup_vs_rhp=lineup))
+        self.assertEqual(
+            problems,
+            [
+                "Lineup vs RHP: ATL Called Hitter is a call-up and can be planned into road games only; "
+                "the lineup cards also cover home days. File him into road days' lineups instead."
+            ],
+        )
+        self.plan.refresh_from_db()
+        self.assertEqual(self.plan.lineup_vs_rhp, [])
+        self.assertEqual(len(self.plan.lineup_vs_lhp), 9)
+        self.assertTrue(all(plans.starters(self.plan).values()))
+
     def test_a_sent_down_player_still_starts_his_planned_home_game(self):
         sent = self.roster.starters[0]
         starts = plans.starters(self.plan)

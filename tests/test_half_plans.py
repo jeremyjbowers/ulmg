@@ -393,3 +393,70 @@ class EditPermissionTestCase(PlanTestCase):
         self.assertTrue(plans.can_edit(owner_user, self.atl))
         self.assertFalse(plans.can_edit(other_user, self.atl))
         self.assertTrue(plans.can_edit(commissioner, self.atl))
+
+
+class FillPlanTestCase(PlanTestCase):
+    """plans.fill_plan saves what is legal and reports the rest, for building test seasons."""
+
+    def fields(self, **kwargs):
+        fields = {
+            "rotation": self.roster.starters,
+            "closer": self.roster.relievers[0],
+            "setup": [self.roster.relievers[1]],
+            "middle_long": [self.roster.swingman],
+            "bench": self.roster.bench,
+            "lineup_vs_lhp": self.roster.lineup(),
+            "lineup_vs_rhp": self.roster.lineup(),
+        }
+        fields.update(kwargs)
+        return fields
+
+    def test_a_legal_plan_fills_like_save_plan(self):
+        plan = plans.plan_for(self.atl, SEASON, 1)
+        self.assertEqual(plans.fill_plan(plan, **self.fields()), [])
+        plan.refresh_from_db()
+        self.assertEqual(plan.rotation, [p.id for p in self.roster.starters])
+        self.assertEqual(plan.closer, self.roster.relievers[0])
+        self.assertEqual(len(plan.lineup_vs_lhp), 9)
+        starters = plans.starters(plan)
+        self.assertEqual(sorted(starters), list(range(1, 82)))
+        self.assertEqual(starters[6], self.roster.starters[0])
+        self.assertTrue(usage.counter_for(self.roster.swingman, SEASON).confined_to_relief)
+
+    def test_a_broken_section_is_left_empty_and_the_rest_is_saved(self):
+        plan = plans.plan_for(self.atl, SEASON, 1)
+        short = self.roster.lineup()[:8]
+        problems = plans.fill_plan(
+            plan, **self.fields(lineup_vs_lhp=short, bench=[self.roster.starters[0]])
+        )
+        self.assertIn("Lineup vs LHP: a lineup needs nine batters; this one has 8.", problems)
+        self.assertTrue(any("The bench is for non-pitchers" in p for p in problems))
+        plan.refresh_from_db()
+        self.assertEqual(plan.lineup_vs_lhp, [])
+        self.assertEqual(plan.bench, [])
+        self.assertEqual(len(plan.lineup_vs_rhp), 9)
+        self.assertEqual(plan.rotation, [p.id for p in self.roster.starters])
+        self.assertTrue(all(plans.starters(plan).values()))
+
+    def test_days_without_a_legal_starter_are_reported_and_the_others_filled(self):
+        # Three starters cannot cover a four-game series inside series rest.
+        plan = plans.plan_for(self.atl, SEASON, 1)
+        problems = plans.fill_plan(plan, **self.fields(rotation=self.roster.starters[:3]))
+        self.assertEqual(len(problems), 1)
+        self.assertTrue(problems[0].startswith("No legal starter for days "))
+        starters = plans.starters(plan)
+        self.assertEqual(starters[1], self.roster.starters[0])
+        self.assertIsNone(starters[4])
+
+    def test_the_second_half_stays_locked_unless_the_caller_ignores_the_lock(self):
+        plan = plans.plan_for(self.atl, SEASON, 2)
+        with self.assertRaises(plans.PlanError):
+            plans.fill_plan(plan, **self.fields())
+        self.assertFalse(models.HalfPlanDay.objects.exists())
+
+        self.assertEqual(plans.fill_plan(plan, ignore_half_lock=True, **self.fields()), [])
+        self.assertEqual(sorted(plans.starters(plan)), list(range(82, 163)))
+        # The lock itself is unchanged for the normal editing path.
+        self.assertFalse(plans.is_open(2))
+        with self.assertRaises(plans.PlanError):
+            self.roster.file(half=2)
