@@ -227,6 +227,8 @@ def team_detail(request, abbreviation):
     context["active_stays"] = roster_moves.active_stays(team, move_season)
     context["move_log"] = roster_moves.move_log(team, move_season)
     context["can_move"] = plans.can_edit(request.user, team)
+    # Once the half has started, the roster buttons become paired Send down / Call up moves.
+    context["paired_moves"] = context["can_move"] and roster_moves.half_has_started(move_season, move_half)
     if context["can_move"]:
         context["call_up_choices"] = models.Player.objects.filter(team=team, is_ulmg_mlb_roster=False).order_by("name")
         context["send_down_choices"] = models.Player.objects.filter(team=team, is_ulmg_mlb_roster=True).order_by("name")

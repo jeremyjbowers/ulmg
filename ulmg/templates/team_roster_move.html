@@ -1,0 +1,40 @@
+{# ABOUTME: The move page for one player: the legal partners for a send-down or a call-up, and a confirm button. #}
+{# ABOUTME: A plain form that posts to the team's roster move view; it needs no JavaScript and fits a phone. #}
+{% extends "base.html" %}
+
+{% block content %}
+{% include 'includes/team_topper.html' %}
+
+<div id="paired-move" class="max-w-xl text-sm">
+    <h2 class="text-lg font-bold mb-1">{% if going_down %}Send down{% else %}Call up{% endif %} {{ choices.player.name }}</h2>
+    <p class="text-gray-600 mb-4">Moves left in half {{ move_half }}: {{ moves_left }} of {{ moves_per_half }}. A move calls one player up and sends one down, for road games only. A call-up stays up for 15 road games or the rest of the half. <a href="/teams/{{ team.abbreviation|lower }}/#roster-moves" class="underline">Back to the team</a></p>
+
+    {% if choices.error %}
+    <p class="move-refused border border-gray-300 bg-gray-50 px-3 py-2 mb-4">{{ choices.error }}</p>
+    {% elif choices.legal %}
+    <form method="post" action="/teams/{{ team.abbreviation|lower }}/moves/" class="space-y-4">
+        {% csrf_token %}
+        <input type="hidden" name="{% if going_down %}player_down{% else %}player_up{% endif %}" value="{{ choices.player.id }}">
+        <fieldset>
+            <legend class="font-bold mb-2">{% if going_down %}Call up in his place{% else %}Send down for him{% endif %}</legend>
+            {% for p in choices.legal %}
+            <label class="move-choice flex items-center gap-2 border border-gray-300 px-3 py-2 mb-1">
+                <input type="radio" name="{% if going_down %}player_up{% else %}player_down{% endif %}" value="{{ p.id }}" required{% if forloop.first and forloop.last %} checked{% endif %}>
+                <span>{{ p.name }} ({{ p.position }})</span>
+            </label>
+            {% endfor %}
+        </fieldset>
+        <button type="submit" class="w-full sm:w-auto bg-gray-800 text-white rounded px-4 py-2 font-bold">Make move</button>
+    </form>
+    {% else %}
+    <p class="move-refused border border-gray-300 bg-gray-50 px-3 py-2 mb-4">{% if going_down %}No AAA player can be called up for {{ choices.player.name }}.{% else %}No 30-man player can be sent down for {{ choices.player.name }}.{% endif %}</p>
+    {% endif %}
+
+    {% if choices.refused %}
+    <h3 class="font-bold mt-6 mb-1">{% if going_down %}Can't be called up{% else %}Can't be sent down{% endif %}</h3>
+    <ul class="text-gray-600">
+        {% for p, reason in choices.refused %}<li class="move-ineligible mb-1">{{ p.name }}: {{ reason }}</li>{% endfor %}
+    </ul>
+    {% endif %}
+</div>
+{% endblock %}

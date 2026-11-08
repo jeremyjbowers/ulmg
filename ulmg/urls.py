@@ -78,6 +78,7 @@ urlpatterns = [
         name="team_plan_day",
     ),
     path("teams/<str:abbreviation>/moves/", views.roster.team_roster_move, name="team_roster_move"),
+    path("teams/<str:abbreviation>/moves/new/", views.roster.team_roster_move_choice, name="team_roster_move_choice"),
     path("teams/<str:abbreviation>/results/", views.season.team_results, name="team_results"),
     path("teams/<str:abbreviation>/", views.site.team_detail),
     path("trades/csv/", views.csv.trades_csv),
