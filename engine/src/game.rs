@@ -13,7 +13,8 @@ use serde::{Deserialize, Serialize};
 use crate::fatigue::{draw_ceiling, effort_per_pitch};
 use crate::model::{
     Bases, BatterCard, FatigueState, GameFixture, Half, LineScore, LogEntry, PaInput, PaResult,
-    PitcherCard, PlayerId, Position, PrePaCalls, Score, Side, Situation, Status, TeamFixture,
+    PitcherCard, PlayerId, Position, PrePaCalls, Running, Score, Side, Situation, Status,
+    TeamFixture,
 };
 
 const FIELD_POSITIONS: [Position; 8] = [
@@ -37,6 +38,7 @@ pub enum GameError {
     PitcherDoesNotHit { player: PlayerId },
     GameOver,
     InvalidFixture(String),
+    InvalidRunning(String),
     Store(String),
     TooLong,
 }
@@ -60,6 +62,7 @@ impl fmt::Display for GameError {
             }
             Self::GameOver => write!(f, "the game is over"),
             Self::InvalidFixture(msg) => write!(f, "invalid fixture: {msg}"),
+            Self::InvalidRunning(msg) => write!(f, "invalid runner ratings: {msg}"),
             Self::Store(msg) => write!(f, "store: {msg}"),
             Self::TooLong => write!(f, "the game did not end"),
         }
@@ -253,6 +256,8 @@ impl Game {
             pitcher_id: pitcher.id.clone(),
             pitcher_name: pitcher.name,
             pitcher: pitcher.rates,
+            hitter_batted_balls: batter.batted_balls,
+            pitcher_batted_balls: pitcher.batted_balls,
             defense: self.defense_rating(fielding),
             situation: Situation {
                 inning: self.inning,
@@ -268,6 +273,7 @@ impl Game {
             park: self.home_park()?.clone(),
             weather: self.weather.clone(),
             calls,
+            running: Running::default(),
         })
     }
 
@@ -748,6 +754,7 @@ fn validate_team(team: &TeamFixture, fixture: &GameFixture) -> Result<(), GameEr
             )));
         }
         check_hitter_rates(&batter.rates, &batter.id)?;
+        check_batted_balls(&batter.batted_balls, &batter.id)?;
         if batter.position == Position::Dh {
             dh += 1;
             continue;
@@ -798,6 +805,7 @@ fn validate_team(team: &TeamFixture, fixture: &GameFixture) -> Result<(), GameEr
                 )));
             }
         }
+        check_batted_balls(&pitcher.batted_balls, &pitcher.id)?;
         if pitcher.fatigue.season_pitches_per_appearance <= 0.0
             || pitcher.fatigue.career_pitches_per_appearance <= 0.0
             || pitcher.fatigue.age == 0
@@ -832,6 +840,23 @@ fn check_hitter_rates(rates: &crate::model::HitterRates, id: &str) -> Result<(),
     if (sum - 1.0).abs() > 1e-6 {
         return Err(GameError::InvalidFixture(format!(
             "{id} rates sum to {sum}"
+        )));
+    }
+    Ok(())
+}
+
+fn check_batted_balls(rates: &crate::model::BattedBallRates, id: &str) -> Result<(), GameError> {
+    for (name, rate) in [("gb", rates.gb), ("fb", rates.fb), ("ld", rates.ld)] {
+        if !(0.0..=1.0).contains(&rate) {
+            return Err(GameError::InvalidFixture(format!(
+                "{id} batted-ball {name} is out of range"
+            )));
+        }
+    }
+    let sum = rates.sum();
+    if (sum - 1.0).abs() > 1e-6 {
+        return Err(GameError::InvalidFixture(format!(
+            "{id} batted-ball rates sum to {sum}"
         )));
     }
     Ok(())

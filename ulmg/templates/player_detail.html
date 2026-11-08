@@ -155,6 +155,12 @@
         <span class="font-bold">Defense runs ({{ card.primary_position }}):</span>
         {% for position, runs in card.defense_display %}{{ position }} {% if runs > 0 %}+{% endif %}{{ runs|floatformat:1 }}{% if not forloop.last %} &middot; {% endif %}{% endfor %}
     </p>
+    <p class="text-xs mb-2">
+        <span class="font-bold">Running:</span>
+        Steal success {% if card.steal_success is not None %}{{ card.steal_success|percents_to_hundreds|floatformat:"1" }}%{% else %}-{% endif %}
+        &middot; Attempts {% if card.steal_attempt_rate is not None %}{{ card.steal_attempt_rate|percents_to_hundreds|floatformat:"1" }}%{% else %}-{% endif %} of times on first
+        &middot; Spd {{ card.spd|floatformat:"1"|default:"-" }}
+    </p>
     {% endif %}
     {% if card.pitcher_rates %}
     <p class="text-xs text-gray-600 mb-1">Pitching allowed, {{ card.batters_faced }} BF &middot; {{ card.fatigue.role|title }}</p>
@@ -187,6 +193,12 @@
     </table>
     </div>
     {% endif %}
+    {% if usage %}{% include "includes/usage_remaining.html" %}{% endif %}
+</div>
+{% elif usage %}
+<!-- ULMG Usage without a generated card -->
+<div class="mb-6">
+    {% include "includes/usage_remaining.html" %}
 </div>
 {% endif %}
 

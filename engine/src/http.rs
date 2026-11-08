@@ -3,7 +3,8 @@
 //! The engine's HTTP surface.
 //!
 //! `POST /start` opens a fixture with a seed. `POST /step` resolves exactly one plate
-//! appearance from a state, an optional call, and a seed. `POST /matchup` reports the
+//! appearance from a state, an optional call, a seed, and optional runner ratings
+//! (`runners` keyed by base, and `league_spd`). `POST /matchup` reports the
 //! outcome probabilities the next plate appearance will draw from. `GET /health` answers
 //! App Platform. The caller holds the state. The same state, call, and seed give the same result.
 
@@ -18,7 +19,7 @@ use serde::Deserialize;
 use serde_json::{json, Value};
 
 use crate::game::{Game, GameError};
-use crate::model::{GameFixture, PrePaCalls};
+use crate::model::{BaseRunners, GameFixture, PrePaCalls, Running};
 use crate::service::{self, Matchup, Stepped};
 
 /// A finished extra-inning game is a few hundred kilobytes. This leaves room without being unbounded.
@@ -45,6 +46,11 @@ struct StepRequest {
     #[serde(default)]
     call: Option<String>,
     seed: u64,
+    /// Ratings of the runners on base. Omitted, every runner runs at the league constants.
+    #[serde(default)]
+    runners: BaseRunners,
+    #[serde(default)]
+    league_spd: Option<f64>,
 }
 
 #[derive(Deserialize)]
@@ -68,7 +74,11 @@ async fn step(body: Bytes) -> Result<Json<Stepped>, HttpError> {
         None => None,
         Some(name) => Some(named_call(name)?),
     };
-    service::step(request.state, call, request.seed)
+    let running = Running {
+        runners: request.runners,
+        league_spd: request.league_spd,
+    };
+    service::step(request.state, call, request.seed, &running)
         .map(Json)
         .map_err(HttpError::Game)
 }
@@ -91,6 +101,7 @@ fn named_call(name: &str) -> Result<PrePaCalls, HttpError> {
         "intentional_walk" => calls.intentional_walk = true,
         "steal" => calls.steal = true,
         "hit_and_run" => calls.hit_and_run = true,
+        "infield_in" => calls.infield_in = true,
         _ => return Err(HttpError::BadCall),
     }
     Ok(calls)
@@ -113,7 +124,7 @@ impl IntoResponse for HttpError {
             Self::BadRequest(message) => (StatusCode::BAD_REQUEST, message),
             Self::BadCall => (
                 StatusCode::BAD_REQUEST,
-                "The call must be bunt, intentional_walk, steal, hit_and_run, or omitted."
+                "The call must be bunt, intentional_walk, steal, hit_and_run, infield_in, or omitted."
                     .to_string(),
             ),
         };
@@ -325,6 +336,99 @@ mod tests {
         );
     }
 
+    async fn runner_on_first() -> (Value, String) {
+        let mut opening = game(&started(2).await);
+        let runner = opening.away.lineup[8].id.clone();
+        opening.bases.first = Some(runner.clone());
+        (serde_json::to_value(&opening).unwrap(), runner)
+    }
+
+    fn baserunning(body: &Value) -> Vec<Value> {
+        body["result"]["baserunning"].as_array().unwrap().clone()
+    }
+
+    #[tokio::test]
+    async fn a_step_carries_the_ratings_of_the_runner_on_base() {
+        let (state, runner) = runner_on_first().await;
+        for (steal_success, event) in [(1.0, "StolenBase"), (0.0, "CaughtStealing")] {
+            for seed in 0..20u64 {
+                let (status, body) = post(
+                    "/step",
+                    json!({
+                        "state": state,
+                        "call": "steal",
+                        "seed": seed,
+                        "runners": { "first": { "id": runner, "steal_success": steal_success, "spd": 7.5 } },
+                        "league_spd": 4.5,
+                    }),
+                )
+                .await;
+                assert_eq!(status, StatusCode::OK, "{body}");
+                assert!(
+                    baserunning(&body)
+                        .iter()
+                        .any(|e| e.get(event).is_some_and(|e| e["runner"] == runner.as_str())),
+                    "steal_success {steal_success} with seed {seed}: {body}"
+                );
+            }
+        }
+    }
+
+    #[tokio::test]
+    async fn a_step_without_ratings_matches_one_with_empty_ratings() {
+        let (state, _) = runner_on_first().await;
+        let (_, bare) = post("/step", json!({ "state": state, "seed": 6 })).await;
+        let (_, empty) = post(
+            "/step",
+            json!({ "state": state, "seed": 6, "runners": {}, "league_spd": null }),
+        )
+        .await;
+        assert_eq!(bare, empty);
+    }
+
+    #[tokio::test]
+    async fn a_rating_for_a_runner_who_is_not_on_that_base_is_rejected() {
+        let (state, runner) = runner_on_first().await;
+        let (status, body) = post(
+            "/step",
+            json!({ "state": state, "seed": 4, "runners": { "second": { "id": runner, "spd": 5.0 } } }),
+        )
+        .await;
+        assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY);
+        assert!(body["error"]
+            .as_str()
+            .unwrap()
+            .contains("invalid runner ratings"));
+
+        let (status, body) = post(
+            "/step",
+            json!({ "state": state, "seed": 4, "runners": { "first": { "id": "someone-else" } } }),
+        )
+        .await;
+        assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY, "{body}");
+    }
+
+    #[tokio::test]
+    async fn out_of_range_ratings_are_rejected() {
+        let (state, runner) = runner_on_first().await;
+        for running in [
+            json!({ "runners": { "first": { "id": runner, "steal_success": 1.5 } } }),
+            json!({ "runners": { "first": { "id": runner, "spd": -1.0 } } }),
+            json!({ "league_spd": 0.0 }),
+        ] {
+            let mut request = json!({ "state": state, "seed": 4 });
+            for (key, value) in running.as_object().unwrap() {
+                request[key] = value.clone();
+            }
+            let (status, body) = post("/step", request).await;
+            assert_eq!(
+                status,
+                StatusCode::UNPROCESSABLE_ENTITY,
+                "{running}: {body}"
+            );
+        }
+    }
+
     #[tokio::test]
     async fn a_hit_and_run_is_accepted() {
         let state = started(2).await;
@@ -334,6 +438,52 @@ mod tests {
         )
         .await;
         assert_eq!(status, StatusCode::OK, "{body}");
+    }
+
+    #[tokio::test]
+    async fn infield_in_holds_the_runner_on_third_on_a_ground_out() {
+        let mut opening = game(&started(2).await);
+        opening.bases.third = Some(opening.away.lineup[8].id.clone());
+        let state = serde_json::to_value(&opening).unwrap();
+        let mut ground_outs = 0;
+        for seed in 0..200u64 {
+            let (status, body) = post(
+                "/step",
+                json!({ "state": state, "call": "infield_in", "seed": seed }),
+            )
+            .await;
+            assert_eq!(status, StatusCode::OK, "{body}");
+            let outcome: PlateOutcome =
+                serde_json::from_value(body["result"]["outcome"].clone()).unwrap();
+            if outcome == PlateOutcome::GroundOut {
+                ground_outs += 1;
+                assert_eq!(body["result"]["change"]["runs_scored"], 0);
+                assert_eq!(
+                    body["state"]["bases"]["third"].as_str(),
+                    opening.bases.third.as_deref()
+                );
+            }
+        }
+        assert!(ground_outs > 0, "no ground out in 200 seeds");
+    }
+
+    #[tokio::test]
+    async fn a_fixture_without_batted_balls_plays_with_league_rates() {
+        let opening = game(&started(2).await);
+        let original: Value = serde_json::from_str(
+            &std::fs::read_to_string(format!("{}/fixtures/game.json", env!("CARGO_MANIFEST_DIR")))
+                .unwrap(),
+        )
+        .unwrap();
+        assert!(original["away"]["lineup"][0].get("batted_balls").is_none());
+        assert_eq!(
+            opening.away.lineup[0].batted_balls,
+            crate::model::BattedBallRates::default()
+        );
+        assert_eq!(
+            opening.home.pitchers[0].batted_balls,
+            crate::model::BattedBallRates::default()
+        );
     }
 
     #[tokio::test]

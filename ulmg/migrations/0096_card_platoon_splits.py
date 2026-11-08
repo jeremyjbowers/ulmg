@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("ulmg", "0092_playerstatseason_fielding_stats_card"),
+        ("ulmg", "0095_usage_ledger"),
     ]
 
     operations = [

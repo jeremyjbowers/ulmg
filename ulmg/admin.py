@@ -26,7 +26,12 @@ from ulmg.models import (
     TradeSummary,
     Transaction,
     DuplicatePlayerCandidate,
+    UsageCounter,
+    UsageAppearance,
+    UsageOverride,
+    UsagePause,
 )
+from ulmg import usage
 
 # Configure admin site
 admin.site.site_title = "The ULMG"
@@ -645,3 +650,58 @@ class DuplicatePlayerCandidateAdmin(admin.ModelAdmin):
     list_filter = ["status"]
     readonly_fields = ["created", "last_modified", "resolved_at", "resolved_by"]
     raw_id_fields = ["player1", "player2", "resolved_by"]
+
+
+@admin.register(UsageCounter)
+class UsageCounterAdmin(admin.ModelAdmin):
+    list_display = [
+        "player",
+        "season",
+        "plate_appearances",
+        "plate_appearances_cap",
+        "starts",
+        "starts_cap",
+        "outs",
+        "innings_cap_outs",
+        "confined_to_relief",
+    ]
+    list_filter = ["season", "confined_to_relief"]
+    search_fields = ["player__name"]
+    raw_id_fields = ["player"]
+
+
+@admin.register(UsageAppearance)
+class UsageAppearanceAdmin(admin.ModelAdmin):
+    list_display = ["player", "game", "started", "outs", "pitches", "allowance_outs", "plate_appearances"]
+    search_fields = ["player__name"]
+    raw_id_fields = ["player", "game"]
+
+
+@admin.register(UsageOverride)
+class UsageOverrideAdmin(admin.ModelAdmin):
+    list_display = ["player", "game", "cap", "requested_by", "approved_by", "approved_at", "reason"]
+    list_filter = ["cap"]
+    search_fields = ["player__name"]
+    raw_id_fields = ["player", "game"]
+    readonly_fields = [
+        "requested_by",
+        "request_reason",
+        "approved_by",
+        "approved_at",
+        "starts_used",
+        "outs_used",
+        "plate_appearances_used",
+    ]
+
+    def save_model(self, request, obj, form, change):
+        """Saving here is the commissioner granting the override, logged with who and why."""
+        granted = usage.grant_override(request.user, obj.player, obj.game, obj.cap, obj.reason)
+        obj.pk = granted.pk
+        obj.refresh_from_db()
+
+
+@admin.register(UsagePause)
+class UsagePauseAdmin(admin.ModelAdmin):
+    list_display = ["game", "team", "created", "resolved_at", "reason"]
+    list_filter = ["resolved_at"]
+    raw_id_fields = ["game", "team"]
