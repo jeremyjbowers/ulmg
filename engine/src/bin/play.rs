@@ -4,7 +4,7 @@ use std::env;
 use std::process::ExitCode;
 
 use baseball_engine::{
-    play_game, ComputerManager, Game, GameFixture, Governance, MemoryStore, PlateOutcome, Sim,
+    play_game, ComputerManager, Game, GameFixture, Governance, PlateOutcome, Sim,
 };
 
 fn main() -> ExitCode {
@@ -27,9 +27,8 @@ fn main() -> ExitCode {
     };
     let mut sim = Sim::from_entropy();
     let mut manager = ComputerManager::from_entropy();
-    let mut store = MemoryStore::default();
     let governance = Governance::new();
-    if let Err(err) = play_game(&mut game, &mut sim, &mut manager, &mut store, &governance) {
+    if let Err(err) = play_game(&mut game, &mut sim, &mut manager, &governance) {
         eprintln!("{err}");
         return ExitCode::from(1);
     }

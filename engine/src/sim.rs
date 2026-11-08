@@ -31,7 +31,7 @@ pub const BUNT_SAC_RATE: f64 = 0.60;
 pub const STEAL_SUCCESS_RATE: f64 = 0.75;
 pub const HIT_AND_RUN_K_KEEP: f64 = 0.5;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize)]
 pub struct OutcomeProbs {
     pub k: f64,
     pub bb: f64,

@@ -12,6 +12,7 @@ hyper-util = "=0.1.20"
 http-body-util = "0.1"
 rand = "0.8.5"
 serde = { version = "1", features = ["derive"] }
-serde_json = "1"
+# float_roundtrip: a state sent back must parse to the same numbers it was written from.
+serde_json = { version = "1", features = ["float_roundtrip"] }
 tokio = { version = "1", features = ["macros", "net", "rt-multi-thread"] }
 tower = { version = "0.5", features = ["util"] }

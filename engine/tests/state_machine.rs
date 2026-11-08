@@ -2,7 +2,7 @@
 
 use baseball_engine::{
     load_json, play_game, Bases, ComputerManager, Game, GameError, GameFixture, Governance, Half,
-    MemoryStore, Position, Side, Sim, Status,
+    Position, Side, Sim, Status,
 };
 
 fn game(postseason: bool) -> Game {
@@ -323,9 +323,9 @@ fn returned_state_is_what_the_next_plate_appearance_reads() {
     let mut game = game(false);
     game.apply_plate_appearance(baseball_engine::harness::holding_out(&game.bases))
         .unwrap();
-    let mut store = MemoryStore::default();
-    store.save(&game).unwrap();
-    let loaded = store.load().unwrap();
+    let saved = serde_json::to_string(&game).unwrap();
+    let loaded: Game = serde_json::from_str(&saved).unwrap();
+    assert_eq!(loaded, game, "the state did not survive a JSON round trip");
     assert_eq!(loaded.outs, 1);
     assert_eq!(loaded.log.len(), game.log.len());
     assert_eq!(loaded.results.len(), 1);
@@ -374,9 +374,8 @@ fn the_fixture_plays_one_regular_season_game() {
     let mut game = Game::start(fixture, 42).unwrap();
     let mut sim = Sim::from_seed(42);
     let mut manager = ComputerManager::from_seed(99);
-    let mut store = MemoryStore::default();
     let governance = Governance::new();
-    play_game(&mut game, &mut sim, &mut manager, &mut store, &governance).unwrap();
+    play_game(&mut game, &mut sim, &mut manager, &governance).unwrap();
     assert_eq!(game.status, Status::Final);
     assert!(
         game.inning >= 9 && game.inning < 30,
@@ -384,8 +383,11 @@ fn the_fixture_plays_one_regular_season_game() {
         game.inning
     );
     assert_eq!(governance.redraws, 0);
-    let saved = store.load().unwrap();
-    assert_eq!(saved.score, game.score);
+    let saved: Game = serde_json::from_str(&serde_json::to_string(&game).unwrap()).unwrap();
+    assert_eq!(
+        saved, game,
+        "the final state did not survive a JSON round trip"
+    );
     for result in &game.results {
         if !result.batter_completed {
             continue;
