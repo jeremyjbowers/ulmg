@@ -64,14 +64,14 @@
         <div class="flex flex-wrap gap-x-3">
             <span class="font-bold">Day {{ row.day }}</span>
             <span>{% if row.is_home %}vs{% else %}at{% endif %} <a href="/teams/{{ row.opponent.abbreviation|lower }}/plan/{{ half }}/?season={{ plan_season }}" class="underline">{{ row.opponent.abbreviation }}</a></span>
-            <span class="plan-starter">SP: {% if row.side.starter %}{{ row.side.starter.name }}{% if row.side.starter_manual %}<span class="font-bold">*</span>{% endif %}{% else %}none{% endif %}</span>
+            <span class="plan-starter">SP: {% if row.side.starter %}{{ row.side.starter.name }}{% if row.side.starter_manual %}<span class="font-bold">*</span>{% endif %}{% if row.side.starter.id in row.side.unavailable %} <span class="plan-unavailable font-bold text-red-700">not on this game's roster</span>{% endif %}{% else %}none{% endif %}</span>
             <span class="text-gray-600">Opp SP: {% if row.side.opponent_starter %}{{ row.side.opponent_starter.name }} ({{ row.side.opponent_starter.throws|default:"?" }}){% else %}not planned{% endif %}</span>
             {% if row.locked %}<span class="plan-locked text-gray-600">{% if row.game.is_played %}Final{% else %}Opened{% endif %}</span>{% elif can_edit and is_open %}<a href="/teams/{{ team.abbreviation|lower }}/plan/{{ half }}/day/{{ row.day }}/?season={{ plan_season }}" class="plan-day-edit underline">Edit day</a>{% endif %}
         </div>
         <details>
             <summary class="text-xs cursor-pointer">Lineup vs {% if row.side.vs == "L" %}LHP{% else %}RHP{% endif %}{% if row.side.lineup_manual %}<span class="font-bold">*</span>{% endif %}</summary>
             <ol class="list-decimal ml-5 text-xs">
-                {% for player, position in row.side.lineup %}<li class="plan-day-batter">{{ position }} {{ player.name }}{% if player.id in capped_ids %} <span class="plan-capped font-bold text-red-700">past his PA cap</span>{% endif %}</li>{% endfor %}
+                {% for player, position in row.side.lineup %}<li class="plan-day-batter">{{ position }} {{ player.name }}{% if player.id in capped_ids %} <span class="plan-capped font-bold text-red-700">past his PA cap</span>{% endif %}{% if player.id in row.side.unavailable %} <span class="plan-unavailable font-bold text-red-700">not on this game's roster</span>{% endif %}</li>{% endfor %}
             </ol>
         </details>
     </div>

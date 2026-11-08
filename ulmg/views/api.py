@@ -13,7 +13,8 @@ from django.views.decorators.cache import never_cache
 from django.conf import settings
 import ujson as json
 
-from ulmg import models, utils
+from ulmg import models, roster_moves, utils
+from ulmg.roster_moves import update_player_stat_season_roster
 
 
 @login_required
@@ -184,31 +185,6 @@ def wishlist_player_action(request, playerid):
         return JsonResponse({"success": True, "player": w})
 
     return JsonResponse({"success": False, "player": w})
-
-
-def update_player_stat_season_roster(player, season=None, **kwargs):
-    """Update or create PlayerStatSeason roster status fields for a player."""
-    current_season = season if season is not None else utils.get_current_season()
-    player_stat_season = models.PlayerStatSeason.objects.filter(
-        player=player,
-        season=current_season,
-    ).first()
-
-    if not player_stat_season:
-        player_stat_season = models.PlayerStatSeason.objects.create(
-            player=player,
-            season=current_season,
-            classification="1-mlb",
-            owned=player.is_owned,
-            carded=False,
-        )
-
-    for field, value in kwargs.items():
-        if hasattr(player_stat_season, field):
-            setattr(player_stat_season, field, value)
-
-    player_stat_season.save()
-    return player_stat_season
 
 
 def assign_midseason_open_draft_player(player, team):
@@ -452,56 +428,20 @@ def player_action(request, playerid, action):
         return HttpResponse("ok")
 
     if action == "to_mlb":
-        previous_season = settings.CURRENT_SEASON - 1
-        if not p.is_carded_for_season(previous_season):
-            return JsonResponse(
-                {"error": "Only carded players (MLB experience last season) can be placed on MLB roster"},
-                status=400,
-            )
-        p.is_ulmg_reserve = False
-        p.is_ulmg_1h_c = False
-        p.is_ulmg_1h_p = False
-        p.is_ulmg_1h_pos = False
-        p.is_ulmg_2h_c = False
-        p.is_ulmg_2h_p = False
-        p.is_ulmg_2h_pos = False
-        p.is_ulmg_mlb_roster = True
-        p.is_ulmg_aaa_roster = False
-        p.save()
-        _update_player_stat_season(p, 
-            is_ulmg_mlb_roster=True,
-            is_ulmg_aaa_roster=False
-        )
+        error = roster_moves.mlb_roster_error(p, settings.CURRENT_SEASON)
+        if error:
+            return JsonResponse({"error": error}, status=400)
+        roster_moves.place_on_mlb_roster(p)
         return HttpResponse("ok")
 
     if action == "to_aaa":
-        if p.is_ulmg_2h_draft:
-            return JsonResponse(
-                {
-                    "error": "Midseason Open picks must stay on the MLB roster or be released"
-                },
-                status=400,
-            )
-        previous_season = settings.CURRENT_SEASON - 1
-        if not p.is_carded_for_season(previous_season):
-            return JsonResponse(
-                {"error": "Only carded players (MLB experience last season) can be placed on AAA roster"},
-                status=400,
-            )
-        p.is_ulmg_reserve = False
-        p.is_ulmg_1h_c = False
-        p.is_ulmg_1h_p = False
-        p.is_ulmg_1h_pos = False
-        p.is_ulmg_2h_c = False
-        p.is_ulmg_2h_p = False
-        p.is_ulmg_2h_pos = False
-        p.is_ulmg_mlb_roster = False
-        p.is_ulmg_aaa_roster = True
-        p.save()
-        _update_player_stat_season(p, 
-            is_ulmg_mlb_roster=False,
-            is_ulmg_aaa_roster=True
-        )
+        error = roster_moves.aaa_roster_error(p, settings.CURRENT_SEASON)
+        stay = roster_moves.active_stay(p, settings.CURRENT_SEASON)
+        if error is None and stay is not None:
+            error = roster_moves.stay_message(p, stay)
+        if error:
+            return JsonResponse({"error": error}, status=400)
+        roster_moves.place_on_aaa_roster(p)
         return HttpResponse("ok")
 
     if action == "off_roster":
@@ -512,6 +452,9 @@ def player_action(request, playerid, action):
                 },
                 status=400,
             )
+        stay = roster_moves.active_stay(p, settings.CURRENT_SEASON)
+        if stay is not None:
+            return JsonResponse({"error": roster_moves.stay_message(p, stay)}, status=400)
         p.is_ulmg_reserve = False
         p.is_ulmg_1h_c = False
         p.is_ulmg_1h_p = False

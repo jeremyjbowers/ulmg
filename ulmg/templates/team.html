@@ -151,6 +151,8 @@
     </div>
 </div>
 
+{% if moves_per_half %}{% include "includes/roster_moves.html" %}{% endif %}
+
 {% if own_team and roster_tab %}
 <div id="drop-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50"
      data-mlb-roster-count="{{ mlb_roster_count|default:0 }}"

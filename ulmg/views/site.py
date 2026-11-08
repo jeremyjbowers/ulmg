@@ -16,7 +16,7 @@ from django.views.decorators.cache import never_cache
 import ujson as json
 from datetime import datetime
 
-from ulmg import cards, models, usage, utils
+from ulmg import cards, models, plans, roster_moves, usage, utils
 from ulmg.cache_utils import (
     get_all_cache_keys,
     delete_cache_key_for_admin,
@@ -207,6 +207,18 @@ def team_detail(request, abbreviation):
     context["num_owned"] = roster_data["num_owned"]
     context["hitters"] = roster_data["hitters"]
     context["pitchers"] = roster_data["pitchers"]
+
+    # Live: roster moves and stays change during games.
+    move_season, move_half = settings.CURRENT_SEASON, plans.current_half()
+    context["move_half"] = move_half
+    context["moves_per_half"] = roster_moves.MOVES_PER_HALF
+    context["moves_left"] = roster_moves.moves_left(team, move_season, move_half)
+    context["active_stays"] = roster_moves.active_stays(team, move_season)
+    context["move_log"] = roster_moves.move_log(team, move_season)
+    context["can_move"] = plans.can_edit(request.user, team)
+    if context["can_move"]:
+        context["call_up_choices"] = models.Player.objects.filter(team=team, is_ulmg_mlb_roster=False).order_by("name")
+        context["send_down_choices"] = models.Player.objects.filter(team=team, is_ulmg_mlb_roster=True).order_by("name")
     return render(request, "team.html", context)
 
 

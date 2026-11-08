@@ -1,0 +1,69 @@
+{# ABOUTME: The team page's roster moves: moves left this half, active call-up stays, the move form and the season's move log. #}
+{# ABOUTME: Expects move_half, moves_left, moves_per_half, active_stays, move_log and can_move from views.site.team_detail. #}
+<div id="roster-moves" class="mb-6 border border-gray-300 p-4 text-sm">
+    <h2 class="text-lg font-bold mb-2 border-b border-gray-300 pb-1">Roster moves</h2>
+    {% include 'includes/plan_errors.html' %}
+    <p class="mb-2">Moves left in half {{ move_half }}: <span id="moves-left">{{ moves_left }}</span> of {{ moves_per_half }}. A move calls one player up and sends one down, for road games only. A call-up stays up for 15 road games or the rest of the half.</p>
+
+    {% if active_stays %}
+    <h3 class="font-bold mb-1">Active stays</h3>
+    <ul class="mb-3">
+        {% for stay in active_stays %}<li class="roster-stay"><a href="/players/{{ stay.player.id }}/" class="underline">{{ stay.player.name }}</a>: {{ stay.games_left }} road game{{ stay.games_left|pluralize }} left</li>{% endfor %}
+    </ul>
+    {% endif %}
+
+    {% if can_move %}
+    <form method="POST" action="/teams/{{ team.abbreviation|lower }}/moves/" class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end mb-3">
+        {% csrf_token %}
+        <div>
+            <label class="block text-xs font-bold mb-1" for="player_up">Call up</label>
+            <select name="player_up" id="player_up" class="w-full border border-gray-300 px-2 py-1 text-sm">
+                <option value="">-</option>
+                {% for p in call_up_choices %}<option value="{{ p.id }}">{{ p.name }} ({{ p.position }})</option>{% endfor %}
+            </select>
+        </div>
+        <div>
+            <label class="block text-xs font-bold mb-1" for="player_down">Send down</label>
+            <select name="player_down" id="player_down" class="w-full border border-gray-300 px-2 py-1 text-sm">
+                <option value="">-</option>
+                {% for p in send_down_choices %}<option value="{{ p.id }}">{{ p.name }} ({{ p.position }})</option>{% endfor %}
+            </select>
+        </div>
+        <div>
+            <button type="submit" class="w-full bg-black text-white px-3 py-1 text-sm underline hover:bg-gray-800"{% if not moves_left %} disabled{% endif %}>Make move</button>
+        </div>
+    </form>
+    {% endif %}
+
+    <h3 class="font-bold mb-1">Move log</h3>
+    {% if move_log %}
+    <div class="overflow-x-auto">
+    <table class="w-full text-xs border-collapse">
+        <thead>
+            <tr class="border-b border-gray-300">
+                <th class="text-left py-1">When</th>
+                <th class="text-center py-1">Half</th>
+                <th class="text-left py-1">Up</th>
+                <th class="text-left py-1">Down</th>
+                <th class="text-center py-1" title="Road games on the stay when the move was made">Stay</th>
+                <th class="text-center py-1" title="Road games left on the stay">Left</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for row in move_log %}
+            <tr class="roster-move-row border-b border-gray-100">
+                <td class="py-1">{{ row.move.made_at|date:"M j, g:i a" }}{% if row.move.game %} (during day {{ row.move.game.day }}){% endif %}</td>
+                <td class="text-center py-1">{{ row.move.half }}</td>
+                <td class="py-1"><a href="/players/{{ row.move.player_up.id }}/" class="underline">{{ row.move.player_up.name }}</a></td>
+                <td class="py-1"><a href="/players/{{ row.move.player_down.id }}/" class="underline">{{ row.move.player_down.name }}</a></td>
+                <td class="text-center py-1">{{ row.move.stay_games }}</td>
+                <td class="text-center py-1">{{ row.games_left }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    </div>
+    {% else %}
+    <p>No moves yet this season.</p>
+    {% endif %}
+</div>

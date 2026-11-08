@@ -7,7 +7,7 @@ from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
 
-from ulmg import models, schedule, usage, utils
+from ulmg import models, roster_moves, schedule, usage, utils
 
 LINEUP_POSITIONS = ["C", "1B", "2B", "3B", "SS", "LF", "CF", "RF", "DH"]
 LINEUP_SIZE = len(LINEUP_POSITIONS)
@@ -125,11 +125,13 @@ def _roster_error(player, team, roster_ids):
     return None
 
 
-def lineup_errors(team, season, entries, label, roster_ids):
+def lineup_errors(team, season, entries, label, roster_problem):
     """
     Rule errors for one lineup. entries are dicts of order (1-9), player (a
     Player) and position. Nine batters, each order and each position once,
     no pitchers, only the 30-man, and a catcher rating to play C.
+    roster_problem(player) says why a player isn't on the roster the lineup
+    is for, or returns None.
     """
     errors = []
     if len(entries) != LINEUP_SIZE:
@@ -159,7 +161,7 @@ def lineup_errors(team, season, entries, label, roster_ids):
         if player.id in seen:
             errors.append(f"{label}: {player.name} is in the lineup twice.")
         seen.add(player.id)
-        roster = _roster_error(player, team, roster_ids)
+        roster = roster_problem(player)
         if roster:
             errors.append(f"{label}: {roster}")
         if is_pitcher(player):
@@ -189,9 +191,38 @@ def lineup_entries(stored):
     ]
 
 
-def plan_errors(team, season, *, rotation, closer, setup, middle_long, bench, lineup_vs_lhp, lineup_vs_rhp):
-    """Every rule error in a plan's rotation, bullpen, bench and lineup cards."""
-    roster_ids = set(thirty_man(team).values_list("id", flat=True))
+def _call_up_card_errors(team, season, half, rosters, cards):
+    """
+    A call-up can be planned into road games only, and the lineup cards
+    cover every home day that hasn't opened, so a call-up can't be on a card
+    while one is left. He goes into road days' lineups one day at a time.
+    """
+    call_ups = rosters.road - rosters.home
+    carded = [(label, entry["player"]) for label, entries in cards for entry in entries]
+    if not any(player.id in call_ups for _, player in carded):
+        return []
+    home_left = any(
+        game.series.home_team_id == team.id and not is_locked(game)
+        for game in half_games(team, season, half).values()
+    )
+    if not home_left:
+        return []
+    return [
+        f"{label}: {player.name} is a call-up and can be planned into road games only; "
+        "the lineup cards also cover home days. File him into road days' lineups instead."
+        for label, player in carded
+        if player.id in call_ups
+    ]
+
+
+def plan_errors(team, season, half, *, rotation, closer, setup, middle_long, bench, lineup_vs_lhp, lineup_vs_rhp):
+    """
+    Every rule error in a plan's rotation, bullpen, bench and lineup cards.
+    They are checked against everyone the team can play in some game of the
+    half; each game's own roster is applied day by day.
+    """
+    rosters = roster_moves.HalfRosters(team, season, half)
+    roster_ids = rosters.all
     errors = []
 
     if not rotation:
@@ -218,8 +249,14 @@ def plan_errors(team, season, *, rotation, closer, setup, middle_long, bench, li
         if bench.count(player) > 1:
             errors.append(f"{player.name} is on the bench twice.")
 
-    errors += lineup_errors(team, season, lineup_vs_lhp, "Lineup vs LHP", roster_ids)
-    errors += lineup_errors(team, season, lineup_vs_rhp, "Lineup vs RHP", roster_ids)
+    def roster_problem(player):
+        return _roster_error(player, team, roster_ids)
+
+    errors += lineup_errors(team, season, lineup_vs_lhp, "Lineup vs LHP", roster_problem)
+    errors += lineup_errors(team, season, lineup_vs_rhp, "Lineup vs RHP", roster_problem)
+    errors += _call_up_card_errors(
+        team, season, half, rosters, [("Lineup vs LHP", lineup_vs_lhp), ("Lineup vs RHP", lineup_vs_rhp)]
+    )
     return _unique_errors([e for e in errors if e])
 
 
@@ -276,13 +313,14 @@ def _planned_starts(plan, games, rows, include):
     return starts
 
 
-def _auto_fill(plan, games, rows):
+def _auto_fill(plan, games, rows, rosters):
     """
     Fill every unopened day without a manual starter from the rotation. The
     k-th game of the half goes to slot ((k - 1) mod N) + 1; a slot whose
-    pitcher would pass his start cap or isn't rested inside the series goes
-    to the next legal pitcher in order, and the cycle continues from him.
-    Returns the days no one could start.
+    pitcher would pass his start cap, isn't rested inside the series, or
+    isn't on that game's roster (a call-up at home, a sent-down pitcher on
+    the road) goes to the next legal pitcher in order, and the cycle
+    continues from him. Returns the days no one could start.
     """
     rotation = _ordered_players(plan.rotation)
     rotation_ids = [p.id for p in rotation]
@@ -308,6 +346,8 @@ def _auto_fill(plan, games, rows):
         for step in range(len(rotation)):
             index = (pointer + step) % len(rotation)
             candidate = rotation[index]
+            if candidate.id not in rosters.for_game(game):
+                continue
             if usage.check_planned_start(candidate, game, planned[candidate.id]).legal:
                 chosen = candidate
                 pointer = index + 1
@@ -324,7 +364,7 @@ def _auto_fill(plan, games, rows):
     return unfilled
 
 
-def _manual_start_problems(plan, games, rows, roster_ids):
+def _manual_start_problems(plan, games, rows, rosters):
     """Rule errors for the unopened days' manual starters, against every other planned start."""
     planned = _planned_starts(plan, games, rows, lambda game, row: True)
     problems = []
@@ -333,14 +373,14 @@ def _manual_start_problems(plan, games, rows, roster_ids):
         starter = row.manual_starter
         if starter is None or is_locked(game):
             continue
-        problem = _start_problem(plan.team, starter, game, planned[starter.id], roster_ids)
+        problem = _start_problem(starter, game, planned[starter.id], rosters)
         if problem:
             problems.append(f"Day {day}: {problem}")
     return problems
 
 
-def _start_problem(team, starter, game, planned_games, roster_ids):
-    roster = _roster_error(starter, team, roster_ids)
+def _start_problem(starter, game, planned_games, rosters):
+    roster = rosters.problem(starter, game)
     if roster:
         return roster
     if not can_pitch(starter):
@@ -350,12 +390,12 @@ def _start_problem(team, starter, game, planned_games, roster_ids):
     return None if check.legal else check.reason
 
 
-def _refill(plan, roster_ids):
+def _refill(plan, rosters):
     """Re-run auto-fill and check every day. Raises PlanError listing the days without a legal starter."""
     games = half_games(plan.team, plan.season, plan.half)
     rows = _day_rows(plan, games)
-    unfilled = _auto_fill(plan, games, rows)
-    errors = _manual_start_problems(plan, games, rows, roster_ids)
+    unfilled = _auto_fill(plan, games, rows, rosters)
+    errors = _manual_start_problems(plan, games, rows, rosters)
     if unfilled:
         days = ", ".join(str(d) for d in unfilled)
         errors.insert(
@@ -436,11 +476,11 @@ def save_plan(plan, *, rotation, closer, setup, middle_long, bench, lineup_vs_lh
         "lineup_vs_lhp": list(lineup_vs_lhp),
         "lineup_vs_rhp": list(lineup_vs_rhp),
     }
-    errors = plan_errors(plan.team, plan.season, **fields)
+    errors = plan_errors(plan.team, plan.season, plan.half, **fields)
     if errors:
         raise PlanError(errors)
 
-    roster_ids = set(thirty_man(plan.team).values_list("id", flat=True))
+    rosters = roster_moves.HalfRosters(plan.team, plan.season, plan.half)
     with transaction.atomic():
         plan.rotation = [p.id for p in fields["rotation"]]
         plan.closer = closer
@@ -450,7 +490,7 @@ def save_plan(plan, *, rotation, closer, setup, middle_long, bench, lineup_vs_lh
         plan.lineup_vs_lhp = stored_lineup(fields["lineup_vs_lhp"])
         plan.lineup_vs_rhp = stored_lineup(fields["lineup_vs_rhp"])
         plan.save()
-        _refill(plan, roster_ids)
+        _refill(plan, rosters)
         return _designate(plan)
 
 
@@ -471,18 +511,20 @@ def save_day(plan, day, *, starter=None, lineup=None):
     if is_locked(game):
         raise PlanError([f"Day {day} has opened; its plan can no longer change."])
 
-    errors = plan_errors(plan.team, plan.season, **_stored_fields(plan))
+    errors = plan_errors(plan.team, plan.season, plan.half, **_stored_fields(plan))
     if errors:
         raise PlanError(["Save the plan first: " + errors[0]] + errors[1:])
 
-    roster_ids = set(thirty_man(plan.team).values_list("id", flat=True))
+    rosters = roster_moves.HalfRosters(plan.team, plan.season, plan.half)
     if lineup is not None:
-        errors += lineup_errors(plan.team, plan.season, lineup, f"Day {day} lineup", roster_ids)
+        errors += lineup_errors(
+            plan.team, plan.season, lineup, f"Day {day} lineup", lambda p: rosters.problem(p, game)
+        )
 
     rows = _day_rows(plan, games)
     if starter is not None:
         planned = _planned_starts(plan, games, rows, lambda g, row: g.day != day)
-        problem = _start_problem(plan.team, starter, game, planned[starter.id], roster_ids)
+        problem = _start_problem(starter, game, planned[starter.id], rosters)
         if problem:
             errors.append(f"Day {day}: {problem}")
     if errors:
@@ -493,7 +535,7 @@ def save_day(plan, day, *, starter=None, lineup=None):
         row.manual_starter = starter
         row.manual_lineup = stored_lineup(lineup) if lineup is not None else None
         row.save()
-        _refill(plan, roster_ids)
+        _refill(plan, rosters)
         return _designate(plan)
 
 
@@ -538,6 +580,12 @@ class PlanBook:
         for row in self.rows.values():
             ids |= {e["player"] for e in row.manual_lineup or []}
         self.players = _players_by_id(ids)
+        self.rosters = {}
+
+    def _rosters(self, team):
+        if team.id not in self.rosters:
+            self.rosters[team.id] = roster_moves.HalfRosters(team, self.season, self.half)
+        return self.rosters[team.id]
 
     def _row(self, team, day):
         plan = self.plans.get(team.id)
@@ -554,7 +602,18 @@ class PlanBook:
         return [(p, e["position"]) for p, e in zip(players, stored) if p is not None]
 
     def live_side(self, game, team, opponent):
-        """A team's sheet for a game from the plans as they stand now."""
+        """
+        A team's sheet for a game from the plans as they stand now. The bench
+        and bullpen hold only that game's roster. unavailable holds the
+        starter and batters who aren't on it, such as a sent-down player on
+        a road lineup card: the next plan save re-fills a starter, and the
+        bench replaces a batter when the game opens (#164).
+        """
+        eligible = self._rosters(team).for_game(game)
+
+        def on_roster(players):
+            return [p for p in players if p is not None and p.id in eligible]
+
         plan, row = self._row(team, game.day)
         _, opponent_row = self._row(opponent, game.day)
         starter = row.starter if row else None
@@ -567,6 +626,8 @@ class PlanBook:
             stored = plan.lineup_vs_lhp if vs == LEFT else plan.lineup_vs_rhp
         else:
             stored = []
+        lineup = self._lineup(stored)
+        closer = plan.closer if plan else None
         return {
             "team": team,
             "plan": plan,
@@ -575,12 +636,14 @@ class PlanBook:
             "opponent_starter": opponent_starter,
             "vs": vs,
             "lineup_stored": list(stored),
-            "lineup": self._lineup(stored),
+            "lineup": lineup,
             "lineup_manual": bool(manual),
-            "bench": self._resolve(plan.bench) if plan else [],
-            "closer": plan.closer if plan else None,
-            "setup": self._resolve(plan.setup) if plan else [],
-            "middle_long": self._resolve(plan.middle_long) if plan else [],
+            "unavailable": {p.id for p, _ in lineup if p.id not in eligible}
+            | ({starter.id} if starter is not None and starter.id not in eligible else set()),
+            "bench": on_roster(self._resolve(plan.bench)) if plan else [],
+            "closer": closer if closer is not None and closer.id in eligible else None,
+            "setup": on_roster(self._resolve(plan.setup)) if plan else [],
+            "middle_long": on_roster(self._resolve(plan.middle_long)) if plan else [],
         }
 
     def opened_side(self, sheet, opponent_sheet, team):
@@ -598,6 +661,7 @@ class PlanBook:
             "lineup_stored": sheet["lineup"],
             "lineup": self._lineup(sheet["lineup"]),
             "lineup_manual": sheet["lineup_manual"],
+            "unavailable": set(),
             "bench": self._resolve(sheet["bench"]),
             "closer": closer,
             "setup": self._resolve(sheet["setup"]),
@@ -656,6 +720,8 @@ def open_game(game):
         )
         if game.opened_at is not None:
             return game.opening_sheet
+        # The half's first game to open fixes the rosters it started with.
+        roster_moves.ensure_snapshot(game.series.slot.season, game.series.slot.half)
         sheet = game_sheet(game)
         game.opening_sheet = {key: _frozen_side(side) for key, side in sheet.items()}
         game.opened_at = timezone.now()
