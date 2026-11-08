@@ -117,13 +117,14 @@
 {% if card %}
 <div class="mb-6">
     <h2 class="text-lg font-bold mb-2 border-b border-gray-300 pb-1">{{ card.season }} Card</h2>
-    {% with line=card.hitter_line %}
-    {% if line %}
+    {% if card.hitter_rates %}
     <p class="text-xs text-gray-600 mb-1">Batting, {{ card.plate_appearances }} PA</p>
     <div class="overflow-x-auto">
     <table class="w-full text-xs border-collapse min-w-max mb-2">
         <thead>
             <tr class="border-b border-gray-300">
+                <th class="text-left py-1">Split</th>
+                <th class="text-center py-1">PA</th>
                 <th class="text-center py-1">AVG</th>
                 <th class="text-center py-1">OBP</th>
                 <th class="text-center py-1">SLG</th>
@@ -134,15 +135,19 @@
             </tr>
         </thead>
         <tbody>
+            {% for label, count, line in card.hitter_lines %}
             <tr class="border-b border-gray-100">
+                <td class="text-left py-1">{{ label }}</td>
+                <td class="text-center py-1">{{ count|default_if_none:"-" }}</td>
                 <td class="text-center py-1">{{ line.avg|floatformat:3|kill_leading_zero|default_if_none:"-" }}</td>
                 <td class="text-center py-1">{{ line.obp|floatformat:3|kill_leading_zero }}</td>
                 <td class="text-center py-1">{{ line.slg|floatformat:3|kill_leading_zero|default_if_none:"-" }}</td>
                 <td class="text-center py-1">{{ line.k_pct|percents_to_hundreds|floatformat:"1" }}</td>
                 <td class="text-center py-1">{{ line.bb_pct|percents_to_hundreds|floatformat:"1" }}</td>
                 <td class="text-center py-1">{{ line.hr_pct|percents_to_hundreds|floatformat:"1" }}</td>
-                <td class="text-center py-1">{{ card.wrc_plus|floatformat:"0"|default_if_none:"-" }}</td>
+                <td class="text-center py-1">{% if forloop.first %}{{ card.wrc_plus|floatformat:"0"|default_if_none:"-" }}{% else %}-{% endif %}</td>
             </tr>
+            {% endfor %}
         </tbody>
     </table>
     </div>
@@ -151,14 +156,14 @@
         {% for position, runs in card.defense_display %}{{ position }} {% if runs > 0 %}+{% endif %}{{ runs|floatformat:1 }}{% if not forloop.last %} &middot; {% endif %}{% endfor %}
     </p>
     {% endif %}
-    {% endwith %}
-    {% with line=card.pitcher_line %}
-    {% if line %}
+    {% if card.pitcher_rates %}
     <p class="text-xs text-gray-600 mb-1">Pitching allowed, {{ card.batters_faced }} BF &middot; {{ card.fatigue.role|title }}</p>
     <div class="overflow-x-auto">
     <table class="w-full text-xs border-collapse min-w-max mb-2">
         <thead>
             <tr class="border-b border-gray-300">
+                <th class="text-left py-1">Split</th>
+                <th class="text-center py-1">BF</th>
                 <th class="text-center py-1">AVG</th>
                 <th class="text-center py-1">OBP</th>
                 <th class="text-center py-1">K%</th>
@@ -167,18 +172,21 @@
             </tr>
         </thead>
         <tbody>
+            {% for label, count, line in card.pitcher_lines %}
             <tr class="border-b border-gray-100">
+                <td class="text-left py-1">{{ label }}</td>
+                <td class="text-center py-1">{{ count|default_if_none:"-" }}</td>
                 <td class="text-center py-1">{{ line.avg|floatformat:3|kill_leading_zero|default_if_none:"-" }}</td>
                 <td class="text-center py-1">{{ line.obp|floatformat:3|kill_leading_zero }}</td>
                 <td class="text-center py-1">{{ line.k_pct|percents_to_hundreds|floatformat:"1" }}</td>
                 <td class="text-center py-1">{{ line.bb_pct|percents_to_hundreds|floatformat:"1" }}</td>
                 <td class="text-center py-1">{{ line.hr_pct|percents_to_hundreds|floatformat:"1" }}</td>
             </tr>
+            {% endfor %}
         </tbody>
     </table>
     </div>
     {% endif %}
-    {% endwith %}
 </div>
 {% endif %}
 

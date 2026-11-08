@@ -1,9 +1,15 @@
-# ABOUTME: Builds engine card numbers (hitter/pitcher rates, fatigue profile, slotted defense) from FanGraphs stats.
+# ABOUTME: Builds engine card numbers (hitter/pitcher rates and platoon splits, fatigue profile, slotted defense) from FanGraphs stats.
 # ABOUTME: Keys match the engine's HitterRates, PitcherRates and FatigueProfile; the engine reads these and computes nothing.
 from django.conf import settings
 
 FULL_SEASON_INNINGS = 1300
 DEFENSE_REGRESSION_INNINGS = 600
+
+# Plate appearances (hitters) or batters faced (pitchers) of overall card mixed into each platoon split.
+PLATOON_REGRESSION_PA = 400
+
+# Player.bats for a switch hitter, as utils.normalize_hand stores it from the FanGraphs roster.
+SWITCH_HITTER = "S"
 
 # Runs added to a shortstop's rating when he is slotted at each position.
 SPECTRUM_GAINS = {
@@ -71,6 +77,77 @@ def pitcher_rates(pitch_stats):
         "hbp": _number(pitch_stats, "hbp") / tbf,
         "hr": hr / tbf,
         "h": (_number(pitch_stats, "h") - hr) / tbf,
+    }
+
+
+def regress_split(split_rates, overall_rates, n):
+    """
+    One platoon split regressed toward the overall card:
+    regressed = (n * split + PLATOON_REGRESSION_PA * overall) / (n + PLATOON_REGRESSION_PA),
+    then renormalized so the rates sum to 1. n is the split's PA or BF.
+    Pitcher rates leave out the outs in play, so that remainder is regressed the same way
+    and counts toward the sum. A split with no PA or BF is the overall card.
+    """
+    if overall_rates is None:
+        return None
+    if not split_rates or n <= 0:
+        return dict(overall_rates)
+
+    r = PLATOON_REGRESSION_PA
+    regressed = {key: (n * split_rates[key] + r * overall) / (n + r) for key, overall in overall_rates.items()}
+    remainder = (n * (1 - sum(split_rates.values())) + r * (1 - sum(overall_rates.values()))) / (n + r)
+    total = sum(regressed.values()) + max(remainder, 0.0)
+    return {key: rate / total for key, rate in regressed.items()}
+
+
+def split_count(split_stats, key):
+    """The split's PA or BF, 0 when the split is missing."""
+    return int(_number(split_stats or {}, key))
+
+
+def hitter_split_rates(split_stats, overall_rates):
+    """Hitter rates versus one pitcher hand, regressed by the split's plate appearances."""
+    return regress_split(hitter_rates(split_stats), overall_rates, split_count(split_stats, "pa"))
+
+
+def pitcher_split_rates(split_stats, overall_rates):
+    """Pitcher rates versus one batter side, regressed by the split's batters faced."""
+    return regress_split(pitcher_rates(split_stats), overall_rates, split_count(split_stats, "tbf"))
+
+
+def batting_side(bats, throws):
+    """
+    The side a batter hits from against a pitcher who throws `throws`.
+    A switch hitter bats from the side opposite the pitcher's arm. None when it cannot be known.
+    """
+    if bats == SWITCH_HITTER:
+        return {"L": "R", "R": "L"}.get(throws)
+    if bats in ("L", "R"):
+        return bats
+    return None
+
+
+def plate_appearance_rates(batter_card, pitcher_card, bats, throws):
+    """
+    The rates to send to the engine's /step for one plate appearance:
+    {"hitter_rates": the batter's split versus the pitcher's throwing hand,
+     "pitcher_rates": the pitcher's split versus the side the batter hits from}.
+    `bats` is the batter's Player.bats (L, R, or S for a switch hitter) and `throws` the
+    pitcher's Player.throws. When a hand is unknown, or the card has no split, the
+    overall card is used. The game puts hitter_rates on the batter's lineup card and
+    pitcher_rates on the pitcher's card in the state it sends.
+    """
+    hitter_split = {
+        "L": batter_card.hitter_rates_vs_lhp,
+        "R": batter_card.hitter_rates_vs_rhp,
+    }.get(throws)
+    pitcher_split = {
+        "L": pitcher_card.pitcher_rates_vs_lhh,
+        "R": pitcher_card.pitcher_rates_vs_rhh,
+    }.get(batting_side(bats, throws))
+    return {
+        "hitter_rates": hitter_split or batter_card.hitter_rates,
+        "pitcher_rates": pitcher_split or pitcher_card.pitcher_rates,
     }
 
 

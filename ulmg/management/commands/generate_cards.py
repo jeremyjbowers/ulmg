@@ -1,4 +1,4 @@
-# ABOUTME: Generates engine cards for every player with a 1-mlb PlayerStatSeason in the card season.
+# ABOUTME: Generates engine cards, platoon splits included, for every player with a 1-mlb PlayerStatSeason in the card season.
 # ABOUTME: Regenerating replaces the player's card for that season; --dry-run computes without saving.
 from django.conf import settings
 from django.core.management.base import BaseCommand
@@ -33,6 +33,15 @@ class Command(BaseCommand):
             "pitcher_rates": cards.pitcher_rates(pss.pitch_stats),
             "fatigue": None,
         }
+        splits = pss.split_stats or {}
+        for hand in ("lhp", "rhp"):
+            split = splits.get(f"bat_vs_{hand}")
+            fields[f"hitter_rates_vs_{hand}"] = cards.hitter_split_rates(split, fields["hitter_rates"])
+            fields[f"plate_appearances_vs_{hand}"] = cards.split_count(split, "pa") if fields["hitter_rates"] else None
+        for side in ("lhh", "rhh"):
+            split = splits.get(f"pit_vs_{side}")
+            fields[f"pitcher_rates_vs_{side}"] = cards.pitcher_split_rates(split, fields["pitcher_rates"])
+            fields[f"batters_faced_vs_{side}"] = cards.split_count(split, "tbf") if fields["pitcher_rates"] else None
 
         if fields["hitter_rates"]:
             fielding = cards.fielding_from_stats(pss.fielding_stats)
