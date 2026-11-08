@@ -9,7 +9,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("ulmg", "0090_ownerapitoken_scope_and_secret"),
+        ("ulmg", "0091_schedule"),
     ]
 
     operations = [
