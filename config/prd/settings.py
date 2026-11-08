@@ -31,3 +31,6 @@ SESSION_COOKIE_DOMAIN = os.getenv('SESSION_COOKIE_DOMAIN', None)
 SESSION_COOKIE_AGE = 60 * 60 * 24 * 180
 SESSION_SAVE_EVERY_REQUEST = True
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False
+
+# The engine is its own component; there is no local default here.
+ENGINE_URL = os.environ.get("ENGINE_URL", None)
