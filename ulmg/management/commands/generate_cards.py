@@ -29,6 +29,9 @@ class Command(BaseCommand):
             "hitter_rates": cards.hitter_rates(pss.hit_stats),
             "primary_position": None,
             "defense": None,
+            "steal_success": None,
+            "steal_attempt_rate": None,
+            "spd": None,
             "batters_faced": None,
             "pitcher_rates": cards.pitcher_rates(pss.pitch_stats),
             "fatigue": None,
@@ -40,6 +43,9 @@ class Command(BaseCommand):
             fields["wrc_plus"] = pss.hit_stats.get("wrc_plus")
             fields["primary_position"] = cards.primary_position(fielding) or "DH"
             fields["defense"] = cards.defense_ratings(fielding)
+            fields["steal_success"] = cards.steal_success(pss.hit_stats)
+            fields["steal_attempt_rate"] = cards.steal_attempt_rate(pss.hit_stats)
+            fields["spd"] = cards.speed(pss.hit_stats)
 
         if fields["pitcher_rates"]:
             fields["batters_faced"] = int(pss.pitch_stats.get("tbf"))
@@ -81,3 +87,8 @@ class Command(BaseCommand):
 
         verb = "Would generate" if dry_run else "Generated"
         self.stdout.write(self.style.SUCCESS(f"{verb} {generated} cards for {season}"))
+
+        if not dry_run:
+            league_spd = models.Card.league_spd(season)
+            shown = "none (no card has Spd)" if league_spd is None else f"{league_spd:.2f}"
+            self.stdout.write(f"League Spd for {season}: {shown}")
