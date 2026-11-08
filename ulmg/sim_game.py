@@ -1242,15 +1242,36 @@ def runner_ratings(play, state):
     return runners
 
 
+def rolled_for_this_stay(events, runner_id):
+    """
+    Whether the log already holds a steal roll for the runner now on first
+    during this stay there. His stay began after the last plate appearance
+    that did not start with him on first; a steal decision for him since
+    then is this stay's roll.
+    """
+    for event in reversed(events):
+        if event.kind == Event.DECISION and event.payload.get("need") == "steal":
+            if str(event.payload.get("runner")) == str(runner_id):
+                return True
+        elif event.kind == Event.PLATE_APPEARANCE:
+            if event.payload["before"]["bases"].get("first") != str(runner_id):
+                return False
+    return False
+
+
 def computer_steal(play, side):
     """
     The computer's steal call for its batting side: with a runner on first,
     second open and fewer than two outs, it sends him with probability equal
-    to his card's steal attempt rate. The draw comes from a logged seed.
+    to his card's steal attempt rate. The rate is per time reaching first,
+    so he is rolled for once a stay on first: at the first plate appearance
+    of the stay in that situation. The draw comes from a logged seed.
     Returns "steal" or None.
     """
     state = play.state
     if not computer_manager.is_steal_situation(state["bases"], state["outs"]):
+        return None
+    if rolled_for_this_stay(play.events, state["bases"]["first"]):
         return None
     runner = play.player(state["bases"]["first"])
     card = play.card(runner)

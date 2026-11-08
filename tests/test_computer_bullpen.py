@@ -17,6 +17,26 @@ NO_LIMIT_OUTS = 60
 SINGLE_RATES = dict(gf.STRIKEOUT_RATES, k=0.0, single=1.0)
 
 
+def steal_stays(log, side):
+    """
+    The side's stays on first that reach a steal situation, worked out from
+    the plate appearances alone: a stay is the run of the side's plate
+    appearances that begin with the same runner on first.
+    """
+    stays = []
+    runner = None
+    for event in gf.events(log, Event.PLATE_APPEARANCE):
+        before = event.payload["before"]
+        on_first = before["bases"].get("first") if event.payload["batting"] == side else None
+        if on_first != runner:
+            runner = on_first
+            counted = False
+        if runner and not counted and computer_manager.is_steal_situation(before["bases"], before["outs"]):
+            stays.append((int(runner), before["inning"]))
+            counted = True
+    return stays
+
+
 def changes(log, side):
     return [e for e in gf.events(log, Event.PITCHING_CHANGE) if e.side == side]
 
@@ -320,6 +340,30 @@ class StealTestCase(ComputerGameTestCase):
         pa = gf.events(log, Event.PLATE_APPEARANCE)[-1]
         self.assertEqual(pa.payload["inputs"]["call"], "steal" if decision.payload["called"] else None)
 
+    def test_a_runner_who_stays_on_first_is_rolled_for_once_and_again_when_he_reaches_first_later(self):
+        # He singles in the 1st and holds while the next two strike out; he singles with two out in
+        # the 3rd (no steal situation); he singles with one out in the 6th and holds again.
+        leadoff = self.home.hitters[0]
+        models.Card.objects.filter(player=leadoff).update(steal_attempt_rate=0.0)
+        log = self.open()
+        self.step_until(log, lambda p: p.state["inning"] == 2 and p.state["half"] == "top")
+        rolls = self.steal_decisions(log)
+        self.assertEqual([(e.payload["runner"], e.payload["called"]) for e in rolls], [(leadoff.id, False)])
+        held = [
+            e
+            for e in gf.events(log, Event.PLATE_APPEARANCE)
+            if e.payload["batting"] == HOME and e.payload["before"]["bases"].get("first") == str(leadoff.id)
+            and computer_manager.is_steal_situation(e.payload["before"]["bases"], e.payload["before"]["outs"])
+        ]
+        self.assertEqual(len(held), 2, "two plate appearances in a steal situation during one stay on first")
+
+        log = gf.refresh(self.step_until(log, lambda p: p.state["inning"] == 7).log)
+        rolls = self.steal_decisions(log)
+        self.assertEqual(len(rolls), 2)
+        self.assertEqual([e.payload["runner"] for e in rolls], [leadoff.id, leadoff.id])
+        self.assertEqual(steal_stays(log, HOME), [(leadoff.id, 1), (leadoff.id, 6)])
+        self.assertEqual(sim_game.replay(gf.events(log)), gf.refresh(log).state)
+
     def test_the_visitors_computer_steals_too(self):
         gf.set_rates([self.road.hitters[0]], SINGLE_RATES)
         models.Card.objects.filter(player=self.road.hitters[0]).update(steal_attempt_rate=1.0)
@@ -355,14 +399,8 @@ class NoIntentionalWalkTestCase(ComputerGameTestCase):
         self.assertTrue(computer_calls, "a .300 attempt rate steals at least once in a game")
         self.assertEqual(sim_game.replay(gf.events(log)), log.state)
 
-        # One logged steal decision for each home plate appearance in a steal situation, and no others.
-        situations = [
-            e
-            for e in gf.events(log, Event.PLATE_APPEARANCE)
-            if e.payload["batting"] == HOME
-            and computer_manager.is_steal_situation(e.payload["before"]["bases"], e.payload["before"]["outs"])
-        ]
+        # One logged steal decision for each home stay on first that reaches a steal situation, and no others.
         steals = [e for e in gf.events(log, Event.DECISION) if e.payload.get("need") == "steal"]
-        self.assertEqual(len(steals), len(situations))
+        self.assertEqual(len(steals), len(steal_stays(log, HOME)))
         self.assertTrue(all(e.side == HOME for e in steals))
         self.assertEqual(len(computer_calls), sum(1 for e in steals if e.payload["called"]))
