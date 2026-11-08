@@ -1,0 +1,48 @@
+{# ABOUTME: One team's season schedule: games 1-162 with opponent, park and result. #}
+{# ABOUTME: Public; on a manager's own page, his road games are marked as the ones he plays. #}
+{% extends "base.html" %}
+
+{% block content %}
+<a id="top"></a>
+{% include 'includes/team_topper.html' %}
+
+<div class="border-b border-gray-300 mb-4">
+    <div class="flex flex-wrap gap-4 pb-2 text-sm">
+        <a href="/teams/{{ team.abbreviation|lower }}/" class="underline">Roster</a>
+        <a href="/teams/{{ team.abbreviation|lower }}/other/" class="underline">Trades & picks</a>
+        <span class="font-bold">Schedule</span>
+    </div>
+</div>
+
+<div class="mb-8">
+    <h2 class="text-lg font-bold mb-2">{{ schedule_season }} schedule</h2>
+    <p class="text-sm text-gray-600 mb-4">Game numbers are league days. <a href="/schedule/?season={{ schedule_season }}" class="underline">League schedule</a></p>
+
+    {% if rows %}
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm border-collapse border border-gray-200">
+            <thead class="bg-gray-50">
+                <tr class="border-b border-gray-300">
+                    <th class="text-left py-1 px-2 border-r border-gray-200">Game</th>
+                    <th class="text-left py-1 px-2 border-r border-gray-200">Opponent</th>
+                    <th class="text-left py-1 px-2 border-r border-gray-200">Result</th>
+                    {% if own_team %}<th class="text-left py-1 px-2">Played by</th>{% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in rows %}
+                <tr class="schedule-game" data-day="{{ row.game.day }}">
+                    <td class="py-1 px-2 border-r border-gray-100">{{ row.game.day }}</td>
+                    <td class="py-1 px-2 border-r border-gray-100">{% if row.is_home %}vs{% else %}at{% endif %} <a href="/teams/{{ row.opponent.abbreviation|lower }}/schedule/?season={{ schedule_season }}" class="underline">{{ row.opponent.abbreviation }}</a></td>
+                    <td class="py-1 px-2 border-r border-gray-100">{{ row.result }}</td>
+                    {% if own_team %}<td class="py-1 px-2">{% if row.manager_plays %}<span class="font-bold">You play</span>{% endif %}</td>{% endif %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p class="text-sm">No schedule has been generated for {{ schedule_season }}.</p>
+    {% endif %}
+</div>
+{% endblock %}

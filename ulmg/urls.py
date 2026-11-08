@@ -69,9 +69,11 @@ urlpatterns = [
     path("teams/csv/", views.csv.all_csv),
     path("teams/<str:abbreviation>/csv/", views.csv.team_csv),
     path("teams/<str:abbreviation>/other/", views.site.team_other),
+    path("teams/<str:abbreviation>/schedule/", views.schedule.team_schedule, name="team_schedule"),
     path("teams/<str:abbreviation>/", views.site.team_detail),
     path("trades/csv/", views.csv.trades_csv),
     path("trades/", views.site.trades),
+    path("schedule/", views.schedule.league_schedule, name="league_schedule"),
     path("drafts/", views.site.draft_list, name="draft_list"),
 
     path("special/players/", views.special.player_util),

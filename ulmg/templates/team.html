@@ -43,6 +43,7 @@
     <div class="flex flex-wrap gap-4 pb-2 text-sm">
         <span class="font-bold">Roster{% if num_owned %} ({{ num_owned }}){% endif %}</span>
         <a href="/teams/{{ team.abbreviation|lower }}/other/" class="underline">Trades & picks</a>
+        <a href="/teams/{{ team.abbreviation|lower }}/schedule/" class="underline">Schedule</a>
         {% if own_team %}
         <a href="/my/wishlist/draft/beta/" class="underline hidden md:inline">AA Draft</a>
         <a href="/my/{{ draft_prep_season }}/draft/" class="underline hidden md:inline">Open Draft</a>
