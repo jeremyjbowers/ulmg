@@ -14,6 +14,7 @@
         <a href="/teams/{{ team.abbreviation|lower }}/" class="underline">Roster{% if num_owned %} ({{ num_owned }}){% endif %}</a>
         <span class="font-bold">Trades & picks</span>
         <a href="/teams/{{ team.abbreviation|lower }}/schedule/" class="underline">Schedule</a>
+        <a href="/teams/{{ team.abbreviation|lower }}/plan/{% if season_half == "2h" %}2{% else %}1{% endif %}/" class="underline">Plan</a>
         {% if own_team %}
         <a href="/my/wishlist/draft/beta/" class="underline hidden md:inline">AA Draft</a>
         <a href="/my/{{ draft_prep_season }}/draft/" class="underline hidden md:inline">Open Draft</a>

@@ -1,0 +1,12 @@
+{# ABOUTME: Rule errors and saved-plan messages on the half plan pages. #}
+{# ABOUTME: Expects `errors` (a list of strings) and Django's `messages`. #}
+{% if messages %}
+<ul class="mb-4 text-sm">
+    {% for message in messages %}<li class="plan-message border border-gray-300 bg-gray-50 px-3 py-2 mb-1">{{ message }}</li>{% endfor %}
+</ul>
+{% endif %}
+{% if errors %}
+<ul class="mb-4 text-sm border border-red-300 bg-red-50 px-3 py-2">
+    {% for error in errors %}<li class="plan-error text-red-800">{{ error }}</li>{% endfor %}
+</ul>
+{% endif %}
