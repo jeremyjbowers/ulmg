@@ -2,9 +2,14 @@ from django.contrib import admin
 from django.contrib.admin import ModelAdmin
 from django.contrib.admin.widgets import FilteredSelectMultiple
 from django.contrib.auth.models import User
+from django.core.exceptions import PermissionDenied
+from django import forms
 from django.forms import ModelForm, DateField
 from django.forms.widgets import SelectDateWidget
 from django.db.models import Q
+from django.template.response import TemplateResponse
+from django.urls import path
+from django.views.decorators.cache import never_cache
 from datetime import datetime
 
 from ulmg.models import (
@@ -31,7 +36,7 @@ from ulmg.models import (
     UsageOverride,
     UsagePause,
 )
-from ulmg import usage
+from ulmg import sim_data, usage
 
 # Configure admin site
 admin.site.site_title = "The ULMG"
@@ -652,8 +657,17 @@ class DuplicatePlayerCandidateAdmin(admin.ModelAdmin):
     raw_id_fields = ["player1", "player2", "resolved_by"]
 
 
+class ResetSimSeasonForm(forms.Form):
+    season = forms.IntegerField()
+    include_schedule = forms.BooleanField(
+        required=False, help_text="Also delete the schedule so generate_schedule can run again."
+    )
+    confirm = forms.IntegerField(required=False, help_text="Type the season number again to reset it.")
+
+
 @admin.register(UsageCounter)
 class UsageCounterAdmin(admin.ModelAdmin):
+    change_list_template = "admin/ulmg/usagecounter/change_list.html"
     list_display = [
         "player",
         "season",
@@ -668,6 +682,49 @@ class UsageCounterAdmin(admin.ModelAdmin):
     list_filter = ["season", "confined_to_relief"]
     search_fields = ["player__name"]
     raw_id_fields = ["player"]
+
+    def get_urls(self):
+        reset = path(
+            "reset-sim-season/",
+            never_cache(self.reset_sim_season_view),
+            name="ulmg_usagecounter_reset_sim_season",
+        )
+        return [reset] + super().get_urls()
+
+    def reset_sim_season_view(self, request):
+        """The commissioner's sim reset: a dry-run summary, then a typed confirmation of the season."""
+        if not request.user.is_superuser:
+            raise PermissionDenied
+        form = ResetSimSeasonForm(request.POST if request.method == "POST" else request.GET or None)
+        steps, summary, done, error = None, None, False, None
+        if form.is_valid():
+            season = form.cleaned_data["season"]
+            include_schedule = form.cleaned_data["include_schedule"]
+            confirm = form.cleaned_data["confirm"]
+            if request.method == "POST" and confirm == season:
+                try:
+                    steps = sim_data.reset_season(season, include_schedule=include_schedule)
+                    done = True
+                except sim_data.SimResetError as reset_error:
+                    error = str(reset_error)
+            elif request.method == "POST" and confirm is None:
+                error = f"Type {season} in the confirmation to reset it; nothing changed."
+            elif request.method == "POST":
+                error = f"The confirmation {confirm} does not match season {season}; nothing changed."
+            if not done:
+                steps = sim_data.plan_reset(season, include_schedule=include_schedule)
+            summary = sim_data.summarize(season, steps, include_schedule, done=done)
+        context = {
+            **self.admin_site.each_context(request),
+            "opts": self.model._meta,
+            "title": "Reset a season's sim data",
+            "form": form,
+            "lines": [step.describe(done=done) for step in steps] if steps else [],
+            "summary": summary,
+            "done": done,
+            "error": error,
+        }
+        return TemplateResponse(request, "admin/reset_sim_season.html", context)
 
 
 @admin.register(UsageAppearance)
