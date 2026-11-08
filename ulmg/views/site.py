@@ -16,7 +16,7 @@ from django.views.decorators.cache import never_cache
 import ujson as json
 from datetime import datetime
 
-from ulmg import models, utils
+from ulmg import cards, models, utils
 from ulmg.cache_utils import (
     get_all_cache_keys,
     delete_cache_key_for_admin,
@@ -133,6 +133,7 @@ def player(request, playerid):
     context["transactions"] = player_data["transactions"]
     context["hitter_stats"] = player_data["hitter_stats"]
     context["pitcher_stats"] = player_data["pitcher_stats"]
+    context["card"] = models.Card.objects.filter(player_id=playerid, season=cards.card_season()).first()
 
     return render(request, "player_detail.html", context)
 
