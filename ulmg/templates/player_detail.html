@@ -148,6 +148,20 @@
 </div>
 {% endif %}
 
+<!-- ULMG Usage -->
+{% if usage %}
+<div class="mb-6 text-xs">
+    <h2 class="text-lg font-bold mb-2 border-b border-gray-300 pb-1">{{ usage.season }} ULMG usage</h2>
+    {% if p.position == "P" %}
+    <div>{% if usage.innings_cap %}{{ usage.innings_left }} of {{ usage.innings_cap }} innings left{% else %}No season innings cap ({{ usage.innings_used }} pitched){% endif %}</div>
+    <div>{{ usage.starts_left }} of {{ usage.counter.starts_cap }} starts left</div>
+    <div>Per game: {{ usage.start_limit }} innings in a start, {{ usage.relief_limit }} in relief</div>
+    {% else %}
+    <div>{% if usage.plate_appearances_left is None %}Unlimited plate appearances ({{ usage.counter.plate_appearances }} used){% else %}{{ usage.plate_appearances_left }} of {{ usage.counter.plate_appearances_cap }} plate appearances left{% endif %}</div>
+    {% endif %}
+</div>
+{% endif %}
+
 <!-- Stats Tables -->
 {% if hitter_stats %}
 <div class="mb-6">
