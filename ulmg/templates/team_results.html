@@ -1,0 +1,85 @@
+{# ABOUTME: One team's ULMG season record: W-L, its players over the usage penalty lines and overrides, and every final. #}
+{# ABOUTME: Public; each final game links to its box score. #}
+{% extends "base.html" %}
+
+{% block content %}
+<a id="top"></a>
+{% include 'includes/team_topper.html' %}
+
+<div class="border-b border-gray-300 mb-4">
+    <div class="flex flex-wrap gap-4 pb-2 text-sm">
+        <a href="/teams/{{ team.abbreviation|lower }}/" class="underline">Roster</a>
+        <a href="/teams/{{ team.abbreviation|lower }}/other/" class="underline">Trades & picks</a>
+        <a href="/teams/{{ team.abbreviation|lower }}/schedule/?season={{ record_season }}" class="underline">Schedule</a>
+        <span class="font-bold">Results</span>
+    </div>
+</div>
+
+<div class="mb-6">
+    <h2 class="text-lg font-bold mb-2">{{ record_season }} ULMG record</h2>
+    <p class="team-record text-2xl font-bold">{{ record.wins }}-{{ record.losses }} <span class="text-base font-normal text-gray-600">{{ record.pct_display }}</span></p>
+    <p class="text-sm text-gray-600">Runs scored {{ record.runs_scored }}, allowed {{ record.runs_allowed }}. <a href="/standings/?season={{ record_season }}" class="underline">Standings</a></p>
+</div>
+
+<div class="mb-6">
+    <h2 class="text-lg font-bold mb-2 border-b border-gray-300 pb-1">Usage penalties</h2>
+    {% if penalties.players_over_10 %}
+    <h3 class="font-bold text-sm mt-2">More than 10% over</h3>
+    <p class="text-xs text-gray-600 mb-1">Ineligible for the playoffs. One costs the club its first-round AA pick; two cost both first-round picks.</p>
+    <ul class="text-sm list-disc ml-5">
+        {% for overage in penalties.players_over_10 %}
+        <li><a href="/players/{{ overage.player.id }}/" class="underline">{{ overage.player.name }}</a>: {{ overage.used }} of {{ overage.cap }} {{ overage.measure }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+    {% if penalties.players_over_20 %}
+    <h3 class="font-bold text-sm mt-2">More than 20% over</h3>
+    <p class="text-xs text-gray-600 mb-1">The club is ineligible for the playoffs, and these players go into the next Open Draft.</p>
+    <ul class="text-sm list-disc ml-5">
+        {% for overage in penalties.players_over_20 %}
+        <li><a href="/players/{{ overage.player.id }}/" class="underline">{{ overage.player.name }}</a>: {{ overage.used }} of {{ overage.cap }} {{ overage.measure }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+    {% if not penalties.players_over_10 %}<p class="text-sm">No player is more than 10% over a usage cap.</p>{% endif %}
+
+    {% if overrides %}
+    <h3 class="font-bold text-sm mt-3">Commissioner overrides</h3>
+    <ul class="text-sm list-disc ml-5">
+        {% for override in overrides %}
+        <li>{{ override.player.name }}, day {{ override.game.day }} ({{ override.game.series.road_team.abbreviation }} at {{ override.game.series.home_team.abbreviation }}): {{ override.get_cap_display }}{% if override.reason %}. {{ override.reason }}{% endif %}. Used under it: {{ override.starts_used }} GS, {{ override.outs_used }} outs, {{ override.plate_appearances_used }} PA</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+</div>
+
+<div class="mb-8">
+    <h2 class="text-lg font-bold mb-2 border-b border-gray-300 pb-1">Results</h2>
+    {% if results %}
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm border-collapse border border-gray-200">
+            <thead class="bg-gray-50">
+                <tr class="border-b border-gray-300">
+                    <th class="text-left py-1 px-2 border-r border-gray-200">Game</th>
+                    <th class="text-left py-1 px-2 border-r border-gray-200">Opponent</th>
+                    <th class="text-left py-1 px-2 border-r border-gray-200">Result</th>
+                    <th class="text-left py-1 px-2">Box score</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for result in results %}
+                <tr class="team-result border-b border-gray-100" data-day="{{ result.game.day }}">
+                    <td class="py-1 px-2 border-r border-gray-100">{{ result.game.day }}</td>
+                    <td class="py-1 px-2 border-r border-gray-100">{% if result.is_home %}vs{% else %}at{% endif %} <a href="/teams/{{ result.opponent.abbreviation|lower }}/results/?season={{ record_season }}" class="underline">{{ result.opponent.abbreviation }}</a></td>
+                    <td class="py-1 px-2 border-r border-gray-100">{{ result.display }}</td>
+                    <td class="py-1 px-2"><a href="/games/{{ result.game.id }}/box/" class="underline">Box score</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p class="text-sm">No final games yet in {{ record_season }}.</p>
+    {% endif %}
+</div>
+{% endblock %}

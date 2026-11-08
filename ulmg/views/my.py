@@ -71,7 +71,7 @@ def my_wishlist_beta(request):
     ).select_related('player').prefetch_related(
         Prefetch(
             'player__playerstatseason_set',
-            queryset=models.PlayerStatSeason.objects.filter(is_career=False).order_by('-season', 'classification'),
+            queryset=models.PlayerStatSeason.objects.filter(is_career=False).exclude(classification=models.PlayerStatSeason.ULMG).order_by('-season', 'classification'),
             to_attr='all_stat_seasons'
         )
     ).order_by("rank")
@@ -135,7 +135,7 @@ def my_draft_prep(request, list_type):
     # Prefetch PlayerStatSeason data to avoid N+1 queries and ensure we use current stats
     prefetch_stats = Prefetch(
         'player__playerstatseason_set',
-        queryset=models.PlayerStatSeason.objects.filter(is_career=False).order_by('-season', 'classification'),
+        queryset=models.PlayerStatSeason.objects.filter(is_career=False).exclude(classification=models.PlayerStatSeason.ULMG).order_by('-season', 'classification'),
         to_attr='all_stat_seasons'
     )
 

@@ -11,6 +11,7 @@
         <a href="/teams/{{ team.abbreviation|lower }}/" class="underline">Roster</a>
         <a href="/teams/{{ team.abbreviation|lower }}/other/" class="underline">Trades & picks</a>
         <span class="font-bold">Schedule</span>
+        <a href="/teams/{{ team.abbreviation|lower }}/results/?season={{ schedule_season }}" class="underline">Results</a>
         <a href="/teams/{{ team.abbreviation|lower }}/plan/{% if season_half == "2h" %}2{% else %}1{% endif %}/?season={{ schedule_season }}" class="underline">Plan</a>
     </div>
 </div>

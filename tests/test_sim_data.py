@@ -121,6 +121,7 @@ class ResetTestCase(TestCase):
         self.assertTrue(
             models.PlayerStatSeason.objects.filter(season=OTHER_SEASON, classification="6-ulmg").exists()
         )
+        self.assertEqual(models.TeamSeasonRecord.objects.filter(season=OTHER_SEASON).count(), 2)
 
     def test_fixture_holds_rows_of_every_kept_model(self):
         # Otherwise the survival checks below would pass for an empty table.
@@ -142,6 +143,7 @@ class ResetTestCase(TestCase):
                 models.UsagePause: ("delete", 1),
                 models.UsageCounter: ("delete", 1),
                 models.PlayerStatSeason: ("delete", 1),
+                models.TeamSeasonRecord: ("delete", 2),
                 models.RosterMove: ("delete", 1),
                 models.HalfPlanDay: ("keep", 3),
                 models.HalfPlan: ("keep", 1),
@@ -199,6 +201,7 @@ class ResetTestCase(TestCase):
         self.assertFalse(
             models.PlayerStatSeason.objects.filter(season=SEASON, classification="6-ulmg").exists()
         )
+        self.assertFalse(models.TeamSeasonRecord.objects.filter(season=SEASON).exists())
 
         # The schedule stays, and every game goes back to unplayed.
         self.assertEqual(models.ScheduleSlot.objects.filter(season=SEASON).count(), 1)
