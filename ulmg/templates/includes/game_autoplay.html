@@ -1,0 +1,12 @@
+{# ABOUTME: The autoplay form on the game page: hands this game, or the rest of its series, to the computer. #}
+{# ABOUTME: Expects `game`, `can_autoplay` and, for a game in progress, `expected`. #}
+{% if can_autoplay %}
+<form method="post" action="/games/{{ game.id }}/autoplay/" class="game-autoplay space-y-2 text-sm mb-6">
+    {% csrf_token %}
+    <input type="hidden" name="expected" value="{{ expected }}">
+    <h2 class="font-bold">Autoplay</h2>
+    <p class="text-xs text-gray-600">The computer plays every seat to the final from both teams' half plans, under the same usage caps. Each game of a series is played in schedule order and stops if a side runs out of legal pitchers.</p>
+    <button type="submit" name="scope" value="game" class="w-full sm:w-auto border border-gray-300 px-4 py-2">Autoplay this game</button>
+    <button type="submit" name="scope" value="series" class="w-full sm:w-auto border border-gray-300 px-4 py-2">Autoplay the rest of the series</button>
+</form>
+{% endif %}

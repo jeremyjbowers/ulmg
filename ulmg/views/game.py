@@ -1,4 +1,4 @@
-# ABOUTME: The sim game pages: the game page with one form per action, each POST playing at most one plate appearance.
+# ABOUTME: The sim game pages: the game page with one form per action, each POST playing at most one plate appearance except autoplay.
 # ABOUTME: Also the public box score page. Seeds never come from the browser; every action carries the log position it expects.
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -7,7 +7,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_POST
 
-from ulmg import box_score, engine_client, models, sim_game, utils
+from ulmg import autoplay, box_score, engine_client, models, sim_game, utils
 
 
 def _game(game_id):
@@ -64,6 +64,7 @@ def game_page(request, game_id):
             context.update(sim_game.pregame(game, request.user))
         else:
             context.update(sim_game.page(log, request.user))
+        context["can_autoplay"] = autoplay.can_autoplay(request.user, game)
     except engine_client.EngineUnavailable:
         context.update({"game": game, "log": log, "engine_down": True})
     return render(request, "game.html", context)
@@ -74,6 +75,9 @@ def _act(request, game, action):
     if action == "open":
         seats = [side for side in request.POST.get("seats", "").split(",") if side]
         sim_game.open_game(game, user, seats)
+        return
+    if action == "autoplay":
+        _autoplay(request, game)
         return
     log = models.GameLog.objects.filter(game=game).first()
     if log is None:
@@ -122,6 +126,22 @@ def _act(request, game, action):
         sim_game.check_pause(log, user, expected)
     else:
         raise Http404("No such game action.")
+
+
+def _autoplay(request, game):
+    """Autoplay this game, or the rest of its series, and say how each game ended."""
+    expected = request.POST.get("expected", "")
+    if request.POST.get("scope") == "series":
+        results = autoplay.autoplay_series(game, request.user, expected=expected)
+    else:
+        results = [autoplay.autoplay_game(game, request.user, expected=expected)]
+    for result in results:
+        played = result.log.game
+        if result.final:
+            final = result.log.events.filter(kind=models.GameEvent.FINAL).first()
+            messages.success(request, f"Autoplayed day {played.day}. {final.text}")
+        else:
+            messages.error(request, f"Autoplay stopped on day {played.day}: {result.paused['reason']}")
 
 
 @never_cache

@@ -1109,55 +1109,78 @@ def open_game(game, user, seats, seeds=engine_client.new_seed):
         if seats not in open_seat_choices(user, game):
             reasons = [r for r in (seat_refusal(user, game, side) for side in seats) if r]
             raise GameRefused(reasons or ["You can open only your team's next unplayed road game."])
+        return start_log(game, user, seats, seeds)
 
-        frozen = plans.open_game(game)
-        game.refresh_from_db()
-        log = models.GameLog.objects.create(game=game)
-        play = Play(log, seeds)
-        play.game = game
-        card_season = play.season - 1
-        play.append(
-            Event.OPEN,
-            user=user,
-            payload={"sheet": frozen, "card_season": card_season, "league_spd": models.Card.league_spd(card_season)},
-            text=f"{game}: opened.",
-        )
-        for side in SIDES:
-            holder = user if side in seats else None
+
+def autoplayer_name(user):
+    return user.username if user is not None else "the autoplay_season command"
+
+
+def start_log(game, user, seats, seeds=engine_client.new_seed, autoplay=False):
+    """
+    Start a game's log inside the caller's transaction, with the game row
+    locked and the user's right to open it already checked. seats are the
+    sides the user takes. With autoplay both seats go to the computer, and
+    each seat event names who handed it over. Raises GameRefused as
+    open_game does.
+    """
+    frozen = plans.open_game(game)
+    game.refresh_from_db()
+    log = models.GameLog.objects.create(game=game)
+    play = Play(log, seeds)
+    play.game = game
+    card_season = play.season - 1
+    play.append(
+        Event.OPEN,
+        user=user,
+        payload={"sheet": frozen, "card_season": card_season, "league_spd": models.Card.league_spd(card_season)},
+        text=f"{game}: opened.",
+    )
+    for side in SIDES:
+        if autoplay:
             play.append(
                 Event.SEAT,
                 side=side,
-                user=holder,
-                text=f"{side_label(game, side)} seat: {holder.username if holder else 'the computer'}.",
+                computer=True,
+                payload={"autoplay": True, "by": user.id if user is not None else None, "from": None},
+                text=f"{side_label(game, side)} seat: the computer, autoplaying for {autoplayer_name(user)}.",
             )
+            continue
+        holder = user if side in seats else None
+        play.append(
+            Event.SEAT,
+            side=side,
+            user=holder,
+            text=f"{side_label(game, side)} seat: {holder.username if holder else 'the computer'}.",
+        )
 
-        problems = []
-        for side in SIDES:
-            team = team_for(game, side)
-            sheet = play.sheet_side(side)
-            if not sheet.get("starter") or len(sheet.get("lineup") or []) != plans.LINEUP_SIZE:
-                problems.append(f"{team.abbreviation} has no planned starter and lineup for day {game.day}.")
-                continue
-            problems += _filed_card_problems(play, side)
-        if problems:
-            raise GameRefused(problems)
+    problems = []
+    for side in SIDES:
+        team = team_for(game, side)
+        sheet = play.sheet_side(side)
+        if not sheet.get("starter") or len(sheet.get("lineup") or []) != plans.LINEUP_SIZE:
+            problems.append(f"{team.abbreviation} has no planned starter and lineup for day {game.day}.")
+            continue
+        problems += _filed_card_problems(play, side)
+    if problems:
+        raise GameRefused(problems)
 
-        starters, lineups = {}, {}
-        for side in SIDES:
-            planned_starter, planned_lineup = _sheet_starter_and_lineup(play, side)
-            starter, problem = _opening_starter(play, side, side in seats, planned_starter)
-            if problem:
-                problems.append(problem)
-                continue
-            starters[side] = starter
-            lineups[side], lineup_problems = _opening_lineup(play, side, planned_lineup, starter)
-            problems += lineup_problems
-        if problems:
-            raise GameRefused(problems)
+    starters, lineups = {}, {}
+    for side in SIDES:
+        planned_starter, planned_lineup = _sheet_starter_and_lineup(play, side)
+        starter, problem = _opening_starter(play, side, side in seats, planned_starter)
+        if problem:
+            problems.append(problem)
+            continue
+        starters[side] = starter
+        lineups[side], lineup_problems = _opening_lineup(play, side, planned_lineup, starter)
+        problems += lineup_problems
+    if problems:
+        raise GameRefused(problems)
 
-        start(play, starters, lineups, user=user)
-        settle(play)
-        play.save_state()
+    start(play, starters, lineups, user=user)
+    settle(play)
+    play.save_state()
     return log
 
 
@@ -1583,55 +1606,66 @@ def step(log, user, expected, call=None, seeds=engine_client.new_seed):
             )
         elif not play.fold.is_human(batting):
             call = computer_steal(play, batting)
-
-        if not play.fold.first_pitch:
-            for side in SIDES:
-                for entry in play.state[side]["lineup"]:
-                    entered(play.game, play.player(entry["id"]))
-                entered(play.game, play.player(play.state[side]["pitcher_slot"]))
-
-        batter, pitcher, inputs = plate_appearance_inputs(play, call)
-        seed = play.seeds()
-        before = situation(play.state)
-        stepped = engine_client.step(
-            with_rates(play.state, inputs["hitter_rates"], inputs["pitcher_rates"]),
-            seed,
-            call=inputs["call"],
-            runners=inputs["runners"],
-            league_spd=inputs["league_spd"],
-        )
-        result = stepped["result"]
-        completed = result["batter_completed"]
-        try:
-            usage.record_plate_appearance(
-                play.game,
-                batter if completed else None,
-                pitcher,
-                at_bat=completed and result["outcome"] not in NOT_AT_BATS,
-                outs=result["change"]["outs_added"],
-                pitches=len(result["pitches"]),
-                pitcher_starting=play.is_starter(fielding, pitcher),
-            )
-        except usage.UsageViolation as violation:
-            raise GameRefused(violation.check.reason)
-        play.append(
-            Event.PLATE_APPEARANCE,
-            side=batting,
-            user=user,
-            seed=seed,
-            payload={
-                "inputs": inputs,
-                "batting": batting,
-                "batter": batter.id,
-                "pitcher": pitcher.id,
-                "before": before,
-                "result": result,
-            },
-            text=new_log_text(play.state, stepped["state"]),
-        )
-        play.state = stepped["state"]
+        play_plate_appearance(play, call, user=user)
         settle(play)
         play.save_state()
+
+
+def play_plate_appearance(play, call, *, user=None, computer=False):
+    """
+    Play the next plate appearance through the engine and append it, with
+    the usage ledger counted in the same transaction. The caller has checked
+    that nothing is needed first and made any call. computer marks a plate
+    appearance played by autoplay.
+    """
+    batting, fielding = batting_side(play.state), fielding_side(play.state)
+    if not play.fold.first_pitch:
+        for side in SIDES:
+            for entry in play.state[side]["lineup"]:
+                entered(play.game, play.player(entry["id"]))
+            entered(play.game, play.player(play.state[side]["pitcher_slot"]))
+
+    batter, pitcher, inputs = plate_appearance_inputs(play, call)
+    seed = play.seeds()
+    before = situation(play.state)
+    stepped = engine_client.step(
+        with_rates(play.state, inputs["hitter_rates"], inputs["pitcher_rates"]),
+        seed,
+        call=inputs["call"],
+        runners=inputs["runners"],
+        league_spd=inputs["league_spd"],
+    )
+    result = stepped["result"]
+    completed = result["batter_completed"]
+    try:
+        usage.record_plate_appearance(
+            play.game,
+            batter if completed else None,
+            pitcher,
+            at_bat=completed and result["outcome"] not in NOT_AT_BATS,
+            outs=result["change"]["outs_added"],
+            pitches=len(result["pitches"]),
+            pitcher_starting=play.is_starter(fielding, pitcher),
+        )
+    except usage.UsageViolation as violation:
+        raise GameRefused(violation.check.reason)
+    play.append(
+        Event.PLATE_APPEARANCE,
+        side=batting,
+        user=user,
+        computer=computer,
+        seed=seed,
+        payload={
+            "inputs": inputs,
+            "batting": batting,
+            "batter": batter.id,
+            "pitcher": pitcher.id,
+            "before": before,
+            "result": result,
+        },
+        text=new_log_text(play.state, stepped["state"]),
+    )
+    play.state = stepped["state"]
 
 
 # Reading the game for its page

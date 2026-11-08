@@ -39,6 +39,7 @@
     {% else %}
     <p class="text-sm mb-6">You can't open this game.</p>
     {% endif %}
+    {% include 'includes/game_autoplay.html' %}
     {% else %}
 
     <div class="game-seats flex flex-wrap gap-4 text-sm mb-4">
@@ -118,6 +119,8 @@
         <button type="submit" class="w-full sm:w-auto bg-black text-white px-4 py-2 font-bold">Play the next plate appearance</button>
     </form>
     {% endif %}
+
+    {% include 'includes/game_autoplay.html' %}
 
     {% if pitcher_options and not need %}
     <form method="post" action="/games/{{ game.id }}/pitcher/" class="game-pitching-change space-y-2 text-sm mb-6">
