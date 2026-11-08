@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from django.db import transaction
 from django.utils import timezone
 
-from ulmg import box_score, cards, computer_manager, engine_client, models, plans, roster_moves, schedule, usage, utils
+from ulmg import box_score, cards, computer_manager, engine_client, models, plans, roster_moves, schedule, season_record, usage, utils
 
 Event = models.GameEvent
 
@@ -843,6 +843,8 @@ def finish(play):
         payload={"score": dict(score)},
         text=f"Final: {side_label(game, AWAY)} {score['away']}, {side_label(game, HOME)} {score['home']}.",
     )
+    # The season's 6-ulmg lines and both clubs' records, summed again from the logs.
+    season_record.record_final(play.log)
 
 
 # Actions

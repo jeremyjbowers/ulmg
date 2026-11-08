@@ -446,13 +446,13 @@ class Player(BaseModel):
         return self.name
 
     def latest_hit_stats(self):
-        stats = PlayerStatSeason.objects.filter(player=self, is_career=False).first()
+        stats = PlayerStatSeason.objects.filter(player=self, is_career=False).exclude(classification=PlayerStatSeason.ULMG).first()
         if stats:
             return stats.hit_stats
         return None
 
     def latest_pit_stats(self):
-        stats = PlayerStatSeason.objects.filter(player=self, is_career=False).first()
+        stats = PlayerStatSeason.objects.filter(player=self, is_career=False).exclude(classification=PlayerStatSeason.ULMG).first()
         if stats:
             return stats.pitch_stats
         return None
@@ -653,7 +653,7 @@ class Player(BaseModel):
             player=self,
             season=stats_season,
             is_career=False,
-        ).order_by("classification").first()
+        ).exclude(classification=PlayerStatSeason.ULMG).order_by("classification").first()
 
     @property
     def stat_season_level(self):
@@ -728,7 +728,7 @@ class Player(BaseModel):
             # Filter out career stats and cap at stats_season
             non_career = [
                 s for s in self.all_stat_seasons
-                if not s.is_career and (s.season or 0) <= stats_season
+                if not s.is_career and (s.season or 0) <= stats_season and s.classification != PlayerStatSeason.ULMG
             ]
             if non_career:
                 # Sort by season desc, then classification (1-mlb is highest)
@@ -740,7 +740,7 @@ class Player(BaseModel):
             player=self,
             is_career=False,
             season__lte=stats_season,
-        ).order_by('-season', 'classification').first()
+        ).exclude(classification=PlayerStatSeason.ULMG).order_by('-season', 'classification').first()
 
     def set_current_mlb_org(self):
         """
@@ -753,7 +753,7 @@ class Player(BaseModel):
                 player=self, 
                 season=current_season,
                 is_career=False,
-            ).first()
+            ).exclude(classification=PlayerStatSeason.ULMG).first()
             current_mlb_org = current_status.mlb_org if current_status else None
             self.current_mlb_org = current_mlb_org
         except ValueError:
@@ -770,7 +770,7 @@ class Player(BaseModel):
                 player=self, 
                 season=current_season,
                 is_career=False,
-            ).first()
+            ).exclude(classification=PlayerStatSeason.ULMG).first()
         except ValueError:
             pass
 
@@ -850,12 +850,16 @@ class PlayerStatSeason(BaseModel):
     season = models.IntegerField(blank=True, null=True)
     # When True, this row represents an aggregated "career" season for the player
     is_career = models.BooleanField(default=False)
+    # A ULMG sim season's line, the sum of its final games' box scores
+    # (ulmg.season_record). Every other classification is real stats.
+    ULMG = "6-ulmg"
     CLASSIFICATION_CHOICES = (
         ("1-mlb", "1-mlb"),
         ("2-milb", "2-milb"),
         ("3-npb", "3-npb"),
         ("4-kbo", "4-kbo"),
         ("5-college", "5-college"),
+        (ULMG, ULMG),
     )
     classification = models.CharField(max_length=255, choices=CLASSIFICATION_CHOICES, null=True)
     level = models.CharField(max_length=255, blank=True, null=True)
@@ -1778,7 +1782,7 @@ class WishlistPlayer(BaseModel):
             player=self.player,
             pitch_stats__isnull=False,
             is_career=False,
-        ).order_by('-season', 'classification')
+        ).exclude(classification=PlayerStatSeason.ULMG).order_by('-season', 'classification')
         
         for stat_season in stat_seasons:
             if stat_season.pitch_stats and stat_season.pitch_stats.get('g', 0) >= 1:
@@ -1794,7 +1798,7 @@ class WishlistPlayer(BaseModel):
             player=self.player,
             hit_stats__isnull=False,
             is_career=False,
-        ).order_by('-season', 'classification')
+        ).exclude(classification=PlayerStatSeason.ULMG).order_by('-season', 'classification')
         
         for stat_season in stat_seasons:
             if stat_season.hit_stats and stat_season.hit_stats.get('pa', 0) >= 1:
@@ -2469,3 +2473,47 @@ class GameEvent(BaseModel):
         if self.pk is not None:
             raise ValueError("A game event is never rewritten; append a new one.")
         super().save(*args, **kwargs)
+
+
+class TeamSeasonRecord(BaseModel):
+    """
+    One club's ULMG season record, built from its final game logs by
+    ulmg.season_record and rebuilt from them whenever asked. It is the sim
+    league's standings line; Team.ls_* stays the MLB rollup.
+    """
+
+    team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name="season_records")
+    season = models.IntegerField()
+    wins = models.IntegerField(default=0)
+    losses = models.IntegerField(default=0)
+    runs_scored = models.IntegerField(default=0)
+    runs_allowed = models.IntegerField(default=0)
+
+    class Meta:
+        ordering = ["season", "team__abbreviation"]
+        constraints = [
+            models.UniqueConstraint(fields=["team", "season"], name="unique_team_season_record"),
+        ]
+
+    def __unicode__(self):
+        return f"{self.team.abbreviation} {self.season}: {self.wins}-{self.losses}"
+
+    @property
+    def games(self):
+        return self.wins + self.losses
+
+    @property
+    def pct(self):
+        """Winning percentage; .000 before a game is played."""
+        return self.wins / self.games if self.games else 0.0
+
+    @property
+    def pct_display(self):
+        return self.format_pct(self.wins, self.losses)
+
+    @staticmethod
+    def format_pct(wins, losses):
+        """A winning percentage as standings print it: .833, 1.000, .000."""
+        games = wins + losses
+        text = f"{wins / games if games else 0.0:.3f}"
+        return text[1:] if text.startswith("0") else text

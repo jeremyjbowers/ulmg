@@ -15,8 +15,8 @@ def create_played_season(season, home, road, player, days=3, first_day=1, slot_n
     """
     One slot and series for the season, every game opened and scored, the
     home team's half plan, the usage ledger rows a played series leaves:
-    a counter, appearances, an override, a pause and the player's 6-ulmg
-    season line, one roster move made during the first game, and the first
+    a counter, appearances, an override, a pause, the player's 6-ulmg
+    season line and both teams' season records, one roster move made during the first game, and the first
     game's log with two of its events.
     """
     slot = models.ScheduleSlot.objects.create(
@@ -60,6 +60,8 @@ def create_played_season(season, home, road, player, days=3, first_day=1, slot_n
         classification="6-ulmg",
         pitch_stats={"ip": 18},
     )
+    models.TeamSeasonRecord.objects.create(team=home, season=season, wins=days, losses=0)
+    models.TeamSeasonRecord.objects.create(team=road, season=season, wins=0, losses=days)
     sent_down = models.Player.objects.create(name=f"Sim Sent Down {season}", position="P", team=road)
     models.RosterMove.objects.create(
         season=season,
