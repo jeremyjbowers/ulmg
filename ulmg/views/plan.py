@@ -49,13 +49,14 @@ def _int_or_none(value):
 class FormState:
     """The editor's selections, from a saved plan or from a posted form."""
 
-    def __init__(self, rotation, closer, setup, middle_long, bench, lineups):
+    def __init__(self, rotation, closer, setup, middle_long, bench, lineups, starter_hook):
         self.rotation = rotation
         self.closer = closer
         self.setup = setup
         self.middle_long = middle_long
         self.bench = bench
         self.lineups = lineups
+        self.starter_hook = starter_hook
 
     @classmethod
     def from_plan(cls, plan):
@@ -66,6 +67,7 @@ class FormState:
             plan.middle_long,
             plan.bench,
             {"vs_lhp": _lineup_rows(plan.lineup_vs_lhp), "vs_rhp": _lineup_rows(plan.lineup_vs_rhp)},
+            plan.starter_hook,
         )
 
     @classmethod
@@ -80,6 +82,7 @@ class FormState:
             ids("middle_long"),
             ids("bench"),
             {prefix: _posted_lineup_rows(post, prefix) for prefix in LINEUP_PREFIXES},
+            post.get("starter_hook"),
         )
 
 
@@ -128,6 +131,7 @@ def _fields(state):
         "bench": listed(state.bench),
         "lineup_vs_lhp": _entries(state.lineups["vs_lhp"], players, errors, "Lineup vs LHP"),
         "lineup_vs_rhp": _entries(state.lineups["vs_rhp"], players, errors, "Lineup vs RHP"),
+        "starter_hook": state.starter_hook,
     }
     return fields, errors
 
@@ -184,6 +188,7 @@ def team_plan(request, abbreviation, half):
         context["closer"] = _lines([plan.closer_id], season)
         context["setup"] = _lines(plan.setup, season)
         context["middle_long"] = _lines(plan.middle_long, season)
+        context["starter_hook"] = plan.get_starter_hook_display()
         context["bench"] = _lines(plan.bench, season)
         context["lineup_cards"] = [
             ("vs LHP", _lineup_lines(plan.lineup_vs_lhp, season)),
@@ -213,6 +218,8 @@ def _editor_context(request, team, half, season, state, errors):
             "closer_id": state.closer,
             "setup_slots": _padded(state.setup, SETUP_SLOTS),
             "middle_long_slots": _padded(state.middle_long, MIDDLE_LONG_SLOTS),
+            "starter_hook": state.starter_hook or models.HalfPlan.NORMAL_HOOK,
+            "starter_hooks": models.HalfPlan.STARTER_HOOK_CHOICES,
             "bench_slots": _padded(state.bench, len(context["hitters"])),
             "lineups": [
                 (prefix, label, state.lineups[prefix]) for prefix, label in LINEUP_PREFIXES.items()

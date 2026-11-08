@@ -31,6 +31,14 @@
         </fieldset>
 
         <fieldset>
+            <legend class="font-bold border-b border-gray-300 w-full mb-2">Starter hook</legend>
+            <p class="text-xs text-gray-600 mb-2">When the computer manages this team, it pulls the starter at the engine's fatigue line or his per-game limit, or sooner: quick at 85% of his fatigue ceiling or 4 runs allowed, normal at 95% or 5 runs, slow at 100% or 6 runs.</p>
+            <select name="starter_hook" class="border border-gray-300 rounded px-1 py-1 w-full" aria-label="Starter hook">
+                {% for value, label in starter_hooks %}<option value="{{ value }}"{% if value == starter_hook %} selected{% endif %}>{{ label }}</option>{% endfor %}
+            </select>
+        </fieldset>
+
+        <fieldset>
             <legend class="font-bold border-b border-gray-300 w-full mb-2">Bullpen</legend>
             <p class="text-xs text-gray-600 mb-2">A pitcher in the rotation and the bullpen starts and relieves this half. A pitcher only in the bullpen is confined to relief.</p>
             <label class="block mb-3"><span class="font-bold text-xs uppercase text-gray-600">Closer</span>

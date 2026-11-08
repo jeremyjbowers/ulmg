@@ -149,6 +149,24 @@ class EditPlanTestCase(PlanViewsTestCase):
         self.assertEqual(plan.lineup_vs_rhp[0], {"player": self.roster.catcher.id, "position": "C"})
         self.assertTrue(usage.counter_for(self.roster.swingman, SEASON).confined_to_relief)
 
+    def test_owner_sets_the_starter_hook(self):
+        client = self.as_user(self.owner)
+        page = client.get(EDIT_URL).content.decode()
+        self.assertIn('<option value="normal" selected>Normal</option>', page)
+        response = client.post(EDIT_URL, dict(form_data(self.roster), starter_hook="quick"), follow=True)
+        self.assertRedirects(response, PLAN_URL)
+        self.assertEqual(self.saved_plan().starter_hook, models.HalfPlan.QUICK_HOOK)
+        self.assertIn('class="plan-starter-hook">Quick', response.content.decode())
+        page = client.get(EDIT_URL).content.decode()
+        self.assertIn('<option value="quick" selected>Quick</option>', page)
+
+    def test_an_unknown_starter_hook_is_refused(self):
+        self.roster.file()
+        response = self.as_user(self.owner).post(EDIT_URL, dict(form_data(self.roster), starter_hook="lazy"))
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("The starter hook must be quick, normal or slow.", response.content.decode())
+        self.assertEqual(self.saved_plan().starter_hook, models.HalfPlan.NORMAL_HOOK)
+
     def test_editor_shows_the_saved_plan(self):
         self.roster.file()
         body = self.as_user(self.owner).get(EDIT_URL).content.decode()

@@ -36,6 +36,8 @@
         <ol class="list-decimal ml-5 mb-2 space-y-1">{% for line in setup %}<li class="plan-setup">{% include 'includes/plan_player.html' %}</li>{% endfor %}</ol>
         <p class="font-bold text-xs uppercase text-gray-600">Middle and long</p>
         <ol class="list-decimal ml-5 space-y-1">{% for line in middle_long %}<li class="plan-middle-long">{% include 'includes/plan_player.html' %}</li>{% endfor %}</ol>
+        <p class="font-bold text-xs uppercase text-gray-600 mt-2">Starter hook</p>
+        <p class="plan-starter-hook">{{ starter_hook }}</p>
     </div>
     <div>
         <h3 class="font-bold border-b border-gray-300 mb-2">Bench order</h3>
