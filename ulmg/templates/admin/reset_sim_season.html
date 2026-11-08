@@ -1,0 +1,46 @@
+{% extends "admin/base_site.html" %}
+{% comment %}ABOUTME: The commissioner's page for resetting a season's sim data from the admin.
+ABOUTME: Shows the dry-run summary per model and asks for the season number again before it deletes.{% endcomment %}
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">Home</a>
+  &rsaquo; <a href="{% url 'admin:ulmg_usagecounter_changelist' %}">{{ opts.verbose_name_plural|capfirst }}</a>
+  &rsaquo; {{ title }}
+</div>
+{% endblock %}
+{% block content %}
+<div id="content-main">
+  <p>Deletes the season's usage ledger and 6-ulmg season lines and puts every game back to unplayed and unopened.
+     The schedule and half plans are kept unless you include the schedule. Players, teams, MLB and minor-league stats, cards, drafts, trades and transactions are never touched.</p>
+
+  {% if error %}<ul class="errorlist"><li>{{ error }}</li></ul>{% endif %}
+
+  {% if lines %}
+    <h2>{% if done %}Done{% else %}Dry run{% endif %}</h2>
+    <ul>{% for line in lines %}<li>{{ line }}</li>{% endfor %}</ul>
+    <p><strong>{{ summary }}</strong></p>
+  {% endif %}
+
+  <form method="get">
+    <fieldset class="module aligned">
+      <div class="form-row">{{ form.season.label_tag }} {{ form.season }}</div>
+      <div class="form-row">{{ form.include_schedule }} {{ form.include_schedule.label_tag }}
+        <div class="help">{{ form.include_schedule.help_text }}</div></div>
+    </fieldset>
+    <div class="submit-row"><input type="submit" value="Show the dry run"></div>
+  </form>
+
+  {% if lines and not done %}
+  <form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="season" value="{{ form.cleaned_data.season }}">
+    {% if form.cleaned_data.include_schedule %}<input type="hidden" name="include_schedule" value="on">{% endif %}
+    <fieldset class="module aligned">
+      <div class="form-row"><label for="id_confirm">Confirm:</label> <input type="number" name="confirm" id="id_confirm">
+        <div class="help">{{ form.confirm.help_text }}</div></div>
+    </fieldset>
+    <div class="submit-row"><input type="submit" class="default" value="Reset {{ form.cleaned_data.season }}"></div>
+  </form>
+  {% endif %}
+</div>
+{% endblock %}

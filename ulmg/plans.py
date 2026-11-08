@@ -404,6 +404,18 @@ def _designate(plan):
     return warnings
 
 
+def reapply_designations(season):
+    """
+    Set every kept plan's swingman designations again, for a season whose
+    usage counters were just reset. Returns the number of plans applied.
+    """
+    applied = 0
+    for plan in models.HalfPlan.objects.filter(season=season).select_related("team"):
+        _designate(plan)
+        applied += 1
+    return applied
+
+
 # Saving
 
 
