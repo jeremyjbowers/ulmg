@@ -1,5 +1,5 @@
 # ABOUTME: Public season schedule pages: the league schedule by slot and day, and one team's 162 games.
-# ABOUTME: Readable without logging in; shows the half plans' starters and marks a manager's own road games.
+# ABOUTME: Readable without logging in; shows plan starters, a manager's own road games, Play links and box scores.
 from django.conf import settings
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.cache import never_cache
@@ -55,8 +55,14 @@ def team_schedule(request, abbreviation):
     context["own_team"] = own_team
 
     starters = plans.season_starters(season)
+    games = schedule.team_games(team, season)
+    # A tester can play any unplayed game; a manager his own team's next unplayed road game.
+    tester = utils.is_sim_tester(request.user)
+    owner_team = owner.team() if owner is not None else None
+    next_road = schedule.next_unplayed_road_game(owner_team, season) if owner_team else None
+    logged = set(models.GameLog.objects.filter(game__in=games).values_list("game_id", flat=True))
     rows = []
-    for game in schedule.team_games(team, season):
+    for game in games:
         is_home = game.series.home_team_id == team.id
         opponent = game.series.road_team if is_home else game.series.home_team
         rows.append(
@@ -68,6 +74,8 @@ def team_schedule(request, abbreviation):
                 "opponent_starter": starters.get((opponent.id, game.day)),
                 "result": _team_result(game, is_home),
                 "manager_plays": own_team and not is_home,
+                "can_play": not game.is_played and (tester or (next_road is not None and game.id == next_road.id)),
+                "has_box": game.is_played and game.id in logged,
             }
         )
     context["rows"] = rows

@@ -1,0 +1,14 @@
+{# ABOUTME: The public box score page of one sim game, linked from both teams' schedules. #}
+{# ABOUTME: Expects `game` and `box`; the box score is computed from the game's log. #}
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-3xl">
+    <h1 class="text-lg font-bold mb-1">Day {{ game.day }}: {{ game.series.road_team.abbreviation }} at {{ game.series.home_team.abbreviation }}{% if box.final %}, final{% endif %}</h1>
+    <p class="text-sm text-gray-600 mb-4">
+        <a href="/teams/{{ game.series.road_team.abbreviation|lower }}/schedule/?season={{ game.series.slot.season }}" class="underline">{{ game.series.road_team.abbreviation }} schedule</a> ·
+        <a href="/teams/{{ game.series.home_team.abbreviation|lower }}/schedule/?season={{ game.series.slot.season }}" class="underline">{{ game.series.home_team.abbreviation }} schedule</a>
+    </p>
+    {% include 'includes/box_score.html' %}
+</div>
+{% endblock %}
