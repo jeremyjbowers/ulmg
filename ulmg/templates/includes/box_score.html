@@ -1,0 +1,105 @@
+{# ABOUTME: A sim game's box score: line score, batting and pitching lines for both sides, LOB and the W/L/S decisions. #}
+{# ABOUTME: Expects `box` from ulmg.box_score.box_score and `game`; every number is computed from the game log. #}
+<div class="box-score mb-6 text-sm">
+    <div class="overflow-x-auto mb-4">
+        <table class="line-score w-full text-xs border-collapse border border-gray-200">
+            <thead class="bg-gray-50">
+                <tr class="border-b border-gray-300">
+                    <th class="text-left py-1 px-2"></th>
+                    {% for inning in box.innings %}<th class="text-center py-1 px-1">{{ inning }}</th>{% endfor %}
+                    <th class="text-center py-1 px-1 font-bold">R</th>
+                    <th class="text-center py-1 px-1 font-bold">H</th>
+                    <th class="text-center py-1 px-1 font-bold">E</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr class="border-b border-gray-100">
+                    <td class="py-1 px-2 font-bold">{{ game.series.road_team.abbreviation }}</td>
+                    {% for runs in box.line.away %}<td class="text-center py-1 px-1">{{ runs }}</td>{% endfor %}
+                    <td class="text-center py-1 px-1 font-bold">{{ box.totals.away.r }}</td>
+                    <td class="text-center py-1 px-1">{{ box.totals.away.h }}</td>
+                    <td class="text-center py-1 px-1">{{ box.totals.away.e }}</td>
+                </tr>
+                <tr>
+                    <td class="py-1 px-2 font-bold">{{ game.series.home_team.abbreviation }}</td>
+                    {% for runs in box.line.home %}<td class="text-center py-1 px-1">{{ runs }}</td>{% endfor %}
+                    <td class="text-center py-1 px-1 font-bold">{{ box.totals.home.r }}</td>
+                    <td class="text-center py-1 px-1">{{ box.totals.home.h }}</td>
+                    <td class="text-center py-1 px-1">{{ box.totals.home.e }}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    {% if box.win %}
+    <p class="box-decisions mb-4">
+        <span class="font-bold">W</span> {{ box.win.name }} ·
+        <span class="font-bold">L</span> {{ box.loss.name }}{% if box.save %} ·
+        <span class="font-bold">S</span> {{ box.save.name }}{% endif %}
+    </p>
+    {% endif %}
+
+    {% for side, team, lines, totals, lob, pitchers in box.sides %}
+    <h3 class="font-bold mb-1">{{ team.abbreviation }} batting</h3>
+    <div class="overflow-x-auto mb-2">
+        <table class="box-batting w-full text-xs border-collapse border border-gray-200">
+            <thead class="bg-gray-50">
+                <tr class="border-b border-gray-300">
+                    <th class="text-left py-1 px-2">Batter</th>
+                    <th class="text-center px-1">AB</th><th class="text-center px-1">R</th><th class="text-center px-1">H</th>
+                    <th class="text-center px-1">RBI</th><th class="text-center px-1">BB</th><th class="text-center px-1">SO</th>
+                    <th class="text-center px-1">2B</th><th class="text-center px-1">3B</th><th class="text-center px-1">HR</th>
+                    <th class="text-center px-1">SB</th><th class="text-center px-1">CS</th><th class="text-center px-1">GIDP</th>
+                    <th class="text-center px-1">SF</th><th class="text-center px-1">LOB</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for line in lines %}
+                <tr class="border-b border-gray-100">
+                    <td class="py-1 px-2">{% if line.substitute %}<span class="ml-5">{% endif %}{{ line.player.name }} {{ line.position }}{% if line.substitute %}</span>{% endif %}</td>
+                    <td class="text-center px-1">{{ line.ab }}</td><td class="text-center px-1">{{ line.r }}</td><td class="text-center px-1">{{ line.h }}</td>
+                    <td class="text-center px-1">{{ line.rbi }}</td><td class="text-center px-1">{{ line.bb }}</td><td class="text-center px-1">{{ line.so }}</td>
+                    <td class="text-center px-1">{{ line.doubles }}</td><td class="text-center px-1">{{ line.triples }}</td><td class="text-center px-1">{{ line.hr }}</td>
+                    <td class="text-center px-1">{{ line.sb }}</td><td class="text-center px-1">{{ line.cs }}</td><td class="text-center px-1">{{ line.gidp }}</td>
+                    <td class="text-center px-1">{{ line.sf }}</td><td class="text-center px-1">{{ line.lob }}</td>
+                </tr>
+                {% endfor %}
+                <tr class="font-bold">
+                    <td class="py-1 px-2">Totals</td>
+                    <td class="text-center px-1">{{ totals.ab }}</td><td class="text-center px-1">{{ totals.r }}</td><td class="text-center px-1">{{ totals.h }}</td>
+                    <td class="text-center px-1">{{ totals.rbi }}</td><td class="text-center px-1">{{ totals.bb }}</td><td class="text-center px-1">{{ totals.so }}</td>
+                    <td class="text-center px-1">{{ totals.doubles }}</td><td class="text-center px-1">{{ totals.triples }}</td><td class="text-center px-1">{{ totals.hr }}</td>
+                    <td class="text-center px-1">{{ totals.sb }}</td><td class="text-center px-1">{{ totals.cs }}</td><td class="text-center px-1">{{ totals.gidp }}</td>
+                    <td class="text-center px-1">{{ totals.sf }}</td><td class="text-center px-1">{{ totals.lob }}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <p class="text-xs text-gray-600 mb-3">Team LOB: {{ lob }}</p>
+
+    <h3 class="font-bold mb-1">{{ team.abbreviation }} pitching</h3>
+    <div class="overflow-x-auto mb-6">
+        <table class="box-pitching w-full text-xs border-collapse border border-gray-200">
+            <thead class="bg-gray-50">
+                <tr class="border-b border-gray-300">
+                    <th class="text-left py-1 px-2">Pitcher</th>
+                    <th class="text-center px-1">IP</th><th class="text-center px-1">H</th><th class="text-center px-1">R</th>
+                    <th class="text-center px-1">ER</th><th class="text-center px-1">BB</th><th class="text-center px-1">SO</th>
+                    <th class="text-center px-1">HR</th><th class="text-center px-1">Pitches</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for line in pitchers %}
+                <tr class="border-b border-gray-100">
+                    <td class="py-1 px-2">{{ line.player.name }}{% if line.player == box.win %} (W){% elif line.player == box.loss %} (L){% elif line.player == box.save %} (S){% endif %}</td>
+                    <td class="text-center px-1">{{ line.ip }}</td><td class="text-center px-1">{{ line.h }}</td><td class="text-center px-1">{{ line.r }}</td>
+                    <td class="text-center px-1">{{ line.er }}</td><td class="text-center px-1">{{ line.bb }}</td><td class="text-center px-1">{{ line.so }}</td>
+                    <td class="text-center px-1">{{ line.hr }}</td><td class="text-center px-1">{{ line.pitches }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endfor %}
+    <p class="text-xs text-gray-600">The sim has no errors, so every run is earned except one scored by the runner placed on second in extra innings.</p>
+</div>

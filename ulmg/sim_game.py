@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from django.db import transaction
 from django.utils import timezone
 
-from ulmg import cards, computer_manager, engine_client, models, plans, roster_moves, schedule, usage, utils
+from ulmg import box_score, cards, computer_manager, engine_client, models, plans, roster_moves, schedule, usage, utils
 
 Event = models.GameEvent
 
@@ -1286,8 +1286,6 @@ def _lineup_rows(play, side):
 
 def page(log, user):
     """Everything the game page shows: the situation, both cards, the odds, usage, choices and the play-by-play."""
-    from ulmg import box_score
-
     play = Play(log)
     game, state, fold = play.game, play.state, play.fold
     context = {

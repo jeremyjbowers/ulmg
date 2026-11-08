@@ -121,6 +121,22 @@ class BoxScore:
     loss: object = None
     save: object = None
     final: bool = False
+    teams: dict = field(default_factory=dict)
+
+    @property
+    def sides(self):
+        """(side, team, batting lines, batting totals, team LOB, pitching lines) for the visitors, then the home team."""
+        return [
+            (
+                side,
+                self.teams.get(side),
+                self.batting.get(side, []),
+                self.batting_totals.get(side, {}),
+                self.team_lob.get(side, 0),
+                self.pitching.get(side, []),
+            )
+            for side in SIDES
+        ]
 
 
 def _runner(event):
@@ -137,7 +153,10 @@ def box_score(log):
     """The box score of a game log, from its events."""
     events = list(log.events.order_by("sequence"))
     starts = [e for e in events if e.kind == Event.START]
-    box = BoxScore(final=any(e.kind == Event.FINAL for e in events))
+    box = BoxScore(
+        final=any(e.kind == Event.FINAL for e in events),
+        teams={AWAY: log.game.series.road_team, HOME: log.game.series.home_team},
+    )
     if not starts:
         return box
 
