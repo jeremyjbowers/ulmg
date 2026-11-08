@@ -13,7 +13,7 @@ from django.views.decorators.cache import never_cache
 from django.conf import settings
 import ujson as json
 
-from ulmg import models, roster_moves, utils
+from ulmg import models, plans, roster_moves, utils
 from ulmg.roster_moves import update_player_stat_season_roster
 
 
@@ -426,6 +426,11 @@ def player_action(request, playerid, action):
         p.is_ulmg_1h_pos = False
         p.save()
         return HttpResponse("ok")
+
+    if action in ("to_mlb", "to_aaa"):
+        error = roster_moves.single_move_error(request.user, settings.CURRENT_SEASON, plans.current_half())
+        if error:
+            return JsonResponse({"error": error}, status=400)
 
     if action == "to_mlb":
         error = roster_moves.mlb_roster_error(p, settings.CURRENT_SEASON)

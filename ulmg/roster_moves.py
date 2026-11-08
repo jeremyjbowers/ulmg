@@ -332,6 +332,19 @@ def half_has_started(season, half):
     return started or models.RosterMove.objects.filter(season=season, half=half).exists()
 
 
+def single_move_error(user, season, half):
+    """
+    Once a half has started, moving one player at a time would dodge the
+    10-move cap, so owners must use a paired move. The commissioner still can.
+    """
+    if getattr(user, "is_superuser", False) or not half_has_started(season, half):
+        return None
+    return (
+        "The half has started: make a roster move instead, calling one player up "
+        "and sending one down together."
+    )
+
+
 def ensure_snapshot(season, half):
     """
     The half's roster snapshot, taken now if there is none, and retaken

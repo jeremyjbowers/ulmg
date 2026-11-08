@@ -478,3 +478,44 @@ class SingleActionTestCase(RosterMoveTestCase):
         self.assertEqual(response.status_code, 400)
         self.assertIn("Only carded players", response.json()["error"])
         self.assertEqual(flags(uncarded), (False, True))
+
+
+class SingleActionDuringAHalfTestCase(RosterMoveTestCase):
+    """Once a half has started, one-player call-ups and send-downs would dodge the 10-move cap."""
+
+    @classmethod
+    def setUpTestData(cls):
+        super().setUpTestData()
+        from tests.test_half_plan_views import create_owner
+
+        cls.owner = create_owner("atl", cls.atl)
+        cls.commissioner = User.objects.create_superuser("commish", "c@example.com", "password")
+
+    def start_half(self):
+        plans.open_game(road_games(self.atl)[0])
+
+    def action(self, user, player, action):
+        client = Client()
+        client.force_login(user)
+        return client.get(f"/api/v1/player/{player.id}/{action}/")
+
+    def test_before_the_half_starts_an_owner_can_still_move_one_player(self):
+        response = self.action(self.owner, self.call_ups[0], "to_mlb")
+        self.assertEqual(response.content, b"ok")
+        self.assertEqual(flags(self.call_ups[0]), (True, False))
+
+    def test_once_the_half_starts_an_owner_must_use_a_paired_move(self):
+        self.start_half()
+        for player, action in ((self.call_ups[0], "to_mlb"), (self.roster.relievers[1], "to_aaa")):
+            with self.subTest(action=action):
+                before = flags(player)
+                response = self.action(self.owner, player, action)
+                self.assertEqual(response.status_code, 400)
+                self.assertIn("roster move", response.json()["error"])
+                self.assertEqual(flags(player), before)
+
+    def test_once_the_half_starts_the_commissioner_can_still_move_one_player(self):
+        self.start_half()
+        response = self.action(self.commissioner, self.call_ups[0], "to_mlb")
+        self.assertEqual(response.content, b"ok")
+        self.assertEqual(flags(self.call_ups[0]), (True, False))
