@@ -5,7 +5,7 @@ from django.apps import apps
 from django.db import models as django_models
 from django.test import TestCase
 
-from ulmg import models, sim_data
+from ulmg import models, plans, sim_data
 from tests.sim_fixtures import STAT_CLASSIFICATIONS, create_kept_rows, create_played_season
 from tests.usage_fixtures import create_pitcher, create_teams
 
@@ -64,7 +64,10 @@ class RegistryCoverageTestCase(TestCase):
 
     def test_schedule_game_clears_every_field_that_marks_it_played(self):
         entry = sim_data.entry_for(models.ScheduleGame)
-        self.assertEqual(entry.clear_fields, {"home_score": None, "road_score": None})
+        self.assertEqual(
+            entry.clear_fields,
+            {"home_score": None, "road_score": None, "opened_at": None, "opening_sheet": None},
+        )
         self.assertTrue(entry.schedule)
 
 
@@ -100,6 +103,9 @@ class ResetTestCase(TestCase):
         other = models.ScheduleGame.objects.filter(series__slot__season=OTHER_SEASON)
         self.assertEqual(other.count(), 3)
         self.assertEqual(other.filter(home_score__isnull=False, road_score__isnull=False).count(), 3)
+        self.assertEqual(other.filter(opened_at__isnull=False, opening_sheet__isnull=False).count(), 3)
+        self.assertEqual(models.HalfPlan.objects.filter(season=OTHER_SEASON).count(), 1)
+        self.assertEqual(models.HalfPlanDay.objects.filter(plan__season=OTHER_SEASON).count(), 3)
         self.assertEqual(models.UsageCounter.objects.filter(season=OTHER_SEASON).count(), 1)
         self.assertEqual(
             models.UsageAppearance.objects.filter(game__series__slot__season=OTHER_SEASON).count(), 3
@@ -132,6 +138,8 @@ class ResetTestCase(TestCase):
                 models.UsagePause: ("delete", 1),
                 models.UsageCounter: ("delete", 1),
                 models.PlayerStatSeason: ("delete", 1),
+                models.HalfPlanDay: ("keep", 3),
+                models.HalfPlan: ("keep", 1),
                 models.ScheduleGame: ("clear", 3),
                 models.ScheduleSeries: ("keep", 1),
                 models.ScheduleSlot: ("keep", 1),
@@ -143,20 +151,34 @@ class ResetTestCase(TestCase):
 
     def test_plan_with_schedule_deletes_the_schedule(self):
         plan = self.plan_by_model(sim_data.plan_reset(SEASON, include_schedule=True))
+        self.assertEqual(plan[models.HalfPlanDay], ("delete", 3))
+        self.assertEqual(plan[models.HalfPlan], ("delete", 1))
         self.assertEqual(plan[models.ScheduleGame], ("delete", 3))
         self.assertEqual(plan[models.ScheduleSeries], ("delete", 1))
         self.assertEqual(plan[models.ScheduleSlot], ("delete", 1))
 
-    def test_clear_counts_only_games_with_a_result(self):
-        unplayed = self.games[1]
-        unplayed.home_score = None
-        unplayed.road_score = None
-        unplayed.save()
+    def test_clear_counts_only_games_with_a_result_or_an_opening(self):
+        unopened = self.games[0]
+        unopened.home_score = unopened.road_score = unopened.opened_at = unopened.opening_sheet = None
+        unopened.save()
+        opened_only = self.games[1]
+        opened_only.home_score = opened_only.road_score = None
+        opened_only.save()
         half_scored = self.games[2]
-        half_scored.road_score = None
+        half_scored.road_score = half_scored.opened_at = half_scored.opening_sheet = None
         half_scored.save()
         plan = self.plan_by_model(sim_data.plan_reset(SEASON))
         self.assertEqual(plan[models.ScheduleGame], ("clear", 2))
+
+    def test_clear_counts_a_game_with_only_an_opening_sheet(self):
+        for game in self.games:
+            game.home_score = game.road_score = game.opened_at = None
+            game.save()
+        plan = self.plan_by_model(sim_data.plan_reset(SEASON))
+        self.assertEqual(plan[models.ScheduleGame], ("clear", 3))
+        sim_data.reset_season(SEASON)
+        games = models.ScheduleGame.objects.filter(series__slot__season=SEASON)
+        self.assertFalse(games.filter(opening_sheet__isnull=False).exists())
 
     def test_reset_removes_only_the_seasons_sim_rows(self):
         steps = sim_data.reset_season(SEASON)
@@ -178,6 +200,13 @@ class ResetTestCase(TestCase):
         self.assertFalse(any(g.is_played for g in games))
         self.assertFalse(games.filter(home_score__isnull=False).exists())
         self.assertFalse(games.filter(road_score__isnull=False).exists())
+        # Opened games go back to unopened, so they can be opened again.
+        self.assertFalse(games.filter(opened_at__isnull=False).exists())
+        self.assertFalse(games.filter(opening_sheet__isnull=False).exists())
+        self.assertFalse(any(plans.is_locked(g) for g in games))
+        # Half plans are kept with the schedule.
+        self.assertEqual(models.HalfPlan.objects.filter(season=SEASON).count(), 1)
+        self.assertEqual(models.HalfPlanDay.objects.filter(plan__season=SEASON).count(), 3)
 
         self.assert_other_season_survives()
         self.assert_kept_rows_survive()
@@ -189,6 +218,8 @@ class ResetTestCase(TestCase):
         self.assertFalse(models.ScheduleSlot.objects.filter(season=SEASON).exists())
         self.assertFalse(models.ScheduleSeries.objects.filter(slot__season=SEASON).exists())
         self.assertFalse(models.ScheduleGame.objects.filter(series__slot__season=SEASON).exists())
+        self.assertFalse(models.HalfPlan.objects.filter(season=SEASON).exists())
+        self.assertFalse(models.HalfPlanDay.objects.filter(plan__season=SEASON).exists())
         self.assertFalse(models.UsageCounter.objects.filter(season=SEASON).exists())
         self.assert_other_season_survives()
         self.assert_kept_rows_survive()

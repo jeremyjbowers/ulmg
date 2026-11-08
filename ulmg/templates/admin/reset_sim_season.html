@@ -10,8 +10,8 @@ ABOUTME: Shows the dry-run summary per model and asks for the season number agai
 {% endblock %}
 {% block content %}
 <div id="content-main">
-  <p>Deletes the season's usage ledger and 6-ulmg season lines and puts every game back to unplayed.
-     Players, teams, MLB and minor-league stats, cards, drafts, trades and transactions are never touched.</p>
+  <p>Deletes the season's usage ledger and 6-ulmg season lines and puts every game back to unplayed and unopened.
+     The schedule and half plans are kept unless you include the schedule. Players, teams, MLB and minor-league stats, cards, drafts, trades and transactions are never touched.</p>
 
   {% if error %}<ul class="errorlist"><li>{{ error }}</li></ul>{% endif %}
 

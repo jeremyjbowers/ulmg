@@ -53,8 +53,9 @@ class ResetSimSeasonCommandTestCase(TestCase):
         self.assertIn("UsageAppearance: would delete 3", output)
         self.assertIn("UsageCounter: would delete 1", output)
         self.assertIn("PlayerStatSeason: would delete 1", output)
-        self.assertIn("ScheduleGame: would clear home_score, road_score on 3", output)
+        self.assertIn("ScheduleGame: would clear home_score, road_score, opened_at, opening_sheet on 3", output)
         self.assertIn("ScheduleSlot: keep 1", output)
+        self.assertIn("HalfPlan: keep 1", output)
         self.assertIn("--confirm 2026", output)
         self.assertEqual(sim_counts(), sim_before)
         self.assertEqual(kept_counts(), kept_before)
@@ -63,8 +64,8 @@ class ResetSimSeasonCommandTestCase(TestCase):
     def test_confirmed_reset_removes_only_that_seasons_sim_rows(self):
         kept_before = kept_counts()
         output = run("--season", str(SEASON), "--confirm", str(SEASON))
-        self.assertIn("1/8 UsageAppearance: deleted 3", output)
-        self.assertIn("ScheduleGame: cleared home_score, road_score on 3", output)
+        self.assertIn("1/10 UsageAppearance: deleted 3", output)
+        self.assertIn("ScheduleGame: cleared home_score, road_score, opened_at, opening_sheet on 3", output)
         self.assertIn("Reset 2026: deleted 7 rows and cleared 3; the schedule is kept", output)
         self.assertFalse(models.UsageCounter.objects.filter(season=SEASON).exists())
         self.assertEqual(played_games(SEASON), 0)
@@ -84,6 +85,7 @@ class ResetSimSeasonCommandTestCase(TestCase):
         output = run("--season", str(SEASON), "--include-schedule")
         self.assertIn("ScheduleGame: would delete 3", output)
         self.assertIn("ScheduleSlot: would delete 1", output)
+        self.assertIn("HalfPlan: would delete 1", output)
 
 
 class ResetThenRegenerateTestCase(TestCase):
@@ -144,7 +146,7 @@ class ResetSimSeasonAdminTestCase(TestCase):
         response = self.client.get(self.url, {"season": SEASON})
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "UsageAppearance: would delete 3")
-        self.assertContains(response, "ScheduleGame: would clear home_score, road_score on 3")
+        self.assertContains(response, "ScheduleGame: would clear home_score, road_score, opened_at, opening_sheet on 3")
         self.assertEqual(sim_counts(), sim_before)
 
     def test_commissioner_resets_with_a_typed_confirmation(self):

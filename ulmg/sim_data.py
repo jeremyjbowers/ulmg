@@ -39,7 +39,11 @@ class SimModel:
         """The season's rows with any clear field not yet at its cleared value."""
         changed = Q()
         for name, value in self.clear_fields.items():
-            changed |= ~Q(**{name: value})
+            # On a JSONField, name=None matches JSON null; __isnull matches SQL NULL.
+            if value is None:
+                changed |= Q(**{f"{name}__isnull": False})
+            else:
+                changed |= ~Q(**{name: value})
         return self.rows(season).filter(changed)
 
     def action(self, include_schedule):
@@ -59,12 +63,16 @@ SIM_MODELS = [
     SimModel(models.UsageCounter, "season"),
     # Only the ULMG season lines; every other classification is real stats.
     SimModel(models.PlayerStatSeason, "season", filters={"classification": "6-ulmg"}),
-    # A game is played once it has both scores; clearing them unplays it.
+    # Half plans go with the schedule; their days before the plans they hang off.
+    SimModel(models.HalfPlanDay, "plan__season", schedule=True),
+    SimModel(models.HalfPlan, "season", schedule=True),
+    # A game is played once it has both scores and locked once it has opened;
+    # clearing all four lets it be opened and played again.
     SimModel(
         models.ScheduleGame,
         "series__slot__season",
         schedule=True,
-        clear_fields={"home_score": None, "road_score": None},
+        clear_fields={"home_score": None, "road_score": None, "opened_at": None, "opening_sheet": None},
     ),
     SimModel(models.ScheduleSeries, "slot__season", schedule=True),
     SimModel(models.ScheduleSlot, "season", schedule=True),

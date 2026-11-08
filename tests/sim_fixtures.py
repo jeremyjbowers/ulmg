@@ -13,9 +13,10 @@ STAT_CLASSIFICATIONS = ["1-mlb", "2-milb", "3-npb", "4-kbo", "5-college"]
 
 def create_played_season(season, home, road, player, days=3, first_day=1, slot_number=1):
     """
-    One slot and series for the season, every game scored, and the usage
-    ledger rows a played series leaves: a counter, appearances, an approved
-    override, a pause and the player's 6-ulmg season line.
+    One slot and series for the season, every game opened and scored, the
+    home team's half plan, and the usage ledger rows a played series leaves:
+    a counter, appearances, an override, a pause and the player's 6-ulmg
+    season line.
     """
     slot = models.ScheduleSlot.objects.create(
         season=season,
@@ -30,9 +31,17 @@ def create_played_season(season, home, road, player, days=3, first_day=1, slot_n
     for day in range(first_day, first_day + days):
         games.append(
             models.ScheduleGame.objects.create(
-                series=series, day=day, home_score=day + 2, road_score=day
+                series=series,
+                day=day,
+                home_score=day + 2,
+                road_score=day,
+                opened_at=timezone.now(),
+                opening_sheet={"home": {"starter": player.id}, "road": {}},
             )
         )
+    plan = models.HalfPlan.objects.create(team=home, season=season, half=1, rotation=[player.id])
+    for day in range(first_day, first_day + days):
+        models.HalfPlanDay.objects.create(plan=plan, day=day, auto_starter=player)
     models.UsageCounter.objects.create(player=player, season=season, starts=1, outs=18)
     for game in games:
         models.UsageAppearance.objects.create(player=player, game=game, outs=6, pitches=90)
