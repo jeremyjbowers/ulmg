@@ -1,0 +1,81 @@
+{# ABOUTME: One team's public half plan: rotation, bullpen roles, bench, lineup cards, and each day's starter and lineup. #}
+{# ABOUTME: Readable by anyone; the owner and the commissioner also get links to the editors. #}
+{% extends "base.html" %}
+
+{% block content %}
+<a id="top"></a>
+{% include 'includes/team_topper.html' %}
+{% include 'includes/plan_tabs.html' %}
+{% include 'includes/plan_errors.html' %}
+
+<div class="mb-6">
+    <h2 class="text-lg font-bold mb-1">{{ plan_season }} {% if half == 1 %}first{% else %}second{% endif %}-half plan</h2>
+    <p class="text-sm text-gray-600">Days {% if half == 1 %}1-81{% else %}82-162{% endif %}. Every team's plan is public.</p>
+    {% if not is_open %}
+    <p class="plan-closed text-sm mt-2">{{ closed_message }}</p>
+    {% elif can_edit %}
+    <p class="text-sm mt-2"><a href="/teams/{{ team.abbreviation|lower }}/plan/{{ half }}/edit/?season={{ plan_season }}" class="plan-edit-link underline font-bold">Edit the plan</a></p>
+    {% endif %}
+</div>
+
+{% if not plan %}
+<p class="text-sm">{{ team.abbreviation }} has not filed a plan for this half.</p>
+{% else %}
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 text-sm">
+    <div>
+        <h3 class="font-bold border-b border-gray-300 mb-2">Rotation</h3>
+        <ol class="list-decimal ml-5 space-y-1">
+            {% for line in rotation %}<li class="plan-rotation">{% include 'includes/plan_player.html' %}</li>{% endfor %}
+        </ol>
+    </div>
+    <div>
+        <h3 class="font-bold border-b border-gray-300 mb-2">Bullpen</h3>
+        <p class="font-bold text-xs uppercase text-gray-600">Closer</p>
+        <ul class="mb-2">{% for line in closer %}<li class="plan-closer">{% include 'includes/plan_player.html' %}</li>{% empty %}<li>None</li>{% endfor %}</ul>
+        <p class="font-bold text-xs uppercase text-gray-600">Setup</p>
+        <ol class="list-decimal ml-5 mb-2 space-y-1">{% for line in setup %}<li class="plan-setup">{% include 'includes/plan_player.html' %}</li>{% endfor %}</ol>
+        <p class="font-bold text-xs uppercase text-gray-600">Middle and long</p>
+        <ol class="list-decimal ml-5 space-y-1">{% for line in middle_long %}<li class="plan-middle-long">{% include 'includes/plan_player.html' %}</li>{% endfor %}</ol>
+    </div>
+    <div>
+        <h3 class="font-bold border-b border-gray-300 mb-2">Bench order</h3>
+        <ol class="list-decimal ml-5 space-y-1">
+            {% for line in bench %}<li class="plan-bench">{% include 'includes/plan_player.html' %}</li>{% endfor %}
+        </ol>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 text-sm">
+    {% for label, card in lineup_cards %}
+    <div>
+        <h3 class="font-bold border-b border-gray-300 mb-2">Lineup {{ label }}</h3>
+        <ol class="list-decimal ml-5 space-y-1">
+            {% for line in card %}<li class="plan-lineup-slot"><span class="font-bold">{{ line.position }}</span> {% include 'includes/plan_player.html' %}</li>{% endfor %}
+        </ol>
+    </div>
+    {% endfor %}
+</div>
+
+<h3 class="font-bold border-b border-gray-300 mb-2">Games</h3>
+<p class="text-xs text-gray-600 mb-2">A lineup follows the opposing starter's hand unless it is set for the day. <span class="font-bold">*</span> marks a manual starter or lineup.</p>
+<div class="space-y-2 mb-8 text-sm">
+    {% for row in rows %}
+    <div class="plan-day border border-gray-200 px-2 py-1" id="day-{{ row.day }}" data-day="{{ row.day }}">
+        <div class="flex flex-wrap gap-x-3">
+            <span class="font-bold">Day {{ row.day }}</span>
+            <span>{% if row.is_home %}vs{% else %}at{% endif %} <a href="/teams/{{ row.opponent.abbreviation|lower }}/plan/{{ half }}/?season={{ plan_season }}" class="underline">{{ row.opponent.abbreviation }}</a></span>
+            <span class="plan-starter">SP: {% if row.side.starter %}{{ row.side.starter.name }}{% if row.side.starter_manual %}<span class="font-bold">*</span>{% endif %}{% else %}none{% endif %}</span>
+            <span class="text-gray-600">Opp SP: {% if row.side.opponent_starter %}{{ row.side.opponent_starter.name }} ({{ row.side.opponent_starter.throws|default:"?" }}){% else %}not planned{% endif %}</span>
+            {% if row.locked %}<span class="plan-locked text-gray-600">{% if row.game.is_played %}Final{% else %}Opened{% endif %}</span>{% elif can_edit and is_open %}<a href="/teams/{{ team.abbreviation|lower }}/plan/{{ half }}/day/{{ row.day }}/?season={{ plan_season }}" class="plan-day-edit underline">Edit day</a>{% endif %}
+        </div>
+        <details>
+            <summary class="text-xs cursor-pointer">Lineup vs {% if row.side.vs == "L" %}LHP{% else %}RHP{% endif %}{% if row.side.lineup_manual %}<span class="font-bold">*</span>{% endif %}</summary>
+            <ol class="list-decimal ml-5 text-xs">
+                {% for player, position in row.side.lineup %}<li class="plan-day-batter">{{ position }} {{ player.name }}{% if player.id in capped_ids %} <span class="plan-capped font-bold text-red-700">past his PA cap</span>{% endif %}</li>{% endfor %}
+            </ol>
+        </details>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+{% endblock %}

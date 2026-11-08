@@ -1,0 +1,86 @@
+{# ABOUTME: The half plan editor: rotation order, bullpen roles, bench order and the two lineup cards. #}
+{# ABOUTME: Only the team's owner and the commissioner reach it; it stacks into one column on a phone. #}
+{% extends "base.html" %}
+
+{% block content %}
+{% include 'includes/team_topper.html' %}
+{% include 'includes/plan_tabs.html' %}
+
+<div class="max-w-3xl">
+    <h2 class="text-lg font-bold mb-1">Edit the {{ plan_season }} {% if half == 1 %}first{% else %}second{% endif %}-half plan</h2>
+    <p class="text-sm text-gray-600 mb-4">Saving re-fills every unopened day without a manual starter from the rotation order. <a href="/teams/{{ team.abbreviation|lower }}/plan/{{ half }}/?season={{ plan_season }}" class="underline">Back to the plan</a></p>
+    {% include 'includes/plan_errors.html' %}
+
+    {% if not is_open %}
+    <p class="plan-closed text-sm">{{ closed_message }}</p>
+    {% else %}
+    <form method="post" class="space-y-6 text-sm">
+        {% csrf_token %}
+        <fieldset>
+            <legend class="font-bold border-b border-gray-300 w-full mb-2">Rotation, in order</legend>
+            <div class="space-y-2">
+                {% for selected in rotation_slots %}
+                <label class="flex gap-2 items-center"><span class="w-6">{{ forloop.counter }}</span>
+                    <select name="rotation" class="border border-gray-300 rounded px-1 py-1 w-full">
+                        <option value="">-</option>
+                        {% for p in pitchers %}<option value="{{ p.id }}"{% if p.id == selected %} selected{% endif %}>{{ p.name }}{% if p.throws %} ({{ p.throws }}){% endif %}</option>{% endfor %}
+                    </select>
+                </label>
+                {% endfor %}
+            </div>
+        </fieldset>
+
+        <fieldset>
+            <legend class="font-bold border-b border-gray-300 w-full mb-2">Bullpen</legend>
+            <p class="text-xs text-gray-600 mb-2">A pitcher in the rotation and the bullpen starts and relieves this half. A pitcher only in the bullpen is confined to relief.</p>
+            <label class="block mb-3"><span class="font-bold text-xs uppercase text-gray-600">Closer</span>
+                <select name="closer" class="border border-gray-300 rounded px-1 py-1 w-full">
+                    <option value="">-</option>
+                    {% for p in pitchers %}<option value="{{ p.id }}"{% if p.id == closer_id %} selected{% endif %}>{{ p.name }}</option>{% endfor %}
+                </select>
+            </label>
+            <p class="font-bold text-xs uppercase text-gray-600">Setup, in order</p>
+            <div class="space-y-2 mb-3">
+                {% for selected in setup_slots %}
+                <select name="setup" class="border border-gray-300 rounded px-1 py-1 w-full" aria-label="Setup {{ forloop.counter }}">
+                    <option value="">-</option>
+                    {% for p in pitchers %}<option value="{{ p.id }}"{% if p.id == selected %} selected{% endif %}>{{ p.name }}</option>{% endfor %}
+                </select>
+                {% endfor %}
+            </div>
+            <p class="font-bold text-xs uppercase text-gray-600">Middle and long, in order</p>
+            <div class="space-y-2">
+                {% for selected in middle_long_slots %}
+                <select name="middle_long" class="border border-gray-300 rounded px-1 py-1 w-full" aria-label="Middle and long {{ forloop.counter }}">
+                    <option value="">-</option>
+                    {% for p in pitchers %}<option value="{{ p.id }}"{% if p.id == selected %} selected{% endif %}>{{ p.name }}</option>{% endfor %}
+                </select>
+                {% endfor %}
+            </div>
+        </fieldset>
+
+        {% for prefix, label, rows in lineups %}
+        <fieldset>
+            <legend class="font-bold border-b border-gray-300 w-full mb-2">{{ label }}</legend>
+            <p class="text-xs text-gray-600 mb-2">Order, batter, position. One of each position, one DH, no pitchers.</p>
+            {% include 'includes/plan_lineup_rows.html' %}
+        </fieldset>
+        {% endfor %}
+
+        <fieldset>
+            <legend class="font-bold border-b border-gray-300 w-full mb-2">Bench, in order</legend>
+            <div class="space-y-2">
+                {% for selected in bench_slots %}
+                <select name="bench" class="border border-gray-300 rounded px-1 py-1 w-full" aria-label="Bench {{ forloop.counter }}">
+                    <option value="">-</option>
+                    {% for p in hitters %}<option value="{{ p.id }}"{% if p.id == selected %} selected{% endif %}>{{ p.name }}</option>{% endfor %}
+                </select>
+                {% endfor %}
+            </div>
+        </fieldset>
+
+        <button type="submit" class="w-full sm:w-auto bg-gray-800 text-white rounded px-4 py-2 font-bold">Save the plan</button>
+    </form>
+    {% endif %}
+</div>
+{% endblock %}
