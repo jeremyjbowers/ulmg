@@ -1,5 +1,6 @@
 import csv
 import json
+import math
 import os
 from decimal import Decimal
 
@@ -50,7 +51,15 @@ class Command(BaseCommand):
     def _process_v(self, k, v):
         int_keys = ['Age', 'AgeR', 'G', 'AB', 'PA', 'H', '1B', '2B', '3B', 'HR', 'R', 'RBI', 'BB', 'IBB', 'SO', 'HBP', 'SF', 'SH', 'GDP', 'SB', 'CS', 'GB', 'FB', 'LD', 'IFFB', 'Pitches', 'Balls', 'Strikes', 'IFH', 'BU', 'BUH', 'SeasonMin', 'SeasonMax', 'W', 'L', 'G', 'GS', 'QS', 'CG', 'ShO', 'SV', 'BS', 'IP', 'TBF', 'H', 'R', 'ER', 'HR', 'BB', 'IBB', 'HBP', 'WP', 'BK', 'SO', 'GB', 'FB', 'LD', 'IFFB', 'Pitches', 'Balls', 'Strikes', 'RS', 'IFH', 'BU', 'BUH']
 
-        if k in int_keys:
+        if k == 'IP':
+            # FanGraphs writes partial innings as .1 and .2; a partial inning counts as a whole one.
+            try:
+                v = math.ceil(float(v))
+
+            except:
+                v = 0
+
+        elif k in int_keys:
 
             try:
                 v = int(v)
