@@ -5,12 +5,13 @@
 use crate::game::{Game, GameError};
 use crate::governance::Governance;
 use crate::manager::ComputerManager;
-use crate::model::PrePaCalls;
+use crate::model::{PrePaCalls, Running};
 use crate::sim::Sim;
 
 /// Resolve exactly one plate appearance.
 ///
 /// `call` is a human choice. When it is absent, the computer manager supplies the call.
+/// `running` carries the ratings of the runners on base; empty runs everyone at the league constants.
 /// An empty mound is filled before this plate appearance, not instead of it.
 pub fn step_plate_appearance(
     game: &mut Game,
@@ -18,6 +19,7 @@ pub fn step_plate_appearance(
     manager: &mut ComputerManager,
     governance: &Governance,
     call: Option<PrePaCalls>,
+    running: &Running,
 ) -> Result<(), GameError> {
     if game.is_final() {
         return Err(GameError::GameOver);
@@ -29,7 +31,11 @@ pub fn step_plate_appearance(
         Some(calls) => calls,
         None => manager.pre_pa_calls(),
     };
-    let input = game.plate_appearance_input(calls)?;
+    running
+        .check(&game.bases)
+        .map_err(GameError::InvalidRunning)?;
+    let mut input = game.plate_appearance_input(calls)?;
+    input.running = running.clone();
     let result = governance.review(sim.resolve(&input));
     game.apply_plate_appearance(result)?;
     Ok(())
@@ -56,7 +62,7 @@ pub fn play_game(
         if guard > 2_000 {
             return Err(GameError::TooLong);
         }
-        step_plate_appearance(game, sim, manager, governance, None)?;
+        step_plate_appearance(game, sim, manager, governance, None, &Running::default())?;
     }
     Ok(())
 }

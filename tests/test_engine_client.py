@@ -1,5 +1,5 @@
 # ABOUTME: Tests the engine client against a real engine process that the tests build and start.
-# ABOUTME: Covers start, two steps in a row, replay, determinism, calls, card batted balls, matchup, and a down engine.
+# ABOUTME: Covers start, steps, calls, runner ratings, card batted balls, replay, determinism, matchup, and a down engine.
 import json
 
 from django.test import SimpleTestCase, override_settings
@@ -114,6 +114,43 @@ class EngineClientTestCase(SimpleTestCase):
         self.assertEqual(matchup["pitcher_id"], state["home"]["pitcher_slot"])
         self.assertAlmostEqual(sum(matchup["probabilities"].values()), 1.0, places=9)
         self.assertEqual(engine_client.matchup(state), matchup)
+
+    def runner_on_first(self):
+        state = self.opening_state(seed=2)
+        runner = state["away"]["lineup"][8]["id"]
+        state["bases"]["first"] = runner
+        return state, runner
+
+    def test_a_step_carries_runner_ratings(self):
+        state, runner = self.runner_on_first()
+        outcomes = [
+            (1.0, {"StolenBase": {"runner": runner, "to": "Second"}}),
+            (0.0, {"CaughtStealing": {"runner": runner, "at": "Second"}}),
+        ]
+        for steal_success, event in outcomes:
+            with self.subTest(steal_success=steal_success):
+                stepped = engine_client.step(
+                    state,
+                    seed=5,
+                    call="steal",
+                    runners={"first": {"id": runner, "steal_success": steal_success, "spd": 7.5}},
+                    league_spd=4.5,
+                )
+                self.assertIn(event, stepped["result"]["baserunning"])
+
+    def test_a_step_without_runner_ratings_sends_none(self):
+        state, _ = self.runner_on_first()
+        self.assertEqual(
+            engine_client.step(state, seed=6),
+            engine_client.step(state, seed=6, runners={}, league_spd=None),
+        )
+
+    def test_a_rating_for_the_wrong_runner_is_refused(self):
+        state, _ = self.runner_on_first()
+        with self.assertRaises(engine_client.EngineError) as caught:
+            engine_client.step(state, seed=4, runners={"first": {"id": "someone-else", "spd": 5.0}})
+        self.assertEqual(caught.exception.status, 422)
+        self.assertIn("invalid runner ratings", str(caught.exception))
 
     def test_an_infield_in_call_holds_the_runner_on_third(self):
         state = self.opening_state(seed=2)

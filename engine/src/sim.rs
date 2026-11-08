@@ -11,7 +11,7 @@ use rand::{Rng, SeedableRng};
 
 use crate::model::{
     Base, BaseOutRunChange, BaserunningEvent, Bases, BattedBallRates, Count, Fielding, HitterRates,
-    PaInput, PaResult, Pitch, PitchKind, PitcherRates, PlateOutcome, PlayerId,
+    PaInput, PaResult, Pitch, PitchKind, PitcherRates, PlateOutcome, PlayerId, Running,
 };
 
 /// League line used as the odds-ratio baseline, per plate appearance.
@@ -30,11 +30,15 @@ pub const LEAGUE_LD: f64 = 0.21;
 /// Hit probability moved into a ball-in-play out, per point of defense, per plate appearance.
 pub const DEFENSE_HIT_DELTA: f64 = 0.002;
 
-/// Chance a runner takes one extra base. There is no speed rating.
+/// Chance a runner takes one extra base at league speed, or when his speed or the league's is not given.
 pub const EXTRA_BASE_RATE: f64 = 0.25;
+/// Bounds on the speed-scaled extra-base chance.
+pub const EXTRA_BASE_MIN: f64 = 0.05;
+pub const EXTRA_BASE_MAX: f64 = 0.60;
 
 pub const BUNT_HIT_RATE: f64 = 0.15;
 pub const BUNT_SAC_RATE: f64 = 0.60;
+/// Steal success for a runner without a steal-success rating.
 pub const STEAL_SUCCESS_RATE: f64 = 0.75;
 pub const HIT_AND_RUN_K_KEEP: f64 = 0.5;
 
@@ -252,6 +256,29 @@ pub fn steal_target(bases: &Bases) -> Option<StealTarget> {
         Some(StealTarget::Third)
     } else {
         None
+    }
+}
+
+/// The runner's steal-success rating, or `STEAL_SUCCESS_RATE` without one.
+pub fn steal_success_rate(rating: Option<f64>) -> f64 {
+    rating.unwrap_or(STEAL_SUCCESS_RATE)
+}
+
+/// `EXTRA_BASE_RATE * runner Spd / league Spd`, clamped to `EXTRA_BASE_MIN..=EXTRA_BASE_MAX`.
+/// Without both speeds this is `EXTRA_BASE_RATE`.
+pub fn extra_base_chance(runner_spd: Option<f64>, league_spd: Option<f64>) -> f64 {
+    match (runner_spd, league_spd) {
+        (Some(runner), Some(league)) if league > 0.0 => {
+            (EXTRA_BASE_RATE * runner / league).clamp(EXTRA_BASE_MIN, EXTRA_BASE_MAX)
+        }
+        _ => EXTRA_BASE_RATE,
+    }
+}
+
+fn steal_runner(bases: &Bases, target: StealTarget) -> Option<&PlayerId> {
+    match target {
+        StealTarget::Second => bases.first.as_ref(),
+        StealTarget::Third => bases.second.as_ref(),
     }
 }
 
@@ -564,7 +591,10 @@ impl Sim {
 
         if input.calls.steal && !input.calls.hit_and_run {
             if let Some(target) = steal_target(&bases) {
-                let success = self.rng.gen::<f64>() < STEAL_SUCCESS_RATE;
+                let rating = steal_runner(&bases, target)
+                    .and_then(|runner| input.running.runners.for_runner(runner))
+                    .and_then(|rating| rating.steal_success);
+                let success = self.rng.gen::<f64>() < steal_success_rate(rating);
                 let (next, event) = apply_steal(&bases, target, success);
                 bases = next;
                 let caught = !success;
@@ -645,7 +675,8 @@ impl Sim {
                 return self.package(input, out, merge(outs_from_running, events, adv));
             }
         }
-        let take_extra = self.take_extra_base(outcome, &bases, input.calls.hit_and_run);
+        let take_extra =
+            self.take_extra_base(outcome, &bases, input.calls.hit_and_run, &input.running);
         let adv = advance(
             &bases,
             &input.hitter_id,
@@ -658,7 +689,13 @@ impl Sim {
         self.package(input, outcome, merge(outs_from_running, events, adv))
     }
 
-    fn take_extra_base(&mut self, outcome: PlateOutcome, bases: &Bases, hit_and_run: bool) -> bool {
+    fn take_extra_base(
+        &mut self,
+        outcome: PlateOutcome,
+        bases: &Bases,
+        hit_and_run: bool,
+        running: &Running,
+    ) -> bool {
         let chance = matches!(
             outcome,
             PlateOutcome::Single | PlateOutcome::Double | PlateOutcome::BuntSingle
@@ -669,7 +706,12 @@ impl Sim {
         if hit_and_run && matches!(outcome, PlateOutcome::Single | PlateOutcome::BuntSingle) {
             return true;
         }
-        self.rng.gen::<f64>() < EXTRA_BASE_RATE
+        let runner_spd = bases
+            .first
+            .as_deref()
+            .and_then(|runner| running.runners.for_runner(runner))
+            .and_then(|rating| rating.spd);
+        self.rng.gen::<f64>() < extra_base_chance(runner_spd, running.league_spd)
     }
 
     fn draw_batted_ball_out(&mut self, mix: &BattedBallRates) -> PlateOutcome {
@@ -924,7 +966,7 @@ impl CountBuilder {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::model::{Half, Park, PrePaCalls, Situation};
+    use crate::model::{BaseRunners, Half, Park, PrePaCalls, RunnerRating, Running, Situation};
 
     fn average_pitcher() -> PitcherRates {
         PitcherRates {
@@ -1474,6 +1516,181 @@ mod tests {
         }
     }
 
+    const LEAGUE_SPD: f64 = 4.5;
+
+    fn rated(id: &str, steal_success: Option<f64>, spd: Option<f64>) -> RunnerRating {
+        RunnerRating {
+            id: id.into(),
+            steal_success,
+            spd,
+        }
+    }
+
+    fn runner_on_first(rating: Option<RunnerRating>, league_spd: Option<f64>) -> PaInput {
+        let mut input = sample_input(false);
+        input.situation.bases.first = Some("r1".into());
+        input.running = Running {
+            runners: BaseRunners {
+                first: rating,
+                ..BaseRunners::default()
+            },
+            league_spd,
+        };
+        input
+    }
+
+    /// Share of singles and doubles on which the runner from first took the extra base.
+    fn extra_base_share(input: &PaInput, seed: u64) -> f64 {
+        let mut sim = Sim::from_seed(seed);
+        let mut chances = 0u32;
+        let mut taken = 0u32;
+        while chances < 4_000 {
+            let result = sim.resolve(input);
+            if !matches!(result.outcome, PlateOutcome::Single | PlateOutcome::Double) {
+                continue;
+            }
+            chances += 1;
+            let took = match result.outcome {
+                PlateOutcome::Single => result
+                    .baserunning
+                    .iter()
+                    .any(|event| matches!(event, BaserunningEvent::TookExtraBase { .. })),
+                _ => result.baserunning.iter().any(
+                    |event| matches!(event, BaserunningEvent::Scored { runner } if runner == "r1"),
+                ),
+            };
+            if took {
+                taken += 1;
+            }
+        }
+        f64::from(taken) / f64::from(chances)
+    }
+
+    /// Share of steal calls with a runner on first that ended in a stolen base.
+    fn steal_share(input: &PaInput, seed: u64) -> f64 {
+        let mut called = input.clone();
+        called.calls.steal = true;
+        let mut sim = Sim::from_seed(seed);
+        let tries = 4_000;
+        let stolen = (0..tries)
+            .filter(|_| {
+                sim.resolve(&called)
+                    .baserunning
+                    .iter()
+                    .any(|event| matches!(event, BaserunningEvent::StolenBase { .. }))
+            })
+            .count();
+        stolen as f64 / tries as f64
+    }
+
+    #[test]
+    fn extra_base_chance_scales_with_runner_speed_over_league_speed() {
+        let fast = extra_base_chance(Some(8.0), Some(LEAGUE_SPD));
+        let slow = extra_base_chance(Some(2.0), Some(LEAGUE_SPD));
+        assert!((fast - EXTRA_BASE_RATE * 8.0 / LEAGUE_SPD).abs() < 1e-12);
+        assert!((slow - EXTRA_BASE_RATE * 2.0 / LEAGUE_SPD).abs() < 1e-12);
+        assert!(
+            (extra_base_chance(Some(LEAGUE_SPD), Some(LEAGUE_SPD)) - EXTRA_BASE_RATE).abs() < 1e-12
+        );
+    }
+
+    #[test]
+    fn extra_base_chance_is_clamped() {
+        assert_eq!(EXTRA_BASE_MIN, 0.05);
+        assert_eq!(EXTRA_BASE_MAX, 0.60);
+        assert_eq!(
+            extra_base_chance(Some(15.0), Some(LEAGUE_SPD)),
+            EXTRA_BASE_MAX
+        );
+        assert_eq!(
+            extra_base_chance(Some(0.5), Some(LEAGUE_SPD)),
+            EXTRA_BASE_MIN
+        );
+        assert_eq!(
+            extra_base_chance(Some(0.0), Some(LEAGUE_SPD)),
+            EXTRA_BASE_MIN
+        );
+    }
+
+    #[test]
+    fn extra_base_chance_without_both_speeds_is_the_constant() {
+        assert_eq!(extra_base_chance(None, None), EXTRA_BASE_RATE);
+        assert_eq!(extra_base_chance(Some(8.0), None), EXTRA_BASE_RATE);
+        assert_eq!(extra_base_chance(None, Some(LEAGUE_SPD)), EXTRA_BASE_RATE);
+    }
+
+    #[test]
+    fn steal_success_is_the_runner_rating_or_the_constant() {
+        assert_eq!(steal_success_rate(Some(0.9)), 0.9);
+        assert_eq!(steal_success_rate(None), STEAL_SUCCESS_RATE);
+    }
+
+    #[test]
+    fn a_fast_runner_takes_the_extra_base_more_than_a_slow_one() {
+        let fast = runner_on_first(Some(rated("r1", None, Some(8.0))), Some(LEAGUE_SPD));
+        let slow = runner_on_first(Some(rated("r1", None, Some(2.0))), Some(LEAGUE_SPD));
+        let fast_share = extra_base_share(&fast, 31);
+        let slow_share = extra_base_share(&slow, 31);
+        assert!(
+            (fast_share - EXTRA_BASE_RATE * 8.0 / LEAGUE_SPD).abs() < 0.03,
+            "fast {fast_share}"
+        );
+        assert!(
+            (slow_share - EXTRA_BASE_RATE * 2.0 / LEAGUE_SPD).abs() < 0.03,
+            "slow {slow_share}"
+        );
+    }
+
+    #[test]
+    fn a_runner_without_ratings_takes_the_extra_base_at_the_constant() {
+        let unrated = runner_on_first(None, Some(LEAGUE_SPD));
+        let share = extra_base_share(&unrated, 32);
+        assert!((share - EXTRA_BASE_RATE).abs() < 0.03, "unrated {share}");
+    }
+
+    #[test]
+    fn a_rating_for_someone_else_does_not_reach_the_runner() {
+        let other = runner_on_first(None, Some(LEAGUE_SPD));
+        let mut misplaced = other.clone();
+        misplaced.running.runners.second = Some(rated("r1-elsewhere", Some(0.0), Some(20.0)));
+        assert_eq!(
+            extra_base_share(&other, 33),
+            extra_base_share(&misplaced, 33)
+        );
+    }
+
+    #[test]
+    fn a_steal_succeeds_at_the_runner_rating() {
+        let burner = runner_on_first(Some(rated("r1", Some(0.92), None)), None);
+        let catcher = runner_on_first(Some(rated("r1", Some(0.40), None)), None);
+        assert!((steal_share(&burner, 41) - 0.92).abs() < 0.03);
+        assert!((steal_share(&catcher, 41) - 0.40).abs() < 0.03);
+    }
+
+    #[test]
+    fn a_steal_without_a_rating_succeeds_at_the_constant() {
+        let unrated = runner_on_first(None, None);
+        assert!((steal_share(&unrated, 42) - STEAL_SUCCESS_RATE).abs() < 0.03);
+    }
+
+    #[test]
+    fn the_runner_stealing_third_uses_his_own_rating() {
+        let mut input = sample_input(false);
+        input.situation.bases.first = Some("r1".into());
+        input.situation.bases.second = Some("r2".into());
+        input.running.runners.first = Some(rated("r1", Some(0.0), None));
+        input.running.runners.second = Some(rated("r2", Some(1.0), None));
+        input.calls.steal = true;
+        let mut sim = Sim::from_seed(43);
+        for _ in 0..50 {
+            let result = sim.resolve(&input);
+            assert!(result.baserunning.contains(&BaserunningEvent::StolenBase {
+                runner: "r2".into(),
+                to: Base::Third,
+            }));
+        }
+    }
+
     fn sample_input(intentional_walk: bool) -> PaInput {
         PaInput {
             hitter_id: "batter".into(),
@@ -1506,6 +1723,7 @@ mod tests {
                 intentional_walk,
                 ..PrePaCalls::default()
             },
+            running: Running::default(),
         }
     }
 }

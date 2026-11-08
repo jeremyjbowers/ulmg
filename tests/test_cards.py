@@ -1,4 +1,4 @@
-# ABOUTME: Tests for engine cards: hitter/pitcher rates, fatigue, defense ratings, fielding load, generation, display.
+# ABOUTME: Tests for engine cards: hitter/pitcher rates, running, fatigue, defense, fielding load, generation, display.
 # ABOUTME: Stats are FanGraphs-shaped rows run through the real loader key processing; no HTTP is mocked.
 import json
 import os
@@ -34,6 +34,9 @@ FG_HITTER_ROW = {
     "HBP": 6,
     "SF": 4,
     "SH": 2,
+    "SB": 20,
+    "CS": 5,
+    "Spd": 6.2,
     "AVG": 0.278,
     "OBP": 0.355,
     "SLG": 0.481,
@@ -100,6 +103,48 @@ class HitterRatesTestCase(SimpleTestCase):
 
     def test_no_plate_appearances_gives_no_rates(self):
         self.assertIsNone(cards.hitter_rates(processed(FG_HITTER_ROW, PA=0)))
+
+
+class RunnerRatingsTestCase(SimpleTestCase):
+    def setUp(self):
+        self.stats = processed(FG_HITTER_ROW)
+
+    def test_steal_prior_constants(self):
+        self.assertEqual(cards.STEAL_PRIOR_ATTEMPTS, 10)
+        self.assertEqual(cards.STEAL_PRIOR_SUCCESS_RATE, 0.72)
+
+    def test_steal_success_is_regressed_toward_the_prior(self):
+        self.assertAlmostEqual(cards.steal_success(self.stats), (20 + 10 * 0.72) / (20 + 5 + 10))
+
+    def test_steal_success_with_zero_attempts_is_the_prior(self):
+        stats = processed(FG_HITTER_ROW, SB=0, CS=0)
+        self.assertAlmostEqual(cards.steal_success(stats), 0.72)
+
+    def test_steal_success_with_a_missing_column_counts_it_as_zero(self):
+        stats = processed(FG_HITTER_ROW)
+        del stats["cs"]
+        self.assertAlmostEqual(cards.steal_success(stats), (20 + 7.2) / 30)
+
+    def test_steal_attempt_rate_is_attempts_per_time_reaching_first(self):
+        self.assertAlmostEqual(cards.steal_attempt_rate(self.stats), (20 + 5) / (90 + 60 + 6))
+
+    def test_steal_attempt_rate_without_reaching_first_is_none(self):
+        stats = processed(FG_HITTER_ROW, **{"1B": 0, "BB": 0, "HBP": 0})
+        self.assertIsNone(cards.steal_attempt_rate(stats))
+
+    def test_speed_is_fangraphs_spd(self):
+        self.assertEqual(cards.speed(self.stats), 6.2)
+
+    def test_missing_speed_is_none(self):
+        stats = processed(FG_HITTER_ROW)
+        del stats["spd"]
+        self.assertIsNone(cards.speed(stats))
+        self.assertIsNone(cards.speed(processed(FG_HITTER_ROW, Spd=None)))
+
+    def test_no_stats_give_no_ratings(self):
+        self.assertIsNone(cards.steal_success(None))
+        self.assertIsNone(cards.steal_attempt_rate(None))
+        self.assertIsNone(cards.speed(None))
 
 
 class PitcherRatesTestCase(SimpleTestCase):
@@ -392,6 +437,32 @@ class GenerateCardsTestCase(TestCase):
         self.assertIsNone(card.defense["C"])
         self.assertIsNone(card.pitcher_rates)
 
+    def test_hitter_card_running(self):
+        self.generate("--season", "2025")
+        card = models.Card.objects.get(player=self.hitter, season=2025)
+        self.assertAlmostEqual(card.steal_success, 27.2 / 35)
+        self.assertAlmostEqual(card.steal_attempt_rate, 25 / 156)
+        self.assertEqual(card.spd, 6.2)
+
+    def test_pitcher_card_has_no_running(self):
+        self.generate("--season", "2025")
+        card = models.Card.objects.get(player=self.pitcher, season=2025)
+        self.assertIsNone(card.steal_success)
+        self.assertIsNone(card.steal_attempt_rate)
+        self.assertIsNone(card.spd)
+
+    def test_runner_rating_shape(self):
+        self.generate("--season", "2025")
+        card = models.Card.objects.get(player=self.hitter, season=2025)
+        self.assertEqual(
+            card.runner_rating("away-9"),
+            {"id": "away-9", "steal_success": card.steal_success, "spd": 6.2},
+        )
+
+    def test_reports_league_speed(self):
+        output = self.generate("--season", "2025")
+        self.assertIn("League Spd for 2025: 6.20", output)
+
     def test_sim_defense_rating_shape(self):
         self.generate("--season", "2025")
         card = models.Card.objects.get(player=self.hitter, season=2025)
@@ -466,6 +537,33 @@ class GenerateCardsTestCase(TestCase):
 
 
 @override_settings(CURRENT_SEASON=2026, CURRENT_SEASON_TYPE="midseason")
+class LeagueSpeedTestCase(TestCase):
+    def card(self, name, season, pa, spd):
+        player = models.Player.objects.create(name=name, position="IF")
+        return models.Card.objects.create(player=player, season=season, plate_appearances=pa, spd=spd)
+
+    def test_league_speed_is_weighted_by_plate_appearances(self):
+        self.card("Burner", 2025, 600, 8.0)
+        self.card("Catcher", 2025, 200, 2.0)
+        self.assertAlmostEqual(models.Card.league_spd(2025), (600 * 8.0 + 200 * 2.0) / 800)
+
+    def test_cards_without_speed_or_plate_appearances_do_not_count(self):
+        self.card("Burner", 2025, 600, 8.0)
+        self.card("Unknown", 2025, 400, None)
+        self.card("Pitcher", 2025, None, None)
+        self.card("Zero", 2025, 0, 3.0)
+        self.assertAlmostEqual(models.Card.league_spd(2025), 8.0)
+
+    def test_only_the_card_season_counts(self):
+        self.card("Burner", 2025, 600, 8.0)
+        self.card("Other Year", 2024, 600, 2.0)
+        self.assertAlmostEqual(models.Card.league_spd(2025), 8.0)
+
+    def test_a_season_without_speed_has_no_league_speed(self):
+        self.assertIsNone(models.Card.league_spd(2025))
+
+
+@override_settings(CURRENT_SEASON=2026, CURRENT_SEASON_TYPE="midseason")
 class CardDisplayTestCase(TestCase):
     def setUp(self):
         self.client = Client()
@@ -514,6 +612,18 @@ class CardDisplayTestCase(TestCase):
         self.assertIn(".478", content)
         self.assertIn("SS -2.6", content)
         self.assertIn("2B", content)
+        self.assertIn("Steal success 77.7%", content)
+        self.assertIn("Attempts 16.0% of times on first", content)
+        self.assertIn("Spd 6.2", content)
+
+    def test_player_page_shows_a_card_generated_without_running(self):
+        models.Card.objects.filter(player=self.hitter).update(steal_success=None, steal_attempt_rate=None, spd=None)
+        response = self.client.get(f"/players/{self.hitter.id}/")
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        self.assertIn("Steal success -", content)
+        self.assertIn("Attempts - of times on first", content)
+        self.assertIn("Spd -", content)
 
     def test_player_page_shows_pitcher_card(self):
         response = self.client.get(f"/players/{self.pitcher.id}/")
@@ -522,6 +632,7 @@ class CardDisplayTestCase(TestCase):
         self.assertIn("800 BF", content)
         self.assertIn(".217", content)
         self.assertIn(".280", content)
+        self.assertNotIn("Steal success", content)
 
     def test_player_without_card_shows_no_card(self):
         other = models.Player.objects.create(name="No Card Guy", position="IF")

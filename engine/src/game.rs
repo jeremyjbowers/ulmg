@@ -13,7 +13,8 @@ use serde::{Deserialize, Serialize};
 use crate::fatigue::{draw_ceiling, effort_per_pitch};
 use crate::model::{
     Bases, BatterCard, FatigueState, GameFixture, Half, LineScore, LogEntry, PaInput, PaResult,
-    PitcherCard, PlayerId, Position, PrePaCalls, Score, Side, Situation, Status, TeamFixture,
+    PitcherCard, PlayerId, Position, PrePaCalls, Running, Score, Side, Situation, Status,
+    TeamFixture,
 };
 
 const FIELD_POSITIONS: [Position; 8] = [
@@ -37,6 +38,7 @@ pub enum GameError {
     PitcherDoesNotHit { player: PlayerId },
     GameOver,
     InvalidFixture(String),
+    InvalidRunning(String),
     Store(String),
     TooLong,
 }
@@ -60,6 +62,7 @@ impl fmt::Display for GameError {
             }
             Self::GameOver => write!(f, "the game is over"),
             Self::InvalidFixture(msg) => write!(f, "invalid fixture: {msg}"),
+            Self::InvalidRunning(msg) => write!(f, "invalid runner ratings: {msg}"),
             Self::Store(msg) => write!(f, "store: {msg}"),
             Self::TooLong => write!(f, "the game did not end"),
         }
@@ -270,6 +273,7 @@ impl Game {
             park: self.home_park()?.clone(),
             weather: self.weather.clone(),
             calls,
+            running: Running::default(),
         })
     }
 

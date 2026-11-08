@@ -11,8 +11,8 @@ use baseball_engine::{
     batted_ball_mix, card_batting_average, load_json, outcome_probabilities, Bases,
     BattedBallRates, BatterCard, ComputerManager, DefenseRating, DistributionFixture,
     FatigueProfile, Game, GameFixture, Governance, Half, HitterRates, PaInput, PaResult, Park,
-    PitcherCard, PitcherRates, PitcherRole, PlateOutcome, Position, PrePaCalls, Sim, Situation,
-    TeamFixture, COMPUTER_BUNT_RATE, DP_RATE, FLY_SECOND_TO_THIRD, GB_SCORE_FROM_THIRD,
+    PitcherCard, PitcherRates, PitcherRole, PlateOutcome, Position, PrePaCalls, Running, Sim,
+    Situation, TeamFixture, COMPUTER_BUNT_RATE, DP_RATE, FLY_SECOND_TO_THIRD, GB_SCORE_FROM_THIRD,
     GB_SECOND_TO_THIRD, INFIELD_IN_SINGLE_SHIFT, LEAGUE_BB, LEAGUE_FB, LEAGUE_GB, LEAGUE_H,
     LEAGUE_HBP, LEAGUE_HR, LEAGUE_K, LEAGUE_LD, SF_RATE,
 };
@@ -52,6 +52,7 @@ fn input_from(fixture: &DistributionFixture, wrc_plus: f64, weather: Option<Stri
         park: fixture.park.clone(),
         weather,
         calls: PrePaCalls::default(),
+        running: Running::default(),
     }
 }
 
@@ -222,6 +223,7 @@ fn league_input(bases: Bases, outs: u8, calls: PrePaCalls) -> PaInput {
         },
         weather: None,
         calls,
+        running: Running::default(),
     }
 }
 
@@ -614,7 +616,15 @@ fn league_average_games_land_in_the_run_and_double_play_bands() {
             guard += 1;
             assert!(guard < 2_000, "game {game_index} did not end");
             let opportunity = game.bases.first.is_some() && game.outs < 2;
-            step_plate_appearance(&mut game, &mut sim, &mut manager, &governance, None).unwrap();
+            step_plate_appearance(
+                &mut game,
+                &mut sim,
+                &mut manager,
+                &governance,
+                None,
+                &Running::default(),
+            )
+            .unwrap();
             if opportunity {
                 opportunities += 1;
                 let result = game.last_result.as_ref().unwrap();

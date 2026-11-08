@@ -11,7 +11,7 @@ use serde::Serialize;
 use crate::game::{Game, GameError};
 use crate::governance::Governance;
 use crate::manager::ComputerManager;
-use crate::model::{GameFixture, PaResult, PlayerId, PrePaCalls};
+use crate::model::{GameFixture, PaResult, PlayerId, PrePaCalls, Running};
 use crate::runner::{needs_pitcher, step_plate_appearance};
 use crate::sim::{outcome_probabilities, OutcomeProbs, Sim};
 
@@ -41,11 +41,24 @@ pub fn start(fixture: GameFixture, seed: u64) -> Result<Game, GameError> {
 }
 
 /// Resolve exactly one plate appearance. `call` is a human choice; `None` lets the computer manager call it.
-pub fn step(mut game: Game, call: Option<PrePaCalls>, seed: u64) -> Result<Stepped, GameError> {
+/// `running` carries the ratings of the runners on base; empty runs everyone at the league constants.
+pub fn step(
+    mut game: Game,
+    call: Option<PrePaCalls>,
+    seed: u64,
+    running: &Running,
+) -> Result<Stepped, GameError> {
     let mut sim = Sim::from_seed(seed);
     let mut manager = ComputerManager::from_seed(seed ^ MANAGER_SEED_MIX);
     let governance = Governance::new();
-    step_plate_appearance(&mut game, &mut sim, &mut manager, &governance, call)?;
+    step_plate_appearance(
+        &mut game,
+        &mut sim,
+        &mut manager,
+        &governance,
+        call,
+        running,
+    )?;
     let result = game
         .last_result
         .clone()
