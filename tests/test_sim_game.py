@@ -401,3 +401,153 @@ class PlayingTestCase(SimGameTestCase):
         with self.assertRaises(sim_game.GameRefused):
             sim_game.change_pitcher(log, self.manager, AWAY, self.road.relievers[0], play.sequence - 1, seeds=self.next_seed)
         self.assertEqual(self.play(log).sequence, play.sequence)
+
+
+class DecisionsTestCase(SimGameTestCase):
+    """Games whose runs are certain: every hitter strikes out except the ones given home-run rates."""
+
+    def setUp(self):
+        super().setUp()
+        gf.set_rates(self.road.hitters + self.road.bench + self.home.hitters + self.home.bench, gf.STRIKEOUT_RATES)
+
+    def test_win_loss_and_save_in_a_save_situation(self):
+        # The home leadoff man homers in the 1st, 4th and 7th: 3-0, and the starter is done after eight.
+        gf.set_rates([self.home.hitters[0]], gf.HOME_RUN_RATES)
+        log = gf.play_out(self.open(), self.manager, self.next_seed)
+        self.assertEqual(log.state["score"], {"away": 0, "home": 3})
+        box = box_score.box_score(log)
+        self.assertGreater(len(box.pitching[HOME]), 1)
+        self.assertGreaterEqual(box.pitching[HOME][0].outs, box_score.STARTER_WIN_OUTS)
+        self.assertEqual(box.win, self.home.starters[0])
+        self.assertEqual(box.loss, self.road.starters[0])
+        finisher = box.pitching[HOME][-1]
+        self.assertGreaterEqual(finisher.outs, 3)
+        self.assertEqual(box.save, finisher.player)
+        self.assertEqual((box.pitching[AWAY][0].r, box.pitching[AWAY][0].er), (3, 3))
+        self.assertEqual(box.line[HOME][-1], "X", "home leads after the top of the 9th and does not bat")
+        leadoff = box.batting[HOME][0]
+        self.assertEqual((leadoff.ab, leadoff.h, leadoff.hr, leadoff.r, leadoff.rbi), (3, 3, 3, 3, 3))
+
+    def test_a_starter_short_of_five_innings_gives_the_win_to_the_most_effective_reliever(self):
+        gf.set_rates([self.home.hitters[0]], gf.HOME_RUN_RATES)
+        gf.counter(self.home.starters[0], start_limit_outs=6)
+        log = gf.play_out(self.open(), self.manager, self.next_seed)
+        box = box_score.box_score(log)
+        starter = box.pitching[HOME][0]
+        self.assertEqual(starter.outs, 6)
+        relievers = box.pitching[HOME][1:]
+        lead_outs = {line.player.id: 0 for line in relievers}
+        for event in gf.events(log, Event.PLATE_APPEARANCE):
+            before = event.payload["before"]["score"]
+            pitcher = event.payload["pitcher"]
+            if event.payload["batting"] == AWAY and before["home"] > before["away"] and pitcher in lead_outs:
+                lead_outs[pitcher] += event.payload["result"]["change"]["outs_added"]
+        best = max(lead_outs.values())
+        expected = next(line.player for line in relievers if lead_outs[line.player.id] == best)
+        self.assertEqual(box.win, expected)
+        self.assertNotEqual(box.win, starter.player)
+
+    def test_the_placed_extra_inning_runner_scores_an_unearned_run(self):
+        gf.set_rates([self.road.bench[0]], gf.HOME_RUN_RATES)
+        models.Card.objects.filter(player=self.road.bench[0]).update(defense={"C": 0.0})
+        log = self.open()
+        play = self.step_until(log, lambda p: p.state["inning"] == 10)
+        self.assertEqual(play.state["half"], "top")
+        ghost = int(play.state["bases"]["second"])
+        leadoff = models.Player.objects.get(pk=int(sim_game.current_batter_id(play.state)))
+        gf.counter(leadoff, plate_appearances_cap=1, plate_appearances=1)
+        sim_game.replace_batter(log, self.manager, AWAY, self.road.bench[0], play.sequence, seeds=self.next_seed)
+        log = gf.play_out(log, self.manager, self.next_seed)
+        self.assertEqual(log.state["score"], {"away": 2, "home": 0})
+        box = box_score.box_score(log)
+        charged = [line for line in box.pitching[HOME] if line.r]
+        self.assertEqual(len(charged), 1)
+        self.assertEqual((charged[0].r, charged[0].er), (2, 1))
+        self.assertEqual(box.loss, charged[0].player)
+        ghost_line = next(line for line in box.batting[AWAY] if line.player.id == ghost)
+        self.assertEqual(ghost_line.r, 1)
+        completed = sum(
+            1
+            for e in gf.events(log, Event.PLATE_APPEARANCE)
+            if e.payload["batter"] == ghost and e.payload["result"]["batter_completed"]
+        )
+        recorded = models.UsageAppearance.objects.get(game=self.game, player_id=ghost).plate_appearances
+        self.assertEqual(recorded, completed, "being placed on second used no plate appearance")
+
+
+class SeatsTestCase(SimGameTestCase):
+    def test_a_tester_plays_the_home_seat_against_the_visitors_computer(self):
+        log = self.open(self.tester, seats=(HOME,))
+        seats = {e.side: e.user for e in gf.events(log, Event.SEAT)}
+        self.assertEqual(seats, {AWAY: None, HOME: self.tester})
+        self.step(log, self.tester)
+        pa = gf.events(log, Event.PLATE_APPEARANCE)[0]
+        self.assertEqual(pa.user, self.tester)
+        self.assertIsNone(pa.payload["inputs"]["call"], "the visitors' computer makes its own offensive call")
+        sim_game.step(log, self.tester, self.play(log).sequence, call=sim_game.PITCH_AROUND, seeds=self.next_seed)
+        with self.assertRaises(sim_game.GameRefused):
+            sim_game.step(log, self.tester, self.play(log).sequence, call="bunt", seeds=self.next_seed)
+        sim_game.change_pitcher(log, self.tester, HOME, self.home.relievers[1], self.play(log).sequence, seeds=self.next_seed)
+        change = gf.events(log, Event.PITCHING_CHANGE)[-1]
+        self.assertEqual((change.user, change.computer, change.side), (self.tester, False, HOME))
+        with self.assertRaises(sim_game.GameRefused):
+            sim_game.change_pitcher(
+                log, self.manager, HOME, self.home.relievers[0], self.play(log).sequence, seeds=self.next_seed
+            )
+
+    def test_a_tester_plays_both_seats_through_a_final(self):
+        log = self.open(self.tester, seats=(AWAY, HOME))
+        log = gf.play_out(log, self.tester, self.next_seed)
+        self.assertEqual(log.state["status"], "final")
+        changes = gf.events(log, Event.PITCHING_CHANGE)
+        self.assertTrue(changes)
+        self.assertTrue(all(not e.computer and e.user == self.tester for e in changes))
+        self.assertFalse(gf.events(log, Event.DECISION), "with both seats held the computer decides nothing")
+        self.assertEqual({e.user for e in gf.events(log, Event.PLATE_APPEARANCE)}, {self.tester})
+        self.game.refresh_from_db()
+        self.assertTrue(self.game.is_played)
+
+    def test_a_manager_is_refused_the_home_seat(self):
+        with self.assertRaises(sim_game.GameRefused) as refused:
+            self.open(self.manager, seats=(HOME,))
+        self.assertIn("visiting side", str(refused.exception))
+        with self.assertRaises(sim_game.GameRefused):
+            self.open(self.manager, seats=(AWAY, HOME))
+        self.assertFalse(models.GameLog.objects.exists())
+        log = self.open(self.manager, seats=(AWAY,))
+        with self.assertRaises(sim_game.GameRefused) as refused:
+            sim_game.take_seat(log, self.manager, HOME, self.play(log).sequence, seeds=self.next_seed)
+        self.assertIn("visiting side", str(refused.exception))
+
+    def test_a_manager_is_refused_another_teams_game(self):
+        with self.assertRaises(sim_game.GameRefused) as refused:
+            self.open(self.other_manager, seats=(AWAY,))
+        self.assertIn(f"Only {self.road.team.abbreviation}'s manager", str(refused.exception))
+        self.assertEqual(sim_game.open_seat_choices(self.other_manager, self.game), [])
+
+    def test_a_manager_opens_only_his_next_unplayed_road_game(self):
+        later = (
+            models.ScheduleGame.objects.filter(series__road_team=self.road.team, series__slot__season=gf.SEASON)
+            .exclude(pk=self.game.pk)
+            .order_by("day")
+            .first()
+        )
+        self.assertEqual(sim_game.open_seat_choices(self.manager, later), [])
+        self.assertEqual(sim_game.open_seat_choices(self.manager, self.game), [(AWAY,)])
+        self.assertEqual(len(sim_game.open_seat_choices(self.tester, later)), 3)
+
+    def test_the_log_names_the_user_in_each_seat_as_seats_change(self):
+        log = self.open(self.tester, seats=(HOME,))
+        sim_game.take_seat(log, self.manager, AWAY, self.play(log).sequence, seeds=self.next_seed)
+        sim_game.leave_seat(log, self.tester, HOME, self.play(log).sequence, seeds=self.next_seed)
+        sim_game.take_seat(log, self.tester, HOME, self.play(log).sequence, seeds=self.next_seed)
+        with self.assertRaises(sim_game.GameRefused) as refused:
+            sim_game.take_seat(log, self.tester, AWAY, self.play(log).sequence, seeds=self.next_seed)
+        self.assertIn("Someone else holds", str(refused.exception))
+        seat_events = [(e.side, e.user) for e in gf.events(log, Event.SEAT)]
+        self.assertEqual(
+            seat_events,
+            [(AWAY, None), (HOME, self.tester), (AWAY, self.manager), (HOME, None), (HOME, self.tester)],
+        )
+        self.assertEqual(self.play(log).fold.seats, {AWAY: self.manager.id, HOME: self.tester.id})
+        self.assertIn(self.manager.username, gf.events(log, Event.SEAT)[2].text)
