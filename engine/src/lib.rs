@@ -27,6 +27,11 @@ pub use manager::{
 pub use model::*;
 pub use runner::play_game;
 pub use sim::{
+    advance_on_out, batted_ball_mix, OutAdvanceOptions, DP_RATE, FLY_SECOND_TO_THIRD,
+    GB_SCORE_FROM_THIRD, GB_SECOND_TO_THIRD, INFIELD_IN_SINGLE_SHIFT, LEAGUE_FB, LEAGUE_GB,
+    LEAGUE_LD, SF_RATE,
+};
+pub use sim::{
     card_batting_average, outcome_probabilities, OutcomeProbs, Sim, DEFENSE_HIT_DELTA,
     EXTRA_BASE_RATE, LEAGUE_BB, LEAGUE_H, LEAGUE_HBP, LEAGUE_HR, LEAGUE_K,
 };
