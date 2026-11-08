@@ -1,11 +1,14 @@
-// ABOUTME: Stateless JSON routes for the engine: start, step, matchup, and health.
+// ABOUTME: Stateless JSON routes for the engine: start, step, matchup, pitcher, substitute, and health.
 // ABOUTME: Every request carries the whole game state; the process keeps nothing between requests.
 //! The engine's HTTP surface.
 //!
 //! `POST /start` opens a fixture with a seed. `POST /step` resolves exactly one plate
 //! appearance from a state, an optional call, a seed, and optional runner ratings
-//! (`runners` keyed by base, and `league_spd`). `POST /matchup` reports the
-//! outcome probabilities the next plate appearance will draw from. `GET /health` answers
+//! (`runners` keyed by base, and `league_spd`). The call `none` plays the plate appearance
+//! with no call at all, where an omitted call lets the computer manager decide.
+//! `POST /matchup` reports the outcome probabilities the next plate appearance will draw
+//! from. `POST /pitcher` makes a pitching change for the fielding club from a card and a
+//! seed. `POST /substitute` puts a batter card in one batting-order slot. `GET /health` answers
 //! App Platform. The caller holds the state. The same state, call, and seed give the same result.
 
 use axum::body::Bytes;
@@ -19,7 +22,7 @@ use serde::Deserialize;
 use serde_json::{json, Value};
 
 use crate::game::{Game, GameError};
-use crate::model::{BaseRunners, GameFixture, PrePaCalls, Running};
+use crate::model::{BaseRunners, BatterCard, GameFixture, PitcherCard, PrePaCalls, Running, Side};
 use crate::service::{self, Matchup, Stepped};
 
 /// A finished extra-inning game is a few hundred kilobytes. This leaves room without being unbounded.
@@ -31,6 +34,8 @@ pub fn router() -> Router {
         .route("/start", post(start))
         .route("/step", post(step))
         .route("/matchup", post(matchup))
+        .route("/pitcher", post(pitcher))
+        .route("/substitute", post(substitute))
         .layer(DefaultBodyLimit::max(BODY_LIMIT_BYTES))
 }
 
@@ -51,6 +56,21 @@ struct StepRequest {
     runners: BaseRunners,
     #[serde(default)]
     league_spd: Option<f64>,
+}
+
+#[derive(Deserialize)]
+struct PitcherRequest {
+    state: Game,
+    pitcher: PitcherCard,
+    seed: u64,
+}
+
+#[derive(Deserialize)]
+struct SubstituteRequest {
+    state: Game,
+    side: Side,
+    index: usize,
+    batter: BatterCard,
 }
 
 #[derive(Deserialize)]
@@ -90,6 +110,20 @@ async fn matchup(body: Bytes) -> Result<Json<Matchup>, HttpError> {
         .map_err(HttpError::Game)
 }
 
+async fn pitcher(body: Bytes) -> Result<Json<Value>, HttpError> {
+    let request: PitcherRequest = parse(&body)?;
+    let game = service::bring_in_pitcher(request.state, request.pitcher, request.seed)
+        .map_err(HttpError::Game)?;
+    Ok(Json(json!({ "state": game })))
+}
+
+async fn substitute(body: Bytes) -> Result<Json<Value>, HttpError> {
+    let request: SubstituteRequest = parse(&body)?;
+    let game = service::substitute(request.state, request.side, request.index, request.batter)
+        .map_err(HttpError::Game)?;
+    Ok(Json(json!({ "state": game })))
+}
+
 fn parse<T: DeserializeOwned>(body: &[u8]) -> Result<T, HttpError> {
     serde_json::from_slice(body).map_err(|err| HttpError::BadRequest(err.to_string()))
 }
@@ -97,6 +131,7 @@ fn parse<T: DeserializeOwned>(body: &[u8]) -> Result<T, HttpError> {
 fn named_call(name: &str) -> Result<PrePaCalls, HttpError> {
     let mut calls = PrePaCalls::default();
     match name {
+        "none" => {}
         "bunt" => calls.bunt = true,
         "intentional_walk" => calls.intentional_walk = true,
         "steal" => calls.steal = true,
@@ -124,7 +159,7 @@ impl IntoResponse for HttpError {
             Self::BadRequest(message) => (StatusCode::BAD_REQUEST, message),
             Self::BadCall => (
                 StatusCode::BAD_REQUEST,
-                "The call must be bunt, intentional_walk, steal, hit_and_run, infield_in, or omitted."
+                "The call must be none, bunt, intentional_walk, steal, hit_and_run, infield_in, or omitted."
                     .to_string(),
             ),
         };
@@ -484,6 +519,209 @@ mod tests {
             opening.home.pitchers[0].batted_balls,
             crate::model::BattedBallRates::default()
         );
+    }
+
+    #[tokio::test]
+    async fn a_none_call_plays_with_no_call_and_no_computer_call() {
+        let state = started(2).await;
+        let (status, body) = post(
+            "/step",
+            json!({ "state": state, "call": "none", "seed": 4 }),
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+        let outcome: PlateOutcome =
+            serde_json::from_value(body["result"]["outcome"].clone()).unwrap();
+        assert!(!matches!(
+            outcome,
+            PlateOutcome::BuntSingle
+                | PlateOutcome::BuntSacrifice
+                | PlateOutcome::BuntOut
+                | PlateOutcome::IntentionalWalk
+        ));
+        let (_, again) = post(
+            "/step",
+            json!({ "state": state, "call": "none", "seed": 4 }),
+        )
+        .await;
+        assert_eq!(again, body);
+    }
+
+    fn relief_card(id: &str) -> Value {
+        json!({
+            "id": id,
+            "name": "Rex Relief",
+            "defense": { "rating": 0, "measured_at": "P" },
+            "rates": { "k": 0.3, "bb": 0.08, "hbp": 0.01, "hr": 0.02, "h": 0.17 },
+            "fatigue": {
+                "role": "reliever", "age": 29, "season_pitches_per_appearance": 18,
+                "career_pitches_per_appearance": 18, "season_appearances": 60
+            }
+        })
+    }
+
+    #[tokio::test]
+    async fn a_pitcher_brought_in_takes_the_mound_and_the_one_he_replaces_cannot_return() {
+        let state = started(2).await;
+        let starter = game(&state).home.pitcher_slot.clone().unwrap();
+        let (status, body) = post(
+            "/pitcher",
+            json!({ "state": state, "pitcher": relief_card("h-rex"), "seed": 9 }),
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+        let changed = game(&body["state"]);
+        assert_eq!(changed.home.pitcher_slot.as_deref(), Some("h-rex"));
+        assert!(changed.home.unavailable.contains(&starter));
+        assert!(changed.home.fatigue["h-rex"].ceiling > 0.0);
+        assert!(changed
+            .log
+            .last()
+            .unwrap()
+            .text
+            .contains("Rex Relief enters"));
+
+        let (_, again) = post(
+            "/pitcher",
+            json!({ "state": state, "pitcher": relief_card("h-rex"), "seed": 9 }),
+        )
+        .await;
+        assert_eq!(again, body, "the same seed drew a different fatigue line");
+
+        let (status, stepped) = post("/step", json!({ "state": body["state"], "seed": 3 })).await;
+        assert_eq!(status, StatusCode::OK, "{stepped}");
+        assert_eq!(stepped["result"]["pitcher_id"], "h-rex");
+
+        let starter_card = serde_json::to_value(
+            changed
+                .home
+                .pitchers
+                .iter()
+                .find(|card| card.id == starter)
+                .unwrap(),
+        )
+        .unwrap();
+        let (status, refused) = post(
+            "/pitcher",
+            json!({ "state": stepped["state"], "pitcher": starter_card, "seed": 9 }),
+        )
+        .await;
+        assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY, "{refused}");
+        assert!(refused["error"]
+            .as_str()
+            .unwrap()
+            .contains("cannot re-enter"));
+    }
+
+    #[tokio::test]
+    async fn a_pitcher_card_with_bad_rates_or_a_batter_on_the_mound_is_rejected() {
+        let state = started(2).await;
+        let mut bad = relief_card("h-bad");
+        bad["rates"]["k"] = json!(1.5);
+        let (status, body) = post(
+            "/pitcher",
+            json!({ "state": state, "pitcher": bad, "seed": 1 }),
+        )
+        .await;
+        assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY, "{body}");
+
+        let batter = game(&state).home.lineup[0].id.clone();
+        let (status, body) = post(
+            "/pitcher",
+            json!({ "state": state, "pitcher": relief_card(&batter), "seed": 1 }),
+        )
+        .await;
+        assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY, "{body}");
+    }
+
+    fn bench_card(id: &str, position: &str) -> Value {
+        json!({
+            "id": id,
+            "name": "Benny Bench",
+            "position": position,
+            "defense": { "rating": 1, "measured_at": position },
+            "wrc_plus": 90,
+            "rates": {
+                "k": 0.2, "bb": 0.08, "hbp": 0.01, "single": 0.15, "double": 0.04,
+                "triple": 0.005, "hr": 0.02, "bip_out": 0.495
+            }
+        })
+    }
+
+    #[tokio::test]
+    async fn a_substitute_takes_the_batting_order_slot_and_the_replaced_player_is_out() {
+        let state = started(2).await;
+        let opening = game(&state);
+        let replaced = opening.away.lineup[0].clone();
+        let position = serde_json::to_value(replaced.position).unwrap();
+        let card = bench_card("a-bench", position.as_str().unwrap());
+        let (status, body) = post(
+            "/substitute",
+            json!({ "state": state, "side": "away", "index": 0, "batter": card }),
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+        let changed = game(&body["state"]);
+        assert_eq!(changed.away.lineup[0].id, "a-bench");
+        assert!(changed.away.unavailable.contains(&replaced.id));
+        assert!(changed.away.in_game.contains(&"a-bench".to_string()));
+        assert!(!changed.away.in_game.contains(&replaced.id));
+        assert!(changed
+            .log
+            .last()
+            .unwrap()
+            .text
+            .contains("Benny Bench replaces"));
+
+        let (status, stepped) = post("/step", json!({ "state": body["state"], "seed": 3 })).await;
+        assert_eq!(status, StatusCode::OK, "{stepped}");
+        assert_eq!(stepped["result"]["batter_id"], "a-bench");
+
+        let mut back = serde_json::to_value(&replaced).unwrap();
+        back["id"] = json!(replaced.id);
+        let (status, refused) = post(
+            "/substitute",
+            json!({ "state": stepped["state"], "side": "away", "index": 0, "batter": back }),
+        )
+        .await;
+        assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY, "{refused}");
+        assert!(refused["error"]
+            .as_str()
+            .unwrap()
+            .contains("cannot re-enter"));
+    }
+
+    #[tokio::test]
+    async fn a_substitute_at_another_position_or_already_playing_is_rejected() {
+        let state = started(2).await;
+        let opening = game(&state);
+        let other = if opening.away.lineup[0].position == crate::model::Position::Dh {
+            "C"
+        } else {
+            "DH"
+        };
+        let (status, body) = post(
+            "/substitute",
+            json!({ "state": state, "side": "away", "index": 0, "batter": bench_card("a-x", other) }),
+        )
+        .await;
+        assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY, "{body}");
+
+        let mut playing = serde_json::to_value(&opening.away.lineup[1]).unwrap();
+        playing["position"] = serde_json::to_value(opening.away.lineup[0].position).unwrap();
+        let (status, body) = post(
+            "/substitute",
+            json!({ "state": state, "side": "away", "index": 0, "batter": playing }),
+        )
+        .await;
+        assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY, "{body}");
+
+        let (status, body) = post(
+            "/substitute",
+            json!({ "state": state, "side": "away", "index": 9, "batter": bench_card("a-y", "DH") }),
+        )
+        .await;
+        assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY, "{body}");
     }
 
     #[tokio::test]
