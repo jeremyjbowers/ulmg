@@ -16,7 +16,8 @@ def create_played_season(season, home, road, player, days=3, first_day=1, slot_n
     One slot and series for the season, every game opened and scored, the
     home team's half plan, the usage ledger rows a played series leaves:
     a counter, appearances, an override, a pause and the player's 6-ulmg
-    season line, and one roster move made during the first game.
+    season line, one roster move made during the first game, and the first
+    game's log with two of its events.
     """
     slot = models.ScheduleSlot.objects.create(
         season=season,
@@ -70,6 +71,9 @@ def create_played_season(season, home, road, player, days=3, first_day=1, slot_n
         stay_last_day=first_day + days - 1,
         game=games[0],
     )
+    log = models.GameLog.objects.create(game=games[0], state={"status": "final"}, state_sequence=2)
+    models.GameEvent.objects.create(log=log, sequence=1, kind=models.GameEvent.OPEN, payload={"sheet": {}})
+    models.GameEvent.objects.create(log=log, sequence=2, kind=models.GameEvent.FINAL, payload={})
     return games
 
 

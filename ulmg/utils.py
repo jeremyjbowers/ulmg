@@ -451,6 +451,16 @@ def get_owner_for_user(user):
     return models.Owner.objects.filter(user=user).first()
 
 
+SIM_TESTERS_GROUP = "Sim testers"
+
+
+def is_sim_tester(user):
+    """A superuser, or a member of the Sim testers group. Testers can play any game from either seat."""
+    if user is None or not user.is_authenticated:
+        return False
+    return user.is_superuser or user.groups.filter(name=SIM_TESTERS_GROUP).exists()
+
+
 def get_team_for_owner(owner):
     """Return the Team managed by an Owner, or None."""
     if owner is None:

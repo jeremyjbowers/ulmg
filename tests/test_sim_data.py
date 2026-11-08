@@ -106,6 +106,7 @@ class ResetTestCase(TestCase):
         self.assertEqual(other.filter(opened_at__isnull=False, opening_sheet__isnull=False).count(), 3)
         self.assertEqual(models.HalfPlan.objects.filter(season=OTHER_SEASON).count(), 1)
         self.assertEqual(models.HalfPlanDay.objects.filter(plan__season=OTHER_SEASON).count(), 3)
+        self.assertEqual(models.GameEvent.objects.filter(log__game__series__slot__season=OTHER_SEASON).count(), 2)
         self.assertEqual(models.UsageCounter.objects.filter(season=OTHER_SEASON).count(), 1)
         self.assertEqual(models.RosterMove.objects.filter(season=OTHER_SEASON).count(), 1)
         self.assertEqual(
@@ -134,6 +135,8 @@ class ResetTestCase(TestCase):
         self.assertEqual(
             self.plan_by_model(steps),
             {
+                models.GameEvent: ("delete", 2),
+                models.GameLog: ("delete", 1),
                 models.UsageAppearance: ("delete", 3),
                 models.UsageOverride: ("delete", 1),
                 models.UsagePause: ("delete", 1),
@@ -189,6 +192,8 @@ class ResetTestCase(TestCase):
         self.assertFalse(models.UsageCounter.objects.filter(season=SEASON).exists())
         self.assertFalse(models.RosterMove.objects.filter(season=SEASON).exists())
         self.assertFalse(models.UsageAppearance.objects.filter(game__series__slot__season=SEASON).exists())
+        self.assertFalse(models.GameLog.objects.filter(game__series__slot__season=SEASON).exists())
+        self.assertFalse(models.GameEvent.objects.filter(log__game__series__slot__season=SEASON).exists())
         self.assertFalse(models.UsageOverride.objects.filter(game__series__slot__season=SEASON).exists())
         self.assertFalse(models.UsagePause.objects.filter(game__series__slot__season=SEASON).exists())
         self.assertFalse(
@@ -239,7 +244,8 @@ class ResetTestCase(TestCase):
         sim_data.reset_season(SEASON, progress=lines.append)
         # One line per model, then one for reapplying the kept plans' swingman designations.
         self.assertEqual(len(lines), len(sim_data.SIM_MODELS) + 1)
-        self.assertIn("UsageAppearance", lines[0])
+        self.assertIn("GameEvent", lines[0])
+        self.assertIn("UsageAppearance", lines[2])
         self.assertIn("swingman designations", lines[-1])
 
     def test_restore_runs_after_its_models_delete(self):
