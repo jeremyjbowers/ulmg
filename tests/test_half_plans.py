@@ -393,3 +393,39 @@ class EditPermissionTestCase(PlanTestCase):
         self.assertTrue(plans.can_edit(owner_user, self.atl))
         self.assertFalse(plans.can_edit(other_user, self.atl))
         self.assertTrue(plans.can_edit(commissioner, self.atl))
+
+
+class StarterHookTestCase(PlanTestCase):
+    def test_a_plan_files_a_starter_hook_and_defaults_to_normal(self):
+        plan = self.roster.file()
+        self.assertEqual(plan.starter_hook, models.HalfPlan.NORMAL_HOOK)
+        plan = self.roster.file(starter_hook=models.HalfPlan.QUICK_HOOK)
+        plan.refresh_from_db()
+        self.assertEqual(plan.starter_hook, models.HalfPlan.QUICK_HOOK)
+        plan = self.roster.file()
+        plan.refresh_from_db()
+        self.assertEqual(plan.starter_hook, models.HalfPlan.QUICK_HOOK, "a save that names no hook keeps the filed one")
+
+    def test_an_unknown_hook_is_refused_and_nothing_is_saved(self):
+        plan = self.roster.file(starter_hook=models.HalfPlan.SLOW_HOOK)
+        with self.assertRaises(plans.PlanError) as raised:
+            self.roster.file(starter_hook="lazy")
+        self.assertIn("The starter hook must be quick, normal or slow.", raised.exception.errors)
+        plan.refresh_from_db()
+        self.assertEqual(plan.starter_hook, models.HalfPlan.SLOW_HOOK)
+
+    def test_the_opened_sheet_carries_the_starter_hook_and_later_edits_do_not_change_it(self):
+        self.roster.file(starter_hook=models.HalfPlan.SLOW_HOOK)
+        game = game_on(self.atl, 1)
+        self.assertEqual(side(game, self.atl)["starter_hook"], models.HalfPlan.SLOW_HOOK)
+        opened = plans.open_game(game)
+        key = "home" if game.series.home_team_id == self.atl.id else "road"
+        self.assertEqual(opened[key]["starter_hook"], models.HalfPlan.SLOW_HOOK)
+        self.roster.file(starter_hook=models.HalfPlan.QUICK_HOOK)
+        game.refresh_from_db()
+        self.assertEqual(side(game, self.atl)["starter_hook"], models.HalfPlan.SLOW_HOOK)
+
+    def test_a_team_without_a_plan_has_a_normal_hook(self):
+        game = game_on(self.atl, 1)
+        other = opponent_on(self.atl, 1)
+        self.assertEqual(side(game, other)["starter_hook"], models.HalfPlan.NORMAL_HOOK)

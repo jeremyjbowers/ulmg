@@ -459,11 +459,19 @@ def reapply_designations(season):
 # Saving
 
 
-def save_plan(plan, *, rotation, closer, setup, middle_long, bench, lineup_vs_lhp, lineup_vs_rhp):
+def starter_hook_errors(starter_hook):
+    hooks = [value for value, _ in models.HalfPlan.STARTER_HOOK_CHOICES]
+    if starter_hook is not None and starter_hook not in hooks:
+        return [f"The starter hook must be {', '.join(hooks[:-1])} or {hooks[-1]}."]
+    return []
+
+
+def save_plan(plan, *, rotation, closer, setup, middle_long, bench, lineup_vs_lhp, lineup_vs_rhp, starter_hook=None):
     """
-    Save a half plan's rotation, bullpen, bench and lineup cards, re-run
-    auto-fill and set swingman designations. Nothing is saved when a rule
-    is broken or a day has no legal starter. Returns warnings to show.
+    Save a half plan's rotation, bullpen, bench, lineup cards and starter
+    hook, re-run auto-fill and set swingman designations. A starter_hook of
+    None keeps the plan's. Nothing is saved when a rule is broken or a day
+    has no legal starter. Returns warnings to show.
     """
     if not is_open(plan.half):
         raise PlanError([closed_message(plan.half)])
@@ -476,7 +484,7 @@ def save_plan(plan, *, rotation, closer, setup, middle_long, bench, lineup_vs_lh
         "lineup_vs_lhp": list(lineup_vs_lhp),
         "lineup_vs_rhp": list(lineup_vs_rhp),
     }
-    errors = plan_errors(plan.team, plan.season, plan.half, **fields)
+    errors = plan_errors(plan.team, plan.season, plan.half, **fields) + starter_hook_errors(starter_hook)
     if errors:
         raise PlanError(errors)
 
@@ -489,6 +497,8 @@ def save_plan(plan, *, rotation, closer, setup, middle_long, bench, lineup_vs_lh
         plan.bench = [p.id for p in fields["bench"]]
         plan.lineup_vs_lhp = stored_lineup(fields["lineup_vs_lhp"])
         plan.lineup_vs_rhp = stored_lineup(fields["lineup_vs_rhp"])
+        if starter_hook is not None:
+            plan.starter_hook = starter_hook
         plan.save()
         _refill(plan, rosters)
         return _designate(plan)
@@ -644,6 +654,7 @@ class PlanBook:
             "closer": closer if closer is not None and closer.id in eligible else None,
             "setup": on_roster(self._resolve(plan.setup)) if plan else [],
             "middle_long": on_roster(self._resolve(plan.middle_long)) if plan else [],
+            "starter_hook": plan.starter_hook if plan else models.HalfPlan.NORMAL_HOOK,
         }
 
     def opened_side(self, sheet, opponent_sheet, team):
@@ -666,6 +677,7 @@ class PlanBook:
             "closer": closer,
             "setup": self._resolve(sheet["setup"]),
             "middle_long": self._resolve(sheet["middle_long"]),
+            "starter_hook": sheet.get("starter_hook", models.HalfPlan.NORMAL_HOOK),
         }
 
     def sheet(self, game):
@@ -702,6 +714,7 @@ def _frozen_side(side):
         "closer": side["closer"].id if side["closer"] else None,
         "setup": [p.id for p in side["setup"] if p],
         "middle_long": [p.id for p in side["middle_long"] if p],
+        "starter_hook": side["starter_hook"],
     }
 
 

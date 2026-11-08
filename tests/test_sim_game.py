@@ -309,16 +309,18 @@ class PlayingTestCase(SimGameTestCase):
 
     def test_the_home_computer_passes_over_a_capped_reliever(self):
         gf.counter(self.home.starters[0], start_limit_outs=3)
-        closer = self.home.relievers[0]
-        row = gf.counter(closer)
-        gf.counter(closer, outs=row.innings_cap_outs)
+        middle = self.home.swingman
+        row = gf.counter(middle)
+        gf.counter(middle, outs=row.innings_cap_outs)
         log = self.open()
         self.step_until(log, lambda p: any(e.kind == Event.PITCHING_CHANGE for e in p.events))
         change = gf.events(log, Event.PITCHING_CHANGE)[0]
         self.assertTrue(change.computer)
-        self.assertEqual(change.payload["pitcher"], self.home.relievers[1].id, "setup is next after the closer")
+        self.assertEqual(
+            change.payload["pitcher"], self.home.relievers[1].id, "setup is next when middle and long is spent"
+        )
         decision = gf.events(log, Event.DECISION)[-1]
-        self.assertIn(closer.name, decision.text)
+        self.assertIn(middle.name, decision.text)
         self.assertIn("no innings left", decision.text)
 
     def test_pitch_around_raises_the_walk_rate_for_that_plate_appearance(self):

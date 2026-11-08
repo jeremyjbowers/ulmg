@@ -2,6 +2,7 @@
 # ABOUTME: Every roll happens on the server through the engine client; the game state is a fold of the log and replays exactly.
 
 import copy
+import random
 from dataclasses import dataclass, field
 
 from django.db import transaction
@@ -494,15 +495,21 @@ class Play:
 
     # Options
 
-    def pitcher_options(self, side):
-        """Every pitcher the side could bring in, in bullpen order then by name, with why not for the illegal."""
+    def bullpen_groups(self, side):
+        """
+        The side's pitchers who haven't been in the game, by bullpen role in
+        plan order. Other pitchers on the game's roster are OTHER, by name.
+        """
         used = used_ids(self.state, side)
         sheet = self.sheet_side(side)
         closer = self.player(sheet["closer"]) if sheet.get("closer") else None
-        setup = self.players(sheet.get("setup", []))
-        middle_long = self.players(sheet.get("middle_long", []))
-        planned = {p.id for p in [closer, *setup, *middle_long] if p is not None}
-        others = sorted(
+        groups = {
+            computer_manager.CLOSER: [closer] if closer is not None else [],
+            computer_manager.SETUP: self.players(sheet.get("setup", [])),
+            computer_manager.MIDDLE_LONG: self.players(sheet.get("middle_long", [])),
+        }
+        planned = {p.id for players in groups.values() for p in players}
+        groups[computer_manager.OTHER] = sorted(
             (
                 p
                 for p in models.Player.objects.filter(pk__in=self.roster(side))
@@ -510,12 +517,48 @@ class Play:
             ),
             key=lambda p: p.name,
         )
-        order = computer_manager.bullpen_order(closer, setup, middle_long, others)
-        return [
-            Option(p, self.pitcher_problem(side, p))
-            for p in order
-            if p is not None and str(p.id) not in used
-        ]
+        return {group: [p for p in players if str(p.id) not in used] for group, players in groups.items()}
+
+    def group_of(self, side, player):
+        """The bullpen role the side's plan gives a pitcher, or OTHER."""
+        sheet = self.sheet_side(side)
+        if sheet.get("closer") == player.id:
+            return computer_manager.CLOSER
+        for group in (computer_manager.SETUP, computer_manager.MIDDLE_LONG):
+            if player.id in sheet.get(group, []):
+                return group
+        return computer_manager.OTHER
+
+    def bullpen_role(self):
+        """The bullpen role the situation calls for, for the fielding side, as the next batter comes up."""
+        state = self.state
+        fielding, batting = fielding_side(state), batting_side(state)
+        return computer_manager.bullpen_role(
+            inning=state["inning"],
+            lead=state["score"][fielding] - state["score"][batting],
+            runners_on=sum(1 for base in ("first", "second", "third") if state["bases"].get(base)),
+            outs=state["outs"],
+        )
+
+    def at_half_inning_start(self):
+        """Whether no plate appearance has been played yet in this half inning."""
+        for event in reversed(self.events):
+            if event.kind == Event.PLATE_APPEARANCE:
+                before = event.payload["before"]
+                return (before["inning"], before["half"]) != (self.state["inning"], self.state["half"])
+        return True
+
+    def pitcher_options(self, side):
+        """Every pitcher the side could bring in, in bullpen order then by name, with why not for the illegal."""
+        groups = self.bullpen_groups(side)
+        closer = groups[computer_manager.CLOSER]
+        order = computer_manager.bullpen_order(
+            closer[0] if closer else None,
+            groups[computer_manager.SETUP],
+            groups[computer_manager.MIDDLE_LONG],
+            groups[computer_manager.OTHER],
+        )
+        return [Option(p, self.pitcher_problem(side, p)) for p in order if p is not None]
 
     def bench_options(self, side, position):
         """Every player who could take a batting-order slot, in bench order then by name, with why not."""
@@ -668,6 +711,8 @@ def settle(play):
                 return
             continue
         if need is None:
+            if computer_pitching_change(play):
+                continue
             return
         options = play.options_for(need)
         legal = [o.player for o in options if o.legal]
@@ -679,17 +724,100 @@ def settle(play):
         computer_move(play, need, options)
 
 
+def role_text(role, choice):
+    """Why the computer took its reliever from the group it did."""
+    wanted = computer_manager.ROLE_LABELS[role]
+    situation = "a save situation, so the closer" if role == computer_manager.CLOSER else f"{wanted} relief"
+    text = f"The situation calls for {situation}"
+    if choice.group != role:
+        text += f"; with no {wanted} arm available it goes to {computer_manager.ROLE_LABELS[choice.group]}"
+    return text + "."
+
+
+def bring_in_reliever(play, side, role, choice, text, payload):
+    decision(
+        play,
+        side,
+        f"{side_label(play.game, side)} computer: {text} {role_text(role, choice)} "
+        f"It brings in {choice.player.name}. " + skipped_text(choice.skipped),
+        dict(
+            payload,
+            role=role,
+            group=choice.group,
+            chose=choice.player.id,
+            skipped=[[p.id, r] for p, r in choice.skipped],
+        ),
+    )
+    bring_in(play, side, choice.player, computer=True)
+
+
+def computer_pitching_change(play):
+    """
+    A change the computer makes when nothing forces one: its starter's hook,
+    or, at the start of a half inning, a reliever whose role no longer
+    applies giving way to an available arm of the role that does. Returns
+    whether it made one.
+    """
+    side = fielding_side(play.state)
+    pid = current_pitcher_id(play.state)
+    if play.fold.is_human(side) or pid is None:
+        return False
+    pitcher = play.player(pid)
+    role = play.bullpen_role()
+    groups = play.bullpen_groups(side)
+
+    def problem(p):
+        return play.pitcher_problem(side, p)
+
+    if play.is_starter(side, pitcher):
+        hook = play.sheet_side(side).get("starter_hook", models.HalfPlan.NORMAL_HOOK)
+        fatigue = play.state[side].get("fatigue", {}).get(pid, {})
+        reason = computer_manager.hook_reason(hook, fatigue)
+        if reason is None:
+            return False
+        payload = {"need": "hook", "hook": hook, "pitcher": pitcher.id, "fatigue": dict(fatigue)}
+        text = f"Its {hook} hook pulls {pitcher.name}: {reason}"
+        choice = computer_manager.reliever(role, groups, problem)
+        if choice.player is None:
+            stayed = any(
+                e.kind == Event.DECISION and e.payload.get("need") == "hook" and e.payload.get("pitcher") == pitcher.id
+                for e in play.events
+            )
+            if not stayed:
+                decision(
+                    play,
+                    side,
+                    f"{side_label(play.game, side)} computer: {text} No reliever is available, so {pitcher.name} "
+                    f"stays in. {skipped_text(choice.skipped)}",
+                    dict(payload, role=role, chose=None, skipped=[[p.id, r] for p, r in choice.skipped]),
+                )
+            return False
+        bring_in_reliever(play, side, role, choice, text, payload)
+        return True
+
+    current = play.group_of(side, pitcher)
+    if current == role or not play.at_half_inning_start():
+        return False
+    choice = computer_manager.preferred_arm(role, groups, problem)
+    if choice.player is None:
+        return False
+    text = (
+        f"A new half inning: {pitcher.name}'s {computer_manager.ROLE_LABELS[current]} role no longer applies."
+    )
+    bring_in_reliever(play, side, role, choice, text, {"need": "role", "pitcher": pitcher.id})
+    return True
+
+
 def computer_move(play, need, options):
     if need.kind == PITCHER_NEED:
-        choice = computer_manager.next_arm([o.player for o in options], lambda p: play.pitcher_problem(need.side, p))
-        decision(
-            play,
-            need.side,
-            f"{side_label(play.game, need.side)} computer: {need.reason} It brings in {choice.player.name}. "
-            + skipped_text(choice.skipped),
-            {"need": need.kind, "chose": choice.player.id, "skipped": [[p.id, r] for p, r in choice.skipped]},
-        )
-        bring_in(play, need.side, choice.player, computer=True)
+        legal = {o.player.id for o in options}
+        groups = {
+            group: [p for p in players if p.id in legal]
+            for group, players in play.bullpen_groups(need.side).items()
+        }
+        role = play.bullpen_role()
+        choice = computer_manager.reliever(role, groups, lambda p: play.pitcher_problem(need.side, p))
+        bring_in_reliever(play, need.side, role, choice, need.reason, {"need": need.kind})
     else:
         position = play.state[need.side]["lineup"][need.slot]["position"]
         choice = computer_manager.bench_replacement(
@@ -1114,6 +1242,39 @@ def runner_ratings(play, state):
     return runners
 
 
+def computer_steal(play, side):
+    """
+    The computer's steal call for its batting side: with a runner on first,
+    second open and fewer than two outs, it sends him with probability equal
+    to his card's steal attempt rate. The draw comes from a logged seed.
+    Returns "steal" or None.
+    """
+    state = play.state
+    if not computer_manager.is_steal_situation(state["bases"], state["outs"]):
+        return None
+    runner = play.player(state["bases"]["first"])
+    card = play.card(runner)
+    rate = card.steal_attempt_rate if card is not None else None
+    seed = play.seeds()
+    draw = random.Random(seed).random()
+    called = computer_manager.calls_steal(rate, draw)
+    label = side_label(play.game, side)
+    shown = "no" if rate is None else f"a {rate:.3f}"
+    play.append(
+        Event.DECISION,
+        side=side,
+        computer=True,
+        seed=seed,
+        payload={"need": "steal", "runner": runner.id, "rate": rate, "draw": draw, "called": called},
+        text=f"{label} computer: {runner.name}, on first with {shown} steal attempt rate, "
+        + ("is sent." if called else "holds."),
+    )
+    if not called:
+        return None
+    play.append(Event.CALL, side=side, computer=True, payload={"call": "steal"}, text=f"{label} calls steal.")
+    return "steal"
+
+
 def plate_appearance_inputs(play, call):
     """The batter, pitcher and everything the engine's step is given for the next plate appearance."""
     state = play.state
@@ -1173,6 +1334,8 @@ def step(log, user, expected, call=None, seeds=engine_client.new_seed):
                 payload={"call": call},
                 text=f"{side_label(play.game, caller)} calls {CALL_LABELS[call].lower()}.",
             )
+        elif not play.fold.is_human(batting):
+            call = computer_steal(play, batting)
 
         if not play.fold.first_pitch:
             for side in SIDES:
