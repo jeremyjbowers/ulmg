@@ -234,8 +234,10 @@ class ResetTestCase(TestCase):
     def test_progress_reports_each_model(self):
         lines = []
         sim_data.reset_season(SEASON, progress=lines.append)
-        self.assertEqual(len(lines), len(sim_data.SIM_MODELS))
+        # One line per model, then one for reapplying the kept plans' swingman designations.
+        self.assertEqual(len(lines), len(sim_data.SIM_MODELS) + 1)
         self.assertIn("UsageAppearance", lines[0])
+        self.assertIn("swingman designations", lines[-1])
 
     def test_restore_runs_after_its_models_delete(self):
         seen = []

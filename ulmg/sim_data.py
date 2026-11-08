@@ -162,9 +162,9 @@ def summarize(season, steps, include_schedule, done):
     deleted = sum(s.count for s in steps if s.action == "delete")
     cleared = sum(s.count for s in steps if s.action == "clear")
     if done:
-        schedule = "the schedule is deleted" if include_schedule else "the schedule is kept"
+        schedule = "the schedule is deleted" if include_schedule else "the schedule is kept and plan swingman designations are reapplied"
         return f"Reset {season}: deleted {deleted} rows and cleared {cleared}; {schedule}."
-    schedule = "the schedule would be deleted" if include_schedule else "the schedule would be kept"
+    schedule = "the schedule would be deleted" if include_schedule else "the schedule would be kept and plan swingman designations reapplied"
     return f"Dry run for {season}: would delete {deleted} rows and clear {cleared}; {schedule}. Nothing changed."
 
 
@@ -202,4 +202,11 @@ def reset_season(season, include_schedule=False, registry=None, progress=None):
         steps.append(step)
         if progress is not None:
             progress(f"{len(steps)}/{len(registry)} {step.describe(done=True)}")
+    if not include_schedule:
+        # The counters are gone but the plans are kept: put the plans' swingman designations back.
+        from ulmg import plans
+
+        applied = plans.reapply_designations(season)
+        if progress is not None:
+            progress(f"Reapplied swingman designations from {applied} kept plans")
     return steps
