@@ -1,0 +1,12 @@
+{# ABOUTME: Live remaining ULMG usage for one player, shown beside his card on the player page. #}
+{# ABOUTME: Expects `usage` from ulmg.usage.usage_summary and the player as `p`. #}
+<div class="text-xs mb-2">
+    <p class="font-bold mb-1">{{ usage.season }} ULMG usage</p>
+    {% if p.position == "P" %}
+    <div>{% if usage.innings_cap %}{{ usage.innings_left }} of {{ usage.innings_cap }} innings left{% else %}No season innings cap ({{ usage.innings_used }} pitched){% endif %}</div>
+    <div>{{ usage.starts_left }} of {{ usage.counter.starts_cap }} starts left</div>
+    <div>Per game: {{ usage.start_limit }} innings in a start, {{ usage.relief_limit }} in relief</div>
+    {% else %}
+    <div>{% if usage.plate_appearances_left is None %}Unlimited plate appearances ({{ usage.counter.plate_appearances }} used){% else %}{{ usage.plate_appearances_left }} of {{ usage.counter.plate_appearances_cap }} plate appearances left{% endif %}</div>
+    {% endif %}
+</div>

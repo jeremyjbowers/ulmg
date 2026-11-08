@@ -16,7 +16,7 @@ from django.views.decorators.cache import never_cache
 import ujson as json
 from datetime import datetime
 
-from ulmg import models, usage, utils
+from ulmg import cards, models, usage, utils
 from ulmg.cache_utils import (
     get_all_cache_keys,
     delete_cache_key_for_admin,
@@ -133,6 +133,7 @@ def player(request, playerid):
     context["transactions"] = player_data["transactions"]
     context["hitter_stats"] = player_data["hitter_stats"]
     context["pitcher_stats"] = player_data["pitcher_stats"]
+    context["card"] = models.Card.objects.filter(player_id=playerid, season=cards.card_season()).first()
     # Live: usage changes as games are played, so it is read on every request.
     context["usage"] = usage.usage_summary(player_data["p"], settings.CURRENT_SEASON)
 

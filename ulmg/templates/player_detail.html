@@ -113,6 +113,81 @@
 </div>
 {% endif %}
 
+<!-- Engine Card -->
+{% if card %}
+<div class="mb-6">
+    <h2 class="text-lg font-bold mb-2 border-b border-gray-300 pb-1">{{ card.season }} Card</h2>
+    {% with line=card.hitter_line %}
+    {% if line %}
+    <p class="text-xs text-gray-600 mb-1">Batting, {{ card.plate_appearances }} PA</p>
+    <div class="overflow-x-auto">
+    <table class="w-full text-xs border-collapse min-w-max mb-2">
+        <thead>
+            <tr class="border-b border-gray-300">
+                <th class="text-center py-1">AVG</th>
+                <th class="text-center py-1">OBP</th>
+                <th class="text-center py-1">SLG</th>
+                <th class="text-center py-1">K%</th>
+                <th class="text-center py-1">BB%</th>
+                <th class="text-center py-1">HR%</th>
+                <th class="text-center py-1">wRC+</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr class="border-b border-gray-100">
+                <td class="text-center py-1">{{ line.avg|floatformat:3|kill_leading_zero|default_if_none:"-" }}</td>
+                <td class="text-center py-1">{{ line.obp|floatformat:3|kill_leading_zero }}</td>
+                <td class="text-center py-1">{{ line.slg|floatformat:3|kill_leading_zero|default_if_none:"-" }}</td>
+                <td class="text-center py-1">{{ line.k_pct|percents_to_hundreds|floatformat:"1" }}</td>
+                <td class="text-center py-1">{{ line.bb_pct|percents_to_hundreds|floatformat:"1" }}</td>
+                <td class="text-center py-1">{{ line.hr_pct|percents_to_hundreds|floatformat:"1" }}</td>
+                <td class="text-center py-1">{{ card.wrc_plus|floatformat:"0"|default_if_none:"-" }}</td>
+            </tr>
+        </tbody>
+    </table>
+    </div>
+    <p class="text-xs mb-2">
+        <span class="font-bold">Defense runs ({{ card.primary_position }}):</span>
+        {% for position, runs in card.defense_display %}{{ position }} {% if runs > 0 %}+{% endif %}{{ runs|floatformat:1 }}{% if not forloop.last %} &middot; {% endif %}{% endfor %}
+    </p>
+    {% endif %}
+    {% endwith %}
+    {% with line=card.pitcher_line %}
+    {% if line %}
+    <p class="text-xs text-gray-600 mb-1">Pitching allowed, {{ card.batters_faced }} BF &middot; {{ card.fatigue.role|title }}</p>
+    <div class="overflow-x-auto">
+    <table class="w-full text-xs border-collapse min-w-max mb-2">
+        <thead>
+            <tr class="border-b border-gray-300">
+                <th class="text-center py-1">AVG</th>
+                <th class="text-center py-1">OBP</th>
+                <th class="text-center py-1">K%</th>
+                <th class="text-center py-1">BB%</th>
+                <th class="text-center py-1">HR%</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr class="border-b border-gray-100">
+                <td class="text-center py-1">{{ line.avg|floatformat:3|kill_leading_zero|default_if_none:"-" }}</td>
+                <td class="text-center py-1">{{ line.obp|floatformat:3|kill_leading_zero }}</td>
+                <td class="text-center py-1">{{ line.k_pct|percents_to_hundreds|floatformat:"1" }}</td>
+                <td class="text-center py-1">{{ line.bb_pct|percents_to_hundreds|floatformat:"1" }}</td>
+                <td class="text-center py-1">{{ line.hr_pct|percents_to_hundreds|floatformat:"1" }}</td>
+            </tr>
+        </tbody>
+    </table>
+    </div>
+    {% endif %}
+    {% endwith %}
+    {% if usage %}{% include "includes/usage_remaining.html" %}{% endif %}
+</div>
+{% elif usage %}
+<!-- ULMG Usage without a generated card -->
+<div class="mb-6">
+    {% include "includes/usage_remaining.html" %}
+</div>
+{% endif %}
+
 <!-- Transactions History -->
 {% if transactions %}
 <div class="mb-6">
@@ -145,20 +220,6 @@
         </tbody>
     </table>
     </div>
-</div>
-{% endif %}
-
-<!-- ULMG Usage -->
-{% if usage %}
-<div class="mb-6 text-xs">
-    <h2 class="text-lg font-bold mb-2 border-b border-gray-300 pb-1">{{ usage.season }} ULMG usage</h2>
-    {% if p.position == "P" %}
-    <div>{% if usage.innings_cap %}{{ usage.innings_left }} of {{ usage.innings_cap }} innings left{% else %}No season innings cap ({{ usage.innings_used }} pitched){% endif %}</div>
-    <div>{{ usage.starts_left }} of {{ usage.counter.starts_cap }} starts left</div>
-    <div>Per game: {{ usage.start_limit }} innings in a start, {{ usage.relief_limit }} in relief</div>
-    {% else %}
-    <div>{% if usage.plate_appearances_left is None %}Unlimited plate appearances ({{ usage.counter.plate_appearances }} used){% else %}{{ usage.plate_appearances_left }} of {{ usage.counter.plate_appearances_cap }} plate appearances left{% endif %}</div>
-    {% endif %}
 </div>
 {% endif %}
 

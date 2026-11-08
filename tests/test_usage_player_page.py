@@ -45,6 +45,17 @@ class PlayerPageUsageTestCase(TestCase):
         self.assertContains(response, "0 of 0 starts left")
         self.assertContains(response, "Per game: 4.0 innings in a start, 2.0 in relief")
 
+    def test_usage_is_shown_in_the_card_block_when_the_player_has_a_card(self):
+        models.Card.objects.create(player=self.hitter, season=ULMG_SEASON - 1)
+        content = self.client.get(f"/players/{self.hitter.id}/").content.decode()
+        card_heading = content.index(f"{ULMG_SEASON - 1} Card")
+        usage_line = content.index("220 of 220 plate appearances left")
+        transactions = content.find("Transaction History")
+        self.assertLess(card_heading, usage_line)
+        self.assertEqual(content.count(f"{ULMG_SEASON} ULMG usage"), 1)
+        if transactions != -1:
+            self.assertLess(usage_line, transactions)
+
     def test_viewing_a_player_does_not_create_a_counter(self):
         self.client.get(f"/players/{self.hitter.id}/")
         self.assertFalse(models.UsageCounter.objects.exists())
