@@ -200,19 +200,20 @@ def move_log(team, season):
     ]
 
 
-def _move_errors(team, player_up, player_down, season, half):
+def call_up_error(team, player_up, season):
+    """Why a player can't be the call-up in one of the team's moves, or None."""
     abbr = team.abbreviation
-    if player_up.pk == player_down.pk:
-        return f"{player_up.name} can't be called up and sent down in the same move."
     if player_up.team_id != team.id:
         return f"{player_up.name} is not on {abbr}."
     if player_up.is_ulmg_mlb_roster:
         return f"{player_up.name} is already on {abbr}'s 30-man."
-    error = mlb_roster_error(player_up, season)
-    if error:
-        return error
+    return mlb_roster_error(player_up, season)
+
+
+def send_down_error(team, player_down, season):
+    """Why a player can't be the send-down in one of the team's moves, or None."""
     if player_down.team_id != team.id or not player_down.is_ulmg_mlb_roster:
-        return f"{player_down.name} is not on {abbr}'s 30-man."
+        return f"{player_down.name} is not on {team.abbreviation}'s 30-man."
     error = aaa_roster_error(player_down, season)
     if error:
         return error
@@ -225,9 +226,65 @@ def _move_errors(team, player_up, player_down, season, half):
             f"{player_down.name} has appeared in the game in progress (day {game.day}) "
             "and can't be sent down until it is final."
         )
-    if moves_this_half(team, season, half).count() >= MOVES_PER_HALF:
-        return f"{abbr} has made its {MOVES_PER_HALF} moves for half {half}."
     return None
+
+
+def cap_error(team, season, half):
+    """Why the team can't make another move this half, or None."""
+    if moves_this_half(team, season, half).count() >= MOVES_PER_HALF:
+        return f"{team.abbreviation} has made its {MOVES_PER_HALF} moves for half {half}."
+    return None
+
+
+def _move_errors(team, player_up, player_down, season, half):
+    if player_up.pk == player_down.pk:
+        return f"{player_up.name} can't be called up and sent down in the same move."
+    return (
+        call_up_error(team, player_up, season)
+        or send_down_error(team, player_down, season)
+        or cap_error(team, season, half)
+    )
+
+
+class MoveChoices:
+    """
+    The players who can finish a move started from one player, found with
+    the same checks make_move runs. `error` says why the move can't start
+    at all; `refused` holds each other candidate with the reason he can't.
+    """
+
+    def __init__(self, player, direction, error, legal, refused):
+        self.player = player
+        self.direction = direction
+        self.error = error
+        self.legal = legal
+        self.refused = refused
+
+
+def move_choices(team, player, direction, season, half):
+    """
+    For a player going DOWN, the team's AAA players who can be called up in
+    his place; for a player going UP, the team's 30-man players who can be
+    sent down for him.
+    """
+    if direction == DOWN:
+        error = send_down_error(team, player, season)
+        candidates = models.Player.objects.filter(team=team, is_ulmg_aaa_roster=True, is_ulmg_mlb_roster=False)
+        partner_error = call_up_error
+    else:
+        error = call_up_error(team, player, season)
+        candidates = models.Player.objects.filter(team=team, is_ulmg_mlb_roster=True)
+        partner_error = send_down_error
+    error = error or cap_error(team, season, half)
+    legal, refused = [], []
+    if error is None:
+        for candidate in candidates.exclude(pk=player.pk).order_by("name"):
+            reason = partner_error(team, candidate, season)
+            if reason:
+                refused.append((candidate, reason))
+            else:
+                legal.append(candidate)
+    return MoveChoices(player, direction, error, legal, refused)
 
 
 def make_move(team, player_up, player_down, *, season, half, user=None):

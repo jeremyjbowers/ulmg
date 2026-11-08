@@ -1,14 +1,14 @@
-# ABOUTME: The roster move form on the team page: one call-up and one send-down as a single non-injury move.
-# ABOUTME: Only the team's owner and the commissioner can make a move; the result shows as a message on the team page.
+# ABOUTME: Roster moves from the team page: one call-up and one send-down as a single non-injury move,
+# ABOUTME: and the move page that offers the legal partners for one player. Only the owner and the commissioner can move.
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseForbidden
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.cache import never_cache
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_GET, require_POST
 
-from ulmg import models, plans, roster_moves
+from ulmg import models, plans, roster_moves, utils
 
 
 def _posted_player(request, name):
@@ -48,3 +48,41 @@ def team_roster_move(request, abbreviation):
     else:
         messages.success(request, f"Called up {player_up.name} and sent down {player_down.name}.")
     return redirect(team_url(team))
+
+
+@never_cache
+@login_required
+@require_GET
+def team_roster_move_choice(request, abbreviation):
+    """
+    A move started from one player: `?down=<id>` for a 30-man player, `?up=<id>`
+    for an AAA player. Offers the players make_move would accept with him, and
+    posts the pair to team_roster_move.
+    """
+    team = get_object_or_404(models.Team, abbreviation__iexact=abbreviation)
+    if not plans.can_edit(request.user, team):
+        return HttpResponseForbidden("Only this team's owner and the commissioner can make its roster moves.")
+
+    given = [(direction, request.GET.get(direction, "")) for direction in (roster_moves.DOWN, roster_moves.UP)]
+    given = [(direction, value) for direction, value in given if value]
+    player = None
+    if len(given) == 1 and given[0][1].isdigit():
+        direction = given[0][0]
+        player = models.Player.objects.filter(pk=int(given[0][1])).first()
+    if player is None:
+        messages.error(request, "Start a move from a player on the team page.")
+        return redirect(team_url(team))
+
+    season, half = settings.CURRENT_SEASON, plans.current_half()
+    context = utils.build_context(request)
+    context.update(
+        {
+            "team": team,
+            "move_half": half,
+            "moves_left": roster_moves.moves_left(team, season, half),
+            "moves_per_half": roster_moves.MOVES_PER_HALF,
+            "choices": roster_moves.move_choices(team, player, direction, season, half),
+            "going_down": direction == roster_moves.DOWN,
+        }
+    )
+    return render(request, "team_roster_move.html", context)
