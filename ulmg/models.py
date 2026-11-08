@@ -1154,6 +1154,7 @@ class Card(BaseModel):
     """
     Engine card for one player and one card season, generated from that season's 1-mlb PlayerStatSeason.
     Rate dicts use the engine's HitterRates / PitcherRates / FatigueProfile keys.
+    Batted-ball dicts use the engine's BattedBallRates keys (gb, fb, ld); None means league rates.
     Defense holds slotted runs per position to one decimal; the engine takes runs / 10.
     Running (hitters only): regressed steal success, steal attempts per time on first, and FanGraphs Spd.
     """
@@ -1163,6 +1164,7 @@ class Card(BaseModel):
     plate_appearances = models.IntegerField(blank=True, null=True)
     wrc_plus = models.FloatField(blank=True, null=True)
     hitter_rates = models.JSONField(blank=True, null=True)
+    hitter_batted_balls = models.JSONField(blank=True, null=True)
     primary_position = models.CharField(max_length=2, blank=True, null=True)
     defense = models.JSONField(blank=True, null=True)
     steal_success = models.FloatField(blank=True, null=True)
@@ -1171,6 +1173,7 @@ class Card(BaseModel):
 
     batters_faced = models.IntegerField(blank=True, null=True)
     pitcher_rates = models.JSONField(blank=True, null=True)
+    pitcher_batted_balls = models.JSONField(blank=True, null=True)
     fatigue = models.JSONField(blank=True, null=True)
 
     class Meta:

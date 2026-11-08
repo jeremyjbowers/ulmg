@@ -119,6 +119,31 @@ pub struct PitcherRates {
     pub h: f64,
 }
 
+/// Shares of batted balls hit on the ground, in the air, and on a line. The three sum to 1.
+/// A card that leaves them out is league average.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct BattedBallRates {
+    pub gb: f64,
+    pub fb: f64,
+    pub ld: f64,
+}
+
+impl Default for BattedBallRates {
+    fn default() -> Self {
+        Self {
+            gb: crate::sim::LEAGUE_GB,
+            fb: crate::sim::LEAGUE_FB,
+            ld: crate::sim::LEAGUE_LD,
+        }
+    }
+}
+
+impl BattedBallRates {
+    pub fn sum(&self) -> f64 {
+        self.gb + self.fb + self.ld
+    }
+}
+
 /// One higher-is-better number, and the position it was measured at.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct DefenseRating {
@@ -152,6 +177,8 @@ pub struct BatterCard {
     pub defense: DefenseRating,
     pub wrc_plus: f64,
     pub rates: HitterRates,
+    #[serde(default)]
+    pub batted_balls: BattedBallRates,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -161,6 +188,8 @@ pub struct PitcherCard {
     pub defense: DefenseRating,
     pub rates: PitcherRates,
     pub fatigue: FatigueProfile,
+    #[serde(default)]
+    pub batted_balls: BattedBallRates,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -200,6 +229,9 @@ pub struct PrePaCalls {
     pub hit_and_run: bool,
     pub bunt: bool,
     pub intentional_walk: bool,
+    /// Honored only with a runner on third and fewer than two outs.
+    #[serde(default)]
+    pub infield_in: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
@@ -333,6 +365,8 @@ pub struct PaInput {
     pub pitcher_id: PlayerId,
     pub pitcher_name: String,
     pub pitcher: PitcherRates,
+    pub hitter_batted_balls: BattedBallRates,
+    pub pitcher_batted_balls: BattedBallRates,
     /// One higher-is-better number for the defense on the field.
     pub defense: f64,
     pub situation: Situation,
@@ -379,7 +413,13 @@ pub enum PlateOutcome {
     Double,
     Triple,
     HomeRun,
+    /// A ball-in-play out that holds every runner. The sim draws the three kinds below instead.
     BipOut,
+    GroundOut,
+    FlyOut,
+    LineOut,
+    GroundedIntoDoublePlay,
+    SacrificeFly,
     BuntSacrifice,
     BuntSingle,
     BuntOut,
@@ -398,6 +438,11 @@ impl PlateOutcome {
             Self::Triple => "tripled",
             Self::HomeRun => "homered",
             Self::BipOut => "was out on a ball in play",
+            Self::GroundOut => "grounded out",
+            Self::FlyOut => "flied out",
+            Self::LineOut => "lined out",
+            Self::GroundedIntoDoublePlay => "grounded into a double play",
+            Self::SacrificeFly => "hit a sacrifice fly",
             Self::BuntSacrifice => "sacrificed",
             Self::BuntSingle => "bunted for a hit",
             Self::BuntOut => "bunted into an out",
@@ -415,7 +460,11 @@ impl PlateOutcome {
     pub fn is_at_bat(self) -> bool {
         !matches!(
             self,
-            Self::Walk | Self::HitByPitch | Self::IntentionalWalk | Self::BuntSacrifice
+            Self::Walk
+                | Self::HitByPitch
+                | Self::IntentionalWalk
+                | Self::BuntSacrifice
+                | Self::SacrificeFly
         )
     }
 }

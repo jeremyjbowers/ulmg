@@ -27,6 +27,7 @@ class Command(BaseCommand):
             "plate_appearances": None,
             "wrc_plus": None,
             "hitter_rates": cards.hitter_rates(pss.hit_stats),
+            "hitter_batted_balls": None,
             "primary_position": None,
             "defense": None,
             "steal_success": None,
@@ -34,6 +35,7 @@ class Command(BaseCommand):
             "spd": None,
             "batters_faced": None,
             "pitcher_rates": cards.pitcher_rates(pss.pitch_stats),
+            "pitcher_batted_balls": None,
             "fatigue": None,
         }
 
@@ -41,6 +43,7 @@ class Command(BaseCommand):
             fielding = cards.fielding_from_stats(pss.fielding_stats)
             fields["plate_appearances"] = int(pss.hit_stats.get("pa"))
             fields["wrc_plus"] = pss.hit_stats.get("wrc_plus")
+            fields["hitter_batted_balls"] = cards.batted_ball_rates(pss.hit_stats)
             fields["primary_position"] = cards.primary_position(fielding) or "DH"
             fields["defense"] = cards.defense_ratings(fielding)
             fields["steal_success"] = cards.steal_success(pss.hit_stats)
@@ -49,6 +52,7 @@ class Command(BaseCommand):
 
         if fields["pitcher_rates"]:
             fields["batters_faced"] = int(pss.pitch_stats.get("tbf"))
+            fields["pitcher_batted_balls"] = cards.batted_ball_rates(pss.pitch_stats)
             fields["fatigue"] = cards.fatigue_profile(pss.pitch_stats, career_pitch_stats)
 
         return fields
