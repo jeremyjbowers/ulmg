@@ -461,6 +461,116 @@ impl Game {
         Ok(())
     }
 
+    /// A pitching change for the fielding club, between plate appearances. A pitcher who is
+    /// not on the staff yet joins it with this card; one already used cannot re-enter.
+    /// The rng draws the new pitcher's fatigue line.
+    pub fn bring_in_pitcher(
+        &mut self,
+        card: PitcherCard,
+        rng: &mut impl Rng,
+    ) -> Result<(), GameError> {
+        if self.is_final() {
+            return Err(GameError::GameOver);
+        }
+        check_pitcher_card(&card)?;
+        let in_a_lineup = self
+            .away
+            .lineup
+            .iter()
+            .chain(&self.home.lineup)
+            .any(|batter| batter.id == card.id);
+        if in_a_lineup {
+            return Err(GameError::InvalidFixture(format!(
+                "{} is in a batting order and cannot pitch",
+                card.id
+            )));
+        }
+        let side = self.fielding_side();
+        let other = match side {
+            Side::Away => Side::Home,
+            Side::Home => Side::Away,
+        };
+        if self.club(other).pitchers.iter().any(|p| p.id == card.id) {
+            return Err(GameError::InvalidFixture(format!(
+                "{} pitches for the other club",
+                card.id
+            )));
+        }
+        let id = card.id.clone();
+        let club = self.club_mut(side);
+        if !club.pitchers.iter().any(|p| p.id == id) {
+            club.pitchers.push(card);
+            club.available.push(id.clone());
+        }
+        self.seat_pitcher(&id, rng)
+    }
+
+    /// Put `card` in the batting-order slot `index` of `side`, at the same position.
+    /// The player he replaces leaves the game and cannot re-enter.
+    pub fn substitute_batter(
+        &mut self,
+        side: Side,
+        index: usize,
+        card: BatterCard,
+    ) -> Result<(), GameError> {
+        if self.is_final() {
+            return Err(GameError::GameOver);
+        }
+        if index >= self.club(side).lineup.len() {
+            return Err(GameError::InvalidFixture(
+                "batting-order index is out of range".into(),
+            ));
+        }
+        if self.is_pitcher(&card.id) {
+            return Err(GameError::PitcherDoesNotHit { player: card.id });
+        }
+        if self.club(side).unavailable.iter().any(|id| id == &card.id) {
+            return Err(GameError::Reentry { player: card.id });
+        }
+        if self.club(side).in_game.iter().any(|id| id == &card.id) {
+            return Err(GameError::InvalidFixture(format!(
+                "{} is already in the game",
+                card.id
+            )));
+        }
+        check_hitter_rates(&card.rates, &card.id)?;
+        check_batted_balls(&card.batted_balls, &card.id)?;
+        let replaced = self.club(side).lineup[index].clone();
+        if card.position != replaced.position {
+            return Err(GameError::InvalidFixture(format!(
+                "{} must play {:?}, the position of the player he replaces",
+                card.id, replaced.position
+            )));
+        }
+        let on_base = [&self.bases.first, &self.bases.second, &self.bases.third]
+            .into_iter()
+            .any(|runner| runner.as_deref() == Some(replaced.id.as_str()));
+        if on_base {
+            return Err(GameError::InvalidFixture(format!(
+                "{} is on base and cannot be replaced at the plate",
+                replaced.id
+            )));
+        }
+        self.move_to_unavailable(side, &replaced.id);
+        let text = format!(
+            "{} replaces {}, batting {} and playing {:?}.",
+            card.name,
+            replaced.name,
+            index + 1,
+            card.position
+        );
+        let club = self.club_mut(side);
+        club.in_game.push(card.id.clone());
+        club.positions.insert(card.id.clone(), card.position);
+        club.lineup[index] = card;
+        self.log.push(LogEntry {
+            inning: self.inning,
+            half: self.half,
+            text,
+        });
+        Ok(())
+    }
+
     /// Fixed lineup. Pitchers are rejected before any other batting-order change.
     pub fn place_in_batting_order(
         &mut self,
@@ -791,30 +901,35 @@ fn validate_team(team: &TeamFixture, fixture: &GameFixture) -> Result<(), GameEr
         )));
     }
     for pitcher in &team.pitchers {
-        for (name, rate) in [
-            ("k", pitcher.rates.k),
-            ("bb", pitcher.rates.bb),
-            ("hbp", pitcher.rates.hbp),
-            ("hr", pitcher.rates.hr),
-            ("h", pitcher.rates.h),
-        ] {
-            if !(0.0..1.0).contains(&rate) {
-                return Err(GameError::InvalidFixture(format!(
-                    "{} {name} is out of range",
-                    pitcher.id
-                )));
-            }
-        }
-        check_batted_balls(&pitcher.batted_balls, &pitcher.id)?;
-        if pitcher.fatigue.season_pitches_per_appearance <= 0.0
-            || pitcher.fatigue.career_pitches_per_appearance <= 0.0
-            || pitcher.fatigue.age == 0
-        {
+        check_pitcher_card(pitcher)?;
+    }
+    Ok(())
+}
+
+fn check_pitcher_card(pitcher: &PitcherCard) -> Result<(), GameError> {
+    for (name, rate) in [
+        ("k", pitcher.rates.k),
+        ("bb", pitcher.rates.bb),
+        ("hbp", pitcher.rates.hbp),
+        ("hr", pitcher.rates.hr),
+        ("h", pitcher.rates.h),
+    ] {
+        if !(0.0..1.0).contains(&rate) {
             return Err(GameError::InvalidFixture(format!(
-                "{} has a bad fatigue profile",
+                "{} {name} is out of range",
                 pitcher.id
             )));
         }
+    }
+    check_batted_balls(&pitcher.batted_balls, &pitcher.id)?;
+    if pitcher.fatigue.season_pitches_per_appearance <= 0.0
+        || pitcher.fatigue.career_pitches_per_appearance <= 0.0
+        || pitcher.fatigue.age == 0
+    {
+        return Err(GameError::InvalidFixture(format!(
+            "{} has a bad fatigue profile",
+            pitcher.id
+        )));
     }
     Ok(())
 }

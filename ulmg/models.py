@@ -2381,3 +2381,89 @@ class HalfRosterSnapshotPlayer(BaseModel):
 
     def __unicode__(self):
         return f"{self.player} in {self.snapshot}"
+
+
+class GameLog(BaseModel):
+    """
+    The play log of one scheduled game. Its events are the record of the
+    game; state is the engine's game state after event state_sequence, a
+    cache of their fold that ulmg.sim_game rebuilds by replaying the events
+    whenever it is missing or behind.
+    """
+
+    game = models.OneToOneField(ScheduleGame, on_delete=models.CASCADE, related_name="game_log")
+    state = models.JSONField(null=True, blank=True)
+    state_sequence = models.IntegerField(default=0)
+
+    class Meta:
+        ordering = ["game__day"]
+
+    def __unicode__(self):
+        return f"Log of {self.game}"
+
+
+class GameEvent(BaseModel):
+    """
+    One event in a game log, appended and never rewritten. sequence rises by
+    one per event within a log. A seat event names the user who holds a
+    side, or no one, when the computer plays it. Engine events carry the
+    seed and every input they were played with, so replaying the log gives
+    the same game. computer marks a decision the computer manager made.
+    """
+
+    OPEN = "open"
+    SEAT = "seat"
+    DECISION = "decision"
+    START = "start"
+    LINEUP = "lineup"
+    CALL = "call"
+    PLATE_APPEARANCE = "plate_appearance"
+    PITCHING_CHANGE = "pitching_change"
+    SUBSTITUTION = "substitution"
+    ROSTER_MOVE = "roster_move"
+    PAUSE = "pause"
+    RESUME = "resume"
+    FINAL = "final"
+    KIND_CHOICES = (
+        (OPEN, "Game opened"),
+        (SEAT, "Seat change"),
+        (DECISION, "Computer decision"),
+        (START, "Lineups set"),
+        (LINEUP, "Lineup change"),
+        (CALL, "Call"),
+        (PLATE_APPEARANCE, "Plate appearance"),
+        (PITCHING_CHANGE, "Pitching change"),
+        (SUBSTITUTION, "Substitution"),
+        (ROSTER_MOVE, "Roster move"),
+        (PAUSE, "Paused"),
+        (RESUME, "Resumed"),
+        (FINAL, "Final"),
+    )
+
+    AWAY = "away"
+    HOME = "home"
+    SIDE_CHOICES = ((AWAY, "Away"), (HOME, "Home"))
+
+    log = models.ForeignKey(GameLog, on_delete=models.CASCADE, related_name="events")
+    sequence = models.IntegerField()
+    kind = models.CharField(max_length=32, choices=KIND_CHOICES)
+    side = models.CharField(max_length=4, choices=SIDE_CHOICES, null=True, blank=True)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="+")
+    computer = models.BooleanField(default=False)
+    seed = models.BigIntegerField(null=True, blank=True)
+    payload = models.JSONField(default=dict, blank=True)
+    text = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ["log", "sequence"]
+        constraints = [
+            models.UniqueConstraint(fields=["log", "sequence"], name="unique_game_event_sequence"),
+        ]
+
+    def __unicode__(self):
+        return f"{self.log.game} #{self.sequence} {self.kind}"
+
+    def save(self, *args, **kwargs):
+        if self.pk is not None:
+            raise ValueError("A game event is never rewritten; append a new one.")
+        super().save(*args, **kwargs)

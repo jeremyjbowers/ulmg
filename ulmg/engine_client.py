@@ -1,5 +1,5 @@
 # ABOUTME: The one HTTP client for the stateless baseball engine service at settings.ENGINE_URL.
-# ABOUTME: Wraps /start, /step, /matchup, and /health with timeouts and raises EngineUnavailable when it is down.
+# ABOUTME: Wraps /start, /step, /matchup, /pitcher, /substitute and /health; raises EngineUnavailable when it is down.
 import secrets
 
 import requests
@@ -38,7 +38,8 @@ def start(fixture, seed):
 def step(state, seed, call=None, runners=None, league_spd=None):
     """Resolve one plate appearance. Returns {"result": ..., "state": ...}.
 
-    `call` is None for a normal plate appearance (the computer manager decides), or one of
+    `call` is None for a normal plate appearance (the computer manager decides), "none" for
+    a plate appearance with no call at all, or one of
     "bunt", "intentional_walk", "steal", "hit_and_run", "infield_in". The infield-in call is
     honored only with a runner on third and fewer than two outs. The same state, call, seed, and
     runner ratings always give the same result, so record them with the plate appearance.
@@ -53,6 +54,23 @@ def step(state, seed, call=None, runners=None, league_spd=None):
     if league_spd is not None:
         payload["league_spd"] = league_spd
     return _post("/step", payload)
+
+
+def bring_in_pitcher(state, pitcher, seed):
+    """
+    A pitching change for the fielding club: `pitcher` is his engine PitcherCard. A pitcher
+    already used in the game cannot re-enter. The seed draws his fatigue line. Returns the state.
+    """
+    return _post("/pitcher", {"state": state, "pitcher": pitcher, "seed": seed})["state"]
+
+
+def substitute(state, side, index, batter):
+    """
+    Put `batter`, an engine BatterCard, in batting-order slot `index` (0-8) of `side`
+    ("away" or "home"), at the position of the player he replaces, who leaves the game.
+    Draws nothing. Returns the state.
+    """
+    return _post("/substitute", {"state": state, "side": side, "index": index, "batter": batter})["state"]
 
 
 def matchup(state):

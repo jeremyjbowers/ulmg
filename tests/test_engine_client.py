@@ -1,5 +1,5 @@
 # ABOUTME: Tests the engine client against a real engine process that the tests build and start.
-# ABOUTME: Covers start, steps, calls, runner ratings, card batted balls, replay, determinism, matchup, and a down engine.
+# ABOUTME: Covers start, steps, calls, pitching changes, substitutes, runner ratings, batted balls, replay, matchup, a down engine.
 import json
 
 from django.test import SimpleTestCase, override_settings
@@ -114,6 +114,31 @@ class EngineClientTestCase(SimpleTestCase):
         self.assertEqual(matchup["pitcher_id"], state["home"]["pitcher_slot"])
         self.assertAlmostEqual(sum(matchup["probabilities"].values()), 1.0, places=9)
         self.assertEqual(engine_client.matchup(state), matchup)
+
+    def test_bring_in_pitcher_changes_pitchers_and_refuses_a_return(self):
+        state = self.opening_state(seed=2)
+        starter_id = state["home"]["pitcher_slot"]
+        starter = next(card for card in state["home"]["pitchers"] if card["id"] == starter_id)
+        reliever = dict(starter, id="h-new", name="New Arm")
+        changed = engine_client.bring_in_pitcher(state, reliever, seed=3)
+        self.assertEqual(changed["home"]["pitcher_slot"], "h-new")
+        self.assertEqual(engine_client.bring_in_pitcher(state, reliever, seed=3), changed)
+        with self.assertRaises(engine_client.EngineError) as caught:
+            engine_client.bring_in_pitcher(changed, starter, seed=3)
+        self.assertEqual(caught.exception.status, 422)
+        self.assertIn("cannot re-enter", str(caught.exception))
+
+    def test_substitute_puts_a_batter_in_a_slot(self):
+        state = self.opening_state(seed=2)
+        replaced = state["away"]["lineup"][2]
+        batter = dict(replaced, id="a-sub", name="Sub Stitute")
+        changed = engine_client.substitute(state, "away", 2, batter)
+        self.assertEqual(changed["away"]["lineup"][2]["id"], "a-sub")
+        self.assertIn(replaced["id"], changed["away"]["unavailable"])
+
+    def test_a_none_call_plays_with_no_call(self):
+        state = self.opening_state(seed=2)
+        self.assertEqual(engine_client.step(state, seed=9, call="none"), engine_client.step(state, seed=9, call="none"))
 
     def runner_on_first(self):
         state = self.opening_state(seed=2)

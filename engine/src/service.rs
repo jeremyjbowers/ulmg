@@ -6,12 +6,16 @@
 //! computer manager from that seed, so the same state, call, and seed always give the
 //! same plate appearance. Nothing here outlives the call.
 
+use rand::rngs::StdRng;
+use rand::SeedableRng;
 use serde::Serialize;
 
 use crate::game::{Game, GameError};
 use crate::governance::Governance;
 use crate::manager::ComputerManager;
-use crate::model::{GameFixture, PaResult, PlayerId, PrePaCalls, Running};
+use crate::model::{
+    BatterCard, GameFixture, PaResult, PitcherCard, PlayerId, PrePaCalls, Running, Side,
+};
 use crate::runner::{needs_pitcher, step_plate_appearance};
 use crate::sim::{outcome_probabilities, OutcomeProbs, Sim};
 
@@ -67,6 +71,24 @@ pub fn step(
         result,
         state: game,
     })
+}
+
+/// A pitching change for the fielding club. The seed draws the new pitcher's fatigue line.
+pub fn bring_in_pitcher(mut game: Game, card: PitcherCard, seed: u64) -> Result<Game, GameError> {
+    let mut rng = StdRng::seed_from_u64(seed);
+    game.bring_in_pitcher(card, &mut rng)?;
+    Ok(game)
+}
+
+/// Replace one batting-order slot of `side`. Draws nothing.
+pub fn substitute(
+    mut game: Game,
+    side: Side,
+    index: usize,
+    card: BatterCard,
+) -> Result<Game, GameError> {
+    game.substitute_batter(side, index, card)?;
+    Ok(game)
 }
 
 /// The probabilities a normal plate appearance (no call) would draw from next.

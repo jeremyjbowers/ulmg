@@ -57,6 +57,9 @@ class SimModel:
 # In delete order: every model that points at a sim model comes before it,
 # so no delete cascades and each count is the model's own rows.
 SIM_MODELS = [
+    # Game logs: every event, then the log that holds it.
+    SimModel(models.GameEvent, "log__game__series__slot__season"),
+    SimModel(models.GameLog, "game__series__slot__season"),
     SimModel(models.UsageAppearance, "game__series__slot__season"),
     SimModel(models.UsageOverride, "game__series__slot__season"),
     SimModel(models.UsagePause, "game__series__slot__season"),

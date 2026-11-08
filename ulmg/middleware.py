@@ -65,6 +65,7 @@ class LoginRequiredMiddleware:
             'league_schedule',
             'team_schedule',
             'team_plan',
+            'game_box_score',
         ]
         if url_name in public_urls:
             return True
