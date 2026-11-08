@@ -65,7 +65,9 @@ SIM_MODELS = [
     SimModel(models.UsagePause, "game__series__slot__season"),
     SimModel(models.UsageCounter, "season"),
     # Only the ULMG season lines; every other classification is real stats.
-    SimModel(models.PlayerStatSeason, "season", filters={"classification": "6-ulmg"}),
+    SimModel(models.PlayerStatSeason, "season", filters={"classification": models.PlayerStatSeason.ULMG}),
+    # The clubs' season records, summed from the game logs like the 6-ulmg lines.
+    SimModel(models.TeamSeasonRecord, "season"),
     # The move log goes, and every rostered player's flags go back to the
     # season's earliest half roster snapshot, which is kept.
     SimModel(models.RosterMove, "season", restore=roster_moves.restore_snapshot),

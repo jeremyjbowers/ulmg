@@ -16,7 +16,7 @@ from django.views.decorators.cache import never_cache
 import ujson as json
 from datetime import datetime
 
-from ulmg import cards, models, plans, roster_moves, usage, utils
+from ulmg import cards, models, plans, roster_moves, season_record, usage, utils
 from ulmg.cache_utils import (
     get_all_cache_keys,
     delete_cache_key_for_admin,
@@ -113,7 +113,10 @@ def player(request, playerid):
                 'details': f"{pick.season.title()} {pick.draft_type.upper()} Draft - Round {pick.draft_round}, Pick {pick.pick_number}" if pick.draft_round and pick.pick_number else f"{pick.season.title()} {pick.draft_type.upper()} Draft"
             })
         transactions.sort(key=lambda x: (x['year'] or 0, x['type'] == 'draft'), reverse=True)
-        player_stats = models.PlayerStatSeason.objects.filter(player_id=playerid, is_career=False).order_by('-season', 'classification')
+        # The ULMG sim line is shown on its own, apart from the real stats.
+        player_stats = models.PlayerStatSeason.objects.filter(player_id=playerid, is_career=False).exclude(
+            classification=models.PlayerStatSeason.ULMG
+        ).order_by('-season', 'classification')
         if p.position == "P":
             pitcher_stats = list(player_stats.filter(pitch_stats__isnull=False))
             hitter_stats = None
@@ -136,6 +139,9 @@ def player(request, playerid):
     context["card"] = models.Card.objects.filter(player_id=playerid, season=cards.card_season()).first()
     # Live: usage changes as games are played, so it is read on every request.
     context["usage"] = usage.usage_summary(player_data["p"], settings.CURRENT_SEASON)
+    # Live: the ULMG season line changes with every final.
+    context["record_season"] = settings.CURRENT_SEASON
+    context["ulmg_line"] = season_record.player_line(player_data["p"], settings.CURRENT_SEASON)
 
     return render(request, "player_detail.html", context)
 
@@ -153,10 +159,11 @@ def team_detail(request, abbreviation):
         context["own_team"] = True
 
     stat_season, classification = utils.parse_team_roster_stat_filters(request)
+    # The roster shows real stats; the ULMG record is shown on its own.
     stat_season_queryset = models.PlayerStatSeason.objects.filter(
         season=stat_season,
         is_career=False,
-    )
+    ).exclude(classification=models.PlayerStatSeason.ULMG)
     if classification:
         stat_season_queryset = stat_season_queryset.filter(classification=classification)
     stat_season_queryset = stat_season_queryset.order_by("classification")
@@ -207,6 +214,10 @@ def team_detail(request, abbreviation):
     context["num_owned"] = roster_data["num_owned"]
     context["hitters"] = roster_data["hitters"]
     context["pitchers"] = roster_data["pitchers"]
+
+    # Live: the ULMG record changes with every final.
+    context["record_season"] = settings.CURRENT_SEASON
+    context["ulmg_record"] = season_record.team_record(team, settings.CURRENT_SEASON)
 
     # Live: roster moves and stays change during games.
     move_season, move_half = settings.CURRENT_SEASON, plans.current_half()
@@ -618,8 +629,11 @@ def filter_players(request):
             except ValueError:
                 pass  # Invalid year, skip carded filter
     
-    # Filter by season first (uses index and is most selective)
-    stat_season_query = stat_season_query.filter(season=search_season)
+    # Filter by season first (uses index and is most selective). ULMG sim lines
+    # are not real stats and are listed on the leaders page instead.
+    stat_season_query = stat_season_query.filter(season=search_season).exclude(
+        classification=models.PlayerStatSeason.ULMG
+    )
     
     # Handle classification filter early (uses classification index)
     if request.GET.get("classification", None):

@@ -150,7 +150,7 @@ def search_players(
 
         qs = models.PlayerStatSeason.objects.select_related("player", "player__team").filter(
             is_career=False, season=search_season
-        )
+        ).exclude(classification=models.PlayerStatSeason.ULMG)
         if classification:
             qs = qs.filter(classification=classification)
         if carded is not None and str(carded).strip():

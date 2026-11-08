@@ -26,6 +26,8 @@ BATTER_OUTS = {
 }
 GIDP = "grounded_into_double_play"
 SACRIFICE_FLY = "sacrifice_fly"
+HIT_BY_PITCH = "hit_by_pitch"
+SACRIFICE_BUNT = "bunt_sacrifice"
 
 # Rule 9.17(b): a starter needs five complete innings for the win.
 STARTER_WIN_OUTS = 15
@@ -64,8 +66,12 @@ class BattingLine:
     lob: int = 0
     gidp: int = 0
     sf: int = 0
+    hbp: int = 0
+    sh: int = 0
 
-    COUNTS = ("pa", "ab", "r", "h", "rbi", "bb", "so", "doubles", "triples", "hr", "sb", "cs", "lob", "gidp", "sf")
+    COUNTS = (
+        "pa", "ab", "r", "h", "rbi", "bb", "so", "doubles", "triples", "hr", "sb", "cs", "lob", "gidp", "sf", "hbp", "sh"
+    )
 
 
 @dataclass
@@ -149,9 +155,9 @@ def _bases(bases):
     return [int(pid) for pid in bases.values() if pid is not None]
 
 
-def box_score(log):
-    """The box score of a game log, from its events."""
-    events = list(log.events.order_by("sequence"))
+def box_score(log, events=None):
+    """The box score of a game log, from its events: given in sequence order, or read from the log."""
+    events = list(log.events.order_by("sequence")) if events is None else list(events)
     starts = [e for e in events if e.kind == Event.START]
     box = BoxScore(
         final=any(e.kind == Event.FINAL for e in events),
@@ -252,6 +258,10 @@ def box_score(log):
                 line.gidp += 1
             if outcome == SACRIFICE_FLY:
                 line.sf += 1
+            if outcome == HIT_BY_PITCH:
+                line.hbp += 1
+            if outcome == SACRIFICE_BUNT:
+                line.sh += 1
             if outcome != GIDP:
                 line.rbi += change["runs_scored"]
             if outcome in BATTER_OUTS:

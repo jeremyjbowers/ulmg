@@ -160,7 +160,7 @@ def player_stat_season_prefetch(lookup="playerstatseason_set"):
         queryset=models.PlayerStatSeason.objects.filter(
             is_career=False,
             season__lte=stats_season,
-        ).order_by("-season", "classification"),
+        ).exclude(classification=models.PlayerStatSeason.ULMG).order_by("-season", "classification"),
         to_attr="all_stat_seasons",
     )
 

@@ -24,10 +24,11 @@ class MoveError(Exception):
 def update_player_stat_season_roster(player, season=None, **kwargs):
     """Update or create PlayerStatSeason roster status fields for a player."""
     current_season = season if season is not None else utils.get_current_season()
+    # Roster flags live on the real season line, never on the ULMG sim line.
     player_stat_season = models.PlayerStatSeason.objects.filter(
         player=player,
         season=current_season,
-    ).first()
+    ).exclude(classification=models.PlayerStatSeason.ULMG).first()
 
     if not player_stat_season:
         player_stat_season = models.PlayerStatSeason.objects.create(
@@ -387,7 +388,11 @@ def restore_snapshot(season):
     for row in snapshot.players.select_related("player"):
         player = row.player
         target = (row.is_ulmg_mlb_roster, row.is_ulmg_aaa_roster)
-        stats = models.PlayerStatSeason.objects.filter(player=player, season=season).first()
+        stats = (
+            models.PlayerStatSeason.objects.filter(player=player, season=season)
+            .exclude(classification=models.PlayerStatSeason.ULMG)
+            .first()
+        )
         player_changed = (player.is_ulmg_mlb_roster, player.is_ulmg_aaa_roster) != target
         stats_changed = stats is not None and (stats.is_ulmg_mlb_roster, stats.is_ulmg_aaa_roster) != target
         if player_changed:

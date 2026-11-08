@@ -164,7 +164,7 @@ def my_team(request, abbreviation):
             "playerstatseason_set",
             queryset=models.PlayerStatSeason.objects.filter(
                 season=stat_season, is_career=False
-            ).order_by("classification"),
+            ).exclude(classification=models.PlayerStatSeason.ULMG).order_by("classification"),
             to_attr="current_season_stats",
         )
     )

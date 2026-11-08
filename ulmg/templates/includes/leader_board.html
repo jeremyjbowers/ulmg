@@ -1,0 +1,14 @@
+{# ABOUTME: One leader board: a stat's label and its leaders with their clubs and values. #}
+{# ABOUTME: Expects board (season_record.Board) and record_season. #}
+<div class="leader-board border border-gray-300 p-2 text-sm" data-stat="{{ board.key }}">
+    <h3 class="font-bold mb-1">{{ board.label }}</h3>
+    {% if board.rows %}
+    <ol class="list-decimal ml-5">
+        {% for row in board.rows %}
+        <li><a href="/players/{{ row.player.id }}/" class="underline">{{ row.player.name }}</a>{% if row.player.team %} <a href="/teams/{{ row.player.team.abbreviation|lower }}/results/?season={{ record_season }}" class="text-xs text-gray-600 underline">{{ row.player.team.abbreviation }}</a>{% endif %} <span class="font-bold">{{ row.value }}</span></li>
+        {% endfor %}
+    </ol>
+    {% else %}
+    <p class="text-xs text-gray-600">No one yet.</p>
+    {% endif %}
+</div>
