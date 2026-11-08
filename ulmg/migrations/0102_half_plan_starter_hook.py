@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("ulmg", "0099_game_log"),
+        ("ulmg", "0101_game_event_position_change"),
     ]
 
     operations = [

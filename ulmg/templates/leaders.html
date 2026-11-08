@@ -1,0 +1,24 @@
+{# ABOUTME: ULMG season leaders: the top players in each batting and pitching counting stat, from 6-ulmg lines. #}
+{# ABOUTME: Public, like the standings; each player links to his page, each club to its results. #}
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto py-4">
+    <h1 class="text-2xl font-bold mb-2 border-b border-gray-300 pb-2">{{ record_season }} ULMG leaders</h1>
+    <p class="text-sm text-gray-600 mb-6">Sim games only, summed from final box scores. <a href="/standings/?season={{ record_season }}" class="underline">Standings</a></p>
+
+    <h2 class="text-lg font-bold mb-3">Batting</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-8">
+        {% for board in leaders.batting %}
+        {% include "includes/leader_board.html" %}
+        {% endfor %}
+    </div>
+
+    <h2 class="text-lg font-bold mb-3">Pitching</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-8">
+        {% for board in leaders.pitching %}
+        {% include "includes/leader_board.html" %}
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

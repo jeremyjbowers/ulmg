@@ -56,7 +56,7 @@
             <tbody>
                 {% for line in lines %}
                 <tr class="border-b border-gray-100">
-                    <td class="py-1 px-2">{% if line.substitute %}<span class="ml-5">{% endif %}{{ line.player.name }} {{ line.position }}{% if line.substitute %}</span>{% endif %}</td>
+                    <td class="py-1 px-2">{% if line.substitute %}<span class="ml-5">{% endif %}{{ line.player.name }} {{ line.notation }}{% if line.substitute %}</span>{% endif %}</td>
                     <td class="text-center px-1">{{ line.ab }}</td><td class="text-center px-1">{{ line.r }}</td><td class="text-center px-1">{{ line.h }}</td>
                     <td class="text-center px-1">{{ line.rbi }}</td><td class="text-center px-1">{{ line.bb }}</td><td class="text-center px-1">{{ line.so }}</td>
                     <td class="text-center px-1">{{ line.doubles }}</td><td class="text-center px-1">{{ line.triples }}</td><td class="text-center px-1">{{ line.hr }}</td>

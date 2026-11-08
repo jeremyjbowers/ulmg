@@ -1,5 +1,5 @@
 # ABOUTME: The one HTTP client for the stateless baseball engine service at settings.ENGINE_URL.
-# ABOUTME: Wraps /start, /step, /matchup, /pitcher, /substitute and /health; raises EngineUnavailable when it is down.
+# ABOUTME: Wraps /start, /step, /matchup, /pitcher, /substitute, /positions and /health; raises EngineUnavailable when it is down.
 import secrets
 
 import requests
@@ -64,13 +64,29 @@ def bring_in_pitcher(state, pitcher, seed):
     return _post("/pitcher", {"state": state, "pitcher": pitcher, "seed": seed})["state"]
 
 
-def substitute(state, side, index, batter):
+def substitute(state, side, index, batter, role=None):
     """
     Put `batter`, an engine BatterCard, in batting-order slot `index` (0-8) of `side`
     ("away" or "home"), at the position of the player he replaces, who leaves the game.
+    `role` is None for a plain replacement, or "pinch_hitter" (for the batter due up),
+    "pinch_runner" (for a runner on base, whose base he takes) or "defense" (while his
+    club is in the field). A pinch hitter or runner for anyone but the DH is listed in
+    the club's "pending" until set_positions gives him a position. Draws nothing. Returns the state.
+    """
+    payload = {"state": state, "side": side, "index": index, "batter": batter}
+    if role is not None:
+        payload["role"] = role
+    return _post("/substitute", payload)["state"]
+
+
+def set_positions(state, side, changes):
+    """
+    New fielding positions for the fielding club `side`. `changes` are dicts of index (the
+    batting-order slot), position and defense (the card's engine DefenseRating there). The
+    DH can't move into the field, and each field position must end with one fielder.
     Draws nothing. Returns the state.
     """
-    return _post("/substitute", {"state": state, "side": side, "index": index, "batter": batter})["state"]
+    return _post("/positions", {"state": state, "side": side, "changes": changes})["state"]
 
 
 def matchup(state):

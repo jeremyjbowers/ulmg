@@ -25,7 +25,13 @@ BATTER_OUTS = {
     "bunt_out",
 }
 GIDP = "grounded_into_double_play"
+DH = "DH"
+# Box score notation for the substitution roles the game log records.
+PINCH_RUNNER = "pinch_runner"
+PINCH_NOTES = {"pinch_hitter": "ph", PINCH_RUNNER: "pr"}
 SACRIFICE_FLY = "sacrifice_fly"
+HIT_BY_PITCH = "hit_by_pitch"
+SACRIFICE_BUNT = "bunt_sacrifice"
 
 # Rule 9.17(b): a starter needs five complete innings for the win.
 STARTER_WIN_OUTS = 15
@@ -64,8 +70,18 @@ class BattingLine:
     lob: int = 0
     gidp: int = 0
     sf: int = 0
+    moves: list = field(default_factory=list)
+    hbp: int = 0
+    sh: int = 0
 
-    COUNTS = ("pa", "ab", "r", "h", "rbi", "bb", "so", "doubles", "triples", "hr", "sb", "cs", "lob", "gidp", "sf")
+    COUNTS = (
+        "pa", "ab", "r", "h", "rbi", "bb", "so", "doubles", "triples", "hr", "sb", "cs", "lob", "gidp", "sf", "hbp", "sh"
+    )
+
+    @property
+    def notation(self):
+        """His positions in order, the standard way: "ph-1B" for a pinch hitter who stayed in at first, "SS-2B" for a move."""
+        return "-".join([self.position] + self.moves)
 
 
 @dataclass
@@ -149,9 +165,24 @@ def _bases(bases):
     return [int(pid) for pid in bases.values() if pid is not None]
 
 
-def box_score(log):
-    """The box score of a game log, from its events."""
-    events = list(log.events.order_by("sequence"))
+def substitute_line(player, payload):
+    """
+    The batting line of a substitute: "ph" or "pr" with no position until he
+    is given one, except for the designated hitter's ("ph-DH"); otherwise
+    the position he took.
+    """
+    note = PINCH_NOTES.get(payload.get("role"))
+    if note is None:
+        return BattingLine(player, payload["position"], substitute=True)
+    line = BattingLine(player, note, substitute=True)
+    if payload["position"] == DH:
+        line.moves.append(DH)
+    return line
+
+
+def box_score(log, events=None):
+    """The box score of a game log, from its events: given in sequence order, or read from the log."""
+    events = list(log.events.order_by("sequence")) if events is None else list(events)
     starts = [e for e in events if e.kind == Event.START]
     box = BoxScore(
         final=any(e.kind == Event.FINAL for e in events),
@@ -177,9 +208,14 @@ def box_score(log):
     side_of_pitcher = {starters[side]: side for side in SIDES}
     for e in events:
         if e.kind == Event.SUBSTITUTION:
-            line = BattingLine(players[e.payload["player"]], e.payload["position"], substitute=True)
+            line = substitute_line(players[e.payload["player"]], e.payload)
             slots[e.side][e.payload["index"]].append(line)
             batting[e.side][line.player.id] = line
+        elif e.kind == Event.POSITION_CHANGE:
+            for pid, change in zip(e.payload["players"], e.payload["changes"]):
+                line = batting[e.side][pid]
+                if line.notation.split("-")[-1] != change["position"]:
+                    line.moves.append(change["position"])
         elif e.kind == Event.PITCHING_CHANGE:
             pid = e.payload["pitcher"]
             pitching[e.side][pid] = PitchingLine(players[pid])
@@ -195,7 +231,17 @@ def box_score(log):
     responsible = {}
     unearned = set()
 
-    for event in (e for e in events if e.kind == Event.PLATE_APPEARANCE):
+    for event in events:
+        if event.kind == Event.SUBSTITUTION and event.payload.get("role") == PINCH_RUNNER:
+            # A pinch runner inherits the runner's pitcher responsibility and, for the placed runner, his unearned run.
+            replaced, runner = event.payload["replaced"], event.payload["player"]
+            if replaced in responsible:
+                responsible[runner] = responsible.pop(replaced)
+            if replaced in unearned:
+                unearned.add(runner)
+            continue
+        if event.kind != Event.PLATE_APPEARANCE:
+            continue
         payload = event.payload
         before, result = payload["before"], payload["result"]
         bats = payload["batting"]
@@ -252,6 +298,10 @@ def box_score(log):
                 line.gidp += 1
             if outcome == SACRIFICE_FLY:
                 line.sf += 1
+            if outcome == HIT_BY_PITCH:
+                line.hbp += 1
+            if outcome == SACRIFICE_BUNT:
+                line.sh += 1
             if outcome != GIDP:
                 line.rbi += change["runs_scored"]
             if outcome in BATTER_OUTS:

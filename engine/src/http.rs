@@ -1,4 +1,4 @@
-// ABOUTME: Stateless JSON routes for the engine: start, step, matchup, pitcher, substitute, and health.
+// ABOUTME: Stateless JSON routes for the engine: start, step, matchup, pitcher, substitute, positions, and health.
 // ABOUTME: Every request carries the whole game state; the process keeps nothing between requests.
 //! The engine's HTTP surface.
 //!
@@ -8,7 +8,9 @@
 //! with no call at all, where an omitted call lets the computer manager decide.
 //! `POST /matchup` reports the outcome probabilities the next plate appearance will draw
 //! from. `POST /pitcher` makes a pitching change for the fielding club from a card and a
-//! seed. `POST /substitute` puts a batter card in one batting-order slot. `GET /health` answers
+//! seed. `POST /substitute` puts a batter card in one batting-order slot, with an optional
+//! `role`: `pinch_hitter`, `pinch_runner`, `defense`, or the default `replacement`.
+//! `POST /positions` gives the fielding club's players new positions. `GET /health` answers
 //! App Platform. The caller holds the state. The same state, call, and seed give the same result.
 
 use axum::body::Bytes;
@@ -21,7 +23,7 @@ use serde::de::DeserializeOwned;
 use serde::Deserialize;
 use serde_json::{json, Value};
 
-use crate::game::{Game, GameError};
+use crate::game::{Game, GameError, PositionChange, SubstituteRole};
 use crate::model::{BaseRunners, BatterCard, GameFixture, PitcherCard, PrePaCalls, Running, Side};
 use crate::service::{self, Matchup, Stepped};
 
@@ -36,6 +38,7 @@ pub fn router() -> Router {
         .route("/matchup", post(matchup))
         .route("/pitcher", post(pitcher))
         .route("/substitute", post(substitute))
+        .route("/positions", post(positions))
         .layer(DefaultBodyLimit::max(BODY_LIMIT_BYTES))
 }
 
@@ -71,6 +74,16 @@ struct SubstituteRequest {
     side: Side,
     index: usize,
     batter: BatterCard,
+    /// Omitted, a plain replacement at the same position, as before roles existed.
+    #[serde(default)]
+    role: SubstituteRole,
+}
+
+#[derive(Deserialize)]
+struct PositionsRequest {
+    state: Game,
+    side: Side,
+    changes: Vec<PositionChange>,
 }
 
 #[derive(Deserialize)]
@@ -119,7 +132,20 @@ async fn pitcher(body: Bytes) -> Result<Json<Value>, HttpError> {
 
 async fn substitute(body: Bytes) -> Result<Json<Value>, HttpError> {
     let request: SubstituteRequest = parse(&body)?;
-    let game = service::substitute(request.state, request.side, request.index, request.batter)
+    let game = service::substitute(
+        request.state,
+        request.side,
+        request.index,
+        request.batter,
+        request.role,
+    )
+    .map_err(HttpError::Game)?;
+    Ok(Json(json!({ "state": game })))
+}
+
+async fn positions(body: Bytes) -> Result<Json<Value>, HttpError> {
+    let request: PositionsRequest = parse(&body)?;
+    let game = service::set_positions(request.state, request.side, request.changes)
         .map_err(HttpError::Game)?;
     Ok(Json(json!({ "state": game })))
 }
@@ -722,6 +748,340 @@ mod tests {
         )
         .await;
         assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY, "{body}");
+    }
+
+    fn position_of(card: &crate::model::BatterCard) -> String {
+        serde_json::to_value(card.position)
+            .unwrap()
+            .as_str()
+            .unwrap()
+            .to_string()
+    }
+
+    fn field_slot(opening: &Game, side: crate::model::Side) -> usize {
+        opening
+            .club(side)
+            .lineup
+            .iter()
+            .position(|b| b.position != crate::model::Position::Dh)
+            .unwrap()
+    }
+
+    fn dh_slot(opening: &Game, side: crate::model::Side) -> usize {
+        opening
+            .club(side)
+            .lineup
+            .iter()
+            .position(|b| b.position == crate::model::Position::Dh)
+            .unwrap()
+    }
+
+    /// The state with the batting order of `side` turned to `index` and the other club in the field.
+    fn due_up(state: &Value, side: crate::model::Side, index: usize) -> Value {
+        let mut opening = game(state);
+        opening.club_mut(side).batter_index = index;
+        opening.half = match side {
+            crate::model::Side::Away => crate::model::Half::Top,
+            crate::model::Side::Home => crate::model::Half::Bottom,
+        };
+        serde_json::to_value(&opening).unwrap()
+    }
+
+    /// The same state with the other club batting, as after the third out.
+    fn turned_over(state: &Value) -> Value {
+        let mut next = game(state);
+        next.half = match next.half {
+            crate::model::Half::Top => crate::model::Half::Bottom,
+            crate::model::Half::Bottom => crate::model::Half::Top,
+        };
+        next.bases = crate::model::Bases::empty();
+        serde_json::to_value(&next).unwrap()
+    }
+
+    async fn substitute_as(
+        state: &Value,
+        side: &str,
+        index: usize,
+        card: Value,
+        role: &str,
+    ) -> (StatusCode, Value) {
+        post(
+            "/substitute",
+            json!({ "state": state, "side": side, "index": index, "batter": card, "role": role }),
+        )
+        .await
+    }
+
+    #[tokio::test]
+    async fn a_pinch_hitter_bats_now_and_needs_a_position_before_his_club_pitches() {
+        let state = started(2).await;
+        let opening = game(&state);
+        let slot = field_slot(&opening, crate::model::Side::Away);
+        let state = due_up(&state, crate::model::Side::Away, slot);
+        let position = position_of(&opening.away.lineup[slot]);
+        let (status, body) = substitute_as(
+            &state,
+            "away",
+            slot,
+            bench_card("a-ph", &position),
+            "pinch_hitter",
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+        let changed = game(&body["state"]);
+        assert_eq!(changed.away.lineup[slot].id, "a-ph");
+        assert_eq!(changed.away.pending, vec!["a-ph".to_string()]);
+        assert!(changed.log.last().unwrap().text.contains("pinch hits for"));
+
+        let (status, stepped) = post("/step", json!({ "state": body["state"], "seed": 3 })).await;
+        assert_eq!(status, StatusCode::OK, "{stepped}");
+        assert_eq!(stepped["result"]["batter_id"], "a-ph");
+
+        let fielding = turned_over(&body["state"]);
+        let (status, refused) = post("/step", json!({ "state": fielding, "seed": 3 })).await;
+        assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY, "{refused}");
+        assert!(refused["error"]
+            .as_str()
+            .unwrap()
+            .contains("a-ph needs a fielding position"));
+        let (status, _) = post("/matchup", json!({ "state": fielding })).await;
+        assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY);
+
+        let (status, placed) = post(
+            "/positions",
+            json!({ "state": fielding, "side": "away", "changes": [
+                { "index": slot, "position": position, "defense": { "rating": 2.5, "measured_at": position } }
+            ] }),
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK, "{placed}");
+        let placed_game = game(&placed["state"]);
+        assert!(placed_game.away.pending.is_empty());
+        assert_eq!(
+            placed_game.defense_rating(crate::model::Side::Away),
+            game(&fielding).defense_rating(crate::model::Side::Away) - 1.0 + 2.5,
+            "team defense was not recomputed from the card at his slot"
+        );
+        let (status, stepped) = post("/step", json!({ "state": placed["state"], "seed": 3 })).await;
+        assert_eq!(status, StatusCode::OK, "{stepped}");
+    }
+
+    #[tokio::test]
+    async fn a_pinch_hitter_must_replace_the_batter_due_up() {
+        let state = started(2).await;
+        let opening = game(&state);
+        let position = position_of(&opening.away.lineup[3]);
+        let (status, body) = substitute_as(
+            &state,
+            "away",
+            3,
+            bench_card("a-ph", &position),
+            "pinch_hitter",
+        )
+        .await;
+        assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY, "{body}");
+        assert!(body["error"].as_str().unwrap().contains("batter due up"));
+
+        let position = position_of(&opening.home.lineup[0]);
+        let (status, body) = substitute_as(
+            &state,
+            "home",
+            0,
+            bench_card("h-ph", &position),
+            "pinch_hitter",
+        )
+        .await;
+        assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY, "{body}");
+    }
+
+    #[tokio::test]
+    async fn a_pinch_hitter_for_the_designated_hitter_is_the_designated_hitter() {
+        let state = started(2).await;
+        let opening = game(&state);
+        let slot = dh_slot(&opening, crate::model::Side::Away);
+        let state = due_up(&state, crate::model::Side::Away, slot);
+        let (status, body) = substitute_as(
+            &state,
+            "away",
+            slot,
+            bench_card("a-dh", "DH"),
+            "pinch_hitter",
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+        let changed = game(&body["state"]);
+        assert!(changed.away.pending.is_empty());
+        assert_eq!(
+            changed.away.lineup[slot].position,
+            crate::model::Position::Dh
+        );
+
+        let fielding = turned_over(&body["state"]);
+        let (status, stepped) = post("/step", json!({ "state": fielding, "seed": 3 })).await;
+        assert_eq!(status, StatusCode::OK, "{stepped}");
+
+        let catcher = changed
+            .away
+            .lineup
+            .iter()
+            .position(|b| b.position == crate::model::Position::Catcher)
+            .unwrap();
+        let (status, refused) = post(
+            "/positions",
+            json!({ "state": fielding, "side": "away", "changes": [
+                { "index": slot, "position": "C", "defense": { "rating": 0, "measured_at": "C" } },
+                { "index": catcher, "position": "DH", "defense": { "rating": 0, "measured_at": "DH" } }
+            ] }),
+        )
+        .await;
+        assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY, "{refused}");
+        assert!(refused["error"]
+            .as_str()
+            .unwrap()
+            .contains("designated hitter"));
+    }
+
+    #[tokio::test]
+    async fn a_pinch_runner_takes_the_base_and_the_slot() {
+        let (state, runner) = runner_on_first().await;
+        let opening = game(&state);
+        let slot = opening
+            .away
+            .lineup
+            .iter()
+            .position(|b| b.id == runner)
+            .unwrap();
+        let position = position_of(&opening.away.lineup[slot]);
+        let (status, body) = substitute_as(
+            &state,
+            "away",
+            slot,
+            bench_card("a-pr", &position),
+            "pinch_runner",
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+        let changed = game(&body["state"]);
+        assert_eq!(changed.bases.first.as_deref(), Some("a-pr"));
+        assert_eq!(changed.away.lineup[slot].id, "a-pr");
+        assert!(changed.away.unavailable.contains(&runner));
+        if changed.away.lineup[slot].position != crate::model::Position::Dh {
+            assert_eq!(changed.away.pending, vec!["a-pr".to_string()]);
+        }
+        assert!(changed.log.last().unwrap().text.contains("pinch runs for"));
+
+        let (status, refused) = substitute_as(
+            &body["state"],
+            "away",
+            0,
+            bench_card("a-pr2", &position_of(&opening.away.lineup[0])),
+            "pinch_runner",
+        )
+        .await;
+        assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY, "{refused}");
+        assert!(refused["error"].as_str().unwrap().contains("not on base"));
+    }
+
+    #[tokio::test]
+    async fn a_defensive_replacement_enters_only_in_the_field_and_changes_the_defense() {
+        let state = started(2).await;
+        let opening = game(&state);
+        let slot = field_slot(&opening, crate::model::Side::Home);
+        let position = position_of(&opening.home.lineup[slot]);
+        let mut glove = bench_card("h-glove", &position);
+        glove["defense"]["rating"] = json!(9.0);
+        let (status, body) = substitute_as(&state, "home", slot, glove.clone(), "defense").await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+        let changed = game(&body["state"]);
+        assert!(changed.home.pending.is_empty());
+        assert_eq!(
+            changed.defense_rating(crate::model::Side::Home),
+            opening.defense_rating(crate::model::Side::Home)
+                - opening.home.lineup[slot].defense.rating
+                + 9.0
+        );
+
+        let slot = field_slot(&opening, crate::model::Side::Away);
+        let position = position_of(&opening.away.lineup[slot]);
+        let (status, refused) = substitute_as(
+            &state,
+            "away",
+            slot,
+            bench_card("a-glove", &position),
+            "defense",
+        )
+        .await;
+        assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY, "{refused}");
+        assert!(refused["error"].as_str().unwrap().contains("in the field"));
+    }
+
+    #[tokio::test]
+    async fn fielders_can_switch_positions_but_every_position_is_covered_once() {
+        let state = started(2).await;
+        let opening = game(&state);
+        let fielders: Vec<usize> = (0..9)
+            .filter(|i| opening.home.lineup[*i].position != crate::model::Position::Dh)
+            .take(2)
+            .collect();
+        let (a, b) = (fielders[0], fielders[1]);
+        let (pa, pb) = (
+            position_of(&opening.home.lineup[a]),
+            position_of(&opening.home.lineup[b]),
+        );
+        let (status, body) = post(
+            "/positions",
+            json!({ "state": state, "side": "home", "changes": [
+                { "index": a, "position": pb, "defense": { "rating": 0.5, "measured_at": pb } },
+                { "index": b, "position": pa, "defense": { "rating": 0.25, "measured_at": pa } }
+            ] }),
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+        let changed = game(&body["state"]);
+        assert_eq!(position_of(&changed.home.lineup[a]), pb);
+        assert_eq!(position_of(&changed.home.lineup[b]), pa);
+
+        let (status, refused) = post(
+            "/positions",
+            json!({ "state": state, "side": "home", "changes": [
+                { "index": a, "position": pb, "defense": { "rating": 0.5, "measured_at": pb } }
+            ] }),
+        )
+        .await;
+        assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY, "{refused}");
+        assert!(refused["error"]
+            .as_str()
+            .unwrap()
+            .contains("exactly one fielder"));
+
+        let (status, refused) = post(
+            "/positions",
+            json!({ "state": state, "side": "away", "changes": [
+                { "index": a, "position": pa, "defense": { "rating": 0.5, "measured_at": pa } }
+            ] }),
+        )
+        .await;
+        assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY, "{refused}");
+    }
+
+    #[tokio::test]
+    async fn a_saved_state_without_pending_players_still_plays() {
+        let mut state = started(2).await;
+        state["away"].as_object_mut().unwrap().remove("pending");
+        state["home"].as_object_mut().unwrap().remove("pending");
+        let (status, body) = post("/step", json!({ "state": state, "seed": 3 })).await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+        let (status, body) = post(
+            "/substitute",
+            json!({ "state": started(2).await, "side": "away", "index": 0,
+                    "batter": bench_card("a-bench", &position_of(&game(&started(2).await).away.lineup[0])) }),
+        )
+        .await;
+        assert_eq!(
+            status,
+            StatusCode::OK,
+            "an omitted role is a plain replacement: {body}"
+        );
     }
 
     #[tokio::test]

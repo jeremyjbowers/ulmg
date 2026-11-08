@@ -237,6 +237,104 @@
 </div>
 {% endif %}
 
+{# The 6-ulmg line: sim games only, apart from the real stats below #}
+{% if ulmg_line %}
+<div class="ulmg-line mb-6">
+    <h2 class="text-lg font-bold mb-2 border-b border-gray-300 pb-1">{{ record_season }} ULMG season</h2>
+    <p class="text-xs text-gray-600 mb-2">Summed from his final ULMG games. The MLB lines are below.</p>
+    {% if ulmg_line.hit_stats %}
+    <div class="overflow-x-auto mb-2">
+    <table class="w-full text-xs border-collapse min-w-max">
+        <thead>
+            <tr class="border-b border-gray-300">
+                <th class="text-center py-1">G</th>
+                <th class="text-center py-1">PA</th>
+                <th class="text-center py-1">AB</th>
+                <th class="text-center py-1">R</th>
+                <th class="text-center py-1">H</th>
+                <th class="text-center py-1">2B</th>
+                <th class="text-center py-1">3B</th>
+                <th class="text-center py-1">HR</th>
+                <th class="text-center py-1">RBI</th>
+                <th class="text-center py-1">BB</th>
+                <th class="text-center py-1">SO</th>
+                <th class="text-center py-1">SB</th>
+                <th class="text-center py-1">AVG</th>
+                <th class="text-center py-1">OBP</th>
+                <th class="text-center py-1">SLG</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% with s=ulmg_line.hit_stats %}
+            <tr class="level-ulmg border-b border-gray-100">
+                <td class="text-center py-1">{{ s.g }}</td>
+                <td class="text-center py-1">{{ s.pa }}</td>
+                <td class="text-center py-1">{{ s.ab }}</td>
+                <td class="text-center py-1">{{ s.r }}</td>
+                <td class="text-center py-1">{{ s.h }}</td>
+                <td class="text-center py-1">{{ s.2b }}</td>
+                <td class="text-center py-1">{{ s.3b }}</td>
+                <td class="text-center py-1">{{ s.hr }}</td>
+                <td class="text-center py-1">{{ s.rbi }}</td>
+                <td class="text-center py-1">{{ s.bb }}</td>
+                <td class="text-center py-1">{{ s.so }}</td>
+                <td class="text-center py-1">{{ s.sb }}</td>
+                <td class="text-center py-1">{{ s.avg|floatformat:3|kill_leading_zero|default_if_none:"-" }}</td>
+                <td class="text-center py-1">{{ s.obp|floatformat:3|kill_leading_zero|default_if_none:"-" }}</td>
+                <td class="text-center py-1">{{ s.slg|floatformat:3|kill_leading_zero|default_if_none:"-" }}</td>
+            </tr>
+            {% endwith %}
+        </tbody>
+    </table>
+    </div>
+    {% endif %}
+    {% if ulmg_line.pitch_stats %}
+    <div class="overflow-x-auto">
+    <table class="w-full text-xs border-collapse min-w-max">
+        <thead>
+            <tr class="border-b border-gray-300">
+                <th class="text-center py-1">G</th>
+                <th class="text-center py-1">GS</th>
+                <th class="text-center py-1">W</th>
+                <th class="text-center py-1">L</th>
+                <th class="text-center py-1">SV</th>
+                <th class="text-center py-1">IP</th>
+                <th class="text-center py-1">H</th>
+                <th class="text-center py-1">R</th>
+                <th class="text-center py-1">ER</th>
+                <th class="text-center py-1">HR</th>
+                <th class="text-center py-1">BB</th>
+                <th class="text-center py-1">SO</th>
+                <th class="text-center py-1">ERA</th>
+                <th class="text-center py-1">WHIP</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% with s=ulmg_line.pitch_stats %}
+            <tr class="level-ulmg border-b border-gray-100">
+                <td class="text-center py-1">{{ s.g }}</td>
+                <td class="text-center py-1">{{ s.gs }}</td>
+                <td class="text-center py-1">{{ s.w }}</td>
+                <td class="text-center py-1">{{ s.l }}</td>
+                <td class="text-center py-1">{{ s.sv }}</td>
+                <td class="text-center py-1">{{ s.ip|floatformat:1 }}</td>
+                <td class="text-center py-1">{{ s.h }}</td>
+                <td class="text-center py-1">{{ s.r }}</td>
+                <td class="text-center py-1">{{ s.er }}</td>
+                <td class="text-center py-1">{{ s.hr }}</td>
+                <td class="text-center py-1">{{ s.bb }}</td>
+                <td class="text-center py-1">{{ s.so }}</td>
+                <td class="text-center py-1">{{ s.era|floatformat:2|default_if_none:"-" }}</td>
+                <td class="text-center py-1">{{ s.whip|floatformat:2|default_if_none:"-" }}</td>
+            </tr>
+            {% endwith %}
+        </tbody>
+    </table>
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
 <!-- Stats Tables -->
 {% if hitter_stats %}
 <div class="mb-6">
