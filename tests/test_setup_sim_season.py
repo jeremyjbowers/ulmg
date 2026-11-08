@@ -209,7 +209,7 @@ class SetupSimSeasonCommandTestCase(TestCase):
         self.assertEqual(self.snapshot(), before)
         self.assertIn("Dry run: nothing saved", out.getvalue())
 
-    def test_setup_refuses_once_games_have_been_played(self):
+    def test_setup_refuses_once_games_are_played_and_succeeds_again_after_a_reset(self):
         run_setup()
         game = schedule.season_games(SEASON).first()
         game.home_score, game.road_score = 3, 2
@@ -222,7 +222,16 @@ class SetupSimSeasonCommandTestCase(TestCase):
         self.assertIn(f"reset_sim_season --season {SEASON}", message)
         self.assertEqual(self.snapshot(), before)
 
-    # TODO(#181): once reset_sim_season (#181, branch sim-reset) is on main, add the
-    # round trip the ticket asks for: after the refusal above, run
-    # `reset_sim_season --season SEASON --confirm SEASON --include-schedule` and check that
-    # setup_sim_season succeeds again with 162 games and complete plans for every team.
+        call_command(
+            "reset_sim_season", "--season", str(SEASON), "--confirm", str(SEASON), "--include-schedule",
+            stdout=StringIO(),
+        )
+        self.assertFalse(models.ScheduleGame.objects.exists())
+        self.assertFalse(models.HalfPlan.objects.exists())
+
+        output = run_setup()
+        self.assertIn("Games created: 1296 (162 per team)", output)
+        self.assertIn("Teams with problems: none", output)
+        for team_obj in models.Team.objects.all():
+            self.assertEqual(len(schedule.team_games(team_obj, SEASON)), 162)
+            self.assert_complete_plan(team_obj, 1)
