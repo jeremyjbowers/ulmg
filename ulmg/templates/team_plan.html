@@ -41,6 +41,12 @@
         {% if mirp %}<ol class="list-decimal ml-5 space-y-1">{% for line in mirp %}<li class="plan-mirp">{% include 'includes/plan_player.html' %}</li>{% endfor %}</ol>{% else %}<p>None</p>{% endif %}
         <p class="font-bold text-xs uppercase text-gray-600 mt-2">Starter hook</p>
         <p class="plan-starter-hook">{{ starter_hook }}</p>
+        <p class="font-bold text-xs uppercase text-gray-600 mt-2">Closer usage</p>
+        <p class="plan-closer-usage">{{ closer_usage }}</p>
+        <p class="font-bold text-xs uppercase text-gray-600 mt-2">Late relief</p>
+        <p class="plan-relief-usage">{{ relief_usage }}</p>
+        <p class="font-bold text-xs uppercase text-gray-600 mt-2">Bench usage</p>
+        <p class="plan-bench-usage">{{ bench_usage }}</p>
     </div>
     <div>
         <h3 class="font-bold border-b border-gray-300 mb-2">Bench order</h3>

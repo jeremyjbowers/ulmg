@@ -495,19 +495,34 @@ def reapply_designations(season):
 # Saving
 
 
-def starter_hook_errors(starter_hook):
-    hooks = [value for value, _ in models.HalfPlan.STARTER_HOOK_CHOICES]
-    if starter_hook is not None and starter_hook not in hooks:
-        return [f"The starter hook must be {', '.join(hooks[:-1])} or {hooks[-1]}."]
+def _choice_errors(value, choices, label):
+    allowed = [item for item, _ in choices]
+    if value is not None and value not in allowed:
+        return [f"The {label} must be {', '.join(allowed[:-1])} or {allowed[-1]}."]
     return []
 
 
-def save_plan(plan, *, rotation, closer, setup_l, setup_r, sirp, mirp, bench, lineup_vs_lhp, lineup_vs_rhp, starter_hook=None):
+def starter_hook_errors(starter_hook):
+    return _choice_errors(starter_hook, models.HalfPlan.STARTER_HOOK_CHOICES, "starter hook")
+
+
+def usage_errors(closer_usage, relief_usage, bench_usage):
+    return (
+        _choice_errors(closer_usage, models.HalfPlan.CLOSER_USAGE_CHOICES, "closer usage")
+        + _choice_errors(relief_usage, models.HalfPlan.RELIEF_USAGE_CHOICES, "late relief")
+        + _choice_errors(bench_usage, models.HalfPlan.BENCH_USAGE_CHOICES, "bench usage")
+    )
+
+
+def save_plan(
+    plan, *, rotation, closer, setup_l, setup_r, sirp, mirp, bench, lineup_vs_lhp, lineup_vs_rhp,
+    starter_hook=None, closer_usage=None, relief_usage=None, bench_usage=None,
+):
     """
-    Save a half plan's rotation, bullpen, bench, lineup cards and starter
-    hook, re-run auto-fill and set swingman designations. A starter_hook of
-    None keeps the plan's. Nothing is saved when a rule is broken or a day
-    has no legal starter. Returns warnings to show.
+    Save a half plan's rotation, bullpen, bench, lineup cards, starter hook
+    and usage styles, re-run auto-fill and set swingman designations. A hook
+    or usage of None keeps the plan's. Nothing is saved when a rule is broken
+    or a day has no legal starter. Returns warnings to show.
     """
     if not is_open(plan.half):
         raise PlanError([closed_message(plan.half)])
@@ -522,7 +537,11 @@ def save_plan(plan, *, rotation, closer, setup_l, setup_r, sirp, mirp, bench, li
         "lineup_vs_lhp": list(lineup_vs_lhp),
         "lineup_vs_rhp": list(lineup_vs_rhp),
     }
-    errors = plan_errors(plan.team, plan.season, plan.half, **fields) + starter_hook_errors(starter_hook)
+    errors = (
+        plan_errors(plan.team, plan.season, plan.half, **fields)
+        + starter_hook_errors(starter_hook)
+        + usage_errors(closer_usage, relief_usage, bench_usage)
+    )
     if errors:
         raise PlanError(errors)
 
@@ -539,6 +558,12 @@ def save_plan(plan, *, rotation, closer, setup_l, setup_r, sirp, mirp, bench, li
         plan.lineup_vs_rhp = stored_lineup(fields["lineup_vs_rhp"])
         if starter_hook is not None:
             plan.starter_hook = starter_hook
+        if closer_usage is not None:
+            plan.closer_usage = closer_usage
+        if relief_usage is not None:
+            plan.relief_usage = relief_usage
+        if bench_usage is not None:
+            plan.bench_usage = bench_usage
         plan.save()
         _refill(plan, rosters)
         return _designate(plan)
@@ -816,6 +841,9 @@ class PlanBook:
             "sirp": on_roster(self._resolve(plan.sirp)) if plan else [],
             "mirp": on_roster(self._resolve(plan.mirp)) if plan else [],
             "starter_hook": plan.starter_hook if plan else models.HalfPlan.NORMAL_HOOK,
+            "closer_usage": plan.closer_usage if plan else models.HalfPlan.NINTH,
+            "relief_usage": plan.relief_usage if plan else models.HalfPlan.STANDARD,
+            "bench_usage": plan.bench_usage if plan else models.HalfPlan.STAND,
         }
 
     def opened_side(self, sheet, opponent_sheet, team):
@@ -841,6 +869,9 @@ class PlanBook:
             "sirp": self._resolve(_sheet_bullpen(sheet, "sirp")),
             "mirp": self._resolve(_sheet_bullpen(sheet, "mirp", "middle_long")),
             "starter_hook": sheet.get("starter_hook", models.HalfPlan.NORMAL_HOOK),
+            "closer_usage": sheet.get("closer_usage", models.HalfPlan.NINTH),
+            "relief_usage": sheet.get("relief_usage", models.HalfPlan.STANDARD),
+            "bench_usage": sheet.get("bench_usage", models.HalfPlan.STAND),
         }
 
     def sheet(self, game):
@@ -889,6 +920,9 @@ def _frozen_side(side):
         "sirp": [p.id for p in side["sirp"] if p],
         "mirp": [p.id for p in side["mirp"] if p],
         "starter_hook": side["starter_hook"],
+        "closer_usage": side["closer_usage"],
+        "relief_usage": side["relief_usage"],
+        "bench_usage": side["bench_usage"],
     }
 
 

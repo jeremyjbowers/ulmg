@@ -1,4 +1,4 @@
-# ABOUTME: The computer manager's choices in a sim game: its starter and his hook, bullpen roles, steals and bench replacements.
+# ABOUTME: The computer manager's choices in a sim game: its starter and his hook, bullpen roles and how it uses them, steals and bench moves.
 # ABOUTME: Each choice walks an order from the half plan and takes the first player a legality check passes.
 
 from dataclasses import dataclass, field
@@ -33,6 +33,40 @@ SETUP_MAX_LEAD = 3
 HOOK_CEILING_SHARE = {"quick": 0.85, "normal": 0.95, "slow": 1.00}
 HOOK_RUNS = {"quick": 4, "normal": 5, "slow": 6}
 DEFAULT_HOOK = "normal"
+
+# How the closer is used. Ninth waits for a save in the ninth or later. Eighth also
+# takes the eighth of a game within three runs. Leverage comes in from the sixth
+# when the tying run is already on base, at bat or on deck.
+NINTH = "ninth"
+EIGHTH = "eighth"
+LEVERAGE = "leverage"
+CLOSER_USAGES = (NINTH, EIGHTH, LEVERAGE)
+DEFAULT_CLOSER_USAGE = NINTH
+LEVERAGE_INNING = 6
+
+# How setup and short relief are used. Standard is the seventh and the eighth.
+# Early moves that window up one inning. Tight uses it only with a lead.
+STANDARD = "standard"
+EARLY = "early"
+TIGHT = "tight"
+RELIEF_USAGES = (STANDARD, EARLY, TIGHT)
+DEFAULT_RELIEF_USAGE = STANDARD
+
+# How the bench is used. Stand only replaces someone the rules force out.
+# Pinch pinch-hits, and pinch-runs, in a late game the side does not lead.
+# Glove replaces a fielder once the side is ahead.
+STAND = "stand"
+PINCH = "pinch"
+GLOVE = "glove"
+BENCH_USAGES = (STAND, PINCH, GLOVE)
+DEFAULT_BENCH_USAGE = STAND
+PINCH_INNING = 7
+PINCH_RUN_INNING = 8
+PINCH_GAP = 20
+PINCH_MAX_DEFICIT = 3
+RUN_SPD_GAP = 2.0
+GLOVE_INNING = 7
+GLOVE_GAP = 5.0
 
 
 @dataclass
@@ -104,23 +138,57 @@ def is_save_situation(lead, runners_on, outs):
     return lead <= runners_on + 2
 
 
-def bullpen_role(inning, lead, runners_on, outs, batter_bats="R"):
+def is_high_leverage(lead, runners_on):
+    """
+    A game within three runs with someone already on base and the tying run
+    on base, at bat or on deck. A tie with a runner on counts; a clean inning
+    does not, however small the lead.
+    """
+    if runners_on <= 0 or not (0 <= lead <= SAVE_MAX_LEAD):
+        return False
+    if lead == 0:
+        return True
+    return lead <= runners_on + 2
+
+
+def bullpen_role(
+    inning, lead, runners_on, outs, batter_bats="R", closer_usage=NINTH, relief_usage=STANDARD
+):
     """
     The role the situation calls for. lead is the fielding side's, negative
-    when it trails. batter_bats is the hitter due up: a left-handed batter
-    in the eighth of a close game calls for setup vs L, and a right-handed
-    or switch hitter calls for setup vs R. The seventh of a close game is
-    one inning of short relief. Anything earlier, or a game that is not
-    close, is middle relief, which can go more than one inning.
+    when it trails. batter_bats is the hitter due up.
+
+    closer_usage ninth waits for a save in the ninth or later. eighth also
+    takes the eighth when the game is within three runs. leverage takes a
+    high-leverage spot from the sixth on, and still closes a ninth-inning save.
+
+    relief_usage standard is short relief in the seventh and setup, by the
+    batter's hand, in the eighth, when the lead is within three or the game
+    is tied. early moves that window up one inning, and setup takes the
+    seventh ahead of short relief. tight uses those innings only with a lead.
+    Anything else is middle relief. An unknown usage reads as the default.
     """
-    if inning >= CLOSER_FIRST_INNING and is_save_situation(lead, runners_on, outs):
+    closer_usage = closer_usage if closer_usage in CLOSER_USAGES else NINTH
+    relief_usage = relief_usage if relief_usage in RELIEF_USAGES else STANDARD
+    if _closer_spot(closer_usage, inning, lead, runners_on, outs):
         return CLOSER
-    if 0 <= lead <= SETUP_MAX_LEAD:
-        if inning == SETUP_INNING:
-            return SETUP_L if batter_bats == "L" else SETUP_R
-        if inning == SIRP_INNING:
-            return SIRP
+    close = 1 <= lead <= SETUP_MAX_LEAD if relief_usage == TIGHT else 0 <= lead <= SETUP_MAX_LEAD
+    setup_innings = (SETUP_INNING - 1, SETUP_INNING) if relief_usage == EARLY else (SETUP_INNING,)
+    sirp_innings = (SIRP_INNING - 1,) if relief_usage == EARLY else (SIRP_INNING,)
+    if close and inning in setup_innings:
+        return SETUP_L if batter_bats == "L" else SETUP_R
+    if close and inning in sirp_innings:
+        return SIRP
     return MIRP
+
+
+def _closer_spot(usage, inning, lead, runners_on, outs):
+    save = inning >= CLOSER_FIRST_INNING and is_save_situation(lead, runners_on, outs)
+    if usage == LEVERAGE:
+        return save or (inning >= LEVERAGE_INNING and is_high_leverage(lead, runners_on))
+    if usage == EIGHTH:
+        return save or (inning == SETUP_INNING and 0 <= lead <= SETUP_MAX_LEAD)
+    return save
 
 
 def group_order(role):
@@ -207,3 +275,69 @@ def calls_steal(attempt_rate, draw):
 def bench_replacement(bench, problem):
     """The first legal player in the side's bench order."""
     return _first_legal(bench, problem)
+
+
+def wants_pinch_hit(style, inning, batting_lead):
+    """Pinch-hit from the seventh on, when the side is tied or trails by at most three."""
+    return style == PINCH and inning >= PINCH_INNING and -PINCH_MAX_DEFICIT <= batting_lead <= 0
+
+
+def pinch_hitter(due_wrc, bench):
+    """
+    The first player in bench order, as (player, wrc_plus), who beats the
+    batter due up by PINCH_GAP. No wRC+ on the due batter means no pinch hit.
+    """
+    if due_wrc is None:
+        return None
+    for player, wrc in bench:
+        if wrc is not None and wrc >= due_wrc + PINCH_GAP:
+            return player
+    return None
+
+
+def wants_pinch_run(style, inning, batting_lead):
+    """Pinch-run from the eighth on, when the side is tied or trails by one."""
+    return style == PINCH and inning >= PINCH_RUN_INNING and -1 <= batting_lead <= 0
+
+
+def pinch_runner(runner_spd, bench):
+    """The first player in bench order, as (player, spd), who is RUN_SPD_GAP faster than the runner."""
+    if runner_spd is None:
+        return None
+    for player, spd in bench:
+        if spd is not None and spd >= runner_spd + RUN_SPD_GAP:
+            return player
+    return None
+
+
+def wants_glove(style, inning, fielding_lead, half_inning_start):
+    """A defensive replacement at the start of a half inning from the seventh on, when the side leads."""
+    return style == GLOVE and half_inning_start and inning >= GLOVE_INNING and fielding_lead >= 1
+
+
+def defensive_replacement(fielders, bench):
+    """
+    The biggest glove upgrade of at least GLOVE_GAP defensive runs.
+
+    fielders is (slot, position, runs) for the men in the field. bench is
+    (player, {position: runs}) in bench order. A player with no rating at
+    the position is left where he is. Ties go to the earlier bench player,
+    then the earlier slot. Returns (slot, player), or None.
+    """
+    best = None
+    for slot, position, runs in fielders:
+        if position in ("DH", "P") or runs is None:
+            continue
+        for index, (player, gloves) in enumerate(bench):
+            upgrade = gloves.get(position)
+            if upgrade is None:
+                continue
+            gain = upgrade - runs
+            if gain < GLOVE_GAP:
+                continue
+            rank = (-gain, index, slot)
+            if best is None or rank < best[0]:
+                best = (rank, slot, player)
+    if best is None:
+        return None
+    return best[1], best[2]

@@ -147,6 +147,102 @@ class StarterHookTestCase(TestCase):
         self.assertIsNotNone(computer_manager.hook_reason(None, self.fatigue(effort=95)))
 
 
+class UsageTestCase(TestCase):
+    def role(self, **kwargs):
+        defaults = dict(inning=8, lead=1, runners_on=0, outs=0, batter_bats="R")
+        defaults.update(kwargs)
+        return computer_manager.bullpen_role(**defaults)
+
+    def test_the_usage_choices_are_the_plans_choices(self):
+        cm = computer_manager
+        self.assertEqual({value for value, _ in models.HalfPlan.CLOSER_USAGE_CHOICES}, set(cm.CLOSER_USAGES))
+        self.assertEqual({value for value, _ in models.HalfPlan.RELIEF_USAGE_CHOICES}, set(cm.RELIEF_USAGES))
+        self.assertEqual({value for value, _ in models.HalfPlan.BENCH_USAGE_CHOICES}, set(cm.BENCH_USAGES))
+        plan = models.HalfPlan()
+        self.assertEqual(plan.closer_usage, models.HalfPlan.NINTH)
+        self.assertEqual(plan.relief_usage, models.HalfPlan.STANDARD)
+        self.assertEqual(plan.bench_usage, models.HalfPlan.STAND)
+
+    def test_an_unknown_usage_reads_as_the_default(self):
+        self.assertEqual(self.role(inning=8, closer_usage="fireman"), computer_manager.SETUP_R)
+        self.assertEqual(self.role(inning=6, lead=1, relief_usage="whenever"), computer_manager.MIRP)
+
+    def test_ninth_waits_for_the_ninth_and_eighth_takes_a_close_eighth(self):
+        cm = computer_manager
+        self.assertEqual(self.role(inning=8, closer_usage=cm.NINTH), cm.SETUP_R)
+        self.assertEqual(self.role(inning=9, lead=2, runners_on=0, outs=0, closer_usage=cm.NINTH), cm.CLOSER)
+        self.assertEqual(self.role(inning=8, closer_usage=cm.EIGHTH), cm.CLOSER)
+        self.assertEqual(self.role(inning=8, lead=0, closer_usage=cm.EIGHTH), cm.CLOSER)
+        self.assertEqual(self.role(inning=8, lead=4, closer_usage=cm.EIGHTH), cm.MIRP)
+        self.assertEqual(self.role(inning=7, lead=1, closer_usage=cm.EIGHTH), cm.SIRP)
+
+    def test_leverage_uses_the_closer_from_the_sixth_when_the_tying_run_is_in_play(self):
+        cm = computer_manager
+        self.assertTrue(cm.is_high_leverage(lead=0, runners_on=1))
+        self.assertTrue(cm.is_high_leverage(lead=2, runners_on=1))
+        self.assertFalse(cm.is_high_leverage(lead=1, runners_on=0), "a clean inning is not high leverage")
+        self.assertFalse(cm.is_high_leverage(lead=4, runners_on=2))
+        self.assertEqual(
+            self.role(inning=6, lead=1, runners_on=1, closer_usage=cm.LEVERAGE), cm.CLOSER
+        )
+        self.assertEqual(
+            self.role(inning=6, lead=1, runners_on=1, closer_usage=cm.NINTH), cm.MIRP
+        )
+        self.assertEqual(
+            self.role(inning=6, lead=1, runners_on=0, closer_usage=cm.LEVERAGE), cm.MIRP
+        )
+        self.assertEqual(
+            self.role(inning=5, lead=1, runners_on=2, closer_usage=cm.LEVERAGE), cm.MIRP
+        )
+        self.assertEqual(
+            self.role(inning=9, lead=3, runners_on=0, outs=0, closer_usage=cm.LEVERAGE), cm.CLOSER
+        )
+
+    def test_early_relief_moves_the_window_up_and_tight_stays_out_of_a_tie(self):
+        cm = computer_manager
+        self.assertEqual(self.role(inning=6, lead=1, relief_usage=cm.EARLY), cm.SIRP)
+        self.assertEqual(self.role(inning=7, lead=1, batter_bats="L", relief_usage=cm.EARLY), cm.SETUP_L)
+        self.assertEqual(self.role(inning=8, lead=1, relief_usage=cm.EARLY), cm.SETUP_R)
+        self.assertEqual(self.role(inning=8, lead=0, relief_usage=cm.TIGHT), cm.MIRP)
+        self.assertEqual(self.role(inning=7, lead=0, relief_usage=cm.TIGHT), cm.MIRP)
+        self.assertEqual(self.role(inning=8, lead=2, relief_usage=cm.TIGHT), cm.SETUP_R)
+        self.assertEqual(self.role(inning=7, lead=2, relief_usage=cm.TIGHT), cm.SIRP)
+
+    def test_pinch_hits_a_clearly_better_bat_and_pinch_runs_a_clearly_faster_runner(self):
+        cm = computer_manager
+        weak, strong, average = players("Weak", "Strong", "Average")
+        self.assertFalse(cm.wants_pinch_hit(cm.STAND, inning=9, batting_lead=0))
+        self.assertFalse(cm.wants_pinch_hit(cm.PINCH, inning=6, batting_lead=-1))
+        self.assertFalse(cm.wants_pinch_hit(cm.PINCH, inning=8, batting_lead=1))
+        self.assertFalse(cm.wants_pinch_hit(cm.PINCH, inning=8, batting_lead=-4))
+        self.assertTrue(cm.wants_pinch_hit(cm.PINCH, inning=7, batting_lead=-3))
+        self.assertEqual(cm.pinch_hitter(80, [(average, 95), (strong, 110)]), strong)
+        self.assertIsNone(cm.pinch_hitter(100, [(strong, 119)]))
+        self.assertIsNone(cm.pinch_hitter(None, [(strong, 140)]))
+        self.assertFalse(cm.wants_pinch_run(cm.PINCH, inning=7, batting_lead=0))
+        self.assertTrue(cm.wants_pinch_run(cm.PINCH, inning=8, batting_lead=-1))
+        self.assertEqual(cm.pinch_runner(3.0, [(average, 4.5), (strong, 6.0)]), strong)
+        self.assertIsNone(cm.pinch_runner(None, [(strong, 8.0)]))
+
+    def test_glove_replaces_the_biggest_upgrade_at_the_start_of_a_late_lead(self):
+        cm = computer_manager
+        first, second = players("First", "Second")
+        self.assertFalse(cm.wants_glove(cm.STAND, inning=9, fielding_lead=2, half_inning_start=True))
+        self.assertFalse(cm.wants_glove(cm.GLOVE, inning=6, fielding_lead=2, half_inning_start=True))
+        self.assertFalse(cm.wants_glove(cm.GLOVE, inning=8, fielding_lead=0, half_inning_start=True))
+        self.assertFalse(cm.wants_glove(cm.GLOVE, inning=8, fielding_lead=2, half_inning_start=False))
+        self.assertTrue(cm.wants_glove(cm.GLOVE, inning=7, fielding_lead=1, half_inning_start=True))
+        found = cm.defensive_replacement(
+            [(0, "C", 4.0), (1, "1B", -8.0), (2, "DH", -20.0)],
+            [(first, {"1B": -2.0}), (second, {"1B": 4.0, "C": 4.5})],
+        )
+        self.assertEqual(found, (1, second))
+        self.assertIsNone(
+            cm.defensive_replacement([(1, "1B", 1.0)], [(first, {"1B": 5.0})]),
+            "a gain under five runs stays put",
+        )
+
+
 class StealTestCase(TestCase):
     def test_a_steal_situation_is_a_runner_on_first_second_open_and_fewer_than_two_outs(self):
         situation = computer_manager.is_steal_situation

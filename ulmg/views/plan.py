@@ -51,7 +51,10 @@ def _int_or_none(value):
 class FormState:
     """The editor's selections, from a saved plan or from a posted form."""
 
-    def __init__(self, rotation, closer, setup_l, setup_r, sirp, mirp, bench, lineups, starter_hook):
+    def __init__(
+        self, rotation, closer, setup_l, setup_r, sirp, mirp, bench, lineups, starter_hook,
+        closer_usage, relief_usage, bench_usage,
+    ):
         self.rotation = rotation
         self.closer = closer
         self.setup_l = setup_l
@@ -61,6 +64,9 @@ class FormState:
         self.bench = bench
         self.lineups = lineups
         self.starter_hook = starter_hook
+        self.closer_usage = closer_usage
+        self.relief_usage = relief_usage
+        self.bench_usage = bench_usage
 
     @classmethod
     def from_plan(cls, plan):
@@ -74,6 +80,9 @@ class FormState:
             plan.bench,
             {"vs_lhp": _lineup_rows(plan.lineup_vs_lhp), "vs_rhp": _lineup_rows(plan.lineup_vs_rhp)},
             plan.starter_hook,
+            plan.closer_usage,
+            plan.relief_usage,
+            plan.bench_usage,
         )
 
     @classmethod
@@ -91,6 +100,9 @@ class FormState:
             ids("bench"),
             {prefix: _posted_lineup_rows(post, prefix) for prefix in LINEUP_PREFIXES},
             post.get("starter_hook"),
+            post.get("closer_usage"),
+            post.get("relief_usage"),
+            post.get("bench_usage"),
         )
 
 
@@ -142,6 +154,9 @@ def _fields(state):
         "lineup_vs_lhp": _entries(state.lineups["vs_lhp"], players, errors, "Lineup vs LHP"),
         "lineup_vs_rhp": _entries(state.lineups["vs_rhp"], players, errors, "Lineup vs RHP"),
         "starter_hook": state.starter_hook,
+        "closer_usage": state.closer_usage,
+        "relief_usage": state.relief_usage,
+        "bench_usage": state.bench_usage,
     }
     return fields, errors
 
@@ -201,6 +216,9 @@ def team_plan(request, abbreviation, half):
         context["sirp"] = _lines(plan.sirp, season)
         context["mirp"] = _lines(plan.mirp, season)
         context["starter_hook"] = plan.get_starter_hook_display()
+        context["closer_usage"] = plan.get_closer_usage_display()
+        context["relief_usage"] = plan.get_relief_usage_display()
+        context["bench_usage"] = plan.get_bench_usage_display()
         context["bench"] = _lines(plan.bench, season)
         context["lineup_cards"] = [
             ("vs LHP", _lineup_lines(plan.lineup_vs_lhp, season)),
@@ -234,6 +252,12 @@ def _editor_context(request, team, half, season, state, errors):
             "mirp_slots": _padded(state.mirp, MIRP_SLOTS),
             "starter_hook": state.starter_hook or models.HalfPlan.NORMAL_HOOK,
             "starter_hooks": models.HalfPlan.STARTER_HOOK_CHOICES,
+            "closer_usage": state.closer_usage or models.HalfPlan.NINTH,
+            "closer_usages": models.HalfPlan.CLOSER_USAGE_CHOICES,
+            "relief_usage": state.relief_usage or models.HalfPlan.STANDARD,
+            "relief_usages": models.HalfPlan.RELIEF_USAGE_CHOICES,
+            "bench_usage": state.bench_usage or models.HalfPlan.STAND,
+            "bench_usages": models.HalfPlan.BENCH_USAGE_CHOICES,
             "bench_slots": _padded(state.bench, len(context["hitters"])),
             "lineups": [
                 (prefix, label, state.lineups[prefix]) for prefix, label in LINEUP_PREFIXES.items()

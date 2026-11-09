@@ -592,12 +592,15 @@ class Play:
         """The bullpen role the situation calls for, for the fielding side, as the next batter comes up."""
         state = self.state
         fielding, batting = fielding_side(state), batting_side(state)
+        sheet = self.sheet_side(fielding)
         return computer_manager.bullpen_role(
             inning=state["inning"],
             lead=state["score"][fielding] - state["score"][batting],
             runners_on=sum(1 for base in ("first", "second", "third") if state["bases"].get(base)),
             outs=state["outs"],
             batter_bats=self._batter_bats(),
+            closer_usage=sheet.get("closer_usage", computer_manager.NINTH),
+            relief_usage=sheet.get("relief_usage", computer_manager.STANDARD),
         )
 
     def _batter_bats(self):
@@ -836,6 +839,8 @@ def settle(play):
         if need is None:
             if computer_pitching_change(play):
                 continue
+            if computer_bench_change(play):
+                continue
             return
         if need.kind == POSITION_NEED and play.fold.is_human(need.side):
             # A human can also rearrange his whole defense, so this waits for him and never pauses.
@@ -850,21 +855,33 @@ def settle(play):
         computer_move(play, need, options)
 
 
-def role_text(role, choice):
+def role_text(role, choice, save=False):
     """Why the computer took its reliever from the group it did."""
     wanted = computer_manager.ROLE_LABELS[role]
-    situation = "a save situation, so the closer" if role == computer_manager.CLOSER else f"{wanted} relief"
+    if role == computer_manager.CLOSER:
+        situation = "a save situation, so the closer" if save else "the closer"
+    else:
+        situation = f"{wanted} relief"
     text = f"The situation calls for {situation}"
     if choice.group != role:
         text += f"; with no {wanted} arm available it goes to {computer_manager.ROLE_LABELS[choice.group]}"
     return text + "."
 
 
+def _save_now(play):
+    state = play.state
+    fielding, batting = fielding_side(state), batting_side(state)
+    runners = sum(1 for base in ("first", "second", "third") if state["bases"].get(base))
+    return state["inning"] >= computer_manager.CLOSER_FIRST_INNING and computer_manager.is_save_situation(
+        state["score"][fielding] - state["score"][batting], runners, state["outs"]
+    )
+
+
 def bring_in_reliever(play, side, role, choice, text, payload):
     decision(
         play,
         side,
-        f"{side_label(play.game, side)} computer: {text} {role_text(role, choice)} "
+        f"{side_label(play.game, side)} computer: {text} {role_text(role, choice, save=_save_now(play))} "
         f"It brings in {choice.player.name}. " + skipped_text(choice.skipped),
         dict(
             payload,
@@ -922,7 +939,11 @@ def computer_pitching_change(play):
         return True
 
     current = play.group_of(side, pitcher)
-    if current == role or not play.at_half_inning_start():
+    if current == role:
+        return False
+    # The closer comes in the moment the spot is his, with men already on.
+    # Every other role waits for a new half inning, so a hand change mid-inning does not pull the pitcher.
+    if role != computer_manager.CLOSER and not play.at_half_inning_start():
         return False
     choice = computer_manager.preferred_arm(role, groups, problem)
     if choice.player is None:
@@ -931,6 +952,166 @@ def computer_pitching_change(play):
         f"A new half inning: {pitcher.name}'s {computer_manager.ROLE_LABELS[current]} role no longer applies."
     )
     bring_in_reliever(play, side, role, choice, text, {"need": "role", "pitcher": pitcher.id})
+    return True
+
+
+def computer_bench_change(play):
+    """
+    A voluntary bench move for a computer-held seat, from the half plan's
+    bench usage. Stand does nothing. Pinch pinch-hits, then pinch-runs.
+    Glove replaces one fielder. One of each per half inning. Returns whether
+    it made one.
+    """
+    state = play.state
+    batting, fielding = batting_side(state), fielding_side(state)
+    if not play.fold.is_human(batting) and _bench_style(play, batting) == computer_manager.PINCH:
+        if _computer_pinch_hit(play, batting) or _computer_pinch_run(play, batting):
+            return True
+    if not play.fold.is_human(fielding) and _bench_style(play, fielding) == computer_manager.GLOVE:
+        return _computer_glove(play, fielding)
+    return False
+
+
+def _bench_style(play, side):
+    return play.sheet_side(side).get("bench_usage", computer_manager.STAND)
+
+
+def _batting_lead(state):
+    batting, fielding = batting_side(state), fielding_side(state)
+    return state["score"][batting] - state["score"][fielding]
+
+
+def _decided_this_half(play, side, need):
+    inning, half = play.state["inning"], play.state["half"]
+    return any(
+        event.kind == Event.DECISION
+        and event.side == side
+        and event.payload.get("need") == need
+        and event.payload.get("inning") == inning
+        and event.payload.get("half") == half
+        for event in play.events
+    )
+
+
+def _legal_bench(play, side, position=None):
+    legal = []
+    for player in play.players(play.sheet_side(side).get("bench") or []):
+        if _substitute_problem(play, side, player, position) is None:
+            legal.append(player)
+    return legal
+
+
+def _computer_pinch_hit(play, side):
+    state = play.state
+    if _decided_this_half(play, side, "pinch_hit"):
+        return False
+    if not computer_manager.wants_pinch_hit(computer_manager.PINCH, state["inning"], _batting_lead(state)):
+        return False
+    slot = state[side]["batter_index"]
+    due_id = state[side]["lineup"][slot]["id"]
+    due = play.player(due_id)
+    card = play.card(due)
+    bench = []
+    for player in _legal_bench(play, side):
+        his = play.card(player)
+        bench.append((player, his.wrc_plus if his is not None else None))
+    chosen = computer_manager.pinch_hitter(card.wrc_plus if card is not None else None, bench)
+    if chosen is None:
+        return False
+    decision(
+        play,
+        side,
+        f"{side_label(play.game, side)} computer: pinch-hits {chosen.name} for {due.name}.",
+        {"need": "pinch_hit", "inning": state["inning"], "half": state["half"], "chose": chosen.id, "for": due.id},
+    )
+    put_in_lineup(play, side, slot, chosen, role=PINCH_HITTER, computer=True)
+    return True
+
+
+def _computer_pinch_run(play, side):
+    state = play.state
+    if _decided_this_half(play, side, "pinch_run"):
+        return False
+    if not computer_manager.wants_pinch_run(computer_manager.PINCH, state["inning"], _batting_lead(state)):
+        return False
+    legal = _legal_bench(play, side)
+    rated = []
+    for player in legal:
+        card = play.card(player)
+        rated.append((player, card.spd if card is not None else None))
+    lineup = state[side]["lineup"]
+    for base in BASES:
+        runner_id = state["bases"].get(base)
+        if not runner_id:
+            continue
+        slot = next((i for i, entry in enumerate(lineup) if str(entry["id"]) == str(runner_id)), None)
+        if slot is None:
+            continue
+        runner = play.player(runner_id)
+        card = play.card(runner)
+        chosen = computer_manager.pinch_runner(card.spd if card is not None else None, rated)
+        if chosen is None:
+            continue
+        decision(
+            play,
+            side,
+            f"{side_label(play.game, side)} computer: pinch-runs {chosen.name} for {runner.name}.",
+            {
+                "need": "pinch_run",
+                "inning": state["inning"],
+                "half": state["half"],
+                "chose": chosen.id,
+                "for": runner.id,
+                "base": base,
+            },
+        )
+        put_in_lineup(play, side, slot, chosen, role=PINCH_RUNNER, base=base, computer=True)
+        return True
+    return False
+
+
+def _computer_glove(play, side):
+    state = play.state
+    if _decided_this_half(play, side, "glove"):
+        return False
+    lead = state["score"][side] - state["score"][batting_side(state)]
+    if not computer_manager.wants_glove(computer_manager.GLOVE, state["inning"], lead, play.at_half_inning_start()):
+        return False
+    lineup = state[side]["lineup"]
+    fielders = []
+    for slot, entry in enumerate(lineup):
+        player = play.player(entry["id"])
+        card = play.card(player)
+        runs = (card.defense or {}).get(entry["position"]) if card is not None else None
+        fielders.append((slot, entry["position"], runs))
+    bench = []
+    for player in play.players(play.sheet_side(side).get("bench") or []):
+        gloves = {}
+        card = play.card(player)
+        for position, runs in (card.defense or {}).items() if card is not None else ():
+            if _substitute_problem(play, side, player, position) is None:
+                gloves[position] = runs
+        bench.append((player, gloves))
+    found = computer_manager.defensive_replacement(fielders, bench)
+    if found is None:
+        return False
+    slot, chosen = found
+    replaced = play.player(lineup[slot]["id"])
+    position = lineup[slot]["position"]
+    decision(
+        play,
+        side,
+        f"{side_label(play.game, side)} computer: {chosen.name} replaces {replaced.name} at {position}.",
+        {
+            "need": "glove",
+            "inning": state["inning"],
+            "half": state["half"],
+            "chose": chosen.id,
+            "for": replaced.id,
+            "position": position,
+        },
+    )
+    put_in_lineup(play, side, slot, chosen, role=DEFENSE, computer=True)
     return True
 
 

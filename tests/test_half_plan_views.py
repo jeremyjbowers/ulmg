@@ -162,6 +162,35 @@ class EditPlanTestCase(PlanViewsTestCase):
         page = client.get(EDIT_URL).content.decode()
         self.assertIn('<option value="quick" selected>Quick</option>', page)
 
+    def test_owner_sets_usage(self):
+        client = self.as_user(self.owner)
+        response = client.post(
+            EDIT_URL,
+            dict(
+                form_data(self.roster),
+                closer_usage="leverage",
+                relief_usage="early",
+                bench_usage="glove",
+            ),
+            follow=True,
+        )
+        self.assertEqual(response.status_code, 200)
+        plan = self.saved_plan()
+        self.assertEqual(plan.closer_usage, models.HalfPlan.LEVERAGE)
+        self.assertEqual(plan.relief_usage, models.HalfPlan.EARLY)
+        self.assertEqual(plan.bench_usage, models.HalfPlan.GLOVE)
+        page = response.content.decode()
+        self.assertIn('class="plan-closer-usage">Leverage', page)
+        self.assertIn('class="plan-relief-usage">Early', page)
+        self.assertIn('class="plan-bench-usage">Glove', page)
+
+    def test_an_unknown_usage_is_refused(self):
+        self.roster.file(bench_usage=models.HalfPlan.GLOVE)
+        response = self.as_user(self.owner).post(EDIT_URL, dict(form_data(self.roster), bench_usage="bunt"))
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("The bench usage must be stand, pinch or glove.", response.content.decode())
+        self.assertEqual(self.saved_plan().bench_usage, models.HalfPlan.GLOVE)
+
     def test_an_unknown_starter_hook_is_refused(self):
         self.roster.file()
         response = self.as_user(self.owner).post(EDIT_URL, dict(form_data(self.roster), starter_hook="lazy"))

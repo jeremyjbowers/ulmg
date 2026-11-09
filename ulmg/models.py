@@ -2253,13 +2253,30 @@ class HalfPlan(BaseModel):
     them: setup against left-handed batters, setup against right-handed
     batters, short relief (one inning) and middle relief (more than one).
     ulmg.plans validates and saves it. starter_hook is how soon the computer
-    pulls this team's starter (ulmg.computer_manager).
+    pulls this team's starter. closer_usage, relief_usage and bench_usage are
+    how it uses the closer, setup and short relief, and the bench
+    (ulmg.computer_manager).
     """
 
     QUICK_HOOK = "quick"
     NORMAL_HOOK = "normal"
     SLOW_HOOK = "slow"
     STARTER_HOOK_CHOICES = ((QUICK_HOOK, "Quick"), (NORMAL_HOOK, "Normal"), (SLOW_HOOK, "Slow"))
+
+    NINTH = "ninth"
+    EIGHTH = "eighth"
+    LEVERAGE = "leverage"
+    CLOSER_USAGE_CHOICES = ((NINTH, "Ninth"), (EIGHTH, "Eighth"), (LEVERAGE, "Leverage"))
+
+    STANDARD = "standard"
+    EARLY = "early"
+    TIGHT = "tight"
+    RELIEF_USAGE_CHOICES = ((STANDARD, "Standard"), (EARLY, "Early"), (TIGHT, "Tight"))
+
+    STAND = "stand"
+    PINCH = "pinch"
+    GLOVE = "glove"
+    BENCH_USAGE_CHOICES = ((STAND, "Stand"), (PINCH, "Pinch"), (GLOVE, "Glove"))
 
     team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name="half_plans")
     season = models.IntegerField()
@@ -2277,6 +2294,9 @@ class HalfPlan(BaseModel):
     lineup_vs_lhp = models.JSONField(default=list, blank=True)
     lineup_vs_rhp = models.JSONField(default=list, blank=True)
     starter_hook = models.CharField(max_length=6, choices=STARTER_HOOK_CHOICES, default=NORMAL_HOOK)
+    closer_usage = models.CharField(max_length=8, choices=CLOSER_USAGE_CHOICES, default=NINTH)
+    relief_usage = models.CharField(max_length=8, choices=RELIEF_USAGE_CHOICES, default=STANDARD)
+    bench_usage = models.CharField(max_length=8, choices=BENCH_USAGE_CHOICES, default=STAND)
 
     class Meta:
         ordering = ["season", "half", "team__abbreviation"]

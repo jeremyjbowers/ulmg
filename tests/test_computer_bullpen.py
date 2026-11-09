@@ -205,6 +205,82 @@ class BullpenRolesTestCase(ComputerGameTestCase):
         self.assertEqual(decision.payload["role"], computer_manager.SETUP_L)
         self.assertEqual(decision.payload["group"], computer_manager.SETUP_L)
 
+    def test_an_eighth_closer_comes_in_for_the_eighth_of_a_tie(self):
+        gf.set_rates([self.home.hitters[0]], gf.STRIKEOUT_RATES)
+        self.home.file(closer_usage=models.HalfPlan.EIGHTH)
+        gf.counter(self.home.starters[0], start_limit_outs=21)
+        log = self.open()
+        change = self.until_changes(log, HOME, 1)[0]
+        self.assertEqual(change.payload["pitcher"], self.home.relievers[0].id)
+        self.assertEqual(inning_of(log, change), 8)
+        self.assertEqual(decision_before(log, change).payload["role"], computer_manager.CLOSER)
+
+    def test_early_relief_brings_short_relief_in_the_sixth(self):
+        gf.set_rates([self.home.hitters[0]], gf.STRIKEOUT_RATES)
+        short = self.home.swingman
+        self.home.file(relief_usage=models.HalfPlan.EARLY, sirp=[short], mirp=[])
+        gf.counter(self.home.starters[0], start_limit_outs=15)
+        log = self.open()
+        change = self.until_changes(log, HOME, 1)[0]
+        self.assertEqual(change.payload["pitcher"], short.id)
+        self.assertEqual(inning_of(log, change), 6)
+        self.assertEqual(decision_before(log, change).payload["role"], computer_manager.SIRP)
+
+    def test_a_leverage_closer_comes_in_before_the_seventh_once_someone_reaches(self):
+        gf.set_rates([self.home.hitters[0]], gf.STRIKEOUT_RATES)
+        gf.set_rates([self.road.hitters[8]], SINGLE_RATES)
+        self.home.file(closer_usage=models.HalfPlan.LEVERAGE)
+        gf.counter(self.home.starters[0], start_limit_outs=15)
+        log = self.open()
+        changes = self.until_changes(log, HOME, 2)
+        self.assertEqual(inning_of(log, changes[0]), 6)
+        self.assertEqual(decision_before(log, changes[0]).payload["role"], computer_manager.MIRP)
+        self.assertEqual(changes[1].payload["pitcher"], self.home.relievers[0].id)
+        self.assertEqual(inning_of(log, changes[1]), 6)
+        self.assertEqual(decision_before(log, changes[1]).payload["role"], computer_manager.CLOSER)
+
+
+class BenchUsageTestCase(ComputerGameTestCase):
+    def _subs(self, play, role):
+        return [
+            event for event in play.events
+            if event.kind == Event.SUBSTITUTION and event.computer and event.payload.get("role") == role
+        ]
+
+    def test_stand_leaves_a_weak_batter_in(self):
+        models.Card.objects.filter(player=self.home.hitters[0]).update(wrc_plus=70)
+        models.Card.objects.filter(player=self.home.bench[0]).update(wrc_plus=140)
+        log = self.open()
+        play = self.step_until(log, lambda p: p.state["inning"] >= 8)
+        self.assertEqual(self._subs(play, sim_game.PINCH_HITTER), [])
+
+    def test_pinch_sends_up_a_better_bat_from_the_seventh(self):
+        self.home.file(bench_usage=models.HalfPlan.PINCH)
+        models.Card.objects.filter(player=self.home.hitters[0]).update(wrc_plus=70)
+        models.Card.objects.filter(player=self.home.bench[0]).update(wrc_plus=110)
+        log = self.open()
+        play = self.step_until(log, lambda p: self._subs(p, sim_game.PINCH_HITTER))
+        sub = self._subs(play, sim_game.PINCH_HITTER)[0]
+        self.assertEqual(sub.payload["player"], self.home.bench[0].id)
+        self.assertEqual(sub.payload["replaced"], self.home.hitters[0].id)
+        decision = decision_before(log, sub)
+        self.assertEqual(decision.payload["need"], "pinch_hit")
+        self.assertGreaterEqual(decision.payload["inning"], 7)
+
+    def test_glove_replaces_a_fielder_once_the_side_leads_from_the_seventh(self):
+        self.home.file(bench_usage=models.HalfPlan.GLOVE)
+        gf.set_rates([self.home.hitters[0]], gf.HOME_RUN_RATES)
+        models.Card.objects.filter(player=self.home.hitters[1]).update(defense={"1B": -8.0})
+        models.Card.objects.filter(player=self.home.bench[0]).update(defense={"1B": 6.0}, wrc_plus=100)
+        log = self.open()
+        play = self.step_until(log, lambda p: self._subs(p, sim_game.DEFENSE))
+        sub = self._subs(play, sim_game.DEFENSE)[0]
+        self.assertEqual(sub.payload["player"], self.home.bench[0].id)
+        self.assertEqual(sub.payload["position"], "1B")
+        decision = decision_before(log, sub)
+        self.assertEqual(decision.payload["need"], "glove")
+        self.assertGreaterEqual(decision.payload["inning"], 7)
+
 
 class StarterHookTestCase(ComputerGameTestCase):
     def setUp(self):

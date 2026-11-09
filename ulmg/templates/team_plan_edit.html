@@ -38,6 +38,25 @@
         </fieldset>
 
         <fieldset>
+            <legend class="font-bold border-b border-gray-300 w-full mb-2">Usage</legend>
+            <label class="block mb-3"><span class="font-bold text-xs uppercase text-gray-600">Closer</span>
+                <select name="closer_usage" class="border border-gray-300 rounded px-1 py-1 w-full" aria-label="Closer usage">
+                    {% for value, label in closer_usages %}<option value="{{ value }}"{% if value == closer_usage %} selected{% endif %}>{{ label }}</option>{% endfor %}
+                </select>
+            </label>
+            <label class="block mb-3"><span class="font-bold text-xs uppercase text-gray-600">Late relief</span>
+                <select name="relief_usage" class="border border-gray-300 rounded px-1 py-1 w-full" aria-label="Late relief">
+                    {% for value, label in relief_usages %}<option value="{{ value }}"{% if value == relief_usage %} selected{% endif %}>{{ label }}</option>{% endfor %}
+                </select>
+            </label>
+            <label class="block"><span class="font-bold text-xs uppercase text-gray-600">Bench</span>
+                <select name="bench_usage" class="border border-gray-300 rounded px-1 py-1 w-full" aria-label="Bench usage">
+                    {% for value, label in bench_usages %}<option value="{{ value }}"{% if value == bench_usage %} selected{% endif %}>{{ label }}</option>{% endfor %}
+                </select>
+            </label>
+        </fieldset>
+
+        <fieldset>
             <legend class="font-bold border-b border-gray-300 w-full mb-2">Bullpen</legend>
             <label class="block mb-3"><span class="font-bold text-xs uppercase text-gray-600">Closer</span>
                 <select name="closer" class="border border-gray-300 rounded px-1 py-1 w-full">

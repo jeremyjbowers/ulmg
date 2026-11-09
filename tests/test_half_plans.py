@@ -453,6 +453,59 @@ class StarterHookTestCase(PlanTestCase):
         self.assertEqual(side(game, other)["starter_hook"], models.HalfPlan.NORMAL_HOOK)
 
 
+class UsageTestCase(PlanTestCase):
+    def test_a_plan_files_usage_and_defaults_to_the_current_behavior(self):
+        plan = self.roster.file()
+        self.assertEqual(plan.closer_usage, models.HalfPlan.NINTH)
+        self.assertEqual(plan.relief_usage, models.HalfPlan.STANDARD)
+        self.assertEqual(plan.bench_usage, models.HalfPlan.STAND)
+        plan = self.roster.file(
+            closer_usage=models.HalfPlan.LEVERAGE,
+            relief_usage=models.HalfPlan.EARLY,
+            bench_usage=models.HalfPlan.PINCH,
+        )
+        plan.refresh_from_db()
+        self.assertEqual(plan.closer_usage, models.HalfPlan.LEVERAGE)
+        plan = self.roster.file()
+        plan.refresh_from_db()
+        self.assertEqual(plan.closer_usage, models.HalfPlan.LEVERAGE, "a save that names no usage keeps the filed one")
+
+    def test_an_unknown_usage_is_refused_and_nothing_is_saved(self):
+        plan = self.roster.file(bench_usage=models.HalfPlan.GLOVE)
+        with self.assertRaises(plans.PlanError) as raised:
+            self.roster.file(relief_usage="whenever")
+        self.assertIn("The late relief must be standard, early or tight.", raised.exception.errors)
+        plan.refresh_from_db()
+        self.assertEqual(plan.bench_usage, models.HalfPlan.GLOVE)
+
+    def test_the_opened_sheet_carries_usage_and_an_older_sheet_reads_the_defaults(self):
+        self.roster.file(
+            closer_usage=models.HalfPlan.EIGHTH,
+            relief_usage=models.HalfPlan.TIGHT,
+            bench_usage=models.HalfPlan.GLOVE,
+        )
+        game = game_on(self.atl, 1)
+        opened = plans.open_game(game)
+        key = "home" if game.series.home_team_id == self.atl.id else "road"
+        self.assertEqual(opened[key]["closer_usage"], models.HalfPlan.EIGHTH)
+        self.assertEqual(opened[key]["relief_usage"], models.HalfPlan.TIGHT)
+        self.assertEqual(opened[key]["bench_usage"], models.HalfPlan.GLOVE)
+        self.roster.file(closer_usage=models.HalfPlan.NINTH)
+        game.refresh_from_db()
+        self.assertEqual(side(game, self.atl)["closer_usage"], models.HalfPlan.EIGHTH)
+        frozen = game.opening_sheet
+        for value in frozen.values():
+            value.pop("closer_usage")
+            value.pop("relief_usage")
+            value.pop("bench_usage")
+        game.opening_sheet = frozen
+        game.save()
+        read = side(game, self.atl)
+        self.assertEqual(read["closer_usage"], models.HalfPlan.NINTH)
+        self.assertEqual(read["relief_usage"], models.HalfPlan.STANDARD)
+        self.assertEqual(read["bench_usage"], models.HalfPlan.STAND)
+
+
 class PlanSaveQueryCountTestCase(PlanTestCase):
     # Auto-fill shares one read of the usage ledger across the half's days instead of reading
     # each candidate's counter and starts again for every day: 437 queries to file this plan before, 195 after.
