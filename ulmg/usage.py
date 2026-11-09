@@ -151,9 +151,27 @@ def game_limit_outs(innings_outs, appearances, min_innings, max_innings):
     return max(min_innings, min(max_innings, innings)) * 3
 
 
+def card_stats_by_player(players, season):
+    """card_stats for many players in one query, as {player id: (hit_stats, pitch_stats)}."""
+    stats = {player.id: ({}, {}) for player in players}
+    rows = models.PlayerStatSeason.objects.filter(
+        player__in=[player.id for player in players],
+        season=season - 1,
+        classification=CARD_CLASSIFICATION,
+        is_career=False,
+    )
+    for row in rows:
+        stats[row.player_id] = (row.hit_stats or {}, row.pitch_stats or {})
+    return stats
+
+
 def card_caps(player, season):
     """The UsageCounter cap fields for a player's ULMG season, from his card season."""
-    hit, pitch = card_stats(player, season)
+    return caps_from_stats(*card_stats(player, season))
+
+
+def caps_from_stats(hit, pitch):
+    """The UsageCounter cap fields from a card season's (hit_stats, pitch_stats)."""
 
     outs = innings_to_outs(pitch.get("ip"))
     starts = _count(pitch, "gs")
@@ -209,6 +227,9 @@ def card_caps(player, season):
 
 def counter_for(player, season):
     """The player's counter for a ULMG season, created with his caps if it doesn't exist."""
+    counter = models.UsageCounter.objects.filter(player=player, season=season).first()
+    if counter:
+        return counter
     counter, _ = models.UsageCounter.objects.get_or_create(
         player=player, season=season, defaults=card_caps(player, season)
     )
@@ -297,6 +318,120 @@ def _series_appearances(player, game):
 
 def _pitched(appearance):
     return appearance.started or appearance.batters_faced > 0
+
+
+class LedgerReads:
+    """
+    The ledger rows one game action or plan save reads, loaded once and
+    kept until forget(). Players passed to preload() are read together, a
+    query per kind of row; anyone else is read on first use. Reads never
+    write, and they belong to one action only: the action calls forget()
+    after it writes to the ledger, and record_plate_appearance always locks
+    and checks fresh rows, so the rules are enforced on the live ledger.
+    """
+
+    def __init__(self, season):
+        self.season = season
+        self._wanted = {}
+        self.forget()
+
+    def for_game(self, game):
+        """These reads, after checking they are for the game's season."""
+        if _season(game) != self.season:
+            raise ValueError(f"These ledger reads are for {self.season}, not {_season(game)}.")
+        return self
+
+    def forget(self):
+        self._counters = {}
+        self._made_starts = {}
+        self._overrides = {}
+        self._appearances = {}
+        self._series_appearances = {}
+
+    def preload(self, players):
+        for player in players:
+            self._wanted[player.id] = player
+
+    def _batch(self, player, loaded):
+        """The player plus every preloaded player not yet in loaded."""
+        batch = {pid: p for pid, p in self._wanted.items() if pid not in loaded}
+        batch[player.id] = player
+        return batch
+
+    def counter(self, player):
+        """As _current_counter: the live counter, or an unsaved one at zero usage with his caps."""
+        if player.id not in self._counters:
+            batch = self._batch(player, self._counters)
+            found = {
+                c.player_id: c
+                for c in models.UsageCounter.objects.filter(player__in=list(batch), season=self.season)
+            }
+            missing = [p for pid, p in batch.items() if pid not in found]
+            stats = card_stats_by_player(missing, self.season) if missing else {}
+            for pid, p in batch.items():
+                counter = found.get(pid)
+                if counter is None:
+                    counter = models.UsageCounter(player=p, season=self.season, **caps_from_stats(*stats[pid]))
+                else:
+                    counter.player = p
+                self._counters[pid] = counter
+        return self._counters[player.id]
+
+    def made_starts(self, player):
+        """The games he has started this season."""
+        if player.id not in self._made_starts:
+            batch = self._batch(player, self._made_starts)
+            for pid in batch:
+                self._made_starts[pid] = []
+            rows = models.UsageAppearance.objects.filter(
+                player__in=list(batch), game__series__slot__season=self.season, started=True
+            ).select_related("game__series__slot")
+            for row in rows:
+                self._made_starts[row.player_id].append(row.game)
+        return self._made_starts[player.id]
+
+    def _game_rows(self, cache, key, player, query):
+        rows = cache.setdefault(key, {})
+        if player.id not in rows:
+            batch = self._batch(player, rows)
+            for pid in batch:
+                rows[pid] = []
+            for row in query(list(batch)):
+                rows[row.player_id].append(row)
+        return rows[player.id]
+
+    def approved_overrides(self, player, game):
+        """As _approved_overrides."""
+        rows = self._game_rows(
+            self._overrides,
+            game.id,
+            player,
+            lambda ids: models.UsageOverride.objects.filter(player__in=ids, game=game, approved_by__isnull=False),
+        )
+        return {o.cap: o for o in rows}
+
+    def appearance(self, player, game):
+        """As _appearance."""
+        rows = self._game_rows(
+            self._appearances,
+            game.id,
+            player,
+            lambda ids: models.UsageAppearance.objects.filter(player__in=ids, game=game),
+        )
+        return rows[0] if rows else None
+
+    def series_appearances(self, player, game):
+        """As _series_appearances."""
+        return list(
+            self._game_rows(
+                self._series_appearances,
+                game.id,
+                player,
+                lambda ids: models.UsageAppearance.objects.filter(player__in=ids, game__series_id=game.series_id)
+                .exclude(game_id=game.id)
+                .select_related("game__series__slot"),
+            )
+        )
 
 
 # Rest
@@ -426,19 +561,37 @@ def _appearance(player, game):
     return models.UsageAppearance.objects.filter(player=player, game=game).first()
 
 
-def check_batter(player, game):
-    """Before seating a batter and before each of his plate appearances: remaining, legal, and why not."""
+def check_batter(player, game, reads=None):
+    """
+    Before seating a batter and before each of his plate appearances:
+    remaining, legal, and why not. reads, a LedgerReads for this action,
+    saves reading the same rows again.
+    """
+    if reads is not None:
+        reads = reads.for_game(game)
+        return _batter_check(reads.counter(player), reads.approved_overrides(player, game))
     counter = _current_counter(player, _season(game))
     return _batter_check(counter, _approved_overrides(player, game))
 
 
-def check_pitcher(player, game, starting=False):
+def check_pitcher(player, game, starting=False, reads=None):
     """
     Before seating a pitcher and before each batter he faces. starting says
     he would be this game's starting pitcher; once he has pitched in the
     game his appearance decides. Covers starts, season innings, this
-    outing's limit and series rest.
+    outing's limit and series rest. reads, a LedgerReads for this action,
+    saves reading the same rows again.
     """
+    if reads is not None:
+        reads = reads.for_game(game)
+        return _pitcher_check(
+            reads.counter(player),
+            game,
+            starting,
+            reads.approved_overrides(player, game),
+            reads.appearance(player, game),
+            reads.series_appearances(player, game),
+        )
     counter = _current_counter(player, _season(game))
     return _pitcher_check(
         counter,
@@ -450,18 +603,24 @@ def check_pitcher(player, game, starting=False):
     )
 
 
-def check_planned_start(player, game, planned_starts):
+def check_planned_start(player, game, planned_starts, reads=None):
     """
     Check a start the half plan (#162) wants without using it up.
     planned_starts are the plan's unplayed starts for him this season; this
     game is counted once whether or not it is among them. Legal when he is
     rested against his starts made and planned in this game's series, and
-    starts made plus starts planned fit his cap.
+    starts made plus starts planned fit his cap. reads, a LedgerReads for
+    this plan save, saves reading his counter and starts again for each day.
     """
-    counter = _current_counter(player, _season(game))
-    made = [a.game for a in models.UsageAppearance.objects.filter(
-        player=player, game__series__slot__season=counter.season, started=True
-    ).select_related("game__series__slot")]
+    if reads is not None:
+        reads = reads.for_game(game)
+        counter = reads.counter(player)
+        made = list(reads.made_starts(player))
+    else:
+        counter = _current_counter(player, _season(game))
+        made = [a.game for a in models.UsageAppearance.objects.filter(
+            player=player, game__series__slot__season=counter.season, started=True
+        ).select_related("game__series__slot")]
     made_ids = {g.id for g in made}
     planned = {g.id: g for g in planned_starts if g.id not in made_ids}
     planned[game.id] = game
@@ -730,9 +889,14 @@ def penalty_lines(team, season):
     return PenaltyLines(over_10, over_20)
 
 
-def usage_summary(player, season):
-    """Live remaining usage for display beside a player's card. Never writes."""
-    counter = _current_counter(player, season)
+def usage_summary(player, season, reads=None):
+    """
+    Live remaining usage for display beside a player's card. Never writes.
+    reads, a LedgerReads for this season, saves reading his counter again.
+    """
+    if reads is not None and reads.season != season:
+        raise ValueError(f"These ledger reads are for {reads.season}, not {season}.")
+    counter = reads.counter(player) if reads is not None else _current_counter(player, season)
     season_cap = season_innings_cap(counter)
     return {
         "season": season,

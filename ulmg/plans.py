@@ -331,16 +331,18 @@ def _planned_starts(plan, games, rows, include):
     return starts
 
 
-def _auto_fill(plan, games, rows, rosters):
+def _auto_fill(plan, games, rows, rosters, reads):
     """
     Fill every unopened day without a manual starter from the rotation. The
     k-th game of the half goes to slot ((k - 1) mod N) + 1; a slot whose
     pitcher would pass his start cap, isn't rested inside the series, or
     isn't on that game's roster (a call-up at home, a sent-down pitcher on
     the road) goes to the next legal pitcher in order, and the cycle
-    continues from him. Returns the days no one could start.
+    continues from him. Returns the days no one could start. reads are the
+    ledger reads for this refill; filling days writes nothing to the ledger.
     """
     rotation = _ordered_players(plan.rotation)
+    reads.preload(rotation)
     rotation_ids = [p.id for p in rotation]
     planned = _planned_starts(
         plan, games, rows, lambda game, row: is_locked(game) or row.manual_starter_id
@@ -366,7 +368,7 @@ def _auto_fill(plan, games, rows, rosters):
             candidate = rotation[index]
             if candidate.id not in rosters.for_game(game):
                 continue
-            if usage.check_planned_start(candidate, game, planned[candidate.id]).legal:
+            if usage.check_planned_start(candidate, game, planned[candidate.id], reads=reads).legal:
                 chosen = candidate
                 pointer = index + 1
                 break
@@ -382,7 +384,7 @@ def _auto_fill(plan, games, rows, rosters):
     return unfilled
 
 
-def _manual_start_problems(plan, games, rows, rosters):
+def _manual_start_problems(plan, games, rows, rosters, reads=None):
     """Rule errors for the unopened days' manual starters, against every other planned start."""
     planned = _planned_starts(plan, games, rows, lambda game, row: True)
     problems = []
@@ -391,20 +393,20 @@ def _manual_start_problems(plan, games, rows, rosters):
         starter = row.manual_starter
         if starter is None or is_locked(game):
             continue
-        problem = _start_problem(starter, game, planned[starter.id], rosters)
+        problem = _start_problem(starter, game, planned[starter.id], rosters, reads)
         if problem:
             problems.append(f"Day {day}: {problem}")
     return problems
 
 
-def _start_problem(starter, game, planned_games, rosters):
+def _start_problem(starter, game, planned_games, rosters, reads=None):
     roster = rosters.problem(starter, game)
     if roster:
         return roster
     if not can_pitch(starter):
         return f"{starter.name} is not a pitcher."
     others = [g for g in planned_games if g.id != game.id]
-    check = usage.check_planned_start(starter, game, others)
+    check = usage.check_planned_start(starter, game, others, reads=reads)
     return None if check.legal else check.reason
 
 
@@ -412,8 +414,10 @@ def _refill_problems(plan, rosters):
     """Re-run auto-fill and check every day. Returns the errors and the days without a legal starter."""
     games = half_games(plan.team, plan.season, plan.half)
     rows = _day_rows(plan, games)
-    unfilled = _auto_fill(plan, games, rows, rosters)
-    errors = _manual_start_problems(plan, games, rows, rosters)
+    # Nothing here writes to the usage ledger, so one read of it serves every day.
+    reads = usage.LedgerReads(plan.season)
+    unfilled = _auto_fill(plan, games, rows, rosters, reads)
+    errors = _manual_start_problems(plan, games, rows, rosters, reads)
     if unfilled:
         days = ", ".join(str(d) for d in unfilled)
         errors.insert(

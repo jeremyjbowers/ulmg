@@ -336,17 +336,16 @@ class HalfRosters:
 
     def __init__(self, team, season, half):
         self.team = team
-        self.road = set(
-            models.Player.objects.filter(team=team, is_ulmg_mlb_roster=True).values_list("id", flat=True)
-        )
+        on_team = dict(models.Player.objects.filter(team=team).values_list("id", "is_ulmg_mlb_roster"))
+        self.road = {pid for pid, mlb in on_team.items() if mlb}
         first_move = {}
-        for move in models.RosterMove.objects.filter(team=team, season=season, half=half).order_by("made_at", "id"):
-            first_move.setdefault(move.player_up_id, UP)
-            first_move.setdefault(move.player_down_id, DOWN)
-        on_team = set(models.Player.objects.filter(team=team).values_list("id", flat=True))
+        moves = models.RosterMove.objects.filter(team=team, season=season, half=half).order_by("made_at", "id")
+        for player_up_id, player_down_id in moves.values_list("player_up_id", "player_down_id"):
+            first_move.setdefault(player_up_id, UP)
+            first_move.setdefault(player_down_id, DOWN)
         called_up = {pid for pid, kind in first_move.items() if kind == UP}
         sent_down = {pid for pid, kind in first_move.items() if kind == DOWN}
-        self.home = (self.road - called_up) | (sent_down & on_team)
+        self.home = (self.road - called_up) | (sent_down & set(on_team))
 
     @property
     def all(self):

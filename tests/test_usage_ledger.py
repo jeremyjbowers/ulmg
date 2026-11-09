@@ -423,6 +423,129 @@ class PlannedStartTestCase(TestCase):
         )
 
 
+class LedgerReadsTestCase(TestCase):
+    """One action's reads of the ledger: the same checks as reading it fresh, loaded once until forget()."""
+
+    def setUp(self):
+        home, road = create_teams()
+        self.games = create_series(home, road, length=5)
+        self.next_series = create_series(home, road, length=4, slot_number=2, first_day=6)
+        self.hitter = create_hitter("Everyday", ab=600, pa=650)
+        self.bench_bat = create_hitter("Bench Bat", ab=3, pa=3)
+        self.ace = create_pitcher("Ace", ip=200, g=32, gs=32, start_minusip=200)
+        self.closer = create_pitcher("Closer", ip=70, g=70, gs=0, relief_minusip=70)
+        self.cup = create_pitcher("Cup of Coffee", ip=1, g=3, gs=0, relief_minusip=1)
+        self.swingman = create_pitcher("Swingman", ip=80, g=30, gs=6, start_minusip=30, relief_minusip=50)
+        self.unused = create_pitcher("Never Used", ip=50, g=40, gs=0, relief_minusip=50)
+        commissioner = User.objects.create_superuser("commish", "c@example.com", "pw")
+
+        strikeout(self.games[0], self.hitter, self.ace, pitcher_starting=True)
+        usage.record_plate_appearance(
+            self.games[3], self.hitter, self.closer, at_bat=True, outs=1, pitches=usage.RELIEVER_HEAVY_PITCHES
+        )
+        for _ in range(3):
+            strikeout(self.games[1], self.bench_bat, self.cup)
+        usage.set_swingman_designation(self.swingman, ULMG_SEASON, usage.BULLPEN)
+        usage.grant_override(
+            commissioner, self.cup, self.games[2], models.UsageOverride.SEASON_INNINGS, "Rainout makeup"
+        )
+        self.pitchers = [self.ace, self.closer, self.cup, self.swingman, self.unused]
+        self.batters = [self.hitter, self.bench_bat]
+
+    def every_game(self):
+        return self.games + self.next_series
+
+    def test_pitcher_checks_match_the_fresh_ledger(self):
+        for game in self.every_game():
+            reads = usage.LedgerReads(ULMG_SEASON)
+            reads.preload(self.pitchers + self.batters)
+            for pitcher in self.pitchers:
+                for starting in (False, True):
+                    self.assertEqual(
+                        usage.check_pitcher(pitcher, game, starting=starting, reads=reads),
+                        usage.check_pitcher(pitcher, game, starting=starting),
+                        msg=f"{pitcher.name} day {game.day} starting={starting}",
+                    )
+
+    def test_batter_checks_match_the_fresh_ledger(self):
+        for game in self.every_game():
+            reads = usage.LedgerReads(ULMG_SEASON)
+            for batter in self.batters + self.pitchers:
+                self.assertEqual(
+                    usage.check_batter(batter, game, reads=reads),
+                    usage.check_batter(batter, game),
+                    msg=f"{batter.name} day {game.day}",
+                )
+
+    def test_planned_start_checks_match_the_fresh_ledger(self):
+        reads = usage.LedgerReads(ULMG_SEASON)
+        reads.preload(self.pitchers)
+        plans = [[], [self.games[4]], [self.games[4], self.next_series[0]], [self.next_series[3]]]
+        for game in self.every_game():
+            for pitcher in self.pitchers:
+                for planned in plans:
+                    self.assertEqual(
+                        usage.check_planned_start(pitcher, game, planned, reads=reads),
+                        usage.check_planned_start(pitcher, game, planned),
+                        msg=f"{pitcher.name} day {game.day} planned {[g.day for g in planned]}",
+                    )
+
+    def test_preloaded_players_are_read_in_a_few_queries_and_then_from_memory(self):
+        reads = usage.LedgerReads(ULMG_SEASON)
+        reads.preload(self.pitchers + self.batters)
+        game = self.games[2]
+        # Counters, card-season stats for players without one, overrides, this game's
+        # appearances and the series' other appearances: one query each.
+        with self.assertNumQueries(5):
+            usage.check_pitcher(self.ace, game, reads=reads)
+        with self.assertNumQueries(0):
+            for pitcher in self.pitchers:
+                usage.check_pitcher(pitcher, game, starting=True, reads=reads)
+                usage.check_pitcher(pitcher, game, reads=reads)
+            for batter in self.batters:
+                usage.check_batter(batter, game, reads=reads)
+        with self.assertNumQueries(1):
+            usage.check_planned_start(self.ace, game, [], reads=reads)
+        with self.assertNumQueries(0):
+            for pitcher in self.pitchers:
+                usage.check_planned_start(pitcher, game, [], reads=reads)
+
+    def test_reads_are_kept_until_forget_and_then_read_the_ledger_again(self):
+        reads = usage.LedgerReads(ULMG_SEASON)
+        game = self.games[4]
+        self.assertTrue(usage.check_pitcher(self.unused, game, reads=reads).legal)
+        # His relief limit is two innings.
+        for _ in range(6):
+            strikeout(game, self.hitter, self.unused)
+        self.assertTrue(usage.check_pitcher(self.unused, game, reads=reads).legal)
+        reads.forget()
+        check = usage.check_pitcher(self.unused, game, reads=reads)
+        self.assertFalse(check.legal)
+        self.assertEqual(check, usage.check_pitcher(self.unused, game))
+
+    def test_a_player_who_was_not_preloaded_is_still_read(self):
+        reads = usage.LedgerReads(ULMG_SEASON)
+        reads.preload([self.ace])
+        self.assertEqual(
+            usage.check_pitcher(self.cup, self.games[2], reads=reads), usage.check_pitcher(self.cup, self.games[2])
+        )
+        self.assertEqual(usage.check_batter(self.bench_bat, self.games[2], reads=reads), usage.check_batter(self.bench_bat, self.games[2]))
+
+    def test_reads_for_another_season_are_refused(self):
+        reads = usage.LedgerReads(ULMG_SEASON + 1)
+        with self.assertRaises(ValueError):
+            usage.check_pitcher(self.ace, self.games[0], reads=reads)
+
+    def test_reads_never_write(self):
+        reads = usage.LedgerReads(ULMG_SEASON)
+        reads.preload(self.pitchers + self.batters)
+        before = models.UsageCounter.objects.count()
+        usage.check_pitcher(self.unused, self.games[0], reads=reads)
+        usage.check_planned_start(self.unused, self.games[0], [], reads=reads)
+        self.assertEqual(models.UsageCounter.objects.count(), before)
+        self.assertFalse(models.UsageCounter.objects.filter(player=self.unused).exists())
+
+
 class PenaltyLinesTestCase(TestCase):
     def setUp(self):
         self.home, self.road = create_teams()

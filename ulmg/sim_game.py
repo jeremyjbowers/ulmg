@@ -418,6 +418,9 @@ class Play:
         self._players = {}
         self._cards = {}
         self._rosters = {}
+        self._roster_players = {}
+        # The usage ledger as this action reads it; every appended event reads it again.
+        self.usage = usage.LedgerReads(self.season)
 
     @property
     def sequence(self):
@@ -437,6 +440,7 @@ class Play:
         )
         self.events.append(event)
         self.fold.apply(event)
+        self.usage.forget()
         return event
 
     def save_state(self):
@@ -449,15 +453,31 @@ class Play:
     def player(self, pid):
         pid = int(pid)
         if pid not in self._players:
-            self._players[pid] = models.Player.objects.get(pk=pid)
+            # Both game rosters are read together on the first lookup.
+            for side in SIDES:
+                self.roster_players(side)
+        if pid not in self._players:
+            self._remember([models.Player.objects.get(pk=pid)])
         return self._players[pid]
 
     def players(self, ids):
         return [self.player(i) for i in ids if i is not None]
 
+    def _remember(self, players):
+        for p in players:
+            self._players.setdefault(p.id, p)
+        self.usage.preload(self._players[p.id] for p in players)
+
     def card(self, player):
+        """The player's engine card, as plans.card_for; every known player's card is read in one query."""
         if player.id not in self._cards:
-            self._cards[player.id] = plans.card_for(player, self.season)
+            wanted = {pid for pid in self._players if pid not in self._cards} | {player.id}
+            found = {
+                card.player_id: card
+                for card in models.Card.objects.filter(player__in=wanted, season=self.season - 1)
+            }
+            for pid in wanted:
+                self._cards[pid] = found.get(pid)
         return self._cards[player.id]
 
     def roster(self, side):
@@ -466,8 +486,17 @@ class Play:
             self._rosters[side] = roster_moves.game_roster_ids(team_for(self.game, side), self.game)
         return self._rosters[side]
 
+    def roster_players(self, side):
+        """The Players on the side's roster for this game, in the order the database returns them."""
+        if side not in self._roster_players:
+            players = list(models.Player.objects.filter(pk__in=self.roster(side)))
+            self._remember(players)
+            self._roster_players[side] = [self._players[p.id] for p in players]
+        return self._roster_players[side]
+
     def forget_rosters(self):
         self._rosters = {}
+        self._roster_players = {}
 
     def sheet_side(self, side):
         return self.fold.sheet[SHEET_KEYS[side]]
@@ -486,7 +515,7 @@ class Play:
         problem = self.position_problem(player, position)
         if problem:
             return problem
-        check = usage.check_batter(player, self.game)
+        check = usage.check_batter(player, self.game, reads=self.usage)
         return None if check.legal else check.reason
 
     def position_problem(self, player, position):
@@ -505,7 +534,7 @@ class Play:
         problem = pitcher_card_problem(player, self.card(player))
         if problem:
             return problem
-        check = usage.check_pitcher(player, self.game, starting=starting)
+        check = usage.check_pitcher(player, self.game, starting=starting, reads=self.usage)
         return None if check.legal else check.reason
 
     def is_starter(self, side, player):
@@ -528,11 +557,7 @@ class Play:
         }
         planned = {p.id for players in groups.values() for p in players}
         groups[computer_manager.OTHER] = sorted(
-            (
-                p
-                for p in models.Player.objects.filter(pk__in=self.roster(side))
-                if plans.can_pitch(p) and p.id not in planned
-            ),
+            (p for p in self.roster_players(side) if plans.can_pitch(p) and p.id not in planned),
             key=lambda p: p.name,
         )
         return {group: [p for p in players if str(p.id) not in used] for group, players in groups.items()}
@@ -585,7 +610,7 @@ class Play:
         others = sorted(
             (
                 p
-                for p in models.Player.objects.filter(pk__in=self.roster(side))
+                for p in self.roster_players(side)
                 if not plans.is_pitcher(p) and p.id not in {q.id for q in bench}
             ),
             key=lambda p: p.name,
@@ -1673,11 +1698,11 @@ def play_plate_appearance(play, call, *, user=None, computer=False):
 
 def _usage_line(play, side, player, pitching):
     """Remaining usage for one player, for the page."""
-    summary = usage.usage_summary(player, play.season)
+    summary = usage.usage_summary(player, play.season, reads=play.usage)
     if not pitching:
         left = summary["plate_appearances_left"]
         return f"PA left: {'unlimited' if left is None else left}"
-    check = usage.check_pitcher(player, play.game, starting=play.is_starter(side, player))
+    check = usage.check_pitcher(player, play.game, starting=play.is_starter(side, player), reads=play.usage)
     remaining = check.remaining
     season_outs = remaining.get("season_outs")
     innings = "unlimited" if season_outs is None else usage.outs_to_innings(season_outs)
