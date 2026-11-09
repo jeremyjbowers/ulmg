@@ -13,11 +13,14 @@ from tests.schedule_fixtures import create_league_teams
 
 
 class ScheduleViewsTestCase(TestCase):
-    def setUp(self):
-        self.teams = create_league_teams()
+    @classmethod
+    def setUpTestData(cls):
+        cls.teams = create_league_teams()
         call_command("generate_schedule", "--season", "2027", "--seed", "21", stdout=StringIO())
+        cls.team = models.Team.objects.get(abbreviation="ATL")
+
+    def setUp(self):
         self.client = Client()
-        self.team = models.Team.objects.get(abbreviation="ATL")
 
     def test_league_schedule_is_public(self):
         response = self.client.get("/schedule/?season=2027")
