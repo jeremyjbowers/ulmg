@@ -66,6 +66,8 @@
         <p class="game-runners">Runners: {% for base, runner in runners %}{{ runner.name }} on {{ base }}{% if not forloop.last %}, {% endif %}{% empty %}none{% endfor %}</p>
     </div>
 
+    {% include 'includes/game_field.html' %}
+
     {% if paused %}
     <div class="game-paused border border-red-300 bg-red-50 px-3 py-2 text-sm mb-4">
         <p class="mb-2">{{ paused.reason }} The game waits for a roster move or a commissioner override.</p>

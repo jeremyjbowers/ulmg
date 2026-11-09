@@ -65,6 +65,7 @@ def game_page(request, game_id):
         else:
             context.update(sim_game.page(log, request.user))
         context["can_autoplay"] = autoplay.can_autoplay(request.user, game)
+        context.update(_autoplay_form(log))
     except engine_client.EngineUnavailable:
         context.update({"game": game, "log": log, "engine_down": True})
     return render(request, "game.html", context)
@@ -128,11 +129,31 @@ def _act(request, game, action):
         raise Http404("No such game action.")
 
 
+def _autoplay_form(log):
+    """The half innings the autoplay form offers, with the current one selected."""
+    inning, half = 9, "bottom"
+    if log is not None and log.state and log.state.get("inning"):
+        inning = log.state["inning"]
+        half = log.state.get("half") or "top"
+    return {
+        "autoplay_innings": range(1, max(12, inning) + 1),
+        "autoplay_inning": inning,
+        "autoplay_half": half,
+    }
+
+
 def _autoplay(request, game):
-    """Autoplay this game, or the rest of its series, and say how each game ended."""
+    """Autoplay through a half inning, this game, or the rest of its series, and say where it stopped."""
     expected = request.POST.get("expected", "")
-    if request.POST.get("scope") == "series":
+    scope = request.POST.get("scope")
+    if scope == "series":
         results = autoplay.autoplay_series(game, request.user, expected=expected)
+    elif scope == "until":
+        results = [
+            autoplay.autoplay_until(
+                game, request.user, request.POST.get("inning"), request.POST.get("half"), expected=expected
+            )
+        ]
     else:
         results = [autoplay.autoplay_game(game, request.user, expected=expected)]
     for result in results:
@@ -140,8 +161,16 @@ def _autoplay(request, game):
         if result.final:
             final = result.log.events.filter(kind=models.GameEvent.FINAL).first()
             messages.success(request, f"Autoplayed day {played.day}. {final.text}")
-        else:
+        elif result.paused:
             messages.error(request, f"Autoplay stopped on day {played.day}: {result.paused['reason']}")
+        elif result.through:
+            state = result.log.state
+            road, home = played.series.road_team.abbreviation, played.series.home_team.abbreviation
+            messages.success(
+                request,
+                f"Autoplayed through {result.through}. {road} {state['score']['away']}, "
+                f"{home} {state['score']['home']}, {state['half']} of the {sim_game.ordinal(state['inning'])}.",
+            )
 
 
 @never_cache

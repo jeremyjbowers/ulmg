@@ -1,0 +1,120 @@
+{# ABOUTME: The pixel field for a half inning played by hand: defense, runners, pitcher, batter, and the last ball path. #}
+{# ABOUTME: Expects `field` from ulmg.field_view. A computer-played plate appearance leaves the path off. #}
+{% if field %}
+<div class="game-field-wrap mb-4 border-4 border-[#1a2744] bg-[#1a2744]">
+    {% if field.ball %}
+    <style>
+        .game-ball-path { stroke-dasharray: 4 4; animation: game-ball-draw 0.9s steps(8) 1; }
+        @keyframes game-ball-draw { from { stroke-dashoffset: 240; } to { stroke-dashoffset: 0; } }
+        .game-ball { offset-path: path("{{ field.ball_css }}"); offset-rotate: 0deg; animation: game-ball-follow 0.9s steps(8) 1 forwards; }
+        @keyframes game-ball-follow { from { offset-distance: 0%; } to { offset-distance: 100%; } }
+    </style>
+    {% endif %}
+    <svg class="game-field w-full h-auto" style="image-rendering: pixelated" viewBox="0 0 320 300" role="img" aria-label="{{ field.scoreboard.away }} {{ field.scoreboard.away_score }}, {{ field.scoreboard.home }} {{ field.scoreboard.home_score }}, {{ field.scoreboard.half }} {{ field.scoreboard.inning }}">
+        <defs>
+            <pattern id="game-grass" width="8" height="8" patternUnits="userSpaceOnUse">
+                <rect width="8" height="8" fill="#1f6b32"/>
+                <rect width="4" height="4" fill="#27803b"/>
+                <rect x="4" y="4" width="4" height="4" fill="#27803b"/>
+            </pattern>
+            <pattern id="game-stands" width="8" height="4" patternUnits="userSpaceOnUse">
+                <rect width="8" height="4" fill="#14203a"/>
+                <rect width="2" height="2" fill="#c45c26"/>
+                <rect x="4" y="0" width="2" height="2" fill="#3d6ea8"/>
+                <rect x="2" y="2" width="2" height="2" fill="#d6c07a"/>
+                <rect x="6" y="2" width="2" height="2" fill="#8d3b4a"/>
+            </pattern>
+        </defs>
+        <rect width="320" height="300" fill="url(#game-grass)"/>
+        <rect width="320" height="20" fill="url(#game-stands)"/>
+        <rect y="20" width="320" height="4" fill="#6b4a2a"/>
+        <rect y="24" width="320" height="4" fill="#c4a06a"/>
+        <polygon points="160,236 236,168 160,100 84,168" fill="#c4a06a"/>
+        <polygon points="160,220 216,164 160,120 104,164" fill="url(#game-grass)"/>
+        <line x1="160" y1="228" x2="312" y2="76" stroke="#f4f0e3" stroke-width="2"/>
+        <line x1="160" y1="228" x2="8" y2="76" stroke="#f4f0e3" stroke-width="2"/>
+        <rect x="148" y="160" width="24" height="12" fill="#8d6a3f"/>
+        <rect x="156" y="224" width="8" height="8" fill="#f4f0e3"/>
+        {% for base in field.bases %}
+        <rect x="{{ base.x|add:'-4' }}" y="{{ base.y|add:'-4' }}" width="8" height="8" fill="#f4f0e3"/>
+        {% endfor %}
+        <rect x="4" y="4" width="168" height="12" fill="#0c1220"/>
+        <text x="8" y="13" fill="#f4f0e3" font-family="ui-monospace, monospace" font-size="9">{{ field.scoreboard.away }} {{ field.scoreboard.away_score }}  {{ field.scoreboard.home }} {{ field.scoreboard.home_score }}  {{ field.scoreboard.half }} {{ field.scoreboard.inning }}</text>
+        <rect x="286" y="4" width="8" height="8" fill="{% if field.scoreboard.outs > 0 %}#f4f0e3{% else %}#0c1220{% endif %}" stroke="#f4f0e3" stroke-width="1"/>
+        <rect x="296" y="4" width="8" height="8" fill="{% if field.scoreboard.outs > 1 %}#f4f0e3{% else %}#0c1220{% endif %}" stroke="#f4f0e3" stroke-width="1"/>
+        <rect x="306" y="4" width="8" height="8" fill="{% if field.scoreboard.outs > 2 %}#f4f0e3{% else %}#0c1220{% endif %}" stroke="#f4f0e3" stroke-width="1"/>
+        {% if field.ball %}
+        <polyline class="game-ball-path" points="{{ field.ball_points }}" fill="none" stroke="#fffef6" stroke-width="2" stroke-linecap="square"/>
+        <rect x="{{ field.ball_end.x|add:'-3' }}" y="{{ field.ball_end.y|add:'-3' }}" width="6" height="6" fill="#fffef6" stroke="#1a1a1a" stroke-width="1"/>
+        <rect class="game-ball" x="-3" y="-3" width="6" height="6" fill="#fffef6" stroke="#1a1a1a" stroke-width="1"/>
+        {% endif %}
+        {% for fielder in field.fielders %}
+        {% if fielder.position == "C" %}
+        <g class="game-fielder" data-position="C" transform="translate({{ fielder.x }},{{ fielder.y }})">
+            <rect x="-4" y="-16" width="8" height="4" fill="#1d3557"/>
+            <rect x="-2" y="-12" width="4" height="4" fill="#f3d2b3"/>
+            <rect x="-4" y="-8" width="8" height="6" fill="#1d3557"/>
+            <rect x="-4" y="-2" width="3" height="4" fill="#0c1220"/>
+            <rect x="1" y="-2" width="3" height="4" fill="#0c1220"/>
+            <text x="0" y="12" text-anchor="middle" fill="#f4f0e3" font-family="ui-monospace, monospace" font-size="8">C {{ fielder.name }}{% if fielder.rating %} {{ fielder.rating }}{% endif %}</text>
+        </g>
+        {% else %}
+        <g class="game-fielder" data-position="{{ fielder.position }}" transform="translate({{ fielder.x }},{{ fielder.y }})">
+            <rect x="-4" y="-16" width="8" height="4" fill="#1d3557"/>
+            <rect x="-2" y="-12" width="4" height="4" fill="#f3d2b3"/>
+            <rect x="-4" y="-8" width="8" height="6" fill="#1d3557"/>
+            <rect x="-4" y="-2" width="3" height="4" fill="#0c1220"/>
+            <rect x="1" y="-2" width="3" height="4" fill="#0c1220"/>
+            {% if fielder.position == "1B" %}
+            <text x="8" y="-6" fill="#f4f0e3" font-family="ui-monospace, monospace" font-size="8">{{ fielder.position }} {{ fielder.name }}</text>
+            {% if fielder.rating %}<text x="8" y="4" fill="#d6c07a" font-family="ui-monospace, monospace" font-size="8">{{ fielder.rating }}</text>{% endif %}
+            {% elif fielder.position == "SS" %}
+            <text x="-8" y="-6" text-anchor="end" fill="#f4f0e3" font-family="ui-monospace, monospace" font-size="8">{{ fielder.position }} {{ fielder.name }}</text>
+            {% if fielder.rating %}<text x="-8" y="4" text-anchor="end" fill="#d6c07a" font-family="ui-monospace, monospace" font-size="8">{{ fielder.rating }}</text>{% endif %}
+            {% else %}
+            <text x="0" y="-20" text-anchor="middle" fill="#f4f0e3" font-family="ui-monospace, monospace" font-size="8">{{ fielder.position }} {{ fielder.name }}{% if fielder.rating %} {{ fielder.rating }}{% endif %}</text>
+            {% endif %}
+        </g>
+        {% endif %}
+        {% endfor %}
+        <g class="game-pitcher" transform="translate({{ field.pitcher.x }},{{ field.pitcher.y }})">
+            <rect x="-4" y="-16" width="8" height="4" fill="#9b2226"/>
+            <rect x="-2" y="-12" width="4" height="4" fill="#f3d2b3"/>
+            <rect x="-4" y="-8" width="8" height="6" fill="#9b2226"/>
+            <rect x="-4" y="-2" width="3" height="4" fill="#0c1220"/>
+            <rect x="1" y="-2" width="3" height="4" fill="#0c1220"/>
+            <text x="10" y="-10" fill="#f4f0e3" font-family="ui-monospace, monospace" font-size="8">P {{ field.pitcher.name }}</text>
+        </g>
+        <g class="game-batter" transform="translate({{ field.batter.x }},{{ field.batter.y }})">
+            <rect x="-4" y="-16" width="8" height="4" fill="#9b2226"/>
+            <rect x="-2" y="-12" width="4" height="4" fill="#f3d2b3"/>
+            <rect x="-4" y="-8" width="8" height="6" fill="#9b2226"/>
+            <rect x="6" y="-10" width="8" height="2" fill="#d6c07a"/>
+            <rect x="-4" y="-2" width="3" height="4" fill="#0c1220"/>
+            <rect x="1" y="-2" width="3" height="4" fill="#0c1220"/>
+            {% if field.batter.x > 160 %}
+            <text x="16" y="-4" fill="#f4f0e3" font-family="ui-monospace, monospace" font-size="8">{{ field.batter.name }}</text>
+            {% else %}
+            <text x="-16" y="-4" text-anchor="end" fill="#f4f0e3" font-family="ui-monospace, monospace" font-size="8">{{ field.batter.name }}</text>
+            {% endif %}
+        </g>
+        {% for runner in field.runners %}
+        <g class="game-runner" data-base="{{ runner.base }}" transform="translate({{ runner.x }},{{ runner.y }})">
+            <rect x="-4" y="-16" width="8" height="4" fill="#f4f0e3"/>
+            <rect x="-2" y="-12" width="4" height="4" fill="#f3d2b3"/>
+            <rect x="-4" y="-8" width="8" height="6" fill="#f4f0e3"/>
+            <rect x="-4" y="-2" width="3" height="4" fill="#9b2226"/>
+            <rect x="1" y="-2" width="3" height="4" fill="#9b2226"/>
+            {% if runner.base == "first" %}
+            <text x="0" y="-20" text-anchor="middle" fill="#f6d0d0" font-family="ui-monospace, monospace" font-size="8">{{ runner.name }}</text>
+            {% elif runner.base == "third" %}
+            <text x="-10" y="-18" text-anchor="end" fill="#f6d0d0" font-family="ui-monospace, monospace" font-size="8">{{ runner.name }}</text>
+            {% else %}
+            <text x="0" y="14" text-anchor="middle" fill="#f6d0d0" font-family="ui-monospace, monospace" font-size="8">{{ runner.name }}</text>
+            {% endif %}
+        </g>
+        {% endfor %}
+    </svg>
+    {% if field.caption %}<p class="game-field-caption text-xs px-2 py-1 text-[#f4f0e3]">{{ field.caption }}</p>{% endif %}
+</div>
+{% endif %}

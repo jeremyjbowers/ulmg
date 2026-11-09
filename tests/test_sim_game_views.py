@@ -54,6 +54,9 @@ class GamePageTestCase(gf.EngineMixin, TestCase):
         self.assertContains(response, "PA left: unlimited")
         self.assertContains(response, "IP left this outing")
         self.assertContains(response, "Top 1")
+        self.assertContains(response, "game-field")
+        self.assertContains(response, 'data-position="C"')
+        self.assertContains(response, 'data-position="SS"')
 
         response = self.post("step", expected=self.expected(), call="bunt")
         self.assertEqual(len(self.log().state["results"]), 1)

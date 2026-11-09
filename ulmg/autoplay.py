@@ -1,8 +1,9 @@
 # ABOUTME: Autoplay: hands a sim game, or the rest of its series, to the computer and plays it to its final in one request.
-# ABOUTME: Uses sim_game's computer paths for every decision; each handed-over seat and every computer action is a logged event.
+# ABOUTME: Also plays through one half inning and hands the seats back. Every computer action is a logged event.
 
 from dataclasses import dataclass
 
+from django.contrib.auth import get_user_model
 from django.db import transaction
 
 from ulmg import engine_client, models, schedule, sim_game
@@ -18,6 +19,8 @@ class Result:
     final: bool
     paused: dict = None
     plate_appearances: int = 0
+    # Set when autoplay stopped at a half inning instead of the final, e.g. "the bottom of the 7th".
+    through: str = None
 
 
 def _log_for(game):
@@ -86,6 +89,80 @@ def _check_expected(play, expected):
         raise sim_game.GameRefused(sim_game.STALE)
 
 
+def _locked_play(game, user, expected, seeds, open_seats, open_autoplay):
+    """The locked play for an autoplay, opened first when the game has no log."""
+    game = (
+        models.ScheduleGame.objects.select_for_update()
+        .select_related("series__slot", "series__home_team", "series__road_team")
+        .get(pk=game.pk)
+    )
+    log = _log_for(game)
+    refusal = autoplay_refusal(user, game, log)
+    if refusal:
+        raise sim_game.GameRefused(refusal)
+    if log is None:
+        log = sim_game.start_log(game, user, open_seats, seeds, autoplay=open_autoplay)
+    elif expected is not None:
+        _check_expected(sim_game.Play(log), expected)
+    log = models.GameLog.objects.select_for_update().select_related(
+        "game__series__slot", "game__series__home_team", "game__series__road_team"
+    ).get(pk=log.pk)
+    return sim_game.Play(log, seeds)
+
+
+def _run(play, keep_going):
+    """Play plate appearances while keep_going(play), the game is unfinished, and nobody is paused."""
+    played = 0
+    while keep_going(play) and not play.fold.final and play.fold.pause is None:
+        need = play.need()
+        if need is not None:
+            # settle() leaves a need open only for a person's seat, and autoplay holds none.
+            raise sim_game.GameRefused(need.reason)
+        call = sim_game.computer_steal(play, sim_game.batting_side(play.state))
+        sim_game.play_plate_appearance(play, call, computer=True)
+        played += 1
+        sim_game.settle(play)
+    play.save_state()
+    return played
+
+
+def _return_seats(play, holders):
+    """Give each seat back to the person who held it before this autoplay stretch."""
+    users = get_user_model().objects.in_bulk([holder for holder in holders.values() if holder])
+    for side, holder in holders.items():
+        user = users.get(holder)
+        if user is None or play.fold.seats[side] is not None:
+            continue
+        play.append(
+            Event.SEAT,
+            side=side,
+            user=user,
+            text=f"{sim_game.side_label(play.game, side)} seat: {user.username}.",
+        )
+
+
+_HALVES = ("top", "bottom")
+
+
+def _target(inning, half):
+    try:
+        inning = int(inning)
+    except (TypeError, ValueError):
+        raise sim_game.GameRefused("Pick an inning.")
+    if not 1 <= inning <= 30:
+        raise sim_game.GameRefused("Pick an inning.")
+    if half not in _HALVES:
+        raise sim_game.GameRefused("Pick the top or the bottom of the inning.")
+    return inning, half
+
+
+def _past(state, inning, half):
+    """Whether the target half inning is over, including a game that ended during it."""
+    if state.get("status") == "final":
+        return True
+    return (state["inning"], _HALVES.index(state["half"])) > (inning, _HALVES.index(half))
+
+
 def autoplay_game(game, user, expected=None, seeds=engine_client.new_seed):
     """
     Play a game to its final with the computer holding both seats, in one
@@ -98,38 +175,45 @@ def autoplay_game(game, user, expected=None, seeds=engine_client.new_seed):
     not autoplay it or it can't be opened.
     """
     with transaction.atomic():
-        game = (
-            models.ScheduleGame.objects.select_for_update()
-            .select_related("series__slot", "series__home_team", "series__road_team")
-            .get(pk=game.pk)
-        )
-        log = _log_for(game)
-        refusal = autoplay_refusal(user, game, log)
-        if refusal:
-            raise sim_game.GameRefused(refusal)
-        if log is None:
-            log = sim_game.start_log(game, user, (), seeds, autoplay=True)
-        elif expected is not None:
-            _check_expected(sim_game.Play(log), expected)
-        log = models.GameLog.objects.select_for_update().select_related(
-            "game__series__slot", "game__series__home_team", "game__series__road_team"
-        ).get(pk=log.pk)
-        play = sim_game.Play(log, seeds)
+        play = _locked_play(game, user, expected, seeds, (), True)
         _hand_over_seats(play, user)
         sim_game.settle(play)
+        played = _run(play, lambda play: True)
+    return Result(log=play.log, final=play.fold.final, paused=play.fold.pause, plate_appearances=played)
 
-        played = 0
-        while not play.fold.final and play.fold.pause is None:
-            need = play.need()
-            if need is not None:
-                # settle() leaves a need open only for a person's seat, and autoplay holds none.
-                raise sim_game.GameRefused(need.reason)
-            call = sim_game.computer_steal(play, sim_game.batting_side(play.state))
-            sim_game.play_plate_appearance(play, call, computer=True)
-            played += 1
-            sim_game.settle(play)
-        play.save_state()
-    return Result(log=log, final=play.fold.final, paused=play.fold.pause, plate_appearances=played)
+
+def autoplay_until(game, user, inning, half, expected=None, seeds=engine_client.new_seed):
+    """
+    Play until the named half inning is over, then hand every seat back to
+    the person who held it. An unopened road game is opened with its manager
+    in the away seat, so he is sitting there again when the stretch ends.
+    The commissioner, and a game he did not hold a seat in, stays with the
+    computer. Raises GameRefused, with nothing saved, when the game is
+    already past that half inning.
+    """
+    inning, half = _target(inning, half)
+    # The road manager sits down for the stretch, so the seat can be handed back to him.
+    seated = (sim_game.AWAY,) if user is not None and not user.is_superuser else ()
+    with transaction.atomic():
+        play = _locked_play(game, user, expected, seeds, seated, open_autoplay=not seated)
+        if _past(play.state, inning, half):
+            raise sim_game.GameRefused(
+                f"The game is already past the {half} of the {sim_game.ordinal(inning)}."
+            )
+        holders = dict(play.fold.seats)
+        _hand_over_seats(play, user)
+        sim_game.settle(play)
+        played = _run(play, lambda play: not _past(play.state, inning, half))
+        if not play.fold.final:
+            _return_seats(play, holders)
+            play.save_state()
+    return Result(
+        log=play.log,
+        final=play.fold.final,
+        paused=play.fold.pause,
+        plate_appearances=played,
+        through=f"the {half} of the {sim_game.ordinal(inning)}",
+    )
 
 
 def remaining_series_games(game):

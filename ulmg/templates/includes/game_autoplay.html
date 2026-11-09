@@ -1,10 +1,22 @@
-{# ABOUTME: The autoplay form on the game page: hands this game, or the rest of its series, to the computer. #}
-{# ABOUTME: Expects `game`, `can_autoplay` and, for a game in progress, `expected`. #}
+{# ABOUTME: The autoplay form: through one half inning, this game, or the rest of its series. #}
+{# ABOUTME: Expects `game`, `can_autoplay`, the inning choices, and, for a game in progress, `expected`. #}
 {% if can_autoplay %}
 <form method="post" action="/games/{{ game.id }}/autoplay/" class="game-autoplay space-y-2 text-sm mb-6">
     {% csrf_token %}
     <input type="hidden" name="expected" value="{{ expected }}">
     <h2 class="font-bold">Autoplay</h2>
+    <div class="flex flex-wrap gap-2 items-center">
+        <span>Through the</span>
+        <select name="half" aria-label="Half inning" class="border border-gray-300 px-2 py-1">
+            <option value="top"{% if autoplay_half == "top" %} selected{% endif %}>top</option>
+            <option value="bottom"{% if autoplay_half == "bottom" %} selected{% endif %}>bottom</option>
+        </select>
+        <span>of the</span>
+        <select name="inning" aria-label="Inning" class="border border-gray-300 px-2 py-1">
+            {% for n in autoplay_innings %}<option value="{{ n }}"{% if n == autoplay_inning %} selected{% endif %}>{{ n }}</option>{% endfor %}
+        </select>
+        <button type="submit" name="scope" value="until" class="border border-gray-300 px-4 py-2">Autoplay through there</button>
+    </div>
     <button type="submit" name="scope" value="game" class="w-full sm:w-auto border border-gray-300 px-4 py-2">Autoplay this game</button>
     <button type="submit" name="scope" value="series" class="w-full sm:w-auto border border-gray-300 px-4 py-2">Autoplay the rest of the series</button>
 </form>

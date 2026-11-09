@@ -8,7 +8,10 @@ from dataclasses import dataclass, field
 from django.db import transaction
 from django.utils import timezone
 
-from ulmg import box_score, cards, computer_manager, engine_client, models, plans, roster_moves, schedule, season_record, usage, utils
+from ulmg import (
+    box_score, cards, computer_manager, engine_client, field_view, models, plans, roster_moves,
+    schedule, season_record, usage, utils,
+)
 
 Event = models.GameEvent
 
@@ -2003,6 +2006,53 @@ def substitution_choices(play, user, need):
     return choices
 
 
+def _field(play):
+    """The pixel field for this half inning: the defense, the runners, and the last ball played by hand."""
+    state = play.state
+    fielding = fielding_side(state)
+    fielders = []
+    for entry in state[fielding]["lineup"]:
+        if entry["position"] in ("DH", "P"):
+            continue
+        player = play.player(entry["id"])
+        card = play.card(player)
+        runs = (card.defense or {}).get(entry["position"]) if card is not None else None
+        fielders.append({"position": entry["position"], "name": player.name, "rating": runs})
+    runners = {
+        base: play.player(pid).name
+        for base, pid in state["bases"].items()
+        if pid and base in BASES
+    }
+    batter = play.player(current_batter_id(state))
+    pitcher_id = current_pitcher_id(state)
+    pitcher = play.player(pitcher_id) if pitcher_id else None
+    last = None
+    for event in reversed(play.events):
+        if event.kind != Event.PLATE_APPEARANCE:
+            continue
+        if not event.computer:
+            result = event.payload.get("result") or {}
+            last = {"outcome": result.get("outcome"), "seed": event.seed or 0}
+        break
+    away, home = team_for(play.game, AWAY), team_for(play.game, HOME)
+    return field_view.scene(
+        fielders,
+        runners,
+        {"name": batter.name, "bats": batter.bats},
+        {"name": pitcher.name} if pitcher is not None else None,
+        last,
+        {
+            "away": away.abbreviation,
+            "home": home.abbreviation,
+            "away_score": state["score"]["away"],
+            "home_score": state["score"]["home"],
+            "half": "Top" if state["half"] == "top" else "Bot",
+            "inning": state["inning"],
+            "outs": state["outs"],
+        },
+    )
+
+
 def _lineup_rows(play, side):
     """The side's current lineup in batting order, for the pregame lineup form."""
     return [
@@ -2066,6 +2116,7 @@ def page(log, user):
             "need": need,
             "first_pitch": fold.first_pitch,
             "can_step": bool(context["user_sides"]) and need is None and fold.pause is None,
+            "field": _field(play),
         }
     )
     if need is None and pitcher is not None:

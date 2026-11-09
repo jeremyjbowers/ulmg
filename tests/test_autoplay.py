@@ -158,6 +158,62 @@ class AutoplayFromTheMiddleTestCase(AutoplayTestCase):
         self.assertEqual(sim_game.Play(log).fold.pause["side"], HOME)
 
 
+class AutoplayUntilTestCase(AutoplayTestCase):
+    def test_autoplay_through_the_top_of_the_first_stops_there_and_returns_the_seat(self):
+        result = autoplay.autoplay_until(self.game, self.manager, 1, "top", seeds=self.next_seed)
+        log = gf.refresh(result.log)
+        self.assertFalse(result.final)
+        self.assertEqual(result.through, "the top of the 1st")
+        self.assertEqual((log.state["inning"], log.state["half"]), (1, "bottom"))
+        self.assertGreater(result.plate_appearances, 0)
+        play = sim_game.Play(log)
+        self.assertEqual(play.fold.seats[AWAY], self.manager.id)
+        self.assertIsNone(play.fold.seats[HOME])
+        appearances = gf.events(log, Event.PLATE_APPEARANCE)
+        self.assertTrue(all(event.computer for event in appearances))
+        self.assertEqual(handed_over(log)[-1].payload["from"], self.manager.id)
+
+    def test_a_stretch_from_the_middle_leaves_the_pitches_already_thrown_by_hand(self):
+        log = sim_game.open_game(self.game, self.manager, (AWAY,), seeds=self.next_seed)
+        sim_game.step(log, self.manager, sim_game.Play(gf.refresh(log)).sequence, seeds=self.next_seed)
+        before = gf.events(gf.refresh(log), Event.PLATE_APPEARANCE)
+        self.assertEqual(before[0].user, self.manager)
+
+        result = autoplay.autoplay_until(
+            self.game, self.manager, 1, "bottom", expected=sim_game.Play(gf.refresh(log)).sequence, seeds=self.next_seed
+        )
+        log = gf.refresh(result.log)
+        self.assertEqual((log.state["inning"], log.state["half"]), (2, "top"))
+        appearances = gf.events(log, Event.PLATE_APPEARANCE)
+        self.assertEqual(appearances[0].user, self.manager)
+        self.assertTrue(all(event.computer for event in appearances[1:]))
+        self.assertEqual(sim_game.Play(log).fold.seats[AWAY], self.manager.id)
+
+    def test_autoplay_through_a_half_inning_already_passed_plays_nothing(self):
+        autoplay.autoplay_until(self.game, self.manager, 1, "top", seeds=self.next_seed)
+        count = len(gf.events(gf.refresh(models.GameLog.objects.get(game=self.game))))
+        with self.assertRaises(sim_game.GameRefused) as refused:
+            autoplay.autoplay_until(
+                self.game, self.manager, 1, "top",
+                expected=sim_game.Play(gf.refresh(models.GameLog.objects.get(game=self.game))).sequence,
+                seeds=self.next_seed,
+            )
+        self.assertIn("already past the top of the 1st", refused.exception.reasons[0])
+        self.assertEqual(len(gf.events(models.GameLog.objects.get(game=self.game))), count)
+
+    def test_the_visitor_autoplays_through_an_inning_from_the_game_page(self):
+        self.client.force_login(self.manager)
+        response = self.client.post(
+            f"/games/{self.game.id}/autoplay/", {"scope": "until", "half": "top", "inning": "1"}, follow=True
+        )
+        self.assertContains(response, "Autoplayed through the top of the 1st")
+        self.assertContains(response, "bottom of the 1st")
+        self.assertContains(response, "game-field")
+        self.assertContains(response, 'data-position="SS"')
+        log = models.GameLog.objects.get(game=self.game)
+        self.assertEqual((log.state["inning"], log.state["half"]), (1, "bottom"))
+
+
 class AutoplaySeriesTestCase(AutoplayTestCase):
     def test_the_visitor_autoplays_the_rest_of_a_series_in_schedule_order(self):
         games = series_games(self.game)
@@ -274,6 +330,8 @@ class AutoplayPageTestCase(AutoplayTestCase):
         self.client.force_login(self.manager)
         page = self.client.get(f"/games/{self.game.id}/")
         self.assertContains(page, "game-autoplay")
+        self.assertContains(page, "Autoplay through there")
+        self.assertContains(page, 'name="inning"')
         self.assertContains(page, "Autoplay the rest of the series")
         response = self.client.post(f"/games/{self.game.id}/autoplay/", {"scope": "game"}, follow=True)
         log = self.assert_final(models.GameLog.objects.get(game=self.game))
