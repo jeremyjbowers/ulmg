@@ -5,7 +5,6 @@
 {% block content %}
 <div class="max-w-6xl mx-auto py-4">
     <h1 class="text-2xl font-bold mb-2 border-b border-gray-300 pb-2">{{ schedule_season }} schedule</h1>
-    <p class="text-sm text-gray-600 mb-6">Every team plays one series in each slot, so a day is every team's game number. Pick a team for its 162 games.</p>
 
     {% if slots %}
     {% regroup slots by half as halves %}

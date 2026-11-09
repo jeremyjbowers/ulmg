@@ -5,8 +5,8 @@
 {% block content %}
 <div class="max-w-6xl mx-auto py-4">
     <h1 class="text-2xl font-bold mb-2 border-b border-gray-300 pb-2">{{ record_season }} standings</h1>
-    <p class="text-sm text-gray-600 mb-6">From final games only. Each conference sends its two division winners and the next two best records. Ties stand until the playoff tiebreakers are applied. <a href="/leaders/?season={{ record_season }}" class="underline">Leaders</a> &middot; <a href="/schedule/?season={{ record_season }}" class="underline">Schedule</a></p>
-    <p class="text-xs text-gray-600 mb-6"><span class="font-bold">*</span> a player more than 10% over a usage cap; <span class="font-bold">**</span> more than 20% over.</p>
+    <p class="text-sm mb-6"><a href="/leaders/?season={{ record_season }}" class="underline">Leaders</a> &middot; <a href="/schedule/?season={{ record_season }}" class="underline">Schedule</a></p>
+    <p class="text-xs text-gray-600 mb-6"><span class="font-bold">*</span> over 10% &middot; <span class="font-bold">**</span> over 20%</p>
 
     {% for conference in conferences %}
     <div class="standings-conference mb-8">

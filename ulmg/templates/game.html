@@ -34,7 +34,6 @@
             {% for value, label in seat_choices %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
         </select>
         <button type="submit" class="w-full sm:w-auto bg-black text-white px-4 py-2 font-bold">Open the game</button>
-        <p class="text-xs text-gray-600">Opening freezes both plans for this game. A seat you don't take is played by that team's computer.</p>
     </form>
     {% else %}
     <p class="text-sm mb-6">You can't open this game.</p>
@@ -169,7 +168,6 @@
         <input type="hidden" name="expected" value="{{ expected }}">
         <input type="hidden" name="side" value="{{ defense.side }}">
         <h2 class="font-bold">Positions</h2>
-        <p class="text-xs text-gray-600">A pinch hitter or runner must be given a position before the next pitch. The designated hitter stays the designated hitter.</p>
         {% for row in defense.rows %}
         <div class="flex gap-2 items-center">
             <span class="w-6">{{ row.order }}</span>
@@ -205,8 +203,7 @@
         {% csrf_token %}
         <input type="hidden" name="expected" value="{{ expected }}">
         <input type="hidden" name="side" value="{{ lineup.side }}">
-        <h2 class="font-bold">{{ lineup.team.abbreviation }} lineup for this game</h2>
-        <p class="text-xs text-gray-600">Before the first pitch you can change it from this game's roster, call-ups included. Your plan doesn't change.</p>
+        <h2 class="font-bold">{{ lineup.team.abbreviation }} lineup</h2>
         {% for row in lineup.rows %}
         <div class="flex gap-2 items-center">
             <span class="w-6">{{ row.order }}</span>

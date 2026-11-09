@@ -8,7 +8,7 @@
 
 <div class="max-w-3xl">
     <h2 class="text-lg font-bold mb-1">Edit the {{ plan_season }} {% if half == 1 %}first{% else %}second{% endif %}-half plan</h2>
-    <p class="text-sm text-gray-600 mb-4">Saving re-fills every unopened day without a manual starter from the rotation order. <a href="/teams/{{ team.abbreviation|lower }}/plan/{{ half }}/?season={{ plan_season }}" class="underline">Back to the plan</a></p>
+    <p class="text-sm mb-4"><a href="/teams/{{ team.abbreviation|lower }}/plan/{{ half }}/?season={{ plan_season }}" class="underline">Back</a></p>
     {% include 'includes/plan_errors.html' %}
 
     {% if not is_open %}
@@ -32,7 +32,6 @@
 
         <fieldset>
             <legend class="font-bold border-b border-gray-300 w-full mb-2">Starter hook</legend>
-            <p class="text-xs text-gray-600 mb-2">When the computer manages this team, it pulls the starter at the engine's fatigue line or his per-game limit, or sooner: quick at 85% of his fatigue ceiling or 4 runs allowed, normal at 95% or 5 runs, slow at 100% or 6 runs.</p>
             <select name="starter_hook" class="border border-gray-300 rounded px-1 py-1 w-full" aria-label="Starter hook">
                 {% for value, label in starter_hooks %}<option value="{{ value }}"{% if value == starter_hook %} selected{% endif %}>{{ label }}</option>{% endfor %}
             </select>
@@ -40,7 +39,6 @@
 
         <fieldset>
             <legend class="font-bold border-b border-gray-300 w-full mb-2">Bullpen</legend>
-            <p class="text-xs text-gray-600 mb-2">A pitcher in the rotation and the bullpen starts and relieves this half. A pitcher only in the bullpen is confined to relief.</p>
             <label class="block mb-3"><span class="font-bold text-xs uppercase text-gray-600">Closer</span>
                 <select name="closer" class="border border-gray-300 rounded px-1 py-1 w-full">
                     <option value="">-</option>
@@ -70,7 +68,6 @@
         {% for prefix, label, rows in lineups %}
         <fieldset>
             <legend class="font-bold border-b border-gray-300 w-full mb-2">{{ label }}</legend>
-            <p class="text-xs text-gray-600 mb-2">Order, batter, position. One of each position, one DH, no pitchers.</p>
             {% include 'includes/plan_lineup_rows.html' %}
         </fieldset>
         {% endfor %}

@@ -42,10 +42,6 @@
 
 {% include "includes/team_tabs.html" with team_tab="roster" %}
 
-{% if half_started %}
-<p class="opening-roster-note mb-4 text-sm">This is the roster the half opened with. Call-ups and send-downs are on the <a href="/teams/{{ team.abbreviation|lower }}/game/" class="underline">Game</a> page, and they change the away roster only.</p>
-{% endif %}
-
 <!-- Team summary stats -->
 <div class="grid grid-cols-2 gap-4 mb-6 text-xs">
     <div>

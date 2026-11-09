@@ -15,8 +15,6 @@ GAME_URL = "/teams/atl/game/"
 MOVE_URL = "/teams/atl/moves/"
 CHOICE_URL = "/teams/atl/moves/new/"
 MOVE_FORM = f'<form method="post" action="{MOVE_URL}"'
-NO_MOVES_LEFT = "No moves left this half (10 of 10 used)"
-
 
 def create_owner(username, team):
     user = User.objects.create_user(username, f"{username}@example.com", "password")
@@ -156,7 +154,6 @@ class PairedMovePagesTestCase(OwnerClients, TestCase):
 
     def test_the_roster_page_keeps_the_opening_roster_once_the_half_has_started(self):
         page = self.client_for(self.owner).get(TEAM_URL)
-        self.assertContains(page, "opening-roster-note")
         self.assertContains(page, 'class="opening-roster-player', count=5)
         self.assertNotContains(page, "Send down</a>")
         self.assertNotContains(page, "Call up</a>")
@@ -292,7 +289,8 @@ class PairedMovePagesTestCase(OwnerClients, TestCase):
     def test_at_the_cap_the_controls_give_way_to_the_cap_message(self):
         self.fill_to_cap()
         page = self.client_for(self.owner).get(GAME_URL)
-        self.assertContains(page, NO_MOVES_LEFT, count=1)
+        self.assertContains(page, '<span id="moves-left">0</span> of 10', html=False)
+        self.assertContains(page, "disabled>Make move</button>")
         self.assertNotContains(page, "Send down</a>")
         self.assertNotContains(page, "Call up</a>")
         roster = self.client_for(self.owner).get(TEAM_URL)

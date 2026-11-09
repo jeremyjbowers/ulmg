@@ -8,7 +8,7 @@
 
 <div class="max-w-xl">
     <h2 class="text-lg font-bold mb-1">Day {{ row.day }}: {% if row.is_home %}vs{% else %}at{% endif %} {{ row.opponent.abbreviation }}</h2>
-    <p class="text-sm text-gray-600 mb-4">Auto-fill has {% if side.starter %}{{ side.starter.name }}{% else %}no one{% endif %} against {% if side.opponent_starter %}{{ side.opponent_starter.name }} ({{ side.opponent_starter.throws|default:"?" }}){% else %}an unplanned starter{% endif %}. <a href="/teams/{{ team.abbreviation|lower }}/plan/{{ half }}/?season={{ plan_season }}#day-{{ row.day }}" class="underline">Back to the plan</a></p>
+    <p class="text-sm text-gray-600 mb-4">SP: {% if side.starter %}{{ side.starter.name }}{% else %}none{% endif %} · Opp SP: {% if side.opponent_starter %}{{ side.opponent_starter.name }} ({{ side.opponent_starter.throws|default:"?" }}){% else %}none{% endif %} · <a href="/teams/{{ team.abbreviation|lower }}/plan/{{ half }}/?season={{ plan_season }}#day-{{ row.day }}" class="underline">Back</a></p>
     {% include 'includes/plan_errors.html' %}
 
     {% if not is_open %}
@@ -23,12 +23,10 @@
                 <option value="">Rotation auto-fill</option>
                 {% for p in pitchers %}<option value="{{ p.id }}"{% if p.id == starter_id %} selected{% endif %}>{{ p.name }}{% if p.throws %} ({{ p.throws }}){% endif %}</option>{% endfor %}
             </select>
-            <span class="block text-xs text-gray-600 mt-1">A spot start must be rested inside the series and fit his start cap.</span>
         </label>
 
         <fieldset>
             <legend class="font-bold mb-2"><label><input type="checkbox" name="override_lineup" value="1"{% if override %} checked{% endif %}> Set this day's lineup</label></legend>
-            <p class="text-xs text-gray-600 mb-2">Unchecked, the day uses the lineup card for the opposing starter's hand.</p>
             {% with prefix="day" rows=lineup_rows %}{% include 'includes/plan_lineup_rows.html' %}{% endwith %}
         </fieldset>
 

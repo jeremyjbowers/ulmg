@@ -81,10 +81,8 @@ class GamePageTestCase(TestCase):
         self.assertIn(self.call_up.name, away)
         self.assertNotIn(self.starter.name, away)
         self.assertIn("in play", body)
-        self.assertIn("the computer will not use a player who is out of plate appearances or innings", body)
 
         roster = self.client.get("/teams/atl/").content.decode()
-        self.assertIn("opening-roster-note", roster)
         self.assertIn('class="opening-roster-player', roster)
         self.assertNotIn("Send down</a>", roster)
         self.assertNotIn('href="/teams/atl/plan/', roster)

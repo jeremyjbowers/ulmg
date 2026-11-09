@@ -10,7 +10,6 @@
 
 <div class="mb-6">
     <h2 class="text-lg font-bold mb-1">{{ plan_season }} {% if half == 1 %}first{% else %}second{% endif %}-half plan</h2>
-    <p class="text-sm text-gray-600">Days {% if half == 1 %}1-81{% else %}82-162{% endif %}. Every team's plan is public.</p>
     {% if not is_open %}
     <p class="plan-closed text-sm mt-2">{{ closed_message }}</p>
     {% elif can_edit %}
@@ -59,7 +58,6 @@
 </div>
 
 <h3 class="font-bold border-b border-gray-300 mb-2">Games</h3>
-<p class="text-xs text-gray-600 mb-2">A lineup follows the opposing starter's hand unless it is set for the day. <span class="font-bold">*</span> marks a manual starter or lineup.</p>
 <div class="space-y-2 mb-8 text-sm">
     {% for row in rows %}
     <div class="plan-day border border-gray-200 px-2 py-1" id="day-{{ row.day }}" data-day="{{ row.day }}">

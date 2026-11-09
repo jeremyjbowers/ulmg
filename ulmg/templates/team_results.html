@@ -19,7 +19,6 @@
     <h2 class="text-lg font-bold mb-2 border-b border-gray-300 pb-1">Usage penalties</h2>
     {% if penalties.players_over_10 %}
     <h3 class="font-bold text-sm mt-2">More than 10% over</h3>
-    <p class="text-xs text-gray-600 mb-1">Ineligible for the playoffs. One costs the club its first-round AA pick; two cost both first-round picks.</p>
     <ul class="text-sm list-disc ml-5">
         {% for overage in penalties.players_over_10 %}
         <li><a href="/players/{{ overage.player.id }}/" class="underline">{{ overage.player.name }}</a>: {{ overage.used }} of {{ overage.cap }} {{ overage.measure }}</li>
@@ -28,7 +27,6 @@
     {% endif %}
     {% if penalties.players_over_20 %}
     <h3 class="font-bold text-sm mt-2">More than 20% over</h3>
-    <p class="text-xs text-gray-600 mb-1">The club is ineligible for the playoffs, and these players go into the next Open Draft.</p>
     <ul class="text-sm list-disc ml-5">
         {% for overage in penalties.players_over_20 %}
         <li><a href="/players/{{ overage.player.id }}/" class="underline">{{ overage.player.name }}</a>: {{ overage.used }} of {{ overage.cap }} {{ overage.measure }}</li>
