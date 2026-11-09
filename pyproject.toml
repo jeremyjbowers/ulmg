@@ -98,4 +98,9 @@ packages = ["config", "ulmg", "ulmg.mcp_app", "ulmg.views", "ulmg.management", "
 [tool.setuptools.package-data]
 "*" = ["*.json", "*.txt", "*.csv", "*.html"]
 
+[dependency-groups]
+dev = [
+    "tblib==3.2.2",
+]
+
 

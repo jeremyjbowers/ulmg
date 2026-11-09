@@ -96,9 +96,11 @@ workon ulmg && django-admin runserver
 
 ### Testing & Quality
 ```bash
-# Run tests
-workon ulmg && django-admin test
-workon ulmg && django-admin test
+# Run the full suite: the normal way, four workers (tblib, in the dev group, comes with uv sync)
+workon ulmg && django-admin test --pythonpath . --parallel 4 --noinput
+
+# Run it in one process (slower; useful for debugging)
+workon ulmg && django-admin test --pythonpath . --noinput
 
 # Run specific test
 workon ulmg && django-admin test ulmg.tests.test_utils
@@ -228,3 +230,5 @@ export DO_SPACES_BUCKET_NAME=your_bucket_name
 - Test configuration in `pytest.ini`
 - Focus on `ulmg.tests.test_utils` for utility testing
 - Use Django's TestCase for database-dependent tests
+- `tests.runner.ProjectTestRunner` (set as TEST_RUNNER in config/dev/settings.py) turns autovacuum off in the test database; see its docstring for why
+- Engine tests share one real engine process per test process (`tests.engine_process.shared_engine`); the binary is built once per process under a file lock in `engine/target/`
