@@ -11,7 +11,7 @@ from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.test import Client, SimpleTestCase, TestCase, override_settings
 
-from tests.engine_process import FIXTURE_PATH, EngineProcess, build_engine
+from tests.engine_process import FIXTURE_PATH, shared_engine
 from tests.test_cards import FG_HITTER_ROW, FG_PITCHER_ROW, processed
 from ulmg import cards, engine_client, models, utils
 from ulmg.management.commands import live_download_fg_splits
@@ -181,8 +181,7 @@ class PlateAppearanceRatesEngineTestCase(SimpleTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.engine = EngineProcess(build_engine()).start()
-        cls.addClassCleanup(cls.engine.stop)
+        cls.engine = shared_engine()
         overridden = override_settings(ENGINE_URL=cls.engine.url)
         overridden.enable()
         cls.addClassCleanup(overridden.disable)

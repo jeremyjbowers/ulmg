@@ -1,5 +1,6 @@
 # ABOUTME: Test helper that builds the real engine binary with cargo and runs it on a free local port.
-# ABOUTME: Fails loudly, never skips, when cargo is missing or the engine does not come up.
+# ABOUTME: Builds once per process under a file lock, shares one engine per test process, and fails loudly when cargo is missing.
+import atexit
 import os
 import shutil
 import socket
@@ -9,6 +10,7 @@ import time
 from pathlib import Path
 
 import requests
+from filelock import FileLock
 
 ENGINE_DIR = Path(__file__).resolve().parent.parent / "engine"
 FIXTURE_PATH = ENGINE_DIR / "fixtures" / "game.json"
@@ -31,21 +33,45 @@ def find_cargo(path=None):
     return cargo
 
 
+def target_dir():
+    """Cargo's target directory for the engine crate."""
+    target = Path(os.environ.get("CARGO_TARGET_DIR", ENGINE_DIR / "target"))
+    if not target.is_absolute():
+        target = ENGINE_DIR / target
+    return target
+
+
+def build_lock_path():
+    """The file lock parallel test workers take before building, so only one runs cargo at a time."""
+    return target_dir() / "ulmg-test-build.lock"
+
+
+_built_binary = None
+
+
 def build_engine():
-    """Build the serve binary and return its path."""
+    """
+    Build the serve binary and return its path. Each process builds once;
+    parallel workers take turns under a file lock in the target directory,
+    so the first compiles and the rest find it up to date.
+    """
+    global _built_binary
     cargo = find_cargo()
-    built = subprocess.run(
-        [cargo, "build", "--quiet", "--bin", "serve"],
-        cwd=ENGINE_DIR,
-        capture_output=True,
-        text=True,
-    )
+    if _built_binary is not None and _built_binary.exists():
+        return _built_binary
+    lock_path = build_lock_path()
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    with FileLock(str(lock_path)):
+        built = subprocess.run(
+            [cargo, "build", "--quiet", "--bin", "serve"],
+            cwd=ENGINE_DIR,
+            capture_output=True,
+            text=True,
+        )
     if built.returncode != 0:
         raise RuntimeError(f"cargo build failed in {ENGINE_DIR}:\n{built.stderr}")
-    target_dir = Path(os.environ.get("CARGO_TARGET_DIR", ENGINE_DIR / "target"))
-    if not target_dir.is_absolute():
-        target_dir = ENGINE_DIR / target_dir
-    return target_dir / "debug" / "serve"
+    _built_binary = target_dir() / "debug" / "serve"
+    return _built_binary
 
 
 def free_port():
@@ -102,3 +128,23 @@ class EngineProcess:
             return ""
         self.output.seek(0)
         return self.output.read()
+
+
+# (process id, EngineProcess) for the engine this process started.
+_shared_engine = (None, None)
+
+
+def shared_engine():
+    """
+    The test process's one running engine, started on first use and stopped
+    when the process exits. The engine is stateless, so every test class in
+    a process (each parallel worker is its own process) can share it.
+    """
+    global _shared_engine
+    owner, engine = _shared_engine
+    if owner == os.getpid() and engine.process.poll() is None:
+        return engine
+    engine = EngineProcess(build_engine()).start()
+    atexit.register(engine.stop)
+    _shared_engine = (os.getpid(), engine)
+    return engine
