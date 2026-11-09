@@ -80,6 +80,9 @@ DATABASES = {
     }
 }
 
+# Turns autovacuum off in the test database; see tests/runner.py.
+TEST_RUNNER = "tests.runner.ProjectTestRunner"
+
 AUTH_PASSWORD_VALIDATORS = [
     {
         "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",

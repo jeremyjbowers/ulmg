@@ -8,10 +8,11 @@ from tests.plan_fixtures import SEASON, Roster, create_season
 
 @override_settings(CURRENT_SEASON=SEASON, TEAM_SEASON_HALF="1h")
 class ResetKeepsPlanDesignationsTestCase(TestCase):
-    def setUp(self):
+    @classmethod
+    def setUpTestData(cls):
         create_season()
-        self.roster = Roster(models.Team.objects.get(abbreviation="ATL"))
-        self.roster.file()
+        cls.roster = Roster(models.Team.objects.get(abbreviation="ATL"))
+        cls.roster.file()
 
     def test_a_kept_plan_reapplies_its_designations(self):
         self.assertTrue(usage.counter_for(self.roster.swingman, SEASON).confined_to_relief)

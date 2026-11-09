@@ -1,7 +1,13 @@
 # ABOUTME: Tests the engine client against a real engine process that the tests build and start.
 # ABOUTME: Covers start, steps, calls, pitching changes, substitutes, runner ratings, batted balls, replay, matchup, a down engine.
 import json
+import subprocess
+import sys
+import time
+from pathlib import Path
 
+import requests
+from filelock import FileLock
 from django.test import SimpleTestCase, override_settings
 
 from tests.engine_process import (
@@ -9,7 +15,10 @@ from tests.engine_process import (
     EngineProcess,
     EngineToolMissing,
     build_engine,
+    build_lock_path,
     find_cargo,
+    shared_engine,
+    target_dir,
 )
 from tests.test_cards import (
     FG_HITTER_ROW,
@@ -33,13 +42,64 @@ class CargoRequirementTestCase(SimpleTestCase):
         self.assertIn("cargo is not installed", str(caught.exception))
 
 
+class EngineBuildTestCase(SimpleTestCase):
+    def test_a_build_waits_while_another_process_holds_the_build_lock(self):
+        binary = build_engine()
+        self.assertEqual(build_lock_path().parent, target_dir())
+        root = Path(__file__).resolve().parents[1]
+        script = "from tests.engine_process import build_engine; print(build_engine())"
+        held_for = 2.0
+        with FileLock(str(build_lock_path())):
+            started = time.monotonic()
+            worker = subprocess.Popen(
+                [sys.executable, "-c", script], cwd=root, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+            )
+            time.sleep(held_for)
+            self.assertIsNone(worker.poll(), "the build did not wait for the lock")
+        stdout, stderr = worker.communicate(timeout=600)
+        self.assertEqual(worker.returncode, 0, stderr)
+        self.assertGreaterEqual(time.monotonic() - started, held_for)
+        self.assertEqual(stdout.strip(), str(binary))
+
+    def test_a_process_builds_once_and_returns_the_same_binary(self):
+        self.assertEqual(build_engine(), build_engine())
+
+    def test_two_processes_building_at_the_same_time_both_get_the_binary(self):
+        root = Path(__file__).resolve().parents[1]
+        script = "from tests.engine_process import build_engine; print(build_engine())"
+        workers = [
+            subprocess.Popen(
+                [sys.executable, "-c", script], cwd=root, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+            )
+            for _ in range(2)
+        ]
+        results = [worker.communicate(timeout=600) for worker in workers]
+        for worker, (_, stderr) in zip(workers, results):
+            self.assertEqual(worker.returncode, 0, stderr)
+        paths = {stdout.strip() for stdout, _ in results}
+        self.assertEqual(paths, {str(build_engine())})
+
+
+class SharedEngineTestCase(SimpleTestCase):
+    def test_one_engine_is_shared_by_every_caller_in_a_process(self):
+        first = shared_engine()
+        self.assertIs(shared_engine(), first)
+        self.assertEqual(requests.get(f"{first.url}/health", timeout=5).status_code, 200)
+
+    def test_a_shared_engine_that_has_exited_is_started_again(self):
+        stopped = shared_engine()
+        stopped.stop()
+        restarted = shared_engine()
+        self.assertIsNot(restarted, stopped)
+        self.assertEqual(requests.get(f"{restarted.url}/health", timeout=5).status_code, 200)
+
+
 class EngineClientTestCase(SimpleTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
         cls.binary = build_engine()
-        cls.engine = EngineProcess(cls.binary).start()
-        cls.addClassCleanup(cls.engine.stop)
+        cls.engine = shared_engine()
         overridden = override_settings(ENGINE_URL=cls.engine.url)
         overridden.enable()
         cls.addClassCleanup(overridden.disable)

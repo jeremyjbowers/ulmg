@@ -7,7 +7,7 @@ from django.contrib.auth.models import Group, User
 from django.test import override_settings
 
 from tests import plan_fixtures
-from tests.engine_process import EngineProcess, build_engine
+from tests.engine_process import shared_engine
 from ulmg import models, schedule, sim_game, usage, utils
 
 SEASON = plan_fixtures.SEASON
@@ -140,13 +140,12 @@ def events(log, kind=None):
 
 
 class EngineMixin:
-    """Starts the real engine binary for a test class and points ENGINE_URL at it."""
+    """Points ENGINE_URL at the test process's shared real engine for a test class."""
 
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.engine = EngineProcess(build_engine()).start()
-        cls.addClassCleanup(cls.engine.stop)
+        cls.engine = shared_engine()
         overridden = override_settings(ENGINE_URL=cls.engine.url)
         overridden.enable()
         cls.addClassCleanup(overridden.disable)

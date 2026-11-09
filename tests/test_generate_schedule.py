@@ -124,8 +124,9 @@ class GenerateScheduleCommandTestCase(TestCase):
 
 
 class NextRoadGameTestCase(TestCase):
-    def setUp(self):
-        self.teams = create_league_teams()
+    @classmethod
+    def setUpTestData(cls):
+        cls.teams = create_league_teams()
         run("--season", "2027", "--seed", "9")
 
     def test_next_unplayed_road_game_in_day_order(self):

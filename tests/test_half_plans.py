@@ -2,7 +2,9 @@
 # ABOUTME: Uses a real generated schedule, real rosters and cards, and the usage ledger in the test database.
 
 from django.contrib.auth.models import User
+from django.db import connection
 from django.test import TestCase, override_settings
+from django.test.utils import CaptureQueriesContext
 
 from ulmg import models, plans, schedule, usage
 from tests.plan_fixtures import (
@@ -429,6 +431,18 @@ class StarterHookTestCase(PlanTestCase):
         game = game_on(self.atl, 1)
         other = opponent_on(self.atl, 1)
         self.assertEqual(side(game, other)["starter_hook"], models.HalfPlan.NORMAL_HOOK)
+
+
+class PlanSaveQueryCountTestCase(PlanTestCase):
+    # Auto-fill shares one read of the usage ledger across the half's days instead of reading
+    # each candidate's counter and starts again for every day: 437 queries to file this plan before, 195 after.
+    SAVE_QUERY_LIMIT = 210
+
+    def test_filing_a_plan_stays_within_its_query_budget(self):
+        with CaptureQueriesContext(connection) as queries:
+            plan = self.roster.file()
+        self.assertEqual(sorted(plans.starters(plan)), list(range(1, 82)))
+        self.assertLessEqual(len(queries), self.SAVE_QUERY_LIMIT, msg="plan save queries")
 
 
 class FillPlanTestCase(PlanTestCase):

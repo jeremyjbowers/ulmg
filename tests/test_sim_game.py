@@ -1,7 +1,9 @@
 # ABOUTME: Tests the sim game against the real engine: opening, stepping, the log, replay, usage, the computer manager and the final.
 # ABOUTME: Plays real games on a generated schedule with filed half plans; seeds come from a counter so every game is repeatable.
 
+from django.db import connection
 from django.test import TestCase
+from django.test.utils import CaptureQueriesContext
 
 from tests import game_fixtures as gf
 from ulmg import box_score, models, plans, sim_game, usage
@@ -403,6 +405,24 @@ class PlayingTestCase(SimGameTestCase):
         with self.assertRaises(sim_game.GameRefused):
             sim_game.change_pitcher(log, self.manager, AWAY, self.road.relievers[0], play.sequence - 1, seeds=self.next_seed)
         self.assertEqual(self.play(log).sequence, play.sequence)
+
+
+class QueryCountTestCase(SimGameTestCase):
+    # Each action reads the ledger, the rosters' players and their cards once instead of once per
+    # check: a plate appearance made 55-64 queries before, 44-49 after.
+    STEP_QUERY_LIMIT = 50
+
+    def test_a_plate_appearance_stays_within_its_query_budget(self):
+        log = self.step(self.open())
+        counts = []
+        for _ in range(12):
+            play = self.play(log)
+            with CaptureQueriesContext(connection) as queries:
+                sim_game.step(log, self.manager, play.sequence, seeds=self.next_seed)
+            counts.append(len(queries))
+            log = gf.refresh(log)
+        self.assertEqual(len(log.state["results"]), 13)
+        self.assertLessEqual(max(counts), self.STEP_QUERY_LIMIT, msg=f"queries per step: {counts}")
 
 
 class DecisionsTestCase(SimGameTestCase):
