@@ -1,0 +1,87 @@
+{# ABOUTME: A team's game page: the four stretches of the season, the home roster, and the away roster. #}
+{# ABOUTME: Call-ups and send-downs are here, and they change the away roster for the current half only. #}
+{% extends "base.html" %}
+
+{% block content %}
+<a id="top"></a>
+{% include 'includes/team_topper.html' %}
+{% include 'includes/team_tabs.html' with team_tab="game" %}
+{% include 'includes/game_tabs.html' with game_section="game" %}
+
+<div class="mb-6 text-sm">
+    <h2 class="text-lg font-bold mb-2">Game</h2>
+    <p class="mb-3">A season has four stretches of games: the first half at home, the first half on the road, and the same again after the break. Between the halves there is a draft and a trading period, and no games. That is when rosters are set again. A player taken in the midseason Open draft has to be on the roster for the whole second half.</p>
+    <ul id="play-periods" class="mb-4">
+        {% for period in periods %}
+        <li class="play-period" data-half="{{ period.half }}" data-side="{{ period.side }}">{{ period.label }}: {{ period.status }}</li>
+        {% endfor %}
+    </ul>
+
+    {% if not half_started %}
+    <p class="half-not-started border border-gray-300 bg-gray-50 px-3 py-2 mb-3">This half has not started. Set the roster on the <a href="/teams/{{ team.abbreviation|lower }}/" class="underline">Roster</a> page, then file the <a href="/teams/{{ team.abbreviation|lower }}/plan/{% if move_half == 2 %}2{% else %}1{% endif %}/" class="underline">lineups</a>. Until the half starts, home and away are that same roster.</p>
+    {% if move_half == 2 %}
+    <p class="trade-break-note">No games are played between the halves. The second-half roster is set on the Roster page, including anyone taken in the midseason Open draft. He stays rostered for the whole second half.</p>
+    {% endif %}
+    {% else %}
+    <p class="mb-4">The home roster is the roster this half opened with, and the lineups filed from it. The other managers play your home games, and you cannot change who is on that roster. A call-up or a send-down changes the away roster only, which you play yourself. Usage counts in every game, home and away, so the computer will not use a player who is out of plate appearances or innings, and the home roster stays as it opened.</p>
+    {% endif %}
+</div>
+
+{% if half_started %}
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 text-sm">
+    <div id="home-roster">
+        <h3 class="font-bold border-b border-gray-300 mb-2">Home roster</h3>
+        <p class="text-xs text-gray-600 mb-2">Played by the other managers from the lineups you filed.</p>
+        <ul>
+            {% for p in home_roster %}
+            <li class="home-roster-player py-0.5"><a href="/players/{{ p.id }}/" class="underline">{{ p.name }}</a> <span class="text-gray-600">{{ p.position }}</span></li>
+            {% empty %}
+            <li>No one was on the 30-man when this half opened.</li>
+            {% endfor %}
+        </ul>
+    </div>
+    <div id="away-roster">
+        <h3 class="font-bold border-b border-gray-300 mb-2">Away roster</h3>
+        <p class="text-xs text-gray-600 mb-2">The roster you play. A move changes this list only.</p>
+        <ul>
+            {% for p in away_roster %}
+            <li class="away-roster-player py-0.5 flex flex-wrap items-center gap-2">
+                <a href="/players/{{ p.id }}/" class="underline">{{ p.name }}</a>
+                <span class="text-gray-600">{{ p.position }}</span>
+                {% if p.is_ulmg_2h_draft %}
+                <span class="2h-draft-locked-mlb text-xs px-1.5 py-0.5 border bg-black border-black text-white rounded" title="Midseason Open pick: must stay on the roster for the whole second half">MLB</span>
+                {% elif can_move and moves_left %}
+                <a class="paired-move text-xs px-1.5 py-0.5 border bg-black border-black text-white rounded whitespace-nowrap" href="/teams/{{ team.abbreviation|lower }}/moves/new/?down={{ p.id }}">Send down</a>
+                {% endif %}
+            </li>
+            {% empty %}
+            <li>No one is on the away roster.</li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+
+<div id="call-up-pool" class="mb-6 text-sm">
+    <h3 class="font-bold border-b border-gray-300 mb-2">Call up from AAA</h3>
+    <ul>
+        {% for p in call_up_pool %}
+        <li class="call-up-player py-0.5 flex flex-wrap items-center gap-2">
+            <a href="/players/{{ p.id }}/" class="underline">{{ p.name }}</a>
+            <span class="text-gray-600">{{ p.position }}</span>
+            {% if can_move and moves_left %}
+            <a class="paired-move text-xs px-1.5 py-0.5 border border-blue-400 text-blue-600 hover:bg-blue-50 rounded whitespace-nowrap" href="/teams/{{ team.abbreviation|lower }}/moves/new/?up={{ p.id }}">Call up</a>
+            {% endif %}
+        </li>
+        {% empty %}
+        <li>No one is on AAA.</li>
+        {% endfor %}
+    </ul>
+</div>
+
+{% if not moves_left %}
+<p id="no-moves-left" class="mb-4 border border-gray-300 bg-gray-50 px-3 py-2 text-sm">No moves left this half ({{ moves_per_half }} of {{ moves_per_half }} used)</p>
+{% endif %}
+
+{% include "includes/roster_moves.html" %}
+{% endif %}
+{% endblock %}

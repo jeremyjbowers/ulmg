@@ -42,19 +42,14 @@
         {% endif %}
         {% endif %}
         
-        {% if paired_moves %}
-        <!-- Paired moves once the half has started: each starts a one-up, one-down move -->
+        {% if half_started %}
+        <!-- The half has started: this page shows the roster it opened with. Moves are on the Game page. -->
         {% if p.is_ulmg_2h_draft %}
             <span class="2h-draft-locked-mlb text-xs px-1.5 py-0.5 border bg-black border-black text-white rounded"
                   title="Midseason Open pick: must stay on MLB roster or be released">MLB</span>
-        {% elif moves_left %}
-            {% if p.is_ulmg_mlb_roster %}
-                <a class="paired-move text-xs px-1.5 py-0.5 border bg-black border-black text-white rounded whitespace-nowrap"
-                   href="/teams/{{ team.abbreviation|lower }}/moves/new/?down={{ p.id }}">Send down</a>
-            {% elif p.is_ulmg_aaa_roster %}
-                <a class="paired-move text-xs px-1.5 py-0.5 border border-blue-400 text-blue-600 hover:bg-blue-50 rounded whitespace-nowrap"
-                   href="/teams/{{ team.abbreviation|lower }}/moves/new/?up={{ p.id }}">Call up</a>
-            {% endif %}
+        {% endif %}
+        {% if p.id in home_roster_ids %}
+            <span class="opening-roster-player text-xs px-1.5 py-0.5 border border-gray-400 text-gray-700 rounded">Home</span>
         {% endif %}
         {% if p.is_ulmg_aaa_roster and not p.is_ulmg_reserve %}
             <!-- Taking an AAA player off the AAA roster leaves the 30-man as it is, so it stays a single action -->

@@ -1,10 +1,8 @@
-{# ABOUTME: The half plan pages' tab line: back to the team's roster and schedule, and each half's plan. #}
+{# ABOUTME: The lineup pages' tabs: the team tabs, the game pages, and each half's plan. #}
 {# ABOUTME: Expects `team`, `half` and `plan_season`. #}
-<div class="border-b border-gray-300 mb-4">
-    <div class="flex flex-wrap gap-4 pb-2 text-sm">
-        <a href="/teams/{{ team.abbreviation|lower }}/" class="underline">Roster</a>
-        <a href="/teams/{{ team.abbreviation|lower }}/schedule/?season={{ plan_season }}" class="underline">Schedule</a>
-        {% if half == 1 %}<span class="font-bold">First-half plan</span>{% else %}<a href="/teams/{{ team.abbreviation|lower }}/plan/1/?season={{ plan_season }}" class="underline">First-half plan</a>{% endif %}
-        {% if half == 2 %}<span class="font-bold">Second-half plan</span>{% else %}<a href="/teams/{{ team.abbreviation|lower }}/plan/2/?season={{ plan_season }}" class="underline">Second-half plan</a>{% endif %}
-    </div>
+{% include "includes/team_tabs.html" with team_tab="game" %}
+{% include "includes/game_tabs.html" with game_section="lineups" %}
+<div class="flex flex-wrap gap-4 pb-2 mb-4 text-sm">
+    {% if half == 1 %}<span class="font-bold">First-half plan</span>{% else %}<a href="/teams/{{ team.abbreviation|lower }}/plan/1/?season={{ plan_season }}" class="underline">First-half plan</a>{% endif %}
+    {% if half == 2 %}<span class="font-bold">Second-half plan</span>{% else %}<a href="/teams/{{ team.abbreviation|lower }}/plan/2/?season={{ plan_season }}" class="underline">Second-half plan</a>{% endif %}
 </div>

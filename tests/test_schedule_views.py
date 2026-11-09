@@ -95,12 +95,17 @@ class ScheduleViewsTestCase(TestCase):
         other = self.client.get("/teams/pit/schedule/?season=2027").content.decode()
         self.assertNotIn("You play", other)
 
-    def test_team_pages_link_to_the_schedule(self):
+    def test_team_pages_link_to_the_game_page(self):
         self.client.force_login(User.objects.create_user(username="reader"))
         roster = self.client.get("/teams/atl/").content.decode()
-        self.assertIn('href="/teams/atl/schedule/"', roster)
+        self.assertIn('href="/teams/atl/game/"', roster)
+        self.assertLess(roster.index("Roster"), roster.index(">Game</"))
+        self.assertLess(roster.index(">Game</"), roster.index("Trades & picks"))
+        self.assertNotIn('href="/teams/atl/schedule/"', roster)
         other = self.client.get("/teams/atl/other/").content.decode()
-        self.assertIn('href="/teams/atl/schedule/"', other)
+        self.assertIn('href="/teams/atl/game/"', other)
+        game = self.client.get("/teams/atl/game/").content.decode()
+        self.assertIn('href="/teams/atl/schedule/"', game)
 
     def test_navigation_links_to_the_league_schedule(self):
         self.client.force_login(User.objects.create_user(username="reader"))

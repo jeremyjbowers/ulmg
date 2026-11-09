@@ -219,19 +219,13 @@ def team_detail(request, abbreviation):
     context["record_season"] = settings.CURRENT_SEASON
     context["ulmg_record"] = season_record.team_record(team, settings.CURRENT_SEASON)
 
-    # Live: roster moves and stays change during games.
+    # Once the half has started, this page shows the roster it opened with.
+    # Call-ups and send-downs live on the game page and change the away roster only.
     move_season, move_half = settings.CURRENT_SEASON, plans.current_half()
-    context["move_half"] = move_half
-    context["moves_per_half"] = roster_moves.MOVES_PER_HALF
-    context["moves_left"] = roster_moves.moves_left(team, move_season, move_half)
-    context["active_stays"] = roster_moves.active_stays(team, move_season)
-    context["move_log"] = roster_moves.move_log(team, move_season)
-    context["can_move"] = plans.can_edit(request.user, team)
-    # Once the half has started, the roster buttons become paired Send down / Call up moves.
-    context["paired_moves"] = context["can_move"] and roster_moves.half_has_started(move_season, move_half)
-    if context["can_move"]:
-        context["call_up_choices"] = models.Player.objects.filter(team=team, is_ulmg_mlb_roster=False).order_by("name")
-        context["send_down_choices"] = models.Player.objects.filter(team=team, is_ulmg_mlb_roster=True).order_by("name")
+    context["half_started"] = roster_moves.half_has_started(move_season, move_half)
+    context["home_roster_ids"] = (
+        roster_moves.HalfRosters(team, move_season, move_half).home if context["half_started"] else set()
+    )
     return render(request, "team.html", context)
 
 

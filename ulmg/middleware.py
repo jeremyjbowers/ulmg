@@ -65,6 +65,7 @@ class LoginRequiredMiddleware:
         public_urls = [
             'league_schedule',
             'team_schedule',
+            'team_game',
             'team_plan',
             'game_box_score',
             'league_standings',
