@@ -1,9 +1,9 @@
 CHI
-ADK
+DEL
 DET
 CAR
 KCB
-AKS
+DCM
 NYH
 ABQ
 CLE
@@ -11,6 +11,6 @@ CIN
 PIT|+
 LOU|-
 LNG
-WCH|+
+HCH|+
 PEN|-
 ATL

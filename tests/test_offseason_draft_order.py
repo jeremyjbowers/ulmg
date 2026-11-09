@@ -11,17 +11,18 @@ AA_PATH = ROOT / "data" / "ulmg" / "2027-offseason-aa-order.txt"
 
 # Inverse of the final 2026 standings (worst picks first). All 16 teams
 # played 162 games, so wins are a complete ranking except for two exact ties:
-# Louisville and Pittsburgh at 90-72, Peninsula and Windy City at 97-65.
+# Louisville and Pittsburgh at 90-72, Peninsula and Hub City at 97-65.
 # The constitution coin-flips who leads round 1. With no flip on record, the
-# alphabetically later team leads odd rounds. Both drafts use that same order,
+# alphabetically later team leads odd rounds. Hub City keeps the odd-round
+# lead assigned when the club was Windy City. Both drafts use that same order,
 # matching the identical Open and AA files from 2023 and 2024.
 ORDER = [
     "CHI",
-    "ADK",
+    "DEL",
     "DET",
     "CAR",
     "KCB",
-    "AKS",
+    "DCM",
     "NYH",
     "ABQ",
     "CLE",
@@ -29,7 +30,7 @@ ORDER = [
     "PIT|+",
     "LOU|-",
     "LNG",
-    "WCH|+",
+    "HCH|+",
     "PEN|-",
     "ATL",
 ]
