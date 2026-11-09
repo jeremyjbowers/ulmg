@@ -1,6 +1,8 @@
 # ABOUTME: Non-injury roster moves: a paired call-up and send-down, 10 per half, with a 15-road-game stay for the call-up.
 # ABOUTME: Also each team's road and home rosters for a half, the half-start roster snapshot, and the sim reset's restore step.
 
+from collections import namedtuple
+
 from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
@@ -328,24 +330,44 @@ def make_move(team, player_up, player_down, *, season, half, user=None):
 
 class HalfRosters:
     """
-    A team's rosters for one half. Road games use the 30-man as it stands.
-    Home games use the 30-man the half's moves left alone: a player whose
-    first move this half was a call-up is road-only, and one whose first
-    move was a send-down stays eligible at home while he is on the team.
+    A team's rosters for one half. Road games use the 30-man as it stands,
+    which is what a call-up and a send-down change. Home games use the 30-man
+    the half opened with. Until the half starts, home and road are the same
+    roster. A player has to still be on the team to be on either one.
     """
 
     def __init__(self, team, season, half):
         self.team = team
+        self.season = season
+        self.half = half
         on_team = dict(models.Player.objects.filter(team=team).values_list("id", "is_ulmg_mlb_roster"))
         self.road = {pid for pid, mlb in on_team.items() if mlb}
+        self.home = self._home_roster(on_team)
+
+    def _home_roster(self, on_team):
+        if not half_has_started(self.season, self.half):
+            return set(self.road)
+        snapshot = models.HalfRosterSnapshot.objects.filter(season=self.season, half=self.half).first()
+        if snapshot is None:
+            return self._home_from_moves(on_team)
+        opened = snapshot.players.filter(team=self.team, is_ulmg_mlb_roster=True).values_list("player_id", flat=True)
+        return set(opened) & set(on_team)
+
+    def _home_from_moves(self, on_team):
+        """
+        The opening 30-man when this half has moves and no snapshot: undo
+        each player's first move. A call-up was not on it; a send-down was.
+        """
         first_move = {}
-        moves = models.RosterMove.objects.filter(team=team, season=season, half=half).order_by("made_at", "id")
+        moves = models.RosterMove.objects.filter(team=self.team, season=self.season, half=self.half).order_by(
+            "made_at", "id"
+        )
         for player_up_id, player_down_id in moves.values_list("player_up_id", "player_down_id"):
             first_move.setdefault(player_up_id, UP)
             first_move.setdefault(player_down_id, DOWN)
         called_up = {pid for pid, kind in first_move.items() if kind == UP}
         sent_down = {pid for pid, kind in first_move.items() if kind == DOWN}
-        self.home = (self.road - called_up) | (sent_down & set(on_team))
+        return (self.road - called_up) | (sent_down & set(on_team))
 
     @property
     def all(self):
@@ -380,6 +402,41 @@ def game_roster_ids(team, game):
 
 
 # The half-start snapshot
+
+
+PlayPeriod = namedtuple("PlayPeriod", ["half", "side", "label", "status"])
+
+# The four stretches of games. Home and away of a half are played through
+# the same days; the stretch between the halves has no games.
+PERIODS = (
+    (1, "home", "First half, home"),
+    (1, "away", "First half, away"),
+    (2, "home", "Second half, home"),
+    (2, "away", "Second half, away"),
+)
+
+
+def play_periods(season):
+    """
+    The four stretches of a season, and where each one stands: setting the
+    roster, in play, complete, or still after the trade break.
+    """
+    from ulmg import plans
+
+    current = plans.current_half()
+    started = half_has_started(season, current)
+    rows = []
+    for half, side, label in PERIODS:
+        if half < current:
+            status = "complete"
+        elif half > current:
+            status = "after the trade break"
+        elif started:
+            status = "in play"
+        else:
+            status = "setting the roster"
+        rows.append(PlayPeriod(half, side, label, status))
+    return rows
 
 
 def half_has_started(season, half):

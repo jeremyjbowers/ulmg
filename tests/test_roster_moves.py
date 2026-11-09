@@ -433,6 +433,37 @@ class SnapshotTestCase(TestCase):
         self.assertEqual(self.snapshot_rows(), before)
         self.assertEqual(models.HalfRosterSnapshot.objects.filter(season=SEASON).count(), 1)
 
+    def test_the_home_roster_stays_the_one_the_half_opened_with(self):
+        sent = self.roster.relievers[1]
+        up = self.call_ups[0]
+        roster_moves.make_move(self.atl, up, sent, season=SEASON, half=1)
+        # A flag change that is not one of the half's moves leaves the home roster alone.
+        extra = self.call_ups[2]
+        extra.is_ulmg_mlb_roster = True
+        extra.is_ulmg_aaa_roster = False
+        extra.save()
+        starter = self.roster.starters[0]
+        starter.is_ulmg_mlb_roster = False
+        starter.is_ulmg_aaa_roster = True
+        starter.save()
+
+        rosters = roster_moves.HalfRosters(self.atl, SEASON, 1)
+        self.assertIn(sent.id, rosters.home)
+        self.assertNotIn(sent.id, rosters.road)
+        self.assertIn(up.id, rosters.road)
+        self.assertNotIn(up.id, rosters.home)
+        self.assertIn(starter.id, rosters.home)
+        self.assertNotIn(starter.id, rosters.road)
+        self.assertIn(extra.id, rosters.road)
+        self.assertNotIn(extra.id, rosters.home)
+
+        home = home_games(self.atl)[0]
+        road = road_games(self.atl)[0]
+        self.assertIn(starter.id, roster_moves.game_roster_ids(self.atl, home))
+        self.assertNotIn(extra.id, roster_moves.game_roster_ids(self.atl, home))
+        self.assertNotIn(starter.id, roster_moves.game_roster_ids(self.atl, road))
+        self.assertIn(extra.id, roster_moves.game_roster_ids(self.atl, road))
+
     def test_opening_the_halfs_first_game_takes_the_snapshot(self):
         before = self.current_rows()
         game = road_games(self.atl)[0]

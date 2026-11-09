@@ -8,6 +8,7 @@ from ulmg import models, roster_moves, schedule
 from tests.plan_fixtures import SEASON, Roster, create_pitcher, create_season
 
 TEAM_URL = "/teams/atl/"
+GAME_URL = "/teams/atl/game/"
 MOVE_URL = "/teams/atl/moves/"
 
 
@@ -51,13 +52,13 @@ class RosterMoveViewsTestCase(TestCase):
 
     def test_the_owner_makes_a_move_and_sees_it_on_the_team_page(self):
         response = self.post_move(self.owner)
-        self.assertRedirects(response, TEAM_URL + "#roster-moves", fetch_redirect_response=False)
+        self.assertRedirects(response, GAME_URL + "#roster-moves", fetch_redirect_response=False)
         move = models.RosterMove.objects.get()
         self.assertEqual(move.made_by, self.owner)
         self.up.refresh_from_db()
         self.assertTrue(self.up.is_ulmg_mlb_roster)
 
-        page = self.client_for(self.owner).get(TEAM_URL)
+        page = self.client_for(self.owner).get(GAME_URL)
         self.assertContains(page, "Called up ATL Call-up and sent down ATL Reliever 2.")
         self.assertContains(page, '<span id="moves-left">9</span> of 10', html=False)
         self.assertContains(page, 'class="roster-stay"', count=1)
@@ -68,8 +69,8 @@ class RosterMoveViewsTestCase(TestCase):
     def test_a_rejected_move_shows_why_and_changes_nothing(self):
         self.post_move(self.owner)
         response = self.post_move(self.owner, up=self.roster.relievers[0], down=self.up)
-        self.assertRedirects(response, TEAM_URL + "#roster-moves", fetch_redirect_response=False)
-        page = self.client_for(self.owner).get(TEAM_URL)
+        self.assertRedirects(response, GAME_URL + "#roster-moves", fetch_redirect_response=False)
+        page = self.client_for(self.owner).get(GAME_URL)
         self.assertContains(page, "already on ATL&#x27;s 30-man")
         self.assertEqual(models.RosterMove.objects.count(), 1)
 
@@ -77,7 +78,7 @@ class RosterMoveViewsTestCase(TestCase):
         self.post_move(self.owner)
         replacement = create_pitcher(self.atl, "ATL Second Call-up", roster=False)
         self.post_move(self.owner, up=replacement, down=self.up)
-        page = self.client_for(self.owner).get(TEAM_URL)
+        page = self.client_for(self.owner).get(GAME_URL)
         self.assertContains(page, "stays on the 30-man for 15 road games")
         self.assertEqual(models.RosterMove.objects.count(), 1)
 
@@ -91,8 +92,8 @@ class RosterMoveViewsTestCase(TestCase):
         self.assertEqual(response.status_code, 403)
         self.assertIn("Forbidden: /teams/atl/moves/", logs.output[0])
         self.assertFalse(models.RosterMove.objects.exists())
-        page = self.client_for(self.other).get(TEAM_URL)
-        self.assertContains(page, 'id="roster-moves"')
+        page = self.client_for(self.other).get(GAME_URL)
+        self.assertContains(page, "half-not-started")
         self.assertNotContains(page, 'name="player_up"')
 
     def test_a_logged_out_post_goes_to_login(self):
@@ -113,7 +114,7 @@ class RosterMoveViewsTestCase(TestCase):
                 season=SEASON, half=1, team=self.atl, player_up=self.up,
                 player_down=self.roster.relievers[1], stay_games=0,
             )
-        page = self.client_for(self.owner).get(TEAM_URL)
+        page = self.client_for(self.owner).get(GAME_URL)
         self.assertContains(page, '<span id="moves-left">0</span> of 10', html=False)
         self.assertContains(page, 'class="roster-move-row ', count=10)
 

@@ -40,23 +40,10 @@
     </form>
 </div>
 
-<!-- Simple tab navigation -->
-<div class="border-b border-gray-300 mb-4">
-    <div class="flex flex-wrap gap-4 pb-2 text-sm">
-        <span class="font-bold">Roster{% if num_owned %} ({{ num_owned }}){% endif %}</span>
-        <a href="/teams/{{ team.abbreviation|lower }}/other/" class="underline">Trades & picks</a>
-        <a href="/teams/{{ team.abbreviation|lower }}/schedule/" class="underline">Schedule</a>
-        <a href="/teams/{{ team.abbreviation|lower }}/results/" class="underline">Results</a>
-        <a href="/teams/{{ team.abbreviation|lower }}/plan/{% if season_half == "2h" %}2{% else %}1{% endif %}/" class="underline">Plan</a>
-        {% if own_team %}
-        <a href="/my/wishlist/draft/beta/" class="underline hidden md:inline">AA Draft</a>
-        <a href="/my/{{ draft_prep_season }}/draft/" class="underline hidden md:inline">Open Draft</a>
-        {% endif %}
-    </div>
-</div>
+{% include "includes/team_tabs.html" with team_tab="roster" %}
 
-{% if own_team and roster_tab and paired_moves and not moves_left %}
-<p id="no-moves-left" class="mb-4 border border-gray-300 bg-gray-50 px-3 py-2 text-sm">No moves left this half ({{ moves_per_half }} of {{ moves_per_half }} used)</p>
+{% if half_started %}
+<p class="opening-roster-note mb-4 text-sm">This is the roster the half opened with. Call-ups and send-downs are on the <a href="/teams/{{ team.abbreviation|lower }}/game/" class="underline">Game</a> page, and they change the away roster only.</p>
 {% endif %}
 
 <!-- Team summary stats -->
@@ -157,8 +144,6 @@
     </table>
     </div>
 </div>
-
-{% if moves_per_half %}{% include "includes/roster_moves.html" %}{% endif %}
 
 {% if own_team and roster_tab %}
 <div id="drop-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50"

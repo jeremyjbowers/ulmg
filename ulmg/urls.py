@@ -69,6 +69,7 @@ urlpatterns = [
     path("teams/csv/", views.csv.all_csv),
     path("teams/<str:abbreviation>/csv/", views.csv.team_csv),
     path("teams/<str:abbreviation>/other/", views.site.team_other),
+    path("teams/<str:abbreviation>/game/", views.roster.team_game, name="team_game"),
     path("teams/<str:abbreviation>/schedule/", views.schedule.team_schedule, name="team_schedule"),
     path("teams/<str:abbreviation>/plan/<int:half>/", views.plan.team_plan, name="team_plan"),
     path("teams/<str:abbreviation>/plan/<int:half>/edit/", views.plan.team_plan_edit, name="team_plan_edit"),
