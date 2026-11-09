@@ -10,8 +10,10 @@ from ulmg.views.schedule import _schedule_season
 
 # Empty selects the editor offers past the players already filed.
 ROTATION_SLOTS = 6
-SETUP_SLOTS = 4
-MIDDLE_LONG_SLOTS = 8
+SETUP_L_SLOTS = 2
+SETUP_R_SLOTS = 2
+SIRP_SLOTS = 3
+MIRP_SLOTS = 4
 LINEUP_PREFIXES = {"vs_lhp": "Lineup vs LHP", "vs_rhp": "Lineup vs RHP"}
 
 
@@ -49,11 +51,13 @@ def _int_or_none(value):
 class FormState:
     """The editor's selections, from a saved plan or from a posted form."""
 
-    def __init__(self, rotation, closer, setup, middle_long, bench, lineups, starter_hook):
+    def __init__(self, rotation, closer, setup_l, setup_r, sirp, mirp, bench, lineups, starter_hook):
         self.rotation = rotation
         self.closer = closer
-        self.setup = setup
-        self.middle_long = middle_long
+        self.setup_l = setup_l
+        self.setup_r = setup_r
+        self.sirp = sirp
+        self.mirp = mirp
         self.bench = bench
         self.lineups = lineups
         self.starter_hook = starter_hook
@@ -63,8 +67,10 @@ class FormState:
         return cls(
             plan.rotation,
             plan.closer_id,
-            plan.setup,
-            plan.middle_long,
+            plan.setup_l,
+            plan.setup_r,
+            plan.sirp,
+            plan.mirp,
             plan.bench,
             {"vs_lhp": _lineup_rows(plan.lineup_vs_lhp), "vs_rhp": _lineup_rows(plan.lineup_vs_rhp)},
             plan.starter_hook,
@@ -78,8 +84,10 @@ class FormState:
         return cls(
             ids("rotation"),
             _int_or_none(post.get("closer")),
-            ids("setup"),
-            ids("middle_long"),
+            ids("setup_l"),
+            ids("setup_r"),
+            ids("sirp"),
+            ids("mirp"),
             ids("bench"),
             {prefix: _posted_lineup_rows(post, prefix) for prefix in LINEUP_PREFIXES},
             post.get("starter_hook"),
@@ -113,7 +121,7 @@ def _entries(rows, players, errors, label):
 
 def _fields(state):
     """save_plan's keyword arguments from editor selections, plus errors for unknown players."""
-    ids = set(state.rotation) | set(state.setup) | set(state.middle_long) | set(state.bench)
+    ids = set(state.rotation) | set(state.setup_l) | set(state.setup_r) | set(state.sirp) | set(state.mirp) | set(state.bench)
     ids |= {state.closer} if state.closer else set()
     for rows in state.lineups.values():
         ids |= {player_id for _, player_id, _ in rows if player_id is not None}
@@ -126,8 +134,10 @@ def _fields(state):
     fields = {
         "rotation": listed(state.rotation),
         "closer": players.get(state.closer),
-        "setup": listed(state.setup),
-        "middle_long": listed(state.middle_long),
+        "setup_l": listed(state.setup_l),
+        "setup_r": listed(state.setup_r),
+        "sirp": listed(state.sirp),
+        "mirp": listed(state.mirp),
         "bench": listed(state.bench),
         "lineup_vs_lhp": _entries(state.lineups["vs_lhp"], players, errors, "Lineup vs LHP"),
         "lineup_vs_rhp": _entries(state.lineups["vs_rhp"], players, errors, "Lineup vs RHP"),
@@ -186,8 +196,10 @@ def team_plan(request, abbreviation, half):
         context["rows"] = plans.plan_rows(plan)
         context["rotation"] = _lines(plan.rotation, season)
         context["closer"] = _lines([plan.closer_id], season)
-        context["setup"] = _lines(plan.setup, season)
-        context["middle_long"] = _lines(plan.middle_long, season)
+        context["setup_l"] = _lines(plan.setup_l, season)
+        context["setup_r"] = _lines(plan.setup_r, season)
+        context["sirp"] = _lines(plan.sirp, season)
+        context["mirp"] = _lines(plan.mirp, season)
         context["starter_hook"] = plan.get_starter_hook_display()
         context["bench"] = _lines(plan.bench, season)
         context["lineup_cards"] = [
@@ -216,8 +228,10 @@ def _editor_context(request, team, half, season, state, errors):
             "errors": errors,
             "rotation_slots": _padded(state.rotation, ROTATION_SLOTS),
             "closer_id": state.closer,
-            "setup_slots": _padded(state.setup, SETUP_SLOTS),
-            "middle_long_slots": _padded(state.middle_long, MIDDLE_LONG_SLOTS),
+            "setup_l_slots": _padded(state.setup_l, SETUP_L_SLOTS),
+            "setup_r_slots": _padded(state.setup_r, SETUP_R_SLOTS),
+            "sirp_slots": _padded(state.sirp, SIRP_SLOTS),
+            "mirp_slots": _padded(state.mirp, MIRP_SLOTS),
             "starter_hook": state.starter_hook or models.HalfPlan.NORMAL_HOOK,
             "starter_hooks": models.HalfPlan.STARTER_HOOK_CHOICES,
             "bench_slots": _padded(state.bench, len(context["hitters"])),

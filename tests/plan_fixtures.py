@@ -102,8 +102,10 @@ class Roster:
         fields = {
             "rotation": rotation if rotation is not None else self.starters,
             "closer": self.relievers[0],
-            "setup": [self.relievers[1]],
-            "middle_long": [self.swingman],
+            "setup_l": [],
+            "setup_r": [self.relievers[1]],
+            "sirp": [],
+            "mirp": [self.swingman],
             "bench": self.bench,
             "lineup_vs_lhp": lineup_vs_lhp or self.lineup(),
             "lineup_vs_rhp": lineup_vs_rhp or self.lineup(),

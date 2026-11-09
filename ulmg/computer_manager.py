@@ -5,19 +5,27 @@ from dataclasses import dataclass, field
 
 # Bullpen roles, named as the half plan's fields. OTHER is every other pitcher on the game's roster.
 CLOSER = "closer"
-SETUP = "setup"
-MIDDLE_LONG = "middle_long"
+SETUP_L = "setup_l"
+SETUP_R = "setup_r"
+SIRP = "sirp"
+MIRP = "mirp"
 OTHER = "other"
-ROLE_LABELS = {CLOSER: "closer", SETUP: "setup", MIDDLE_LONG: "middle and long", OTHER: "other arms"}
-# When the situation's group has no available arm, the next groups in this order.
-FALLBACK_ORDER = (MIDDLE_LONG, SETUP, CLOSER)
+ROLE_LABELS = {
+    CLOSER: "closer",
+    SETUP_L: "setup vs L",
+    SETUP_R: "setup vs R",
+    SIRP: "short relief",
+    MIRP: "middle relief",
+    OTHER: "other arms",
+}
 
 # The closer: the ninth inning or later, in a save situation.
 CLOSER_FIRST_INNING = 9
 # Rule 9.19(d)(1): a lead of no more than three runs, with at least an inning to pitch.
 SAVE_MAX_LEAD = 3
-# Setup: the seventh or eighth inning with a lead of this many runs or fewer, or a tie.
-SETUP_INNINGS = (7, 8)
+# A one-inning bridge in the seventh, then a setup man in the eighth, when the lead is this small or the game is tied.
+SIRP_INNING = 7
+SETUP_INNING = 8
 SETUP_MAX_LEAD = 3
 
 # The starter hook, by the half plan's setting: the share of his fatigue ceiling he may spend,
@@ -71,13 +79,13 @@ def starter(planned, rotation, problem):
     return _first_legal(order, problem)
 
 
-def bullpen_order(closer, setup, middle_long, others=()):
+def bullpen_order(closer, setup_l, setup_r, sirp, mirp, others=()):
     """
     The order a human's pitching choices are listed in: the closer, then
-    setup, then middle and long relief, then any other pitcher on the game's
-    roster.
+    setup against left-handed batters, setup against right-handed batters,
+    short relief, middle relief, then any other pitcher on the game's roster.
     """
-    return [closer, *setup, *middle_long, *others]
+    return [closer, *setup_l, *setup_r, *sirp, *mirp, *others]
 
 
 def is_save_situation(lead, runners_on, outs):
@@ -96,18 +104,43 @@ def is_save_situation(lead, runners_on, outs):
     return lead <= runners_on + 2
 
 
-def bullpen_role(inning, lead, runners_on, outs):
-    """The role the situation calls for. lead is the fielding side's, negative when it trails."""
+def bullpen_role(inning, lead, runners_on, outs, batter_bats="R"):
+    """
+    The role the situation calls for. lead is the fielding side's, negative
+    when it trails. batter_bats is the hitter due up: a left-handed batter
+    in the eighth of a close game calls for setup vs L, and a right-handed
+    or switch hitter calls for setup vs R. The seventh of a close game is
+    one inning of short relief. Anything earlier, or a game that is not
+    close, is middle relief, which can go more than one inning.
+    """
     if inning >= CLOSER_FIRST_INNING and is_save_situation(lead, runners_on, outs):
         return CLOSER
-    if inning in SETUP_INNINGS and 0 <= lead <= SETUP_MAX_LEAD:
-        return SETUP
-    return MIDDLE_LONG
+    if 0 <= lead <= SETUP_MAX_LEAD:
+        if inning == SETUP_INNING:
+            return SETUP_L if batter_bats == "L" else SETUP_R
+        if inning == SIRP_INNING:
+            return SIRP
+    return MIRP
 
 
 def group_order(role):
-    """The role's group, then the others in fallback order, then every other pitcher."""
-    return [role] + [group for group in FALLBACK_ORDER if group != role] + [OTHER]
+    """
+    The role's own group, then the next groups a manager would try, then
+    every other pitcher. A save goes to setup before a middle man. A short
+    or middle need goes to the other multi-inning and one-inning arms before
+    it spends the closer.
+    """
+    if role == SETUP_L:
+        rest = (SETUP_R, SIRP, MIRP, CLOSER)
+    elif role == SETUP_R:
+        rest = (SETUP_L, SIRP, MIRP, CLOSER)
+    elif role == SIRP:
+        rest = (MIRP, SETUP_R, SETUP_L, CLOSER)
+    elif role == CLOSER:
+        rest = (SETUP_R, SETUP_L, SIRP, MIRP)
+    else:
+        rest = (SIRP, SETUP_R, SETUP_L, CLOSER)
+    return [role, *rest, OTHER]
 
 
 def _first_in_groups(order, groups, problem):

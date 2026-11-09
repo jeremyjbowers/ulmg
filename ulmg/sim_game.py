@@ -244,6 +244,15 @@ def fielding_side(state):
     return other_side(batting_side(state))
 
 
+def _sheet_list(sheet, key, old_key=None):
+    """A bullpen list from a frozen sheet. Sheets opened before the roles split keep the old key."""
+    if key in sheet:
+        return sheet.get(key) or []
+    if old_key:
+        return sheet.get(old_key) or []
+    return []
+
+
 def current_batter_id(state):
     club = state[batting_side(state)]
     return club["lineup"][club["batter_index"]]["id"]
@@ -552,8 +561,10 @@ class Play:
         closer = self.player(sheet["closer"]) if sheet.get("closer") else None
         groups = {
             computer_manager.CLOSER: [closer] if closer is not None else [],
-            computer_manager.SETUP: self.players(sheet.get("setup", [])),
-            computer_manager.MIDDLE_LONG: self.players(sheet.get("middle_long", [])),
+            computer_manager.SETUP_L: self.players(_sheet_list(sheet, "setup_l")),
+            computer_manager.SETUP_R: self.players(_sheet_list(sheet, "setup_r", "setup")),
+            computer_manager.SIRP: self.players(_sheet_list(sheet, "sirp")),
+            computer_manager.MIRP: self.players(_sheet_list(sheet, "mirp", "middle_long")),
         }
         planned = {p.id for players in groups.values() for p in players}
         groups[computer_manager.OTHER] = sorted(
@@ -567,8 +578,13 @@ class Play:
         sheet = self.sheet_side(side)
         if sheet.get("closer") == player.id:
             return computer_manager.CLOSER
-        for group in (computer_manager.SETUP, computer_manager.MIDDLE_LONG):
-            if player.id in sheet.get(group, []):
+        for group, old in (
+            (computer_manager.SETUP_L, None),
+            (computer_manager.SETUP_R, "setup"),
+            (computer_manager.SIRP, None),
+            (computer_manager.MIRP, "middle_long"),
+        ):
+            if player.id in _sheet_list(sheet, group, old):
                 return group
         return computer_manager.OTHER
 
@@ -581,7 +597,19 @@ class Play:
             lead=state["score"][fielding] - state["score"][batting],
             runners_on=sum(1 for base in ("first", "second", "third") if state["bases"].get(base)),
             outs=state["outs"],
+            batter_bats=self._batter_bats(),
         )
+
+    def _batter_bats(self):
+        """The hitter due up's bats, from a player this play already loaded."""
+        try:
+            pid = int(current_batter_id(self.state))
+        except (TypeError, ValueError):
+            return "R"
+        player = self._players.get(pid)
+        if player is None or not player.bats:
+            return "R"
+        return player.bats
 
     def at_half_inning_start(self):
         """Whether no plate appearance has been played yet in this half inning."""
@@ -597,8 +625,10 @@ class Play:
         closer = groups[computer_manager.CLOSER]
         order = computer_manager.bullpen_order(
             closer[0] if closer else None,
-            groups[computer_manager.SETUP],
-            groups[computer_manager.MIDDLE_LONG],
+            groups[computer_manager.SETUP_L],
+            groups[computer_manager.SETUP_R],
+            groups[computer_manager.SIRP],
+            groups[computer_manager.MIRP],
             groups[computer_manager.OTHER],
         )
         return [Option(p, self.pitcher_problem(side, p)) for p in order if p is not None]
@@ -1042,7 +1072,14 @@ def _sheet_starter_and_lineup(play, side):
 def _filed_card_problems(play, side):
     sheet = play.sheet_side(side)
     problems = []
-    pitchers = play.players([sheet.get("starter"), sheet.get("closer"), *sheet.get("setup", []), *sheet.get("middle_long", [])])
+    pitchers = play.players([
+        sheet.get("starter"),
+        sheet.get("closer"),
+        *_sheet_list(sheet, "setup_l"),
+        *_sheet_list(sheet, "setup_r", "setup"),
+        *_sheet_list(sheet, "sirp"),
+        *_sheet_list(sheet, "mirp", "middle_long"),
+    ])
     hitters = play.players([e["player"] for e in sheet.get("lineup") or []] + list(sheet.get("bench", [])))
     for p in pitchers:
         problem = pitcher_card_problem(p, play.card(p))

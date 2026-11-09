@@ -30,10 +30,10 @@ class ComputerManagerTestCase(TestCase):
         choice = computer_manager.starter(spot, [one, two], lambda p: "no" if p == spot else None)
         self.assertEqual(choice.player, one)
 
-    def test_the_bullpen_lists_closer_setup_middle_then_the_rest(self):
-        closer, setup, middle, other = players("Closer", "Setup", "Middle", "Other")
-        order = computer_manager.bullpen_order(closer, [setup], [middle], [other])
-        self.assertEqual(order, [closer, setup, middle, other])
+    def test_the_bullpen_lists_closer_setup_short_middle_then_the_rest(self):
+        closer, left, right, short, middle, other = players("Closer", "Left", "Right", "Short", "Middle", "Other")
+        order = computer_manager.bullpen_order(closer, [left], [right], [short], [middle], [other])
+        self.assertEqual(order, [closer, left, right, short, middle, other])
 
     def test_no_legal_player_returns_none_with_every_reason(self):
         a, b = players("A", "B")
@@ -59,49 +59,63 @@ class BullpenRoleTestCase(TestCase):
         role = computer_manager.bullpen_role
         self.assertEqual(role(inning=9, lead=3, runners_on=0, outs=0), computer_manager.CLOSER)
         self.assertEqual(role(inning=11, lead=1, runners_on=1, outs=1), computer_manager.CLOSER)
-        self.assertEqual(role(inning=8, lead=1, runners_on=0, outs=0), computer_manager.SETUP)
-        self.assertEqual(role(inning=9, lead=0, runners_on=0, outs=0), computer_manager.MIDDLE_LONG)
-        self.assertEqual(role(inning=9, lead=5, runners_on=0, outs=0), computer_manager.MIDDLE_LONG)
+        self.assertEqual(role(inning=8, lead=1, runners_on=0, outs=0), computer_manager.SETUP_R)
+        self.assertEqual(role(inning=8, lead=1, runners_on=0, outs=0, batter_bats="L"), computer_manager.SETUP_L)
+        self.assertEqual(role(inning=8, lead=1, runners_on=0, outs=0, batter_bats="S"), computer_manager.SETUP_R)
+        self.assertEqual(role(inning=7, lead=1, runners_on=0, outs=0), computer_manager.SIRP)
+        self.assertEqual(role(inning=9, lead=0, runners_on=0, outs=0), computer_manager.MIRP)
+        self.assertEqual(role(inning=9, lead=5, runners_on=0, outs=0), computer_manager.MIRP)
 
-    def test_setup_in_the_seventh_and_eighth_with_a_lead_of_three_or_fewer_or_a_tie(self):
+    def test_short_relief_in_the_seventh_and_setup_in_the_eighth_when_the_game_is_close(self):
         role = computer_manager.bullpen_role
+        for lead in (0, 1, 3):
+            self.assertEqual(role(inning=7, lead=lead, runners_on=0, outs=0), computer_manager.SIRP)
+            self.assertEqual(role(inning=8, lead=lead, runners_on=0, outs=0, batter_bats="R"), computer_manager.SETUP_R)
+            self.assertEqual(role(inning=8, lead=lead, runners_on=0, outs=0, batter_bats="L"), computer_manager.SETUP_L)
         for inning in (7, 8):
-            for lead in (0, 1, 3):
-                self.assertEqual(role(inning=inning, lead=lead, runners_on=0, outs=0), computer_manager.SETUP)
-            self.assertEqual(role(inning=inning, lead=4, runners_on=0, outs=0), computer_manager.MIDDLE_LONG)
-            self.assertEqual(role(inning=inning, lead=-1, runners_on=0, outs=0), computer_manager.MIDDLE_LONG)
-        self.assertEqual(role(inning=6, lead=1, runners_on=0, outs=0), computer_manager.MIDDLE_LONG)
+            self.assertEqual(role(inning=inning, lead=4, runners_on=0, outs=0), computer_manager.MIRP)
+            self.assertEqual(role(inning=inning, lead=-1, runners_on=0, outs=0), computer_manager.MIRP)
+        self.assertEqual(role(inning=6, lead=1, runners_on=0, outs=0), computer_manager.MIRP)
 
-    def test_middle_and_long_otherwise(self):
-        self.assertEqual(computer_manager.bullpen_role(inning=2, lead=-6, runners_on=2, outs=0), computer_manager.MIDDLE_LONG)
+    def test_middle_relief_otherwise(self):
+        self.assertEqual(computer_manager.bullpen_role(inning=2, lead=-6, runners_on=2, outs=0), computer_manager.MIRP)
 
-    def test_an_empty_group_falls_to_middle_and_long_then_setup_then_closer_then_the_rest(self):
+    def test_an_empty_group_falls_through_the_next_roles(self):
         cm = computer_manager
-        self.assertEqual(cm.group_order(cm.CLOSER), [cm.CLOSER, cm.MIDDLE_LONG, cm.SETUP, cm.OTHER])
-        self.assertEqual(cm.group_order(cm.SETUP), [cm.SETUP, cm.MIDDLE_LONG, cm.CLOSER, cm.OTHER])
-        self.assertEqual(cm.group_order(cm.MIDDLE_LONG), [cm.MIDDLE_LONG, cm.SETUP, cm.CLOSER, cm.OTHER])
+        self.assertEqual(cm.group_order(cm.CLOSER), [cm.CLOSER, cm.SETUP_R, cm.SETUP_L, cm.SIRP, cm.MIRP, cm.OTHER])
+        self.assertEqual(cm.group_order(cm.SETUP_L), [cm.SETUP_L, cm.SETUP_R, cm.SIRP, cm.MIRP, cm.CLOSER, cm.OTHER])
+        self.assertEqual(cm.group_order(cm.SETUP_R), [cm.SETUP_R, cm.SETUP_L, cm.SIRP, cm.MIRP, cm.CLOSER, cm.OTHER])
+        self.assertEqual(cm.group_order(cm.SIRP), [cm.SIRP, cm.MIRP, cm.SETUP_R, cm.SETUP_L, cm.CLOSER, cm.OTHER])
+        self.assertEqual(cm.group_order(cm.MIRP), [cm.MIRP, cm.SIRP, cm.SETUP_R, cm.SETUP_L, cm.CLOSER, cm.OTHER])
 
     def test_the_reliever_is_the_first_available_arm_of_the_first_group_with_one(self):
         cm = computer_manager
         closer, first, second, middle, other = players("Closer", "First", "Second", "Middle", "Other")
-        groups = {cm.CLOSER: [closer], cm.SETUP: [first, second], cm.MIDDLE_LONG: [middle], cm.OTHER: [other]}
-        choice = cm.reliever(cm.SETUP, groups, lambda p: None)
-        self.assertEqual((choice.player, choice.group), (first, cm.SETUP))
-        choice = cm.reliever(cm.SETUP, groups, lambda p: "tired" if p == first else None)
-        self.assertEqual((choice.player, choice.group, choice.skipped), (second, cm.SETUP, [(first, "tired")]))
+        groups = {
+            cm.CLOSER: [closer],
+            cm.SETUP_L: [],
+            cm.SETUP_R: [first, second],
+            cm.SIRP: [],
+            cm.MIRP: [middle],
+            cm.OTHER: [other],
+        }
+        choice = cm.reliever(cm.SETUP_R, groups, lambda p: None)
+        self.assertEqual((choice.player, choice.group), (first, cm.SETUP_R))
+        choice = cm.reliever(cm.SETUP_R, groups, lambda p: "tired" if p == first else None)
+        self.assertEqual((choice.player, choice.group, choice.skipped), (second, cm.SETUP_R, [(first, "tired")]))
         choice = cm.reliever(cm.CLOSER, groups, lambda p: "capped" if p == closer else None)
-        self.assertEqual((choice.player, choice.group), (middle, cm.MIDDLE_LONG))
-        choice = cm.reliever(cm.MIDDLE_LONG, groups, lambda p: None if p == other else "capped")
+        self.assertEqual((choice.player, choice.group), (first, cm.SETUP_R))
+        choice = cm.reliever(cm.MIRP, groups, lambda p: None if p == other else "capped")
         self.assertEqual((choice.player, choice.group), (other, cm.OTHER))
         self.assertEqual([p for p, _ in choice.skipped], [middle, first, second, closer])
-        self.assertIsNone(cm.reliever(cm.MIDDLE_LONG, groups, lambda p: "capped").player)
+        self.assertIsNone(cm.reliever(cm.MIRP, groups, lambda p: "capped").player)
 
     def test_the_preferred_arm_is_only_from_the_situations_own_group(self):
         cm = computer_manager
         closer, setup = players("Closer", "Setup")
-        groups = {cm.CLOSER: [closer], cm.SETUP: [setup], cm.MIDDLE_LONG: [], cm.OTHER: []}
-        self.assertEqual(cm.preferred_arm(cm.SETUP, groups, lambda p: None).player, setup)
-        self.assertIsNone(cm.preferred_arm(cm.MIDDLE_LONG, groups, lambda p: None).player)
+        groups = {cm.CLOSER: [closer], cm.SETUP_R: [setup], cm.SETUP_L: [], cm.SIRP: [], cm.MIRP: [], cm.OTHER: []}
+        self.assertEqual(cm.preferred_arm(cm.SETUP_R, groups, lambda p: None).player, setup)
+        self.assertIsNone(cm.preferred_arm(cm.MIRP, groups, lambda p: None).player)
 
 
 class StarterHookTestCase(TestCase):

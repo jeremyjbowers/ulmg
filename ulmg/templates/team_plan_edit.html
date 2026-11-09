@@ -45,19 +45,37 @@
                     {% for p in pitchers %}<option value="{{ p.id }}"{% if p.id == closer_id %} selected{% endif %}>{{ p.name }}</option>{% endfor %}
                 </select>
             </label>
-            <p class="font-bold text-xs uppercase text-gray-600">Setup, in order</p>
+            <p class="font-bold text-xs uppercase text-gray-600">Setup L</p>
             <div class="space-y-2 mb-3">
-                {% for selected in setup_slots %}
-                <select name="setup" class="border border-gray-300 rounded px-1 py-1 w-full" aria-label="Setup {{ forloop.counter }}">
+                {% for selected in setup_l_slots %}
+                <select name="setup_l" class="border border-gray-300 rounded px-1 py-1 w-full" aria-label="Setup L {{ forloop.counter }}">
                     <option value="">-</option>
                     {% for p in pitchers %}<option value="{{ p.id }}"{% if p.id == selected %} selected{% endif %}>{{ p.name }}</option>{% endfor %}
                 </select>
                 {% endfor %}
             </div>
-            <p class="font-bold text-xs uppercase text-gray-600">Middle and long, in order</p>
+            <p class="font-bold text-xs uppercase text-gray-600">Setup R</p>
+            <div class="space-y-2 mb-3">
+                {% for selected in setup_r_slots %}
+                <select name="setup_r" class="border border-gray-300 rounded px-1 py-1 w-full" aria-label="Setup R {{ forloop.counter }}">
+                    <option value="">-</option>
+                    {% for p in pitchers %}<option value="{{ p.id }}"{% if p.id == selected %} selected{% endif %}>{{ p.name }}</option>{% endfor %}
+                </select>
+                {% endfor %}
+            </div>
+            <p class="font-bold text-xs uppercase text-gray-600">SIRP</p>
+            <div class="space-y-2 mb-3">
+                {% for selected in sirp_slots %}
+                <select name="sirp" class="border border-gray-300 rounded px-1 py-1 w-full" aria-label="SIRP {{ forloop.counter }}">
+                    <option value="">-</option>
+                    {% for p in pitchers %}<option value="{{ p.id }}"{% if p.id == selected %} selected{% endif %}>{{ p.name }}</option>{% endfor %}
+                </select>
+                {% endfor %}
+            </div>
+            <p class="font-bold text-xs uppercase text-gray-600">MIRP</p>
             <div class="space-y-2">
-                {% for selected in middle_long_slots %}
-                <select name="middle_long" class="border border-gray-300 rounded px-1 py-1 w-full" aria-label="Middle and long {{ forloop.counter }}">
+                {% for selected in mirp_slots %}
+                <select name="mirp" class="border border-gray-300 rounded px-1 py-1 w-full" aria-label="MIRP {{ forloop.counter }}">
                     <option value="">-</option>
                     {% for p in pitchers %}<option value="{{ p.id }}"{% if p.id == selected %} selected{% endif %}>{{ p.name }}</option>{% endfor %}
                 </select>

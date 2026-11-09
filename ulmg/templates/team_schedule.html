@@ -12,6 +12,7 @@
 <div class="mb-8">
     <h2 class="text-lg font-bold mb-2">{{ schedule_season }} schedule</h2>
     <p class="text-sm mb-4"><a href="/schedule/?season={{ schedule_season }}" class="underline">League schedule</a></p>
+    {% include 'includes/plan_errors.html' %}
 
     {% if rows %}
     <div class="overflow-x-auto">
@@ -27,10 +28,25 @@
             </thead>
             <tbody>
                 {% for row in rows %}
-                <tr class="schedule-game" data-day="{{ row.game.day }}">
+                <tr class="schedule-game" id="day-{{ row.game.day }}" data-day="{{ row.game.day }}">
                     <td class="py-1 px-2 border-r border-gray-100">{{ row.game.day }}</td>
                     <td class="py-1 px-2 border-r border-gray-100">{% if row.is_home %}vs{% else %}at{% endif %} <a href="/teams/{{ row.opponent.abbreviation|lower }}/schedule/?season={{ schedule_season }}" class="underline">{{ row.opponent.abbreviation }}</a></td>
-                    <td class="schedule-starters py-1 px-2 border-r border-gray-100">{% if row.starter or row.opponent_starter %}{{ row.starter.name|default:"-" }} vs {{ row.opponent_starter.name|default:"-" }}{% endif %}</td>
+                    <td class="schedule-starters py-1 px-2 border-r border-gray-100">
+                        {% if row.starter_choices %}
+                        <form method="post" action="/teams/{{ team.abbreviation|lower }}/schedule/?season={{ schedule_season }}" class="inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="day" value="{{ row.game.day }}">
+                            <select name="starter" class="border border-gray-300 px-1 py-0.5 max-w-48" aria-label="Starter, day {{ row.game.day }}" onchange="this.form.submit()">
+                                <option value=""{% if not row.starter_manual %} selected{% endif %}>Rotation{% if row.auto_starter %}: {{ row.auto_starter.name }}{% endif %}</option>
+                                {% for choice in row.starter_choices %}
+                                <option value="{{ choice.player.id }}"{% if row.starter_manual and row.starter.id == choice.player.id %} selected{% endif %}>{{ choice.player.name }} ({{ choice.left }})</option>
+                                {% endfor %}
+                            </select>
+                            <button type="submit" class="underline">Set</button>
+                        </form>
+                        vs {{ row.opponent_starter.name|default:"-" }}
+                        {% elif row.starter or row.opponent_starter %}{{ row.starter.name|default:"-" }} vs {{ row.opponent_starter.name|default:"-" }}{% endif %}
+                    </td>
                     <td class="py-1 px-2 border-r border-gray-100">{{ row.result }}{% if row.has_box %} <a href="/games/{{ row.game.id }}/box/" class="schedule-box underline">Box score</a>{% endif %}{% if row.can_play %} <a href="/games/{{ row.game.id }}/" class="schedule-play underline font-bold">Play</a>{% endif %}</td>
                     {% if own_team %}<td class="py-1 px-2">{% if row.manager_plays %}<span class="font-bold">You play</span>{% endif %}</td>{% endif %}
                 </tr>

@@ -302,7 +302,7 @@ class LineupValidationTestCase(PlanTestCase):
 
     def test_bench_and_bullpen_rules(self):
         with self.assertRaises(plans.PlanError) as raised:
-            self.roster.file(bench=[self.roster.relievers[0]], setup=[self.roster.relievers[0]])
+            self.roster.file(bench=[self.roster.relievers[0]], setup_r=[self.roster.relievers[0]])
         message = str(raised.exception)
         self.assertIn("The bench is for non-pitchers", message)
         self.assertIn("is in the bullpen twice", message)
@@ -366,8 +366,28 @@ class OpenedGameTestCase(PlanTestCase):
         self.assertEqual(len(sheet["lineup"]), 9)
         self.assertEqual(sheet["bench"], [p.id for p in self.roster.bench])
         self.assertEqual(sheet["closer"], self.roster.relievers[0].id)
-        self.assertEqual(sheet["setup"], [self.roster.relievers[1].id])
-        self.assertEqual(sheet["middle_long"], [self.roster.swingman.id])
+        self.assertEqual(sheet["setup_l"], [])
+        self.assertEqual(sheet["setup_r"], [self.roster.relievers[1].id])
+        self.assertEqual(sheet["sirp"], [])
+        self.assertEqual(sheet["mirp"], [self.roster.swingman.id])
+
+    def test_a_sheet_frozen_before_the_bullpen_split_still_reads(self):
+        plans.open_game(self.game)
+        self.game.refresh_from_db()
+        key = "home" if self.game.series.home_team_id == self.atl.id else "road"
+        frozen = self.game.opening_sheet
+        side = frozen[key]
+        side["setup"] = side.pop("setup_r")
+        side["middle_long"] = side.pop("mirp")
+        side.pop("setup_l")
+        side.pop("sirp")
+        self.game.opening_sheet = frozen
+        self.game.save()
+        read = plans.game_sheet(self.game)[key]
+        self.assertEqual(read["setup_r"], [self.roster.relievers[1]])
+        self.assertEqual(read["mirp"], [self.roster.swingman])
+        self.assertEqual(read["setup_l"], [])
+        self.assertEqual(read["sirp"], [])
 
 
 class SeasonStartersTestCase(PlanTestCase):
@@ -452,8 +472,10 @@ class FillPlanTestCase(PlanTestCase):
         fields = {
             "rotation": self.roster.starters,
             "closer": self.roster.relievers[0],
-            "setup": [self.roster.relievers[1]],
-            "middle_long": [self.roster.swingman],
+            "setup_l": [],
+            "setup_r": [self.roster.relievers[1]],
+            "sirp": [],
+            "mirp": [self.roster.swingman],
             "bench": self.roster.bench,
             "lineup_vs_lhp": self.roster.lineup(),
             "lineup_vs_rhp": self.roster.lineup(),

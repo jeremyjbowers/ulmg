@@ -229,10 +229,14 @@ def rotation_errors(team, rotation, roster_ids):
     return _unique_errors([e for e in errors if e])
 
 
-def bullpen_errors(team, closer, setup, middle_long, roster_ids):
+def _bullpen_players(closer, setup_l, setup_r, sirp, mirp):
+    return ([closer] if closer else []) + list(setup_l) + list(setup_r) + list(sirp) + list(mirp)
+
+
+def bullpen_errors(team, closer, setup_l, setup_r, sirp, mirp, roster_ids):
     """Rule errors for the bullpen roles: 30-man pitchers, each in one role once."""
     errors = []
-    bullpen = ([closer] if closer else []) + list(setup) + list(middle_long)
+    bullpen = _bullpen_players(closer, setup_l, setup_r, sirp, mirp)
     for player in bullpen:
         errors.append(_roster_error(player, team, roster_ids))
         if not can_pitch(player):
@@ -254,7 +258,7 @@ def bench_errors(team, bench, roster_ids):
     return _unique_errors([e for e in errors if e])
 
 
-def plan_errors(team, season, half, *, rotation, closer, setup, middle_long, bench, lineup_vs_lhp, lineup_vs_rhp):
+def plan_errors(team, season, half, *, rotation, closer, setup_l, setup_r, sirp, mirp, bench, lineup_vs_lhp, lineup_vs_rhp):
     """
     Every rule error in a plan's rotation, bullpen, bench and lineup cards.
     They are checked against everyone the team can play in some game of the
@@ -264,7 +268,7 @@ def plan_errors(team, season, half, *, rotation, closer, setup, middle_long, ben
     roster_ids = rosters.all
     errors = []
     errors += rotation_errors(team, rotation, roster_ids)
-    errors += bullpen_errors(team, closer, setup, middle_long, roster_ids)
+    errors += bullpen_errors(team, closer, setup_l, setup_r, sirp, mirp, roster_ids)
     errors += bench_errors(team, bench, roster_ids)
 
     def roster_problem(player):
@@ -283,8 +287,10 @@ def _stored_fields(plan):
     return {
         "rotation": _ordered_players(plan.rotation),
         "closer": plan.closer,
-        "setup": _ordered_players(plan.setup),
-        "middle_long": _ordered_players(plan.middle_long),
+        "setup_l": _ordered_players(plan.setup_l),
+        "setup_r": _ordered_players(plan.setup_r),
+        "sirp": _ordered_players(plan.sirp),
+        "mirp": _ordered_players(plan.mirp),
         "bench": _ordered_players(plan.bench),
         "lineup_vs_lhp": lineup_entries(plan.lineup_vs_lhp),
         "lineup_vs_rhp": lineup_entries(plan.lineup_vs_rhp),
@@ -451,7 +457,9 @@ def _designate(plan):
     }
     rotation_ids = set(plan.rotation)
     starting_ids = rotation_ids | spot_ids
-    bullpen_ids = set(plan.setup) | set(plan.middle_long) | ({plan.closer_id} if plan.closer_id else set())
+    bullpen_ids = set(plan.setup_l) | set(plan.setup_r) | set(plan.sirp) | set(plan.mirp)
+    if plan.closer_id:
+        bullpen_ids.add(plan.closer_id)
 
     warnings = []
     for player in _players_by_id(starting_ids | bullpen_ids).values():
@@ -494,7 +502,7 @@ def starter_hook_errors(starter_hook):
     return []
 
 
-def save_plan(plan, *, rotation, closer, setup, middle_long, bench, lineup_vs_lhp, lineup_vs_rhp, starter_hook=None):
+def save_plan(plan, *, rotation, closer, setup_l, setup_r, sirp, mirp, bench, lineup_vs_lhp, lineup_vs_rhp, starter_hook=None):
     """
     Save a half plan's rotation, bullpen, bench, lineup cards and starter
     hook, re-run auto-fill and set swingman designations. A starter_hook of
@@ -506,8 +514,10 @@ def save_plan(plan, *, rotation, closer, setup, middle_long, bench, lineup_vs_lh
     fields = {
         "rotation": list(rotation),
         "closer": closer,
-        "setup": list(setup),
-        "middle_long": list(middle_long),
+        "setup_l": list(setup_l),
+        "setup_r": list(setup_r),
+        "sirp": list(sirp),
+        "mirp": list(mirp),
         "bench": list(bench),
         "lineup_vs_lhp": list(lineup_vs_lhp),
         "lineup_vs_rhp": list(lineup_vs_rhp),
@@ -520,8 +530,10 @@ def save_plan(plan, *, rotation, closer, setup, middle_long, bench, lineup_vs_lh
     with transaction.atomic():
         plan.rotation = [p.id for p in fields["rotation"]]
         plan.closer = closer
-        plan.setup = [p.id for p in fields["setup"]]
-        plan.middle_long = [p.id for p in fields["middle_long"]]
+        plan.setup_l = [p.id for p in fields["setup_l"]]
+        plan.setup_r = [p.id for p in fields["setup_r"]]
+        plan.sirp = [p.id for p in fields["sirp"]]
+        plan.mirp = [p.id for p in fields["mirp"]]
         plan.bench = [p.id for p in fields["bench"]]
         plan.lineup_vs_lhp = stored_lineup(fields["lineup_vs_lhp"])
         plan.lineup_vs_rhp = stored_lineup(fields["lineup_vs_rhp"])
@@ -533,7 +545,7 @@ def save_plan(plan, *, rotation, closer, setup, middle_long, bench, lineup_vs_lh
 
 
 def fill_plan(
-    plan, *, rotation, closer, setup, middle_long, bench, lineup_vs_lhp, lineup_vs_rhp, ignore_half_lock=False
+    plan, *, rotation, closer, setup_l, setup_r, sirp, mirp, bench, lineup_vs_lhp, lineup_vs_rhp, ignore_half_lock=False
 ):
     """
     Save as much of a half plan as is legal, for building a test season
@@ -551,7 +563,9 @@ def fill_plan(
     team = plan.team
     rosters = roster_moves.HalfRosters(team, plan.season, plan.half)
     roster_ids = rosters.all
-    rotation, setup, middle_long, bench = list(rotation), list(setup), list(middle_long), list(bench)
+    rotation, setup_l, setup_r, sirp, mirp, bench = (
+        list(rotation), list(setup_l), list(setup_r), list(sirp), list(mirp), list(bench)
+    )
     lineup_vs_lhp, lineup_vs_rhp = list(lineup_vs_lhp), list(lineup_vs_rhp)
 
     problems = []
@@ -559,10 +573,10 @@ def fill_plan(
     if errors:
         problems += errors
         rotation = []
-    errors = bullpen_errors(plan.team, closer, setup, middle_long, roster_ids)
+    errors = bullpen_errors(plan.team, closer, setup_l, setup_r, sirp, mirp, roster_ids)
     if errors:
         problems += errors
-        closer, setup, middle_long = None, [], []
+        closer, setup_l, setup_r, sirp, mirp = None, [], [], [], []
     errors = bench_errors(plan.team, bench, roster_ids)
     if errors:
         problems += errors
@@ -588,8 +602,10 @@ def fill_plan(
     with transaction.atomic():
         plan.rotation = [p.id for p in rotation]
         plan.closer = closer
-        plan.setup = [p.id for p in setup]
-        plan.middle_long = [p.id for p in middle_long]
+        plan.setup_l = [p.id for p in setup_l]
+        plan.setup_r = [p.id for p in setup_r]
+        plan.sirp = [p.id for p in sirp]
+        plan.mirp = [p.id for p in mirp]
         plan.bench = [p.id for p in bench]
         plan.lineup_vs_lhp = stored_lineup(lineup_vs_lhp)
         plan.lineup_vs_rhp = stored_lineup(lineup_vs_rhp)
@@ -644,6 +660,54 @@ def save_day(plan, day, *, starter=None, lineup=None):
         return _designate(plan)
 
 
+def set_starter(plan, day, starter):
+    """
+    Set or clear one day's starter from the schedule, and leave that day's
+    lineup alone. None returns the day to the rotation.
+    """
+    games = half_games(plan.team, plan.season, plan.half)
+    row = plan.days.filter(day=day).first() if day in games else None
+    lineup = lineup_entries(row.manual_lineup) if row is not None and row.manual_lineup else None
+    return save_day(plan, day, starter=starter, lineup=lineup)
+
+
+def schedule_starter_choices(team, season):
+    """
+    The pitchers an editor may start in each unopened game of an open half,
+    and how many starts each still has room for, counting starts made and
+    every other start the plan already gives him. A pitcher at his cap, or
+    without rest inside the series, is left out.
+    """
+    choices = {}
+    for half in HALVES:
+        if not is_open(half):
+            continue
+        plan = find_plan(team, season, half)
+        if plan is None:
+            continue
+        games = half_games(team, season, half)
+        rows = _day_rows(plan, games)
+        rosters = roster_moves.HalfRosters(team, season, half)
+        pitchers = [p for p in models.Player.objects.filter(id__in=rosters.all).order_by("name") if can_pitch(p)]
+        reads = usage.LedgerReads(season)
+        reads.preload(pitchers)
+        planned = _planned_starts(plan, games, rows, lambda game, row: True)
+        for day in sorted(games):
+            game = games[day]
+            if is_locked(game):
+                continue
+            offered = []
+            for pitcher in pitchers:
+                others = [g for g in planned[pitcher.id] if g.id != game.id]
+                if _start_problem(pitcher, game, others, rosters, reads):
+                    continue
+                counter = reads.for_game(game).counter(pitcher)
+                left = counter.starts_cap - counter.starts - len(others)
+                offered.append({"player": pitcher, "left": left})
+            choices[game.id] = offered
+    return choices
+
+
 # Reading
 
 
@@ -680,7 +744,7 @@ class PlanBook:
             self.rows[(row.plan_id, row.day)] = row
         ids = set()
         for plan in self.plans.values():
-            ids |= set(plan.bench) | set(plan.setup) | set(plan.middle_long)
+            ids |= set(plan.bench) | set(plan.setup_l) | set(plan.setup_r) | set(plan.sirp) | set(plan.mirp)
             ids |= {e["player"] for e in plan.lineup_vs_lhp + plan.lineup_vs_rhp}
         for row in self.rows.values():
             ids |= {e["player"] for e in row.manual_lineup or []}
@@ -747,8 +811,10 @@ class PlanBook:
             | ({starter.id} if starter is not None and starter.id not in eligible else set()),
             "bench": on_roster(self._resolve(plan.bench)) if plan else [],
             "closer": closer if closer is not None and closer.id in eligible else None,
-            "setup": on_roster(self._resolve(plan.setup)) if plan else [],
-            "middle_long": on_roster(self._resolve(plan.middle_long)) if plan else [],
+            "setup_l": on_roster(self._resolve(plan.setup_l)) if plan else [],
+            "setup_r": on_roster(self._resolve(plan.setup_r)) if plan else [],
+            "sirp": on_roster(self._resolve(plan.sirp)) if plan else [],
+            "mirp": on_roster(self._resolve(plan.mirp)) if plan else [],
             "starter_hook": plan.starter_hook if plan else models.HalfPlan.NORMAL_HOOK,
         }
 
@@ -770,8 +836,10 @@ class PlanBook:
             "unavailable": set(),
             "bench": self._resolve(sheet["bench"]),
             "closer": closer,
-            "setup": self._resolve(sheet["setup"]),
-            "middle_long": self._resolve(sheet["middle_long"]),
+            "setup_l": self._resolve(_sheet_bullpen(sheet, "setup_l")),
+            "setup_r": self._resolve(_sheet_bullpen(sheet, "setup_r", "setup")),
+            "sirp": self._resolve(_sheet_bullpen(sheet, "sirp")),
+            "mirp": self._resolve(_sheet_bullpen(sheet, "mirp", "middle_long")),
             "starter_hook": sheet.get("starter_hook", models.HalfPlan.NORMAL_HOOK),
         }
 
@@ -788,6 +856,15 @@ class PlanBook:
             "home": self.live_side(game, home, road),
             "road": self.live_side(game, road, home),
         }
+
+
+def _sheet_bullpen(sheet, key, old_key=None):
+    """A frozen bullpen list. A sheet opened before the roles split keeps its old key."""
+    if key in sheet:
+        return sheet[key] or []
+    if old_key and old_key in sheet:
+        return sheet[old_key] or []
+    return []
 
 
 def game_sheet(game):
@@ -807,8 +884,10 @@ def _frozen_side(side):
         "lineup_manual": side["lineup_manual"],
         "bench": [p.id for p in side["bench"] if p],
         "closer": side["closer"].id if side["closer"] else None,
-        "setup": [p.id for p in side["setup"] if p],
-        "middle_long": [p.id for p in side["middle_long"] if p],
+        "setup_l": [p.id for p in side["setup_l"] if p],
+        "setup_r": [p.id for p in side["setup_r"] if p],
+        "sirp": [p.id for p in side["sirp"] if p],
+        "mirp": [p.id for p in side["mirp"] if p],
         "starter_hook": side["starter_hook"],
     }
 

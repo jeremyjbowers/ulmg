@@ -14,8 +14,10 @@ def form_data(roster, rotation=None, vs_lhp=None, vs_rhp=None):
     data = {
         "rotation": [p.id for p in (rotation or roster.starters)],
         "closer": roster.relievers[0].id,
-        "setup": [roster.relievers[1].id],
-        "middle_long": [roster.swingman.id],
+        "setup_l": [],
+        "setup_r": [roster.relievers[1].id],
+        "sirp": [],
+        "mirp": [roster.swingman.id],
         "bench": [p.id for p in roster.bench],
     }
     for prefix, lineup in (("vs_lhp", vs_lhp), ("vs_rhp", vs_rhp)):
@@ -271,6 +273,71 @@ class SchedulePlannedStartersTestCase(PlanViewsTestCase):
     def test_team_schedule_shows_the_plans_starters(self):
         self.roster.file()
         body = self.client.get(f"/teams/atl/schedule/?season={SEASON}").content.decode()
-        self.assertRegex(body, r'(?s)data-day="1">.*?class="schedule-starters[^"]*">ATL Starter 1 vs -</td>')
-        self.assertRegex(body, r'(?s)data-day="6">.*?class="schedule-starters[^"]*">ATL Starter 1 vs -</td>')
+        self.assertRegex(body, r'(?s)data-day="1">.*?class="schedule-starters[^"]*">\s*ATL Starter 1 vs -\s*</td>')
+        self.assertRegex(body, r'(?s)data-day="6">.*?class="schedule-starters[^"]*">\s*ATL Starter 1 vs -\s*</td>')
         self.assertEqual(body.count("ATL Starter 1 vs"), 17)
+
+
+SCHEDULE_URL = f"/teams/atl/schedule/?season={SEASON}"
+
+
+class ScheduleStarterEditTestCase(PlanViewsTestCase):
+    def setUp(self):
+        super().setUp()
+        self.plan = self.roster.file()
+
+    def select(self, body, day):
+        match = re.search(rf'aria-label="Starter, day {day}"(.*?)</select>', body, re.S)
+        self.assertIsNotNone(match, msg=f"day {day} has no starter select")
+        return match.group(1)
+
+    def test_the_owner_sees_the_rotation_on_games_1_6_and_11_and_can_change_one_day(self):
+        client = self.as_user(self.owner)
+        body = client.get(SCHEDULE_URL).content.decode()
+        ace = self.roster.starters[0].name
+        for day in (1, 6, 11):
+            chosen = self.select(body, day)
+            self.assertIn(f"Rotation: {ace}", chosen)
+            self.assertIn('value="" selected', chosen)
+            self.assertRegex(chosen, r"\(\d+\)")
+        self.assertIsNone(re.search(r'aria-label="Starter, day 82"', body))
+
+        fifth = self.roster.swingman
+        lineup = self.roster.lineup()
+        lineup[8]["player"] = self.roster.bench[0]
+        plans.save_day(self.plan, 1, lineup=lineup)
+        response = client.post(SCHEDULE_URL, {"day": 1, "starter": fifth.id}, follow=True)
+        self.assertEqual(response.status_code, 200)
+        chosen = self.select(response.content.decode(), 1)
+        self.assertIn(f'value="{fifth.id}" selected', chosen)
+        self.assertIn(f"Rotation: {ace}", self.select(response.content.decode(), 6))
+        row = self.plan.days.get(day=1)
+        self.assertEqual(row.manual_starter_id, fifth.id)
+        self.assertEqual(row.manual_lineup[-1]["player"], self.roster.bench[0].id)
+
+        cleared = client.post(SCHEDULE_URL, {"day": 1, "starter": ""}, follow=True)
+        self.assertIn("the rotation", cleared.content.decode())
+        self.plan.days.get(day=1).refresh_from_db()
+        self.assertIsNone(self.plan.days.get(day=1).manual_starter_id)
+        self.assertEqual(self.plan.days.get(day=1).manual_lineup[-1]["player"], self.roster.bench[0].id)
+
+    def test_a_pitcher_at_his_start_cap_is_left_out_and_a_forged_post_is_refused(self):
+        capped = self.roster.swingman
+        counter = usage.counter_for(capped, SEASON)
+        counter.starts_cap = 0
+        counter.save()
+        client = self.as_user(self.owner)
+        chosen = self.select(client.get(SCHEDULE_URL).content.decode(), 2)
+        self.assertNotIn(f'value="{capped.id}"', chosen)
+        response = client.post(SCHEDULE_URL, {"day": 2, "starter": capped.id}, follow=True)
+        self.assertIn("cap is 0 starts", response.content.decode())
+        self.assertIsNone(self.plan.days.get(day=2).manual_starter_id)
+
+    def test_another_owner_cannot_set_starters_and_a_visitor_sees_the_names(self):
+        response = self.as_user(self.other_owner).post(
+            SCHEDULE_URL, {"day": 1, "starter": self.roster.starters[4].id}
+        )
+        self.assertEqual(response.status_code, 403)
+        body = Client().get(SCHEDULE_URL).content.decode()
+        self.assertNotIn('aria-label="Starter, day 1"', body)
+        self.assertIn("ATL Starter 1 vs", body)

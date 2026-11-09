@@ -31,10 +31,14 @@
         <h3 class="font-bold border-b border-gray-300 mb-2">Bullpen</h3>
         <p class="font-bold text-xs uppercase text-gray-600">Closer</p>
         <ul class="mb-2">{% for line in closer %}<li class="plan-closer">{% include 'includes/plan_player.html' %}</li>{% empty %}<li>None</li>{% endfor %}</ul>
-        <p class="font-bold text-xs uppercase text-gray-600">Setup</p>
-        <ol class="list-decimal ml-5 mb-2 space-y-1">{% for line in setup %}<li class="plan-setup">{% include 'includes/plan_player.html' %}</li>{% endfor %}</ol>
-        <p class="font-bold text-xs uppercase text-gray-600">Middle and long</p>
-        <ol class="list-decimal ml-5 space-y-1">{% for line in middle_long %}<li class="plan-middle-long">{% include 'includes/plan_player.html' %}</li>{% endfor %}</ol>
+        <p class="font-bold text-xs uppercase text-gray-600">Setup L</p>
+        {% if setup_l %}<ol class="list-decimal ml-5 mb-2 space-y-1">{% for line in setup_l %}<li class="plan-setup-l">{% include 'includes/plan_player.html' %}</li>{% endfor %}</ol>{% else %}<p class="mb-2">None</p>{% endif %}
+        <p class="font-bold text-xs uppercase text-gray-600">Setup R</p>
+        {% if setup_r %}<ol class="list-decimal ml-5 mb-2 space-y-1">{% for line in setup_r %}<li class="plan-setup-r">{% include 'includes/plan_player.html' %}</li>{% endfor %}</ol>{% else %}<p class="mb-2">None</p>{% endif %}
+        <p class="font-bold text-xs uppercase text-gray-600">SIRP</p>
+        {% if sirp %}<ol class="list-decimal ml-5 mb-2 space-y-1">{% for line in sirp %}<li class="plan-sirp">{% include 'includes/plan_player.html' %}</li>{% endfor %}</ol>{% else %}<p class="mb-2">None</p>{% endif %}
+        <p class="font-bold text-xs uppercase text-gray-600">MIRP</p>
+        {% if mirp %}<ol class="list-decimal ml-5 space-y-1">{% for line in mirp %}<li class="plan-mirp">{% include 'includes/plan_player.html' %}</li>{% endfor %}</ol>{% else %}<p>None</p>{% endif %}
         <p class="font-bold text-xs uppercase text-gray-600 mt-2">Starter hook</p>
         <p class="plan-starter-hook">{{ starter_hook }}</p>
     </div>

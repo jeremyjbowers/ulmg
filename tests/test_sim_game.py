@@ -63,6 +63,17 @@ class OpeningTestCase(SimGameTestCase):
             )
             self.assertEqual([b["position"] for b in state[side]["lineup"]], [pos for _, pos in sheet[key]["lineup"]])
 
+    def test_the_computer_opens_on_the_lineup_card_for_the_opposing_hand(self):
+        self.road.starters[0].throws = "L"
+        self.road.starters[0].save()
+        self.road.file()
+        vs_left = self.home.lineup(self.home.hitters[:-1] + [self.home.bench[0]])
+        self.home.file(lineup_vs_lhp=vs_left, lineup_vs_rhp=self.home.lineup())
+        log = self.open(seats=(AWAY,))
+        batting = [b["id"] for b in gf.refresh(log).state[HOME]["lineup"]]
+        self.assertEqual(batting, [str(entry["player"].id) for entry in vs_left])
+        self.assertNotEqual(batting, [str(entry["player"].id) for entry in self.home.lineup()])
+
     def test_opening_copies_both_plans_into_the_log_and_seats_the_visitor(self):
         log = self.open()
         opening = gf.events(log, Event.OPEN)[0]
@@ -319,7 +330,7 @@ class PlayingTestCase(SimGameTestCase):
         change = gf.events(log, Event.PITCHING_CHANGE)[0]
         self.assertTrue(change.computer)
         self.assertEqual(
-            change.payload["pitcher"], self.home.relievers[1].id, "setup is next when middle and long is spent"
+            change.payload["pitcher"], self.home.relievers[1].id, "setup is next when middle relief is spent"
         )
         decision = gf.events(log, Event.DECISION)[-1]
         self.assertIn(middle.name, decision.text)
