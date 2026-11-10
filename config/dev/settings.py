@@ -138,8 +138,8 @@ MLB_ROSTER_SIZE = 30
 PROTECT_ROSTER_SIZE = 40
 
 TEAM_PROTECT_TAB = False
-# Off: roster/protection row actions and sticky MLB roster count live on team pages when True.
-TEAM_ROSTER_TAB = False
+# The roster page's MLB and AAA buttons, used to set the 30-man before a half starts.
+TEAM_ROSTER_TAB = True
 TEAM_LIVE_TAB = False
 TEAM_WISHLIST_TAB = False
 

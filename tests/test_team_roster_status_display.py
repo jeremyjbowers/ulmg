@@ -21,6 +21,7 @@ class TeamRosterStatusDisplayTestCase(TestCase):
             owner_obj=self.owner,
         )
 
+    @override_settings(TEAM_ROSTER_TAB=False)
     def test_team_page_hides_mlb_roster_badge_when_roster_tab_off(self):
         self.client.login(username="mgr", password="secret")
         response = self.client.get("/teams/tst/")
@@ -81,7 +82,8 @@ class TeamRosterStatusDisplayTestCase(TestCase):
         self.assertIn(">A<", row_chunk)
         self.assertNotIn(">NYY<", row_chunk)
         self.assertNotIn("10-Day IL", row_chunk)
-        self.assertNotIn('data-action="off_roster"', row_chunk)
+        self.assertIn('data-action="off_roster"', row_chunk)
+        self.assertIn('data-action="to_aaa"', row_chunk)
 
     def test_team_page_shows_pitcher_g_and_fip_columns(self):
         p = models.Player.objects.create(
