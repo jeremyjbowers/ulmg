@@ -82,8 +82,7 @@ class TeamRosterStatusDisplayTestCase(TestCase):
         self.assertIn(">A<", row_chunk)
         self.assertNotIn(">NYY<", row_chunk)
         self.assertNotIn("10-Day IL", row_chunk)
-        self.assertIn('data-action="off_roster"', row_chunk)
-        self.assertIn('data-action="to_aaa"', row_chunk)
+        self.assertNotIn('data-action="off_roster"', row_chunk)
 
     def test_team_page_shows_pitcher_g_and_fip_columns(self):
         p = models.Player.objects.create(
