@@ -1,4 +1,4 @@
-# ABOUTME: Draws a season's schedule of 44 series slots (162 games per team) and saves it.
+# ABOUTME: Draws a season's schedule of 46 slots (162 games per team) and saves it.
 # ABOUTME: Supports --seed for a reproducible draw and --dry-run; refuses once a game is played.
 import secrets
 
@@ -8,7 +8,7 @@ from ulmg import models, schedule
 
 
 class Command(BaseCommand):
-    help = "Generate a season's schedule: 22 series slots per half, 162 games per team."
+    help = "Generate a season's schedule: 23 slots per half, 162 games per team."
 
     def add_arguments(self, parser):
         parser.add_argument("--season", type=int, required=True, help="Season year, e.g. 2027")
@@ -48,10 +48,15 @@ class Command(BaseCommand):
             matchups = ", ".join(
                 f"{s.road.abbreviation} at {s.home.abbreviation}" for s in slot.series
             )
+            games = "game" if slot.length == 1 else "games"
+            if slot.length == 1:
+                span = f"day {slot.days[0]}"
+            else:
+                span = f"days {slot.days[0]}-{slot.days[-1]}"
             self.stdout.write(
                 f"Slot {slot.number}/{len(plan)}: half {slot.half}, "
-                f"{slot_type_names[slot.slot_type].lower()}, {slot.length} games, "
-                f"days {slot.days[0]}-{slot.days[-1]}: {matchups}"
+                f"{slot_type_names[slot.slot_type].lower()}, {slot.length} {games}, "
+                f"{span}: {matchups}"
             )
 
         if dry_run:

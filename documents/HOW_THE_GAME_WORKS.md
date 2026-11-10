@@ -185,7 +185,7 @@ The caps come from the card season, the same year the card's rates come from.
 
 **One outing.** The limit is 1.25 times his card-season innings per appearance, rounded up, and then clamped. A start is clamped between 4 and 9 innings. A relief outing is clamped between 1 and 3. A pitcher with five or more starts on his card keeps his starter's outing limit when he relieves. A card with no appearances of that kind gets the floor, 4 or 1.
 
-**Rest, inside the series.** A season is 162 games, 22 series a half: four games outside the conference, three against the other division, four inside the division, and one five-game division series in each half. Rest is counted in games of the series. A starter cannot start within three games of another start: game 1 blocks games 2, 3, and 4. The two ends of a five-game series are far enough apart. A reliever cannot pitch three games of the series in a row, and he cannot pitch the game before or the game after an outing of 30 or more pitches in that series.
+**Rest, inside the series.** A season is 162 games. Each half is eight 4-game series against the other conference, eight 3-game series against the other division, and six 4-game division series, then one extra division game. Rest is counted in games of the series. A starter cannot start within three games of another start: in a four-game series, game 1 blocks games 2, 3, and 4. A reliever cannot pitch three games of the series in a row, and he cannot pitch the game before or the game after an outing of 30 or more pitches in that series.
 
 A play that starts with room for one more out may record two or three, as a double play does. The extra outs count, and they are kept on the appearance as allowance. The next batter is where the limit stops him.
 

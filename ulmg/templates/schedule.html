@@ -15,7 +15,7 @@
         {% for slot in half.list %}
         <div class="schedule-slot">
             <div class="border border-gray-300 p-2 text-sm h-full">
-                <div class="font-bold">Days {{ slot.first_day }}-{{ slot.last_day }}</div>
+                <div class="font-bold">{% if slot.length == 1 %}Day {{ slot.first_day }}{% else %}Days {{ slot.first_day }}-{{ slot.last_day }}{% endif %}</div>
                 <div class="text-xs text-gray-600 mb-1">Slot {{ slot.number }} &middot; {{ slot.get_slot_type_display }} &middot; {{ slot.length }}-game series</div>
                 <ul>
                     {% for series in slot.series.all %}

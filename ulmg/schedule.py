@@ -1,4 +1,4 @@
-# ABOUTME: Draws and stores a ULMG season schedule of 44 series slots and 162 games per team.
+# ABOUTME: Draws and stores a ULMG season schedule of 46 slots and 162 games per team.
 # ABOUTME: Also answers schedule questions: a team's games, played seasons, and the next road game.
 
 import random
@@ -15,9 +15,10 @@ OTHER_DIVISION = models.ScheduleSlot.OTHER_DIVISION
 DIVISION = models.ScheduleSlot.DIVISION
 
 SERIES_LENGTH = {OTHER_CONFERENCE: 4, OTHER_DIVISION: 3, DIVISION: 4}
-LONG_SERIES_LENGTH = 5
+EXTRA_GAME_LENGTH = 1
 
 # Each half runs in the constitution's order: (slot type, slots in the run).
+# One extra division game follows the runs.
 HALF_RUNS = [
     (OTHER_CONFERENCE, 8),
     (OTHER_DIVISION, 4),
@@ -29,8 +30,10 @@ HALF_RUNS = [
 # Division rounds for teams A, B, C, D (0-3) in one division, as (road, home)
 # pairs. Each half is two runs of three rounds; in each half every pair of
 # rivals meets once at each park and every team is home once or twice per run.
-# The first round of each half's first run is the long slot: A at B and C at D
-# in the first half, B at C and D at A in the second.
+# The first round of each half's first run is also the extra game, played on
+# its own after the half's series: A at B and C at D in the first half, B at C
+# and D at A in the second. Each team thereby hosts one rival for one extra
+# game and visits a different rival for one.
 A, B, C, D = 0, 1, 2, 3
 DIVISION_ROUNDS = {
     1: (
@@ -150,6 +153,18 @@ def _other_division_rounds(rng, first, second):
     return by_half
 
 
+def _extra_division_series(all_divisions, half):
+    """The half's extra game in every division: the (0, 0) round, one game."""
+    series = []
+    for division_teams in all_divisions:
+        pairs = DIVISION_ROUNDS[half][0][0]
+        series += [
+            PlannedSeries(home=division_teams[home], road=division_teams[road])
+            for road, home in pairs
+        ]
+    return series
+
+
 def _division_rounds(division_teams, half, order):
     """
     The six rounds of one division for a half, in the given order of
@@ -167,7 +182,8 @@ def _division_rounds(division_teams, half, order):
 
 def build_season_plan(teams, seed):
     """
-    Draw a season of 44 slots (22 per half) for the sixteen teams. The same
+    Draw a season of 46 slots (23 per half) for the sixteen teams. Each half
+    is the constitution's 22 series, then one extra division game. The same
     teams and seed always draw the same schedule.
     """
     alignment = league_alignment(list(teams))
@@ -195,8 +211,8 @@ def build_season_plan(teams, seed):
     number = 1
     day = 1
     for half in (1, 2):
-        # The long round sits at a drawn position in one of the half's two
-        # division runs; the other run holds the reversed rounds.
+        # The order of the six four-game division rounds is drawn. The extra
+        # game keeps the fixed pairs and sits after the half's series.
         division_runs = [[(0, 0), (0, 1), (0, 2)], [(1, 0), (1, 1), (1, 2)]]
         for run in division_runs:
             rng.shuffle(run)
@@ -222,10 +238,7 @@ def build_season_plan(teams, seed):
                     series = []
                     for rounds in division_rounds:
                         series += rounds[division_index]
-                    if division_order[division_index] == (0, 0):
-                        length = LONG_SERIES_LENGTH
-                    else:
-                        length = SERIES_LENGTH[slot_type]
+                    length = SERIES_LENGTH[slot_type]
                     division_index += 1
                 plan.append(
                     PlannedSlot(
@@ -241,6 +254,18 @@ def build_season_plan(teams, seed):
                 day += length
             if slot_type == OTHER_DIVISION:
                 other_division_run += 1
+        plan.append(
+            PlannedSlot(
+                half=half,
+                number=number,
+                slot_type=DIVISION,
+                length=EXTRA_GAME_LENGTH,
+                first_day=day,
+                series=_extra_division_series(all_divisions, half),
+            )
+        )
+        number += 1
+        day += EXTRA_GAME_LENGTH
     return plan
 
 
