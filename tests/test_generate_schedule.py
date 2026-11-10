@@ -33,9 +33,9 @@ class GenerateScheduleCommandTestCase(TestCase):
 
     def test_saves_the_whole_season(self):
         output = run("--season", "2027", "--seed", "11")
-        self.assertIn("Saved 44 slots, 352 series and 1296 games for 2027", output)
-        self.assertEqual(models.ScheduleSlot.objects.filter(season=2027).count(), 44)
-        self.assertEqual(models.ScheduleSeries.objects.filter(slot__season=2027).count(), 352)
+        self.assertIn("Saved 46 slots, 368 series and 1296 games for 2027", output)
+        self.assertEqual(models.ScheduleSlot.objects.filter(season=2027).count(), 46)
+        self.assertEqual(models.ScheduleSeries.objects.filter(slot__season=2027).count(), 368)
         games = models.ScheduleGame.objects.filter(series__slot__season=2027)
         self.assertEqual(games.count(), 1296)
         self.assertFalse(games.filter(home_score__isnull=False).exists())
@@ -78,14 +78,14 @@ class GenerateScheduleCommandTestCase(TestCase):
         run("--season", "2027", "--seed", "5")
         output = run("--season", "2027", "--seed", "6")
         self.assertIn("Replacing the existing 2027 schedule", output)
-        self.assertEqual(models.ScheduleSlot.objects.filter(season=2027).count(), 44)
+        self.assertEqual(models.ScheduleSlot.objects.filter(season=2027).count(), 46)
         self.assertEqual(models.ScheduleGame.objects.filter(series__slot__season=2027).count(), 1296)
 
     def test_other_seasons_are_left_alone(self):
         run("--season", "2026", "--seed", "1")
         run("--season", "2027", "--seed", "2")
-        self.assertEqual(models.ScheduleSlot.objects.filter(season=2026).count(), 44)
-        self.assertEqual(models.ScheduleSlot.objects.filter(season=2027).count(), 44)
+        self.assertEqual(models.ScheduleSlot.objects.filter(season=2026).count(), 46)
+        self.assertEqual(models.ScheduleSlot.objects.filter(season=2027).count(), 46)
 
     def test_seed_is_reported_when_drawn(self):
         output = run("--season", "2027")
@@ -93,13 +93,14 @@ class GenerateScheduleCommandTestCase(TestCase):
 
     def test_progress_output_names_each_slot(self):
         output = run("--season", "2027", "--seed", "3")
-        self.assertIn("Slot 1/44: half 1, other conference, 4 games, days 1-4", output)
-        self.assertIn("Slot 44/44:", output)
+        self.assertIn("Slot 1/46: half 1, other conference, 4 games, days 1-4", output)
+        self.assertIn("Slot 23/46: half 1, division, 1 game, day 81", output)
+        self.assertIn("Slot 46/46:", output)
 
     def test_dry_run_writes_nothing(self):
         output = run("--season", "2027", "--seed", "3", "--dry-run")
         self.assertIn("Dry run: nothing saved", output)
-        self.assertIn("Slot 44/44:", output)
+        self.assertIn("Slot 46/46:", output)
         self.assertEqual(models.ScheduleSlot.objects.count(), 0)
 
     def test_refuses_after_a_game_is_played(self):

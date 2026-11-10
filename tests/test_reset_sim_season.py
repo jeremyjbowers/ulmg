@@ -105,13 +105,13 @@ class ResetThenRegenerateTestCase(TestCase):
             call_command("generate_schedule", "--season", str(SEASON), "--seed", "8", stdout=StringIO())
 
         output = run("--season", str(SEASON), "--confirm", str(SEASON), "--include-schedule")
-        self.assertIn("ScheduleSlot: deleted 44", output)
+        self.assertIn("ScheduleSlot: deleted 46", output)
         self.assertIn("the schedule is deleted", output)
         self.assertFalse(models.ScheduleSlot.objects.filter(season=SEASON).exists())
 
         out = StringIO()
         call_command("generate_schedule", "--season", str(SEASON), "--seed", "8", stdout=out)
-        self.assertIn("Saved 44 slots, 352 series and 1296 games for 2026", out.getvalue())
+        self.assertIn("Saved 46 slots, 368 series and 1296 games for 2026", out.getvalue())
         self.assertEqual(played_games(SEASON), 0)
         self.assertEqual(models.Team.objects.count(), 16)
 

@@ -28,11 +28,12 @@ class ScheduleViewsTestCase(TestCase):
         body = response.content.decode()
         self.assertIn("2027 schedule", body)
         self.assertIn("Days 1-4", body)
-        last = models.ScheduleSlot.objects.get(season=2027, number=44)
+        last = models.ScheduleSlot.objects.get(season=2027, number=46)
         self.assertEqual(last.last_day, 162)
-        self.assertIn(f"Days {last.first_day}-162", body)
-        self.assertEqual(body.count('class="schedule-slot"'), 44)
-        self.assertEqual(body.count('class="schedule-series"'), 352)
+        self.assertEqual(last.length, 1)
+        self.assertIn("Day 162", body)
+        self.assertEqual(body.count('class="schedule-slot"'), 46)
+        self.assertEqual(body.count('class="schedule-series"'), 368)
 
     def test_league_schedule_lists_every_series_in_a_slot(self):
         body = self.client.get("/schedule/?season=2027").content.decode()
