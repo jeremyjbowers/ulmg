@@ -163,13 +163,16 @@ def _lineup_fields(state):
 
 
 def _roster(team, season, half, game=None):
-    """Pitchers from the half's roster, or one game's, and hitters on the MLB roster now."""
+    """Pitchers from the half's roster, or one game's, and hitters on the MLB roster now.
+
+    Both lists are in last-name order for the card stacks.
+    """
     rosters = roster_moves.HalfRosters(team, season, half)
     ids = rosters.for_game(game) if game is not None else rosters.all
     roster = by_last_name(models.Player.objects.filter(id__in=ids))
     return {
         "pitchers": [player for player in roster if plans.can_pitch(player)],
-        "hitters": plans.lineup_hitters(ids),
+        "hitters": by_last_name(plans.lineup_hitters(ids)),
     }
 
 
