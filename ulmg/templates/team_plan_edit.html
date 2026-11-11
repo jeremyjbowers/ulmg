@@ -10,7 +10,8 @@
 <div>
     <h2 class="text-lg font-bold mb-1">Set lineups</h2>
     <p class="text-sm text-gray-600 mb-1">{{ half_note }} Drag a card into a slot, or click a card and then the slot. vs Righty is against right-handed starters and vs Lefty against left-handed ones. <a href="/teams/{{ team.abbreviation|lower }}/plan/{{ half }}/{{ plan_season }}/" class="underline">Back to the lineups</a></p>
-    <p class="text-sm text-gray-600 card-season mb-4">These lineups use the {{ plan_season|add:"-1" }} MLB cards.</p>
+    <p class="text-sm text-gray-600 card-season mb-1">These lineups use the {{ plan_season|add:"-1" }} MLB cards.</p>
+    <p class="text-sm text-gray-600 mb-4">vs Righty and vs Lefty cover every day that hasn't opened, at home and on the road. A call-up plays road games only, so he is not filed on these cards. Open that road day on the <a href="/teams/{{ team.abbreviation|lower }}/schedule/{{ plan_season }}/" class="road-day-lineups underline">schedule</a> and set its lineup.</p>
     {% include 'includes/plan_errors.html' %}
 
     {% if not is_open %}

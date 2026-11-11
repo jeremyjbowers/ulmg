@@ -61,6 +61,8 @@ class ScheduleViewsTestCase(TestCase):
         body = response.content.decode()
         self.assertEqual(body.count('class="schedule-game"'), 162)
         self.assertEqual(body.count("unplayed"), 162)
+        self.assertNotIn("day-lineup", body)
+        self.assertIn('id="day-1"', body)
         self.assertNotIn("You play", body)
         days = [int(d) for d in re.findall(r'data-day="(\d+)"', body)]
         self.assertEqual(days, list(range(1, 163)))

@@ -233,6 +233,22 @@ class EditPlanTestCase(PlanViewsTestCase):
         self.assertEqual(plans.starters(plan)[6], self.roster.starters[0])
         self.assertFalse(usage.counter_for(self.roster.starters[0], SEASON).confined_to_relief)
 
+    def test_a_day_page_exists_before_the_cards_are_filed(self):
+        self.assertIsNone(self.saved_plan())
+        response = self.as_user(self.owner).get(day_url(1))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "This is a")
+        self.assertIsNotNone(self.saved_plan())
+
+    def test_the_editor_sends_a_call_up_to_a_road_day_on_the_schedule(self):
+        body = self.as_user(self.owner).get(EDIT_URL).content.decode()
+        self.assertIn(
+            f'href="/teams/atl/schedule/{SEASON}/" class="road-day-lineups underline">schedule</a>',
+            body,
+        )
+        self.assertIn("A call-up plays road games only, so he is not filed on these cards.", body)
+        self.assertIn("Open that road day on the", body)
+
     def test_owner_sets_the_starter_hook(self):
         client = self.as_user(self.owner)
         page = client.get(EDIT_URL).content.decode()
@@ -507,6 +523,20 @@ class EditDayTestCase(PlanViewsTestCase):
         body = client.get(SCHEDULE_URL).content.decode()
         self.assertRegex(body, r'(?s)data-day="1".*?Opened')
         self.assertEqual(body.count("starter-slot"), 80)
+        self.assertNotIn(f'href="/teams/atl/plan/1/{SEASON}/day/1/"', body)
+        self.assertEqual(body.count('class="day-lineup underline"'), 80)
+
+    def test_a_road_day_page_says_a_call_up_can_play_and_a_home_day_says_he_cannot(self):
+        games = plans.half_games(self.atl, SEASON, 1)
+        road = next(game for game in games.values() if game.series.road_team_id == self.atl.id)
+        home = next(game for game in games.values() if game.series.home_team_id == self.atl.id)
+        client = self.as_user(self.owner)
+        road_body = client.get(day_url(road.day)).content.decode()
+        home_body = client.get(day_url(home.day)).content.decode()
+        self.assertIn("This is a road game.", road_body)
+        self.assertIn("Check Set this day's lineup to file a call-up here.", road_body)
+        self.assertIn("This is a home game.", home_body)
+        self.assertIn("A call-up cannot be in this lineup.", home_body)
 
     def test_lineup_override_rule_errors(self):
         stranger = create_hitter(self.car, "CAR Hitter")
@@ -518,6 +548,28 @@ class EditDayTestCase(PlanViewsTestCase):
 
 
 class SchedulePlannedStartersTestCase(PlanViewsTestCase):
+    def test_open_days_link_to_that_days_lineup(self):
+        self.roster.file()
+        body = self.as_user(self.owner).get(SCHEDULE_URL).content.decode()
+        games = list(plans.half_games(self.atl, SEASON, 1).values())
+        home = [game for game in games if game.series.home_team_id == self.atl.id]
+        road = [game for game in games if game.series.road_team_id == self.atl.id]
+        self.assertEqual(body.count('class="day-lineup underline"'), len(games))
+        self.assertEqual(body.count(">Home lineup</a>"), len(home))
+        self.assertEqual(body.count(">Road lineup</a>"), len(road))
+        self.assertIn("Road lineup and Home lineup on an open game set that day's lineup.", body)
+        for game in (home[0], road[0]):
+            label = "Home lineup" if game in home else "Road lineup"
+            self.assertIn(f'id="day-{game.day}"', body)
+            self.assertIn(
+                f'href="/teams/atl/plan/1/{SEASON}/day/{game.day}/" class="day-lineup underline">{label}</a>',
+                body,
+            )
+        public = Client().get(SCHEDULE_URL).content.decode()
+        self.assertNotIn("day-lineup", public)
+        self.assertNotIn("Road lineup and Home lineup", public)
+        self.assertIn('id="day-1"', public)
+
     def test_team_schedule_shows_the_plans_starters(self):
         self.roster.file()
         body = self.client.get(SCHEDULE_URL).content.decode()
