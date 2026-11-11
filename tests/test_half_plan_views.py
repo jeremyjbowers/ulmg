@@ -102,7 +102,7 @@ class PublicPlanTestCase(PlanViewsTestCase):
         body = self.client.get(PLAN_URL).content.decode()
         self.assertIn("C +4.0", body)
         self.assertIn("PA unlimited", body)
-        self.assertIn("Speed", body)
+        self.assertIn("Spd -", body)
 
     def test_plan_page_without_a_plan(self):
         response = self.client.get(PLAN_URL)
@@ -151,6 +151,12 @@ class EditPlanTestCase(PlanViewsTestCase):
         self.assertIn('data-lineup="vs_lhp"', body)
         self.assertIn("lg:grid-cols-2", body)
         self.assertNotIn("<select", body.split("<main", 1)[1])
+        self.assertIn('data-position-buttons', body)
+        self.assertIn('data-positions="C,1B,DH"', body)
+        self.assertIn('data-positions="1B,2B,3B,SS,LF,CF,RF,DH"', body)
+        self.assertIn('data-positions="1B,LF,CF,RF,DH"', body)
+        self.assertNotIn('type="radio" name="vs_rhp_position_', body)
+        self.assertIn('name="vs_rhp_position_1"', body)
 
         response = client.post(EDIT_URL, form_data(self.roster), follow=True)
         self.assertRedirects(response, PLAN_URL)

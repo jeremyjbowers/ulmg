@@ -156,15 +156,19 @@ def _with_missing(cards, ids, season, kind):
 
 def _slots(rows, cards, season, kind):
     cards = _with_missing(cards, [player_id for _, player_id, _ in rows], season, kind)
-    return [
-        {
-            "order": order,
-            "player_id": player_id or "",
-            "position": position,
-            "card": cards.get(player_id),
-        }
-        for order, player_id, position in rows
-    ]
+    slots = []
+    for order, player_id, position in rows:
+        card = cards.get(player_id)
+        slots.append(
+            {
+                "order": order,
+                "player_id": player_id or "",
+                "position": position,
+                "card": card,
+                "choices": (card or {}).get("positions") or plans.LINEUP_POSITIONS,
+            }
+        )
+    return slots
 
 
 def _rotation_slots(ids, cards, season):

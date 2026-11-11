@@ -47,7 +47,7 @@ def create_pitcher(team, name, throws="R", stats=STARTER_STATS, roster=True, car
     return player
 
 
-def create_hitter(team, name, position="OF", defense=None, roster=True, card=True):
+def create_hitter(team, name, position="OF", defense=None, roster=True, card=True, primary=None):
     player = models.Player.objects.create(
         name=name, position=position, level="V", team=team, bats="R", throws="R",
         is_ulmg_mlb_roster=roster,
@@ -56,12 +56,15 @@ def create_hitter(team, name, position="OF", defense=None, roster=True, card=Tru
         player=player, season=CARD_SEASON, classification="1-mlb", hit_stats=dict(HITTER_STATS)
     )
     if card:
+        if primary is None and position in ("C", "1B", "2B", "3B", "SS", "LF", "CF", "RF"):
+            primary = position
         models.Card.objects.create(
             player=player,
             season=CARD_SEASON,
             plate_appearances=600,
             hitter_rates=dict(HITTER_RATES),
             defense=defense or {},
+            primary_position=primary,
         )
     return player
 
@@ -82,7 +85,7 @@ class Roster:
         self.swingman = create_pitcher(team, f"{abbr} Swingman", stats=SWINGMAN_STATS)
         self.catcher = create_hitter(team, f"{abbr} Catcher", position="C", defense={"C": 4.0})
         self.fielders = [
-            create_hitter(team, f"{abbr} Fielder {position}", defense={position: 1.5})
+            create_hitter(team, f"{abbr} Fielder {position}", defense={position: 1.5}, primary=position)
             for position in FIELD_POSITIONS[1:]
         ]
         self.hitters = [self.catcher] + self.fielders + [create_hitter(team, f"{abbr} Hitter DH")]

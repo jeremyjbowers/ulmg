@@ -28,6 +28,12 @@ SPECTRUM_GAINS = {
 
 CATCHER = "C"
 FIRST_BASE = "1B"
+INFIELD_POSITIONS = ("1B", "2B", "3B", "SS")
+OUTFIELD_POSITIONS = ("LF", "CF", "RF")
+
+# The spectrum already treats the outfield as easier than the infield.
+# An infielder gives back this many runs on top of that when he is read out there.
+INF_TO_OF_PENALTY = 5
 
 # Display and tie-break order for card defense.
 DEFENSE_POSITIONS = ["C", "1B", "2B", "3B", "SS", "LF", "CF", "RF"]
@@ -316,3 +322,55 @@ def _one_decimal(value):
 def sim_defense(card_runs):
     """The engine sums nine fielders and moves 0.002 of hit probability per point, so it takes runs / 10."""
     return card_runs / 10
+
+
+def playing_primary(card, player=None):
+    """The position eligibility follows: the card's primary, else the player's listed position."""
+    primary = getattr(card, "primary_position", None) if card is not None else None
+    if primary:
+        return primary
+    raw = ""
+    if player is not None and getattr(player, "position", None):
+        raw = player.position.upper()
+    if raw in ("C", "1B", "2B", "3B", "SS", "LF", "CF", "RF", "DH"):
+        return raw
+    if raw in ("OF", "OF-P"):
+        return "CF"
+    if raw in ("IF", "IF-P", "IF-OF"):
+        return "SS"
+    return None
+
+
+def eligible_positions(primary, defense):
+    """Defensive positions a manager may slot him at. DH is always added by the lineup."""
+    defense = defense or {}
+    if primary == CATCHER:
+        return [CATCHER, FIRST_BASE]
+    if primary in OUTFIELD_POSITIONS:
+        return [FIRST_BASE, "LF", "CF", "RF"]
+    if primary in INFIELD_POSITIONS:
+        positions = ["1B", "2B", "3B", "SS", "LF", "CF", "RF"]
+        if defense.get(CATCHER) is not None:
+            return [CATCHER, *positions]
+        return positions
+    rated = [position for position in DEFENSE_POSITIONS if defense.get(position) is not None]
+    return rated or ["1B", "2B", "3B", "SS", "LF", "CF", "RF"]
+
+
+def slotted_runs(defense, primary, position):
+    """Stored spectrum runs at a position, with the infielder-to-outfield penalty applied once."""
+    if not defense or defense.get(position) is None:
+        return None
+    penalty = INF_TO_OF_PENALTY if primary in INFIELD_POSITIONS and position in OUTFIELD_POSITIONS else 0
+    return round(defense[position] - penalty, 1) + 0.0
+
+
+def shown_defense(defense, primary):
+    """Eligible positions that have a rating, in display order, after the outfield penalty."""
+    rows = []
+    for position in eligible_positions(primary, defense):
+        runs = slotted_runs(defense, primary, position)
+        if runs is None:
+            continue
+        rows.append((position, runs))
+    return rows
