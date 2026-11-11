@@ -16,6 +16,14 @@ class UtilsTestCase(TestCase):
             self.assertEqual(utils.normalize_pos(p), "OF")
             self.assertEqual(utils.normalize_pos(p.lower()), "OF")
 
+    def test_fangraphs_id_strips_a_float_suffix(self):
+        self.assertEqual(utils.fangraphs_id(669127.0), "669127")
+        self.assertEqual(utils.fangraphs_id("669127.0"), "669127")
+        self.assertEqual(utils.fangraphs_id(25816), "25816")
+        self.assertEqual(utils.fangraphs_id("sa3010329"), "sa3010329")
+        self.assertIsNone(utils.fangraphs_id(None))
+        self.assertIsNone(utils.fangraphs_id(""))
+
     def test_str_to_bool(self):
         for b in ["y", "yes", "t", "true"]:
             self.assertEqual(utils.str_to_bool(b), True)

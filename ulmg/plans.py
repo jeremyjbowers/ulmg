@@ -169,7 +169,9 @@ def lineup_errors(team, season, entries, label, roster_problem):
         if entry["position"] == CATCHER:
             card = card_for(player, season)
             if card is None or (card.defense or {}).get(CATCHER) is None:
-                errors.append(f"{label}: {player.name} has no catcher rating and cannot be filed at C.")
+                errors.append(
+                    f"{label}: {player.name} has no catcher rating for {season - 1} and cannot be filed at C."
+                )
     return errors
 
 

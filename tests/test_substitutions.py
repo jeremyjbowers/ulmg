@@ -113,7 +113,10 @@ class PinchHitterTestCase(SubstitutionTestCase):
         self.fielding(log, AWAY)
         with self.assertRaises(sim_game.GameRefused) as refused:
             self.positions(log, {CATCHER_SLOT: "C"})
-        self.assertIn(f"{bat.name} has no catcher rating and cannot play C.", refused.exception.reasons)
+        self.assertIn(
+            f"{bat.name} has no catcher rating for {plan_fixtures.CARD_SEASON} and cannot play C.",
+            refused.exception.reasons,
+        )
 
         catcher = self.road.bench[1]
         sim_game.defensive_substitution(log, self.manager, AWAY, CATCHER_SLOT, catcher, self.sequence(log), seeds=self.next_seed)

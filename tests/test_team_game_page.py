@@ -64,9 +64,9 @@ class GamePageTestCase(TestCase):
         self.assertLess(body.index(">Game</"), body.index("Trades & picks"))
         for label in ("First half, home", "First half, away", "Second half, home", "Second half, away"):
             self.assertIn(label, body)
-        self.assertIn('href="/teams/atl/plan/1/"', body)
-        self.assertIn('href="/teams/atl/schedule/"', body)
-        self.assertIn('href="/teams/atl/results/"', body)
+        self.assertIn(f'href="/teams/atl/plan/1/?season={ULMG_SEASON}"', body)
+        self.assertIn(f'href="/teams/atl/schedule/?season={ULMG_SEASON}"', body)
+        self.assertIn(f'href="/teams/atl/results/?season={ULMG_SEASON}"', body)
         self.assertIn("half-not-started", body)
 
     def test_a_move_changes_the_away_roster_and_leaves_the_home_roster(self):

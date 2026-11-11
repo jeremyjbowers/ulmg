@@ -283,7 +283,7 @@ class LineupValidationTestCase(PlanTestCase):
     def test_non_catcher_at_c_rejected(self):
         lineup = self.roster.lineup()
         lineup[0]["player"], lineup[1]["player"] = lineup[1]["player"], lineup[0]["player"]
-        self.assertRejected(lineup, "has no catcher rating")
+        self.assertRejected(lineup, f"has no catcher rating for {SEASON - 1}")
 
     def test_duplicate_position_and_short_lineup_rejected(self):
         lineup = self.roster.lineup()

@@ -128,6 +128,78 @@ def get_current_season():
     return season
 
 
+def fangraphs_id(value):
+    """A FanGraphs or MLBAM id as stored on Player: digits only, with a trailing .0 removed."""
+    if value is None or value == "" or isinstance(value, bool):
+        return None
+    if isinstance(value, float):
+        if not value.is_integer():
+            return None
+        value = int(value)
+    text = str(value).strip()
+    if text.endswith(".0") and text[:-2].isdigit():
+        text = text[:-2]
+    return text or None
+
+
+def _numeric_fg_id(player):
+    return bool(player.fg_id) and str(player.fg_id).isdigit()
+
+
+def players_for_fangraphs_row(fg_id, mlbam_id, name=None):
+    """
+    Player rows a FanGraphs leaderboard row belongs to.
+    Ids are tried first. A player still filed under a minor-league FanGraphs id
+    (sa3010329) is included by exact name when that name is unambiguous.
+    """
+    from ulmg import models
+
+    fg_id = fangraphs_id(fg_id)
+    mlbam_id = fangraphs_id(mlbam_id)
+    found = []
+    seen = set()
+
+    def add(players):
+        for player in players:
+            if player.pk not in seen:
+                seen.add(player.pk)
+                found.append(player)
+
+    if fg_id:
+        add(models.Player.objects.filter(fg_id=fg_id))
+    if mlbam_id:
+        add(models.Player.objects.filter(mlbam_id=mlbam_id))
+
+    named = []
+    if name and str(name).strip():
+        named = list(models.Player.objects.filter(name__iexact=str(name).strip()))
+    stale = [player for player in named if not _numeric_fg_id(player)]
+    if not found:
+        if len(named) == 1:
+            add(named)
+        elif len(stale) == 1:
+            add(stale)
+    else:
+        add(stale)
+    return found
+
+
+def remember_fangraphs_ids(player, fg_id, mlbam_id):
+    """Fill a missing MLBAM id, and replace a non-numeric FanGraphs id with the major-league one."""
+    fg_id = fangraphs_id(fg_id)
+    mlbam_id = fangraphs_id(mlbam_id)
+    changed = False
+    if fg_id and player.fg_id != fg_id and not _numeric_fg_id(player):
+        player.fg_id = fg_id
+        changed = True
+    if mlbam_id and not player.mlbam_id:
+        player.mlbam_id = mlbam_id
+        changed = True
+    if changed:
+        player.save()
+    return player
+
+
 def mlb_appearances_q(prefix=""):
     """Return a Q object matching PlayerStatSeason rows with MLB hitting or pitching appearances."""
     field = f"{prefix}__" if prefix else ""

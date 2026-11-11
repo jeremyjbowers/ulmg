@@ -7,7 +7,7 @@ import requests
 from django.conf import settings
 from django.core.management.base import BaseCommand
 
-from ulmg import models
+from ulmg import models, utils
 from ulmg.management.commands.live_update_stats_from_fg_stats import Command as FgStatsCommand
 
 
@@ -47,16 +47,13 @@ class Command(BaseCommand):
         url = f"https://static-theulmg.nyc3.digitaloceanspaces.com/fg-stats/{season}/fg_mlb_fld.json"
         return requests.get(url).json()
 
-    def find_player(self, row):
-        fg_id = row.get('playerid')
-        mlbam_id = row.get('xMLBAMID')
-        if fg_id:
-            player = models.Player.objects.filter(fg_id=fg_id).first()
-            if player:
-                return player
-        if mlbam_id:
-            return models.Player.objects.filter(mlbam_id=mlbam_id).first()
-        return None
+    def find_players(self, row, dry_run):
+        """Every player this row belongs to, including one still stored under a minor-league FanGraphs id."""
+        players = utils.players_for_fangraphs_row(row.get('playerid'), row.get('xMLBAMID'), row.get('PlayerName'))
+        if not dry_run:
+            for player in players:
+                utils.remember_fangraphs_ids(player, row.get('playerid'), row.get('xMLBAMID'))
+        return players
 
     def handle(self, *args, **options):
         season = options.get('season') or settings.CURRENT_SEASON - 1
@@ -78,32 +75,33 @@ class Command(BaseCommand):
         updated = 0
         total = len(by_player)
         for idx, player_rows in enumerate(by_player.values(), start=1):
-            player = self.find_player(player_rows[0])
-            if not player:
+            players = self.find_players(player_rows[0], dry_run)
+            if not players:
                 continue
 
-            pss = models.PlayerStatSeason.objects.filter(
-                player=player, season=season, classification="1-mlb", is_career=False
-            ).first()
-            if not pss:
-                continue
-
-            fielding_stats = {}
-            for row in player_rows:
-                stat_dict = {stats_command._process_k(k): v for k, v in row.items()}
-                position = stat_dict.get('pos')
-                if not position:
+            for player in players:
+                pss = models.PlayerStatSeason.objects.filter(
+                    player=player, season=season, classification="1-mlb", is_career=False
+                ).first()
+                if not pss:
                     continue
-                if position in fielding_stats:
-                    self.stdout.write(self.style.WARNING(
-                        f"{player} has more than one {position} row; check that 'Pos' is the row's position"
-                    ))
-                fielding_stats[position] = stat_dict
 
-            pss.fielding_stats = fielding_stats
-            if not dry_run:
-                pss.save()
-            updated += 1
-            self.stdout.write(f"[{idx}/{total}] {player}: {', '.join(sorted(fielding_stats))}")
+                fielding_stats = {}
+                for row in player_rows:
+                    stat_dict = {stats_command._process_k(k): v for k, v in row.items()}
+                    position = stat_dict.get('pos')
+                    if not position:
+                        continue
+                    if position in fielding_stats:
+                        self.stdout.write(self.style.WARNING(
+                            f"{player} has more than one {position} row; check that 'Pos' is the row's position"
+                        ))
+                    fielding_stats[position] = stat_dict
+
+                pss.fielding_stats = fielding_stats
+                if not dry_run:
+                    pss.save()
+                updated += 1
+                self.stdout.write(f"[{idx}/{total}] {player}: {', '.join(sorted(fielding_stats))}")
 
         self.stdout.write(self.style.SUCCESS(f"Updated fielding for {updated} players"))

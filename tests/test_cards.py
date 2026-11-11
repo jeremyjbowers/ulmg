@@ -2,6 +2,7 @@
 # ABOUTME: Stats are FanGraphs-shaped rows run through the real loader key processing; no HTTP is mocked.
 import json
 import os
+import tempfile
 from io import StringIO
 
 from django.contrib.auth.models import User
@@ -405,6 +406,113 @@ class LoadFieldingTestCase(TestCase):
         finally:
             os.remove(path)
         self.assertIn("more than one SS row", out.getvalue())
+
+    def _load_rows(self, rows, season, *args):
+        out = StringIO()
+        with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as handle:
+            json.dump(rows, handle)
+            path = handle.name
+        try:
+            call_command(
+                "live_update_fielding_from_fg_fielding",
+                "--season", str(season), "--file", path, *args, stdout=out,
+            )
+        finally:
+            os.remove(path)
+        return out.getvalue()
+
+    def test_a_minor_league_fg_id_matches_by_name_and_gets_a_catcher_rating(self):
+        catcher = models.Player.objects.create(name="Shea Langeliers", position="C", fg_id="sa3010329")
+        pss = models.PlayerStatSeason.objects.create(
+            player=catcher, season=2026, classification="1-mlb", hit_stats=processed(FG_HITTER_ROW)
+        )
+        row = {
+            "playerid": 25816,
+            "xMLBAMID": 669127.0,
+            "PlayerName": "Shea Langeliers",
+            "Pos": "C",
+            "Inn": 634.0,
+            "FRP": -5.0,
+        }
+        self._load_rows([row], 2026, "--dry-run")
+        catcher.refresh_from_db()
+        self.assertEqual(catcher.fg_id, "sa3010329")
+
+        self._load_rows([row], 2026)
+        pss.refresh_from_db()
+        catcher.refresh_from_db()
+        self.assertEqual(pss.fielding_stats["C"]["inn"], 634.0)
+        self.assertEqual(pss.fielding_stats["C"]["frp"], -5.0)
+        self.assertEqual(catcher.fg_id, "25816")
+        self.assertEqual(catcher.mlbam_id, "669127")
+
+        call_command("generate_cards", "--season", "2026", stdout=StringIO())
+        card = models.Card.objects.get(player=catcher, season=2026)
+        self.assertEqual(card.primary_position, "C")
+        self.assertAlmostEqual(card.defense["C"], -5.3)
+
+    def test_a_float_mlbam_id_matches_the_stored_id(self):
+        catcher = models.Player.objects.create(name="Other Catcher", position="C", mlbam_id="669127")
+        pss = models.PlayerStatSeason.objects.create(
+            player=catcher, season=2026, classification="1-mlb", hit_stats=processed(FG_HITTER_ROW)
+        )
+        self._load_rows([{
+            "playerid": 25816,
+            "xMLBAMID": 669127.0,
+            "PlayerName": "Shea Langeliers",
+            "Pos": "C",
+            "Inn": 634.0,
+            "FRP": -5.0,
+        }], 2026)
+        pss.refresh_from_db()
+        catcher.refresh_from_db()
+        self.assertIn("C", pss.fielding_stats)
+        self.assertEqual(catcher.fg_id, "25816")
+
+    def test_the_same_name_on_a_stale_id_is_updated_with_the_id_match(self):
+        shell = models.Player.objects.create(name="Shea Langeliers", position="C", fg_id="25816")
+        real = models.Player.objects.create(name="Shea Langeliers", position="C", fg_id="sa3010329")
+        shell_pss = models.PlayerStatSeason.objects.create(
+            player=shell, season=2026, classification="1-mlb", hit_stats=processed(FG_HITTER_ROW)
+        )
+        real_pss = models.PlayerStatSeason.objects.create(
+            player=real, season=2026, classification="1-mlb", hit_stats=processed(FG_HITTER_ROW)
+        )
+        self._load_rows([{
+            "playerid": 25816,
+            "PlayerName": "Shea Langeliers",
+            "Pos": "C",
+            "Inn": 634.0,
+            "FRP": -5.0,
+        }], 2026)
+        shell_pss.refresh_from_db()
+        real_pss.refresh_from_db()
+        real.refresh_from_db()
+        self.assertIn("C", shell_pss.fielding_stats)
+        self.assertIn("C", real_pss.fielding_stats)
+        self.assertEqual(real.fg_id, "25816")
+
+    def test_two_stale_ids_with_the_same_name_are_not_guessed(self):
+        players = [
+            models.Player.objects.create(name="Shea Langeliers", position="C", fg_id=fg_id)
+            for fg_id in ("sa3010329", "sa9999999")
+        ]
+        for player in players:
+            models.PlayerStatSeason.objects.create(
+                player=player, season=2026, classification="1-mlb", hit_stats=processed(FG_HITTER_ROW)
+            )
+        self._load_rows([{
+            "playerid": 25816,
+            "PlayerName": "Shea Langeliers",
+            "Pos": "C",
+            "Inn": 634.0,
+            "FRP": -5.0,
+        }], 2026)
+        for player in players:
+            player.refresh_from_db()
+            pss = player.playerstatseason_set.get(season=2026)
+            self.assertIsNone(pss.fielding_stats)
+            self.assertNotEqual(player.fg_id, "25816")
 
 
 @override_settings(CURRENT_SEASON=2026, CURRENT_SEASON_TYPE="midseason")

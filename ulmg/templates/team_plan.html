@@ -11,6 +11,7 @@
 <div class="mb-6">
     <h2 class="text-lg font-bold mb-1">{{ plan_season }} {% if half == 1 %}first{% else %}second{% endif %}-half plan</h2>
     <p class="text-sm text-gray-600">Days {% if half == 1 %}1-81{% else %}82-162{% endif %}. Every team's plan is public.</p>
+    <p class="text-sm text-gray-600 card-season">This plan uses the {{ plan_season|add:"-1" }} MLB cards.</p>
     {% if not is_open %}
     <p class="plan-closed text-sm mt-2">{{ closed_message }}</p>
     {% elif can_edit %}

@@ -522,7 +522,7 @@ class Play:
         """Why a player can't be slotted at a position, or None. Only a catcher needs a rating."""
         card = self.card(player)
         if position == CATCHER and (card is None or (card.defense or {}).get(CATCHER) is None):
-            return f"{player.name} has no catcher rating and cannot play C."
+            return f"{player.name} has no catcher rating for {self.season - 1} and cannot play C."
         return None
 
     def pitcher_problem(self, side, player, starting=False):
