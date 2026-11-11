@@ -84,9 +84,8 @@ class GamePageTestCase(TestCase):
             "Lineups are not filed.",
             "No rotation is set.",
             "No closer is named.",
-            "No one is in setup.",
-            "No one is in middle relief.",
-            "No one is in long relief.",
+            "No one is in single-inning relief.",
+            "No one is in multi-inning relief.",
         ):
             self.assertIn(note, body)
         self.assertNotIn('id="schedule-progress"', body)
@@ -134,9 +133,8 @@ class GamePageTestCase(TestCase):
             half=1,
             rotation=[self.starter.id],
             closer=self.starter,
-            setup=[self.starter.id],
-            middle=[self.call_up.id],
-            long_relief=[self.starter.id],
+            sirp=[self.starter.id],
+            mirp=[self.call_up.id],
             lineup_vs_lhp=card,
             lineup_vs_rhp=card,
         )
@@ -180,9 +178,8 @@ def _filed(team, starter, season=ULMG_SEASON):
         half=1,
         rotation=[starter.id],
         closer=starter,
-        setup=[starter.id],
-        middle=[starter.id],
-        long_relief=[starter.id],
+        sirp=[starter.id],
+        mirp=[starter.id],
         lineup_vs_lhp=card,
         lineup_vs_rhp=card,
     )
@@ -198,9 +195,8 @@ class PlanGapTestCase(TestCase):
                 ("lineups", "Lineups are not filed."),
                 ("rotation", "No rotation is set."),
                 ("bullpen", "No closer is named."),
-                ("bullpen", "No one is in setup."),
-                ("bullpen", "No one is in middle relief."),
-                ("bullpen", "No one is in long relief."),
+                ("bullpen", "No one is in single-inning relief."),
+                ("bullpen", "No one is in multi-inning relief."),
             ],
         )
 

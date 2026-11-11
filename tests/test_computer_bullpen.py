@@ -89,7 +89,7 @@ class BullpenRolesTestCase(ComputerGameTestCase):
         self.assertEqual(decision.payload["group"], computer_manager.CLOSER)
         self.assertIn("save situation", decision.text)
 
-    def test_a_capped_closer_is_skipped_for_middle_and_long(self):
+    def test_a_capped_closer_is_skipped_for_a_multi_inning_reliever(self):
         gf.counter(self.home.starters[0], start_limit_outs=24)
         closer = self.home.relievers[0]
         row = gf.counter(closer)
@@ -99,7 +99,7 @@ class BullpenRolesTestCase(ComputerGameTestCase):
         self.assertEqual(change.payload["pitcher"], self.home.swingman.id)
         decision = decision_before(log, change)
         self.assertEqual(decision.payload["role"], computer_manager.CLOSER)
-        self.assertEqual(decision.payload["group"], computer_manager.LONG)
+        self.assertEqual(decision.payload["group"], computer_manager.MIRP)
         self.assertEqual(decision.payload["skipped"][0][0], closer.id)
         self.assertIn("no innings left", decision.text)
 
@@ -115,7 +115,7 @@ class BullpenRolesTestCase(ComputerGameTestCase):
         self.assertEqual(decision.payload["skipped"][0][0], closer.id)
         self.assertIn("40 pitches", decision.text)
 
-    def test_setup_holds_the_seventh_and_eighth_and_the_closer_takes_the_ninth(self):
+    def test_a_single_inning_reliever_holds_the_seventh_and_eighth_and_the_closer_takes_the_ninth(self):
         gf.counter(self.home.starters[0], start_limit_outs=18)
         setup = self.home.relievers[1]
         gf.counter(setup, relief_limit_outs=9)
@@ -123,16 +123,16 @@ class BullpenRolesTestCase(ComputerGameTestCase):
         first, second = self.until_changes(log, HOME, 2)
         self.assertEqual(first.payload["pitcher"], setup.id)
         self.assertEqual(inning_of(log, first), 7)
-        self.assertEqual(decision_before(log, first).payload["role"], computer_manager.SETUP)
+        self.assertEqual(decision_before(log, first).payload["role"], computer_manager.SIRP)
         self.assertEqual(second.payload["pitcher"], self.home.relievers[0].id)
-        self.assertEqual(inning_of(log, second), 9, "setup stays through the 8th, when his role still applies")
+        self.assertEqual(inning_of(log, second), 9, "the single-inning reliever stays through the 8th, when his role still applies")
         decision = decision_before(log, second)
         self.assertEqual(decision.payload["need"], "role")
         self.assertEqual(decision.payload["role"], computer_manager.CLOSER)
         self.assertIn(setup.name, decision.text)
         self.assertEqual(models.UsageAppearance.objects.get(game=self.game, player=setup).outs, 6)
 
-    def test_setup_comes_in_late_in_a_tie(self):
+    def test_a_single_inning_reliever_comes_in_late_in_a_tie(self):
         gf.set_rates([self.home.hitters[0]], gf.STRIKEOUT_RATES)
         gf.counter(self.home.starters[0], start_limit_outs=21)
         log = self.open()
@@ -141,15 +141,15 @@ class BullpenRolesTestCase(ComputerGameTestCase):
         self.assertEqual(inning_of(log, change), 8)
         self.assertEqual(self.play(log).state["score"], {"away": 0, "home": 0})
 
-    def test_middle_and_long_after_an_early_knockout(self):
+    def test_a_multi_inning_reliever_after_an_early_knockout(self):
         gf.counter(self.home.starters[0], start_limit_outs=6)
         log = self.open()
         change = self.until_changes(log, HOME, 1)[0]
         self.assertEqual(change.payload["pitcher"], self.home.swingman.id)
         self.assertEqual(inning_of(log, change), 3)
-        self.assertEqual(decision_before(log, change).payload["role"], computer_manager.LONG)
+        self.assertEqual(decision_before(log, change).payload["role"], computer_manager.MIRP)
 
-    def test_middle_and_long_with_a_big_lead_in_the_seventh(self):
+    def test_a_multi_inning_reliever_with_a_big_lead_in_the_seventh(self):
         gf.set_rates(self.home.hitters[:2], gf.HOME_RUN_RATES)
         gf.counter(self.home.starters[0], start_limit_outs=18)
         log = self.open()
@@ -158,19 +158,10 @@ class BullpenRolesTestCase(ComputerGameTestCase):
         self.assertGreater(self.play(log).state["score"]["home"], 3)
         self.assertEqual(change.payload["pitcher"], self.home.swingman.id)
         decision = decision_before(log, change)
-        self.assertEqual(decision.payload["role"], computer_manager.MIDDLE)
-        self.assertEqual(decision.payload["group"], computer_manager.LONG)
+        self.assertEqual(decision.payload["role"], computer_manager.MIRP)
+        self.assertEqual(decision.payload["group"], computer_manager.MIRP)
 
-    def test_a_quick_pen_brings_the_closer_in_for_an_eighth_inning_save(self):
-        self.home.file(half=1, bullpen_logic=models.HalfPlan.QUICK_PEN)
-        gf.counter(self.home.starters[0], start_limit_outs=21)
-        log = self.open()
-        change = self.until_changes(log, HOME, 1)[0]
-        self.assertEqual(change.payload["pitcher"], self.home.relievers[0].id)
-        self.assertEqual(inning_of(log, change), 8)
-        self.assertEqual(decision_before(log, change).payload["role"], computer_manager.CLOSER)
-
-    def test_with_middle_and_long_spent_setup_is_next_then_the_closer(self):
+    def test_with_the_multi_inning_reliever_spent_a_single_inning_arm_is_next_then_the_closer(self):
         gf.counter(self.home.starters[0], start_limit_outs=6)
         row = gf.counter(self.home.swingman)
         gf.counter(self.home.swingman, outs=usage.season_innings_cap(row))
@@ -178,7 +169,7 @@ class BullpenRolesTestCase(ComputerGameTestCase):
         log = self.open()
         first, second = self.until_changes(log, HOME, 2)
         self.assertEqual(first.payload["pitcher"], self.home.relievers[1].id)
-        self.assertEqual(decision_before(log, first).payload["group"], computer_manager.SETUP)
+        self.assertEqual(decision_before(log, first).payload["group"], computer_manager.SIRP)
         self.assertEqual(second.payload["pitcher"], self.home.relievers[0].id)
         self.assertEqual(decision_before(log, second).payload["group"], computer_manager.CLOSER)
 

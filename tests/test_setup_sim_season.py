@@ -49,10 +49,10 @@ class DefaultPlanTestCase(TestCase):
         fields, problems = sim_setup.default_plan(self.atl, SEASON)
         s = self.roster.starters
         self.assertEqual(fields["rotation"], [s[2], s[0], s[1], s[3], s[4]])
-        self.assertIn(sixth, fields["setup"] + fields["middle"] + fields["long_relief"])
+        self.assertIn(sixth, fields["sirp"] + fields["mirp"])
         self.assertEqual(problems, [])
 
-    def test_closer_by_saves_setup_by_holds_and_everyone_else_in_middle_relief(self):
+    def test_closer_by_saves_then_single_inning_by_holds_and_the_rest_multi_inning(self):
         third = create_pitcher(self.atl, "ATL Reliever 3", stats=RELIEVER_STATS)
         first, second = self.roster.relievers
         set_pitch_stats(second, sv=30, hld=2)
@@ -60,9 +60,8 @@ class DefaultPlanTestCase(TestCase):
         set_pitch_stats(self.roster.swingman, hld=5)
         fields, _ = sim_setup.default_plan(self.atl, SEASON)
         self.assertEqual(fields["closer"], second)
-        self.assertEqual(fields["setup"], [first, self.roster.swingman])
-        self.assertEqual(fields["middle"], [third])
-        self.assertEqual(fields["long_relief"], [])
+        self.assertEqual(fields["sirp"], [first, self.roster.swingman])
+        self.assertEqual(fields["mirp"], [third])
 
     def test_lineup_is_the_best_bats_at_positions_they_can_play_with_the_best_remaining_at_dh(self):
         utility = create_hitter(self.atl, "ATL Utility", position="IF", defense={"2B": 1.0, "SS": 1.0})
@@ -100,7 +99,7 @@ class DefaultPlanTestCase(TestCase):
         fields, problems = sim_setup.default_plan(self.atl, SEASON)
         self.assertEqual(problems, ["No card for ATL Reliever 1; left out of the plan."])
         self.assertNotEqual(fields["closer"], reliever)
-        self.assertNotIn(reliever, fields["setup"] + fields["middle"] + fields["long_relief"])
+        self.assertNotIn(reliever, fields["sirp"] + fields["mirp"])
 
     def test_a_missing_catcher_card_leaves_nobody_to_catch(self):
         models.Card.objects.filter(player=self.roster.catcher).delete()
@@ -123,7 +122,7 @@ class SetupSimSeasonCommandTestCase(TestCase):
         self.assertIsNotNone(plan, msg=f"{team_obj.abbreviation} half {half}")
         self.assertEqual(len(plan.rotation), 5)
         self.assertIsNotNone(plan.closer_id)
-        self.assertEqual(len(plan.setup), 2)
+        self.assertEqual(len(plan.sirp), 2)
         self.assertEqual(len(plan.bench), 2)
         self.assertEqual(len(plan.lineup_vs_lhp), 9)
         self.assertEqual(len(plan.lineup_vs_rhp), 9)
@@ -174,7 +173,7 @@ class SetupSimSeasonCommandTestCase(TestCase):
             self.assert_complete_plan(team_obj, 1)
 
         car = plans.find_plan(team("CAR"), SEASON, 1)
-        self.assertNotIn(car_reliever.id, car.setup + car.middle + car.long_relief + [car.closer_id])
+        self.assertNotIn(car_reliever.id, car.sirp + car.mirp + [car.closer_id])
         self.assertTrue(all(plans.starters(car).values()))
         self.assertEqual(len(car.lineup_vs_rhp), 9)
 
