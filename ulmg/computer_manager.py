@@ -5,38 +5,23 @@ from dataclasses import dataclass, field
 
 # Bullpen roles, named as the half plan's fields. OTHER is every other pitcher on the game's roster.
 CLOSER = "closer"
-SETUP = "setup"
-MIDDLE = "middle"
-LONG = "long"
+SIRP = "sirp"
+MIRP = "mirp"
 OTHER = "other"
 ROLE_LABELS = {
     CLOSER: "closer",
-    SETUP: "setup",
-    MIDDLE: "middle",
-    LONG: "long",
+    SIRP: "single-inning",
+    MIRP: "multi-inning",
     OTHER: "other arms",
 }
 # When the situation's group has no available arm, the next groups in this order.
-# Middle and long go before setup and the closer, so a missing arm does not burn a leverage arm first.
-FALLBACK_ORDER = (MIDDLE, LONG, SETUP, CLOSER)
+# Multi-inning goes before single-inning and the closer, so a missing arm does not burn a leverage arm first.
+FALLBACK_ORDER = (MIRP, SIRP, CLOSER)
 
 # Rule 9.19(d)(1): a lead of no more than three runs, with at least an inning to pitch.
 SAVE_MAX_LEAD = 3
-# Setup comes in with a lead of this many runs or fewer, or a tie.
-SETUP_MAX_LEAD = 3
-
-# Bullpen logic, the half plan's choices. Each one is how early the leverage
-# arms come in. long_through is the last inning that calls for long relief.
-# setup_innings call for setup in a tie or a lead of SETUP_MAX_LEAD or fewer.
-# closer_first is the first inning a save situation calls for the closer.
-# Anything those three do not claim is middle relief.
-BULLPEN_WINDOWS = {
-    "quick": {"long_through": 4, "setup_innings": (6, 7, 8), "closer_first": 8},
-    "normal": {"long_through": 5, "setup_innings": (7, 8), "closer_first": 9},
-    "slow": {"long_through": 6, "setup_innings": (8,), "closer_first": 9},
-}
-DEFAULT_BULLPEN = "normal"
-_ORDINALS = {1: "1st", 2: "2nd", 3: "3rd", 4: "4th", 5: "5th", 6: "6th", 7: "7th", 8: "8th", 9: "9th"}
+# A close game is within this many runs either way. From the 6th on, that wants one inning.
+CLOSE_RUNS = 3
 
 # The starter hook, by the half plan's setting: the share of his fatigue ceiling he may spend,
 # and the runs he may allow in the game, before the computer pulls him.
@@ -89,40 +74,13 @@ def starter(planned, rotation, problem):
     return _first_legal(order, problem)
 
 
-def bullpen_order(closer, setup, middle, long_relief, others=()):
+def bullpen_order(closer, sirp, mirp, others=()):
     """
     The order a human's pitching choices are listed in: the closer, then
-    setup, then middle, then long relief, then any other pitcher on the
-    game's roster.
+    single-inning relief, then multi-inning relief, then any other pitcher
+    on the game's roster.
     """
-    return [closer, *setup, *middle, *long_relief, *others]
-
-
-def _window(logic):
-    return BULLPEN_WINDOWS.get(logic, BULLPEN_WINDOWS[DEFAULT_BULLPEN])
-
-
-def _ordinal(inning):
-    return _ORDINALS.get(inning, f"{inning}th")
-
-
-def _inning_phrase(innings):
-    """'in the 7th and 8th' from a tuple of inning numbers."""
-    words = [_ordinal(inning) for inning in innings]
-    if len(words) == 1:
-        return f"in the {words[0]}"
-    return "in the " + ", ".join(words[:-1]) + f" and {words[-1]}"
-
-
-def describe_bullpen_logic(logic):
-    """One sentence naming when this logic calls for long relief, setup and the closer. Middle is the rest."""
-    window = _window(logic)
-    return (
-        f"Long relief through the {_ordinal(window['long_through'])}. "
-        f"Setup {_inning_phrase(window['setup_innings'])}, tied or leading by {SETUP_MAX_LEAD} or fewer. "
-        f"The closer from the {_ordinal(window['closer_first'])} on, in a save situation. "
-        "Middle relief otherwise."
-    )
+    return [closer, *sirp, *mirp, *others]
 
 
 def is_save_situation(lead, runners_on, outs):
@@ -141,19 +99,18 @@ def is_save_situation(lead, runners_on, outs):
     return lead <= runners_on + 2
 
 
-def bullpen_role(inning, lead, runners_on, outs, logic=None):
+def bullpen_role(inning, lead, runners_on, outs):
     """
-    The role the situation calls for under a bullpen logic. lead is the
-    fielding side's, negative when it trails. An unknown logic reads as normal.
+    The role the situation calls for. lead is the fielding side's, negative
+    when it trails. The closer works a save from the 9th on. From the 6th
+    on, a game within three runs wants one inning. Anything earlier, or a
+    game that is not that close, wants a multi-inning arm.
     """
-    window = _window(logic)
-    if inning >= window["closer_first"] and is_save_situation(lead, runners_on, outs):
+    if inning >= 9 and is_save_situation(lead, runners_on, outs):
         return CLOSER
-    if inning in window["setup_innings"] and 0 <= lead <= SETUP_MAX_LEAD:
-        return SETUP
-    if inning <= window["long_through"]:
-        return LONG
-    return MIDDLE
+    if inning >= 6 and -CLOSE_RUNS <= lead <= CLOSE_RUNS:
+        return SIRP
+    return MIRP
 
 
 def group_order(role):

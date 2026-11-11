@@ -255,7 +255,7 @@ class PlanEligibilityTestCase(RosterMoveTestCase):
     def test_a_called_up_player_is_rejected_from_a_home_game_plan(self):
         up = self.call_ups[0]
         self.move(up, self.roster.relievers[1])
-        self.roster.file(setup=[up])
+        self.roster.file(sirp=[up])
         home_day = home_games(self.atl)[0].day
         road_day = road_games(self.atl)[0].day
 
@@ -285,11 +285,11 @@ class PlanEligibilityTestCase(RosterMoveTestCase):
     def test_a_called_up_reliever_is_on_road_bullpens_only(self):
         up = self.call_ups[0]
         self.move(up, self.roster.relievers[1])
-        self.roster.file(setup=[up])
+        self.roster.file(sirp=[up])
         road = plans.game_sheet(road_games(self.atl)[0])["road"]
         home = plans.game_sheet(home_games(self.atl)[0])["home"]
-        self.assertIn(up, road["setup"])
-        self.assertNotIn(up, home["setup"])
+        self.assertIn(up, road["sirp"])
+        self.assertNotIn(up, home["sirp"])
 
     def test_a_called_up_starter_is_auto_filled_into_road_games_only(self):
         up = self.call_ups[0]
@@ -306,9 +306,8 @@ class PlanEligibilityTestCase(RosterMoveTestCase):
         fields = {
             "rotation": self.roster.starters,
             "closer": self.roster.relievers[0],
-            "setup": [],
-            "middle": [],
-            "long_relief": [self.roster.swingman],
+            "sirp": [],
+            "mirp": [self.roster.swingman],
             "bench": [self.roster.bench[0]],
             "lineup_vs_lhp": self.roster.lineup(),
             "lineup_vs_rhp": self.roster.lineup(),
@@ -376,9 +375,9 @@ class PlanEligibilityTestCase(RosterMoveTestCase):
         home = next(g for g in home_games(self.atl) if g.day == home_day)
         self.assertEqual(plans.game_sheet(home)["home"]["starter"], swingman)
         # He stays in the home bullpen and leaves the road one.
-        self.assertIn(swingman, plans.game_sheet(home)["home"]["long_relief"])
+        self.assertIn(swingman, plans.game_sheet(home)["home"]["mirp"])
         road = road_games(self.atl)[0]
-        self.assertNotIn(swingman, plans.game_sheet(road)["road"]["long_relief"])
+        self.assertNotIn(swingman, plans.game_sheet(road)["road"]["mirp"])
         with self.assertRaisesMessage(plans.PlanError, "sent down and can be planned into home games only"):
             plans.save_day(self.plan, road.day, starter=swingman)
 
