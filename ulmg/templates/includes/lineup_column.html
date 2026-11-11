@@ -1,5 +1,5 @@
 {# ABOUTME: One lineup column, batting order 1-9, with a position on each slot. #}
-{# ABOUTME: Expects prefix, label, slots, positions and editable. vR and vL each get one of these. #}
+{# ABOUTME: Expects prefix, label, slots, positions and editable. vs Righty and vs Lefty each get one. #}
 <style>
     /* The drop well stays the height of a player card. An empty one is a grey well. */
     .lineup-column .slot-well {
@@ -10,22 +10,29 @@
     .lineup-column .slot-well:not(:has(.decision-card)) {
         background: #e5e7eb;
     }
+    .lineup-column .slot-frame:not(:has(.decision-card)) .slot-remove {
+        display: none;
+    }
     .lineup-column .slot-well .decision-card {
         flex: 1 1 auto;
         width: 100%;
+        padding-right: 1.25rem;
     }
 </style>
 <div class="lineup-column" data-lineup="{{ prefix }}">
-    <h3 class="font-bold border-b border-gray-300 mb-1">{{ label }}</h3>
+    <div class="flex items-end justify-between gap-3 border-b border-gray-300 mb-2 pb-1">
+        <h3 class="text-2xl font-bold leading-none">{{ label }}</h3>
+        {% if editable %}<button type="button" data-clear-lineup class="shrink-0 border border-gray-400 px-2 py-1 text-xs leading-none">Clear all</button>{% endif %}
+    </div>
     <ol class="space-y-1">
         {% for slot in slots %}
         <li class="lineup-slot border border-dashed border-gray-300 px-1 py-0.5" data-index="{{ slot.order }}">
-            <div class="flex justify-between text-xs leading-tight text-gray-500">
-                <span>{{ slot.order }}</span>
-                {% if editable %}<button type="button" data-clear class="underline">Clear</button>{% endif %}
-            </div>
-            <div class="slot-body slot-well">
-                {% if slot.card %}{% include "includes/decision_card.html" with card=slot.card %}{% endif %}
+            <div class="text-xs leading-tight text-gray-500">{{ slot.order }}</div>
+            <div class="slot-frame relative">
+                <div class="slot-body slot-well">
+                    {% if slot.card %}{% include "includes/decision_card.html" with card=slot.card %}{% endif %}
+                </div>
+                {% if editable %}<button type="button" data-clear class="slot-remove absolute top-0.5 right-0.5 z-10 border border-gray-400 bg-white px-1 leading-none text-gray-700" aria-label="Remove from this spot" title="Remove from this spot">&times;</button>{% endif %}
             </div>
             {% if editable %}
             <div class="flex flex-wrap gap-1 mt-0.5" data-position-buttons data-all="{{ positions|join:',' }}">
