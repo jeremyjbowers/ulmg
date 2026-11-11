@@ -579,7 +579,8 @@ def team_plan_day(request, abbreviation, half, day, season=None):
     season = int(season)
     if not plans.can_edit(request.user, team):
         return HttpResponseForbidden("Only this team's owner and the commissioner can edit its plan.")
-    plan = get_object_or_404(models.HalfPlan, team=team, season=season, half=half)
+    # An owner can open a day before the cards are filed. The plan is the place that day is stored.
+    plan = plans.plan_for(team, season, half)
     row = next((item for item in plans.plan_rows(plan) if item["day"] == day), None)
     if row is None:
         raise Http404(f"Day {day} is not in half {half}.")

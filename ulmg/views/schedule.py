@@ -148,6 +148,7 @@ def team_schedule(request, abbreviation, season=None):
         starter = side["starter"] if side else None
         manual = bool(side and side["starter_manual"])
         locked = plans.is_locked(game)
+        editable = can_edit and not locked and plans.is_open(game.series.slot.half)
         rows.append(
             {
                 "game": game,
@@ -162,7 +163,19 @@ def team_schedule(request, abbreviation, season=None):
                 "can_play": not game.is_played and (tester or (next_road is not None and game.id == next_road.id)),
                 "has_box": game.is_played and game.id in logged,
                 "locked": locked,
-                "editable": can_edit and not locked and plans.is_open(game.series.slot.half),
+                "editable": editable,
+                "day_url": (
+                    season_url(
+                        "teams",
+                        team.abbreviation.lower(),
+                        "plan",
+                        game.series.slot.half,
+                        season=season,
+                        tail=("day", game.day),
+                    )
+                    if editable
+                    else ""
+                ),
                 "lineup_gap": bool(side and side["unavailable"]),
             }
         )

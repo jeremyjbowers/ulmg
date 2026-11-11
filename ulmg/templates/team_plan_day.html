@@ -10,7 +10,12 @@
 <div>
     <h2 class="text-lg font-bold mb-1">Day {{ row.day }}: {% if row.is_home %}vs{% else %}at{% endif %} {{ row.opponent.abbreviation }}</h2>
     <p class="text-sm text-gray-600 mb-1">The rotation has {% if side.starter %}{{ side.starter.name }}{% else %}no one{% endif %} against {% if side.opponent_starter %}{{ side.opponent_starter.name }} ({{ side.opponent_starter.throws|default:"?" }}){% else %}an unplanned starter{% endif %}. <a href="/teams/{{ team.abbreviation|lower }}/schedule/{{ plan_season }}/" class="underline">Back to the schedule</a></p>
-    <p class="text-sm text-gray-600 card-season mb-4">This day uses the {{ plan_season|add:"-1" }} MLB cards.</p>
+    <p class="text-sm text-gray-600 card-season mb-1">This day uses the {{ plan_season|add:"-1" }} MLB cards.</p>
+    {% if row.is_home %}
+    <p class="day-roster-note text-sm text-gray-600 mb-4">This is a home game. A call-up cannot be in this lineup. It uses the roster the half opened with.</p>
+    {% else %}
+    <p class="day-roster-note text-sm text-gray-600 mb-4">This is a road game. Check Set this day's lineup to file a call-up here. vs Righty and vs Lefty cannot hold him, because those cards also cover home days.</p>
+    {% endif %}
     {% include 'includes/plan_errors.html' %}
 
     {% if not is_open %}

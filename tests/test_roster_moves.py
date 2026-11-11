@@ -336,7 +336,7 @@ class PlanEligibilityTestCase(RosterMoveTestCase):
             problems,
             [
                 "Lineup vs RHP: ATL Called Hitter is a call-up and can be planned into road games only; "
-                "the lineup cards also cover home days. File him into road days' lineups instead."
+                "the lineup cards also cover home days. Open that road day on the schedule and set its lineup."
             ],
         )
         self.plan.refresh_from_db()

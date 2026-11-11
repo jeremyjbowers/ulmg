@@ -217,7 +217,7 @@ def _call_up_card_errors(team, season, half, rosters, cards):
     """
     A call-up can be planned into road games only, and the lineup cards
     cover every home day that hasn't opened, so a call-up can't be on a card
-    while one is left. He goes into road days' lineups one day at a time.
+    while one is left. He goes on one road day's lineup, from the schedule.
     """
     call_ups = rosters.road - rosters.home
     carded = [(label, entry["player"]) for label, entries in cards for entry in entries]
@@ -231,7 +231,7 @@ def _call_up_card_errors(team, season, half, rosters, cards):
         return []
     return [
         f"{label}: {player.name} is a call-up and can be planned into road games only; "
-        "the lineup cards also cover home days. File him into road days' lineups instead."
+        "the lineup cards also cover home days. Open that road day on the schedule and set its lineup."
         for label, player in carded
         if player.id in call_ups
     ]
