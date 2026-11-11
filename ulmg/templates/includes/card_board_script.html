@@ -8,6 +8,43 @@
 (function () {
     var picked = null;
 
+    function csrfToken() {
+        var input = document.querySelector("[name=csrfmiddlewaretoken]");
+        return input ? input.value : "";
+    }
+
+    function applyDesignation(playerId, designation) {
+        document.querySelectorAll('.decision-card[data-kind="p"][data-player="' + playerId + '"]').forEach(function (card) {
+            card.dataset.designation = designation;
+            card.querySelectorAll("button[data-designation]").forEach(function (button) {
+                var on = button.dataset.designation === designation;
+                button.classList.toggle("bg-gray-800", on);
+                button.classList.toggle("text-white", on);
+            });
+        });
+    }
+
+    function postDesignation(card, designation, previous) {
+        if (!card.dataset.designationUrl) {
+            applyDesignation(card.dataset.player, previous);
+            return;
+        }
+        var token = csrfToken();
+        var body = new URLSearchParams();
+        body.set("player", card.dataset.player);
+        body.set("designation", designation);
+        if (token) body.set("csrfmiddlewaretoken", token);
+        fetch(card.dataset.designationUrl, {
+            method: "POST",
+            headers: {"X-Requested-With": "fetch", "X-CSRFToken": token},
+            body: body
+        }).then(function (response) {
+            if (!response.ok) applyDesignation(card.dataset.player, previous);
+        }).catch(function () {
+            applyDesignation(card.dataset.player, previous);
+        });
+    }
+
     function boardOf(slot) {
         return slot.closest("[data-lineup], [data-rotation], [data-starter-grid]");
     }
@@ -75,6 +112,18 @@
     }
 
     document.addEventListener("click", function (event) {
+        var designationButton = event.target.closest("button[data-designation]");
+        if (designationButton) {
+            event.preventDefault();
+            var named = designationButton.closest(".decision-card");
+            if (!named) return;
+            var designation = designationButton.dataset.designation;
+            var previous = named.dataset.designation;
+            if (designation === previous) return;
+            applyDesignation(named.dataset.player, designation);
+            postDesignation(named, designation, previous);
+            return;
+        }
         var clearButton = event.target.closest("[data-clear]");
         if (clearButton) {
             event.preventDefault();
@@ -106,6 +155,10 @@
     });
 
     document.addEventListener("dragstart", function (event) {
+        if (event.target.closest("button")) {
+            event.preventDefault();
+            return;
+        }
         var card = event.target.closest(".decision-card");
         if (!card) return;
         event.dataTransfer.setData("text/plain", card.dataset.kind + ":" + card.dataset.player);

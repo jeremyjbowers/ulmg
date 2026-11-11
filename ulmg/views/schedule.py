@@ -7,7 +7,7 @@ from django.views.decorators.cache import never_cache
 
 from ulmg import decision_cards, models, plans, roster_moves, schedule, utils
 from ulmg.season_paths import bounce, season_url
-from ulmg.views.plan import _built_cards, _int_or_none
+from ulmg.views.plan import _built_cards, _int_or_none, by_last_name
 
 
 def _team_result(game, is_home):
@@ -134,7 +134,7 @@ def team_schedule(request, abbreviation, season=None):
         roster_ids |= roster_moves.HalfRosters(team, season, half).all
     pitchers = [
         player
-        for player in models.Player.objects.filter(id__in=roster_ids).order_by("name")
+        for player in by_last_name(models.Player.objects.filter(id__in=roster_ids))
         if plans.can_pitch(player)
     ]
     pitcher_cards = _built_cards(pitchers, season, "p") if can_edit else {}
@@ -168,4 +168,12 @@ def team_schedule(request, abbreviation, season=None):
         )
     context["rows"] = rows
     context["pitcher_cards"] = list(pitcher_cards.values())
+    context["designation_url"] = season_url(
+        "teams",
+        team.abbreviation.lower(),
+        "plan",
+        plans.current_half(),
+        season=season,
+        tail=("designation",),
+    )
     return render(request, "team_schedule.html", context, status=400 if errors else 200)
