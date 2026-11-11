@@ -1,10 +1,12 @@
-# ABOUTME: Tests for the team Game tab: lineups, the schedule and call-ups live there, and the four stretches of a season.
+# ABOUTME: Tests for the team Game tab: filing gaps, games played and left, and the next road series.
 # ABOUTME: The roster page stays the roster the half opens with. Uses real teams, players and the test client.
+
+from unittest.mock import patch
 
 from django.contrib.auth.models import User
 from django.test import TestCase, override_settings
 
-from ulmg import models, roster_moves, utils
+from ulmg import models, plans, roster_moves, schedule, utils
 from tests.usage_fixtures import ULMG_SEASON, create_pitcher, create_series, create_teams
 
 
@@ -55,35 +57,105 @@ class GamePageTestCase(TestCase):
 
     def setUp(self):
         self.client.force_login(self.owner)
+        patcher = patch("ulmg.utils.league_season", return_value=ULMG_SEASON)
+        patcher.start()
+        self.addCleanup(patcher.stop)
 
-    def test_the_game_page_lists_the_four_stretches_and_the_lineup_and_schedule_pages(self):
+    def test_the_game_page_names_filing_gaps_and_the_next_road_series(self):
         page = self.client.get("/teams/atl/game/")
         self.assertEqual(page.status_code, 200)
         body = page.content.decode()
         self.assertLess(body.index("Roster"), body.index(">Game</"))
         self.assertLess(body.index(">Game</"), body.index("Trades & picks"))
-        for label in ("First half, home", "First half, away", "Second half, home", "Second half, away"):
-            self.assertIn(label, body)
+        self.assertNotIn("First half, home", body)
+        self.assertNotIn("This half", body)
+        self.assertIn(">Up next<", body)
         year = utils.league_season()
         self.assertIn(f'href="/teams/atl/plan/1/{year}/edit/"', body)
         self.assertIn(f'href="/teams/atl/schedule/{year}/"', body)
         self.assertIn(f'href="/teams/atl/results/{year}/"', body)
         self.assertIn(">Set lineups<", body)
         self.assertIn(">Set rotation<", body)
-        self.assertIn("half-not-started", body)
+        self.assertIn(f'href="/teams/atl/plan/1/{year}/bullpen/"', body)
+        self.assertLess(body.index(">Schedule<"), body.index(">Bullpen<"))
+        self.assertLess(body.index(">Bullpen<"), body.index(">Results<"))
+        self.assertIn('id="plan-gaps"', body)
+        for note in (
+            "Lineups are not filed.",
+            "No rotation is set.",
+            "No closer is named.",
+            "No one is in setup.",
+            "No one is in middle relief.",
+            "No one is in long relief.",
+        ):
+            self.assertIn(note, body)
+        self.assertNotIn('id="schedule-progress"', body)
+        self.assertNotIn('id="home-roster"', body)
+        self.assertNotIn('data-side="home"', body)
+        series = body.split('id="away-series"', 1)[1]
+        self.assertIn('data-opponent="HCH"', series)
+        self.assertIn('data-day="1"', series)
+        self.assertIn("No starter", series)
+        game = models.ScheduleGame.objects.get(series__road_team=self.atl, day=1)
+        self.assertIn(f'href="/games/{game.id}/"', series)
+        self.assertEqual(series.count("schedule-play"), 1)
 
-    def test_a_move_changes_the_away_roster_and_leaves_the_home_roster(self):
+    def test_a_played_road_game_counts_and_drops_off_the_list(self):
+        game = models.ScheduleGame.objects.get(series__road_team=self.atl, day=1)
+        game.home_score = 4
+        game.road_score = 2
+        game.save()
+        body = self.client.get("/teams/atl/game/").content.decode()
+        self.assertIn("Away: 1 played, 2 left. Home: 0 played, 0 left.", body)
+        listed = body.split('id="away-series"', 1)[1].split('id="away-roster"', 1)[0]
+        self.assertNotIn('data-day="1"', listed)
+        self.assertIn('data-day="2"', listed)
+        self.assertIn("1 played, 2 left", listed)
+        self.assertNotIn('data-side="home"', body)
+        nxt = models.ScheduleGame.objects.get(series__road_team=self.atl, day=2)
+        self.assertEqual(body.count("schedule-play"), 1)
+        self.assertIn(f'href="/games/{nxt.id}/"', body)
+
+    def test_a_home_series_stays_off_the_list(self):
+        foe = models.Team.objects.create(
+            abbreviation="BOS", city="Boston", nickname="Pilgrims", division="Rickey"
+        )
+        create_series(self.atl, foe, length=2, slot_number=8, first_day=10)
+        body = self.client.get("/teams/atl/game/").content.decode()
+        series = body.split('id="away-series"', 1)[1]
+        self.assertIn('data-opponent="HCH"', series)
+        self.assertNotIn('data-opponent="BOS"', series)
+
+    def test_a_filed_plan_has_no_gap_notes(self):
+        card = [{}] * plans.LINEUP_SIZE
+        plan = models.HalfPlan.objects.create(
+            team=self.atl,
+            season=ULMG_SEASON,
+            half=1,
+            rotation=[self.starter.id],
+            closer=self.starter,
+            setup=[self.starter.id],
+            middle=[self.call_up.id],
+            long_relief=[self.starter.id],
+            lineup_vs_lhp=card,
+            lineup_vs_rhp=card,
+        )
+        for game in models.ScheduleGame.objects.filter(series__slot__season=ULMG_SEASON):
+            models.HalfPlanDay.objects.create(plan=plan, day=game.day, auto_starter=self.starter)
+        body = self.client.get("/teams/atl/game/").content.decode()
+        self.assertIn('id="plan-complete"', body)
+        self.assertNotIn('id="plan-gaps"', body)
+        self.assertIn(self.starter.name, body.split('id="away-series"', 1)[1])
+
+    def test_a_move_changes_the_away_roster(self):
         roster_moves.make_move(self.atl, self.call_up, self.starter, season=ULMG_SEASON, half=1)
         page = self.client.get("/teams/atl/game/")
         body = page.content.decode()
-        home = body.split('id="home-roster"', 1)[1].split('id="away-roster"', 1)[0]
+        self.assertNotIn('id="home-roster"', body)
         away = body.split('id="away-roster"', 1)[1].split('id="call-up-pool"', 1)[0]
-        self.assertIn(self.starter.name, home)
-        self.assertNotIn(self.call_up.name, home)
-        self.assertNotIn("/moves/new/", home)
         self.assertIn(self.call_up.name, away)
         self.assertNotIn(self.starter.name, away)
-        self.assertIn("in play", body)
+        self.assertIn("Away: 0 played, 3 left. Home: 0 played, 0 left.", body)
         self.assertIn("the computer will not use a player who is out of plate appearances or innings", body)
 
         roster = self.client.get("/teams/atl/").content.decode()
@@ -92,3 +164,105 @@ class GamePageTestCase(TestCase):
         self.assertNotIn("Send down</a>", roster)
         self.assertNotIn('href="/teams/atl/plan/', roster)
         self.assertNotIn('href="/teams/atl/schedule/"', roster)
+
+
+def _club(abbreviation):
+    return models.Team.objects.create(
+        abbreviation=abbreviation, city=abbreviation, nickname="Club", division="Rickey"
+    )
+
+
+def _filed(team, starter, season=ULMG_SEASON):
+    card = [{}] * plans.LINEUP_SIZE
+    return models.HalfPlan.objects.create(
+        team=team,
+        season=season,
+        half=1,
+        rotation=[starter.id],
+        closer=starter,
+        setup=[starter.id],
+        middle=[starter.id],
+        long_relief=[starter.id],
+        lineup_vs_lhp=card,
+        lineup_vs_rhp=card,
+    )
+
+
+class PlanGapTestCase(TestCase):
+    def test_an_empty_plan_names_every_gap(self):
+        _, atl = create_teams()
+        notes = [(gap["kind"], gap["text"]) for gap in plans.plan_gaps(atl, ULMG_SEASON, 1)]
+        self.assertEqual(
+            notes,
+            [
+                ("lineups", "Lineups are not filed."),
+                ("rotation", "No rotation is set."),
+                ("bullpen", "No closer is named."),
+                ("bullpen", "No one is in setup."),
+                ("bullpen", "No one is in middle relief."),
+                ("bullpen", "No one is in long relief."),
+            ],
+        )
+
+    def test_one_short_lineup_card_is_named(self):
+        _, atl = create_teams()
+        starter = create_pitcher("ATL Starter", team=atl, g=10, gs=10, ip="60.0")
+        plan = _filed(atl, starter)
+        plan.lineup_vs_lhp = []
+        plan.save()
+        self.assertEqual(
+            plans.plan_gaps(atl, ULMG_SEASON, 1),
+            [{"kind": "lineups", "text": "The lineup vs LHP is not filed."}],
+        )
+
+    def test_open_days_without_a_starter_are_a_rotation_gap(self):
+        home, atl = create_teams()
+        create_series(home, atl, length=2)
+        starter = create_pitcher("ATL Starter", team=atl, g=10, gs=10, ip="60.0")
+        plan = _filed(atl, starter)
+        models.HalfPlanDay.objects.create(
+            plan=plan,
+            day=1,
+            auto_starter=starter,
+        )
+        self.assertEqual(
+            plans.plan_gaps(atl, ULMG_SEASON, 1),
+            [{"kind": "rotation", "text": "1 open day has no starter."}],
+        )
+
+    def test_a_complete_plan_has_no_gaps(self):
+        home, atl = create_teams()
+        games = create_series(home, atl, length=2)
+        starter = create_pitcher("ATL Starter", team=atl, g=10, gs=10, ip="60.0")
+        plan = _filed(atl, starter)
+        for game in games:
+            models.HalfPlanDay.objects.create(plan=plan, day=game.day, auto_starter=starter)
+        self.assertEqual(plans.plan_gaps(atl, ULMG_SEASON, 1), [])
+
+
+class UpcomingRoadSeriesTestCase(TestCase):
+    def test_the_next_three_road_series_skip_home_games_and_finished_series(self):
+        home, atl = create_teams()
+        first = create_series(home, atl, length=2, slot_number=1, first_day=1)
+        first[0].home_score = 3
+        first[0].road_score = 1
+        first[0].save()
+        extras = []
+        for number, abbreviation in enumerate(["BOS", "NYK", "CHI", "DET"], start=2):
+            club = _club(abbreviation)
+            create_series(club, atl, length=1, slot_number=number, first_day=10 + number)
+            extras.append(abbreviation)
+        foe = _club("PHI")
+        create_series(atl, foe, length=2, slot_number=8, first_day=30)
+
+        rows = schedule.upcoming_road_series(atl, ULMG_SEASON, 1)
+        self.assertEqual([row["opponent"].abbreviation for row in rows], ["HCH", "BOS", "NYK"])
+        self.assertEqual(rows[0]["played"], 1)
+        self.assertEqual(rows[0]["left"], 1)
+        self.assertEqual([game.day for game in rows[0]["games"]], [2])
+        self.assertNotIn("CHI", [row["opponent"].abbreviation for row in rows])
+        self.assertNotIn("PHI", [row["opponent"].abbreviation for row in rows])
+
+        counts = schedule.half_game_counts(atl, ULMG_SEASON, 1)
+        self.assertEqual(counts["away"], {"played": 1, "left": 5})
+        self.assertEqual(counts["home"], {"played": 0, "left": 2})

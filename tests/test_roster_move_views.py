@@ -1,6 +1,8 @@
 # ABOUTME: End-to-end tests for roster moves on the team page: the move form, the move log, moves left and active stays.
 # ABOUTME: Posts real forms over the test client as the owner, another owner, the commissioner and logged out.
 
+from unittest.mock import patch
+
 from django.contrib.auth.models import User
 from django.test import Client, TestCase, override_settings
 
@@ -35,6 +37,9 @@ class RosterMoveViewsTestCase(TestCase):
 
     def setUp(self):
         self.clients = {}
+        patcher = patch("ulmg.utils.league_season", return_value=SEASON)
+        patcher.start()
+        self.addCleanup(patcher.stop)
 
     def client_for(self, user):
         # One client per user, so a message set by a post shows on the next page.
@@ -93,7 +98,7 @@ class RosterMoveViewsTestCase(TestCase):
         self.assertIn("Forbidden: /teams/atl/moves/", logs.output[0])
         self.assertFalse(models.RosterMove.objects.exists())
         page = self.client_for(self.other).get(GAME_URL)
-        self.assertContains(page, "half-not-started")
+        self.assertContains(page, 'id="plan-gaps"')
         self.assertNotContains(page, 'name="player_up"')
 
     def test_a_logged_out_post_goes_to_login(self):

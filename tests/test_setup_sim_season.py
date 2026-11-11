@@ -49,7 +49,7 @@ class DefaultPlanTestCase(TestCase):
         fields, problems = sim_setup.default_plan(self.atl, SEASON)
         s = self.roster.starters
         self.assertEqual(fields["rotation"], [s[2], s[0], s[1], s[3], s[4]])
-        self.assertIn(sixth, fields["setup"] + fields["middle_long"])
+        self.assertIn(sixth, fields["setup"] + fields["middle"] + fields["long_relief"])
         self.assertEqual(problems, [])
 
     def test_closer_by_saves_setup_by_holds_and_everyone_else_in_middle_relief(self):
@@ -61,7 +61,8 @@ class DefaultPlanTestCase(TestCase):
         fields, _ = sim_setup.default_plan(self.atl, SEASON)
         self.assertEqual(fields["closer"], second)
         self.assertEqual(fields["setup"], [first, self.roster.swingman])
-        self.assertEqual(fields["middle_long"], [third])
+        self.assertEqual(fields["middle"], [third])
+        self.assertEqual(fields["long_relief"], [])
 
     def test_lineup_is_the_best_bats_at_positions_they_can_play_with_the_best_remaining_at_dh(self):
         utility = create_hitter(self.atl, "ATL Utility", position="IF", defense={"2B": 1.0, "SS": 1.0})
@@ -99,7 +100,7 @@ class DefaultPlanTestCase(TestCase):
         fields, problems = sim_setup.default_plan(self.atl, SEASON)
         self.assertEqual(problems, ["No card for ATL Reliever 1; left out of the plan."])
         self.assertNotEqual(fields["closer"], reliever)
-        self.assertNotIn(reliever, fields["setup"] + fields["middle_long"])
+        self.assertNotIn(reliever, fields["setup"] + fields["middle"] + fields["long_relief"])
 
     def test_a_missing_catcher_card_leaves_nobody_to_catch(self):
         models.Card.objects.filter(player=self.roster.catcher).delete()
@@ -173,7 +174,7 @@ class SetupSimSeasonCommandTestCase(TestCase):
             self.assert_complete_plan(team_obj, 1)
 
         car = plans.find_plan(team("CAR"), SEASON, 1)
-        self.assertNotIn(car_reliever.id, car.setup + car.middle_long + [car.closer_id])
+        self.assertNotIn(car_reliever.id, car.setup + car.middle + car.long_relief + [car.closer_id])
         self.assertTrue(all(plans.starters(car).values()))
         self.assertEqual(len(car.lineup_vs_rhp), 9)
 

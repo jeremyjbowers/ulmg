@@ -9,7 +9,7 @@
     var picked = null;
 
     function boardOf(slot) {
-        return slot.closest("[data-lineup], [data-rotation], [data-starter-grid]");
+        return slot.closest("[data-lineup], [data-rotation], [data-bullpen], [data-starter-grid]");
     }
 
     function accepts(slot, card) {
@@ -58,7 +58,7 @@
     function place(slot, card) {
         if (!accepts(slot, card)) return;
         var board = boardOf(slot);
-        if (board && (board.hasAttribute("data-lineup") || board.hasAttribute("data-rotation"))) {
+        if (board && (board.hasAttribute("data-lineup") || board.hasAttribute("data-rotation") || board.hasAttribute("data-bullpen"))) {
             board.querySelectorAll(".lineup-slot, .rotation-slot").forEach(function (other) {
                 var input = other.querySelector(".player-id");
                 if (other !== slot && input && input.value === card.dataset.player) clearSlot(other);

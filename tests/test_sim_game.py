@@ -319,7 +319,7 @@ class PlayingTestCase(SimGameTestCase):
         change = gf.events(log, Event.PITCHING_CHANGE)[0]
         self.assertTrue(change.computer)
         self.assertEqual(
-            change.payload["pitcher"], self.home.relievers[1].id, "setup is next when middle and long is spent"
+            change.payload["pitcher"], self.home.relievers[1].id, "setup is next when long relief is spent"
         )
         decision = gf.events(log, Event.DECISION)[-1]
         self.assertIn(middle.name, decision.text)
