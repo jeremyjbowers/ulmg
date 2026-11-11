@@ -191,7 +191,8 @@ class ResetTestCase(TestCase):
         steps = sim_data.reset_season(SEASON)
 
         self.assertEqual(self.plan_by_model(steps)[models.UsageAppearance], ("delete", 3))
-        self.assertFalse(models.UsageCounter.objects.filter(season=SEASON).exists())
+        counter = models.UsageCounter.objects.get(player=self.pitcher, season=SEASON)
+        self.assertEqual((counter.starts, counter.outs, counter.confined_to_relief), (0, 0, False))
         self.assertFalse(models.RosterMove.objects.filter(season=SEASON).exists())
         self.assertFalse(models.UsageAppearance.objects.filter(game__series__slot__season=SEASON).exists())
         self.assertFalse(models.GameLog.objects.filter(game__series__slot__season=SEASON).exists())
@@ -235,12 +236,14 @@ class ResetTestCase(TestCase):
         self.assert_other_season_survives()
         self.assert_kept_rows_survive()
 
-    def test_a_second_reset_finds_nothing(self):
+    def test_a_second_reset_finds_only_the_counter_the_first_put_back(self):
         sim_data.reset_season(SEASON)
         steps = sim_data.plan_reset(SEASON)
         for step in steps:
-            if step.action != "keep":
-                self.assertEqual(step.count, 0, step.entry.model.__name__)
+            if step.action == "keep":
+                continue
+            expected = 1 if step.entry.model is models.UsageCounter else 0
+            self.assertEqual(step.count, expected, step.entry.model.__name__)
 
     def test_progress_reports_each_model(self):
         lines = []

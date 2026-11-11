@@ -163,7 +163,7 @@ class PagesTestCase(TestCase):
         )
 
     def test_the_standings_page_is_public(self):
-        response = self.client.get("/standings/")
+        response = self.client.get(f"/standings/{SEASON}/")
         self.assertEqual(response.status_code, 200)
         content = response.content.decode()
         for name in ("Rickey", "Fernandez", "Ringen", "Orzol", "East wild card", "West wild card"):
@@ -172,7 +172,7 @@ class PagesTestCase(TestCase):
         self.assertContains(response, "Tied")
 
     def test_the_results_page_lists_final_games_with_box_score_links(self):
-        response = self.client.get("/teams/atl/results/")
+        response = self.client.get(f"/teams/atl/results/{SEASON}/")
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, f'href="/games/{self.won.id}/box/"')
         self.assertContains(response, f'href="/games/{self.lost.id}/box/"')
@@ -195,7 +195,7 @@ class PagesTestCase(TestCase):
             player=over_10, game=self.won, cap=models.UsageOverride.PLATE_APPEARANCES,
             reason="Extra innings", approved_by=commissioner, plate_appearances_used=2,
         )
-        response = self.client.get("/teams/atl/results/")
+        response = self.client.get(f"/teams/atl/results/{SEASON}/")
         content = response.content.decode()
         self.assertIn("More than 10% over", content)
         self.assertIn("More than 20% over", content)
@@ -213,11 +213,11 @@ class PagesTestCase(TestCase):
     def test_the_standings_page_flags_a_team_with_a_player_over_a_penalty_line(self):
         player = models.Player.objects.create(name="Flagged", position="OF", level="V", team=self.car)
         models.UsageCounter.objects.create(player=player, season=SEASON, plate_appearances=125, plate_appearances_cap=100)
-        response = self.client.get("/standings/")
+        response = self.client.get(f"/standings/{SEASON}/")
         self.assertContains(response, 'title="A player more than 20% over a usage cap"')
 
     def test_the_leaders_page_is_public_and_ranks_the_6_ulmg_lines(self):
-        response = self.client.get("/leaders/")
+        response = self.client.get(f"/leaders/{SEASON}/")
         self.assertEqual(response.status_code, 200)
         leaders = season_record.leaders(SEASON)
         home_runs = next(board for board in leaders.batting if board.key == "hr")
@@ -235,7 +235,7 @@ class PagesTestCase(TestCase):
         response = self.client.get("/teams/atl/")
         self.assertContains(response, "ULMG record")
         self.assertContains(response, "10-2")
-        self.assertContains(response, 'href="/teams/atl/results/"')
+        self.assertContains(response, f'href="/teams/atl/results/{SEASON}/"')
 
     def test_the_team_roster_shows_the_mlb_line_not_the_ulmg_line(self):
         self.client.force_login(User.objects.create_user("viewer"))

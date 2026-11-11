@@ -5,7 +5,7 @@ import random
 
 from tests import game_fixtures as gf
 from tests.test_sim_game import SimGameTestCase
-from ulmg import computer_manager, models, sim_game
+from ulmg import computer_manager, models, sim_game, usage
 
 Event = models.GameEvent
 AWAY, HOME = sim_game.AWAY, sim_game.HOME
@@ -161,7 +161,7 @@ class BullpenRolesTestCase(ComputerGameTestCase):
     def test_with_middle_and_long_spent_setup_is_next_then_the_closer(self):
         gf.counter(self.home.starters[0], start_limit_outs=6)
         row = gf.counter(self.home.swingman)
-        gf.counter(self.home.swingman, outs=row.innings_cap_outs)
+        gf.counter(self.home.swingman, outs=usage.season_innings_cap(row))
         gf.counter(self.home.relievers[1], relief_limit_outs=3)
         log = self.open()
         first, second = self.until_changes(log, HOME, 2)

@@ -1,0 +1,50 @@
+{# ABOUTME: A rotation of one to six starters, and the button that pushes it onto the schedule. #}
+{# ABOUTME: The rotation is a shortcut. Starters set on the schedule stay when it is pushed again. #}
+{% extends "base.html" %}
+
+{% block content %}
+{% include 'includes/team_topper.html' %}
+{% include "includes/team_tabs.html" with team_tab="game" %}
+{% include "includes/game_tabs.html" with game_section="rotation" %}
+
+<div>
+    <h2 class="text-lg font-bold mb-1">Set rotation</h2>
+    <p class="text-sm text-gray-600 mb-1">{{ half_note }} Put one to six starters in order, then push the rotation onto the schedule. It fills open days that do not already have a starter of their own. The schedule is where a starter stays. <a href="{{ schedule_url }}" class="underline">Schedule</a></p>
+    <p class="text-sm text-gray-600 card-season mb-4">These cards use the {{ plan_season|add:"-1" }} MLB cards.</p>
+    {% include 'includes/plan_errors.html' %}
+
+    {% if not is_open %}
+    <p class="plan-closed text-sm">{{ closed_message }}</p>
+    {% else %}
+    <div class="lg:grid lg:grid-cols-12 lg:gap-4">
+        <div class="lg:col-span-4 mb-4" data-stack>
+            <h3 class="font-bold border-b border-gray-300 mb-2">Pitchers</h3>
+            <div class="space-y-2">
+                {% for card in pitcher_cards %}
+                {% include "includes/decision_card.html" %}
+                {% endfor %}
+            </div>
+        </div>
+        <form method="post" class="lg:col-span-8 space-y-2 text-sm" data-rotation>
+            {% csrf_token %}
+            {% for slot in rotation_slots %}
+            <div class="rotation-slot lineup-slot border border-dashed border-gray-300 p-1" data-index="{{ forloop.counter }}">
+                <div class="flex justify-between text-xs text-gray-500">
+                    <span>{{ forloop.counter }}</span>
+                    {% if can_edit %}<button type="button" data-clear class="underline">Clear</button>{% endif %}
+                </div>
+                <div class="slot-body">
+                    {% if slot.card %}{% include "includes/decision_card.html" with card=slot.card %}{% endif %}
+                </div>
+                {% if can_edit %}<input type="hidden" class="player-id" name="rotation" value="{{ slot.player_id }}">{% endif %}
+            </div>
+            {% endfor %}
+            {% if can_edit %}
+            <button type="submit" class="bg-gray-800 text-white rounded px-4 py-2 font-bold">Push rotation to schedule</button>
+            {% endif %}
+        </form>
+    </div>
+    {% if can_edit %}{% include "includes/card_board_script.html" %}{% endif %}
+    {% endif %}
+</div>
+{% endblock %}

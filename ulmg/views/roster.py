@@ -56,6 +56,7 @@ def team_game(request, abbreviation):
             "moves_left": roster_moves.moves_left(team, season, half),
             "active_stays": roster_moves.active_stays(team, season),
             "move_log": roster_moves.move_log(team, season),
+            "can_edit": can_edit,
             "can_move": can_edit and started,
         }
     )

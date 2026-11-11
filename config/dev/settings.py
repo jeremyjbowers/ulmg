@@ -143,7 +143,8 @@ TEAM_ROSTER_TAB = False
 TEAM_LIVE_TAB = False
 TEAM_WISHLIST_TAB = False
 
-TEAM_SEASON_HALF = "2h"
+# The second half of the schedule opens when this is "2h".
+TEAM_SEASON_HALF = "1h"
 CURRENT_SEASON = 2026
 CURRENT_SEASON_TYPE = "midseason"
 # Team-page Open/AA draft prep can look ahead of CURRENT_SEASON_TYPE.

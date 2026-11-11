@@ -1,15 +1,16 @@
-{# ABOUTME: One unopened day of a half plan: a spot starter and a lineup override, each optional. #}
-{# ABOUTME: Only the team's owner and the commissioner reach it; blank fields return the day to auto-fill. #}
+{# ABOUTME: One unopened day: a spot starter and, if wanted, a lineup for that day only. #}
+{# ABOUTME: The schedule grid is the usual place to set a starter. Blank fields return the day to the rotation. #}
 {% extends "base.html" %}
 
 {% block content %}
 {% include 'includes/team_topper.html' %}
-{% include 'includes/plan_tabs.html' %}
+{% include "includes/team_tabs.html" with team_tab="game" %}
+{% include "includes/game_tabs.html" with game_section="schedule" %}
 
-<div class="max-w-xl">
+<div>
     <h2 class="text-lg font-bold mb-1">Day {{ row.day }}: {% if row.is_home %}vs{% else %}at{% endif %} {{ row.opponent.abbreviation }}</h2>
-    <p class="text-sm text-gray-600 mb-1">Auto-fill has {% if side.starter %}{{ side.starter.name }}{% else %}no one{% endif %} against {% if side.opponent_starter %}{{ side.opponent_starter.name }} ({{ side.opponent_starter.throws|default:"?" }}){% else %}an unplanned starter{% endif %}. <a href="/teams/{{ team.abbreviation|lower }}/plan/{{ half }}/?season={{ plan_season }}#day-{{ row.day }}" class="underline">Back to the plan</a></p>
-    <p class="text-sm text-gray-600 card-season mb-4">This plan uses the {{ plan_season|add:"-1" }} MLB cards.</p>
+    <p class="text-sm text-gray-600 mb-1">The rotation has {% if side.starter %}{{ side.starter.name }}{% else %}no one{% endif %} against {% if side.opponent_starter %}{{ side.opponent_starter.name }} ({{ side.opponent_starter.throws|default:"?" }}){% else %}an unplanned starter{% endif %}. <a href="/teams/{{ team.abbreviation|lower }}/schedule/{{ plan_season }}/" class="underline">Back to the schedule</a></p>
+    <p class="text-sm text-gray-600 card-season mb-4">This day uses the {{ plan_season|add:"-1" }} MLB cards.</p>
     {% include 'includes/plan_errors.html' %}
 
     {% if not is_open %}
@@ -19,22 +20,50 @@
     {% else %}
     <form method="post" class="space-y-6 text-sm">
         {% csrf_token %}
-        <label class="block"><span class="font-bold">Starter</span>
-            <select name="starter" class="border border-gray-300 rounded px-1 py-1 w-full mt-1">
-                <option value="">Rotation auto-fill</option>
-                {% for p in pitchers %}<option value="{{ p.id }}"{% if p.id == starter_id %} selected{% endif %}>{{ p.name }}{% if p.throws %} ({{ p.throws }}){% endif %}</option>{% endfor %}
-            </select>
-            <span class="block text-xs text-gray-600 mt-1">A spot start must be rested inside the series and fit his start cap.</span>
-        </label>
-
-        <fieldset>
-            <legend class="font-bold mb-2"><label><input type="checkbox" name="override_lineup" value="1"{% if override %} checked{% endif %}> Set this day's lineup</label></legend>
-            <p class="text-xs text-gray-600 mb-2">Unchecked, the day uses the lineup card for the opposing starter's hand.</p>
-            {% with prefix="day" rows=lineup_rows %}{% include 'includes/plan_lineup_rows.html' %}{% endwith %}
-        </fieldset>
-
-        <button type="submit" class="w-full sm:w-auto bg-gray-800 text-white rounded px-4 py-2 font-bold">Save day {{ row.day }}</button>
+        <div class="lg:grid lg:grid-cols-12 lg:gap-4">
+            <div class="lg:col-span-4 space-y-4">
+                <div data-stack>
+                    <h3 class="font-bold border-b border-gray-300 mb-2">Pitchers</h3>
+                    <div class="space-y-2">
+                        {% for card in pitcher_cards %}
+                        {% include "includes/decision_card.html" %}
+                        {% endfor %}
+                    </div>
+                </div>
+                <div data-stack>
+                    <h3 class="font-bold border-b border-gray-300 mb-2">Hitters</h3>
+                    <div class="space-y-2">
+                        {% for card in hitter_cards %}
+                        {% include "includes/decision_card.html" %}
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            <div class="lg:col-span-8 space-y-4">
+                <div data-starter-grid>
+                    <h3 class="font-bold mb-1">Starter</h3>
+                    <div class="rotation-slot lineup-slot border border-dashed border-gray-300 p-1 max-w-md">
+                        <div class="flex justify-between text-xs text-gray-500">
+                            <span>Spot start</span>
+                            <button type="button" data-clear class="underline">Rotation</button>
+                        </div>
+                        <div class="slot-body">
+                            {% if starter_card %}{% include "includes/decision_card.html" with card=starter_card %}{% endif %}
+                        </div>
+                        <input type="hidden" class="player-id" name="starter" value="{{ starter_id }}">
+                    </div>
+                    <p class="text-xs text-gray-600 mt-1">A spot start must be rested inside the series and fit his start cap. Clear it to use the rotation.</p>
+                </div>
+                <fieldset>
+                    <legend class="font-bold mb-2"><label><input type="checkbox" name="override_lineup" value="1"{% if override %} checked{% endif %}> Set this day's lineup</label></legend>
+                    <p class="text-xs text-gray-600 mb-2">Unchecked, the day uses the lineup card for the opposing starter's hand.</p>
+                    {% include "includes/lineup_column.html" with prefix="day" label="This day" slots=lineup_rows editable=True %}
+                </fieldset>
+                <button type="submit" class="bg-gray-800 text-white rounded px-4 py-2 font-bold">Save day {{ row.day }}</button>
+            </div>
+        </div>
     </form>
+    {% include "includes/card_board_script.html" %}
     {% endif %}
 </div>
 {% endblock %}

@@ -45,12 +45,14 @@ def create_owner(username, team):
     return user
 
 
-PLAN_URL = f"/teams/atl/plan/1/?season={SEASON}"
-EDIT_URL = f"/teams/atl/plan/1/edit/?season={SEASON}"
+PLAN_URL = f"/teams/atl/plan/1/{SEASON}/"
+EDIT_URL = f"/teams/atl/plan/1/{SEASON}/edit/"
+ROTATION_URL = f"/teams/atl/plan/1/{SEASON}/rotation/"
+SCHEDULE_URL = f"/teams/atl/schedule/{SEASON}/"
 
 
 def day_url(day, half=1):
-    return f"/teams/atl/plan/{half}/day/{day}/?season={SEASON}"
+    return f"/teams/atl/plan/{half}/{SEASON}/day/{day}/"
 
 
 @override_settings(CURRENT_SEASON=SEASON, TEAM_SEASON_HALF="1h")
@@ -82,27 +84,30 @@ class PublicPlanTestCase(PlanViewsTestCase):
         response = self.client.get(PLAN_URL)
         self.assertEqual(response.status_code, 200)
         body = response.content.decode()
-        self.assertEqual(body.count('class="plan-day '), 81)
-        self.assertEqual([int(d) for d in re.findall(r'data-day="(\d+)"', body)], list(range(1, 82)))
-        self.assertEqual(body.count('class="plan-rotation"'), 5)
-        self.assertIn("ATL Starter 1", body)
-        self.assertIn('class="plan-closer"', body)
-        self.assertIn("ATL Bench 1", body)
-        self.assertIn("This plan uses the 2026 MLB cards", body)
-        self.assertNotIn("Edit the plan", body)
-        self.assertNotIn("Edit day", body)
+        self.assertIn('data-lineup="vs_rhp"', body)
+        self.assertIn('data-lineup="vs_lhp"', body)
+        self.assertIn("lg:grid-cols-2", body)
+        self.assertIn(">vR<", body)
+        self.assertIn(">vL<", body)
+        self.assertIn("ATL Catcher", body)
+        self.assertNotIn('class="plan-day ', body)
+        self.assertIn("These lineups use the 2026 MLB cards", body)
+        self.assertNotIn("Set lineups", body)
+        rotation = self.client.get(ROTATION_URL).content.decode()
+        self.assertIn("ATL Starter 1", rotation)
+        self.assertNotIn("Push rotation to schedule", rotation)
 
     def test_plan_shows_cards_and_usage(self):
         self.roster.file()
         body = self.client.get(PLAN_URL).content.decode()
-        self.assertIn("34 starts left", body)
         self.assertIn("C +4.0", body)
-        self.assertIn("unlimited PA", body)
+        self.assertIn("PA unlimited", body)
+        self.assertIn("Speed", body)
 
     def test_plan_page_without_a_plan(self):
         response = self.client.get(PLAN_URL)
         self.assertEqual(response.status_code, 200)
-        self.assertIn("ATL has not filed a plan for this half", response.content.decode())
+        self.assertIn("ATL has not filed lineups for this half", response.content.decode())
 
     def test_logged_out_editor_redirects_to_login(self):
         response = self.client.get(EDIT_URL)
@@ -113,7 +118,7 @@ class PublicPlanTestCase(PlanViewsTestCase):
         self.roster.file()
         client = self.as_user(self.other_owner)
         self.assertEqual(client.get(PLAN_URL).status_code, 200)
-        self.assertNotIn("Edit the plan", client.get(PLAN_URL).content.decode())
+        self.assertNotIn("Set lineups", client.get(PLAN_URL).content.decode())
         self.assertEqual(client.get(EDIT_URL).status_code, 403)
 
         reversed_rotation = list(reversed(self.roster.starters))
@@ -140,26 +145,38 @@ class EditPlanTestCase(PlanViewsTestCase):
         client = self.as_user(self.owner)
         page = client.get(EDIT_URL)
         self.assertEqual(page.status_code, 200)
-        self.assertIn("Save the plan", page.content.decode())
+        body = page.content.decode()
+        self.assertIn("Save lineups", body)
+        self.assertIn('data-lineup="vs_rhp"', body)
+        self.assertIn('data-lineup="vs_lhp"', body)
+        self.assertIn("lg:grid-cols-2", body)
+        self.assertNotIn("<select", body.split("<main", 1)[1])
 
         response = client.post(EDIT_URL, form_data(self.roster), follow=True)
         self.assertRedirects(response, PLAN_URL)
-        self.assertIn("Saved the half 1 plan", response.content.decode())
+        self.assertIn("Saved the half 1 lineups", response.content.decode())
         plan = self.saved_plan()
-        self.assertEqual(plans.starters(plan)[6], self.roster.starters[0])
         self.assertEqual(plan.lineup_vs_rhp[0], {"player": self.roster.catcher.id, "position": "C"})
-        self.assertTrue(usage.counter_for(self.roster.swingman, SEASON).confined_to_relief)
+        self.assertEqual(plan.rotation, [])
+        self.assertFalse(plan.days.exists())
+
+        response = client.post(ROTATION_URL, {"rotation": [p.id for p in self.roster.starters]}, follow=True)
+        self.assertRedirects(response, SCHEDULE_URL)
+        self.assertIn("Pushed the rotation onto the schedule", response.content.decode())
+        plan.refresh_from_db()
+        self.assertEqual(plans.starters(plan)[6], self.roster.starters[0])
+        self.assertFalse(usage.counter_for(self.roster.starters[0], SEASON).confined_to_relief)
 
     def test_owner_sets_the_starter_hook(self):
         client = self.as_user(self.owner)
         page = client.get(EDIT_URL).content.decode()
-        self.assertIn('<option value="normal" selected>Normal</option>', page)
+        self.assertIn('value="normal" checked', page)
         response = client.post(EDIT_URL, dict(form_data(self.roster), starter_hook="quick"), follow=True)
         self.assertRedirects(response, PLAN_URL)
         self.assertEqual(self.saved_plan().starter_hook, models.HalfPlan.QUICK_HOOK)
-        self.assertIn('class="plan-starter-hook">Quick', response.content.decode())
+        self.assertIn("Starter hook: Quick", response.content.decode())
         page = client.get(EDIT_URL).content.decode()
-        self.assertIn('<option value="quick" selected>Quick</option>', page)
+        self.assertIn('value="quick" checked', page)
 
     def test_an_unknown_starter_hook_is_refused(self):
         self.roster.file()
@@ -170,8 +187,10 @@ class EditPlanTestCase(PlanViewsTestCase):
 
     def test_editor_shows_the_saved_plan(self):
         self.roster.file()
-        body = self.as_user(self.owner).get(EDIT_URL).content.decode()
-        self.assertIn(f'<option value="{self.roster.starters[0].id}" selected>', body)
+        body = self.as_user(self.owner).get(ROTATION_URL).content.decode()
+        self.assertIn(f'name="rotation" value="{self.roster.starters[0].id}"', body)
+        self.assertIn("32 GS (max 34)", body)
+        self.assertIn("190.0 IP", body)
 
     def test_commissioner_can_edit_any_plan(self):
         response = self.as_user(self.commissioner).post(EDIT_URL, form_data(self.roster))
@@ -186,35 +205,36 @@ class EditPlanTestCase(PlanViewsTestCase):
         body = response.content.decode()
         self.assertIn("ATL Starter 1 is a pitcher; pitchers do not hit.", body)
         # The posted selections are kept on the form.
-        self.assertIn(f'<option value="{self.roster.starters[0].id}" selected>', body)
+        self.assertIn(f'data-player="{self.roster.starters[0].id}"', body)
         plan = self.saved_plan()
         self.assertTrue(plan is None or not plan.days.exists())
 
     def test_save_rejected_listing_days_without_a_starter(self):
+        self.roster.file()
         response = self.as_user(self.owner).post(
-            EDIT_URL, form_data(self.roster, rotation=self.roster.starters[:3])
+            ROTATION_URL, {"rotation": [p.id for p in self.roster.starters[:3]]}
         )
         self.assertEqual(response.status_code, 400)
         self.assertRegex(response.content.decode(), r"No legal starter for days 4, ")
 
     def test_second_half_locked_until_2h(self):
-        url = f"/teams/atl/plan/2/edit/?season={SEASON}"
+        url = f"/teams/atl/plan/2/{SEASON}/edit/"
         client = self.as_user(self.owner)
         self.assertIn("opens after the trade break", client.get(url).content.decode())
         response = client.post(url, form_data(self.roster))
         self.assertEqual(response.status_code, 400)
         self.assertFalse(models.HalfPlan.objects.filter(half=2).exists())
-        public = self.client.get(f"/teams/atl/plan/2/?season={SEASON}").content.decode()
+        public = self.client.get(f"/teams/atl/plan/2/{SEASON}/").content.decode()
         self.assertIn("opens after the trade break", public)
-        self.assertIn("ATL has not filed a plan for this half", public)
+        self.assertIn("ATL has not filed lineups for this half", public)
 
         with self.settings(TEAM_SEASON_HALF="2h"):
-            response = client.post(url, form_data(self.roster))
+            response = client.post(ROTATION_URL.replace("/plan/1/", "/plan/2/"), {"rotation": [p.id for p in self.roster.starters]})
         self.assertEqual(response.status_code, 302)
         self.assertEqual(models.HalfPlanDay.objects.filter(plan__half=2).count(), 81)
 
     def test_unknown_half_is_not_found(self):
-        self.assertEqual(self.client.get(f"/teams/atl/plan/3/?season={SEASON}").status_code, 404)
+        self.assertEqual(self.client.get(f"/teams/atl/plan/3/{SEASON}/").status_code, 404)
 
 
 class EditDayTestCase(PlanViewsTestCase):
@@ -228,13 +248,13 @@ class EditDayTestCase(PlanViewsTestCase):
         client = self.as_user(self.owner)
         self.assertEqual(client.get(day_url(20)).status_code, 200)
         response = client.post(day_url(20), day_data(starter=self.roster.swingman, lineup=lineup), follow=True)
-        self.assertRedirects(response, PLAN_URL + "#day-20", fetch_redirect_response=False)
+        self.assertRedirects(response, SCHEDULE_URL + "#day-20", fetch_redirect_response=False)
         body = response.content.decode()
         self.assertIn("ends his relief-only designation", body)
         row = self.plan.days.get(day=20)
         self.assertEqual(row.manual_starter, self.roster.swingman)
         self.assertEqual(row.manual_lineup[-1], {"player": self.roster.bench[1].id, "position": "DH"})
-        self.assertRegex(body, r'(?s)data-day="20".*?SP: ATL Swingman<span class="font-bold">\*</span>')
+        self.assertRegex(body, r'(?s)data-day="20".*?ATL Swingman\*')
 
     def test_spot_start_breaking_rest_is_rejected(self):
         response = self.as_user(self.owner).post(day_url(3), day_data(starter=self.roster.starters[0]))
@@ -255,9 +275,9 @@ class EditDayTestCase(PlanViewsTestCase):
         self.assertIn("has opened", client.get(day_url(1)).content.decode())
         response = client.post(day_url(1), day_data(starter=self.roster.swingman))
         self.assertEqual(response.status_code, 400)
-        body = client.get(PLAN_URL).content.decode()
+        body = client.get(SCHEDULE_URL).content.decode()
         self.assertRegex(body, r'(?s)data-day="1".*?Opened')
-        self.assertEqual(body.count("Edit day"), 80)
+        self.assertEqual(body.count("starter-slot"), 80)
 
     def test_lineup_override_rule_errors(self):
         stranger = create_hitter(self.car, "CAR Hitter")
@@ -271,7 +291,7 @@ class EditDayTestCase(PlanViewsTestCase):
 class SchedulePlannedStartersTestCase(PlanViewsTestCase):
     def test_team_schedule_shows_the_plans_starters(self):
         self.roster.file()
-        body = self.client.get(f"/teams/atl/schedule/?season={SEASON}").content.decode()
+        body = self.client.get(SCHEDULE_URL).content.decode()
         self.assertRegex(body, r'(?s)data-day="1">.*?class="schedule-starters[^"]*">ATL Starter 1 vs -</td>')
         self.assertRegex(body, r'(?s)data-day="6">.*?class="schedule-starters[^"]*">ATL Starter 1 vs -</td>')
         self.assertEqual(body.count("ATL Starter 1 vs"), 17)

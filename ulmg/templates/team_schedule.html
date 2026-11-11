@@ -1,5 +1,5 @@
-{# ABOUTME: One team's season schedule: games 1-162 with opponent, park, planned starters and result. #}
-{# ABOUTME: Public; marks a manager's own road games, links Play for games the user can play and logged games' box scores. #}
+{# ABOUTME: One team's schedule. The owner sets starters by dragging pitcher cards onto open games. #}
+{# ABOUTME: Games 82-162 stay hidden until the second half is enabled. #}
 {% extends "base.html" %}
 
 {% block content %}
@@ -8,36 +8,35 @@
 
 {% include "includes/team_tabs.html" with team_tab="game" %}
 {% include "includes/game_tabs.html" with game_section="schedule" %}
+{% include 'includes/plan_errors.html' %}
 
 <div class="mb-8">
     <h2 class="text-lg font-bold mb-2">{{ schedule_season }} schedule</h2>
-    <p class="text-sm text-gray-600 mb-4">Game numbers are league days. <a href="/schedule/?season={{ schedule_season }}" class="underline">League schedule</a></p>
+    <p class="text-sm text-gray-600 mb-4">Game numbers are league days. This is where starters are set.{% if not second_half_open %} Games 82–162 are hidden until the second half is enabled.{% endif %} <a href="/schedule/{{ schedule_season }}/" class="underline">League schedule</a></p>
 
     {% if rows %}
-    <div class="overflow-x-auto">
-        <table class="w-full text-sm border-collapse border border-gray-200">
-            <thead class="bg-gray-50">
-                <tr class="border-b border-gray-300">
-                    <th class="text-left py-1 px-2 border-r border-gray-200">Game</th>
-                    <th class="text-left py-1 px-2 border-r border-gray-200">Opponent</th>
-                    <th class="text-left py-1 px-2 border-r border-gray-200">Starters</th>
-                    <th class="text-left py-1 px-2 border-r border-gray-200">Result</th>
-                    {% if own_team %}<th class="text-left py-1 px-2">Played by</th>{% endif %}
-                </tr>
-            </thead>
-            <tbody>
-                {% for row in rows %}
-                <tr class="schedule-game" data-day="{{ row.game.day }}">
-                    <td class="py-1 px-2 border-r border-gray-100">{{ row.game.day }}</td>
-                    <td class="py-1 px-2 border-r border-gray-100">{% if row.is_home %}vs{% else %}at{% endif %} <a href="/teams/{{ row.opponent.abbreviation|lower }}/schedule/?season={{ schedule_season }}" class="underline">{{ row.opponent.abbreviation }}</a></td>
-                    <td class="schedule-starters py-1 px-2 border-r border-gray-100">{% if row.starter or row.opponent_starter %}{{ row.starter.name|default:"-" }} vs {{ row.opponent_starter.name|default:"-" }}{% endif %}</td>
-                    <td class="py-1 px-2 border-r border-gray-100">{{ row.result }}{% if row.has_box %} <a href="/games/{{ row.game.id }}/box/" class="schedule-box underline">Box score</a>{% endif %}{% if row.can_play %} <a href="/games/{{ row.game.id }}/" class="schedule-play underline font-bold">Play</a>{% endif %}</td>
-                    {% if own_team %}<td class="py-1 px-2">{% if row.manager_plays %}<span class="font-bold">You play</span>{% endif %}</td>{% endif %}
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+    {% if can_edit %}
+    <form method="post">
+        {% csrf_token %}
+        <div class="lg:grid lg:grid-cols-12 lg:gap-4">
+            <div class="lg:col-span-4 mb-4" data-stack>
+                <h3 class="font-bold border-b border-gray-300 mb-2">Pitchers</h3>
+                <div class="space-y-2">
+                    {% for card in pitcher_cards %}
+                    {% include "includes/decision_card.html" %}
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="lg:col-span-8" data-starter-grid>
+                {% include "includes/schedule_rows.html" with editing=True %}
+                <button type="submit" class="mt-4 bg-gray-800 text-white rounded px-4 py-2 font-bold">Save starters</button>
+            </div>
+        </div>
+    </form>
+    {% include "includes/card_board_script.html" %}
+    {% else %}
+    {% include "includes/schedule_rows.html" with editing=False %}
+    {% endif %}
     {% else %}
     <p class="text-sm">No schedule has been generated for {{ schedule_season }}.</p>
     {% endif %}

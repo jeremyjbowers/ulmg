@@ -1,95 +1,50 @@
-{# ABOUTME: The half plan editor: rotation order, bullpen roles, bench order and the two lineup cards. #}
-{# ABOUTME: Only the team's owner and the commissioner reach it; it stacks into one column on a phone. #}
+{# ABOUTME: Set the two lineup cards by dragging hitters into vR and vL. #}
+{# ABOUTME: The columns sit side by side when the window is wide enough. Only the owner and the commissioner get here. #}
 {% extends "base.html" %}
 
 {% block content %}
 {% include 'includes/team_topper.html' %}
-{% include 'includes/plan_tabs.html' %}
+{% include "includes/team_tabs.html" with team_tab="game" %}
+{% include "includes/game_tabs.html" with game_section="lineups" %}
 
-<div class="max-w-3xl">
-    <h2 class="text-lg font-bold mb-1">Edit the {{ plan_season }} {% if half == 1 %}first{% else %}second{% endif %}-half plan</h2>
-    <p class="text-sm text-gray-600 mb-1">Saving re-fills every unopened day without a manual starter from the rotation order. <a href="/teams/{{ team.abbreviation|lower }}/plan/{{ half }}/?season={{ plan_season }}" class="underline">Back to the plan</a></p>
-    <p class="text-sm text-gray-600 card-season mb-4">This plan uses the {{ plan_season|add:"-1" }} MLB cards.</p>
+<div>
+    <h2 class="text-lg font-bold mb-1">Set lineups</h2>
+    <p class="text-sm text-gray-600 mb-1">{{ half_note }} Drag a card into a slot, or click a card and then the slot. vR is against right-handed starters and vL against left-handed ones. <a href="/teams/{{ team.abbreviation|lower }}/plan/{{ half }}/{{ plan_season }}/" class="underline">Back to the lineups</a></p>
+    <p class="text-sm text-gray-600 card-season mb-4">These lineups use the {{ plan_season|add:"-1" }} MLB cards.</p>
     {% include 'includes/plan_errors.html' %}
 
     {% if not is_open %}
     <p class="plan-closed text-sm">{{ closed_message }}</p>
     {% else %}
-    <form method="post" class="space-y-6 text-sm">
-        {% csrf_token %}
-        <fieldset>
-            <legend class="font-bold border-b border-gray-300 w-full mb-2">Rotation, in order</legend>
+    <div class="lg:grid lg:grid-cols-12 lg:gap-4">
+        <div class="lg:col-span-4 mb-4" data-stack>
+            <h3 class="font-bold border-b border-gray-300 mb-2">Hitters</h3>
             <div class="space-y-2">
-                {% for selected in rotation_slots %}
-                <label class="flex gap-2 items-center"><span class="w-6">{{ forloop.counter }}</span>
-                    <select name="rotation" class="border border-gray-300 rounded px-1 py-1 w-full">
-                        <option value="">-</option>
-                        {% for p in pitchers %}<option value="{{ p.id }}"{% if p.id == selected %} selected{% endif %}>{{ p.name }}{% if p.throws %} ({{ p.throws }}){% endif %}</option>{% endfor %}
-                    </select>
-                </label>
+                {% for card in hitter_cards %}
+                {% include "includes/decision_card.html" %}
                 {% endfor %}
             </div>
-        </fieldset>
-
-        <fieldset>
-            <legend class="font-bold border-b border-gray-300 w-full mb-2">Starter hook</legend>
-            <p class="text-xs text-gray-600 mb-2">When the computer manages this team, it pulls the starter at the engine's fatigue line or his per-game limit, or sooner: quick at 85% of his fatigue ceiling or 4 runs allowed, normal at 95% or 5 runs, slow at 100% or 6 runs.</p>
-            <select name="starter_hook" class="border border-gray-300 rounded px-1 py-1 w-full" aria-label="Starter hook">
-                {% for value, label in starter_hooks %}<option value="{{ value }}"{% if value == starter_hook %} selected{% endif %}>{{ label }}</option>{% endfor %}
-            </select>
-        </fieldset>
-
-        <fieldset>
-            <legend class="font-bold border-b border-gray-300 w-full mb-2">Bullpen</legend>
-            <p class="text-xs text-gray-600 mb-2">A pitcher in the rotation and the bullpen starts and relieves this half. A pitcher only in the bullpen is confined to relief.</p>
-            <label class="block mb-3"><span class="font-bold text-xs uppercase text-gray-600">Closer</span>
-                <select name="closer" class="border border-gray-300 rounded px-1 py-1 w-full">
-                    <option value="">-</option>
-                    {% for p in pitchers %}<option value="{{ p.id }}"{% if p.id == closer_id %} selected{% endif %}>{{ p.name }}</option>{% endfor %}
-                </select>
-            </label>
-            <p class="font-bold text-xs uppercase text-gray-600">Setup, in order</p>
-            <div class="space-y-2 mb-3">
-                {% for selected in setup_slots %}
-                <select name="setup" class="border border-gray-300 rounded px-1 py-1 w-full" aria-label="Setup {{ forloop.counter }}">
-                    <option value="">-</option>
-                    {% for p in pitchers %}<option value="{{ p.id }}"{% if p.id == selected %} selected{% endif %}>{{ p.name }}</option>{% endfor %}
-                </select>
+        </div>
+        <form method="post" class="lg:col-span-8 space-y-4 text-sm">
+            {% csrf_token %}
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {% for prefix, label, slots in lineup_columns %}
+                {% include "includes/lineup_column.html" with editable=True %}
                 {% endfor %}
             </div>
-            <p class="font-bold text-xs uppercase text-gray-600">Middle and long, in order</p>
-            <div class="space-y-2">
-                {% for selected in middle_long_slots %}
-                <select name="middle_long" class="border border-gray-300 rounded px-1 py-1 w-full" aria-label="Middle and long {{ forloop.counter }}">
-                    <option value="">-</option>
-                    {% for p in pitchers %}<option value="{{ p.id }}"{% if p.id == selected %} selected{% endif %}>{{ p.name }}</option>{% endfor %}
-                </select>
-                {% endfor %}
-            </div>
-        </fieldset>
-
-        {% for prefix, label, rows in lineups %}
-        <fieldset>
-            <legend class="font-bold border-b border-gray-300 w-full mb-2">{{ label }}</legend>
-            <p class="text-xs text-gray-600 mb-2">Order, batter, position. One of each position, one DH, no pitchers.</p>
-            {% include 'includes/plan_lineup_rows.html' %}
-        </fieldset>
-        {% endfor %}
-
-        <fieldset>
-            <legend class="font-bold border-b border-gray-300 w-full mb-2">Bench, in order</legend>
-            <div class="space-y-2">
-                {% for selected in bench_slots %}
-                <select name="bench" class="border border-gray-300 rounded px-1 py-1 w-full" aria-label="Bench {{ forloop.counter }}">
-                    <option value="">-</option>
-                    {% for p in hitters %}<option value="{{ p.id }}"{% if p.id == selected %} selected{% endif %}>{{ p.name }}</option>{% endfor %}
-                </select>
-                {% endfor %}
-            </div>
-        </fieldset>
-
-        <button type="submit" class="w-full sm:w-auto bg-gray-800 text-white rounded px-4 py-2 font-bold">Save the plan</button>
-    </form>
+            <fieldset>
+                <legend class="font-bold mb-1">Starter hook</legend>
+                <p class="text-xs text-gray-600 mb-2">When the computer manages this team, it pulls the starter at the engine's fatigue line or his per-game limit, or sooner: quick at 85% of his fatigue ceiling or 4 runs allowed, normal at 95% or 5 runs, slow at 100% or 6 runs.</p>
+                <div class="flex flex-wrap gap-3">
+                    {% for value, label in starter_hooks %}
+                    <label><input type="radio" name="starter_hook" value="{{ value }}"{% if value == starter_hook %} checked{% endif %}> {{ label }}</label>
+                    {% endfor %}
+                </div>
+            </fieldset>
+            <button type="submit" class="bg-gray-800 text-white rounded px-4 py-2 font-bold">Save lineups</button>
+        </form>
+    </div>
+    {% include "includes/card_board_script.html" %}
     {% endif %}
 </div>
 {% endblock %}

@@ -1,0 +1,20 @@
+{# ABOUTME: One draggable player card: the numbers a manager uses to set a lineup or a starter. #}
+{# ABOUTME: Expects `card` from ulmg.decision_cards, kind h or p. #}
+<article class="decision-card border border-gray-300 bg-white p-2 text-xs cursor-grab" draggable="true" data-player="{{ card.player.id }}" data-kind="{{ card.kind }}">
+    <div class="font-bold">
+        <a href="/players/{{ card.player.id }}/" class="underline" draggable="false">{{ card.player.name }}</a>
+        {% if card.kind == "p" and card.player.throws %}({{ card.player.throws }}){% endif %}
+        {% if card.kind == "h" and card.player.bats %}{{ card.player.bats }}{% endif %}
+        {% if card.capped %} <span class="plan-capped font-bold text-red-700">past his PA cap</span>{% endif %}
+    </div>
+    {% if card.kind == "h" %}
+    <div>PA {{ card.pa_label }} &middot; {{ card.war_label }} WAR &middot; {{ card.wrc_label }} wRC+</div>
+    <div>{{ card.slash }}</div>
+    <div>{{ card.defense_label }}</div>
+    <div>Speed {{ card.speed_label }}</div>
+    {% else %}
+    <div>{{ card.starts_label }} &middot; {{ card.innings_label }}</div>
+    <div>{{ card.xfip_label }} xFIP &middot; {{ card.war_label }} WAR</div>
+    <div>{{ card.k9_label }} K/9 &middot; {{ card.bb9_label }} BB/9</div>
+    {% endif %}
+</article>

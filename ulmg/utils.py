@@ -7,6 +7,7 @@ import platform
 import sys
 from decimal import Decimal
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 from bs4 import BeautifulSoup
 from dateutil.parser import parse
@@ -115,10 +116,23 @@ def get_fg_birthdate(player):
         time.sleep(1.5)
 
 
+# The league's year turns the day after the MLB season, not on January 1.
+LEAGUE_ZONE = ZoneInfo("America/New_York")
+SEASON_OPENS = (11, 1)
+
+
 def get_ulmg_season(date):
-    if date.month >= 10:
+    """The ULMG year of a date. November 1 opens the next year."""
+    if (date.month, date.day) >= SEASON_OPENS:
         return int(date.year) + 1
-    return date.year
+    return int(date.year)
+
+
+def league_season(when=None):
+    """The ULMG season a page uses when the URL does not name one."""
+    if when is None:
+        when = datetime.now(LEAGUE_ZONE).date()
+    return get_ulmg_season(when)
 
 
 def get_current_season():
@@ -554,6 +568,7 @@ def build_context(request):
     context["protect_tab"] = settings.TEAM_PROTECT_TAB
     context["live_tab"] = settings.TEAM_LIVE_TAB
     context["season_half"] = settings.TEAM_SEASON_HALF
+    context["league_season"] = league_season()
     
     # Add previous season for roster eligibility checks
     context["previous_season"] = settings.CURRENT_SEASON - 1

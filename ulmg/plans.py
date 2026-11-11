@@ -43,6 +43,13 @@ def current_half():
     return 2 if settings.TEAM_SEASON_HALF == SECOND_HALF_OPENS else 1
 
 
+def visible_halves():
+    """The halves on the schedule. The second stays off it until it is enabled."""
+    if is_open(2):
+        return (1, 2)
+    return (1,)
+
+
 def closed_message(half):
     return f"The half {half} plan opens after the trade break."
 
@@ -418,7 +425,8 @@ def _refill_problems(plan, rosters):
     rows = _day_rows(plan, games)
     # Nothing here writes to the usage ledger, so one read of it serves every day.
     reads = usage.LedgerReads(plan.season)
-    unfilled = _auto_fill(plan, games, rows, rosters, reads)
+    # An empty rotation is a schedule nobody has pushed yet, not a hole in one.
+    unfilled = _auto_fill(plan, games, rows, rosters, reads) if plan.rotation else []
     errors = _manual_start_problems(plan, games, rows, rosters, reads)
     if unfilled:
         days = ", ".join(str(d) for d in unfilled)
@@ -494,6 +502,96 @@ def starter_hook_errors(starter_hook):
     if starter_hook is not None and starter_hook not in hooks:
         return [f"The starter hook must be {', '.join(hooks[:-1])} or {hooks[-1]}."]
     return []
+
+
+def save_lineups(plan, *, lineup_vs_lhp, lineup_vs_rhp, starter_hook=None):
+    """
+    Save the two lineup cards and the starter hook. Lineups stay until the
+    next save. This does not touch the rotation or the schedule's starters.
+    """
+    if not is_open(plan.half):
+        raise PlanError([closed_message(plan.half)])
+    rosters = roster_moves.HalfRosters(plan.team, plan.season, plan.half)
+
+    def roster_problem(player):
+        return _roster_error(player, plan.team, rosters.all)
+
+    errors = []
+    errors += lineup_errors(plan.team, plan.season, lineup_vs_lhp, "Lineup vs LHP", roster_problem)
+    errors += lineup_errors(plan.team, plan.season, lineup_vs_rhp, "Lineup vs RHP", roster_problem)
+    errors += _call_up_card_errors(
+        plan.team,
+        plan.season,
+        plan.half,
+        rosters,
+        [("Lineup vs LHP", lineup_vs_lhp), ("Lineup vs RHP", lineup_vs_rhp)],
+    )
+    errors += starter_hook_errors(starter_hook)
+    if errors:
+        raise PlanError(_unique_errors(errors))
+
+    with transaction.atomic():
+        plan.lineup_vs_lhp = stored_lineup(lineup_vs_lhp)
+        plan.lineup_vs_rhp = stored_lineup(lineup_vs_rhp)
+        if starter_hook is not None:
+            plan.starter_hook = starter_hook
+        plan.save()
+    return []
+
+
+def push_rotation(plan, rotation):
+    """
+    Write a rotation of one to six starters and fill the half's open days
+    from it. Days with a manual starter stay as they are. The rotation is a
+    way to fill the schedule, not a lineup that keeps applying itself.
+    """
+    if not is_open(plan.half):
+        raise PlanError([closed_message(plan.half)])
+    rosters = roster_moves.HalfRosters(plan.team, plan.season, plan.half)
+    errors = rotation_errors(plan.team, rotation, rosters.all)
+    if errors:
+        raise PlanError(errors)
+    if len(rotation) > 6:
+        raise PlanError(["A rotation is one to six starters."])
+
+    with transaction.atomic():
+        plan.rotation = [player.id for player in rotation]
+        plan.save()
+        _refill(plan, rosters)
+        return _designate(plan)
+
+
+def assign_starters(plan, assignments):
+    """
+    Set or clear manual starters. assignments maps a day to a Player or to
+    None, and None returns that day to the rotation. Locked days and illegal
+    starts are refused and nothing is saved.
+    """
+    if not is_open(plan.half):
+        raise PlanError([closed_message(plan.half)])
+    games = half_games(plan.team, plan.season, plan.half)
+    rosters = roster_moves.HalfRosters(plan.team, plan.season, plan.half)
+    errors = []
+    for day in sorted(assignments):
+        game = games.get(day)
+        if game is None:
+            errors.append(f"Day {day} is not in half {plan.half}.")
+        elif is_locked(game):
+            errors.append(f"Day {day} has opened; its plan can no longer change.")
+    if errors:
+        raise PlanError(errors)
+
+    with transaction.atomic():
+        rows = _day_rows(plan, games)
+        for day, starter in assignments.items():
+            rows[day].manual_starter = starter
+        errors = _manual_start_problems(plan, games, rows, rosters)
+        if errors:
+            raise PlanError(errors)
+        for day in assignments:
+            rows[day].save(update_fields=["manual_starter", "last_modified"])
+        _refill(plan, rosters)
+        return _designate(plan)
 
 
 def save_plan(plan, *, rotation, closer, setup, middle_long, bench, lineup_vs_lhp, lineup_vs_rhp, starter_hook=None):

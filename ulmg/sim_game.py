@@ -1906,8 +1906,10 @@ def pregame(game, user):
                 "team": team,
                 "starter": team_sheet["starter"],
                 "lineup": team_sheet["lineup"],
-                "plan_day_url": f"/teams/{team.abbreviation.lower()}/plan/{game.series.slot.half}/day/{game.day}/"
-                f"?season={season_of(game)}",
+                "plan_day_url": (
+                    f"/teams/{team.abbreviation.lower()}/plan/{game.series.slot.half}/"
+                    f"{season_of(game)}/day/{game.day}/"
+                ),
                 "can_edit_plan": plans.can_edit(user, team),
             }
         )

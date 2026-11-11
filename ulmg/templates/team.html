@@ -10,7 +10,7 @@
 {% block content %}
 {% include 'includes/team_topper.html' %}
 
-<p class="team-ulmg-record text-sm mb-4"><span class="font-bold">{{ record_season }} ULMG record:</span> {{ ulmg_record.wins }}-{{ ulmg_record.losses }} ({{ ulmg_record.pct_display }}) &middot; <a href="/teams/{{ team.abbreviation|lower }}/results/" class="underline">Results</a> &middot; <a href="/standings/" class="underline">Standings</a></p>
+<p class="team-ulmg-record text-sm mb-4"><span class="font-bold">{{ record_season }} ULMG record:</span> {{ ulmg_record.wins }}-{{ ulmg_record.losses }} ({{ ulmg_record.pct_display }}) &middot; <a href="/teams/{{ team.abbreviation|lower }}/results/{{ record_season }}/" class="underline">Results</a> &middot; <a href="/standings/{{ record_season }}/" class="underline">Standings</a></p>
 
 <div class="mb-6 border border-gray-300 p-4 bg-gray-50">
     <form method="GET" action="/teams/{{ team.abbreviation|lower }}/" class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
