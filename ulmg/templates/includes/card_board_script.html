@@ -23,11 +23,36 @@
         return document.querySelector('[data-stack] .decision-card[data-player="' + id + '"][data-kind="' + kind + '"]');
     }
 
+    function positionCodes(card) {
+        if (!card || !card.dataset.positions) return null;
+        return card.dataset.positions.split(",").filter(function (code) { return code; });
+    }
+
+    function renderPositions(slot, codes) {
+        var box = slot.querySelector("[data-position-buttons]");
+        if (!box || !codes.length) return;
+        var hidden = box.querySelector(".position-value");
+        var current = hidden.value;
+        if (codes.indexOf(current) < 0) current = codes.indexOf("DH") >= 0 ? "DH" : codes[0];
+        hidden.value = current;
+        box.querySelectorAll("button[data-position]").forEach(function (button) { button.remove(); });
+        codes.forEach(function (code) {
+            var button = document.createElement("button");
+            button.type = "button";
+            button.dataset.position = code;
+            button.className = "border border-gray-400 px-1 leading-none" + (code === current ? " bg-gray-800 text-white" : "");
+            button.textContent = code;
+            box.insertBefore(button, hidden);
+        });
+    }
+
     function clearSlot(slot) {
         var body = slot.querySelector(".slot-body");
         if (body) body.replaceChildren();
         var input = slot.querySelector(".player-id");
         if (input) input.value = "";
+        var box = slot.querySelector("[data-position-buttons]");
+        if (box && box.dataset.all) renderPositions(slot, box.dataset.all.split(","));
     }
 
     function place(slot, card) {
@@ -45,6 +70,8 @@
         body.replaceChildren(copy);
         var input = slot.querySelector(".player-id");
         if (input) input.value = card.dataset.player;
+        var codes = positionCodes(card);
+        if (codes) renderPositions(slot, codes);
     }
 
     document.addEventListener("click", function (event) {
@@ -54,7 +81,19 @@
             clearSlot(clearButton.closest(".lineup-slot, .rotation-slot"));
             return;
         }
-        if (event.target.closest("a, input, label")) return;
+        var positionButton = event.target.closest("button[data-position]");
+        if (positionButton) {
+            event.preventDefault();
+            var box = positionButton.closest("[data-position-buttons]");
+            box.querySelector(".position-value").value = positionButton.dataset.position;
+            box.querySelectorAll("button[data-position]").forEach(function (button) {
+                var on = button === positionButton;
+                button.classList.toggle("bg-gray-800", on);
+                button.classList.toggle("text-white", on);
+            });
+            return;
+        }
+        if (event.target.closest("a, input, label, button")) return;
         var card = event.target.closest(".decision-card");
         if (card && card.closest("[data-stack]")) {
             if (picked) picked.classList.remove("is-picked");

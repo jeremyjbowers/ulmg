@@ -1204,7 +1204,8 @@ class Card(BaseModel):
 
     def sim_defense_rating(self, position):
         """The engine's DefenseRating at a position, or None where he cannot be slotted."""
-        runs = (self.defense or {}).get(position)
+        player = self.player if not self.primary_position and self.player_id else None
+        runs = cards.slotted_runs(self.defense, cards.playing_primary(self, player), position)
         if runs is None:
             return None
         return {"rating": cards.sim_defense(runs), "measured_at": position}
@@ -1229,11 +1230,8 @@ class Card(BaseModel):
         return {"id": runner_id, "steal_success": self.steal_success, "spd": self.spd}
 
     def defense_display(self):
-        return [
-            (position, self.defense[position])
-            for position in cards.DEFENSE_POSITIONS
-            if self.defense and self.defense.get(position) is not None
-        ]
+        player = self.player if not self.primary_position and self.player_id else None
+        return cards.shown_defense(self.defense, cards.playing_primary(self, player))
 
     @staticmethod
     def _slash_line(hits, total_bases, bb, hbp, k, hr):

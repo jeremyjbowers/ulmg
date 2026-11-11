@@ -1,12 +1,12 @@
 # ABOUTME: The card a manager reads while setting a lineup or a starter.
 # ABOUTME: Hitters show playing time, offense, defense and speed. Pitchers show the usage rules and their rates.
 
-from ulmg import models, usage
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 
-# FanGraphs Spd runs roughly 0 to 10. These bands are a glance, not a grade.
-SLOW = 3
-AVERAGE = 5
-FAST = 7
+from ulmg import cards, models, usage
+
+# FanGraphs Spd runs about 0 to 10. Zero on the card is an average 5.
+SPD_AVERAGE = 5
 
 
 def load(players, season):
@@ -33,8 +33,9 @@ def hitter_card(player, hit, card):
         "war_label": _decimal(hit.get("war"), 1),
         "wrc_label": _wrc(hit, card),
         "slash": _slash(card),
-        "defense_label": _defense(card),
+        "defense_label": _defense(card, player),
         "speed_label": speed_label(card.spd if card is not None else None),
+        "positions": _lineup_positions(card, player),
     }
 
 
@@ -58,16 +59,17 @@ def pitcher_card(player, pitch, card):
 
 
 def speed_label(spd):
-    """A rough speed word from FanGraphs Spd. None when the card has no Spd."""
+    """Whole steps from an average FanGraphs Spd. 8 is +3 and 4 is -1. None when the card has no Spd."""
     if spd is None:
         return "-"
-    if spd < SLOW:
-        return "slow"
-    if spd < AVERAGE:
-        return "average"
-    if spd < FAST:
-        return "fast"
-    return "burner"
+    try:
+        shifted = Decimal(str(spd)) - Decimal(SPD_AVERAGE)
+        score = int(shifted.quantize(Decimal("1"), rounding=ROUND_HALF_UP))
+    except (InvalidOperation, ValueError):
+        return "-"
+    if score > 0:
+        return f"+{score}"
+    return str(score)
 
 
 def _plate_appearances(hit):
@@ -109,14 +111,22 @@ def _slash(card):
     return f"{fmt(line['avg'])}/{fmt(line['obp'])}/{fmt(line['slg'])}"
 
 
-def _defense(card):
+def _defense(card, player):
     if card is None:
         return "-"
     parts = []
-    for position, runs in card.defense_display():
+    for position, runs in cards.shown_defense(card.defense, cards.playing_primary(card, player)):
         sign = "+" if runs > 0 else ""
         parts.append(f"{position} {sign}{runs:.1f}")
     return ", ".join(parts) if parts else "-"
+
+
+def _lineup_positions(card, player):
+    defense = card.defense if card is not None else None
+    codes = list(cards.eligible_positions(cards.playing_primary(card, player), defense))
+    if "DH" not in codes:
+        codes.append("DH")
+    return codes
 
 
 def _starts(pitch, caps):

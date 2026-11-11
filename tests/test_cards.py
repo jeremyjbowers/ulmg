@@ -301,6 +301,23 @@ class CatcherDefenseTestCase(SimpleTestCase):
         self.assertEqual(ratings["C"], 0.0)
         self.assertEqual(ratings["SS"], 6.8)
 
+    def test_an_infielder_loses_five_runs_when_read_in_the_outfield(self):
+        defense = {"SS": -12.0, "CF": 1.0, "1B": 6.0}
+        self.assertEqual(cards.slotted_runs(defense, "SS", "SS"), -12.0)
+        self.assertEqual(cards.slotted_runs(defense, "SS", "CF"), -4.0)
+        self.assertEqual(cards.slotted_runs(defense, "SS", "1B"), 6.0)
+        self.assertEqual(cards.slotted_runs(defense, "CF", "CF"), 1.0)
+        self.assertIsNone(cards.slotted_runs(defense, "C", "LF"))
+
+    def test_eligible_positions_follow_where_he_plays(self):
+        self.assertEqual(cards.eligible_positions("C", {"C": 4.0, "LF": -1.0}), ["C", "1B"])
+        self.assertEqual(cards.eligible_positions("CF", {"CF": 3.0, "SS": -8.0}), ["1B", "LF", "CF", "RF"])
+        self.assertEqual(
+            cards.eligible_positions("SS", {"SS": -12.0}),
+            ["1B", "2B", "3B", "SS", "LF", "CF", "RF"],
+        )
+        self.assertEqual(cards.eligible_positions("SS", {"SS": -12.0, "C": 1.0})[0], "C")
+
 
 class NoFieldingRowTestCase(SimpleTestCase):
     def test_no_fielding_row_is_zero_at_first_base(self):
@@ -576,6 +593,10 @@ class GenerateCardsTestCase(TestCase):
         card = models.Card.objects.get(player=self.hitter, season=2025)
         self.assertEqual(card.sim_defense_rating("SS"), {"rating": cards.sim_defense(-2.6), "measured_at": "SS"})
         self.assertIsNone(card.sim_defense_rating("C"))
+        self.assertEqual(
+            card.sim_defense_rating("CF")["rating"],
+            cards.sim_defense(card.defense["CF"] - cards.INF_TO_OF_PENALTY),
+        )
 
     def test_pitcher_card(self):
         self.generate("--season", "2025")

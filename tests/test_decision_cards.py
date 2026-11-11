@@ -1,5 +1,5 @@
 # ABOUTME: Tests the cards a manager reads while setting lineups and starters.
-# ABOUTME: Plate appearances, the reliever innings table, and the rough speed word.
+# ABOUTME: Plate appearances, the reliever innings table, and speed as steps from average.
 
 from django.test import TestCase
 
@@ -31,7 +31,8 @@ class DecisionCardTestCase(TestCase):
         self.assertIn("/", shown["slash"])
         self.assertIn("CF +3.5", shown["defense_label"])
         self.assertIn("LF -1.2", shown["defense_label"])
-        self.assertEqual(shown["speed_label"], "fast")
+        self.assertEqual(shown["speed_label"], "+1")
+        self.assertEqual(shown["positions"], ["1B", "LF", "CF", "RF", "DH"])
 
     def test_a_hitter_under_the_cap_shows_his_plate_appearances(self):
         player = self.player("Part time")
@@ -39,12 +40,46 @@ class DecisionCardTestCase(TestCase):
         self.assertEqual(shown["pa_label"], "400")
         self.assertEqual(shown["speed_label"], "-")
 
-    def test_speed_words_follow_the_bands(self):
-        self.assertEqual(decision_cards.speed_label(1.5), "slow")
-        self.assertEqual(decision_cards.speed_label(4), "average")
-        self.assertEqual(decision_cards.speed_label(6), "fast")
-        self.assertEqual(decision_cards.speed_label(8), "burner")
+    def test_speed_is_whole_steps_from_an_average_five(self):
+        self.assertEqual(decision_cards.speed_label(1.5), "-4")
+        self.assertEqual(decision_cards.speed_label(4), "-1")
+        self.assertEqual(decision_cards.speed_label(5), "0")
+        self.assertEqual(decision_cards.speed_label(6), "+1")
+        self.assertEqual(decision_cards.speed_label(8), "+3")
         self.assertEqual(decision_cards.speed_label(None), "-")
+
+    def test_eligibility_follows_the_primary_position(self):
+        infielder = self.player("Shortstop", position="SS")
+        card = models.Card.objects.create(
+            player=infielder, season=2026, primary_position="SS",
+            defense={"SS": -12.0, "CF": 1.0, "C": 2.0},
+        )
+        shown = decision_cards.hitter_card(infielder, {}, card)
+        self.assertIn("SS -12.0", shown["defense_label"])
+        self.assertIn("CF -4.0", shown["defense_label"])
+        self.assertIn("C +2.0", shown["defense_label"])
+        self.assertEqual(shown["positions"], ["C", "1B", "2B", "3B", "SS", "LF", "CF", "RF", "DH"])
+
+        outfielder = self.player("Center", position="CF")
+        card = models.Card.objects.create(
+            player=outfielder, season=2026, primary_position="CF",
+            defense={"CF": 3.0, "SS": -8.0, "1B": 6.0},
+        )
+        shown = decision_cards.hitter_card(outfielder, {}, card)
+        self.assertIn("CF +3.0", shown["defense_label"])
+        self.assertIn("1B +6.0", shown["defense_label"])
+        self.assertNotIn("SS", shown["defense_label"])
+        self.assertEqual(shown["positions"], ["1B", "LF", "CF", "RF", "DH"])
+
+        catcher = self.player("Backstop", position="C")
+        card = models.Card.objects.create(
+            player=catcher, season=2026, primary_position="C",
+            defense={"C": 4.0, "1B": 0.0, "LF": -1.0},
+        )
+        shown = decision_cards.hitter_card(catcher, {}, card)
+        self.assertEqual(shown["defense_label"], "C +4.0, 1B 0.0")
+        self.assertNotIn("LF", shown["defense_label"])
+        self.assertEqual(shown["positions"], ["C", "1B", "DH"])
 
     def test_a_reliever_shows_the_innings_max_from_the_rules(self):
         player = self.player("Reliever", position="P")
