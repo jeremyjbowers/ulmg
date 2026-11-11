@@ -8,7 +8,8 @@
 
 <div class="max-w-xl">
     <h2 class="text-lg font-bold mb-1">Day {{ row.day }}: {% if row.is_home %}vs{% else %}at{% endif %} {{ row.opponent.abbreviation }}</h2>
-    <p class="text-sm text-gray-600 mb-4">Auto-fill has {% if side.starter %}{{ side.starter.name }}{% else %}no one{% endif %} against {% if side.opponent_starter %}{{ side.opponent_starter.name }} ({{ side.opponent_starter.throws|default:"?" }}){% else %}an unplanned starter{% endif %}. <a href="/teams/{{ team.abbreviation|lower }}/plan/{{ half }}/?season={{ plan_season }}#day-{{ row.day }}" class="underline">Back to the plan</a></p>
+    <p class="text-sm text-gray-600 mb-1">Auto-fill has {% if side.starter %}{{ side.starter.name }}{% else %}no one{% endif %} against {% if side.opponent_starter %}{{ side.opponent_starter.name }} ({{ side.opponent_starter.throws|default:"?" }}){% else %}an unplanned starter{% endif %}. <a href="/teams/{{ team.abbreviation|lower }}/plan/{{ half }}/?season={{ plan_season }}#day-{{ row.day }}" class="underline">Back to the plan</a></p>
+    <p class="text-sm text-gray-600 card-season mb-4">This plan uses the {{ plan_season|add:"-1" }} MLB cards.</p>
     {% include 'includes/plan_errors.html' %}
 
     {% if not is_open %}

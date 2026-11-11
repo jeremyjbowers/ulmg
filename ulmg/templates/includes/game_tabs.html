@@ -1,6 +1,6 @@
 {# ABOUTME: The Game section's pages: this half's rosters, lineups, the schedule and results. #}
 {# ABOUTME: Expects `team` and `game_section` (`game`, `lineups`, `schedule` or `results`). #}
-{% firstof record_season schedule_season plan_season as game_season %}
+{% firstof record_season schedule_season plan_season current_season as game_season %}
 <div class="flex flex-wrap gap-4 pb-2 mb-4 text-sm">
     {% if game_section == "game" %}<span class="font-bold">This half</span>{% else %}<a href="/teams/{{ team.abbreviation|lower }}/game/" class="underline">This half</a>{% endif %}
     {% if game_section == "lineups" %}<span class="font-bold">Lineups</span>{% else %}<a href="/teams/{{ team.abbreviation|lower }}/plan/{% if season_half == "2h" %}2{% else %}1{% endif %}/{% if game_season %}?season={{ game_season }}{% endif %}" class="underline">Lineups</a>{% endif %}

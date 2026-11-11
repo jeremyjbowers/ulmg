@@ -88,6 +88,7 @@ class PublicPlanTestCase(PlanViewsTestCase):
         self.assertIn("ATL Starter 1", body)
         self.assertIn('class="plan-closer"', body)
         self.assertIn("ATL Bench 1", body)
+        self.assertIn("This plan uses the 2026 MLB cards", body)
         self.assertNotIn("Edit the plan", body)
         self.assertNotIn("Edit day", body)
 

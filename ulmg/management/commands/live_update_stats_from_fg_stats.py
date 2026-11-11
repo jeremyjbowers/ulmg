@@ -84,7 +84,6 @@ class Command(BaseCommand):
 
                 for stat in stats:
                     stat_dict = {self._process_k(k): self._process_v(k, v) for k, v in stat.items()}
-                    p_obj = None
                     mlbam_id = None
                     fg_id = None
 
@@ -103,30 +102,17 @@ class Command(BaseCommand):
                     if stat.get('xMLBAMID'):
                         mlbam_id = stat.get('xMLBAMID')
 
-                    if fg_id:
-                        try:
-                            p_obj = models.Player.objects.get(fg_id=fg_id)
-                        except models.Player.DoesNotExist:
-                            """
-                            We do not create players here. FG stats doesn't have all fields we expect for player creation.
-                            """
-                            pass
+                    fg_id = utils.fangraphs_id(fg_id)
+                    mlbam_id = utils.fangraphs_id(mlbam_id)
+                    # A minor-league FanGraphs id (sa3010329) does not match playerid, so the name is the fallback.
+                    players = utils.players_for_fangraphs_row(fg_id, mlbam_id, stat.get('PlayerName'))
 
-                    if not p_obj:
-                        if mlbam_id:
-                            try:
-                                p_obj = models.Player.objects.get(mlbam_id=mlbam_id)
-                                if fg_id:
-                                    p_obj.fg_id = fg_id
-                                    p_obj.save()
-
-                            except models.Player.DoesNotExist:
-                                """
-                                We do not create players here. FG stats doesn't have all fields we expect for player creation.
-                                """
-                                pass
-
-                    if p_obj:
+                    for p_obj in players:
+                        matched_by_mlbam = bool(mlbam_id) and p_obj.mlbam_id == mlbam_id and p_obj.fg_id != fg_id
+                        utils.remember_fangraphs_ids(p_obj, fg_id, mlbam_id)
+                        if matched_by_mlbam and fg_id and p_obj.fg_id != fg_id:
+                            p_obj.fg_id = fg_id
+                            p_obj.save()
                         # Guard: Only create 1-mlb records if there are actual MLB stats
                         if league == "mlb":
                             has_stats = False

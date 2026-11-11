@@ -8,7 +8,8 @@
 
 <div class="max-w-3xl">
     <h2 class="text-lg font-bold mb-1">Edit the {{ plan_season }} {% if half == 1 %}first{% else %}second{% endif %}-half plan</h2>
-    <p class="text-sm text-gray-600 mb-4">Saving re-fills every unopened day without a manual starter from the rotation order. <a href="/teams/{{ team.abbreviation|lower }}/plan/{{ half }}/?season={{ plan_season }}" class="underline">Back to the plan</a></p>
+    <p class="text-sm text-gray-600 mb-1">Saving re-fills every unopened day without a manual starter from the rotation order. <a href="/teams/{{ team.abbreviation|lower }}/plan/{{ half }}/?season={{ plan_season }}" class="underline">Back to the plan</a></p>
+    <p class="text-sm text-gray-600 card-season mb-4">This plan uses the {{ plan_season|add:"-1" }} MLB cards.</p>
     {% include 'includes/plan_errors.html' %}
 
     {% if not is_open %}
