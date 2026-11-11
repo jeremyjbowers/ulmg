@@ -1,6 +1,5 @@
 # ABOUTME: The team Game page, and roster moves made from it: one call-up and one send-down as a single move.
 # ABOUTME: The move page offers the legal partners for one player. Only the owner and the commissioner can move.
-from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseForbidden
@@ -8,7 +7,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_GET, require_POST
 
-from ulmg import models, plans, roster_moves, utils
+from ulmg import models, plans, roster_moves, schedule, utils
 
 
 def _posted_player(request, name):
@@ -18,6 +17,41 @@ def _posted_player(request, name):
 
 def game_url(team):
     return f"/teams/{team.abbreviation.lower()}/game/#roster-moves"
+
+
+def _playing_season():
+    """The league year these pages follow. It opens on November 1, same as the schedule and plan URLs."""
+    return utils.league_season()
+
+
+def _gap_links(team, season, half, can_edit):
+    base = f"/teams/{team.abbreviation.lower()}/plan/{half}/{season}"
+    return {
+        "lineups": f"{base}/edit/" if can_edit else f"{base}/",
+        "rotation": f"{base}/rotation/",
+        "bullpen": f"{base}/bullpen/",
+    }
+
+
+def _road_series(team, season, half, user, own_team):
+    plan = plans.find_plan(team, season, half)
+    by_day = plans.starters(plan) if plan else {}
+    nxt = schedule.next_unplayed_road_game(team, season)
+    next_id = nxt.id if nxt else None
+    tester = utils.is_sim_tester(user)
+    rows = []
+    for series in schedule.upcoming_road_series(team, season, half):
+        games = []
+        for game in series["games"]:
+            games.append(
+                {
+                    "game": game,
+                    "starter": by_day.get(game.day),
+                    "can_play": tester or (own_team and game.id == next_id),
+                }
+            )
+        rows.append({**series, "games": games})
+    return rows
 
 
 def _own_team(user, team):
@@ -31,23 +65,31 @@ def _own_team(user, team):
 @never_cache
 def team_game(request, abbreviation):
     """
-    The team's game page: the four stretches of the season, the home roster
-    the half opened with, and the away roster a call-up changes.
+    The team's game page: what still needs filing, and once the half is in
+    play, games played and left plus the next road series. Home games stay
+    off this list. Call-ups change the away roster only.
     """
     team = get_object_or_404(models.Team, abbreviation__iexact=abbreviation)
-    season, half = settings.CURRENT_SEASON, plans.current_half()
+    season, half = _playing_season(), plans.current_half()
     started = roster_moves.half_has_started(season, half)
     rosters = roster_moves.HalfRosters(team, season, half)
     can_edit = plans.can_edit(request.user, team)
+    own_team = _own_team(request.user, team)
+    counts = schedule.half_game_counts(team, season, half)
+    links = _gap_links(team, season, half, can_edit)
     context = utils.build_context(request)
     context.update(
         {
             "team": team,
-            "own_team": _own_team(request.user, team),
+            "own_team": own_team,
             "half_started": started,
             "move_half": half,
-            "periods": roster_moves.play_periods(season),
-            "home_roster": models.Player.objects.filter(id__in=rosters.home).order_by("name"),
+            "gaps": [{**gap, "href": links[gap["kind"]]} for gap in plans.plan_gaps(team, season, half)],
+            "road_series": _road_series(team, season, half, request.user, own_team),
+            "away_played": counts["away"]["played"],
+            "away_left": counts["away"]["left"],
+            "home_played": counts["home"]["played"],
+            "home_left": counts["home"]["left"],
             "away_roster": models.Player.objects.filter(id__in=rosters.road).order_by("name"),
             "call_up_pool": models.Player.objects.filter(
                 team=team, is_ulmg_aaa_roster=True, is_ulmg_mlb_roster=False
@@ -85,7 +127,7 @@ def team_roster_move(request, abbreviation):
             team,
             player_up,
             player_down,
-            season=settings.CURRENT_SEASON,
+            season=_playing_season(),
             half=plans.current_half(),
             user=request.user,
         )
@@ -119,7 +161,7 @@ def team_roster_move_choice(request, abbreviation):
         messages.error(request, "Start a move from a player on the game page.")
         return redirect(game_url(team))
 
-    season, half = settings.CURRENT_SEASON, plans.current_half()
+    season, half = _playing_season(), plans.current_half()
     context = utils.build_context(request)
     context.update(
         {

@@ -550,10 +550,12 @@ class Play:
         used = used_ids(self.state, side)
         sheet = self.sheet_side(side)
         closer = self.player(sheet["closer"]) if sheet.get("closer") else None
+        middle_ids, long_ids = plans.sheet_bullpen_ids(sheet)
         groups = {
             computer_manager.CLOSER: [closer] if closer is not None else [],
             computer_manager.SETUP: self.players(sheet.get("setup", [])),
-            computer_manager.MIDDLE_LONG: self.players(sheet.get("middle_long", [])),
+            computer_manager.MIDDLE: self.players(middle_ids),
+            computer_manager.LONG: self.players(long_ids),
         }
         planned = {p.id for players in groups.values() for p in players}
         groups[computer_manager.OTHER] = sorted(
@@ -567,9 +569,13 @@ class Play:
         sheet = self.sheet_side(side)
         if sheet.get("closer") == player.id:
             return computer_manager.CLOSER
-        for group in (computer_manager.SETUP, computer_manager.MIDDLE_LONG):
-            if player.id in sheet.get(group, []):
-                return group
+        middle_ids, long_ids = plans.sheet_bullpen_ids(sheet)
+        if player.id in sheet.get("setup", []):
+            return computer_manager.SETUP
+        if player.id in middle_ids:
+            return computer_manager.MIDDLE
+        if player.id in long_ids:
+            return computer_manager.LONG
         return computer_manager.OTHER
 
     def bullpen_role(self):
@@ -581,6 +587,7 @@ class Play:
             lead=state["score"][fielding] - state["score"][batting],
             runners_on=sum(1 for base in ("first", "second", "third") if state["bases"].get(base)),
             outs=state["outs"],
+            logic=self.sheet_side(fielding).get("bullpen_logic", models.HalfPlan.NORMAL_PEN),
         )
 
     def at_half_inning_start(self):
@@ -598,7 +605,8 @@ class Play:
         order = computer_manager.bullpen_order(
             closer[0] if closer else None,
             groups[computer_manager.SETUP],
-            groups[computer_manager.MIDDLE_LONG],
+            groups[computer_manager.MIDDLE],
+            groups[computer_manager.LONG],
             groups[computer_manager.OTHER],
         )
         return [Option(p, self.pitcher_problem(side, p)) for p in order if p is not None]
@@ -1042,7 +1050,10 @@ def _sheet_starter_and_lineup(play, side):
 def _filed_card_problems(play, side):
     sheet = play.sheet_side(side)
     problems = []
-    pitchers = play.players([sheet.get("starter"), sheet.get("closer"), *sheet.get("setup", []), *sheet.get("middle_long", [])])
+    middle_ids, long_ids = plans.sheet_bullpen_ids(sheet)
+    pitchers = play.players(
+        [sheet.get("starter"), sheet.get("closer"), *sheet.get("setup", []), *middle_ids, *long_ids]
+    )
     hitters = play.players([e["player"] for e in sheet.get("lineup") or []] + list(sheet.get("bench", [])))
     for p in pitchers:
         problem = pitcher_card_problem(p, play.card(p))

@@ -27,8 +27,9 @@ class DecisionCardTestCase(TestCase):
         shown = decision_cards.hitter_card(player, {"pa": 600, "ab": 520, "war": 4.2}, card)
         self.assertEqual(shown["pa_label"], "unlimited")
         self.assertEqual(shown["war_label"], "4.2")
+        self.assertEqual(shown["rate_label"], "4.2")
         self.assertEqual(shown["wrc_label"], "140")
-        self.assertEqual(shown["shade"], decision_cards.hitter_shade(140))
+        self.assertEqual(shown["shade"], decision_cards.hitter_shade(4.2))
         self.assertIn("/", shown["slash"])
         self.assertIn("CF +3.5", shown["defense_label"])
         self.assertIn("LF -1.2", shown["defense_label"])
@@ -40,6 +41,7 @@ class DecisionCardTestCase(TestCase):
         shown = decision_cards.hitter_card(player, {"pa": 400, "ab": 360}, None)
         self.assertEqual(shown["pa_label"], "400")
         self.assertEqual(shown["speed_label"], "-")
+        self.assertIsNone(shown["rate_label"])
         self.assertIsNone(shown["shade"])
 
     def test_speed_is_whole_steps_from_an_average_five(self):
@@ -112,13 +114,30 @@ class DecisionCardTestCase(TestCase):
         self.assertEqual(shown["innings_label"], "190.0 IP")
         self.assertEqual(shown["designation"], usage.ROTATION)
 
+    def test_the_wash_uses_war_per_600_plate_appearances(self):
+        # FanGraphs WAR already counts the glove. Per 600 PA, 2 is average.
+        self.assertEqual(decision_cards.war_per_600({"war": 2, "pa": 600}), 2)
+        self.assertEqual(decision_cards.war_per_600({"war": 1, "pa": 150}), 4)
+        self.assertEqual(decision_cards.war_per_600({"war": 0, "pa": 200}), 0)
+        self.assertEqual(decision_cards.war_per_600({"war": -0.5, "pa": 300}), -1)
+        self.assertIsNone(decision_cards.war_per_600({"war": 3}))
+        self.assertIsNone(decision_cards.war_per_600({"pa": 400}))
+        self.assertIsNone(decision_cards.war_per_600({"war": 1, "pa": 0}))
+
+        player = self.player("Glove")
+        shown = decision_cards.hitter_card(player, {"pa": 200, "war": 1.2, "wrc_plus": 80}, None)
+        self.assertEqual(shown["war_label"], "1.2")
+        self.assertEqual(shown["wrc_label"], "80")
+        self.assertEqual(shown["rate_label"], "3.6")
+        self.assertEqual(shown["shade"], decision_cards.hitter_shade(3.6))
+
     def test_the_wash_runs_from_a_pale_green_to_a_light_pink(self):
-        self.assertIsNone(decision_cards.hitter_shade(100))
+        self.assertIsNone(decision_cards.hitter_shade(2))
         self.assertIsNone(decision_cards.pitcher_shade(4.10))
         self.assertIsNone(decision_cards.hitter_shade(None))
         self.assertIsNone(decision_cards.pitcher_shade(""))
-        green = decision_cards.hitter_shade(160)
-        pink = decision_cards.hitter_shade(40)
+        green = decision_cards.hitter_shade(4)
+        pink = decision_cards.hitter_shade(0)
         self.assertEqual(green, decision_cards.shade_color(1))
         self.assertEqual(pink, decision_cards.shade_color(-1))
         self.assertEqual(decision_cards.pitcher_shade(2.5), green)
@@ -126,7 +145,7 @@ class DecisionCardTestCase(TestCase):
         for color in (green, pink):
             channels = [int(color[i:i + 2], 16) for i in (1, 3, 5)]
             self.assertTrue(all(channel >= 190 for channel in channels), color)
-        modest = decision_cards.hitter_shade(112)
+        modest = decision_cards.hitter_shade(2.8)
         red, green_channel, _ = [int(modest[i:i + 2], 16) for i in (1, 3, 5)]
         self.assertIsNotNone(modest)
         self.assertNotEqual(modest, green)

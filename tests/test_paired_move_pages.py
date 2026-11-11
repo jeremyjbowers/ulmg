@@ -2,6 +2,7 @@
 # ABOUTME: Uses one small road series, real players and the test client; no JavaScript is needed to make a move.
 
 import re
+from unittest.mock import patch
 
 from django.contrib.auth.models import User
 from django.test import Client, TestCase, override_settings
@@ -50,6 +51,9 @@ def radio_ids(page):
 class OwnerClients:
     def setUp(self):
         self.clients = {}
+        patcher = patch("ulmg.utils.league_season", return_value=ULMG_SEASON)
+        patcher.start()
+        self.addCleanup(patcher.stop)
 
     def client_for(self, user):
         # One client per user, so a message set by a post shows on the next page.
@@ -79,7 +83,8 @@ class BeforeTheHalfTestCase(OwnerClients, TestCase):
         self.assertNotContains(page, "Send down</a>")
         self.assertNotContains(page, "Call up</a>")
         game = self.client_for(self.owner).get(GAME_URL)
-        self.assertContains(game, "half-not-started")
+        self.assertContains(game, 'id="plan-gaps"')
+        self.assertContains(game, "Lineups are not filed.")
         self.assertNotContains(game, "Send down</a>")
 
 
@@ -174,10 +179,10 @@ class PairedMovePagesTestCase(OwnerClients, TestCase):
         self.assertContains(page, "Send down</a>", count=4)
         self.assertContains(page, "Call up</a>", count=3)
         self.assertNotContains(page, f"?down={self.open_pick.id}")
-        home = page.content.decode().split('id="home-roster"', 1)[1].split('id="away-roster"', 1)[0]
-        self.assertNotIn("/moves/new/", home)
-        self.assertIn(self.returner.name, home)
-        self.assertNotIn(self.prospect.name, home)
+        self.assertNotContains(page, 'id="home-roster"')
+        away = page.content.decode().split('id="away-roster"', 1)[1].split('id="call-up-pool"', 1)[0]
+        self.assertNotIn(self.returner.name, away)
+        self.assertNotIn(self.prospect.name, away)
 
     def test_the_commissioner_sees_the_paired_controls(self):
         page = self.client_for(self.commish).get(GAME_URL)

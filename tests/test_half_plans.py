@@ -367,7 +367,9 @@ class OpenedGameTestCase(PlanTestCase):
         self.assertEqual(sheet["bench"], [p.id for p in self.roster.bench])
         self.assertEqual(sheet["closer"], self.roster.relievers[0].id)
         self.assertEqual(sheet["setup"], [self.roster.relievers[1].id])
-        self.assertEqual(sheet["middle_long"], [self.roster.swingman.id])
+        self.assertEqual(sheet["middle"], [])
+        self.assertEqual(sheet["long_relief"], [self.roster.swingman.id])
+        self.assertEqual(sheet["bullpen_logic"], models.HalfPlan.NORMAL_PEN)
 
 
 class SeasonStartersTestCase(PlanTestCase):
@@ -433,6 +435,126 @@ class StarterHookTestCase(PlanTestCase):
         self.assertEqual(side(game, other)["starter_hook"], models.HalfPlan.NORMAL_HOOK)
 
 
+class BullpenSaveTestCase(PlanTestCase):
+    def test_saving_the_bullpen_keeps_the_lineups_and_the_rotation(self):
+        plan = self.roster.file()
+        rotation = list(plan.rotation)
+        lineup = list(plan.lineup_vs_rhp)
+        before = plans.starters(plan)
+        warnings = plans.save_bullpen(
+            plan,
+            closer=self.roster.relievers[1],
+            setup=[self.roster.relievers[0]],
+            middle=[self.roster.swingman],
+            long_relief=[],
+            bullpen_logic=models.HalfPlan.QUICK_PEN,
+        )
+        self.assertEqual(warnings, [])
+        plan.refresh_from_db()
+        self.assertEqual(plan.closer, self.roster.relievers[1])
+        self.assertEqual(plan.setup, [self.roster.relievers[0].id])
+        self.assertEqual(plan.middle, [self.roster.swingman.id])
+        self.assertEqual(plan.long_relief, [])
+        self.assertEqual(plan.bullpen_logic, models.HalfPlan.QUICK_PEN)
+        self.assertEqual(plan.rotation, rotation)
+        self.assertEqual(plan.lineup_vs_rhp, lineup)
+        self.assertTrue(usage.counter_for(self.roster.swingman, SEASON).confined_to_relief)
+        self.assertEqual(plans.starters(plan), before)
+
+    def test_taking_a_swingman_out_of_the_bullpen_ends_his_relief_designation(self):
+        plan = self.roster.file()
+        self.assertTrue(usage.counter_for(self.roster.swingman, SEASON).confined_to_relief)
+        plans.save_bullpen(
+            plan,
+            closer=self.roster.relievers[0],
+            setup=[self.roster.relievers[1]],
+            middle=[],
+            long_relief=[],
+            bullpen_logic=models.HalfPlan.NORMAL_PEN,
+        )
+        self.assertFalse(usage.counter_for(self.roster.swingman, SEASON).confined_to_relief)
+
+    def test_an_unknown_bullpen_logic_is_refused_and_nothing_is_saved(self):
+        plan = self.roster.file(bullpen_logic=models.HalfPlan.SLOW_PEN)
+        with self.assertRaises(plans.PlanError) as raised:
+            plans.save_bullpen(
+                plan,
+                closer=plan.closer,
+                setup=[self.roster.relievers[1]],
+                middle=[],
+                long_relief=[self.roster.swingman],
+                bullpen_logic="wild",
+            )
+        self.assertIn("The bullpen logic must be quick, normal or slow.", raised.exception.errors)
+        plan.refresh_from_db()
+        self.assertEqual(plan.bullpen_logic, models.HalfPlan.SLOW_PEN)
+        self.assertEqual(plan.long_relief, [self.roster.swingman.id])
+
+    def test_a_save_that_names_no_logic_keeps_the_filed_one(self):
+        plan = self.roster.file(bullpen_logic=models.HalfPlan.QUICK_PEN)
+        plans.save_bullpen(
+            plan,
+            closer=self.roster.relievers[0],
+            setup=[self.roster.relievers[1]],
+            middle=[],
+            long_relief=[self.roster.swingman],
+        )
+        plan.refresh_from_db()
+        self.assertEqual(plan.bullpen_logic, models.HalfPlan.QUICK_PEN)
+
+    def test_the_same_pitcher_cannot_fill_two_roles(self):
+        plan = self.roster.file()
+        with self.assertRaises(plans.PlanError) as raised:
+            plans.save_bullpen(
+                plan,
+                closer=self.roster.relievers[0],
+                setup=[self.roster.relievers[0]],
+                middle=[],
+                long_relief=[],
+            )
+        self.assertIn("is in the bullpen twice", str(raised.exception))
+        plan.refresh_from_db()
+        self.assertEqual(plan.closer, self.roster.relievers[0])
+        self.assertEqual(plan.setup, [self.roster.relievers[1].id])
+
+    def test_the_opened_sheet_keeps_the_bullpen_and_a_sheet_from_before_the_split_reads_as_middle(self):
+        self.roster.file(
+            bullpen_logic=models.HalfPlan.QUICK_PEN,
+            setup=[],
+            middle=[self.roster.relievers[1]],
+            long_relief=[self.roster.swingman],
+        )
+        game = game_on(self.atl, 1)
+        key = "home" if game.series.home_team_id == self.atl.id else "road"
+        opened = plans.open_game(game)
+        self.assertEqual(opened[key]["bullpen_logic"], models.HalfPlan.QUICK_PEN)
+        self.assertEqual(opened[key]["middle"], [self.roster.relievers[1].id])
+        self.assertEqual(opened[key]["long_relief"], [self.roster.swingman.id])
+        self.roster.file(bullpen_logic=models.HalfPlan.SLOW_PEN, middle=[], long_relief=[])
+        game.refresh_from_db()
+        frozen = side(game, self.atl)
+        self.assertEqual(frozen["bullpen_logic"], models.HalfPlan.QUICK_PEN)
+        self.assertEqual([p.id for p in frozen["middle"]], [self.roster.relievers[1].id])
+
+        sheet = dict(game.opening_sheet)
+        old = {k: v for k, v in sheet[key].items() if k not in ("middle", "long_relief", "bullpen_logic")}
+        old["middle_long"] = [self.roster.swingman.id]
+        sheet[key] = old
+        game.opening_sheet = sheet
+        game.save(update_fields=["opening_sheet"])
+        read = side(game, self.atl)
+        self.assertEqual([p.id for p in read["middle"]], [self.roster.swingman.id])
+        self.assertEqual(read["long_relief"], [])
+        self.assertEqual(read["bullpen_logic"], models.HalfPlan.NORMAL_PEN)
+
+    def test_a_team_without_a_plan_has_a_normal_bullpen_logic(self):
+        game = game_on(self.atl, 1)
+        other = opponent_on(self.atl, 1)
+        self.assertEqual(side(game, other)["bullpen_logic"], models.HalfPlan.NORMAL_PEN)
+        self.assertEqual(side(game, other)["middle"], [])
+        self.assertEqual(side(game, other)["long_relief"], [])
+
+
 class PlanSaveQueryCountTestCase(PlanTestCase):
     # Auto-fill shares one read of the usage ledger across the half's days instead of reading
     # each candidate's counter and starts again for every day: 437 queries to file this plan before, 195 after.
@@ -453,7 +575,8 @@ class FillPlanTestCase(PlanTestCase):
             "rotation": self.roster.starters,
             "closer": self.roster.relievers[0],
             "setup": [self.roster.relievers[1]],
-            "middle_long": [self.roster.swingman],
+            "middle": [],
+            "long_relief": [self.roster.swingman],
             "bench": self.roster.bench,
             "lineup_vs_lhp": self.roster.lineup(),
             "lineup_vs_rhp": self.roster.lineup(),

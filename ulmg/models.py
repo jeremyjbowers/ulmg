@@ -2248,13 +2248,19 @@ class HalfPlan(BaseModel):
     cards, the bench order and the bullpen roles. Ordered lists hold Player
     ids. A lineup card is a list of {"player": id, "position": code} in
     batting order. ulmg.plans validates and saves it. starter_hook is how
-    soon the computer pulls this team's starter (ulmg.computer_manager).
+    soon the computer pulls this team's starter, and bullpen_logic is how
+    early it brings in the closer and setup (ulmg.computer_manager).
     """
 
     QUICK_HOOK = "quick"
     NORMAL_HOOK = "normal"
     SLOW_HOOK = "slow"
     STARTER_HOOK_CHOICES = ((QUICK_HOOK, "Quick"), (NORMAL_HOOK, "Normal"), (SLOW_HOOK, "Slow"))
+
+    QUICK_PEN = "quick"
+    NORMAL_PEN = "normal"
+    SLOW_PEN = "slow"
+    BULLPEN_LOGIC_CHOICES = ((QUICK_PEN, "Quick"), (NORMAL_PEN, "Normal"), (SLOW_PEN, "Slow"))
 
     team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name="half_plans")
     season = models.IntegerField()
@@ -2265,11 +2271,13 @@ class HalfPlan(BaseModel):
         Player, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
     )
     setup = ArrayField(models.IntegerField(), default=list, blank=True)
-    middle_long = ArrayField(models.IntegerField(), default=list, blank=True)
+    middle = ArrayField(models.IntegerField(), default=list, blank=True)
+    long_relief = ArrayField(models.IntegerField(), default=list, blank=True)
     bench = ArrayField(models.IntegerField(), default=list, blank=True)
     lineup_vs_lhp = models.JSONField(default=list, blank=True)
     lineup_vs_rhp = models.JSONField(default=list, blank=True)
     starter_hook = models.CharField(max_length=6, choices=STARTER_HOOK_CHOICES, default=NORMAL_HOOK)
+    bullpen_logic = models.CharField(max_length=6, choices=BULLPEN_LOGIC_CHOICES, default=NORMAL_PEN)
 
     class Meta:
         ordering = ["season", "half", "team__abbreviation"]

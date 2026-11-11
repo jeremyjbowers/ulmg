@@ -18,7 +18,7 @@
         {% endif %}
     </div>
     {% if card.kind == "h" %}
-    <div>PA {{ card.pa_label }} &middot; {{ card.war_label }} WAR &middot; {{ card.wrc_label }} wRC+ &middot; {{ card.slash }} &middot; Spd {{ card.speed_label }}</div>
+    <div>PA {{ card.pa_label }} &middot; {{ card.war_label }} WAR{% if card.rate_label %} &middot; {{ card.rate_label }}/600{% endif %} &middot; {{ card.wrc_label }} wRC+ &middot; {{ card.slash }} &middot; Spd {{ card.speed_label }}</div>
     <div>{{ card.defense_label }}</div>
     {% else %}
     <div>{{ card.starts_label }} &middot; {{ card.innings_label }} &middot; {{ card.xfip_label }} xFIP &middot; {{ card.war_label }} WAR</div>

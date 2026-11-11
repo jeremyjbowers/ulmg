@@ -1,4 +1,4 @@
-# ABOUTME: Lineup and rotation pages for one half, plus the one-day lineup override.
+# ABOUTME: Lineup, rotation and bullpen pages for one half, plus the one-day lineup override.
 # ABOUTME: Anyone can read them. Only the team's owner and the commissioner can change them.
 from django.contrib import messages
 from django.http import (
@@ -12,11 +12,18 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.cache import never_cache
 
-from ulmg import decision_cards, models, plans, roster_moves, usage, utils
+from ulmg import computer_manager, decision_cards, models, plans, roster_moves, usage, utils
 from ulmg.season_paths import bounce, season_url
 
 # The rotation shortcut offers six slots. Fewer than six is a shorter rotation.
 ROTATION_SLOTS = 6
+# Empty slots on the bullpen page. A role that already names more arms shows every one of them.
+BULLPEN_GROUPS = (
+    ("closer", "Closer", 1, "Save situations."),
+    ("setup", "Setup", 4, "A close game in the late innings."),
+    ("middle", "Middle", 6, "The innings between long relief and setup."),
+    ("long_relief", "Long relief", 4, "When the starter is out early."),
+)
 LINEUP_COLUMNS = (("vs_rhp", "vs Righty"), ("vs_lhp", "vs Lefty"))
 
 
@@ -46,6 +53,12 @@ def _rotation_url(team, half, season):
 
 def _schedule_url(team, season):
     return season_url("teams", team.abbreviation.lower(), "schedule", season=season)
+
+
+def _bullpen_url(team, half, season):
+    return season_url(
+        "teams", team.abbreviation.lower(), "plan", half, season=season, tail=("bullpen",)
+    )
 
 
 def _designation_url(team, half, season):
@@ -218,11 +231,41 @@ def _slots(rows, cards, season, kind):
     return slots
 
 
-def _rotation_slots(ids, cards, season):
-    ids = list(ids)[:ROTATION_SLOTS]
-    ids = ids + [None] * (ROTATION_SLOTS - len(ids))
+def _padded_slots(ids, cards, season, count):
+    """Slots for a role: at least count of them, and one for every pitcher already named."""
+    ids = [player_id for player_id in ids if player_id]
+    width = max(count, len(ids))
+    ids = ids + [None] * (width - len(ids))
     cards = _with_missing(cards, ids, season, "p")
     return [{"player_id": player_id or "", "card": cards.get(player_id)} for player_id in ids]
+
+
+def _rotation_slots(ids, cards, season):
+    return _padded_slots(list(ids)[:ROTATION_SLOTS], cards, season, ROTATION_SLOTS)
+
+
+def _posted_ids(post, name):
+    return [player_id for player_id in (_int_or_none(value) for value in post.getlist(name)) if player_id]
+
+
+def _bullpen_from_plan(plan):
+    return {
+        "closer": [plan.closer_id] if plan.closer_id else [],
+        "setup": list(plan.setup or []),
+        "middle": list(plan.middle or []),
+        "long_relief": list(plan.long_relief or []),
+        "bullpen_logic": plan.bullpen_logic or models.HalfPlan.NORMAL_PEN,
+    }
+
+
+def _bullpen_from_post(post):
+    return {
+        "closer": _posted_ids(post, "closer")[:1],
+        "setup": _posted_ids(post, "setup"),
+        "middle": _posted_ids(post, "middle"),
+        "long_relief": _posted_ids(post, "long_relief"),
+        "bullpen_logic": post.get("bullpen_logic"),
+    }
 
 
 def _half_note(half):
@@ -388,6 +431,97 @@ def team_plan_rotation(request, abbreviation, half, season=None):
         }
     )
     return render(request, "team_rotation.html", context, status=400 if errors else 200)
+
+
+def _bullpen_players(state, errors):
+    """Players for each role, in the posted order. Unknown ids become an error and stop the save."""
+    ids = [player_id for name, _, _, _ in BULLPEN_GROUPS for player_id in state[name]]
+    players = models.Player.objects.in_bulk(ids)
+    if any(player_id not in players for player_id in ids):
+        errors.append("That pitcher is not a player.")
+        return None
+    return {name: [players[player_id] for player_id in state[name]] for name, _, _, _ in BULLPEN_GROUPS}
+
+
+def _bullpen_context(request, team, half, season, state, errors):
+    context = _common(request, team, half, season)
+    roster = _roster(team, season, half)
+    cards = _built_cards(roster["pitchers"], season, "p")
+    labels = dict(models.HalfPlan.BULLPEN_LOGIC_CHOICES)
+    logic = state["bullpen_logic"] or models.HalfPlan.NORMAL_PEN
+    context.update(
+        {
+            "errors": errors,
+            "pitcher_cards": list(cards.values()),
+            "bullpen_groups": [
+                {
+                    "name": name,
+                    "label": label,
+                    "note": note,
+                    "slots": _padded_slots(state[name], cards, season, count),
+                }
+                for name, label, count, note in BULLPEN_GROUPS
+            ],
+            "bullpen_logic": logic,
+            "bullpen_logic_label": labels.get(logic, logic),
+            "bullpen_logics": [
+                {
+                    "value": value,
+                    "label": label,
+                    "note": computer_manager.describe_bullpen_logic(value),
+                    "checked": value == logic,
+                }
+                for value, label in models.HalfPlan.BULLPEN_LOGIC_CHOICES
+            ],
+        }
+    )
+    return context
+
+
+@never_cache
+def team_plan_bullpen(request, abbreviation, half, season=None):
+    team = _team_and_half(abbreviation, half)
+    bounced = bounce(
+        request,
+        "teams",
+        team.abbreviation.lower(),
+        "plan",
+        half,
+        season=season,
+        tail=("bullpen",),
+    )
+    if bounced:
+        return bounced
+    season = int(season)
+    plan = plans.find_plan(team, season, half) or models.HalfPlan(team=team, season=season, half=half)
+    state = _bullpen_from_plan(plan)
+
+    errors = []
+    if request.method == "POST":
+        if not plans.can_edit(request.user, team):
+            return HttpResponseForbidden("Only this team's owner and the commissioner can set the bullpen.")
+        state = _bullpen_from_post(request.POST)
+        found = _bullpen_players(state, errors)
+        if found is not None and not errors:
+            try:
+                warnings = plans.save_bullpen(
+                    plan,
+                    closer=found["closer"][0] if found["closer"] else None,
+                    setup=found["setup"],
+                    middle=found["middle"],
+                    long_relief=found["long_relief"],
+                    bullpen_logic=state["bullpen_logic"],
+                )
+            except plans.PlanError as error:
+                errors = error.errors
+            else:
+                for warning in warnings:
+                    messages.warning(request, warning)
+                messages.success(request, "Saved the bullpen.")
+                return redirect(_bullpen_url(team, half, season))
+
+    context = _bullpen_context(request, team, half, season, state, errors)
+    return render(request, "team_bullpen.html", context, status=400 if errors else 200)
 
 
 @never_cache

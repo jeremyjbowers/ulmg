@@ -99,7 +99,7 @@ class BullpenRolesTestCase(ComputerGameTestCase):
         self.assertEqual(change.payload["pitcher"], self.home.swingman.id)
         decision = decision_before(log, change)
         self.assertEqual(decision.payload["role"], computer_manager.CLOSER)
-        self.assertEqual(decision.payload["group"], computer_manager.MIDDLE_LONG)
+        self.assertEqual(decision.payload["group"], computer_manager.LONG)
         self.assertEqual(decision.payload["skipped"][0][0], closer.id)
         self.assertIn("no innings left", decision.text)
 
@@ -147,7 +147,7 @@ class BullpenRolesTestCase(ComputerGameTestCase):
         change = self.until_changes(log, HOME, 1)[0]
         self.assertEqual(change.payload["pitcher"], self.home.swingman.id)
         self.assertEqual(inning_of(log, change), 3)
-        self.assertEqual(decision_before(log, change).payload["role"], computer_manager.MIDDLE_LONG)
+        self.assertEqual(decision_before(log, change).payload["role"], computer_manager.LONG)
 
     def test_middle_and_long_with_a_big_lead_in_the_seventh(self):
         gf.set_rates(self.home.hitters[:2], gf.HOME_RUN_RATES)
@@ -157,6 +157,18 @@ class BullpenRolesTestCase(ComputerGameTestCase):
         self.assertEqual(inning_of(log, change), 7)
         self.assertGreater(self.play(log).state["score"]["home"], 3)
         self.assertEqual(change.payload["pitcher"], self.home.swingman.id)
+        decision = decision_before(log, change)
+        self.assertEqual(decision.payload["role"], computer_manager.MIDDLE)
+        self.assertEqual(decision.payload["group"], computer_manager.LONG)
+
+    def test_a_quick_pen_brings_the_closer_in_for_an_eighth_inning_save(self):
+        self.home.file(half=1, bullpen_logic=models.HalfPlan.QUICK_PEN)
+        gf.counter(self.home.starters[0], start_limit_outs=21)
+        log = self.open()
+        change = self.until_changes(log, HOME, 1)[0]
+        self.assertEqual(change.payload["pitcher"], self.home.relievers[0].id)
+        self.assertEqual(inning_of(log, change), 8)
+        self.assertEqual(decision_before(log, change).payload["role"], computer_manager.CLOSER)
 
     def test_with_middle_and_long_spent_setup_is_next_then_the_closer(self):
         gf.counter(self.home.starters[0], start_limit_outs=6)

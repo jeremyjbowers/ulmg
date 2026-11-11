@@ -8,10 +8,13 @@ from ulmg import cards, models, usage
 # FanGraphs Spd runs about 0 to 10. Zero on the card is an average 5.
 SPD_AVERAGE = 5
 
-# wRC+ of 100 is an average bat. An xFIP of 4.10 is an average arm.
-# Thirty points of wRC+, or 0.80 of xFIP, reaches the full wash.
-HITTER_AVERAGE = 100
-HITTER_SPAN = 30
+# FanGraphs WAR already counts hitting, baserunning and defense. Per 600
+# plate appearances, about 2 wins is an average hitter. Two wins either
+# side of that is the full wash. An xFIP of 4.10 is an average arm, and
+# 0.80 of xFIP reaches the full wash.
+HITTER_AVERAGE = 2.0
+HITTER_SPAN = 2.0
+PA_PER_RATE = 600
 PITCHER_AVERAGE = 4.10
 PITCHER_SPAN = 0.80
 
@@ -35,19 +38,20 @@ def load(players, season):
 
 
 def hitter_card(player, hit, card):
-    """What a hitter's card shows: PA, WAR, wRC+, the slash line, defense and speed."""
+    """What a hitter's card shows: PA, WAR, WAR per 600 PA, wRC+, the slash line, defense and speed."""
     hit = hit or {}
     return {
         "player": player,
         "kind": "h",
         "pa_label": _plate_appearances(hit),
         "war_label": _decimal(hit.get("war"), 1),
+        "rate_label": _rate_label(hit),
         "wrc_label": _wrc(hit, card),
         "slash": _slash(card),
         "defense_label": _defense(card, player),
         "speed_label": speed_label(card.spd if card is not None else None),
         "positions": _lineup_positions(card, player),
-        "shade": hitter_shade(_wrc_value(hit, card)),
+        "shade": hitter_shade(war_per_600(hit)),
     }
 
 
@@ -104,9 +108,19 @@ def shade_color(score):
     return "#{:02x}{:02x}{:02x}".format(*channels)
 
 
-def hitter_shade(wrc):
-    """Pale green above a 100 wRC+, light pink below. None at average or with no wRC+."""
-    value = _stat_number(wrc)
+def war_per_600(hit):
+    """FanGraphs WAR scaled to 600 plate appearances. None without both WAR and PA."""
+    hit = hit or {}
+    war = _stat_number(hit.get("war"))
+    pa = _stat_number(hit.get("pa"))
+    if war is None or pa is None or pa <= 0:
+        return None
+    return war * PA_PER_RATE / pa
+
+
+def hitter_shade(rate):
+    """Pale green above 2 WAR per 600 PA, light pink below. None at average or with no rate."""
+    value = _stat_number(rate)
     if value is None:
         return None
     return shade_color((value - HITTER_AVERAGE) / HITTER_SPAN)
@@ -162,6 +176,13 @@ def _wrc_value(hit, card):
     if card is not None and card.wrc_plus is not None:
         return _stat_number(card.wrc_plus)
     return _stat_number((hit or {}).get("wrc_plus"))
+
+
+def _rate_label(hit):
+    rate = war_per_600(hit)
+    if rate is None:
+        return None
+    return _decimal(rate, 1)
 
 
 def _wrc(hit, card):

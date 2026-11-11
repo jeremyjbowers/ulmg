@@ -1,0 +1,77 @@
+{# ABOUTME: The closer, setup, middle and long relief, and the bullpen logic that decides when each comes in. #}
+{# ABOUTME: Anyone can read it. The owner and the commissioner drag pitchers into the roles and save. #}
+{% extends "base.html" %}
+
+{% block content %}
+{% include 'includes/team_topper.html' %}
+{% include "includes/team_tabs.html" with team_tab="game" %}
+{% include "includes/game_tabs.html" with game_section="bullpen" %}
+
+<div>
+    <h2 class="text-lg font-bold mb-1">Bullpen</h2>
+    <p class="text-sm text-gray-600 mb-1">{{ half_note }} Name a closer, then setup, middle and long relief, in the order the computer should try them. A pitcher goes in one role. Bullpen logic is how early the closer and setup come in when the computer manages this team.</p>
+    <p class="text-sm text-gray-600 card-season mb-4">These cards use the {{ plan_season|add:"-1" }} MLB cards.</p>
+    {% include 'includes/plan_errors.html' %}
+
+    {% if not is_open %}
+    <p class="plan-closed text-sm">{{ closed_message }}</p>
+    {% else %}
+    <div class="lg:grid lg:grid-cols-12 lg:gap-4">
+        <div class="lg:col-span-4 mb-4" data-stack>
+            <h3 class="font-bold border-b border-gray-300 mb-2">Pitchers</h3>
+            <div class="space-y-2">
+                {% for card in pitcher_cards %}
+                {% include "includes/decision_card.html" %}
+                {% endfor %}
+            </div>
+        </div>
+        <form method="post" class="lg:col-span-8 space-y-4 text-sm" data-bullpen>
+            {% csrf_token %}
+            <fieldset>
+                <legend class="font-bold mb-1">Bullpen logic</legend>
+                {% if can_edit %}
+                <div class="space-y-2">
+                    {% for choice in bullpen_logics %}
+                    <label class="block">
+                        <input type="radio" name="bullpen_logic" value="{{ choice.value }}"{% if choice.checked %} checked{% endif %}>
+                        {{ choice.label }}
+                        <span class="text-xs text-gray-600">{{ choice.note }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="bullpen-logic">Bullpen logic: {{ bullpen_logic_label }}</p>
+                <p class="text-xs text-gray-600">{% for choice in bullpen_logics %}{% if choice.checked %}{{ choice.note }}{% endif %}{% endfor %}</p>
+                {% endif %}
+            </fieldset>
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+                {% for group in bullpen_groups %}
+                <div data-bullpen-group="{{ group.name }}">
+                    <h3 class="font-bold border-b border-gray-300 mb-1">{{ group.label }}</h3>
+                    <p class="text-xs text-gray-600 mb-2">{{ group.note }}</p>
+                    <div class="space-y-2">
+                        {% for slot in group.slots %}
+                        <div class="lineup-slot border border-dashed border-gray-300 p-1">
+                            <div class="flex justify-between text-xs text-gray-500">
+                                <span>{{ forloop.counter }}</span>
+                                {% if can_edit %}<button type="button" data-clear class="underline">Clear</button>{% endif %}
+                            </div>
+                            <div class="slot-body">
+                                {% if slot.card %}{% include "includes/decision_card.html" with card=slot.card %}{% endif %}
+                            </div>
+                            {% if can_edit %}<input type="hidden" class="player-id" name="{{ group.name }}" value="{{ slot.player_id }}">{% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% if can_edit %}
+            <button type="submit" class="bg-gray-800 text-white rounded px-4 py-2 font-bold">Save bullpen</button>
+            {% endif %}
+        </form>
+    </div>
+    {% if can_edit %}{% include "includes/card_board_script.html" %}{% endif %}
+    {% endif %}
+</div>
+{% endblock %}
