@@ -18,7 +18,7 @@
     </ul>
 
     {% if not half_started %}
-    <p class="half-not-started border border-gray-300 bg-gray-50 px-3 py-2 mb-3">This half has not started. Set the roster on the <a href="/teams/{{ team.abbreviation|lower }}/" class="underline">Roster</a> page, then file the <a href="/teams/{{ team.abbreviation|lower }}/plan/{% if move_half == 2 %}2{% else %}1{% endif %}/?season={{ current_season }}" class="underline">lineups</a>. Until the half starts, home and away are that same roster.</p>
+    <p class="half-not-started border border-gray-300 bg-gray-50 px-3 py-2 mb-3">This half has not started. Set the roster on the <a href="/teams/{{ team.abbreviation|lower }}/" class="underline">Roster</a> page, then file the <a href="/teams/{{ team.abbreviation|lower }}/plan/{% if move_half == 2 %}2{% else %}1{% endif %}/{{ league_season }}/" class="underline">lineups</a>. Until the half starts, home and away are that same roster.</p>
     {% if move_half == 2 %}
     <p class="trade-break-note">No games are played between the halves. The second-half roster is set on the Roster page, including anyone taken in the midseason Open draft. He stays rostered for the whole second half.</p>
     {% endif %}

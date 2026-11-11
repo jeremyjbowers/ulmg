@@ -1,7 +1,7 @@
 {# ABOUTME: One standings row: team, W, L, Pct and games behind, with the usage penalty flag. #}
 {# ABOUTME: Expects row and games_behind; with wild_card, adds the race place and any tied division lead. #}
 <tr class="standings-row border-b border-gray-100{% if wild_card and row.status == 'in' %} font-bold{% endif %}" data-team="{{ row.team.abbreviation }}">
-    <td class="py-1 px-2"><a href="/teams/{{ row.team.abbreviation|lower }}/results/?season={{ record_season }}" class="underline">{{ row.team.abbreviation }}</a>{% if row.penalty == "20" %} <span class="font-bold" title="A player more than 20% over a usage cap">**</span>{% elif row.penalty == "10" %} <span class="font-bold" title="A player more than 10% over a usage cap">*</span>{% endif %}{% if not wild_card and row.tied_for_lead %} <span class="text-xs text-gray-600">Tied</span>{% endif %}</td>
+    <td class="py-1 px-2"><a href="/teams/{{ row.team.abbreviation|lower }}/results/{{ record_season }}/" class="underline">{{ row.team.abbreviation }}</a>{% if row.penalty == "20" %} <span class="font-bold" title="A player more than 20% over a usage cap">**</span>{% elif row.penalty == "10" %} <span class="font-bold" title="A player more than 10% over a usage cap">*</span>{% endif %}{% if not wild_card and row.tied_for_lead %} <span class="text-xs text-gray-600">Tied</span>{% endif %}</td>
     <td class="text-right py-1 px-2">{{ row.wins }}</td>
     <td class="text-right py-1 px-2">{{ row.losses }}</td>
     <td class="text-right py-1 px-2">{{ row.pct_display }}</td>

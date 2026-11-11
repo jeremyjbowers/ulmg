@@ -137,26 +137,35 @@ class PlanPagesAfterAMoveTestCase(TestCase):
         self.client.force_login(self.owner)
 
     def option(self, player):
-        return f'<option value="{player.id}"'
+        return f'data-player="{player.id}"'
+
+    def stacks(self, response):
+        """The pitcher stack and the hitter stack, without the slots a lineup already holds."""
+        body = response.content.decode()
+        pitchers = body.split(">Pitchers</h3>", 1)[1].split(">Hitters</h3>", 1)[0]
+        hitters = body.split(">Hitters</h3>", 1)[1].split("lg:col-span-8", 1)[0]
+        return pitchers, hitters
 
     def test_the_plan_editor_offers_call_ups_and_sent_down_players(self):
-        page = self.client.get(f"/teams/atl/plan/1/edit/?season={SEASON}")
-        self.assertContains(page, self.option(self.up))
-        self.assertContains(page, self.option(self.sent))
+        lineups = self.client.get(f"/teams/atl/plan/1/{SEASON}/edit/")
+        self.assertContains(lineups, self.option(self.sent))
+        self.assertNotContains(lineups, self.option(self.up))
+        rotation = self.client.get(f"/teams/atl/plan/1/{SEASON}/rotation/")
+        self.assertContains(rotation, self.option(self.up))
 
     def test_the_day_editor_offers_that_games_roster(self):
         games = [g for g in schedule.team_games(self.atl, SEASON) if g.series.slot.half == 1]
         home = next(g for g in games if g.series.home_team_id == self.atl.id)
         road = next(g for g in games if g.series.road_team_id == self.atl.id)
-        home_page = self.client.get(f"/teams/atl/plan/1/day/{home.day}/?season={SEASON}")
-        self.assertNotContains(home_page, self.option(self.up))
-        self.assertContains(home_page, self.option(self.sent))
-        road_page = self.client.get(f"/teams/atl/plan/1/day/{road.day}/?season={SEASON}")
-        self.assertContains(road_page, self.option(self.up))
-        self.assertNotContains(road_page, self.option(self.sent))
+        home_pitchers, home_hitters = self.stacks(self.client.get(f"/teams/atl/plan/1/{SEASON}/day/{home.day}/"))
+        self.assertNotIn(self.option(self.up), home_pitchers)
+        self.assertIn(self.option(self.sent), home_hitters)
+        road_pitchers, road_hitters = self.stacks(self.client.get(f"/teams/atl/plan/1/{SEASON}/day/{road.day}/"))
+        self.assertIn(self.option(self.up), road_pitchers)
+        self.assertNotIn(self.option(self.sent), road_hitters)
 
     def test_the_plan_page_flags_a_sent_down_batter_on_road_days(self):
-        page = self.client.get(f"/teams/atl/plan/1/?season={SEASON}")
+        page = self.client.get(f"/teams/atl/schedule/{SEASON}/")
         road_days = sum(
             1 for g in schedule.team_games(self.atl, SEASON)
             if g.series.slot.half == 1 and g.series.road_team_id == self.atl.id

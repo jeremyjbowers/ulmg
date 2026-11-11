@@ -5,7 +5,7 @@
     {% if board.rows %}
     <ol class="list-decimal ml-5">
         {% for row in board.rows %}
-        <li><a href="/players/{{ row.player.id }}/" class="underline">{{ row.player.name }}</a>{% if row.player.team %} <a href="/teams/{{ row.player.team.abbreviation|lower }}/results/?season={{ record_season }}" class="text-xs text-gray-600 underline">{{ row.player.team.abbreviation }}</a>{% endif %} <span class="font-bold">{{ row.value }}</span></li>
+        <li><a href="/players/{{ row.player.id }}/" class="underline">{{ row.player.name }}</a>{% if row.player.team %} <a href="/teams/{{ row.player.team.abbreviation|lower }}/results/{{ record_season }}/" class="text-xs text-gray-600 underline">{{ row.player.team.abbreviation }}</a>{% endif %} <span class="font-bold">{{ row.value }}</span></li>
         {% endfor %}
     </ol>
     {% else %}

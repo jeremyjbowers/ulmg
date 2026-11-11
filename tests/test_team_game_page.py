@@ -4,7 +4,7 @@
 from django.contrib.auth.models import User
 from django.test import TestCase, override_settings
 
-from ulmg import models, roster_moves
+from ulmg import models, roster_moves, utils
 from tests.usage_fixtures import ULMG_SEASON, create_pitcher, create_series, create_teams
 
 
@@ -64,9 +64,12 @@ class GamePageTestCase(TestCase):
         self.assertLess(body.index(">Game</"), body.index("Trades & picks"))
         for label in ("First half, home", "First half, away", "Second half, home", "Second half, away"):
             self.assertIn(label, body)
-        self.assertIn(f'href="/teams/atl/plan/1/?season={ULMG_SEASON}"', body)
-        self.assertIn(f'href="/teams/atl/schedule/?season={ULMG_SEASON}"', body)
-        self.assertIn(f'href="/teams/atl/results/?season={ULMG_SEASON}"', body)
+        year = utils.league_season()
+        self.assertIn(f'href="/teams/atl/plan/1/{year}/edit/"', body)
+        self.assertIn(f'href="/teams/atl/schedule/{year}/"', body)
+        self.assertIn(f'href="/teams/atl/results/{year}/"', body)
+        self.assertIn(">Set lineups<", body)
+        self.assertIn(">Set rotation<", body)
         self.assertIn("half-not-started", body)
 
     def test_a_move_changes_the_away_roster_and_leaves_the_home_roster(self):

@@ -67,7 +67,9 @@ class ResetSimSeasonCommandTestCase(TestCase):
         self.assertIn("3/14 UsageAppearance: deleted 3", output)
         self.assertIn("ScheduleGame: cleared home_score, road_score, opened_at, opening_sheet on 3", output)
         self.assertIn("Reset 2026: deleted 13 rows and cleared 3; the schedule is kept", output)
-        self.assertFalse(models.UsageCounter.objects.filter(season=SEASON).exists())
+        # The kept first-half plan is designated again, so a fresh counter replaces the played one.
+        counter = models.UsageCounter.objects.get(player=self.pitcher, season=SEASON)
+        self.assertEqual((counter.starts, counter.outs), (0, 0))
         self.assertEqual(played_games(SEASON), 0)
         self.assertEqual(models.ScheduleGame.objects.filter(series__slot__season=SEASON).count(), 3)
         self.assertEqual(played_games(OTHER_SEASON), 3)
@@ -156,7 +158,8 @@ class ResetSimSeasonAdminTestCase(TestCase):
         self.assertContains(response, "UsageAppearance: deleted 3")
         self.assertContains(response, "Reset 2026")
         self.assertEqual(played_games(SEASON), 0)
-        self.assertFalse(models.UsageCounter.objects.filter(season=SEASON).exists())
+        counter = models.UsageCounter.objects.get(player=self.pitcher, season=SEASON)
+        self.assertEqual((counter.starts, counter.outs), (0, 0))
         self.assertEqual(played_games(OTHER_SEASON), 3)
 
     def test_a_mismatched_confirmation_changes_nothing(self):

@@ -1,7 +1,7 @@
 # ABOUTME: Tests the sim game pages over the test client against the real engine: open, step, refusals, seats and the box score.
 # ABOUTME: Also covers the schedule's Play and box score links, the public box score page and refusals shown as messages.
 
-from django.test import TestCase
+from django.test import TestCase, override_settings
 
 from tests import game_fixtures as gf
 from ulmg import models, sim_game
@@ -37,7 +37,7 @@ class GamePageTestCase(gf.EngineMixin, TestCase):
         self.assertContains(response, 'action="/games/%d/open/"' % self.game.id)
         self.assertContains(response, '<option value="away">Away</option>', html=True)
         self.assertNotContains(response, '<option value="home">Home</option>', html=True)
-        self.assertContains(response, f"/plan/1/day/{self.game.day}/")
+        self.assertContains(response, f"/plan/1/{gf.SEASON}/day/{self.game.day}/")
 
     def test_a_logged_out_visitor_is_sent_to_log_in(self):
         response = self.client.get(self.url)
@@ -111,23 +111,24 @@ class GamePageTestCase(gf.EngineMixin, TestCase):
         self.assertContains(response, "(L)")
         self.game.refresh_from_db()
         for team in (self.road.team, self.home.team):
-            schedule_page = self.client.get(f"/teams/{team.abbreviation.lower()}/schedule/?season={gf.SEASON}")
+            schedule_page = self.client.get(f"/teams/{team.abbreviation.lower()}/schedule/{gf.SEASON}/")
             self.assertContains(schedule_page, f'href="/games/{self.game.id}/box/"')
         self.client.logout()
         box = self.client.get(f"/games/{self.game.id}/box/")
         self.assertEqual(box.status_code, 200, "the box score is public")
         self.assertContains(box, "box-pitching")
 
+    @override_settings(TEAM_SEASON_HALF="2h")
     def test_the_schedule_offers_play_for_the_managers_next_road_game_only(self):
         self.client.force_login(self.manager)
-        page = self.client.get(f"/teams/{self.road.team.abbreviation.lower()}/schedule/?season={gf.SEASON}")
+        page = self.client.get(f"/teams/{self.road.team.abbreviation.lower()}/schedule/{gf.SEASON}/")
         self.assertContains(page, f'href="/games/{self.game.id}/" class="schedule-play', count=1)
         self.assertContains(page, "schedule-play", count=1)
         self.client.force_login(self.other_manager)
-        page = self.client.get(f"/teams/{self.road.team.abbreviation.lower()}/schedule/?season={gf.SEASON}")
+        page = self.client.get(f"/teams/{self.road.team.abbreviation.lower()}/schedule/{gf.SEASON}/")
         self.assertNotContains(page, f'href="/games/{self.game.id}/" class="schedule-play')
         self.client.force_login(self.tester)
-        page = self.client.get(f"/teams/{self.road.team.abbreviation.lower()}/schedule/?season={gf.SEASON}")
+        page = self.client.get(f"/teams/{self.road.team.abbreviation.lower()}/schedule/{gf.SEASON}/")
         self.assertContains(page, "schedule-play", count=162)
 
     def test_seat_changes_through_the_page_are_logged_with_the_user(self):

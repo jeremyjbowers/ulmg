@@ -5,7 +5,7 @@
 {% block content %}
 <div class="max-w-6xl mx-auto py-4">
     <h1 class="text-2xl font-bold mb-2 border-b border-gray-300 pb-2">{{ schedule_season }} schedule</h1>
-    <p class="text-sm text-gray-600 mb-6">Every team plays one series in each slot, so a day is every team's game number. Pick a team for its 162 games.</p>
+    <p class="text-sm text-gray-600 mb-6">Every team plays one series in each slot, so a day is every team's game number.{% if not second_half_open %} Games 82–162 are hidden until the second half is enabled.{% endif %}</p>
 
     {% if slots %}
     {% regroup slots by half as halves %}
@@ -19,7 +19,7 @@
                 <div class="text-xs text-gray-600 mb-1">Slot {{ slot.number }} &middot; {{ slot.get_slot_type_display }} &middot; {{ slot.length }}-game series</div>
                 <ul>
                     {% for series in slot.series.all %}
-                    <li class="schedule-series"><a href="/teams/{{ series.road_team.abbreviation|lower }}/schedule/?season={{ schedule_season }}" class="underline">{{ series.road_team.abbreviation }}</a> at <a href="/teams/{{ series.home_team.abbreviation|lower }}/schedule/?season={{ schedule_season }}" class="underline font-bold">{{ series.home_team.abbreviation }}</a></li>
+                    <li class="schedule-series"><a href="/teams/{{ series.road_team.abbreviation|lower }}/schedule/{{ schedule_season }}/" class="underline">{{ series.road_team.abbreviation }}</a> at <a href="/teams/{{ series.home_team.abbreviation|lower }}/schedule/{{ schedule_season }}/" class="underline font-bold">{{ series.home_team.abbreviation }}</a></li>
                     {% endfor %}
                 </ul>
             </div>

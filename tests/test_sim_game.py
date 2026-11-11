@@ -313,7 +313,7 @@ class PlayingTestCase(SimGameTestCase):
         gf.counter(self.home.starters[0], start_limit_outs=3)
         middle = self.home.swingman
         row = gf.counter(middle)
-        gf.counter(middle, outs=row.innings_cap_outs)
+        gf.counter(middle, outs=usage.season_innings_cap(row))
         log = self.open()
         self.step_until(log, lambda p: any(e.kind == Event.PITCHING_CHANGE for e in p.events))
         change = gf.events(log, Event.PITCHING_CHANGE)[0]

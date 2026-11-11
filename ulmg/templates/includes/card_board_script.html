@@ -1,0 +1,89 @@
+{# ABOUTME: Drag a card from the stack onto a slot, or click a card and then a slot. #}
+{# ABOUTME: A lineup column keeps each player once. The schedule grid takes pitchers. #}
+<style>
+    .decision-card.is-picked { outline: 2px solid #111; }
+    .lineup-slot.is-over { background: #f3f4f6; }
+</style>
+<script>
+(function () {
+    var picked = null;
+
+    function boardOf(slot) {
+        return slot.closest("[data-lineup], [data-rotation], [data-starter-grid]");
+    }
+
+    function accepts(slot, card) {
+        var board = boardOf(slot);
+        if (!board || !card) return false;
+        if (board.hasAttribute("data-lineup")) return card.dataset.kind === "h";
+        return card.dataset.kind === "p";
+    }
+
+    function sourceCard(id, kind) {
+        return document.querySelector('[data-stack] .decision-card[data-player="' + id + '"][data-kind="' + kind + '"]');
+    }
+
+    function clearSlot(slot) {
+        var body = slot.querySelector(".slot-body");
+        if (body) body.replaceChildren();
+        var input = slot.querySelector(".player-id");
+        if (input) input.value = "";
+    }
+
+    function place(slot, card) {
+        if (!accepts(slot, card)) return;
+        var board = boardOf(slot);
+        if (board && (board.hasAttribute("data-lineup") || board.hasAttribute("data-rotation"))) {
+            board.querySelectorAll(".lineup-slot, .rotation-slot").forEach(function (other) {
+                var input = other.querySelector(".player-id");
+                if (other !== slot && input && input.value === card.dataset.player) clearSlot(other);
+            });
+        }
+        var body = slot.querySelector(".slot-body");
+        var copy = card.cloneNode(true);
+        copy.classList.remove("is-picked");
+        body.replaceChildren(copy);
+        var input = slot.querySelector(".player-id");
+        if (input) input.value = card.dataset.player;
+    }
+
+    document.addEventListener("click", function (event) {
+        var clearButton = event.target.closest("[data-clear]");
+        if (clearButton) {
+            event.preventDefault();
+            clearSlot(clearButton.closest(".lineup-slot, .rotation-slot"));
+            return;
+        }
+        if (event.target.closest("a, input, label")) return;
+        var card = event.target.closest(".decision-card");
+        if (card && card.closest("[data-stack]")) {
+            if (picked) picked.classList.remove("is-picked");
+            picked = card;
+            card.classList.add("is-picked");
+            return;
+        }
+        var slot = event.target.closest(".lineup-slot, .rotation-slot");
+        if (slot && picked) place(slot, picked);
+    });
+
+    document.addEventListener("dragstart", function (event) {
+        var card = event.target.closest(".decision-card");
+        if (!card) return;
+        event.dataTransfer.setData("text/plain", card.dataset.kind + ":" + card.dataset.player);
+        event.dataTransfer.effectAllowed = "copy";
+    });
+
+    document.addEventListener("dragover", function (event) {
+        if (event.target.closest(".lineup-slot, .rotation-slot")) event.preventDefault();
+    });
+
+    document.addEventListener("drop", function (event) {
+        var slot = event.target.closest(".lineup-slot, .rotation-slot");
+        if (!slot) return;
+        event.preventDefault();
+        var payload = event.dataTransfer.getData("text/plain").split(":");
+        var card = sourceCard(payload[1], payload[0]);
+        if (card) place(slot, card);
+    });
+})();
+</script>

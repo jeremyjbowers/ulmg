@@ -1,3 +1,5 @@
+from datetime import date
+
 from django.db.models import Prefetch
 from django.test import TestCase, override_settings
 
@@ -7,6 +9,14 @@ from ulmg import models, utils
 class UtilsTestCase(TestCase):
     """Test utility functions"""
     
+    def test_the_league_year_opens_on_november_1(self):
+        self.assertEqual(utils.get_ulmg_season(date(2026, 10, 31)), 2026)
+        self.assertEqual(utils.get_ulmg_season(date(2026, 11, 1)), 2027)
+        self.assertEqual(utils.get_ulmg_season(date(2026, 11, 11)), 2027)
+        self.assertEqual(utils.get_ulmg_season(date(2027, 6, 1)), 2027)
+        self.assertEqual(utils.league_season(date(2026, 10, 31)), 2026)
+        self.assertEqual(utils.league_season(date(2026, 11, 1)), 2027)
+
     def test_normalized_pos(self):
         for p in ["1B", "2B", "3B", "SS"]:
             self.assertEqual(utils.normalize_pos(p), "IF")
