@@ -2248,8 +2248,9 @@ class HalfPlan(BaseModel):
     cards, the bench order and the bullpen roles. Ordered lists hold Player
     ids. A lineup card is a list of {"player": id, "position": code} in
     batting order. ulmg.plans validates and saves it. starter_hook is how
-    soon the computer pulls this team's starter, and bullpen_logic is which
-    bullpen usage the computer follows (ulmg.computer_manager).
+    soon the computer pulls this team's starter. The bullpen is a closer,
+    single-inning relief (sirp) and multi-inning relief (mirp), and
+    bullpen_logic is which usage the computer follows (ulmg.computer_manager).
     """
 
     QUICK_HOOK = "quick"
@@ -2282,9 +2283,8 @@ class HalfPlan(BaseModel):
     closer = models.ForeignKey(
         Player, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
     )
-    setup = ArrayField(models.IntegerField(), default=list, blank=True)
-    middle = ArrayField(models.IntegerField(), default=list, blank=True)
-    long_relief = ArrayField(models.IntegerField(), default=list, blank=True)
+    sirp = ArrayField(models.IntegerField(), default=list, blank=True)
+    mirp = ArrayField(models.IntegerField(), default=list, blank=True)
     bench = ArrayField(models.IntegerField(), default=list, blank=True)
     lineup_vs_lhp = models.JSONField(default=list, blank=True)
     lineup_vs_rhp = models.JSONField(default=list, blank=True)

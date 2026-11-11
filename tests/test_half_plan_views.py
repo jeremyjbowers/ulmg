@@ -15,8 +15,8 @@ def form_data(roster, rotation=None, vs_lhp=None, vs_rhp=None):
     data = {
         "rotation": [p.id for p in (rotation or roster.starters)],
         "closer": roster.relievers[0].id,
-        "setup": [roster.relievers[1].id],
-        "long_relief": [roster.swingman.id],
+        "sirp": [roster.relievers[1].id],
+        "mirp": [roster.swingman.id],
         "bench": [p.id for p in roster.bench],
     }
     for prefix, lineup in (("vs_lhp", vs_lhp), ("vs_rhp", vs_rhp)):
@@ -121,8 +121,11 @@ class PublicPlanTestCase(PlanViewsTestCase):
         self.assertIn("ATL Reliever 1", bullpen)
         self.assertIn("ATL Swingman", bullpen)
         self.assertIn("Bullpen usage: Traditional closer", bullpen)
-        self.assertIn("through the fifth", bullpen)
+        self.assertIn("from the sixth", bullpen)
         self.assertNotIn("bullpen-choice", bullpen)
+        self.assertIn(">SIRP<", bullpen)
+        self.assertIn(">MIRP<", bullpen)
+        self.assertNotIn("Bullpen logic", bullpen)
         self.assertNotIn("Save bullpen", bullpen)
         self.assertLess(bullpen.index(">Schedule<"), bullpen.index(">Bullpen<"))
         self.assertLess(bullpen.index(">Bullpen<"), bullpen.index(">Results<"))
@@ -209,9 +212,8 @@ class EditPlanTestCase(PlanViewsTestCase):
             BULLPEN_URL,
             {
                 "closer": self.roster.relievers[0].id,
-                "setup": [self.roster.relievers[1].id],
-                "middle": [],
-                "long_relief": [self.roster.swingman.id],
+                "sirp": [self.roster.relievers[1].id],
+                "mirp": [self.roster.swingman.id],
                 "bullpen_logic": "leverage",
             },
             follow=True,
@@ -220,12 +222,13 @@ class EditPlanTestCase(PlanViewsTestCase):
         self.assertIn("Saved the bullpen", response.content.decode())
         plan.refresh_from_db()
         self.assertEqual(plan.closer_id, self.roster.relievers[0].id)
-        self.assertEqual(plan.setup, [self.roster.relievers[1].id])
-        self.assertEqual(plan.long_relief, [self.roster.swingman.id])
+        self.assertEqual(plan.sirp, [self.roster.relievers[1].id])
+        self.assertEqual(plan.mirp, [self.roster.swingman.id])
         self.assertEqual(plan.bullpen_logic, models.HalfPlan.LEVERAGE_PEN)
         self.assertEqual(plan.rotation, [])
         self.assertFalse(plan.days.exists())
         self.assertIn("with a runner on", response.content.decode())
+        self.assertIn("One inning from the 6th on", response.content.decode())
         saved = client.get(BULLPEN_URL).content.decode()
         self.assertIn('name="bullpen_logic" value="leverage"', saved)
         self.assertRegex(saved, r'data-bullpen-choice="leverage"[^>]*\bis-selected\b')
@@ -269,10 +272,10 @@ class EditPlanTestCase(PlanViewsTestCase):
         body = client.get(BULLPEN_URL).content.decode()
         self.assertIn("Save bullpen", body)
         self.assertIn('data-bullpen-group="closer"', body)
-        self.assertIn('data-bullpen-group="setup"', body)
-        self.assertIn('data-bullpen-group="middle"', body)
-        self.assertIn('data-bullpen-group="long_relief"', body)
-        self.assertIn(">Long relief<", body)
+        self.assertIn('data-bullpen-group="sirp"', body)
+        self.assertIn('data-bullpen-group="mirp"', body)
+        self.assertIn(">SIRP<", body)
+        self.assertIn(">MIRP<", body)
         self.assertIn('name="bullpen_logic"', body)
         self.assertIn('value="traditional"', body)
         self.assertRegex(body, r'data-bullpen-choice="traditional"[^>]*\bis-selected\b')
@@ -281,7 +284,8 @@ class EditPlanTestCase(PlanViewsTestCase):
         self.assertIn(">Protect the lead<", body)
         self.assertIn(">Save the pen<", body)
         self.assertNotIn('type="radio"', body)
-        self.assertIn("through the fifth", body)
+        self.assertIn("Before the 6th", body)
+        self.assertIn("from the sixth", body)
         self.assertLess(body.index(">Set lineups<"), body.index(">Set rotation<"))
         self.assertLess(body.index(">Set rotation<"), body.index(">Schedule<"))
         self.assertLess(body.index(">Schedule<"), body.index(">Bullpen</span>"))
@@ -289,7 +293,7 @@ class EditPlanTestCase(PlanViewsTestCase):
 
         response = client.post(
             BULLPEN_URL,
-            {"closer": self.roster.relievers[0].id, "setup": [self.roster.relievers[0].id], "bullpen_logic": "traditional"},
+            {"closer": self.roster.relievers[0].id, "sirp": [self.roster.relievers[0].id], "bullpen_logic": "traditional"},
         )
         self.assertEqual(response.status_code, 400)
         self.assertIn("is in the bullpen twice", response.content.decode())
@@ -313,7 +317,10 @@ class EditPlanTestCase(PlanViewsTestCase):
         client = self.as_user(self.other_owner)
         self.assertEqual(client.get(BULLPEN_URL).status_code, 200)
         self.assertNotIn("Save bullpen", client.get(BULLPEN_URL).content.decode())
-        response = client.post(BULLPEN_URL, {"closer": self.roster.swingman.id, "bullpen_logic": "save"})
+        response = client.post(
+            BULLPEN_URL,
+            {"closer": self.roster.swingman.id, "sirp": [self.roster.relievers[1].id], "bullpen_logic": "save"},
+        )
         self.assertEqual(response.status_code, 403)
         self.assertEqual(self.saved_plan().closer_id, self.roster.relievers[0].id)
 
@@ -362,7 +369,7 @@ class EditPlanTestCase(PlanViewsTestCase):
         self.assertIn("opens after the trade break", client.get(url).content.decode())
         bullpen = f"/teams/atl/plan/2/{SEASON}/bullpen/"
         self.assertIn("opens after the trade break", client.get(bullpen).content.decode())
-        self.assertEqual(client.post(bullpen, {"bullpen_logic": "quick"}).status_code, 400)
+        self.assertEqual(client.post(bullpen, {"closer": self.roster.relievers[0].id}).status_code, 400)
         response = client.post(url, form_data(self.roster))
         self.assertEqual(response.status_code, 400)
         self.assertFalse(models.HalfPlan.objects.filter(half=2).exists())

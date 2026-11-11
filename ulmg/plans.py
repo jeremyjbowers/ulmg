@@ -251,10 +251,10 @@ def rotation_errors(team, rotation, roster_ids):
     return _unique_errors([e for e in errors if e])
 
 
-def bullpen_errors(team, closer, setup, middle, long_relief, roster_ids):
+def bullpen_errors(team, closer, sirp, mirp, roster_ids):
     """Rule errors for the bullpen roles: 30-man pitchers, each in one role once."""
     errors = []
-    bullpen = ([closer] if closer else []) + list(setup) + list(middle) + list(long_relief)
+    bullpen = ([closer] if closer else []) + list(sirp) + list(mirp)
     for player in bullpen:
         errors.append(_roster_error(player, team, roster_ids))
         if not can_pitch(player):
@@ -276,7 +276,7 @@ def bench_errors(team, bench, roster_ids):
     return _unique_errors([e for e in errors if e])
 
 
-def plan_errors(team, season, half, *, rotation, closer, setup, middle, long_relief, bench, lineup_vs_lhp, lineup_vs_rhp):
+def plan_errors(team, season, half, *, rotation, closer, sirp, mirp, bench, lineup_vs_lhp, lineup_vs_rhp):
     """
     Every rule error in a plan's rotation, bullpen, bench and lineup cards.
     They are checked against everyone the team can play in some game of the
@@ -286,7 +286,7 @@ def plan_errors(team, season, half, *, rotation, closer, setup, middle, long_rel
     roster_ids = rosters.all
     errors = []
     errors += rotation_errors(team, rotation, roster_ids)
-    errors += bullpen_errors(team, closer, setup, middle, long_relief, roster_ids)
+    errors += bullpen_errors(team, closer, sirp, mirp, roster_ids)
     errors += bench_errors(team, bench, roster_ids)
 
     def roster_problem(player):
@@ -305,9 +305,8 @@ def _stored_fields(plan):
     return {
         "rotation": _ordered_players(plan.rotation),
         "closer": plan.closer,
-        "setup": _ordered_players(plan.setup),
-        "middle": _ordered_players(plan.middle),
-        "long_relief": _ordered_players(plan.long_relief),
+        "sirp": _ordered_players(plan.sirp),
+        "mirp": _ordered_players(plan.mirp),
         "bench": _ordered_players(plan.bench),
         "lineup_vs_lhp": lineup_entries(plan.lineup_vs_lhp),
         "lineup_vs_rhp": lineup_entries(plan.lineup_vs_rhp),
@@ -460,7 +459,7 @@ def _refill(plan, rosters):
 
 def _bullpen_ids(plan):
     """Player ids named in any bullpen role."""
-    ids = set(plan.setup) | set(plan.middle) | set(plan.long_relief)
+    ids = set(plan.sirp) | set(plan.mirp)
     if plan.closer_id:
         ids.add(plan.closer_id)
     return ids
@@ -631,16 +630,17 @@ def assign_starters(plan, assignments):
         return _designate(plan)
 
 
-def save_bullpen(plan, *, closer, setup, middle, long_relief, bullpen_logic=None):
+def save_bullpen(plan, *, closer, sirp, mirp, bullpen_logic=None):
     """
-    Save the closer, setup, middle, long relief and the bullpen logic.
-    Lineups, the rotation and the schedule's starters stay as they are.
-    A bullpen_logic of None keeps the plan's. Returns warnings to show.
+    Save the closer, single-inning relief, multi-inning relief and the
+    bullpen usage. Lineups, the rotation and the schedule's starters stay
+    as they are. A bullpen_logic of None keeps the plan's. Returns warnings
+    to show.
     """
     if not is_open(plan.half):
         raise PlanError([closed_message(plan.half)])
     rosters = roster_moves.HalfRosters(plan.team, plan.season, plan.half)
-    errors = bullpen_errors(plan.team, closer, setup, middle, long_relief, rosters.all)
+    errors = bullpen_errors(plan.team, closer, sirp, mirp, rosters.all)
     errors += bullpen_logic_errors(bullpen_logic)
     if errors:
         raise PlanError(_unique_errors(errors))
@@ -648,9 +648,8 @@ def save_bullpen(plan, *, closer, setup, middle, long_relief, bullpen_logic=None
     previous = _bullpen_ids(plan) if plan.pk else set()
     with transaction.atomic():
         plan.closer = closer
-        plan.setup = [p.id for p in setup]
-        plan.middle = [p.id for p in middle]
-        plan.long_relief = [p.id for p in long_relief]
+        plan.sirp = [p.id for p in sirp]
+        plan.mirp = [p.id for p in mirp]
         if bullpen_logic is not None:
             plan.bullpen_logic = bullpen_logic
         plan.save()
@@ -658,12 +657,12 @@ def save_bullpen(plan, *, closer, setup, middle, long_relief, bullpen_logic=None
 
 
 def save_plan(
-    plan, *, rotation, closer, setup, middle, long_relief, bench, lineup_vs_lhp, lineup_vs_rhp,
+    plan, *, rotation, closer, sirp, mirp, bench, lineup_vs_lhp, lineup_vs_rhp,
     starter_hook=None, bullpen_logic=None,
 ):
     """
     Save a half plan's rotation, bullpen, bench, lineup cards, starter hook
-    and bullpen logic, re-run auto-fill and set swingman designations. A
+    and bullpen usage, re-run auto-fill and set swingman designations. A
     starter_hook or bullpen_logic of None keeps the plan's. Nothing is saved
     when a rule is broken or a day has no legal starter. Returns warnings to show.
     """
@@ -672,9 +671,8 @@ def save_plan(
     fields = {
         "rotation": list(rotation),
         "closer": closer,
-        "setup": list(setup),
-        "middle": list(middle),
-        "long_relief": list(long_relief),
+        "sirp": list(sirp),
+        "mirp": list(mirp),
         "bench": list(bench),
         "lineup_vs_lhp": list(lineup_vs_lhp),
         "lineup_vs_rhp": list(lineup_vs_rhp),
@@ -692,9 +690,8 @@ def save_plan(
     with transaction.atomic():
         plan.rotation = [p.id for p in fields["rotation"]]
         plan.closer = closer
-        plan.setup = [p.id for p in fields["setup"]]
-        plan.middle = [p.id for p in fields["middle"]]
-        plan.long_relief = [p.id for p in fields["long_relief"]]
+        plan.sirp = [p.id for p in fields["sirp"]]
+        plan.mirp = [p.id for p in fields["mirp"]]
         plan.bench = [p.id for p in fields["bench"]]
         plan.lineup_vs_lhp = stored_lineup(fields["lineup_vs_lhp"])
         plan.lineup_vs_rhp = stored_lineup(fields["lineup_vs_rhp"])
@@ -708,7 +705,7 @@ def save_plan(
 
 
 def fill_plan(
-    plan, *, rotation, closer, setup, middle, long_relief, bench, lineup_vs_lhp, lineup_vs_rhp, ignore_half_lock=False
+    plan, *, rotation, closer, sirp, mirp, bench, lineup_vs_lhp, lineup_vs_rhp, ignore_half_lock=False
 ):
     """
     Save as much of a half plan as is legal, for building a test season
@@ -726,9 +723,7 @@ def fill_plan(
     team = plan.team
     rosters = roster_moves.HalfRosters(team, plan.season, plan.half)
     roster_ids = rosters.all
-    rotation, setup, middle, long_relief, bench = (
-        list(rotation), list(setup), list(middle), list(long_relief), list(bench)
-    )
+    rotation, sirp, mirp, bench = list(rotation), list(sirp), list(mirp), list(bench)
     lineup_vs_lhp, lineup_vs_rhp = list(lineup_vs_lhp), list(lineup_vs_rhp)
 
     problems = []
@@ -736,10 +731,10 @@ def fill_plan(
     if errors:
         problems += errors
         rotation = []
-    errors = bullpen_errors(plan.team, closer, setup, middle, long_relief, roster_ids)
+    errors = bullpen_errors(plan.team, closer, sirp, mirp, roster_ids)
     if errors:
         problems += errors
-        closer, setup, middle, long_relief = None, [], [], []
+        closer, sirp, mirp = None, [], []
     errors = bench_errors(plan.team, bench, roster_ids)
     if errors:
         problems += errors
@@ -766,9 +761,8 @@ def fill_plan(
     with transaction.atomic():
         plan.rotation = [p.id for p in rotation]
         plan.closer = closer
-        plan.setup = [p.id for p in setup]
-        plan.middle = [p.id for p in middle]
-        plan.long_relief = [p.id for p in long_relief]
+        plan.sirp = [p.id for p in sirp]
+        plan.mirp = [p.id for p in mirp]
         plan.bench = [p.id for p in bench]
         plan.lineup_vs_lhp = stored_lineup(lineup_vs_lhp)
         plan.lineup_vs_rhp = stored_lineup(lineup_vs_rhp)
@@ -885,15 +879,13 @@ def _rotation_gap(plan, team, season, half):
 def _bullpen_gaps(plan):
     empty = {
         "closer": plan is None or plan.closer_id is None,
-        "setup": plan is None or not plan.setup,
-        "middle": plan is None or not plan.middle,
-        "long": plan is None or not plan.long_relief,
+        "sirp": plan is None or not plan.sirp,
+        "mirp": plan is None or not plan.mirp,
     }
     notes = (
         ("closer", "No closer is named."),
-        ("setup", "No one is in setup."),
-        ("middle", "No one is in middle relief."),
-        ("long", "No one is in long relief."),
+        ("sirp", "No one is in single-inning relief."),
+        ("mirp", "No one is in multi-inning relief."),
     )
     return [{"kind": "bullpen", "text": text} for key, text in notes if empty[key]]
 
@@ -923,7 +915,7 @@ class PlanBook:
             self.rows[(row.plan_id, row.day)] = row
         ids = set()
         for plan in self.plans.values():
-            ids |= set(plan.bench) | set(plan.setup) | set(plan.middle) | set(plan.long_relief)
+            ids |= set(plan.bench) | set(plan.sirp) | set(plan.mirp)
             ids |= {e["player"] for e in plan.lineup_vs_lhp + plan.lineup_vs_rhp}
         for row in self.rows.values():
             ids |= {e["player"] for e in row.manual_lineup or []}
@@ -990,9 +982,8 @@ class PlanBook:
             | ({starter.id} if starter is not None and starter.id not in eligible else set()),
             "bench": on_roster(self._resolve(plan.bench)) if plan else [],
             "closer": closer if closer is not None and closer.id in eligible else None,
-            "setup": on_roster(self._resolve(plan.setup)) if plan else [],
-            "middle": on_roster(self._resolve(plan.middle)) if plan else [],
-            "long_relief": on_roster(self._resolve(plan.long_relief)) if plan else [],
+            "sirp": on_roster(self._resolve(plan.sirp)) if plan else [],
+            "mirp": on_roster(self._resolve(plan.mirp)) if plan else [],
             "starter_hook": plan.starter_hook if plan else models.HalfPlan.NORMAL_HOOK,
             "bullpen_logic": plan.bullpen_logic if plan else models.HalfPlan.TRADITIONAL_PEN,
         }
@@ -1002,7 +993,7 @@ class PlanBook:
         starter, opponent_starter, closer = self._resolve(
             [sheet["starter"], opponent_sheet["starter"], sheet["closer"]]
         )
-        middle_ids, long_ids = sheet_bullpen_ids(sheet)
+        sirp_ids, mirp_ids = sheet_relief_ids(sheet)
         return {
             "team": team,
             "plan": self.plans.get(team.id),
@@ -1016,9 +1007,8 @@ class PlanBook:
             "unavailable": set(),
             "bench": self._resolve(sheet["bench"]),
             "closer": closer,
-            "setup": self._resolve(sheet["setup"]),
-            "middle": self._resolve(middle_ids),
-            "long_relief": self._resolve(long_ids),
+            "sirp": self._resolve(sirp_ids),
+            "mirp": self._resolve(mirp_ids),
             "starter_hook": sheet.get("starter_hook", models.HalfPlan.NORMAL_HOOK),
             "bullpen_logic": sheet.get("bullpen_logic", models.HalfPlan.TRADITIONAL_PEN),
         }
@@ -1055,24 +1045,29 @@ def _frozen_side(side):
         "lineup_manual": side["lineup_manual"],
         "bench": [p.id for p in side["bench"] if p],
         "closer": side["closer"].id if side["closer"] else None,
-        "setup": [p.id for p in side["setup"] if p],
-        "middle": [p.id for p in side["middle"] if p],
-        "long_relief": [p.id for p in side["long_relief"] if p],
+        "sirp": [p.id for p in side["sirp"] if p],
+        "mirp": [p.id for p in side["mirp"] if p],
         "starter_hook": side["starter_hook"],
         "bullpen_logic": side["bullpen_logic"],
     }
 
 
-def sheet_bullpen_ids(sheet):
+def sheet_relief_ids(sheet):
     """
-    (middle ids, long-relief ids) from a frozen sheet. A sheet filed when
-    middle and long relief were one group keeps those arms as middle relief.
+    (single-inning ids, multi-inning ids) from a frozen sheet. A sheet filed
+    with setup, middle and long relief keeps setup and middle as single-inning
+    relief, in that order, and long relief as multi-inning. A sheet from when
+    middle and long were one group keeps those arms as multi-inning relief.
     """
     if sheet is None:
         return [], []
-    if "middle" in sheet or "long_relief" in sheet:
-        return list(sheet.get("middle") or []), list(sheet.get("long_relief") or [])
-    return list(sheet.get("middle_long") or []), []
+    if "sirp" in sheet or "mirp" in sheet:
+        return list(sheet.get("sirp") or []), list(sheet.get("mirp") or [])
+    if "setup" in sheet or "middle" in sheet or "long_relief" in sheet:
+        sirp = list(sheet.get("setup") or [])
+        sirp += [player_id for player_id in (sheet.get("middle") or []) if player_id not in sirp]
+        return sirp, list(sheet.get("long_relief") or [])
+    return [], list(sheet.get("middle_long") or [])
 
 
 def open_game(game):

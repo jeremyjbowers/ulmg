@@ -1,4 +1,4 @@
-{# ABOUTME: The closer, setup, middle and long relief, and the bullpen usage the computer follows. #}
+{# ABOUTME: The closer, single-inning relief, multi-inning relief, and the usage the computer follows. #}
 {# ABOUTME: Anyone can read it. The owner and the commissioner drag pitchers into the roles and save. #}
 {% extends "base.html" %}
 
@@ -9,7 +9,7 @@
 
 <div>
     <h2 class="text-lg font-bold mb-1">Bullpen</h2>
-    <p class="text-sm text-gray-600 mb-1">{{ half_note }} Name a closer, then setup, middle and long relief, in the order the computer should try them. A pitcher goes in one role. The buttons choose how the computer uses that pen.</p>
+    <p class="text-sm text-gray-600 mb-1">{{ half_note }} Name a closer, then the single-inning relievers (SIRP) and the multi-inning relievers (MIRP), in the order the computer should try them. A pitcher goes in one role. The buttons choose when the computer uses each column. The notes on the columns are the traditional usage.</p>
     <p class="text-sm text-gray-600 card-season mb-4">These cards use the {{ plan_season|add:"-1" }} MLB cards.</p>
     {% include 'includes/plan_errors.html' %}
 
@@ -44,7 +44,7 @@
                 <p class="text-xs text-gray-600">{{ bullpen_logic_note }}</p>
                 {% endif %}
             </fieldset>
-            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {% for group in bullpen_groups %}
                 <div data-bullpen-group="{{ group.name }}">
                     <h3 class="font-bold border-b border-gray-300 mb-1">{{ group.label }}</h3>

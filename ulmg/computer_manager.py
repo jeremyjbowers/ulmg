@@ -5,118 +5,109 @@ from dataclasses import dataclass, field
 
 # Bullpen roles, named as the half plan's fields. OTHER is every other pitcher on the game's roster.
 CLOSER = "closer"
-SETUP = "setup"
-MIDDLE = "middle"
-LONG = "long"
+SIRP = "sirp"
+MIRP = "mirp"
 OTHER = "other"
 ROLE_LABELS = {
     CLOSER: "closer",
-    SETUP: "setup",
-    MIDDLE: "middle",
-    LONG: "long",
+    SIRP: "single-inning",
+    MIRP: "multi-inning",
     OTHER: "other arms",
 }
 # When the situation's group has no available arm, the next groups in this order.
-# Middle and long go before setup and the closer, so a missing arm does not burn a leverage arm first.
-FALLBACK_ORDER = (MIDDLE, LONG, SETUP, CLOSER)
+# Multi-inning goes before single-inning and the closer, so a missing arm does not burn a leverage arm first.
+FALLBACK_ORDER = (MIRP, SIRP, CLOSER)
 
 # Rule 9.19(d)(1): a lead of no more than three runs, with at least an inning to pitch.
 SAVE_MAX_LEAD = 3
-# Setup comes in with a lead of this many runs or fewer, or a tie.
-SETUP_MAX_LEAD = 3
+# A close game is within this many runs either way. Traditional usage wants one inning from the 6th on.
+CLOSE_RUNS = 3
 
-# Bullpen usage, the half plan's choices. long_through is the last inning
-# that calls for long relief. setup_innings, between setup_min_lead and
-# setup_max_lead, call for setup. closer is which spots call the closer,
-# starting at closer_first. Anything those three do not claim is middle relief.
-# quick, normal and slow are the earlier names, still read from a game that
-# opened before the bullpen page offered these.
+# Bullpen usage, the half plan's choices. Each one says when the closer and
+# single-inning relief come in. Anything they do not claim is multi-inning
+# relief. quick, normal and slow are the earlier names, still read from a
+# game that opened before the bullpen page offered these buttons.
 def _usage(
-    long_through,
-    setup_innings,
-    closer_first,
     note,
+    *,
+    sirp_innings=(),
+    sirp_from=None,
+    closer_first=9,
     closer="save",
-    setup_min_lead=0,
-    setup_max_lead=SETUP_MAX_LEAD,
+    sirp_min_lead=0,
+    sirp_max_lead=SAVE_MAX_LEAD,
     closer_max_lead=None,
     closer_min_lead=1,
 ):
     return {
-        "long_through": long_through,
-        "setup_innings": setup_innings,
-        "setup_min_lead": setup_min_lead,
-        "setup_max_lead": setup_max_lead,
+        "note": note,
+        "sirp_innings": sirp_innings,
+        "sirp_from": sirp_from,
+        "sirp_min_lead": sirp_min_lead,
+        "sirp_max_lead": sirp_max_lead,
         "closer_first": closer_first,
         "closer": closer,
         "closer_max_lead": closer_max_lead,
         "closer_min_lead": closer_min_lead,
-        "note": note,
     }
 
 
 _TRADITIONAL = _usage(
-    5,
-    (7, 8),
-    9,
-    "The closer pitches the ninth in a save situation. Setup pitches the seventh and eighth "
-    "when the game is tied or the lead is three or fewer. Long relief works through the fifth.",
+    "The closer pitches the ninth or later in a save situation. Single-inning relief pitches from the sixth "
+    "on when the game is within three runs. Multi-inning relief works before the sixth, or when the game is not that close.",
+    sirp_from=6,
+    sirp_min_lead=-CLOSE_RUNS,
+    sirp_max_lead=CLOSE_RUNS,
 )
 BULLPEN_WINDOWS = {
     "traditional": _TRADITIONAL,
     "normal": _TRADITIONAL,
     "leverage": _usage(
-        4,
-        (6, 7, 8),
-        7,
         "The closer comes in from the seventh on for a one- or two-run save, a ninth-inning save, "
-        "or a one-run game or a tie with a runner on. Setup pitches the sixth, seventh and eighth "
-        "when the lead is three or fewer and the closer stays in the pen. Long relief works through the fourth.",
+        "or a one-run game or a tie with a runner on. Single-inning relief pitches the sixth, seventh and eighth "
+        "when the lead is three or fewer and the closer stays in the pen. Multi-inning relief works the rest.",
+        sirp_innings=(6, 7, 8),
+        closer_first=7,
         closer="traffic",
     ),
     "quick": _usage(
-        4,
-        (6, 7, 8),
-        8,
-        "Long relief through the 4th. Setup in the 6th, 7th and 8th, tied or leading by 3 or fewer. "
-        "The closer from the 8th on, in a save situation.",
+        "Single-inning relief in the 6th, 7th and 8th, tied or leading by 3 or fewer. "
+        "The closer from the 8th on, in a save situation. Multi-inning relief otherwise.",
+        sirp_innings=(6, 7, 8),
+        closer_first=8,
     ),
     "fireman": _usage(
-        4,
-        (7, 8),
-        6,
         "The closer is a multi-inning ace. From the sixth on he pitches a tie or a one-run lead, "
-        "and from the eighth on a save, and he stays while that is still true. Setup holds a two- or "
-        "three-run lead in the seventh and eighth. Long relief works through the fourth.",
+        "and from the eighth on a save, and he stays while that is still true. Single-inning relief holds a two- or "
+        "three-run lead in the seventh and eighth. Multi-inning relief works the rest.",
+        sirp_innings=(7, 8),
+        closer_first=6,
         closer="fireman",
-        setup_min_lead=2,
+        sirp_min_lead=2,
     ),
     "protect": _usage(
-        6,
-        (7, 8),
-        9,
-        "A lead gets the good arms. Setup pitches the seventh and eighth when leading by one, two or three. "
+        "A lead gets the good arms. Single-inning relief pitches the seventh and eighth when leading by one, two or three. "
         "The closer pitches the ninth or later whenever the lead is three or fewer, save or not. "
-        "Tied or trailing, long relief works through the sixth and middle relief after that.",
+        "Tied or trailing, multi-inning relief works.",
+        sirp_innings=(7, 8),
+        closer_first=9,
         closer="lead",
-        setup_min_lead=1,
+        sirp_min_lead=1,
         closer_max_lead=SAVE_MAX_LEAD,
     ),
     "save": _usage(
-        6,
-        (8,),
-        9,
-        "The closer pitches the ninth only in a save of one or two runs. Setup pitches the eighth "
-        "only in a tie or a one-run lead. Long relief works through the sixth. Everything else is middle relief.",
+        "The closer pitches the ninth only in a save of one or two runs. Single-inning relief pitches the eighth "
+        "only in a tie or a one-run lead. Multi-inning relief works the rest.",
+        sirp_innings=(8,),
+        closer_first=9,
         closer_max_lead=2,
-        setup_max_lead=1,
+        sirp_max_lead=1,
     ),
     "slow": _usage(
-        6,
-        (8,),
-        9,
-        "Long relief through the 6th. Setup in the 8th, tied or leading by 3 or fewer. "
-        "The closer from the 9th on, in a save situation.",
+        "Single-inning relief in the 8th, tied or leading by 3 or fewer. "
+        "The closer from the 9th on, in a save situation. Multi-inning relief otherwise.",
+        sirp_innings=(8,),
+        closer_first=9,
     ),
 }
 DEFAULT_BULLPEN = "traditional"
@@ -172,13 +163,13 @@ def starter(planned, rotation, problem):
     return _first_legal(order, problem)
 
 
-def bullpen_order(closer, setup, middle, long_relief, others=()):
+def bullpen_order(closer, sirp, mirp, others=()):
     """
     The order a human's pitching choices are listed in: the closer, then
-    setup, then middle, then long relief, then any other pitcher on the
-    game's roster.
+    single-inning relief, then multi-inning relief, then any other pitcher
+    on the game's roster.
     """
-    return [closer, *setup, *middle, *long_relief, *others]
+    return [closer, *sirp, *mirp, *others]
 
 
 def _window(logic):
@@ -214,6 +205,14 @@ def _calls_closer(window, inning, lead, runners_on, outs):
     return False
 
 
+def _calls_sirp(window, inning, lead):
+    if not window["sirp_min_lead"] <= lead <= window["sirp_max_lead"]:
+        return False
+    if window["sirp_from"] is not None and inning >= window["sirp_from"]:
+        return True
+    return inning in window["sirp_innings"]
+
+
 def is_save_situation(lead, runners_on, outs):
     """
     Rule 9.19(d) for a pitcher entering in the ninth inning or later: a lead
@@ -233,16 +232,17 @@ def is_save_situation(lead, runners_on, outs):
 def bullpen_role(inning, lead, runners_on, outs, logic=None):
     """
     The role the situation calls for under a bullpen usage. lead is the
-    fielding side's, negative when it trails. An unknown usage reads as traditional.
+    fielding side's, negative when it trails. An unknown usage reads as
+    traditional: the closer in a save from the 9th on, single-inning relief
+    from the 6th on when the game is within three runs, and multi-inning
+    relief otherwise.
     """
     window = _window(logic)
     if _calls_closer(window, inning, lead, runners_on, outs):
         return CLOSER
-    if inning in window["setup_innings"] and window["setup_min_lead"] <= lead <= window["setup_max_lead"]:
-        return SETUP
-    if inning <= window["long_through"]:
-        return LONG
-    return MIDDLE
+    if _calls_sirp(window, inning, lead):
+        return SIRP
+    return MIRP
 
 
 def group_order(role):

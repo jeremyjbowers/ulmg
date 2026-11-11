@@ -19,10 +19,9 @@ from ulmg.season_paths import bounce, season_url
 ROTATION_SLOTS = 6
 # Empty slots on the bullpen page. A role that already names more arms shows every one of them.
 BULLPEN_GROUPS = (
-    ("closer", "Closer", 1, "Save situations."),
-    ("setup", "Setup", 4, "A close game in the late innings."),
-    ("middle", "Middle", 6, "The innings between long relief and setup."),
-    ("long_relief", "Long relief", 4, "When the starter is out early."),
+    ("closer", "Closer", 1, "The 9th or later, in a save."),
+    ("sirp", "SIRP", 4, "One inning from the 6th on, when the game is within three runs."),
+    ("mirp", "MIRP", 4, "Before the 6th, or when the game is not that close."),
 )
 LINEUP_COLUMNS = (("vs_rhp", "vs Righty"), ("vs_lhp", "vs Lefty"))
 
@@ -251,9 +250,8 @@ def _posted_ids(post, name):
 def _bullpen_from_plan(plan):
     return {
         "closer": [plan.closer_id] if plan.closer_id else [],
-        "setup": list(plan.setup or []),
-        "middle": list(plan.middle or []),
-        "long_relief": list(plan.long_relief or []),
+        "sirp": list(plan.sirp or []),
+        "mirp": list(plan.mirp or []),
         "bullpen_logic": plan.bullpen_logic or models.HalfPlan.TRADITIONAL_PEN,
     }
 
@@ -261,9 +259,8 @@ def _bullpen_from_plan(plan):
 def _bullpen_from_post(post):
     return {
         "closer": _posted_ids(post, "closer")[:1],
-        "setup": _posted_ids(post, "setup"),
-        "middle": _posted_ids(post, "middle"),
-        "long_relief": _posted_ids(post, "long_relief"),
+        "sirp": _posted_ids(post, "sirp"),
+        "mirp": _posted_ids(post, "mirp"),
         "bullpen_logic": post.get("bullpen_logic"),
     }
 
@@ -508,9 +505,8 @@ def team_plan_bullpen(request, abbreviation, half, season=None):
                 warnings = plans.save_bullpen(
                     plan,
                     closer=found["closer"][0] if found["closer"] else None,
-                    setup=found["setup"],
-                    middle=found["middle"],
-                    long_relief=found["long_relief"],
+                    sirp=found["sirp"],
+                    mirp=found["mirp"],
                     bullpen_logic=state["bullpen_logic"],
                 )
             except plans.PlanError as error:
