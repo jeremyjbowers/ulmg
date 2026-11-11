@@ -3,6 +3,7 @@
 from django.contrib import messages
 from django.http import Http404, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.cache import never_cache
 
 from ulmg import decision_cards, models, plans, roster_moves, utils
@@ -385,7 +386,11 @@ def team_plan_day(request, abbreviation, half, day, season=None):
                 for warning in warnings:
                     messages.warning(request, warning)
                 messages.success(request, f"Saved day {day}.")
-                return redirect(f"{_schedule_url(team, season)}#day-{day}")
+                # The day number comes from the URL. Only a local path is a safe redirect.
+                target = f"{_schedule_url(team, season)}#day-{int(day)}"
+                if url_has_allowed_host_and_scheme(target, allowed_hosts=None):
+                    return redirect(target)
+                return redirect(_schedule_url(team, season))
 
     context = _common(request, team, half, season)
     roster = _roster(team, season, half, row["game"])
