@@ -2248,8 +2248,8 @@ class HalfPlan(BaseModel):
     cards, the bench order and the bullpen roles. Ordered lists hold Player
     ids. A lineup card is a list of {"player": id, "position": code} in
     batting order. ulmg.plans validates and saves it. starter_hook is how
-    soon the computer pulls this team's starter, and bullpen_logic is how
-    early it brings in the closer and setup (ulmg.computer_manager).
+    soon the computer pulls this team's starter, and bullpen_logic is which
+    bullpen usage the computer follows (ulmg.computer_manager).
     """
 
     QUICK_HOOK = "quick"
@@ -2257,10 +2257,22 @@ class HalfPlan(BaseModel):
     SLOW_HOOK = "slow"
     STARTER_HOOK_CHOICES = ((QUICK_HOOK, "Quick"), (NORMAL_HOOK, "Normal"), (SLOW_HOOK, "Slow"))
 
+    TRADITIONAL_PEN = "traditional"
+    LEVERAGE_PEN = "leverage"
+    FIREMAN_PEN = "fireman"
+    PROTECT_PEN = "protect"
+    SAVE_PEN = "save"
+    # Earlier choices. A game opened before these names still stores one of them.
     QUICK_PEN = "quick"
     NORMAL_PEN = "normal"
     SLOW_PEN = "slow"
-    BULLPEN_LOGIC_CHOICES = ((QUICK_PEN, "Quick"), (NORMAL_PEN, "Normal"), (SLOW_PEN, "Slow"))
+    BULLPEN_LOGIC_CHOICES = (
+        (TRADITIONAL_PEN, "Traditional closer"),
+        (LEVERAGE_PEN, "Highest leverage"),
+        (FIREMAN_PEN, "Fireman"),
+        (PROTECT_PEN, "Protect the lead"),
+        (SAVE_PEN, "Save the pen"),
+    )
 
     team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name="half_plans")
     season = models.IntegerField()
@@ -2277,7 +2289,9 @@ class HalfPlan(BaseModel):
     lineup_vs_lhp = models.JSONField(default=list, blank=True)
     lineup_vs_rhp = models.JSONField(default=list, blank=True)
     starter_hook = models.CharField(max_length=6, choices=STARTER_HOOK_CHOICES, default=NORMAL_HOOK)
-    bullpen_logic = models.CharField(max_length=6, choices=BULLPEN_LOGIC_CHOICES, default=NORMAL_PEN)
+    bullpen_logic = models.CharField(
+        max_length=12, choices=BULLPEN_LOGIC_CHOICES, default=TRADITIONAL_PEN
+    )
 
     class Meta:
         ordering = ["season", "half", "team__abbreviation"]

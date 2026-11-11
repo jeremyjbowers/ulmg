@@ -254,7 +254,7 @@ def _bullpen_from_plan(plan):
         "setup": list(plan.setup or []),
         "middle": list(plan.middle or []),
         "long_relief": list(plan.long_relief or []),
-        "bullpen_logic": plan.bullpen_logic or models.HalfPlan.NORMAL_PEN,
+        "bullpen_logic": plan.bullpen_logic or models.HalfPlan.TRADITIONAL_PEN,
     }
 
 
@@ -448,7 +448,7 @@ def _bullpen_context(request, team, half, season, state, errors):
     roster = _roster(team, season, half)
     cards = _built_cards(roster["pitchers"], season, "p")
     labels = dict(models.HalfPlan.BULLPEN_LOGIC_CHOICES)
-    logic = state["bullpen_logic"] or models.HalfPlan.NORMAL_PEN
+    logic = state["bullpen_logic"] or models.HalfPlan.TRADITIONAL_PEN
     context.update(
         {
             "errors": errors,
@@ -464,6 +464,7 @@ def _bullpen_context(request, team, half, season, state, errors):
             ],
             "bullpen_logic": logic,
             "bullpen_logic_label": labels.get(logic, logic),
+            "bullpen_logic_note": computer_manager.describe_bullpen_logic(logic),
             "bullpen_logics": [
                 {
                     "value": value,

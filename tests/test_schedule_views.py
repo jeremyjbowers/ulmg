@@ -60,7 +60,9 @@ class ScheduleViewsTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
         body = response.content.decode()
         self.assertEqual(body.count('class="schedule-game"'), 162)
-        self.assertEqual(body.count("unplayed"), 162)
+        self.assertNotIn("unplayed", body)
+        self.assertNotIn("schedule-play", body)
+        self.assertNotIn("Played by", body)
         self.assertNotIn("day-lineup", body)
         self.assertIn('id="day-1"', body)
         self.assertNotIn("You play", body)
@@ -82,7 +84,7 @@ class ScheduleViewsTestCase(TestCase):
         game.road_score = 3
         game.save()
         body = self.client.get("/teams/atl/schedule/2027/").content.decode()
-        self.assertEqual(body.count("unplayed"), 161)
+        self.assertNotIn("unplayed", body)
         if game.series.home_team_id == self.team.id:
             self.assertIn("W 7-3", body)
         else:
@@ -95,8 +97,14 @@ class ScheduleViewsTestCase(TestCase):
         self.team.save()
         self.client.force_login(user)
         body = self.client.get("/teams/atl/schedule/2027/").content.decode()
-        self.assertEqual(body.count("You play"), 81)
+        self.assertEqual(body.count("schedule-away"), 81)
+        self.assertEqual(body.count("#fff3c4"), 81)
+        self.assertEqual(body.count("schedule-play"), 1)
+        self.assertNotIn("You play", body)
+        self.assertNotIn("Played by", body)
+        self.assertNotIn("unplayed", body)
         other = self.client.get("/teams/pit/schedule/2027/").content.decode()
+        self.assertNotIn("schedule-away", other)
         self.assertNotIn("You play", other)
 
     def test_team_pages_link_to_the_game_page(self):

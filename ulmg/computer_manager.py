@@ -25,18 +25,101 @@ SAVE_MAX_LEAD = 3
 # Setup comes in with a lead of this many runs or fewer, or a tie.
 SETUP_MAX_LEAD = 3
 
-# Bullpen logic, the half plan's choices. Each one is how early the leverage
-# arms come in. long_through is the last inning that calls for long relief.
-# setup_innings call for setup in a tie or a lead of SETUP_MAX_LEAD or fewer.
-# closer_first is the first inning a save situation calls for the closer.
-# Anything those three do not claim is middle relief.
+# Bullpen usage, the half plan's choices. long_through is the last inning
+# that calls for long relief. setup_innings, between setup_min_lead and
+# setup_max_lead, call for setup. closer is which spots call the closer,
+# starting at closer_first. Anything those three do not claim is middle relief.
+# quick, normal and slow are the earlier names, still read from a game that
+# opened before the bullpen page offered these.
+def _usage(
+    long_through,
+    setup_innings,
+    closer_first,
+    note,
+    closer="save",
+    setup_min_lead=0,
+    setup_max_lead=SETUP_MAX_LEAD,
+    closer_max_lead=None,
+    closer_min_lead=1,
+):
+    return {
+        "long_through": long_through,
+        "setup_innings": setup_innings,
+        "setup_min_lead": setup_min_lead,
+        "setup_max_lead": setup_max_lead,
+        "closer_first": closer_first,
+        "closer": closer,
+        "closer_max_lead": closer_max_lead,
+        "closer_min_lead": closer_min_lead,
+        "note": note,
+    }
+
+
+_TRADITIONAL = _usage(
+    5,
+    (7, 8),
+    9,
+    "The closer pitches the ninth in a save situation. Setup pitches the seventh and eighth "
+    "when the game is tied or the lead is three or fewer. Long relief works through the fifth.",
+)
 BULLPEN_WINDOWS = {
-    "quick": {"long_through": 4, "setup_innings": (6, 7, 8), "closer_first": 8},
-    "normal": {"long_through": 5, "setup_innings": (7, 8), "closer_first": 9},
-    "slow": {"long_through": 6, "setup_innings": (8,), "closer_first": 9},
+    "traditional": _TRADITIONAL,
+    "normal": _TRADITIONAL,
+    "leverage": _usage(
+        4,
+        (6, 7, 8),
+        7,
+        "The closer comes in from the seventh on for a one- or two-run save, a ninth-inning save, "
+        "or a one-run game or a tie with a runner on. Setup pitches the sixth, seventh and eighth "
+        "when the lead is three or fewer and the closer stays in the pen. Long relief works through the fourth.",
+        closer="traffic",
+    ),
+    "quick": _usage(
+        4,
+        (6, 7, 8),
+        8,
+        "Long relief through the 4th. Setup in the 6th, 7th and 8th, tied or leading by 3 or fewer. "
+        "The closer from the 8th on, in a save situation.",
+    ),
+    "fireman": _usage(
+        4,
+        (7, 8),
+        6,
+        "The closer is a multi-inning ace. From the sixth on he pitches a tie or a one-run lead, "
+        "and from the eighth on a save, and he stays while that is still true. Setup holds a two- or "
+        "three-run lead in the seventh and eighth. Long relief works through the fourth.",
+        closer="fireman",
+        setup_min_lead=2,
+    ),
+    "protect": _usage(
+        6,
+        (7, 8),
+        9,
+        "A lead gets the good arms. Setup pitches the seventh and eighth when leading by one, two or three. "
+        "The closer pitches the ninth or later whenever the lead is three or fewer, save or not. "
+        "Tied or trailing, long relief works through the sixth and middle relief after that.",
+        closer="lead",
+        setup_min_lead=1,
+        closer_max_lead=SAVE_MAX_LEAD,
+    ),
+    "save": _usage(
+        6,
+        (8,),
+        9,
+        "The closer pitches the ninth only in a save of one or two runs. Setup pitches the eighth "
+        "only in a tie or a one-run lead. Long relief works through the sixth. Everything else is middle relief.",
+        closer_max_lead=2,
+        setup_max_lead=1,
+    ),
+    "slow": _usage(
+        6,
+        (8,),
+        9,
+        "Long relief through the 6th. Setup in the 8th, tied or leading by 3 or fewer. "
+        "The closer from the 9th on, in a save situation.",
+    ),
 }
-DEFAULT_BULLPEN = "normal"
-_ORDINALS = {1: "1st", 2: "2nd", 3: "3rd", 4: "4th", 5: "5th", 6: "6th", 7: "7th", 8: "8th", 9: "9th"}
+DEFAULT_BULLPEN = "traditional"
 
 # The starter hook, by the half plan's setting: the share of his fatigue ceiling he may spend,
 # and the runs he may allow in the game, before the computer pulls him.
@@ -102,27 +185,33 @@ def _window(logic):
     return BULLPEN_WINDOWS.get(logic, BULLPEN_WINDOWS[DEFAULT_BULLPEN])
 
 
-def _ordinal(inning):
-    return _ORDINALS.get(inning, f"{inning}th")
-
-
-def _inning_phrase(innings):
-    """'in the 7th and 8th' from a tuple of inning numbers."""
-    words = [_ordinal(inning) for inning in innings]
-    if len(words) == 1:
-        return f"in the {words[0]}"
-    return "in the " + ", ".join(words[:-1]) + f" and {words[-1]}"
-
-
 def describe_bullpen_logic(logic):
-    """One sentence naming when this logic calls for long relief, setup and the closer. Middle is the rest."""
-    window = _window(logic)
-    return (
-        f"Long relief through the {_ordinal(window['long_through'])}. "
-        f"Setup {_inning_phrase(window['setup_innings'])}, tied or leading by {SETUP_MAX_LEAD} or fewer. "
-        f"The closer from the {_ordinal(window['closer_first'])} on, in a save situation. "
-        "Middle relief otherwise."
-    )
+    """The sentence the bullpen page shows for this usage. An unknown usage reads as traditional."""
+    return _window(logic)["note"]
+
+
+def _calls_closer(window, inning, lead, runners_on, outs):
+    if inning < window["closer_first"]:
+        return False
+    mode = window["closer"]
+    save = is_save_situation(lead, runners_on, outs)
+    if mode == "save":
+        cap = window["closer_max_lead"]
+        return save and (cap is None or lead <= cap)
+    if mode == "lead":
+        return window["closer_min_lead"] <= lead <= window["closer_max_lead"]
+    if mode == "fireman":
+        if lead in (0, 1):
+            return True
+        return inning >= 8 and save
+    if mode == "traffic":
+        cap = window["closer_max_lead"]
+        if inning >= 9 and save and (cap is None or lead <= cap):
+            return True
+        if save and 0 < lead <= 2:
+            return True
+        return lead in (-1, 0, 1) and runners_on >= 1
+    return False
 
 
 def is_save_situation(lead, runners_on, outs):
@@ -143,13 +232,13 @@ def is_save_situation(lead, runners_on, outs):
 
 def bullpen_role(inning, lead, runners_on, outs, logic=None):
     """
-    The role the situation calls for under a bullpen logic. lead is the
-    fielding side's, negative when it trails. An unknown logic reads as normal.
+    The role the situation calls for under a bullpen usage. lead is the
+    fielding side's, negative when it trails. An unknown usage reads as traditional.
     """
     window = _window(logic)
-    if inning >= window["closer_first"] and is_save_situation(lead, runners_on, outs):
+    if _calls_closer(window, inning, lead, runners_on, outs):
         return CLOSER
-    if inning in window["setup_innings"] and 0 <= lead <= SETUP_MAX_LEAD:
+    if inning in window["setup_innings"] and window["setup_min_lead"] <= lead <= window["setup_max_lead"]:
         return SETUP
     if inning <= window["long_through"]:
         return LONG

@@ -162,7 +162,10 @@ class BullpenRolesTestCase(ComputerGameTestCase):
         self.assertEqual(decision.payload["group"], computer_manager.LONG)
 
     def test_a_quick_pen_brings_the_closer_in_for_an_eighth_inning_save(self):
-        self.home.file(half=1, bullpen_logic=models.HalfPlan.QUICK_PEN)
+        # A game opened under the earlier name still uses that window.
+        plan = self.home.file(half=1)
+        plan.bullpen_logic = models.HalfPlan.QUICK_PEN
+        plan.save(update_fields=["bullpen_logic"])
         gf.counter(self.home.starters[0], start_limit_outs=21)
         log = self.open()
         change = self.until_changes(log, HOME, 1)[0]

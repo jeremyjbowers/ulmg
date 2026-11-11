@@ -1,4 +1,4 @@
-{# ABOUTME: The closer, setup, middle and long relief, and the bullpen logic that decides when each comes in. #}
+{# ABOUTME: The closer, setup, middle and long relief, and the bullpen usage the computer follows. #}
 {# ABOUTME: Anyone can read it. The owner and the commissioner drag pitchers into the roles and save. #}
 {% extends "base.html" %}
 
@@ -9,7 +9,7 @@
 
 <div>
     <h2 class="text-lg font-bold mb-1">Bullpen</h2>
-    <p class="text-sm text-gray-600 mb-1">{{ half_note }} Name a closer, then setup, middle and long relief, in the order the computer should try them. A pitcher goes in one role. Bullpen logic is how early the closer and setup come in when the computer manages this team.</p>
+    <p class="text-sm text-gray-600 mb-1">{{ half_note }} Name a closer, then setup, middle and long relief, in the order the computer should try them. A pitcher goes in one role. The buttons choose how the computer uses that pen.</p>
     <p class="text-sm text-gray-600 card-season mb-4">These cards use the {{ plan_season|add:"-1" }} MLB cards.</p>
     {% include 'includes/plan_errors.html' %}
 
@@ -28,20 +28,20 @@
         <form method="post" class="lg:col-span-8 space-y-4 text-sm" data-bullpen>
             {% csrf_token %}
             <fieldset>
-                <legend class="font-bold mb-1">Bullpen logic</legend>
+                <legend class="font-bold mb-1">Bullpen usage</legend>
                 {% if can_edit %}
-                <div class="space-y-2">
-                    {% for choice in bullpen_logics %}
-                    <label class="block">
-                        <input type="radio" name="bullpen_logic" value="{{ choice.value }}"{% if choice.checked %} checked{% endif %}>
-                        {{ choice.label }}
-                        <span class="text-xs text-gray-600">{{ choice.note }}</span>
-                    </label>
-                    {% endfor %}
+                <div data-bullpen-logic>
+                    <div class="flex flex-wrap gap-1">
+                        {% for choice in bullpen_logics %}
+                        <button type="button" data-bullpen-choice="{{ choice.value }}" data-note="{{ choice.note }}" class="bullpen-choice border border-gray-400 px-2 py-1{% if choice.checked %} is-selected bg-gray-800 text-white{% endif %}">{{ choice.label }}</button>
+                        {% endfor %}
+                    </div>
+                    <input type="hidden" name="bullpen_logic" value="{{ bullpen_logic }}">
+                    <p class="bullpen-logic-note text-xs text-gray-600 mt-2">{{ bullpen_logic_note }}</p>
                 </div>
                 {% else %}
-                <p class="bullpen-logic">Bullpen logic: {{ bullpen_logic_label }}</p>
-                <p class="text-xs text-gray-600">{% for choice in bullpen_logics %}{% if choice.checked %}{{ choice.note }}{% endif %}{% endfor %}</p>
+                <p class="bullpen-logic">Bullpen usage: {{ bullpen_logic_label }}</p>
+                <p class="text-xs text-gray-600">{{ bullpen_logic_note }}</p>
                 {% endif %}
             </fieldset>
             <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">

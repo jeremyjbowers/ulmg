@@ -1,0 +1,12 @@
+{# ABOUTME: One starter cell: a name, or the drop slot on the owner's side of an open game. #}
+{# ABOUTME: Expects starter, drop, ours and row. A manual starter shows a star. #}
+{% spaceless %}
+{% if drop %}
+<div class="starter-slot lineup-slot border border-dashed border-gray-300 p-1 w-60 max-w-full" data-auto="{{ row.auto_name }}">
+<div class="slot-body">{% if row.starter_manual and row.starter_card %}{% include "includes/decision_card.html" with card=row.starter_card %}{% else %}{{ starter.name|default:"-" }}{% endif %}</div>
+<input type="hidden" class="player-id" name="starter_{{ row.game.day }}" value="{% if row.starter_manual and row.starter %}{{ row.starter.id }}{% endif %}">
+<button type="button" data-clear class="underline text-xs">Rotation</button>
+</div>{% if row.starter_manual %}*{% endif %}
+{% else %}{{ starter.name|default:"-" }}{% if ours and row.starter_manual %}*{% endif %}{% endif %}
+{% if ours and row.lineup_gap %} <span class="plan-unavailable font-bold text-red-700">not on this game's roster</span>{% endif %}
+{% endspaceless %}

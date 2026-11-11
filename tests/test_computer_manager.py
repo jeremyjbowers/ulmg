@@ -96,12 +96,52 @@ class BullpenRoleTestCase(TestCase):
         self.assertEqual(role(inning=9, lead=1, runners_on=0, outs=0, logic="slow"), computer_manager.CLOSER)
         self.assertIn("6th", computer_manager.describe_bullpen_logic("slow"))
 
+    def test_each_bullpen_usage_calls_a_different_arm(self):
+        role = computer_manager.bullpen_role
+        choices = {value for value, _ in models.HalfPlan.BULLPEN_LOGIC_CHOICES}
+        self.assertEqual(choices, set(computer_manager.BULLPEN_WINDOWS) - {"quick", "normal", "slow"})
+        # Highest leverage: the closer in a one-run spot with a runner on, including the seventh.
+        self.assertEqual(role(inning=7, lead=-1, runners_on=1, outs=0, logic="leverage"), computer_manager.CLOSER)
+        self.assertEqual(role(inning=7, lead=0, runners_on=1, outs=1, logic="leverage"), computer_manager.CLOSER)
+        self.assertEqual(role(inning=8, lead=1, runners_on=0, outs=0, logic="leverage"), computer_manager.CLOSER)
+        self.assertEqual(role(inning=8, lead=0, runners_on=0, outs=0, logic="leverage"), computer_manager.SETUP)
+        self.assertEqual(role(inning=7, lead=3, runners_on=0, outs=0, logic="leverage"), computer_manager.SETUP)
+        self.assertEqual(role(inning=9, lead=3, runners_on=0, outs=0, logic="leverage"), computer_manager.CLOSER)
+        self.assertEqual(role(inning=4, lead=-3, runners_on=0, outs=0, logic="leverage"), computer_manager.LONG)
+        self.assertIn("runner on", computer_manager.describe_bullpen_logic("leverage"))
+        # Fireman: a tie or a one-run lead from the sixth, and he can stay there.
+        self.assertEqual(role(inning=6, lead=1, runners_on=0, outs=0, logic="fireman"), computer_manager.CLOSER)
+        self.assertEqual(role(inning=6, lead=0, runners_on=0, outs=2, logic="fireman"), computer_manager.CLOSER)
+        self.assertEqual(role(inning=7, lead=1, runners_on=0, outs=0, logic="fireman"), computer_manager.CLOSER)
+        self.assertEqual(role(inning=7, lead=2, runners_on=0, outs=0, logic="fireman"), computer_manager.SETUP)
+        self.assertEqual(role(inning=8, lead=3, runners_on=0, outs=0, logic="fireman"), computer_manager.CLOSER)
+        self.assertEqual(role(inning=6, lead=3, runners_on=0, outs=0, logic="fireman"), computer_manager.MIDDLE)
+        self.assertEqual(role(inning=5, lead=1, runners_on=0, outs=0, logic="fireman"), computer_manager.MIDDLE)
+        self.assertIn("multi-inning", computer_manager.describe_bullpen_logic("fireman"))
+        # Protect the lead: no leverage arm when tied, and the closer for any one-to-three-run ninth.
+        self.assertEqual(role(inning=8, lead=0, runners_on=2, outs=0, logic="protect"), computer_manager.MIDDLE)
+        self.assertEqual(role(inning=8, lead=2, runners_on=0, outs=0, logic="protect"), computer_manager.SETUP)
+        self.assertEqual(role(inning=9, lead=3, runners_on=0, outs=2, logic="protect"), computer_manager.CLOSER)
+        self.assertEqual(role(inning=9, lead=3, runners_on=0, outs=2, logic="traditional"), computer_manager.MIDDLE)
+        self.assertEqual(role(inning=9, lead=0, runners_on=0, outs=0, logic="protect"), computer_manager.MIDDLE)
+        self.assertEqual(role(inning=6, lead=2, runners_on=0, outs=0, logic="protect"), computer_manager.LONG)
+        self.assertIn("A lead gets the good arms", computer_manager.describe_bullpen_logic("protect"))
+        # Save the pen: the closer only for a one- or two-run save, setup only for a tie or one-run eighth.
+        self.assertEqual(role(inning=9, lead=1, runners_on=0, outs=0, logic="save"), computer_manager.CLOSER)
+        self.assertEqual(role(inning=9, lead=3, runners_on=0, outs=0, logic="save"), computer_manager.MIDDLE)
+        self.assertEqual(role(inning=8, lead=1, runners_on=0, outs=0, logic="save"), computer_manager.SETUP)
+        self.assertEqual(role(inning=8, lead=0, runners_on=0, outs=0, logic="save"), computer_manager.SETUP)
+        self.assertEqual(role(inning=8, lead=2, runners_on=0, outs=0, logic="save"), computer_manager.MIDDLE)
+        self.assertEqual(role(inning=7, lead=1, runners_on=0, outs=0, logic="save"), computer_manager.MIDDLE)
+        self.assertEqual(role(inning=6, lead=-4, runners_on=0, outs=0, logic="save"), computer_manager.LONG)
+        self.assertIn("one or two runs", computer_manager.describe_bullpen_logic("save"))
+
     def test_an_unknown_logic_reads_as_normal(self):
         role = computer_manager.bullpen_role
         self.assertEqual(role(inning=8, lead=1, runners_on=0, outs=0, logic="wild"), computer_manager.SETUP)
         self.assertEqual(role(inning=2, lead=0, runners_on=0, outs=0, logic=None), computer_manager.LONG)
-        self.assertIn("5th", computer_manager.describe_bullpen_logic(None))
-        self.assertIn("9th", computer_manager.describe_bullpen_logic("normal"))
+        self.assertIn("fifth", computer_manager.describe_bullpen_logic(None))
+        self.assertIn("ninth", computer_manager.describe_bullpen_logic("normal"))
 
     def test_an_empty_group_falls_to_middle_then_long_then_setup_then_closer(self):
         cm = computer_manager
@@ -150,7 +190,7 @@ class StarterHookTestCase(TestCase):
         self.assertEqual(hooks, set(computer_manager.HOOK_CEILING_SHARE))
         self.assertEqual(hooks, set(computer_manager.HOOK_RUNS))
         self.assertEqual(models.HalfPlan().starter_hook, models.HalfPlan.NORMAL_HOOK)
-        self.assertEqual(models.HalfPlan().bullpen_logic, models.HalfPlan.NORMAL_PEN)
+        self.assertEqual(models.HalfPlan().bullpen_logic, models.HalfPlan.TRADITIONAL_PEN)
 
     def test_each_hook_pulls_at_its_share_of_the_fatigue_ceiling(self):
         reason = computer_manager.hook_reason

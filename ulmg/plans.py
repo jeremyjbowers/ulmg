@@ -994,7 +994,7 @@ class PlanBook:
             "middle": on_roster(self._resolve(plan.middle)) if plan else [],
             "long_relief": on_roster(self._resolve(plan.long_relief)) if plan else [],
             "starter_hook": plan.starter_hook if plan else models.HalfPlan.NORMAL_HOOK,
-            "bullpen_logic": plan.bullpen_logic if plan else models.HalfPlan.NORMAL_PEN,
+            "bullpen_logic": plan.bullpen_logic if plan else models.HalfPlan.TRADITIONAL_PEN,
         }
 
     def opened_side(self, sheet, opponent_sheet, team):
@@ -1020,7 +1020,7 @@ class PlanBook:
             "middle": self._resolve(middle_ids),
             "long_relief": self._resolve(long_ids),
             "starter_hook": sheet.get("starter_hook", models.HalfPlan.NORMAL_HOOK),
-            "bullpen_logic": sheet.get("bullpen_logic", models.HalfPlan.NORMAL_PEN),
+            "bullpen_logic": sheet.get("bullpen_logic", models.HalfPlan.TRADITIONAL_PEN),
         }
 
     def sheet(self, game):
