@@ -123,13 +123,13 @@ def _lineup_fields(state):
 
 
 def _roster(team, season, half, game=None):
-    """Players the editor offers: the half's roster, or one game's roster."""
+    """Pitchers from the half's roster, or one game's, and hitters on the MLB roster now."""
     rosters = roster_moves.HalfRosters(team, season, half)
     ids = rosters.for_game(game) if game is not None else rosters.all
     roster = list(models.Player.objects.filter(id__in=ids).order_by("name"))
     return {
         "pitchers": [player for player in roster if plans.can_pitch(player)],
-        "hitters": [player for player in roster if not plans.is_pitcher(player)],
+        "hitters": plans.lineup_hitters(ids),
     }
 
 
