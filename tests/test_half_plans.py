@@ -70,7 +70,7 @@ class RotationAutoFillTestCase(PlanTestCase):
         self.assertEqual(starters[82], self.roster.starters[0])
         self.assertEqual(starters[87], self.roster.starters[0])
 
-    def test_auto_fill_skips_a_capped_starter_and_continues_the_cycle(self):
+    def test_auto_fill_leaves_a_capped_starters_later_slots_blank(self):
         # Two card-season starts and ten innings: a starts cap of two.
         capped = create_pitcher(self.atl, "ATL Capped", stats={"g": 2, "gs": 2, "ip": "10.0"})
         rotation = list(self.roster.starters[:4])
@@ -79,13 +79,15 @@ class RotationAutoFillTestCase(PlanTestCase):
         starters = plans.starters(plan)
         self.assertEqual(starters[2], capped)
         self.assertEqual(starters[7], capped)
-        # Day 12 is his slot; the next legal pitcher in rotation order takes it.
-        self.assertEqual(starters[12], rotation[2])
-        # The cycle continues as if day 12 had been rotation[2]'s.
-        self.assertEqual(starters[13], rotation[3])
-        self.assertEqual(starters[14], rotation[4])
-        self.assertEqual(starters[15], rotation[0])
-        self.assertEqual(starters[16], rotation[2])
+        # Day 12 is his slot. He is out of starts, so it stays blank.
+        self.assertIsNone(starters[12])
+        self.assertIsNone(starters[17])
+        # The next slots keep their own pitchers.
+        self.assertEqual(starters[3], rotation[2])
+        self.assertEqual(starters[13], rotation[2])
+        self.assertEqual(starters[14], rotation[3])
+        self.assertEqual(starters[15], rotation[4])
+        self.assertEqual(starters[16], rotation[0])
         self.assertEqual(list(starters.values()).count(capped), 2)
 
     def test_save_rejected_when_a_day_has_no_legal_starter(self):

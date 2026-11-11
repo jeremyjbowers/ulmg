@@ -163,6 +163,7 @@
                 if (fixedHeader && mainContent) {
                     const headerHeight = fixedHeader.offsetHeight;
                     mainContent.style.marginTop = headerHeight + 'px';
+                    document.documentElement.style.setProperty('--header-offset', headerHeight + 'px');
                 }
             }
             

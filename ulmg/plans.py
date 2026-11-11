@@ -353,15 +353,24 @@ def _planned_starts(plan, games, rows, include):
     return starts
 
 
+def _out_of_starts(player, planned_games, reads):
+    """True when starts made plus these unplayed planned starts already use his cap."""
+    counter = reads.counter(player)
+    return counter.starts + len(planned_games) >= counter.starts_cap
+
+
 def _auto_fill(plan, games, rows, rosters, reads):
     """
     Fill every unopened day without a manual starter from the rotation. The
-    k-th game of the half goes to slot ((k - 1) mod N) + 1; a slot whose
-    pitcher would pass his start cap, isn't rested inside the series, or
-    isn't on that game's roster (a call-up at home, a sent-down pitcher on
-    the road) goes to the next legal pitcher in order, and the cycle
-    continues from him. Returns the days no one could start. reads are the
-    ledger reads for this refill; filling days writes nothing to the ledger.
+    k-th game of the half goes to slot ((k - 1) mod N) + 1. A slot whose
+    pitcher is out of starts stays blank: he takes the first days he is
+    eligible for, and the rest of his slots are left empty. A slot whose
+    pitcher isn't rested inside the series, or isn't on that game's roster
+    (a call-up at home, a sent-down pitcher on the road), goes to the next
+    legal pitcher in order, and the cycle continues from him. Returns the
+    days no one could start for a reason other than the start cap. reads
+    are the ledger reads for this refill; filling days writes nothing to
+    the ledger.
     """
     rotation = _ordered_players(plan.rotation)
     reads.preload(rotation)
@@ -385,18 +394,26 @@ def _auto_fill(plan, games, rows, rosters, reads):
             continue
 
         chosen = None
+        blank_for_cap = False
         for step in range(len(rotation)):
             index = (pointer + step) % len(rotation)
             candidate = rotation[index]
             if candidate.id not in rosters.for_game(game):
+                continue
+            if _out_of_starts(candidate, planned[candidate.id], reads):
+                # His own slot stays empty once his starts are used up.
+                if step == 0:
+                    blank_for_cap = True
+                    break
                 continue
             if usage.check_planned_start(candidate, game, planned[candidate.id], reads=reads).legal:
                 chosen = candidate
                 pointer = index + 1
                 break
         if chosen is None:
-            unfilled.append(day)
             pointer += 1
+            if not blank_for_cap:
+                unfilled.append(day)
         else:
             planned[chosen.id].append(game)
 
@@ -803,6 +820,54 @@ def save_day(plan, day, *, starter=None, lineup=None):
 
 
 # Reading
+
+
+def start_usage(team, season, players):
+    """
+    ULMG starts for each pitcher. cap is the calculated starts limit, not
+    his real starts. made is starts he has actually made. scheduled is
+    unplayed starts either half's plan has him down for. remaining is the
+    cap minus starts made. days lists the scheduled days.
+    """
+    players = list(players)
+    ids = [player.id for player in players]
+    counters = {
+        counter.player_id: counter
+        for counter in models.UsageCounter.objects.filter(player_id__in=ids, season=season)
+    }
+    missing = [player for player in players if player.id not in counters]
+    stats = usage.card_stats_by_player(missing, season) if missing else {}
+    scheduled_days = {player_id: [] for player_id in ids}
+    for half in HALVES:
+        plan = find_plan(team, season, half)
+        if plan is None:
+            continue
+        games = half_games(team, season, half)
+        for row in plan.days.select_related("auto_starter", "manual_starter"):
+            game = games.get(row.day)
+            starter = row.starter
+            if game is None or game.is_played or starter is None or starter.id not in scheduled_days:
+                continue
+            scheduled_days[starter.id].append(row.day)
+    rows = {}
+    for player in players:
+        counter = counters.get(player.id)
+        if counter is not None:
+            cap = counter.starts_cap
+            made = counter.starts
+        else:
+            hit, pitch = stats.get(player.id, ({}, {}))
+            cap = usage.caps_from_stats(hit, pitch)["starts_cap"]
+            made = 0
+        days = scheduled_days[player.id]
+        rows[player.id] = {
+            "cap": cap,
+            "made": made,
+            "scheduled": len(days),
+            "remaining": max(cap - made, 0),
+            "days": days,
+        }
+    return rows
 
 
 def starters(plan):

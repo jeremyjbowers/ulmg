@@ -1,11 +1,12 @@
-{# ABOUTME: The Game section's pages: what's next, lineups, the rotation, the schedule, the bullpen and results. #}
-{# ABOUTME: The half is the open one. Set lineups and Set rotation are the owner's names for those pages. #}
+{# ABOUTME: The Game section's pages: the schedule, lineups, the rotation and the bullpen. #}
+{# ABOUTME: Play next opens this team's next away game. Results lives on the schedule and in the top of the team page. #}
+{% load ulmg_tags %}
 {% firstof record_season schedule_season plan_season league_season as game_season %}
+{% play_next_href team user game_season as play_next %}
 <div class="flex flex-wrap gap-4 pb-2 mb-4 text-sm">
-    {% if game_section == "game" %}<span class="font-bold">Up next</span>{% else %}<a href="/teams/{{ team.abbreviation|lower }}/game/" class="underline">Up next</a>{% endif %}
-    {% if game_section == "lineups" %}<span class="font-bold">{% if can_edit %}Set lineups{% else %}Lineups{% endif %}</span>{% else %}<a href="/teams/{{ team.abbreviation|lower }}/plan/{% if season_half == "2h" %}2{% else %}1{% endif %}/{{ game_season }}/{% if can_edit %}edit/{% endif %}" class="underline">{% if can_edit %}Set lineups{% else %}Lineups{% endif %}</a>{% endif %}
-    {% if game_section == "rotation" %}<span class="font-bold">{% if can_edit %}Set rotation{% else %}Rotation{% endif %}</span>{% else %}<a href="/teams/{{ team.abbreviation|lower }}/plan/{% if season_half == "2h" %}2{% else %}1{% endif %}/{{ game_season }}/rotation/" class="underline">{% if can_edit %}Set rotation{% else %}Rotation{% endif %}</a>{% endif %}
     {% if game_section == "schedule" %}<span class="font-bold">Schedule</span>{% else %}<a href="/teams/{{ team.abbreviation|lower }}/schedule/{{ game_season }}/" class="underline">Schedule</a>{% endif %}
+    {% if game_section == "lineups" %}<span class="font-bold">Lineups</span>{% else %}<a href="/teams/{{ team.abbreviation|lower }}/plan/{% if season_half == "2h" %}2{% else %}1{% endif %}/{{ game_season }}/{% if can_edit %}edit/{% endif %}" class="underline">Lineups</a>{% endif %}
+    {% if game_section == "rotation" %}<span class="font-bold">Rotation</span>{% else %}<a href="/teams/{{ team.abbreviation|lower }}/plan/{% if season_half == "2h" %}2{% else %}1{% endif %}/{{ game_season }}/rotation/" class="underline">Rotation</a>{% endif %}
     {% if game_section == "bullpen" %}<span class="font-bold">Bullpen</span>{% else %}<a href="/teams/{{ team.abbreviation|lower }}/plan/{% if season_half == "2h" %}2{% else %}1{% endif %}/{{ game_season }}/bullpen/" class="underline">Bullpen</a>{% endif %}
-    {% if game_section == "results" %}<span class="font-bold">Results</span>{% else %}<a href="/teams/{{ team.abbreviation|lower }}/results/{{ game_season }}/" class="underline">Results</a>{% endif %}
+    {% if play_next %}<a href="{{ play_next }}" class="play-next underline font-bold">Play next</a>{% endif %}
 </div>

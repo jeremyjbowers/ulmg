@@ -3,7 +3,7 @@
 <div class="border-b border-gray-300 mb-4">
     <div class="flex flex-wrap gap-4 pb-2 text-sm">
         {% if team_tab == "roster" %}<span class="font-bold">Roster{% if num_owned %} ({{ num_owned }}){% endif %}</span>{% else %}<a href="/teams/{{ team.abbreviation|lower }}/" class="underline">Roster{% if num_owned %} ({{ num_owned }}){% endif %}</a>{% endif %}
-        {% if team_tab == "game" %}<span class="font-bold">Game</span>{% else %}<a href="/teams/{{ team.abbreviation|lower }}/game/" class="underline">Game</a>{% endif %}
+        {% if team_tab == "game" %}<span class="font-bold">Game</span>{% else %}<a href="/teams/{{ team.abbreviation|lower }}/schedule/{{ league_season }}/" class="underline">Game</a>{% endif %}
         {% if team_tab == "trades" %}<span class="font-bold">Trades & picks</span>{% else %}<a href="/teams/{{ team.abbreviation|lower }}/other/" class="underline">Trades & picks</a>{% endif %}
         {% if own_team %}
         <a href="/my/wishlist/draft/beta/" class="underline hidden md:inline">AA Draft</a>

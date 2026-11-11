@@ -8,9 +8,7 @@
 {% include "includes/game_tabs.html" with game_section="bullpen" %}
 
 <div>
-    <h2 class="text-lg font-bold mb-1">Bullpen</h2>
-    <p class="text-sm text-gray-600 mb-1">{{ half_note }} Name a closer, then the single-inning relievers (SIRP) and the multi-inning relievers (MIRP), in the order the computer should try them. A pitcher goes in one role. SIRP is one inning from the 6th on when the game is within three runs. MIRP is before the 6th, or when the game is not that close. The closer works a save from the 9th on.</p>
-    <p class="text-sm text-gray-600 card-season mb-4">These cards use the {{ plan_season|add:"-1" }} MLB cards.</p>
+    <h2 class="text-lg font-bold mb-4">Bullpen</h2>
     {% include 'includes/plan_errors.html' %}
 
     {% if not is_open %}
@@ -30,8 +28,7 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {% for group in bullpen_groups %}
                 <div data-bullpen-group="{{ group.name }}">
-                    <h3 class="font-bold border-b border-gray-300 mb-1">{{ group.label }}</h3>
-                    <p class="text-xs text-gray-600 mb-2">{{ group.note }}</p>
+                    <h3 class="font-bold border-b border-gray-300 mb-2">{{ group.label }}</h3>
                     <div class="space-y-2">
                         {% for slot in group.slots %}
                         <div class="lineup-slot border border-dashed border-gray-300 p-1">

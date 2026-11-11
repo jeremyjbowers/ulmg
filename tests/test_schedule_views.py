@@ -74,7 +74,7 @@ class ScheduleViewsTestCase(TestCase):
                 text = f"vs <a[^>]*>{game.series.road_team.abbreviation}</a>"
             else:
                 text = f"at <a[^>]*>{game.series.home_team.abbreviation}</a>"
-            self.assertRegex(body, rf'data-day="{game.day}"[^>]*>\s*<td[^>]*>{game.day}</td>\s*<td[^>]*>{text}')
+            self.assertRegex(body, rf'data-day="{game.day}"[^>]*>\s*<td[^>]*>Game {game.day}</td>\s*<td[^>]*>{text}')
 
     def test_team_schedule_shows_results(self):
         game = schedule.team_games(self.team, 2027)[0]
@@ -99,17 +99,22 @@ class ScheduleViewsTestCase(TestCase):
         other = self.client.get("/teams/pit/schedule/2027/").content.decode()
         self.assertNotIn("You play", other)
 
-    def test_team_pages_link_to_the_game_page(self):
+    def test_the_game_tab_opens_the_schedule(self):
         self.client.force_login(User.objects.create_user(username="reader"))
+        year = utils.league_season()
         roster = self.client.get("/teams/atl/").content.decode()
-        self.assertIn('href="/teams/atl/game/"', roster)
+        self.assertIn(f'href="/teams/atl/schedule/{year}/"', roster)
         self.assertLess(roster.index("Roster"), roster.index(">Game</"))
         self.assertLess(roster.index(">Game</"), roster.index("Trades & picks"))
-        self.assertNotIn('href="/teams/atl/schedule/"', roster)
         other = self.client.get("/teams/atl/other/").content.decode()
-        self.assertIn('href="/teams/atl/game/"', other)
-        game = self.client.get("/teams/atl/game/").content.decode()
-        self.assertIn(f'href="/teams/atl/schedule/{utils.league_season()}/"', game)
+        self.assertIn(f'href="/teams/atl/schedule/{year}/"', other)
+        schedule_page = self.client.get(f"/teams/atl/schedule/{year}/").content.decode()
+        self.assertIn(">Schedule</span>", schedule_page)
+        self.assertLess(schedule_page.index(">Schedule<"), schedule_page.index(">Lineups<"))
+        self.assertLess(schedule_page.index(">Lineups<"), schedule_page.index(">Rotation<"))
+        self.assertLess(schedule_page.index(">Rotation<"), schedule_page.index(">Bullpen<"))
+        self.assertNotIn(">Up next<", schedule_page)
+        self.assertNotIn(">Results<", schedule_page)
 
     def test_the_second_half_stays_off_the_schedule_until_it_is_enabled(self):
         with self.settings(TEAM_SEASON_HALF="1h"):

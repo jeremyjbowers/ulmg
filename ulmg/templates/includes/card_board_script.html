@@ -3,6 +3,11 @@
 <style>
     .decision-card.is-picked { outline: 2px solid #111; }
     .lineup-slot.is-over { background: #f3f4f6; }
+    .decision-card.starts-spent { cursor: not-allowed; opacity: 0.55; }
+    .slot-well { box-sizing: border-box; display: flex; min-height: 52px; }
+    .slot-well:not(:has(.decision-card)) { background: #e5e7eb; }
+    .slot-frame:not(:has(.decision-card)) .slot-remove { display: none; }
+    .slot-well .decision-card { flex: 1 1 auto; width: 100%; padding-right: 1.25rem; }
 </style>
 <script>
 (function () {
@@ -83,6 +88,47 @@
         });
     }
 
+    function effectivePitcher(slot) {
+        var input = slot.querySelector(".player-id");
+        if (input && input.value) return input.value;
+        return slot.dataset.autoStarter || "";
+    }
+
+    function scheduledOnGrid(playerId) {
+        var count = 0;
+        document.querySelectorAll("[data-starter-grid] .starter-slot").forEach(function (slot) {
+            if (effectivePitcher(slot) === String(playerId)) count += 1;
+        });
+        return count;
+    }
+
+    function startsRoom(card) {
+        if (!card || card.dataset.startsCap === undefined || card.dataset.startsCap === "") return null;
+        var cap = Number(card.dataset.startsCap);
+        var made = Number(card.dataset.startsMade || 0);
+        var elsewhere = Number(card.dataset.startsElsewhere || 0);
+        return cap - made - elsewhere - scheduledOnGrid(card.dataset.player);
+    }
+
+    function canTakeStart(card, slot) {
+        var board = boardOf(slot);
+        if (!board || !board.hasAttribute("data-starter-grid")) return true;
+        var room = startsRoom(card);
+        if (room === null) return true;
+        if (effectivePitcher(slot) === String(card.dataset.player)) return true;
+        return room > 0;
+    }
+
+    function refreshStartCards() {
+        document.querySelectorAll("[data-stack] .decision-card[data-starts-cap]").forEach(function (card) {
+            var open = startsRoom(card) > 0;
+            card.draggable = open;
+            card.classList.toggle("starts-spent", !open);
+            if (open) card.removeAttribute("title");
+            else card.title = "No starts left to schedule";
+        });
+    }
+
     function clearSlot(slot) {
         var body = slot.querySelector(".slot-body");
         if (body) body.replaceChildren();
@@ -93,7 +139,7 @@
     }
 
     function place(slot, card) {
-        if (!accepts(slot, card)) return;
+        if (!accepts(slot, card) || !canTakeStart(card, slot)) return;
         var board = boardOf(slot);
         if (board && (board.hasAttribute("data-lineup") || board.hasAttribute("data-rotation") || board.hasAttribute("data-bullpen"))) {
             board.querySelectorAll(".lineup-slot, .rotation-slot").forEach(function (other) {
@@ -109,6 +155,7 @@
         if (input) input.value = card.dataset.player;
         var codes = positionCodes(card);
         if (codes) renderPositions(slot, codes);
+        refreshStartCards();
     }
 
     document.addEventListener("click", function (event) {
@@ -134,6 +181,7 @@
         if (clearButton) {
             event.preventDefault();
             clearSlot(clearButton.closest(".lineup-slot, .rotation-slot"));
+            refreshStartCards();
             return;
         }
         var positionButton = event.target.closest("button[data-position]");
@@ -151,6 +199,7 @@
         if (event.target.closest("a, input, label, button")) return;
         var card = event.target.closest(".decision-card");
         if (card && card.closest("[data-stack]")) {
+            if (card.dataset.startsCap !== undefined && card.dataset.startsCap !== "" && startsRoom(card) <= 0) return;
             if (picked) picked.classList.remove("is-picked");
             picked = card;
             card.classList.add("is-picked");
@@ -167,6 +216,10 @@
         }
         var card = event.target.closest(".decision-card");
         if (!card) return;
+        if (card.closest("[data-stack]") && card.dataset.startsCap !== undefined && card.dataset.startsCap !== "" && startsRoom(card) <= 0) {
+            event.preventDefault();
+            return;
+        }
         event.dataTransfer.setData("text/plain", card.dataset.kind + ":" + card.dataset.player);
         event.dataTransfer.effectAllowed = "copy";
     });
@@ -183,5 +236,7 @@
         var card = sourceCard(payload[1], payload[0]);
         if (card) place(slot, card);
     });
+
+    refreshStartCards();
 })();
 </script>

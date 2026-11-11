@@ -115,7 +115,6 @@ def team_schedule(request, abbreviation, season=None):
     context["team"] = team
     context["schedule_season"] = season
     context["can_edit"] = can_edit
-    context["second_half_open"] = 2 in plans.visible_halves()
     context["errors"] = errors
 
     owner = utils.get_owner_for_user(request.user)
@@ -124,10 +123,14 @@ def team_schedule(request, abbreviation, season=None):
 
     planned = _planned_rows(team, season)
     games = _visible(schedule.team_games(team, season))
-    tester = utils.is_sim_tester(request.user)
-    owner_team = owner.team() if owner is not None else None
-    next_road = schedule.next_unplayed_road_game(owner_team, season) if owner_team else None
     logged = set(models.GameLog.objects.filter(game__in=games).values_list("game_id", flat=True))
+    auto_starter_ids = {}
+    for half in plans.visible_halves():
+        plan = plans.find_plan(team, season, half)
+        if plan is None:
+            continue
+        for day_row in plan.days.all():
+            auto_starter_ids[day_row.day] = day_row.auto_starter_id
 
     roster_ids = set()
     for half in plans.visible_halves():
@@ -160,25 +163,25 @@ def team_schedule(request, abbreviation, season=None):
                 "opponent_starter": side["opponent_starter"] if side else None,
                 "result": _team_result(game, is_home),
                 "manager_plays": own_team and not is_home,
-                "can_play": not game.is_played and (tester or (next_road is not None and game.id == next_road.id)),
                 "has_box": game.is_played and game.id in logged,
                 "locked": locked,
                 "editable": editable,
-                "day_url": (
-                    season_url(
-                        "teams",
-                        team.abbreviation.lower(),
-                        "plan",
-                        game.series.slot.half,
-                        season=season,
-                        tail=("day", game.day),
-                    )
-                    if editable
-                    else ""
-                ),
+                "auto_starter_id": auto_starter_ids.get(game.day),
                 "lineup_gap": bool(side and side["unavailable"]),
             }
         )
+    if pitcher_cards:
+        on_grid = {row["game"].day for row in rows if row["editable"]}
+        counted = plans.start_usage(team, season, [card["player"] for card in pitcher_cards.values()])
+        for player_id, card in pitcher_cards.items():
+            usage_row = counted[player_id]
+            card["show_start_usage"] = True
+            card["starts_cap"] = usage_row["cap"]
+            card["starts_made"] = usage_row["made"]
+            card["starts_scheduled"] = usage_row["scheduled"]
+            card["starts_remaining"] = usage_row["remaining"]
+            card["starts_elsewhere"] = sum(1 for day in usage_row["days"] if day not in on_grid)
+            card["can_schedule"] = usage_row["made"] + usage_row["scheduled"] < usage_row["cap"]
     context["rows"] = rows
     context["pitcher_cards"] = list(pitcher_cards.values())
     context["designation_url"] = season_url(

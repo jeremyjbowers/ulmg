@@ -131,17 +131,19 @@ class GamePageTestCase(gf.EngineMixin, TestCase):
         self.assertContains(box, "box-pitching")
 
     @override_settings(TEAM_SEASON_HALF="2h")
-    def test_the_schedule_offers_play_for_the_managers_next_road_game_only(self):
+    def test_the_schedule_offers_play_next_for_the_managers_next_road_game_only(self):
         self.client.force_login(self.manager)
         page = self.client.get(f"/teams/{self.road.team.abbreviation.lower()}/schedule/{gf.SEASON}/")
-        self.assertContains(page, f'href="/games/{self.game.id}/" class="schedule-play', count=1)
-        self.assertContains(page, "schedule-play", count=1)
+        self.assertContains(page, f'href="/games/{self.game.id}/" class="play-next', count=1)
+        self.assertContains(page, "play-next", count=1)
+        self.assertNotContains(page, "schedule-play")
         self.client.force_login(self.other_manager)
         page = self.client.get(f"/teams/{self.road.team.abbreviation.lower()}/schedule/{gf.SEASON}/")
-        self.assertNotContains(page, f'href="/games/{self.game.id}/" class="schedule-play')
+        self.assertNotContains(page, "play-next")
         self.client.force_login(self.tester)
         page = self.client.get(f"/teams/{self.road.team.abbreviation.lower()}/schedule/{gf.SEASON}/")
-        self.assertContains(page, "schedule-play", count=162)
+        self.assertContains(page, f'href="/games/{self.game.id}/" class="play-next', count=1)
+        self.assertContains(page, "play-next", count=1)
 
     def test_seat_changes_through_the_page_are_logged_with_the_user(self):
         self.post("open", user=self.tester, seats="home")

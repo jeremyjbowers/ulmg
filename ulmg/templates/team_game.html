@@ -9,8 +9,6 @@
 {% include 'includes/game_tabs.html' with game_section="game" %}
 
 <div class="mb-6 text-sm">
-    <h2 class="text-lg font-bold mb-2">Up next</h2>
-
     {% if gaps %}
     <ul id="plan-gaps" class="mb-4 border border-gray-300 bg-gray-50 px-3 py-2">
         {% for gap in gaps %}
@@ -41,7 +39,6 @@
             <li class="away-game py-0.5" data-day="{{ row.game.day }}" data-side="away">
                 Day {{ row.game.day }}
                 {% if row.starter %}{{ row.starter.name }}{% else %}No starter{% endif %}
-                {% if row.can_play %} <a href="/games/{{ row.game.id }}/" class="schedule-play underline font-bold">Play</a>{% endif %}
             </li>
             {% endfor %}
         </ul>
