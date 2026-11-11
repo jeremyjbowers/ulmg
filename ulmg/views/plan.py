@@ -1,12 +1,18 @@
 # ABOUTME: Lineup and rotation pages for one half, plus the one-day lineup override.
 # ABOUTME: Anyone can read them. Only the team's owner and the commissioner can change them.
 from django.contrib import messages
-from django.http import Http404, HttpResponseForbidden
+from django.http import (
+    Http404,
+    HttpResponse,
+    HttpResponseBadRequest,
+    HttpResponseForbidden,
+    HttpResponseNotAllowed,
+)
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.cache import never_cache
 
-from ulmg import decision_cards, models, plans, roster_moves, utils
+from ulmg import decision_cards, models, plans, roster_moves, usage, utils
 from ulmg.season_paths import bounce, season_url
 
 # The rotation shortcut offers six slots. Fewer than six is a shorter rotation.
@@ -40,6 +46,27 @@ def _rotation_url(team, half, season):
 
 def _schedule_url(team, season):
     return season_url("teams", team.abbreviation.lower(), "schedule", season=season)
+
+
+def _designation_url(team, half, season):
+    return season_url(
+        "teams", team.abbreviation.lower(), "plan", half, season=season, tail=("designation",)
+    )
+
+
+def by_last_name(players):
+    """Card-list order: last name, then first name. A bare name sorts on its last word."""
+
+    def key(player):
+        last = (player.last_name or "").strip()
+        first = (player.first_name or "").strip()
+        if not last and player.name:
+            parts = player.name.split()
+            last = parts[-1]
+            first = " ".join(parts[:-1])
+        return (last.casefold(), first.casefold(), (player.name or "").casefold(), player.pk or 0)
+
+    return sorted(players, key=key)
 
 
 def _lineup_rows(stored):
@@ -126,21 +153,38 @@ def _roster(team, season, half, game=None):
     """Players the editor offers: the half's roster, or one game's roster."""
     rosters = roster_moves.HalfRosters(team, season, half)
     ids = rosters.for_game(game) if game is not None else rosters.all
-    roster = list(models.Player.objects.filter(id__in=ids).order_by("name"))
+    roster = by_last_name(models.Player.objects.filter(id__in=ids))
     return {
         "pitchers": [player for player in roster if plans.can_pitch(player)],
         "hitters": [player for player in roster if not plans.is_pitcher(player)],
     }
 
 
+def _designation_flags(players, season):
+    """player id → confined_to_relief, only for counters that already exist."""
+    return dict(
+        models.UsageCounter.objects.filter(
+            player_id__in=[player.id for player in players],
+            season=season,
+        ).values_list("player_id", "confined_to_relief")
+    )
+
+
 def _built_cards(players, season, kind):
     stats, cards = decision_cards.load(players, season)
+    flags = _designation_flags(players, season) if kind == "p" else {}
     built = {}
     for player in players:
         hit, pitch = stats.get(player.id, ({}, {}))
         card = cards.get(player.id)
         if kind == "p":
-            built[player.id] = decision_cards.pitcher_card(player, pitch, card)
+            confined = flags[player.id] if player.id in flags else None
+            built[player.id] = decision_cards.pitcher_card(
+                player,
+                pitch,
+                card,
+                designation=decision_cards.shown_designation(pitch, confined),
+            )
         else:
             built[player.id] = decision_cards.hitter_card(player, hit, card)
     return built
@@ -196,6 +240,7 @@ def _common(request, team, half, season):
             "closed_message": plans.closed_message(half),
             "half_note": _half_note(half),
             "positions": plans.LINEUP_POSITIONS,
+            "designation_url": _designation_url(team, half, season),
         }
     )
     return context
@@ -340,6 +385,44 @@ def team_plan_rotation(request, abbreviation, half, season=None):
         }
     )
     return render(request, "team_rotation.html", context, status=400 if errors else 200)
+
+
+@never_cache
+def team_plan_designation(request, abbreviation, half, season=None):
+    """Name one pitcher starter or reliever for this season's usage."""
+    team = _team_and_half(abbreviation, half)
+    bounced = bounce(
+        request,
+        "teams",
+        team.abbreviation.lower(),
+        "plan",
+        half,
+        season=season,
+        tail=("designation",),
+    )
+    if bounced:
+        return bounced
+    season = int(season)
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+    if not plans.can_edit(request.user, team):
+        return HttpResponseForbidden(
+            "Only this team's owner and the commissioner can set a pitcher's designation."
+        )
+    if not plans.is_open(half):
+        return HttpResponseBadRequest(plans.closed_message(half))
+    designation = request.POST.get("designation")
+    if designation not in usage.DESIGNATIONS:
+        return HttpResponseBadRequest("Designation must be rotation or bullpen.")
+    player_id = _int_or_none(request.POST.get("player"))
+    roster = _roster(team, season, half)
+    player = next((candidate for candidate in roster["pitchers"] if candidate.id == player_id), None)
+    if player is None:
+        return HttpResponseBadRequest("That pitcher is not on this half's roster.")
+    usage.set_swingman_designation(player, season, designation)
+    if request.headers.get("x-requested-with") == "fetch":
+        return HttpResponse(status=204)
+    return redirect(_rotation_url(team, half, season))
 
 
 @never_cache

@@ -6,8 +6,9 @@ import re
 from django.contrib.auth.models import User
 from django.test import Client, TestCase, override_settings
 
-from ulmg import models, plans, usage
-from tests.plan_fixtures import SEASON, Roster, create_hitter, create_season
+from ulmg import decision_cards, models, plans, usage
+from ulmg.views.plan import by_last_name
+from tests.plan_fixtures import SEASON, Roster, create_hitter, create_pitcher, create_season
 
 
 def form_data(roster, rotation=None, vs_lhp=None, vs_rhp=None):
@@ -48,7 +49,22 @@ def create_owner(username, team):
 PLAN_URL = f"/teams/atl/plan/1/{SEASON}/"
 EDIT_URL = f"/teams/atl/plan/1/{SEASON}/edit/"
 ROTATION_URL = f"/teams/atl/plan/1/{SEASON}/rotation/"
+DESIGNATION_URL = f"/teams/atl/plan/1/{SEASON}/designation/"
 SCHEDULE_URL = f"/teams/atl/schedule/{SEASON}/"
+
+
+def articles(body, player_id):
+    """Every decision card for one player, stack copies and slot copies."""
+    return re.findall(
+        rf'<article\b[^>]*\bdata-player="{player_id}"[^>]*>.*?</article>',
+        body,
+        re.S,
+    )
+
+
+def stack_html(body):
+    """The first card list, before the editor form."""
+    return body.split("data-stack", 1)[1].split("<form", 1)[0]
 
 
 def day_url(day, half=1):
@@ -243,6 +259,107 @@ class EditPlanTestCase(PlanViewsTestCase):
 
     def test_unknown_half_is_not_found(self):
         self.assertEqual(self.client.get(f"/teams/atl/plan/3/{SEASON}/").status_code, 404)
+
+    def test_card_lists_are_sorted_by_last_name(self):
+        aaron = models.Player(name="Zack Aaron", first_name="Zack", last_name="Aaron", pk=2)
+        zulu = models.Player(name="Adam Zulu", first_name="Adam", last_name="Zulu", pk=1)
+        bare = models.Player(name="Moe Only", pk=3)
+        self.assertEqual(
+            [player.name for player in by_last_name([zulu, bare, aaron])],
+            ["Zack Aaron", "Moe Only", "Adam Zulu"],
+        )
+        create_hitter(self.atl, "Zack Aaron")
+        create_hitter(self.atl, "Adam Zulu")
+        create_pitcher(self.atl, "Zack Aaron")
+        create_pitcher(self.atl, "Adam Zulu")
+        client = self.as_user(self.owner)
+        hitters = stack_html(client.get(EDIT_URL).content.decode())
+        self.assertLess(hitters.index("Zack Aaron"), hitters.index("Adam Zulu"))
+        pitchers = stack_html(client.get(ROTATION_URL).content.decode())
+        self.assertLess(pitchers.index("Zack Aaron"), pitchers.index("Adam Zulu"))
+
+    def test_cards_wash_green_above_average_and_pink_below(self):
+        models.Card.objects.filter(player=self.roster.catcher).update(wrc_plus=150)
+        models.Card.objects.filter(player=self.roster.bench[0]).update(wrc_plus=50)
+        client = self.as_user(self.owner)
+        body = client.get(EDIT_URL).content.decode()
+        good = articles(body, self.roster.catcher.id)[0]
+        bad = articles(body, self.roster.bench[0].id)[0]
+        self.assertIn(f"background-color: {decision_cards.hitter_shade(150)}", good)
+        self.assertIn(f"background-color: {decision_cards.hitter_shade(50)}", bad)
+        plain = articles(body, self.roster.bench[1].id)[0]
+        self.assertNotIn("background-color", plain)
+
+    def test_a_pitcher_who_never_started_shows_as_a_reliever(self):
+        client = self.as_user(self.owner)
+        body = client.get(ROTATION_URL).content.decode()
+        reliever = articles(body, self.roster.relievers[0].id)[0]
+        starter = articles(body, self.roster.starters[0].id)[0]
+        swingman = articles(body, self.roster.swingman.id)[0]
+        self.assertIn('data-designation="bullpen"', reliever)
+        self.assertIn('data-designation="bullpen" class="border border-gray-400 px-1 leading-none bg-gray-800 text-white"', reliever)
+        self.assertIn('data-designation="rotation"', starter)
+        self.assertIn('data-designation="rotation"', swingman)
+        self.assertFalse(models.UsageCounter.objects.filter(player=self.roster.relievers[0]).exists())
+        self.assertIn("reliever innings bonus", body)
+
+    def test_owner_designates_a_swingman_reliever_and_it_sticks(self):
+        client = self.as_user(self.owner)
+        response = client.post(
+            DESIGNATION_URL,
+            {"player": self.roster.swingman.id, "designation": "bullpen"},
+            HTTP_X_REQUESTED_WITH="fetch",
+        )
+        self.assertEqual(response.status_code, 204)
+        counter = usage.counter_for(self.roster.swingman, SEASON)
+        self.assertTrue(counter.confined_to_relief)
+        self.assertEqual(usage.season_innings_cap(counter), counter.confined_innings_cap_outs)
+        self.assertGreater(counter.confined_innings_cap_outs, counter.innings_cap_outs)
+        body = client.get(ROTATION_URL).content.decode()
+        for card in articles(body, self.roster.swingman.id):
+            self.assertIn('data-designation="bullpen"', card)
+
+        response = client.post(
+            ROTATION_URL, {"rotation": [p.id for p in self.roster.starters]}, follow=True
+        )
+        self.assertRedirects(response, SCHEDULE_URL)
+        counter.refresh_from_db()
+        self.assertTrue(counter.confined_to_relief)
+
+        response = client.post(
+            DESIGNATION_URL,
+            {"player": self.roster.swingman.id, "designation": "rotation"},
+            HTTP_X_REQUESTED_WITH="fetch",
+        )
+        self.assertEqual(response.status_code, 204)
+        counter.refresh_from_db()
+        self.assertFalse(counter.confined_to_relief)
+
+    def test_only_the_owner_can_designate_a_roster_pitcher(self):
+        self.roster.file()
+        other = self.as_user(self.other_owner)
+        response = other.post(
+            DESIGNATION_URL, {"player": self.roster.swingman.id, "designation": "rotation"}
+        )
+        self.assertEqual(response.status_code, 403)
+        self.assertTrue(usage.counter_for(self.roster.swingman, SEASON).confined_to_relief)
+
+        owner = self.as_user(self.owner)
+        response = owner.post(DESIGNATION_URL, {"player": self.roster.catcher.id, "designation": "bullpen"})
+        self.assertEqual(response.status_code, 400)
+        response = owner.post(DESIGNATION_URL, {"player": self.roster.swingman.id, "designation": "closer"})
+        self.assertEqual(response.status_code, 400)
+        self.assertTrue(usage.counter_for(self.roster.swingman, SEASON).confined_to_relief)
+
+        logged_out = Client().post(
+            DESIGNATION_URL, {"player": self.roster.swingman.id, "designation": "rotation"}
+        )
+        self.assertEqual(logged_out.status_code, 302)
+        self.assertIn("/accounts/login/", logged_out["Location"])
+        public = Client().get(ROTATION_URL).content.decode()
+        card = articles(public, self.roster.swingman.id)[0]
+        self.assertNotIn("<button", card)
+        self.assertIn("Reliever", card)
 
 
 class EditDayTestCase(PlanViewsTestCase):

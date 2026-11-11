@@ -1,5 +1,5 @@
 # ABOUTME: The card a manager reads while setting a lineup or a starter.
-# ABOUTME: Hitters show playing time, offense, defense and speed. Pitchers show the usage rules and their rates.
+# ABOUTME: Hitters show playing time, offense, defense and speed. Pitchers show the usage rules, their rates and a starter or reliever name.
 
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 
@@ -7,6 +7,17 @@ from ulmg import cards, models, usage
 
 # FanGraphs Spd runs about 0 to 10. Zero on the card is an average 5.
 SPD_AVERAGE = 5
+
+# wRC+ of 100 is an average bat. An xFIP of 4.10 is an average arm.
+# Thirty points of wRC+, or 0.80 of xFIP, reaches the full wash.
+HITTER_AVERAGE = 100
+HITTER_SPAN = 30
+PITCHER_AVERAGE = 4.10
+PITCHER_SPAN = 0.80
+
+# The darkest green and the reddest pink a card takes. Both stay light enough to read.
+PALE_GREEN = (198, 228, 208)
+LIGHT_PINK = (250, 214, 220)
 
 
 def load(players, season):
@@ -36,15 +47,20 @@ def hitter_card(player, hit, card):
         "defense_label": _defense(card, player),
         "speed_label": speed_label(card.spd if card is not None else None),
         "positions": _lineup_positions(card, player),
+        "shade": hitter_shade(_wrc_value(hit, card)),
     }
 
 
-def pitcher_card(player, pitch, card):
+def pitcher_card(player, pitch, card, designation=None):
     """
     What a pitcher's card shows. A reliever's innings max is 1.25x at 60
     innings and 1.5x at 70, the same table the usage ledger enforces.
+    designation is rotation or bullpen. With none, the card season's role
+    stands in until a counter exists.
     """
     pitch = pitch or {}
+    if designation not in usage.DESIGNATIONS:
+        designation = shown_designation(pitch, None)
     caps = usage.caps_from_stats({}, pitch)
     return {
         "player": player,
@@ -55,7 +71,53 @@ def pitcher_card(player, pitch, card):
         "war_label": _decimal(pitch.get("war"), 1),
         "k9_label": _decimal(pitch.get("k_9"), 1),
         "bb9_label": _decimal(pitch.get("bb_9"), 1),
+        "shade": pitcher_shade(_stat_number(pitch.get("xfip"))),
+        "designation": designation,
+        "starts": usage._count(pitch, "gs"),
     }
+
+
+def shown_designation(pitch, confined):
+    """
+    The Starter or Reliever button.
+    A pitcher who never started stays a reliever: he has no starts to give.
+    Anyone who did start shows as a starter until a stored bullpen
+    designation names him a reliever. That is also how a swingman's cap starts.
+    """
+    pitch = pitch or {}
+    # No starts on the card means no starts to give, so the button stays Reliever.
+    if usage._count(pitch, "g") > 0 and usage._count(pitch, "gs") == 0:
+        return usage.BULLPEN
+    if confined is True:
+        return usage.BULLPEN
+    return usage.ROTATION
+
+
+def shade_color(score):
+    """A background for a score from -1 (below average) to 1 (above). 0 is no wash."""
+    score = max(-1.0, min(1.0, float(score)))
+    if score == 0:
+        return None
+    target = PALE_GREEN if score > 0 else LIGHT_PINK
+    amount = abs(score) ** 0.5
+    channels = tuple(round(255 + (channel - 255) * amount) for channel in target)
+    return "#{:02x}{:02x}{:02x}".format(*channels)
+
+
+def hitter_shade(wrc):
+    """Pale green above a 100 wRC+, light pink below. None at average or with no wRC+."""
+    value = _stat_number(wrc)
+    if value is None:
+        return None
+    return shade_color((value - HITTER_AVERAGE) / HITTER_SPAN)
+
+
+def pitcher_shade(xfip):
+    """Pale green below a 4.10 xFIP, light pink above. None at average or with no xFIP."""
+    value = _stat_number(xfip)
+    if value is None:
+        return None
+    return shade_color((PITCHER_AVERAGE - value) / PITCHER_SPAN)
 
 
 def speed_label(spd):
@@ -87,14 +149,26 @@ def _plate_appearances(hit):
     return "-"
 
 
-def _wrc(hit, card):
-    value = card.wrc_plus if card is not None and card.wrc_plus is not None else hit.get("wrc_plus")
+def _stat_number(value):
     if value in (None, ""):
-        return "-"
+        return None
     try:
-        return str(int(round(float(value))))
+        return float(value)
     except (TypeError, ValueError):
+        return None
+
+
+def _wrc_value(hit, card):
+    if card is not None and card.wrc_plus is not None:
+        return _stat_number(card.wrc_plus)
+    return _stat_number((hit or {}).get("wrc_plus"))
+
+
+def _wrc(hit, card):
+    value = _wrc_value(hit, card)
+    if value is None:
         return "-"
+    return str(int(round(value)))
 
 
 def _slash(card):

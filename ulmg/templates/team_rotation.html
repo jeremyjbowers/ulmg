@@ -10,7 +10,8 @@
 <div>
     <h2 class="text-lg font-bold mb-1">Set rotation</h2>
     <p class="text-sm text-gray-600 mb-1">{{ half_note }} Put one to six starters in order, then push the rotation onto the schedule. It fills open days that do not already have a starter of their own. The schedule is where a starter stays. <a href="{{ schedule_url }}" class="underline">Schedule</a></p>
-    <p class="text-sm text-gray-600 card-season mb-4">These cards use the {{ plan_season|add:"-1" }} MLB cards.</p>
+    <p class="text-sm text-gray-600 card-season{% if can_edit %} mb-1{% else %} mb-4{% endif %}">These cards use the {{ plan_season|add:"-1" }} MLB cards.</p>
+    {% if can_edit %}<p class="text-sm text-gray-600 mb-4">Starter or Reliever on a card names him for usage. A swingman named Reliever gets the reliever innings bonus until he makes a start.</p>{% endif %}
     {% include 'includes/plan_errors.html' %}
 
     {% if not is_open %}
