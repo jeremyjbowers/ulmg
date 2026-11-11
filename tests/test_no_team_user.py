@@ -88,6 +88,8 @@ class NoTeamUserTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, 'href="/teams//"')
         self.assertNotContains(response, ">My Team</a>")
+        self.assertNotContains(response, 'href="/leaders/"')
+        self.assertNotContains(response, ">Leaders</a>")
 
     def test_team_page_renders_for_user_without_team(self):
         self.client.force_login(self.user)
