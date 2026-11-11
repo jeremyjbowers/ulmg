@@ -279,16 +279,26 @@ class EditPlanTestCase(PlanViewsTestCase):
         self.assertLess(pitchers.index("Zack Aaron"), pitchers.index("Adam Zulu"))
 
     def test_cards_wash_green_above_average_and_pink_below(self):
-        models.Card.objects.filter(player=self.roster.catcher).update(wrc_plus=150)
-        models.Card.objects.filter(player=self.roster.bench[0]).update(wrc_plus=50)
+        self.set_war(self.roster.catcher, 4)
+        self.set_war(self.roster.bench[0], 0)
         client = self.as_user(self.owner)
         body = client.get(EDIT_URL).content.decode()
         good = articles(body, self.roster.catcher.id)[0]
         bad = articles(body, self.roster.bench[0].id)[0]
-        self.assertIn(f"background-color: {decision_cards.hitter_shade(150)}", good)
-        self.assertIn(f"background-color: {decision_cards.hitter_shade(50)}", bad)
+        self.assertIn("4.0/600", good)
+        self.assertIn(f"background-color: {decision_cards.hitter_shade(4)}", good)
+        self.assertIn("0.0/600", bad)
+        self.assertIn(f"background-color: {decision_cards.hitter_shade(0)}", bad)
         plain = articles(body, self.roster.bench[1].id)[0]
+        self.assertNotIn("/600", plain)
         self.assertNotIn("background-color", plain)
+
+    def set_war(self, player, war):
+        row = models.PlayerStatSeason.objects.get(player=player, season=SEASON - 1, classification="1-mlb")
+        stats = dict(row.hit_stats)
+        stats["war"] = war
+        row.hit_stats = stats
+        row.save()
 
     def test_a_pitcher_who_never_started_shows_as_a_reliever(self):
         client = self.as_user(self.owner)
