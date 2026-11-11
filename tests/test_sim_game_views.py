@@ -44,6 +44,18 @@ class GamePageTestCase(gf.EngineMixin, TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertIn("/accounts/login/", response["Location"])
 
+    def test_the_pregame_lineup_list_is_the_current_mlb_roster(self):
+        self.post("open", user=self.tester, seats="away,home")
+        removed = self.home.bench[0]
+        kept = self.home.bench[1]
+        removed.is_ulmg_mlb_roster = False
+        removed.save()
+        response = self.client.get(self.url)
+        heading = f"{self.home.team.abbreviation} lineup for this game"
+        form = response.content.decode().split(heading, 1)[1].split("</form>", 1)[0]
+        self.assertNotIn(f'value="{removed.id}"', form)
+        self.assertIn(f'value="{kept.id}"', form)
+
     def test_opening_and_stepping_through_the_page(self):
         response = self.post("open", seats="away")
         self.assertEqual(response.status_code, 200)
