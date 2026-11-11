@@ -124,6 +124,12 @@
             postDesignation(named, designation, previous);
             return;
         }
+        var clearLineup = event.target.closest("[data-clear-lineup]");
+        if (clearLineup) {
+            event.preventDefault();
+            clearLineup.closest("[data-lineup]").querySelectorAll(".lineup-slot").forEach(clearSlot);
+            return;
+        }
         var clearButton = event.target.closest("[data-clear]");
         if (clearButton) {
             event.preventDefault();

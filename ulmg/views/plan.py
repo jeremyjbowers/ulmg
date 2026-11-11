@@ -24,7 +24,7 @@ BULLPEN_GROUPS = (
     ("middle", "Middle", 6, "The innings between long relief and setup."),
     ("long_relief", "Long relief", 4, "When the starter is out early."),
 )
-LINEUP_COLUMNS = (("vs_rhp", "vR"), ("vs_lhp", "vL"))
+LINEUP_COLUMNS = (("vs_rhp", "vs Righty"), ("vs_lhp", "vs Lefty"))
 
 
 def _team_and_half(abbreviation, half):

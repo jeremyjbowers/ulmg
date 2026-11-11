@@ -1,4 +1,4 @@
-{# ABOUTME: Set the two lineup cards by dragging hitters into vR and vL. #}
+{# ABOUTME: Set the two lineup cards by dragging hitters into vs Righty and vs Lefty. #}
 {# ABOUTME: The columns sit side by side when the window is wide enough. Only the owner and the commissioner get here. #}
 {% extends "base.html" %}
 
@@ -9,7 +9,7 @@
 
 <div>
     <h2 class="text-lg font-bold mb-1">Set lineups</h2>
-    <p class="text-sm text-gray-600 mb-1">{{ half_note }} Drag a card into a slot, or click a card and then the slot. vR is against right-handed starters and vL against left-handed ones. <a href="/teams/{{ team.abbreviation|lower }}/plan/{{ half }}/{{ plan_season }}/" class="underline">Back to the lineups</a></p>
+    <p class="text-sm text-gray-600 mb-1">{{ half_note }} Drag a card into a slot, or click a card and then the slot. vs Righty is against right-handed starters and vs Lefty against left-handed ones. <a href="/teams/{{ team.abbreviation|lower }}/plan/{{ half }}/{{ plan_season }}/" class="underline">Back to the lineups</a></p>
     <p class="text-sm text-gray-600 card-season mb-4">These lineups use the {{ plan_season|add:"-1" }} MLB cards.</p>
     {% include 'includes/plan_errors.html' %}
 
