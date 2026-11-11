@@ -584,6 +584,7 @@ class Play:
             lead=state["score"][fielding] - state["score"][batting],
             runners_on=sum(1 for base in ("first", "second", "third") if state["bases"].get(base)),
             outs=state["outs"],
+            logic=self.sheet_side(fielding).get("bullpen_logic", models.HalfPlan.TRADITIONAL_PEN),
         )
 
     def at_half_inning_start(self):

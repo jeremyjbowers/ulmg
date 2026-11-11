@@ -120,6 +120,9 @@ class PublicPlanTestCase(PlanViewsTestCase):
         bullpen = self.client.get(BULLPEN_URL).content.decode()
         self.assertIn("ATL Reliever 1", bullpen)
         self.assertIn("ATL Swingman", bullpen)
+        self.assertIn("Bullpen usage: Traditional closer", bullpen)
+        self.assertIn("from the sixth", bullpen)
+        self.assertNotIn("bullpen-choice", bullpen)
         self.assertIn(">SIRP<", bullpen)
         self.assertIn(">MIRP<", bullpen)
         self.assertNotIn("Bullpen logic", bullpen)
@@ -211,6 +214,7 @@ class EditPlanTestCase(PlanViewsTestCase):
                 "closer": self.roster.relievers[0].id,
                 "sirp": [self.roster.relievers[1].id],
                 "mirp": [self.roster.swingman.id],
+                "bullpen_logic": "leverage",
             },
             follow=True,
         )
@@ -220,9 +224,14 @@ class EditPlanTestCase(PlanViewsTestCase):
         self.assertEqual(plan.closer_id, self.roster.relievers[0].id)
         self.assertEqual(plan.sirp, [self.roster.relievers[1].id])
         self.assertEqual(plan.mirp, [self.roster.swingman.id])
+        self.assertEqual(plan.bullpen_logic, models.HalfPlan.LEVERAGE_PEN)
         self.assertEqual(plan.rotation, [])
         self.assertFalse(plan.days.exists())
+        self.assertIn("with a runner on", response.content.decode())
         self.assertIn("One inning from the 6th on", response.content.decode())
+        saved = client.get(BULLPEN_URL).content.decode()
+        self.assertIn('name="bullpen_logic" value="leverage"', saved)
+        self.assertRegex(saved, r'data-bullpen-choice="leverage"[^>]*\bis-selected\b')
 
         response = client.post(ROTATION_URL, {"rotation": [p.id for p in self.roster.starters]}, follow=True)
         self.assertRedirects(response, SCHEDULE_URL)
@@ -271,8 +280,16 @@ class EditPlanTestCase(PlanViewsTestCase):
         self.assertIn('data-bullpen-group="mirp"', body)
         self.assertIn(">SIRP<", body)
         self.assertIn(">MIRP<", body)
-        self.assertNotIn('name="bullpen_logic"', body)
+        self.assertIn('name="bullpen_logic"', body)
+        self.assertIn('value="traditional"', body)
+        self.assertRegex(body, r'data-bullpen-choice="traditional"[^>]*\bis-selected\b')
+        self.assertIn(">Highest leverage<", body)
+        self.assertIn(">Fireman<", body)
+        self.assertIn(">Protect the lead<", body)
+        self.assertIn(">Save the pen<", body)
+        self.assertNotIn('type="radio"', body)
         self.assertIn("Before the 6th", body)
+        self.assertIn("from the sixth", body)
         self.assertLess(body.index(">Set lineups<"), body.index(">Set rotation<"))
         self.assertLess(body.index(">Set rotation<"), body.index(">Schedule<"))
         self.assertLess(body.index(">Schedule<"), body.index(">Bullpen</span>"))
@@ -280,18 +297,34 @@ class EditPlanTestCase(PlanViewsTestCase):
 
         response = client.post(
             BULLPEN_URL,
-            {"closer": self.roster.relievers[0].id, "sirp": [self.roster.relievers[0].id]},
+            {"closer": self.roster.relievers[0].id, "sirp": [self.roster.relievers[0].id], "bullpen_logic": "traditional"},
         )
         self.assertEqual(response.status_code, 400)
         self.assertIn("is in the bullpen twice", response.content.decode())
         self.assertIsNone(self.saved_plan())
+
+    def test_an_unknown_bullpen_logic_is_refused(self):
+        self.roster.file(bullpen_logic=models.HalfPlan.SAVE_PEN)
+        response = self.as_user(self.owner).post(
+            BULLPEN_URL,
+            {"closer": self.roster.relievers[0].id, "bullpen_logic": "wild"},
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn(
+            "The bullpen logic must be traditional, leverage, fireman, protect or save.",
+            response.content.decode(),
+        )
+        self.assertEqual(self.saved_plan().bullpen_logic, models.HalfPlan.SAVE_PEN)
 
     def test_another_owner_can_read_the_bullpen_but_not_set_it(self):
         self.roster.file()
         client = self.as_user(self.other_owner)
         self.assertEqual(client.get(BULLPEN_URL).status_code, 200)
         self.assertNotIn("Save bullpen", client.get(BULLPEN_URL).content.decode())
-        response = client.post(BULLPEN_URL, {"closer": self.roster.swingman.id, "sirp": [self.roster.relievers[1].id]})
+        response = client.post(
+            BULLPEN_URL,
+            {"closer": self.roster.swingman.id, "sirp": [self.roster.relievers[1].id], "bullpen_logic": "save"},
+        )
         self.assertEqual(response.status_code, 403)
         self.assertEqual(self.saved_plan().closer_id, self.roster.relievers[0].id)
 
@@ -490,7 +523,7 @@ class EditDayTestCase(PlanViewsTestCase):
         row = self.plan.days.get(day=20)
         self.assertEqual(row.manual_starter, self.roster.swingman)
         self.assertEqual(row.manual_lineup[-1], {"player": self.roster.bench[1].id, "position": "DH"})
-        self.assertRegex(body, r'(?s)data-day="20".*?ATL Swingman\*')
+        self.assertRegex(body, r'(?s)data-day="20".*?ATL Swingman.*?\*')
 
     def test_spot_start_breaking_rest_is_rejected(self):
         response = self.as_user(self.owner).post(day_url(3), day_data(starter=self.roster.starters[0]))
@@ -515,7 +548,7 @@ class EditDayTestCase(PlanViewsTestCase):
         self.assertRegex(body, r'(?s)data-day="1".*?Opened')
         self.assertEqual(body.count("starter-slot"), 80)
         self.assertNotIn(f'href="/teams/atl/plan/1/{SEASON}/day/1/"', body)
-        self.assertEqual(body.count('class="day-lineup underline"'), 80)
+        self.assertEqual(body.count("day-lineup"), 80)
 
     def test_a_road_day_page_says_a_call_up_can_play_and_a_home_day_says_he_cannot(self):
         games = plans.half_games(self.atl, SEASON, 1)
@@ -545,25 +578,62 @@ class SchedulePlannedStartersTestCase(PlanViewsTestCase):
         games = list(plans.half_games(self.atl, SEASON, 1).values())
         home = [game for game in games if game.series.home_team_id == self.atl.id]
         road = [game for game in games if game.series.road_team_id == self.atl.id]
-        self.assertEqual(body.count('class="day-lineup underline"'), len(games))
-        self.assertEqual(body.count(">Home lineup</a>"), len(home))
-        self.assertEqual(body.count(">Road lineup</a>"), len(road))
-        self.assertIn("Road lineup and Home lineup on an open game set that day's lineup.", body)
+        self.assertEqual(body.count("day-lineup"), len(games))
+        self.assertEqual(body.count(">change this game's lineup</a>"), len(games))
+        self.assertNotIn(">Home lineup</a>", body)
+        self.assertNotIn(">Road lineup</a>", body)
+        self.assertIn("The link on an open game sets that day's lineup.", body)
         for game in (home[0], road[0]):
-            label = "Home lineup" if game in home else "Road lineup"
             self.assertIn(f'id="day-{game.day}"', body)
             self.assertIn(
-                f'href="/teams/atl/plan/1/{SEASON}/day/{game.day}/" class="day-lineup underline">{label}</a>',
+                f'href="/teams/atl/plan/1/{SEASON}/day/{game.day}/" class="day-lineup underline text-xs">change this game\'s lineup</a>',
                 body,
             )
         public = Client().get(SCHEDULE_URL).content.decode()
         self.assertNotIn("day-lineup", public)
-        self.assertNotIn("Road lineup and Home lineup", public)
+        self.assertNotIn("The link on an open game sets", public)
         self.assertIn('id="day-1"', public)
 
     def test_team_schedule_shows_the_plans_starters(self):
-        self.roster.file()
+        plan = self.roster.file()
         body = self.client.get(SCHEDULE_URL).content.decode()
-        self.assertRegex(body, r'(?s)data-day="1">.*?class="schedule-starters[^"]*">ATL Starter 1 vs -</td>')
-        self.assertRegex(body, r'(?s)data-day="6">.*?class="schedule-starters[^"]*">ATL Starter 1 vs -</td>')
-        self.assertEqual(body.count("ATL Starter 1 vs"), 17)
+        starters = plans.starters(plan)
+        self.assertIn(">Home starter<", body)
+        self.assertIn(">Away starter<", body)
+        self.assertNotIn(">Played by<", body)
+        for game in plans.half_games(self.atl, SEASON, 1).values():
+            row = re.search(rf'(?s)<tr id="day-{game.day}".*?</tr>', body).group(0)
+            is_home = game.series.home_team_id == self.atl.id
+            home = re.search(r'class="home-starter[^"]*"[^>]*>(.*?)</td>', row, re.S).group(1).strip()
+            away = re.search(r'class="away-starter[^"]*"[^>]*>(.*?)</td>', row, re.S).group(1).strip()
+            name = starters[game.day].name
+            self.assertEqual((home, away), (name, "-") if is_home else ("-", name))
+
+    def test_the_owner_drops_a_rotation_starter_on_his_side(self):
+        self.roster.file()
+        body = self.as_user(self.owner).get(SCHEDULE_URL).content.decode()
+        stack = body.split("data-stack", 1)[1].split("data-starter-grid", 1)[0]
+        for starter in self.roster.starters:
+            self.assertIn(f'data-player="{starter.id}"', stack)
+        for other in self.roster.relievers + [self.roster.swingman]:
+            self.assertNotIn(f'data-player="{other.id}"', stack)
+        self.assertIn(">Starters<", body)
+        self.assertIn("w-60", body)
+        games = list(plans.half_games(self.atl, SEASON, 1).values())
+        road = [game for game in games if game.series.road_team_id == self.atl.id]
+        self.assertEqual(body.count("schedule-away"), len(road))
+        self.assertEqual(body.count("#fff3c4"), len(road))
+        self.assertNotIn("unplayed", body)
+        self.assertEqual(body.count("schedule-play"), 1)
+        for game in games:
+            row = re.search(rf'(?s)<tr id="day-{game.day}".*?</tr>', body).group(0)
+            is_home = game.series.home_team_id == self.atl.id
+            home = re.search(r'class="home-starter[^"]*"[^>]*>(.*?)</td>', row, re.S).group(1)
+            away = re.search(r'class="away-starter[^"]*"[^>]*>(.*?)</td>', row, re.S).group(1)
+            self.assertEqual("starter-slot" in home, is_home)
+            self.assertEqual("starter-slot" in away, not is_home)
+            if is_home:
+                self.assertNotIn("schedule-play", row)
+                self.assertNotIn("schedule-away", row)
+                result = re.search(r'class="schedule-result[^"]*"[^>]*>(.*?)</td>', row, re.S).group(1)
+                self.assertEqual(result.strip(), "")

@@ -5,14 +5,14 @@ from django.http import HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.cache import never_cache
 
-from ulmg import decision_cards, models, plans, roster_moves, schedule, utils
+from ulmg import models, plans, schedule, utils
 from ulmg.season_paths import bounce, season_url
-from ulmg.views.plan import _built_cards, _int_or_none, by_last_name
+from ulmg.views.plan import _built_cards, _int_or_none
 
 
 def _team_result(game, is_home):
     if not game.is_played:
-        return "unplayed"
+        return ""
     team_score, opponent_score = (
         (game.home_score, game.road_score) if is_home else (game.road_score, game.home_score)
     )
@@ -56,6 +56,42 @@ def _planned_rows(team, season):
         for row in plans.plan_rows(plan):
             planned[row["day"]] = row
     return planned
+
+
+def _rotation_starters(team, season):
+    """Pitchers in the visible halves' rotations, in rotation order, each once."""
+    ordered = []
+    seen = set()
+    saved = {
+        plan.half: plan
+        for plan in models.HalfPlan.objects.filter(
+            team=team, season=season, half__in=plans.visible_halves()
+        )
+    }
+    for half in plans.visible_halves():
+        plan = saved.get(half)
+        if plan is None:
+            continue
+        for player_id in plan.rotation or []:
+            if player_id and player_id not in seen:
+                seen.add(player_id)
+                ordered.append(player_id)
+    players = models.Player.objects.in_bulk(ordered)
+    return [
+        players[player_id]
+        for player_id in ordered
+        if player_id in players and plans.can_pitch(players[player_id])
+    ]
+
+
+def _auto_names(team, season):
+    """day → the rotation's name for that day, or '-' when auto-fill left it empty."""
+    names = {}
+    saved = models.HalfPlan.objects.filter(team=team, season=season, half__in=plans.visible_halves())
+    days = models.HalfPlanDay.objects.filter(plan__in=saved).select_related("auto_starter")
+    for row in days:
+        names[row.day] = row.auto_starter.name if row.auto_starter_id else "-"
+    return names
 
 
 def _save_starters(request, team, season):
@@ -129,15 +165,17 @@ def team_schedule(request, abbreviation, season=None):
     next_road = schedule.next_unplayed_road_game(owner_team, season) if owner_team else None
     logged = set(models.GameLog.objects.filter(game__in=games).values_list("game_id", flat=True))
 
-    roster_ids = set()
-    for half in plans.visible_halves():
-        roster_ids |= roster_moves.HalfRosters(team, season, half).all
-    pitchers = [
-        player
-        for player in by_last_name(models.Player.objects.filter(id__in=roster_ids))
-        if plans.can_pitch(player)
-    ]
-    pitcher_cards = _built_cards(pitchers, season, "p") if can_edit else {}
+    starters = _rotation_starters(team, season)
+    starter_ids = {player.id for player in starters}
+    manual_ids = set()
+    for sheet in planned.values():
+        side = sheet.get("side") or {}
+        starter = side.get("starter")
+        if starter is not None and side.get("starter_manual") and starter.id not in starter_ids:
+            manual_ids.add(starter.id)
+    extra = list(models.Player.objects.filter(id__in=manual_ids)) if manual_ids else []
+    pitcher_cards = _built_cards(starters + extra, season, "p") if can_edit else {}
+    auto_names = _auto_names(team, season)
 
     rows = []
     for game in games:
@@ -146,6 +184,7 @@ def team_schedule(request, abbreviation, season=None):
         sheet = planned.get(game.day)
         side = sheet["side"] if sheet else None
         starter = side["starter"] if side else None
+        opponent_starter = side["opponent_starter"] if side else None
         manual = bool(side and side["starter_manual"])
         locked = plans.is_locked(game)
         editable = can_edit and not locked and plans.is_open(game.series.slot.half)
@@ -157,10 +196,19 @@ def team_schedule(request, abbreviation, season=None):
                 "starter": starter,
                 "starter_manual": manual,
                 "starter_card": pitcher_cards.get(starter.id) if starter else None,
-                "opponent_starter": side["opponent_starter"] if side else None,
+                "home_starter": starter if is_home else opponent_starter,
+                "away_starter": opponent_starter if is_home else starter,
+                "auto_name": auto_names.get(game.day, "-"),
+                "drop_home": editable and is_home,
+                "drop_away": editable and not is_home,
+                "is_away": not is_home,
                 "result": _team_result(game, is_home),
-                "manager_plays": own_team and not is_home,
-                "can_play": not game.is_played and (tester or (next_road is not None and game.id == next_road.id)),
+                "mine_away": own_team and not is_home,
+                "can_play": (
+                    not is_home
+                    and not game.is_played
+                    and (tester or (next_road is not None and game.id == next_road.id))
+                ),
                 "has_box": game.is_played and game.id in logged,
                 "locked": locked,
                 "editable": editable,
@@ -180,7 +228,15 @@ def team_schedule(request, abbreviation, season=None):
             }
         )
     context["rows"] = rows
-    context["pitcher_cards"] = list(pitcher_cards.values())
+    context["pitcher_cards"] = [pitcher_cards[player.id] for player in starters if player.id in pitcher_cards]
+    context["rotation_url"] = season_url(
+        "teams",
+        team.abbreviation.lower(),
+        "plan",
+        plans.current_half(),
+        season=season,
+        tail=("rotation",),
+    )
     context["designation_url"] = season_url(
         "teams",
         team.abbreviation.lower(),

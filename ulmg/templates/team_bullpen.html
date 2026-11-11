@@ -1,4 +1,4 @@
-{# ABOUTME: The closer, single-inning relief and multi-inning relief for one half. #}
+{# ABOUTME: The closer, single-inning relief, multi-inning relief, and the usage the computer follows. #}
 {# ABOUTME: Anyone can read it. The owner and the commissioner drag pitchers into the roles and save. #}
 {% extends "base.html" %}
 
@@ -9,7 +9,7 @@
 
 <div>
     <h2 class="text-lg font-bold mb-1">Bullpen</h2>
-    <p class="text-sm text-gray-600 mb-1">{{ half_note }} Name a closer, then the single-inning relievers (SIRP) and the multi-inning relievers (MIRP), in the order the computer should try them. A pitcher goes in one role. SIRP is one inning from the 6th on when the game is within three runs. MIRP is before the 6th, or when the game is not that close. The closer works a save from the 9th on.</p>
+    <p class="text-sm text-gray-600 mb-1">{{ half_note }} Name a closer, then the single-inning relievers (SIRP) and the multi-inning relievers (MIRP), in the order the computer should try them. A pitcher goes in one role. The buttons choose when the computer uses each column. The notes on the columns are the traditional usage.</p>
     <p class="text-sm text-gray-600 card-season mb-4">These cards use the {{ plan_season|add:"-1" }} MLB cards.</p>
     {% include 'includes/plan_errors.html' %}
 
@@ -27,6 +27,23 @@
         </div>
         <form method="post" class="lg:col-span-8 space-y-4 text-sm" data-bullpen>
             {% csrf_token %}
+            <fieldset>
+                <legend class="font-bold mb-1">Bullpen usage</legend>
+                {% if can_edit %}
+                <div data-bullpen-logic>
+                    <div class="flex flex-wrap gap-1">
+                        {% for choice in bullpen_logics %}
+                        <button type="button" data-bullpen-choice="{{ choice.value }}" data-note="{{ choice.note }}" class="bullpen-choice border border-gray-400 px-2 py-1{% if choice.checked %} is-selected bg-gray-800 text-white{% endif %}">{{ choice.label }}</button>
+                        {% endfor %}
+                    </div>
+                    <input type="hidden" name="bullpen_logic" value="{{ bullpen_logic }}">
+                    <p class="bullpen-logic-note text-xs text-gray-600 mt-2">{{ bullpen_logic_note }}</p>
+                </div>
+                {% else %}
+                <p class="bullpen-logic">Bullpen usage: {{ bullpen_logic_label }}</p>
+                <p class="text-xs text-gray-600">{{ bullpen_logic_note }}</p>
+                {% endif %}
+            </fieldset>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {% for group in bullpen_groups %}
                 <div data-bullpen-group="{{ group.name }}">

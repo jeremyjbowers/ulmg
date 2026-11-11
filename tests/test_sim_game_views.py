@@ -4,7 +4,7 @@
 from django.test import TestCase, override_settings
 
 from tests import game_fixtures as gf
-from ulmg import models, sim_game
+from ulmg import models, schedule, sim_game
 
 Event = models.GameEvent
 AWAY, HOME = sim_game.AWAY, sim_game.HOME
@@ -141,7 +141,14 @@ class GamePageTestCase(gf.EngineMixin, TestCase):
         self.assertNotContains(page, f'href="/games/{self.game.id}/" class="schedule-play')
         self.client.force_login(self.tester)
         page = self.client.get(f"/teams/{self.road.team.abbreviation.lower()}/schedule/{gf.SEASON}/")
-        self.assertContains(page, "schedule-play", count=162)
+        away = [
+            game
+            for game in schedule.team_games(self.road.team, gf.SEASON)
+            if game.series.road_team_id == self.road.team.id and not game.is_played
+        ]
+        self.assertContains(page, "schedule-play", count=len(away))
+        home_page = self.client.get(f"/teams/{self.home.team.abbreviation.lower()}/schedule/{gf.SEASON}/")
+        self.assertNotContains(home_page, f'href="/games/{self.game.id}/" class="schedule-play')
 
     def test_seat_changes_through_the_page_are_logged_with_the_user(self):
         self.post("open", user=self.tester, seats="home")

@@ -1,24 +1,31 @@
-{# ABOUTME: The games on a team's schedule, with the starter cell the owner edits. #}
-{# ABOUTME: An open game links to that day's lineup. Expects rows, schedule_season, own_team and editing. #}
+{# ABOUTME: The games on a team's schedule. The owner drops a starter onto his side of an open game. #}
+{# ABOUTME: His away games are marked. Expects rows, schedule_season and own_team. #}
 <div class="overflow-x-auto">
-    <table class="w-full text-sm border-collapse border border-gray-200">
+    <table class="w-full text-sm border-collapse border border-gray-200 table-fixed">
+        <colgroup>
+            <col class="w-32">
+            <col class="w-24">
+            <col>
+            <col>
+            <col class="w-28">
+        </colgroup>
         <thead class="bg-gray-50">
             <tr class="border-b border-gray-300">
                 <th class="text-left py-1 px-2 border-r border-gray-200">Game</th>
                 <th class="text-left py-1 px-2 border-r border-gray-200">Opponent</th>
-                <th class="text-left py-1 px-2 border-r border-gray-200">Starters</th>
-                <th class="text-left py-1 px-2 border-r border-gray-200">Result</th>
-                {% if own_team %}<th class="text-left py-1 px-2">Played by</th>{% endif %}
+                <th class="text-left py-1 px-2 border-r border-gray-200">Home starter</th>
+                <th class="text-left py-1 px-2 border-r border-gray-200">Away starter</th>
+                <th class="text-left py-1 px-2">Result</th>
             </tr>
         </thead>
         <tbody>
             {% for row in rows %}
-            <tr id="day-{{ row.game.day }}" class="schedule-game" data-day="{{ row.game.day }}">
-                <td class="py-1 px-2 border-r border-gray-100">{{ row.game.day }}{% if row.day_url %} <a href="{{ row.day_url }}" class="day-lineup underline">{% if row.is_home %}Home lineup{% else %}Road lineup{% endif %}</a>{% endif %}</td>
-                <td class="py-1 px-2 border-r border-gray-100">{% if row.is_home %}vs{% else %}at{% endif %} <a href="/teams/{{ row.opponent.abbreviation|lower }}/schedule/{{ schedule_season }}/" class="underline">{{ row.opponent.abbreviation }}</a></td>
-                <td class="schedule-starters py-1 px-2 border-r border-gray-100">{% if editing and row.editable %}<div class="starter-slot lineup-slot border border-dashed border-gray-300 p-1 mb-1"><div class="slot-body">{% if row.starter_manual and row.starter_card %}{% include "includes/decision_card.html" with card=row.starter_card %}{% elif row.starter %}{{ row.starter.name }}{% endif %}</div><input type="hidden" class="player-id" name="starter_{{ row.game.day }}" value="{% if row.starter_manual and row.starter %}{{ row.starter.id }}{% endif %}"><button type="button" data-clear class="underline text-xs">Rotation</button></div>{% endif %}{{ row.starter.name|default:"-" }}{% if row.starter_manual %}*{% endif %} vs {{ row.opponent_starter.name|default:"-" }}{% if row.lineup_gap %} <span class="plan-unavailable font-bold text-red-700">not on this game's roster</span>{% endif %}</td>
-                <td class="py-1 px-2 border-r border-gray-100">{{ row.result }}{% if row.locked %} <span class="plan-locked text-gray-600">{% if row.game.is_played %}Final{% else %}Opened{% endif %}</span>{% endif %}{% if row.has_box %} <a href="/games/{{ row.game.id }}/box/" class="schedule-box underline">Box score</a>{% endif %}{% if row.can_play %} <a href="/games/{{ row.game.id }}/" class="schedule-play underline font-bold">Play</a>{% endif %}</td>
-                {% if own_team %}<td class="py-1 px-2">{% if row.manager_plays %}<span class="font-bold">You play</span>{% endif %}</td>{% endif %}
+            <tr id="day-{{ row.game.day }}" class="schedule-game{% if row.mine_away %} schedule-away{% endif %}"{% if row.mine_away %} style="background-color: #fff3c4"{% endif %} data-day="{{ row.game.day }}">
+                <td class="py-1 px-2 border-r border-gray-100 align-top">{{ row.game.day }}{% if row.day_url %}<br><a href="{{ row.day_url }}" class="day-lineup underline text-xs">change this game's lineup</a>{% endif %}</td>
+                <td class="py-1 px-2 border-r border-gray-100 align-top">{% if row.is_home %}vs{% else %}at{% endif %} <a href="/teams/{{ row.opponent.abbreviation|lower }}/schedule/{{ schedule_season }}/" class="underline">{{ row.opponent.abbreviation }}</a></td>
+                <td class="home-starter py-1 px-2 border-r border-gray-100 align-top">{% include "includes/starter_cell.html" with starter=row.home_starter drop=row.drop_home ours=row.is_home %}</td>
+                <td class="away-starter py-1 px-2 border-r border-gray-100 align-top">{% include "includes/starter_cell.html" with starter=row.away_starter drop=row.drop_away ours=row.is_away %}</td>
+                <td class="schedule-result py-1 px-2 align-top">{{ row.result }}{% if row.locked %} <span class="plan-locked text-gray-600">{% if row.game.is_played %}Final{% else %}Opened{% endif %}</span>{% endif %}{% if row.has_box %} <a href="/games/{{ row.game.id }}/box/" class="schedule-box underline">Box score</a>{% endif %}{% if row.can_play %} <a href="/games/{{ row.game.id }}/" class="schedule-play underline font-bold">Play</a>{% endif %}</td>
             </tr>
             {% endfor %}
         </tbody>
