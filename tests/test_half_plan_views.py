@@ -157,6 +157,8 @@ class EditPlanTestCase(PlanViewsTestCase):
         self.assertIn('data-positions="1B,LF,CF,RF,DH"', body)
         self.assertNotIn('type="radio" name="vs_rhp_position_', body)
         self.assertIn('name="vs_rhp_position_1"', body)
+        self.assertIn("slot-well", body)
+        self.assertIn("background: #e5e7eb", body)
 
         response = client.post(EDIT_URL, form_data(self.roster), follow=True)
         self.assertRedirects(response, PLAN_URL)
