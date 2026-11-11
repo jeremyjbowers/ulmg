@@ -1877,13 +1877,12 @@ def page(log, user):
     context["pregame"] = []
     if not fold.first_pitch:
         for side in context["user_sides"]:
-            roster = models.Player.objects.filter(pk__in=play.roster(side)).order_by("name")
             context["pregame"].append(
                 {
                     "side": side,
                     "team": team_for(game, side),
                     "rows": _lineup_rows(play, side),
-                    "hitters": [p for p in roster if not plans.is_pitcher(p)],
+                    "hitters": plans.lineup_hitters(play.roster(side)),
                     "positions": plans.LINEUP_POSITIONS,
                 }
             )

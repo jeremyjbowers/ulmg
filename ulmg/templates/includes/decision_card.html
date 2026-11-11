@@ -1,11 +1,21 @@
 {# ABOUTME: One draggable player card: the numbers a manager uses to set a lineup or a starter. #}
 {# ABOUTME: Expects `card` from ulmg.decision_cards, kind h or p. Kept to two or three tight lines. #}
-<article class="decision-card border border-gray-300 bg-white px-1.5 py-0.5 text-xs leading-tight cursor-grab" draggable="true" data-player="{{ card.player.id }}" data-kind="{{ card.kind }}"{% if card.kind == "h" %} data-positions="{{ card.positions|join:',' }}"{% endif %}>
-    <div class="font-bold truncate">
-        <a href="/players/{{ card.player.id }}/" class="underline" draggable="false">{{ card.player.name }}</a>
-        {% if card.kind == "p" and card.player.throws %}({{ card.player.throws }}){% endif %}
-        {% if card.kind == "h" and card.player.bats %}{{ card.player.bats }}{% endif %}
-        {% if card.capped %} <span class="plan-capped font-bold text-red-700">past his PA cap</span>{% endif %}
+<article class="decision-card border border-gray-300 bg-white px-1.5 py-0.5 text-xs leading-tight cursor-grab" draggable="true" data-player="{{ card.player.id }}" data-kind="{{ card.kind }}"{% if card.kind == "h" %} data-positions="{{ card.positions|join:',' }}"{% endif %}{% if card.kind == "p" %} data-designation="{{ card.designation }}"{% if can_edit %} data-designation-url="{{ designation_url }}"{% endif %}{% endif %}{% if card.shade %} style="background-color: {{ card.shade }}"{% endif %}>
+    <div class="flex items-baseline gap-1">
+        <div class="font-bold truncate min-w-0 flex-1">
+            <a href="/players/{{ card.player.id }}/" class="underline" draggable="false">{{ card.player.name }}</a>
+            {% if card.kind == "p" and card.player.throws %}({{ card.player.throws }}){% endif %}
+            {% if card.kind == "h" and card.player.bats %}{{ card.player.bats }}{% endif %}
+            {% if card.capped %} <span class="plan-capped font-bold text-red-700">past his PA cap</span>{% endif %}
+        </div>
+        {% if card.kind == "p" and can_edit %}
+        <div class="shrink-0 whitespace-nowrap font-normal" title="Reliever gives a swingman the reliever innings bonus until he starts.">
+            <button type="button" draggable="false" data-designation="rotation" class="border border-gray-400 px-1 leading-none{% if card.designation != 'bullpen' %} bg-gray-800 text-white{% endif %}"{% if card.starts == 0 %} disabled title="He made no starts, so he stays a reliever."{% endif %}>Starter</button>
+            <button type="button" draggable="false" data-designation="bullpen" class="border border-gray-400 px-1 leading-none{% if card.designation == 'bullpen' %} bg-gray-800 text-white{% endif %}">Reliever</button>
+        </div>
+        {% elif card.kind == "p" %}
+        <div class="shrink-0 font-normal">{% if card.designation == "bullpen" %}Reliever{% else %}Starter{% endif %}</div>
+        {% endif %}
     </div>
     {% if card.kind == "h" %}
     <div>PA {{ card.pa_label }} &middot; {{ card.war_label }} WAR &middot; {{ card.wrc_label }} wRC+ &middot; {{ card.slash }} &middot; Spd {{ card.speed_label }}</div>

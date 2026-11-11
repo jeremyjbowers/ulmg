@@ -85,6 +85,19 @@ def is_pitcher(player):
     return player.position == models.Player.PITCHER
 
 
+def lineup_hitters(ids):
+    """
+    Hitters a lineup list offers, in name order. Only players on the MLB
+    roster now. The half's opening snapshot can still include someone who
+    has since left that roster; he is not in this list.
+    """
+    return [
+        player
+        for player in models.Player.objects.filter(id__in=ids, is_ulmg_mlb_roster=True).order_by("name")
+        if not is_pitcher(player)
+    ]
+
+
 def can_pitch(player):
     """A pitcher or a two-way player."""
     return models.Player.PITCHER in (player.position or "").split("-")

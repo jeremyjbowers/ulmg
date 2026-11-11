@@ -1,5 +1,20 @@
 {# ABOUTME: One lineup column, batting order 1-9, with a position on each slot. #}
 {# ABOUTME: Expects prefix, label, slots, positions and editable. vR and vL each get one of these. #}
+<style>
+    /* The drop well stays the height of a player card. An empty one is a grey well. */
+    .lineup-column .slot-well {
+        box-sizing: border-box;
+        display: flex;
+        min-height: 52px;
+    }
+    .lineup-column .slot-well:not(:has(.decision-card)) {
+        background: #e5e7eb;
+    }
+    .lineup-column .slot-well .decision-card {
+        flex: 1 1 auto;
+        width: 100%;
+    }
+</style>
 <div class="lineup-column" data-lineup="{{ prefix }}">
     <h3 class="font-bold border-b border-gray-300 mb-1">{{ label }}</h3>
     <ol class="space-y-1">
@@ -9,7 +24,7 @@
                 <span>{{ slot.order }}</span>
                 {% if editable %}<button type="button" data-clear class="underline">Clear</button>{% endif %}
             </div>
-            <div class="slot-body">
+            <div class="slot-body slot-well">
                 {% if slot.card %}{% include "includes/decision_card.html" with card=slot.card %}{% endif %}
             </div>
             {% if editable %}

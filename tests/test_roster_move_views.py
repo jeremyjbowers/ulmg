@@ -151,12 +151,35 @@ class PlanPagesAfterAMoveTestCase(TestCase):
         hitters = body.split(">Hitters</h3>", 1)[1].split("lg:col-span-8", 1)[0]
         return pitchers, hitters
 
-    def test_the_plan_editor_offers_call_ups_and_sent_down_players(self):
+    def hitter_stack(self, response):
+        """The hitter cards offered for a lineup, without anyone already filed into a slot."""
+        body = response.content.decode()
+        return body.split(">Hitters</h3>", 1)[1].split("lg:col-span-8", 1)[0]
+
+    def test_the_plan_editor_offers_the_current_mlb_roster(self):
         lineups = self.client.get(f"/teams/atl/plan/1/{SEASON}/edit/")
-        self.assertContains(lineups, self.option(self.sent))
+        stack = self.hitter_stack(lineups)
+        self.assertNotIn(self.option(self.sent), stack)
+        self.assertIn(self.option(self.roster.bench[0]), stack)
         self.assertNotContains(lineups, self.option(self.up))
         rotation = self.client.get(f"/teams/atl/plan/1/{SEASON}/rotation/")
         self.assertContains(rotation, self.option(self.up))
+
+    def test_a_player_removed_in_the_admin_leaves_the_lineup_lists(self):
+        removed = self.roster.bench[0]
+        kept = self.roster.bench[1]
+        removed.is_ulmg_mlb_roster = False
+        removed.save()
+
+        stack = self.hitter_stack(self.client.get(f"/teams/atl/plan/1/{SEASON}/edit/"))
+        self.assertNotIn(self.option(removed), stack)
+        self.assertIn(self.option(kept), stack)
+
+        games = [g for g in schedule.team_games(self.atl, SEASON) if g.series.slot.half == 1]
+        home = next(g for g in games if g.series.home_team_id == self.atl.id)
+        _, home_hitters = self.stacks(self.client.get(f"/teams/atl/plan/1/{SEASON}/day/{home.day}/"))
+        self.assertNotIn(self.option(removed), home_hitters)
+        self.assertIn(self.option(kept), home_hitters)
 
     def test_the_day_editor_offers_that_games_roster(self):
         games = [g for g in schedule.team_games(self.atl, SEASON) if g.series.slot.half == 1]
@@ -164,7 +187,8 @@ class PlanPagesAfterAMoveTestCase(TestCase):
         road = next(g for g in games if g.series.road_team_id == self.atl.id)
         home_pitchers, home_hitters = self.stacks(self.client.get(f"/teams/atl/plan/1/{SEASON}/day/{home.day}/"))
         self.assertNotIn(self.option(self.up), home_pitchers)
-        self.assertIn(self.option(self.sent), home_hitters)
+        self.assertNotIn(self.option(self.sent), home_hitters)
+        self.assertIn(self.option(self.roster.bench[0]), home_hitters)
         road_pitchers, road_hitters = self.stacks(self.client.get(f"/teams/atl/plan/1/{SEASON}/day/{road.day}/"))
         self.assertIn(self.option(self.up), road_pitchers)
         self.assertNotIn(self.option(self.sent), road_hitters)
