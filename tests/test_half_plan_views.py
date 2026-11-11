@@ -240,14 +240,18 @@ class EditPlanTestCase(PlanViewsTestCase):
         self.assertContains(response, "This is a")
         self.assertIsNotNone(self.saved_plan())
 
-    def test_the_editor_sends_a_call_up_to_a_road_day_on_the_schedule(self):
+    def test_the_editor_heading_names_the_half_and_the_lineups_follow(self):
         body = self.as_user(self.owner).get(EDIT_URL).content.decode()
-        self.assertIn(
-            f'href="/teams/atl/schedule/{SEASON}/" class="road-day-lineups underline">schedule</a>',
-            body,
-        )
-        self.assertIn("A call-up plays road games only, so he is not filed on these cards.", body)
-        self.assertIn("Open that road day on the", body)
+        self.assertIn(">Set first half lineups<", body)
+        self.assertLess(body.index(">Set first half lineups<"), body.index('data-lineup="vs_rhp"'))
+        self.assertLess(body.index('data-lineup="vs_rhp"'), body.index('data-lineup="vs_lhp"'))
+        self.assertNotIn("Drag a card into a slot", body)
+        self.assertNotIn("These lineups use the", body)
+        self.assertNotIn("A call-up plays road games only", body)
+        self.assertNotIn("Games 82", body)
+        self.assertNotIn("Back to the lineups", body)
+        second = self.as_user(self.owner).get(EDIT_URL.replace("/plan/1/", "/plan/2/")).content.decode()
+        self.assertIn(">Set second half lineups<", second)
 
     def test_owner_sets_the_starter_hook(self):
         client = self.as_user(self.owner)
