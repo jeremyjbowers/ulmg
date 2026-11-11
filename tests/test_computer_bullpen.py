@@ -161,6 +161,18 @@ class BullpenRolesTestCase(ComputerGameTestCase):
         self.assertEqual(decision.payload["role"], computer_manager.MIRP)
         self.assertEqual(decision.payload["group"], computer_manager.MIRP)
 
+    def test_a_quick_pen_brings_the_closer_in_for_an_eighth_inning_save(self):
+        # A game opened under the earlier name still uses that window.
+        plan = self.home.file(half=1)
+        plan.bullpen_logic = models.HalfPlan.QUICK_PEN
+        plan.save(update_fields=["bullpen_logic"])
+        gf.counter(self.home.starters[0], start_limit_outs=21)
+        log = self.open()
+        change = self.until_changes(log, HOME, 1)[0]
+        self.assertEqual(change.payload["pitcher"], self.home.relievers[0].id)
+        self.assertEqual(inning_of(log, change), 8)
+        self.assertEqual(decision_before(log, change).payload["role"], computer_manager.CLOSER)
+
     def test_with_the_multi_inning_reliever_spent_a_single_inning_arm_is_next_then_the_closer(self):
         gf.counter(self.home.starters[0], start_limit_outs=6)
         row = gf.counter(self.home.swingman)

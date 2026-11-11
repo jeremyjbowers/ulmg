@@ -1,5 +1,5 @@
-{# ABOUTME: One team's schedule. The owner sets starters by dragging pitcher cards onto open games. #}
-{# ABOUTME: Games 82-162 stay hidden until the second half is enabled. #}
+{# ABOUTME: One team's schedule. The owner drags rotation starters onto his side of an open game. #}
+{# ABOUTME: Games 82-162 stay hidden until the second half is enabled. Away games he plays are marked. #}
 {% extends "base.html" %}
 
 {% block content %}
@@ -43,22 +43,26 @@
         {% csrf_token %}
         <div class="schedule-board">
             <div class="pitcher-stack mb-4" data-stack>
-                <h3 class="font-bold border-b border-gray-300 mb-2">Pitchers</h3>
+                <h3 class="font-bold border-b border-gray-300 mb-2">Starters</h3>
+                {% if pitcher_cards %}
                 <div class="space-y-2">
                     {% for card in pitcher_cards %}
                     {% include "includes/decision_card.html" %}
                     {% endfor %}
                 </div>
+                {% else %}
+                <p class="text-xs text-gray-600">No starters selected. <a href="{{ rotation_url }}" class="underline">Set the rotation</a> to choose who appears here.</p>
+                {% endif %}
             </div>
             <div data-starter-grid>
-                {% include "includes/schedule_rows.html" with editing=True %}
+                {% include "includes/schedule_rows.html" %}
                 <button type="submit" class="mt-4 bg-gray-800 text-white rounded px-4 py-2 font-bold">Save starters</button>
             </div>
         </div>
     </form>
     {% include "includes/card_board_script.html" %}
     {% else %}
-    {% include "includes/schedule_rows.html" with editing=False %}
+    {% include "includes/schedule_rows.html" %}
     {% endif %}
     {% else %}
     <p class="text-sm">No schedule has been generated for {{ schedule_season }}.</p>

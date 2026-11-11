@@ -20,8 +20,97 @@ FALLBACK_ORDER = (MIRP, SIRP, CLOSER)
 
 # Rule 9.19(d)(1): a lead of no more than three runs, with at least an inning to pitch.
 SAVE_MAX_LEAD = 3
-# A close game is within this many runs either way. From the 6th on, that wants one inning.
+# A close game is within this many runs either way. Traditional usage wants one inning from the 6th on.
 CLOSE_RUNS = 3
+
+# Bullpen usage, the half plan's choices. Each one says when the closer and
+# single-inning relief come in. Anything they do not claim is multi-inning
+# relief. quick, normal and slow are the earlier names, still read from a
+# game that opened before the bullpen page offered these buttons.
+def _usage(
+    note,
+    *,
+    sirp_innings=(),
+    sirp_from=None,
+    closer_first=9,
+    closer="save",
+    sirp_min_lead=0,
+    sirp_max_lead=SAVE_MAX_LEAD,
+    closer_max_lead=None,
+    closer_min_lead=1,
+):
+    return {
+        "note": note,
+        "sirp_innings": sirp_innings,
+        "sirp_from": sirp_from,
+        "sirp_min_lead": sirp_min_lead,
+        "sirp_max_lead": sirp_max_lead,
+        "closer_first": closer_first,
+        "closer": closer,
+        "closer_max_lead": closer_max_lead,
+        "closer_min_lead": closer_min_lead,
+    }
+
+
+_TRADITIONAL = _usage(
+    "The closer pitches the ninth or later in a save situation. Single-inning relief pitches from the sixth "
+    "on when the game is within three runs. Multi-inning relief works before the sixth, or when the game is not that close.",
+    sirp_from=6,
+    sirp_min_lead=-CLOSE_RUNS,
+    sirp_max_lead=CLOSE_RUNS,
+)
+BULLPEN_WINDOWS = {
+    "traditional": _TRADITIONAL,
+    "normal": _TRADITIONAL,
+    "leverage": _usage(
+        "The closer comes in from the seventh on for a one- or two-run save, a ninth-inning save, "
+        "or a one-run game or a tie with a runner on. Single-inning relief pitches the sixth, seventh and eighth "
+        "when the lead is three or fewer and the closer stays in the pen. Multi-inning relief works the rest.",
+        sirp_innings=(6, 7, 8),
+        closer_first=7,
+        closer="traffic",
+    ),
+    "quick": _usage(
+        "Single-inning relief in the 6th, 7th and 8th, tied or leading by 3 or fewer. "
+        "The closer from the 8th on, in a save situation. Multi-inning relief otherwise.",
+        sirp_innings=(6, 7, 8),
+        closer_first=8,
+    ),
+    "fireman": _usage(
+        "The closer is a multi-inning ace. From the sixth on he pitches a tie or a one-run lead, "
+        "and from the eighth on a save, and he stays while that is still true. Single-inning relief holds a two- or "
+        "three-run lead in the seventh and eighth. Multi-inning relief works the rest.",
+        sirp_innings=(7, 8),
+        closer_first=6,
+        closer="fireman",
+        sirp_min_lead=2,
+    ),
+    "protect": _usage(
+        "A lead gets the good arms. Single-inning relief pitches the seventh and eighth when leading by one, two or three. "
+        "The closer pitches the ninth or later whenever the lead is three or fewer, save or not. "
+        "Tied or trailing, multi-inning relief works.",
+        sirp_innings=(7, 8),
+        closer_first=9,
+        closer="lead",
+        sirp_min_lead=1,
+        closer_max_lead=SAVE_MAX_LEAD,
+    ),
+    "save": _usage(
+        "The closer pitches the ninth only in a save of one or two runs. Single-inning relief pitches the eighth "
+        "only in a tie or a one-run lead. Multi-inning relief works the rest.",
+        sirp_innings=(8,),
+        closer_first=9,
+        closer_max_lead=2,
+        sirp_max_lead=1,
+    ),
+    "slow": _usage(
+        "Single-inning relief in the 8th, tied or leading by 3 or fewer. "
+        "The closer from the 9th on, in a save situation. Multi-inning relief otherwise.",
+        sirp_innings=(8,),
+        closer_first=9,
+    ),
+}
+DEFAULT_BULLPEN = "traditional"
 
 # The starter hook, by the half plan's setting: the share of his fatigue ceiling he may spend,
 # and the runs he may allow in the game, before the computer pulls him.
@@ -83,6 +172,47 @@ def bullpen_order(closer, sirp, mirp, others=()):
     return [closer, *sirp, *mirp, *others]
 
 
+def _window(logic):
+    return BULLPEN_WINDOWS.get(logic, BULLPEN_WINDOWS[DEFAULT_BULLPEN])
+
+
+def describe_bullpen_logic(logic):
+    """The sentence the bullpen page shows for this usage. An unknown usage reads as traditional."""
+    return _window(logic)["note"]
+
+
+def _calls_closer(window, inning, lead, runners_on, outs):
+    if inning < window["closer_first"]:
+        return False
+    mode = window["closer"]
+    save = is_save_situation(lead, runners_on, outs)
+    if mode == "save":
+        cap = window["closer_max_lead"]
+        return save and (cap is None or lead <= cap)
+    if mode == "lead":
+        return window["closer_min_lead"] <= lead <= window["closer_max_lead"]
+    if mode == "fireman":
+        if lead in (0, 1):
+            return True
+        return inning >= 8 and save
+    if mode == "traffic":
+        cap = window["closer_max_lead"]
+        if inning >= 9 and save and (cap is None or lead <= cap):
+            return True
+        if save and 0 < lead <= 2:
+            return True
+        return lead in (-1, 0, 1) and runners_on >= 1
+    return False
+
+
+def _calls_sirp(window, inning, lead):
+    if not window["sirp_min_lead"] <= lead <= window["sirp_max_lead"]:
+        return False
+    if window["sirp_from"] is not None and inning >= window["sirp_from"]:
+        return True
+    return inning in window["sirp_innings"]
+
+
 def is_save_situation(lead, runners_on, outs):
     """
     Rule 9.19(d) for a pitcher entering in the ninth inning or later: a lead
@@ -99,16 +229,18 @@ def is_save_situation(lead, runners_on, outs):
     return lead <= runners_on + 2
 
 
-def bullpen_role(inning, lead, runners_on, outs):
+def bullpen_role(inning, lead, runners_on, outs, logic=None):
     """
-    The role the situation calls for. lead is the fielding side's, negative
-    when it trails. The closer works a save from the 9th on. From the 6th
-    on, a game within three runs wants one inning. Anything earlier, or a
-    game that is not that close, wants a multi-inning arm.
+    The role the situation calls for under a bullpen usage. lead is the
+    fielding side's, negative when it trails. An unknown usage reads as
+    traditional: the closer in a save from the 9th on, single-inning relief
+    from the 6th on when the game is within three runs, and multi-inning
+    relief otherwise.
     """
-    if inning >= 9 and is_save_situation(lead, runners_on, outs):
+    window = _window(logic)
+    if _calls_closer(window, inning, lead, runners_on, outs):
         return CLOSER
-    if inning >= 6 and -CLOSE_RUNS <= lead <= CLOSE_RUNS:
+    if _calls_sirp(window, inning, lead):
         return SIRP
     return MIRP
 

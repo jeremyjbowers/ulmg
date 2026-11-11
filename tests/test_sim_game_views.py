@@ -1,5 +1,5 @@
 # ABOUTME: Tests the sim game pages over the test client against the real engine: open, step, refusals, seats and the box score.
-# ABOUTME: Also covers the schedule's Play and box score links, the public box score page and refusals shown as messages.
+# ABOUTME: Also covers the schedule's Play next and box score links, the public box score page and refusals shown as messages.
 
 from django.test import TestCase, override_settings
 
@@ -144,6 +144,10 @@ class GamePageTestCase(gf.EngineMixin, TestCase):
         page = self.client.get(f"/teams/{self.road.team.abbreviation.lower()}/schedule/{gf.SEASON}/")
         self.assertContains(page, f'href="/games/{self.game.id}/" class="play-next', count=1)
         self.assertContains(page, "play-next", count=1)
+        self.assertNotContains(page, "schedule-play")
+        home_page = self.client.get(f"/teams/{self.home.team.abbreviation.lower()}/schedule/{gf.SEASON}/")
+        self.assertNotContains(home_page, f'href="/games/{self.game.id}/" class="play-next')
+        self.assertNotContains(home_page, "schedule-play")
 
     def test_seat_changes_through_the_page_are_logged_with_the_user(self):
         self.post("open", user=self.tester, seats="home")

@@ -131,7 +131,10 @@
 
     function clearSlot(slot) {
         var body = slot.querySelector(".slot-body");
-        if (body) body.replaceChildren();
+        if (body) {
+            body.replaceChildren();
+            if (slot.dataset.auto) body.textContent = slot.dataset.auto;
+        }
         var input = slot.querySelector(".player-id");
         if (input) input.value = "";
         var box = slot.querySelector("[data-position-buttons]");
@@ -159,6 +162,22 @@
     }
 
     document.addEventListener("click", function (event) {
+        var usageButton = event.target.closest("button[data-bullpen-choice]");
+        if (usageButton) {
+            event.preventDefault();
+            var group = usageButton.closest("[data-bullpen-logic]");
+            group.querySelectorAll("button[data-bullpen-choice]").forEach(function (button) {
+                var on = button === usageButton;
+                button.classList.toggle("is-selected", on);
+                button.classList.toggle("bg-gray-800", on);
+                button.classList.toggle("text-white", on);
+            });
+            var input = group.querySelector("input[name=bullpen_logic]");
+            if (input) input.value = usageButton.dataset.bullpenChoice;
+            var note = group.querySelector(".bullpen-logic-note");
+            if (note) note.textContent = usageButton.dataset.note || "";
+            return;
+        }
         var designationButton = event.target.closest("button[data-designation]");
         if (designationButton) {
             event.preventDefault();

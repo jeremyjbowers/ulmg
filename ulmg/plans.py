@@ -553,6 +553,10 @@ def starter_hook_errors(starter_hook):
     return _choice_errors(starter_hook, models.HalfPlan.STARTER_HOOK_CHOICES, "starter hook")
 
 
+def bullpen_logic_errors(bullpen_logic):
+    return _choice_errors(bullpen_logic, models.HalfPlan.BULLPEN_LOGIC_CHOICES, "bullpen logic")
+
+
 def save_lineups(plan, *, lineup_vs_lhp, lineup_vs_rhp, starter_hook=None):
     """
     Save the two lineup cards and the starter hook. Lineups stay until the
@@ -643,16 +647,18 @@ def assign_starters(plan, assignments):
         return _designate(plan)
 
 
-def save_bullpen(plan, *, closer, sirp, mirp):
+def save_bullpen(plan, *, closer, sirp, mirp, bullpen_logic=None):
     """
-    Save the closer, single-inning relief and multi-inning relief.
-    Lineups, the rotation and the schedule's starters stay as they are.
-    Returns warnings to show.
+    Save the closer, single-inning relief, multi-inning relief and the
+    bullpen usage. Lineups, the rotation and the schedule's starters stay
+    as they are. A bullpen_logic of None keeps the plan's. Returns warnings
+    to show.
     """
     if not is_open(plan.half):
         raise PlanError([closed_message(plan.half)])
     rosters = roster_moves.HalfRosters(plan.team, plan.season, plan.half)
     errors = bullpen_errors(plan.team, closer, sirp, mirp, rosters.all)
+    errors += bullpen_logic_errors(bullpen_logic)
     if errors:
         raise PlanError(_unique_errors(errors))
 
@@ -661,18 +667,21 @@ def save_bullpen(plan, *, closer, sirp, mirp):
         plan.closer = closer
         plan.sirp = [p.id for p in sirp]
         plan.mirp = [p.id for p in mirp]
+        if bullpen_logic is not None:
+            plan.bullpen_logic = bullpen_logic
         plan.save()
         return _designate(plan, previous)
 
 
 def save_plan(
-    plan, *, rotation, closer, sirp, mirp, bench, lineup_vs_lhp, lineup_vs_rhp, starter_hook=None,
+    plan, *, rotation, closer, sirp, mirp, bench, lineup_vs_lhp, lineup_vs_rhp,
+    starter_hook=None, bullpen_logic=None,
 ):
     """
-    Save a half plan's rotation, bullpen, bench, lineup cards and starter
-    hook, re-run auto-fill and set swingman designations. A starter_hook of
-    None keeps the plan's. Nothing is saved when a rule is broken or a day
-    has no legal starter. Returns warnings to show.
+    Save a half plan's rotation, bullpen, bench, lineup cards, starter hook
+    and bullpen usage, re-run auto-fill and set swingman designations. A
+    starter_hook or bullpen_logic of None keeps the plan's. Nothing is saved
+    when a rule is broken or a day has no legal starter. Returns warnings to show.
     """
     if not is_open(plan.half):
         raise PlanError([closed_message(plan.half)])
@@ -685,7 +694,11 @@ def save_plan(
         "lineup_vs_lhp": list(lineup_vs_lhp),
         "lineup_vs_rhp": list(lineup_vs_rhp),
     }
-    errors = plan_errors(plan.team, plan.season, plan.half, **fields) + starter_hook_errors(starter_hook)
+    errors = (
+        plan_errors(plan.team, plan.season, plan.half, **fields)
+        + starter_hook_errors(starter_hook)
+        + bullpen_logic_errors(bullpen_logic)
+    )
     if errors:
         raise PlanError(errors)
 
@@ -701,6 +714,8 @@ def save_plan(
         plan.lineup_vs_rhp = stored_lineup(fields["lineup_vs_rhp"])
         if starter_hook is not None:
             plan.starter_hook = starter_hook
+        if bullpen_logic is not None:
+            plan.bullpen_logic = bullpen_logic
         plan.save()
         _refill(plan, rosters)
         return _designate(plan, previous)
@@ -1035,6 +1050,7 @@ class PlanBook:
             "sirp": on_roster(self._resolve(plan.sirp)) if plan else [],
             "mirp": on_roster(self._resolve(plan.mirp)) if plan else [],
             "starter_hook": plan.starter_hook if plan else models.HalfPlan.NORMAL_HOOK,
+            "bullpen_logic": plan.bullpen_logic if plan else models.HalfPlan.TRADITIONAL_PEN,
         }
 
     def opened_side(self, sheet, opponent_sheet, team):
@@ -1059,6 +1075,7 @@ class PlanBook:
             "sirp": self._resolve(sirp_ids),
             "mirp": self._resolve(mirp_ids),
             "starter_hook": sheet.get("starter_hook", models.HalfPlan.NORMAL_HOOK),
+            "bullpen_logic": sheet.get("bullpen_logic", models.HalfPlan.TRADITIONAL_PEN),
         }
 
     def sheet(self, game):
@@ -1096,6 +1113,7 @@ def _frozen_side(side):
         "sirp": [p.id for p in side["sirp"] if p],
         "mirp": [p.id for p in side["mirp"] if p],
         "starter_hook": side["starter_hook"],
+        "bullpen_logic": side["bullpen_logic"],
     }
 
 

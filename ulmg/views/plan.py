@@ -12,7 +12,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.cache import never_cache
 
-from ulmg import decision_cards, models, plans, roster_moves, usage, utils
+from ulmg import computer_manager, decision_cards, models, plans, roster_moves, usage, utils
 from ulmg.season_paths import bounce, season_url
 
 # The rotation shortcut offers six slots. Fewer than six is a shorter rotation.
@@ -252,6 +252,7 @@ def _bullpen_from_plan(plan):
         "closer": [plan.closer_id] if plan.closer_id else [],
         "sirp": list(plan.sirp or []),
         "mirp": list(plan.mirp or []),
+        "bullpen_logic": plan.bullpen_logic or models.HalfPlan.TRADITIONAL_PEN,
     }
 
 
@@ -260,6 +261,7 @@ def _bullpen_from_post(post):
         "closer": _posted_ids(post, "closer")[:1],
         "sirp": _posted_ids(post, "sirp"),
         "mirp": _posted_ids(post, "mirp"),
+        "bullpen_logic": post.get("bullpen_logic"),
     }
 
 
@@ -442,6 +444,8 @@ def _bullpen_context(request, team, half, season, state, errors):
     context = _common(request, team, half, season)
     roster = _roster(team, season, half)
     cards = _built_cards(roster["pitchers"], season, "p")
+    labels = dict(models.HalfPlan.BULLPEN_LOGIC_CHOICES)
+    logic = state["bullpen_logic"] or models.HalfPlan.TRADITIONAL_PEN
     context.update(
         {
             "errors": errors,
@@ -454,6 +458,18 @@ def _bullpen_context(request, team, half, season, state, errors):
                     "slots": _padded_slots(state[name], cards, season, count),
                 }
                 for name, label, count, note in BULLPEN_GROUPS
+            ],
+            "bullpen_logic": logic,
+            "bullpen_logic_label": labels.get(logic, logic),
+            "bullpen_logic_note": computer_manager.describe_bullpen_logic(logic),
+            "bullpen_logics": [
+                {
+                    "value": value,
+                    "label": label,
+                    "note": computer_manager.describe_bullpen_logic(value),
+                    "checked": value == logic,
+                }
+                for value, label in models.HalfPlan.BULLPEN_LOGIC_CHOICES
             ],
         }
     )
@@ -491,6 +507,7 @@ def team_plan_bullpen(request, abbreviation, half, season=None):
                     closer=found["closer"][0] if found["closer"] else None,
                     sirp=found["sirp"],
                     mirp=found["mirp"],
+                    bullpen_logic=state["bullpen_logic"],
                 )
             except plans.PlanError as error:
                 errors = error.errors

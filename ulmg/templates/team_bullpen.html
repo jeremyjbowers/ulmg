@@ -1,4 +1,4 @@
-{# ABOUTME: The closer, single-inning relief and multi-inning relief for one half. #}
+{# ABOUTME: The closer, single-inning relief, multi-inning relief, and the usage the computer follows. #}
 {# ABOUTME: Anyone can read it. The owner and the commissioner drag pitchers into the roles and save. #}
 {% extends "base.html" %}
 
@@ -25,10 +25,28 @@
         </div>
         <form method="post" class="lg:col-span-8 space-y-4 text-sm" data-bullpen>
             {% csrf_token %}
+            <fieldset>
+                <legend class="font-bold mb-1">Bullpen usage</legend>
+                {% if can_edit %}
+                <div data-bullpen-logic>
+                    <div class="flex flex-wrap gap-1">
+                        {% for choice in bullpen_logics %}
+                        <button type="button" data-bullpen-choice="{{ choice.value }}" data-note="{{ choice.note }}" class="bullpen-choice border border-gray-400 px-2 py-1{% if choice.checked %} is-selected bg-gray-800 text-white{% endif %}">{{ choice.label }}</button>
+                        {% endfor %}
+                    </div>
+                    <input type="hidden" name="bullpen_logic" value="{{ bullpen_logic }}">
+                    <p class="bullpen-logic-note text-xs text-gray-600 mt-2">{{ bullpen_logic_note }}</p>
+                </div>
+                {% else %}
+                <p class="bullpen-logic">Bullpen usage: {{ bullpen_logic_label }}</p>
+                <p class="text-xs text-gray-600">{{ bullpen_logic_note }}</p>
+                {% endif %}
+            </fieldset>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {% for group in bullpen_groups %}
                 <div data-bullpen-group="{{ group.name }}">
-                    <h3 class="font-bold border-b border-gray-300 mb-2">{{ group.label }}</h3>
+                    <h3 class="font-bold border-b border-gray-300 mb-1">{{ group.label }}</h3>
+                    <p class="text-xs text-gray-600 mb-2">{{ group.note }}</p>
                     <div class="space-y-2">
                         {% for slot in group.slots %}
                         <div class="lineup-slot border border-dashed border-gray-300 p-1">
