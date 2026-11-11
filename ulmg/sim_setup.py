@@ -10,7 +10,8 @@ from ulmg import models, plans, usage
 # - Rotation: the five pitchers with the most card-season starts (gs).
 # - Closer: the bullpen arm with the most card-season saves (sv), then holds (hld).
 # - Setup: the next two by holds, then saves.
-# - Middle and long relief: every other pitcher, in the same order.
+# - Middle relief: every other pitcher who did not start, in the same order.
+# - Long relief: every other pitcher who started, in the same order.
 # - Lineups: the nine best hitters by card wrc_plus. The best eight who can
 #   cover C, 1B, 2B, 3B, SS, LF, CF and RF field those positions (a position
 #   is playable when the card has a defense rating there), and the best
@@ -140,11 +141,13 @@ def default_plan(team, season):
     problems += lineup_problems
     in_lineup = {entry["player"].id for entry in lineup}
 
+    rest = by_holds[SETUP_ARMS:]
     fields = {
         "rotation": rotation,
         "closer": closer,
         "setup": by_holds[:SETUP_ARMS],
-        "middle_long": by_holds[SETUP_ARMS:],
+        "middle": [p for p in rest if _count(pitch_stats[p.id], "gs") == 0],
+        "long_relief": [p for p in rest if _count(pitch_stats[p.id], "gs") > 0],
         "bench": [p for p in hitters if p.id not in in_lineup],
         "lineup_vs_lhp": lineup,
         "lineup_vs_rhp": [dict(entry) for entry in lineup],

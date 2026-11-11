@@ -16,7 +16,7 @@ def form_data(roster, rotation=None, vs_lhp=None, vs_rhp=None):
         "rotation": [p.id for p in (rotation or roster.starters)],
         "closer": roster.relievers[0].id,
         "setup": [roster.relievers[1].id],
-        "middle_long": [roster.swingman.id],
+        "long_relief": [roster.swingman.id],
         "bench": [p.id for p in roster.bench],
     }
     for prefix, lineup in (("vs_lhp", vs_lhp), ("vs_rhp", vs_rhp)):
@@ -49,6 +49,7 @@ def create_owner(username, team):
 PLAN_URL = f"/teams/atl/plan/1/{SEASON}/"
 EDIT_URL = f"/teams/atl/plan/1/{SEASON}/edit/"
 ROTATION_URL = f"/teams/atl/plan/1/{SEASON}/rotation/"
+BULLPEN_URL = f"/teams/atl/plan/1/{SEASON}/bullpen/"
 DESIGNATION_URL = f"/teams/atl/plan/1/{SEASON}/designation/"
 SCHEDULE_URL = f"/teams/atl/schedule/{SEASON}/"
 
@@ -112,6 +113,13 @@ class PublicPlanTestCase(PlanViewsTestCase):
         rotation = self.client.get(ROTATION_URL).content.decode()
         self.assertIn("ATL Starter 1", rotation)
         self.assertNotIn("Push rotation to schedule", rotation)
+        bullpen = self.client.get(BULLPEN_URL).content.decode()
+        self.assertIn("ATL Reliever 1", bullpen)
+        self.assertIn("ATL Swingman", bullpen)
+        self.assertIn("Bullpen logic: Normal", bullpen)
+        self.assertNotIn("Save bullpen", bullpen)
+        self.assertLess(bullpen.index(">Schedule<"), bullpen.index(">Bullpen<"))
+        self.assertLess(bullpen.index(">Bullpen<"), bullpen.index(">Results<"))
 
     def test_plan_shows_cards_and_usage(self):
         self.roster.file()
@@ -184,6 +192,29 @@ class EditPlanTestCase(PlanViewsTestCase):
         self.assertEqual(plan.rotation, [])
         self.assertFalse(plan.days.exists())
 
+        response = client.post(
+            BULLPEN_URL,
+            {
+                "closer": self.roster.relievers[0].id,
+                "setup": [self.roster.relievers[1].id],
+                "middle": [],
+                "long_relief": [self.roster.swingman.id],
+                "bullpen_logic": "quick",
+            },
+            follow=True,
+        )
+        self.assertRedirects(response, BULLPEN_URL)
+        self.assertIn("Saved the bullpen", response.content.decode())
+        plan.refresh_from_db()
+        self.assertEqual(plan.closer_id, self.roster.relievers[0].id)
+        self.assertEqual(plan.setup, [self.roster.relievers[1].id])
+        self.assertEqual(plan.long_relief, [self.roster.swingman.id])
+        self.assertEqual(plan.bullpen_logic, models.HalfPlan.QUICK_PEN)
+        self.assertEqual(plan.rotation, [])
+        self.assertFalse(plan.days.exists())
+        self.assertIn("Long relief through the 4th", response.content.decode())
+        self.assertIn('value="quick" checked', client.get(BULLPEN_URL).content.decode())
+
         response = client.post(ROTATION_URL, {"rotation": [p.id for p in self.roster.starters]}, follow=True)
         self.assertRedirects(response, SCHEDULE_URL)
         self.assertIn("Pushed the rotation onto the schedule", response.content.decode())
@@ -201,6 +232,50 @@ class EditPlanTestCase(PlanViewsTestCase):
         self.assertIn("Starter hook: Quick", response.content.decode())
         page = client.get(EDIT_URL).content.decode()
         self.assertIn('value="quick" checked', page)
+
+    def test_the_bullpen_page_offers_each_role_and_refuses_a_pitcher_in_two_of_them(self):
+        client = self.as_user(self.owner)
+        body = client.get(BULLPEN_URL).content.decode()
+        self.assertIn("Save bullpen", body)
+        self.assertIn('data-bullpen-group="closer"', body)
+        self.assertIn('data-bullpen-group="setup"', body)
+        self.assertIn('data-bullpen-group="middle"', body)
+        self.assertIn('data-bullpen-group="long_relief"', body)
+        self.assertIn(">Long relief<", body)
+        self.assertIn('name="bullpen_logic"', body)
+        self.assertIn('value="normal" checked', body)
+        self.assertIn("Long relief through the 5th", body)
+        self.assertLess(body.index(">Set lineups<"), body.index(">Set rotation<"))
+        self.assertLess(body.index(">Set rotation<"), body.index(">Schedule<"))
+        self.assertLess(body.index(">Schedule<"), body.index(">Bullpen</span>"))
+        self.assertLess(body.index(">Bullpen</span>"), body.index(">Results<"))
+
+        response = client.post(
+            BULLPEN_URL,
+            {"closer": self.roster.relievers[0].id, "setup": [self.roster.relievers[0].id], "bullpen_logic": "normal"},
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("is in the bullpen twice", response.content.decode())
+        self.assertIsNone(self.saved_plan())
+
+    def test_an_unknown_bullpen_logic_is_refused(self):
+        self.roster.file(bullpen_logic=models.HalfPlan.SLOW_PEN)
+        response = self.as_user(self.owner).post(
+            BULLPEN_URL,
+            {"closer": self.roster.relievers[0].id, "bullpen_logic": "wild"},
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("The bullpen logic must be quick, normal or slow.", response.content.decode())
+        self.assertEqual(self.saved_plan().bullpen_logic, models.HalfPlan.SLOW_PEN)
+
+    def test_another_owner_can_read_the_bullpen_but_not_set_it(self):
+        self.roster.file()
+        client = self.as_user(self.other_owner)
+        self.assertEqual(client.get(BULLPEN_URL).status_code, 200)
+        self.assertNotIn("Save bullpen", client.get(BULLPEN_URL).content.decode())
+        response = client.post(BULLPEN_URL, {"closer": self.roster.swingman.id, "bullpen_logic": "slow"})
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(self.saved_plan().closer_id, self.roster.relievers[0].id)
 
     def test_an_unknown_starter_hook_is_refused(self):
         self.roster.file()
@@ -245,6 +320,9 @@ class EditPlanTestCase(PlanViewsTestCase):
         url = f"/teams/atl/plan/2/{SEASON}/edit/"
         client = self.as_user(self.owner)
         self.assertIn("opens after the trade break", client.get(url).content.decode())
+        bullpen = f"/teams/atl/plan/2/{SEASON}/bullpen/"
+        self.assertIn("opens after the trade break", client.get(bullpen).content.decode())
+        self.assertEqual(client.post(bullpen, {"bullpen_logic": "quick"}).status_code, 400)
         response = client.post(url, form_data(self.roster))
         self.assertEqual(response.status_code, 400)
         self.assertFalse(models.HalfPlan.objects.filter(half=2).exists())

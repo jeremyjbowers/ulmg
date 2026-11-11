@@ -1,10 +1,11 @@
-{# ABOUTME: The Game section's pages: this half's rosters, lineups, the rotation shortcut, the schedule and results. #}
+{# ABOUTME: The Game section's pages: what's next, lineups, the rotation, the schedule, the bullpen and results. #}
 {# ABOUTME: The half is the open one. Set lineups and Set rotation are the owner's names for those pages. #}
 {% firstof record_season schedule_season plan_season league_season as game_season %}
 <div class="flex flex-wrap gap-4 pb-2 mb-4 text-sm">
-    {% if game_section == "game" %}<span class="font-bold">This half</span>{% else %}<a href="/teams/{{ team.abbreviation|lower }}/game/" class="underline">This half</a>{% endif %}
+    {% if game_section == "game" %}<span class="font-bold">Up next</span>{% else %}<a href="/teams/{{ team.abbreviation|lower }}/game/" class="underline">Up next</a>{% endif %}
     {% if game_section == "lineups" %}<span class="font-bold">{% if can_edit %}Set lineups{% else %}Lineups{% endif %}</span>{% else %}<a href="/teams/{{ team.abbreviation|lower }}/plan/{% if season_half == "2h" %}2{% else %}1{% endif %}/{{ game_season }}/{% if can_edit %}edit/{% endif %}" class="underline">{% if can_edit %}Set lineups{% else %}Lineups{% endif %}</a>{% endif %}
     {% if game_section == "rotation" %}<span class="font-bold">{% if can_edit %}Set rotation{% else %}Rotation{% endif %}</span>{% else %}<a href="/teams/{{ team.abbreviation|lower }}/plan/{% if season_half == "2h" %}2{% else %}1{% endif %}/{{ game_season }}/rotation/" class="underline">{% if can_edit %}Set rotation{% else %}Rotation{% endif %}</a>{% endif %}
     {% if game_section == "schedule" %}<span class="font-bold">Schedule</span>{% else %}<a href="/teams/{{ team.abbreviation|lower }}/schedule/{{ game_season }}/" class="underline">Schedule</a>{% endif %}
+    {% if game_section == "bullpen" %}<span class="font-bold">Bullpen</span>{% else %}<a href="/teams/{{ team.abbreviation|lower }}/plan/{% if season_half == "2h" %}2{% else %}1{% endif %}/{{ game_season }}/bullpen/" class="underline">Bullpen</a>{% endif %}
     {% if game_section == "results" %}<span class="font-bold">Results</span>{% else %}<a href="/teams/{{ team.abbreviation|lower }}/results/{{ game_season }}/" class="underline">Results</a>{% endif %}
 </div>

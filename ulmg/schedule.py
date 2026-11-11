@@ -333,3 +333,55 @@ def next_unplayed_road_game(team, season):
         .order_by("day")
         .first()
     )
+
+
+# How many road series the game page lists. The current one counts.
+UPCOMING_ROAD_SERIES = 3
+
+
+def half_game_counts(team, season, half):
+    """Played and remaining games in one half, split into home and away."""
+    games = [game for game in team_games(team, season) if game.series.slot.half == half]
+
+    def side(home):
+        chosen = [game for game in games if (game.series.home_team_id == team.id) == home]
+        played = sum(1 for game in chosen if game.is_played)
+        return {"played": played, "left": len(chosen) - played}
+
+    return {"home": side(True), "away": side(False)}
+
+
+def upcoming_road_series(team, season, half, limit=UPCOMING_ROAD_SERIES):
+    """
+    The next road series in this half that still have an unplayed game, up to
+    limit, in day order. Each series lists only its unplayed games. Home
+    series are left out: the manager plays the road.
+    """
+    road = [
+        game
+        for game in team_games(team, season)
+        if game.series.slot.half == half and game.series.road_team_id == team.id
+    ]
+    grouped = []
+    current = None
+    for game in road:
+        if current is None or current["id"] != game.series_id:
+            current = {"id": game.series_id, "opponent": game.series.home_team, "games": []}
+            grouped.append(current)
+        current["games"].append(game)
+    upcoming = []
+    for series in grouped:
+        left = [game for game in series["games"] if not game.is_played]
+        if not left:
+            continue
+        upcoming.append(
+            {
+                "opponent": series["opponent"],
+                "played": len(series["games"]) - len(left),
+                "left": len(left),
+                "games": left,
+            }
+        )
+        if len(upcoming) == limit:
+            break
+    return upcoming

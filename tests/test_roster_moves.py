@@ -307,7 +307,8 @@ class PlanEligibilityTestCase(RosterMoveTestCase):
             "rotation": self.roster.starters,
             "closer": self.roster.relievers[0],
             "setup": [],
-            "middle_long": [self.roster.swingman],
+            "middle": [],
+            "long_relief": [self.roster.swingman],
             "bench": [self.roster.bench[0]],
             "lineup_vs_lhp": self.roster.lineup(),
             "lineup_vs_rhp": self.roster.lineup(),
@@ -375,9 +376,9 @@ class PlanEligibilityTestCase(RosterMoveTestCase):
         home = next(g for g in home_games(self.atl) if g.day == home_day)
         self.assertEqual(plans.game_sheet(home)["home"]["starter"], swingman)
         # He stays in the home bullpen and leaves the road one.
-        self.assertIn(swingman, plans.game_sheet(home)["home"]["middle_long"])
+        self.assertIn(swingman, plans.game_sheet(home)["home"]["long_relief"])
         road = road_games(self.atl)[0]
-        self.assertNotIn(swingman, plans.game_sheet(road)["road"]["middle_long"])
+        self.assertNotIn(swingman, plans.game_sheet(road)["road"]["long_relief"])
         with self.assertRaisesMessage(plans.PlanError, "sent down and can be planned into home games only"):
             plans.save_day(self.plan, road.day, starter=swingman)
 
