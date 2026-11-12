@@ -1,6 +1,7 @@
 {# ABOUTME: The sim game page: open a game, then play it one plate appearance per POST with both cards, the odds and usage in view. #}
 {# ABOUTME: Every form carries the log position it expects; a seat nobody holds is the computer's, and the box score shows at the final. #}
 {% extends "base.html" %}
+{% load static %}
 
 {% block extrahead %}
 {% include "includes/game_style.html" %}
@@ -50,7 +51,6 @@
 
     {% if not final %}
     <div class="game-stage">
-        {% include "includes/game_controls.html" %}
         {% if paused %}
         <div class="game-paused border border-red-300 bg-red-50 px-3 py-2 text-sm">
             <p class="mb-2">{{ paused.reason }} The game waits for a roster move or a commissioner override.</p>
@@ -79,14 +79,22 @@
                 <p class="game-scoreline">{{ away_team.abbreviation }} {{ score.away }} · {{ home_team.abbreviation }} {{ score.home }}</p>
                 <p>Day {{ game.day }} · {{ half }} {{ inning }} · {{ outs }} out{{ outs|pluralize }}
                     <span class="out-pips" aria-hidden="true">{% for pip in "123" %}<span class="{% if forloop.counter <= outs %}is-out{% endif %}"></span>{% endfor %}</span>
-                    · {{ batting_team.abbreviation }} batting</p>
+                    · {{ batting_team.abbreviation }} batting
+                    <span class="base-diamond" aria-hidden="true">
+                        <span class="base base-2{% if field.bases.second %} is-on{% endif %}"></span>
+                        <span class="base base-3{% if field.bases.third %} is-on{% endif %}"></span>
+                        <span class="base base-1{% if field.bases.first %} is-on{% endif %}"></span>
+                    </span>
+                </p>
                 <p class="game-runners">Runners: {% for base, runner in runners %}{{ runner.name }} on {{ base }}{% if not forloop.last %}, {% endif %}{% empty %}none{% endfor %}</p>
+                {% if field.banner %}<p class="game-result">{{ field.banner.label }}{% if field.banner.count %} {{ field.banner.count }}{% endif %}</p>{% endif %}
             </div>
-            {% if box.innings %}
-            <div class="game-line">{% include "includes/line_score.html" %}</div>
-            {% endif %}
         </div>
+        {% if box.innings %}
+        <div class="game-line">{% include "includes/line_score.html" %}</div>
+        {% endif %}
         {% include "includes/game_field.html" %}
+        {% include "includes/game_controls.html" %}
     </div>
     {% endif %}
 
@@ -186,4 +194,8 @@
     </div>
     {% endif %}
 </div>
+{% endblock %}
+
+{% block extrascript %}
+{% if field %}<script type="module" src="{% static 'ulmg/game_field.js' %}"></script>{% endif %}
 {% endblock %}

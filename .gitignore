@@ -18,7 +18,8 @@ app-id.txt
 *app*.yaml
 *app*.yml
 
-static/
+# Collectstatic output at the repo root. App files live in ulmg/static/.
+/static/
 public/*
 !public/.gitkeep
 

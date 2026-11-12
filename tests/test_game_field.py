@@ -1,7 +1,10 @@
-# ABOUTME: Tests the video-game field: fielder plates, the pitcher's mound card, the batter's box and the ball track.
+# ABOUTME: Tests the SNES field JSON, the HTML line score, and the kit composer the game page loads.
 # ABOUTME: The page tests play a real engine game and check the call buttons and the substitution modals.
 
+import json
 import os
+import subprocess
+from pathlib import Path
 
 from django.test import SimpleTestCase, TestCase
 
@@ -12,6 +15,7 @@ Event = models.GameEvent
 AWAY, HOME = sim_game.AWAY, sim_game.HOME
 
 STRIKEOUT = {"k": 1.0, "bb": 0.0, "hbp": 0.0, "single": 0.0, "double": 0.0, "triple": 0.0, "hr": 0.0, "bip_out": 0.0}
+ROOT = Path(__file__).resolve().parent.parent
 
 
 class FieldGeometryTest(SimpleTestCase):
@@ -22,72 +26,60 @@ class FieldGeometryTest(SimpleTestCase):
         self.assertEqual(game_field.fielding_label(0), "0.0")
 
     def test_a_right_handed_batter_stands_on_the_third_base_side(self):
-        # From behind the plate, the right-handed box is on the left of the screen.
         self.assertEqual(game_field.batter_box("R", "R"), "left")
-        self.assertLess(game_field.BATTER_BOXES["left"][0], game_field.HOME[0])
+        self.assertFalse(game_field.batter_flip("left"))
 
     def test_a_left_handed_batter_stands_on_the_first_base_side(self):
         self.assertEqual(game_field.batter_box("L", "L"), "right")
-        self.assertGreater(game_field.BATTER_BOXES["right"][0], game_field.HOME[0])
+        self.assertTrue(game_field.batter_flip("right"))
 
     def test_a_switch_hitter_stands_opposite_the_pitcher(self):
         self.assertEqual(game_field.batter_box("S", "R"), "right")
         self.assertEqual(game_field.batter_box("S", "L"), "left")
         self.assertEqual(game_field.batter_box("S", None), "left")
 
-    def test_a_single_is_a_line_drive_with_a_track_from_home(self):
+    def test_a_single_is_a_line_drive_in_world_space(self):
         ball = game_field.ball_track({"outcome": "single", "batter_id": "9", "count": {"balls": 1, "strikes": 2}})
         self.assertEqual(ball["kind"], "line")
         self.assertEqual(ball["label"], "SINGLE")
-        self.assertTrue(ball["path"].startswith(f"M {game_field.CONTACT[0]},{game_field.CONTACT[1]} Q "))
+        self.assertIn((ball["x"], ball["z"]), game_field.LANDINGS["single"])
+        self.assertEqual(ball["height_ft"], game_field.HEIGHT_FT["line"])
         self.assertEqual(ball["count"], "1-2")
 
     def test_the_same_batted_ball_lands_in_the_same_place(self):
         result = {"outcome": "line_out", "batter_id": "4", "count": {"balls": 0, "strikes": 1}}
-        self.assertEqual(game_field.ball_track(result)["path"], game_field.ball_track(result)["path"])
+        self.assertEqual(game_field.ball_track(result)["z"], game_field.ball_track(result)["z"])
 
-    def test_a_strikeout_has_a_banner_and_no_track(self):
+    def test_a_strikeout_has_a_banner_and_no_landing(self):
         self.assertIsNone(game_field.ball_track({"outcome": "strikeout", "batter_id": "1", "count": {"balls": 0, "strikes": 3}}))
         shown = game_field.result_banner({"outcome": "strikeout", "count": {"balls": 0, "strikes": 3}})
         self.assertEqual(shown["label"], "STRIKEOUT")
-        self.assertIsNone(shown["path"])
+        self.assertIsNone(shown["z"])
 
-    def test_the_result_sits_on_the_marquee_below_every_batted_ball(self):
-        # The word used to share the grass with the landing, so a single sat on top of SINGLE.
-        for outcome in game_field.LANDINGS:
-            ball = game_field.ball_track({"outcome": outcome, "batter_id": "9", "count": {"balls": 1, "strikes": 2}})
-            self.assertLess(ball["y"], game_field.PLAY_HEIGHT)
-        self.assertGreaterEqual(game_field.BANNER_Y, game_field.PLAY_HEIGHT)
-        self.assertGreater(game_field.HEIGHT, game_field.BANNER_Y)
+    def test_the_logical_field_is_the_kit_320_by_180(self):
+        self.assertEqual(game_field.LOGICAL, {"width": 320, "height": 180})
+        self.assertEqual(game_field.MIN_SCALE, 4)
 
-    def test_the_screen_is_sixteen_by_nine_and_about_900_tall(self):
-        self.assertEqual(game_field.HEIGHT, 900)
-        self.assertEqual(game_field.WIDTH * 9, game_field.HEIGHT * 16)
+    def test_world_positions_match_the_kit(self):
+        self.assertEqual(game_field.POS["CF"], (0, 315))
+        self.assertEqual(game_field.POS["P"], (0, 60.5))
+        self.assertLess(game_field.POS["3B"][0], 0)
+        self.assertGreater(game_field.POS["1B"][0], 0)
 
-    def test_the_catcher_is_larger_and_closer_than_the_outfield(self):
-        # Second deck, not a helicopter: the plate is in the foreground and center field shrinks, mildly.
-        catcher = game_field.ANCHORS["C"]
-        center = game_field.ANCHORS["CF"]
-        pitcher = game_field.ANCHORS["P"]
-        self.assertGreater(catcher[1], pitcher[1])
-        self.assertGreater(pitcher[1], center[1])
-        self.assertGreater(game_field.SCALES["C"], game_field.SCALES["CF"])
-        ratio = game_field.SCALES["CF"] / game_field.SCALES["C"]
-        self.assertGreater(ratio, 0.55)
-        self.assertLess(ratio, 0.8)
+    def test_skin_is_stable_for_a_player(self):
+        self.assertEqual(game_field.skin_for(4), game_field.skin_for(4))
+        self.assertIn(game_field.skin_for(4), game_field.SKINS)
+        self.assertEqual(len({game_field.skin_for(i) for i in range(6)}), 3)
 
-    def test_home_wears_white_and_the_road_wears_dark(self):
-        home = game_field.uniform("home")
-        away = game_field.uniform("away")
-        self.assertEqual(home["jersey"], "#f4f1e8")
-        self.assertEqual(away["jersey"], "#3a4150")
-        self.assertNotEqual(home["pants"], away["pants"])
-
-    def test_the_fielders_do_not_all_use_one_stance(self):
-        poses = {game_field.stance(position, 4) for position in ("SS", "1B", "LF", "CF", "RF")}
-        self.assertGreaterEqual(len(poses), 2)
-        self.assertEqual(game_field.stance("LF", 4), game_field.stance("LF", 4))
-        self.assertIn(game_field.stance("SS", 4), game_field.STANCES)
+    def test_the_composer_draws_kit_sprites_at_an_integer_scale(self):
+        result = subprocess.run(
+            ["node", str(ROOT / "tests" / "js" / "test_game_field.mjs")],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("ok", result.stdout)
 
 
 class GameFieldPageTest(gf.EngineMixin, TestCase):
@@ -109,21 +101,25 @@ class GameFieldPageTest(gf.EngineMixin, TestCase):
     def expected(self):
         return sim_game.Play(self.log()).sequence
 
-    def field_markup(self, response):
+    def field_data(self, response):
         html = response.content.decode()
-        return html.split('class="game-field"', 1)[1].split("</svg>", 1)[0]
+        blob = html.split('id="game-field-data"', 1)[1].split(">", 1)[1].split("</script>", 1)[0]
+        return json.loads(blob)
 
     def test_the_field_names_every_fielder_with_his_position_and_fielding_value(self):
         self.post("open", seats="away,home")
         response = self.client.get(self.url)
-        field = self.field_markup(response)
-        self.assertIn(self.home.catcher.name, field)
-        self.assertIn('data-position="C"', field)
-        self.assertIn('data-fielding="+4.0"', field)
+        field = self.field_data(response)
+        catcher = next(f for f in field["fielders"] if f["position"] == "C")
+        self.assertEqual(catcher["name"], self.home.catcher.name)
+        self.assertEqual(catcher["fielding"], "+4.0")
+        self.assertEqual(catcher["sprite"], "catcher")
+        self.assertEqual((catcher["x"], catcher["z"]), game_field.POS["C"])
+        names = {f["name"] for f in field["fielders"]}
         for fielder in self.home.fielders:
-            self.assertIn(fielder.name, field)
-            self.assertIn('data-fielding="+1.5"', field)
-        self.assertNotIn(f'data-name="{self.home.hitters[-1].name}"', field)
+            self.assertIn(fielder.name, names)
+        self.assertNotIn(self.home.hitters[-1].name, names)
+        self.assertContains(response, 'src="/static/ulmg/game_field.js"')
 
     def test_the_mound_shows_xfip_pitches_and_fatigue(self):
         self.post("open", seats="away,home")
@@ -132,35 +128,38 @@ class GameFieldPageTest(gf.EngineMixin, TestCase):
         row.pitch_stats = {**row.pitch_stats, "xfip": 3.37}
         row.save(update_fields=["pitch_stats"])
         response = self.client.get(self.url)
-        field = self.field_markup(response)
+        pitcher = self.field_data(response)["pitcher"]
         fatigue = self.log().state[HOME]["fatigue"][str(starter.id)]
-        self.assertIn(starter.name, field)
-        self.assertIn('data-xfip="3.37"', field)
-        self.assertIn(f'data-pitches="{fatigue["pitches"]}"', field)
-        self.assertIn(f'data-effort="{fatigue["effort"]}"', field)
-        self.assertIn(f'data-ceiling="{fatigue["ceiling"]}"', field)
-        self.assertIn("xFIP", field)
-        self.assertIn("pitches", field)
+        self.assertEqual(pitcher["name"], starter.name)
+        self.assertEqual(pitcher["xfip"], "3.37")
+        self.assertEqual(pitcher["pitches"], fatigue["pitches"])
+        self.assertEqual(pitcher["effort"], fatigue["effort"])
+        self.assertEqual(pitcher["ceiling"], fatigue["ceiling"])
+        self.assertEqual(pitcher["sprite"], "pitch_set")
 
     def test_the_batter_stands_on_the_side_he_hits_from(self):
         self.post("open", seats="away,home")
         leadoff = self.road.hitters[0]
         response = self.client.get(self.url)
-        # The screen is 16:9 whether or not a ball has been put in play.
-        self.assertIn(f'viewBox="0 0 {game_field.WIDTH} {game_field.HEIGHT}"', response.content.decode())
-        self.assertIn('data-box="left"', self.field_markup(response))
-        self.assertIn(f'translate({game_field.BATTER_BOXES["left"][0]},', self.field_markup(response))
+        html = response.content.decode()
+        self.assertIn('id="game-field-data"', html)
+        self.assertIn("min-height: 720px", html)
+        batter = self.field_data(response)["batter"]
+        self.assertEqual(batter["box"], "left")
+        self.assertFalse(batter["flip"])
 
         leadoff.bats = "L"
         leadoff.save(update_fields=["bats"])
-        response = self.client.get(self.url)
-        self.assertIn('data-box="right"', self.field_markup(response))
-        self.assertIn(f'translate({game_field.BATTER_BOXES["right"][0]},', self.field_markup(response))
+        batter = self.field_data(self.client.get(self.url))["batter"]
+        self.assertEqual(batter["box"], "right")
+        self.assertTrue(batter["flip"])
+        self.assertEqual(batter["hand"], "L")
 
         leadoff.bats = "S"
         leadoff.save(update_fields=["bats"])
-        response = self.client.get(self.url)
-        self.assertIn('data-box="right"', self.field_markup(response))
+        batter = self.field_data(self.client.get(self.url))["batter"]
+        self.assertEqual(batter["box"], "right")
+        self.assertTrue(batter["flip"])
 
     def test_hit_and_run_and_steal_are_buttons_that_resolve_the_plate_appearance(self):
         self.post("open", seats="away,home")
@@ -174,26 +173,22 @@ class GameFieldPageTest(gf.EngineMixin, TestCase):
         response = self.post("step", expected=self.expected(), call="steal")
         self.assertEqual(gf.events(self.log(), Event.CALL)[-1].payload["call"], "steal")
 
-    def test_a_ball_in_play_draws_a_track_and_a_strikeout_does_not(self):
+    def test_a_ball_in_play_has_a_landing_and_a_strikeout_does_not(self):
         self.post("open", seats="away,home")
-        # A home run is in play no matter the defense. A strikeout never is.
         gf.set_rates([self.road.hitters[0]], gf.HOME_RUN_RATES)
         response = self.post("step", expected=self.expected())
-        field = self.field_markup(response)
+        field = self.field_data(response)
         ball = game_field.ball_track(self.log().state["last_result"])
-        self.assertIn(f'viewBox="0 0 {game_field.WIDTH} {game_field.HEIGHT}"', field)
         self.assertEqual(ball["kind"], "fly")
-        self.assertIn('class="ball-track ball-track-fly"', field)
-        self.assertIn('data-kind="fly"', field)
-        self.assertIn('data-outcome="home_run"', field)
-        self.assertIn(ball["path"], field)
-        self.assertIn("HOME RUN", field)
+        self.assertEqual(field["banner"]["outcome"], "home_run")
+        self.assertEqual(field["banner"]["z"], ball["z"])
+        self.assertContains(response, "HOME RUN")
 
         gf.set_rates(self.road.hitters[1:2], STRIKEOUT)
         response = self.post("step", expected=self.expected())
-        field = self.field_markup(response)
-        self.assertNotIn("ball-track", field)
-        self.assertIn("STRIKEOUT", field)
+        field = self.field_data(response)
+        self.assertIsNone(field["banner"]["z"])
+        self.assertContains(response, "STRIKEOUT")
 
     def test_substitution_buttons_open_modals_of_the_available_players(self):
         self.post("open", seats="away,home")
@@ -203,9 +198,8 @@ class GameFieldPageTest(gf.EngineMixin, TestCase):
         self.assertIn(">Substitution<", html)
         self.assertNotIn(">Offensive substitution<", html)
         self.assertNotIn(">Defensive substitution<", html)
-        self.assertLess(html.find("Play the next plate appearance"), html.find('class="game-scoreboard'))
         self.assertLess(html.find('class="game-scoreboard'), html.find('class="game-field"'))
-        self.assertIn("100dvh", html)
+        self.assertLess(html.find('class="game-field"'), html.find("Play the next plate appearance"))
         modal = html.split('id="substitution"', 1)[1].split('id="game-after-modals"', 1)[0]
         self.assertIn(f'action="/games/{self.game.id}/pinch_hit/"', modal)
         self.assertIn(f'value="{self.road.bench[0].id}"', modal)
@@ -215,39 +209,38 @@ class GameFieldPageTest(gf.EngineMixin, TestCase):
         self.assertIn(f'value="{self.home.bench[0].id}"', modal)
         self.assertIn(f'action="/games/{self.game.id}/positions/"', modal)
 
-    def test_the_home_club_is_in_white_and_the_road_club_is_in_the_dark(self):
+    def test_the_home_club_is_home_whites_and_the_road_club_is_away(self):
         self.post("open", seats="away,home")
-        field = self.field_markup(self.client.get(self.url))
-        self.assertIn('data-position="C"', field)
-        self.assertIn('data-uniform="home"', field)
-        self.assertIn('data-uniform="away"', field)
-        self.assertIn(game_field.HOME_JERSEY, field)
-        self.assertIn(game_field.AWAY_JERSEY, field)
-        stances = {piece for piece in game_field.STANCES if f'data-stance="{piece}"' in field}
-        self.assertGreaterEqual(len(stances), 2)
+        field = self.field_data(self.client.get(self.url))
+        catcher = next(f for f in field["fielders"] if f["position"] == "C")
+        self.assertEqual(catcher["team"], "home")
+        self.assertEqual(field["batter"]["team"], "away")
+        self.assertIn(catcher["skin"], game_field.SKINS)
 
-    def test_infield_names_sit_beside_the_player(self):
+    def test_infield_names_are_tagged_from_world_positions(self):
         self.post("open", seats="away,home")
-        field = self.field_markup(self.client.get(self.url))
-        ss = field.split('data-position="SS"', 1)[1].split('data-position=', 1)[0]
-        first = field.split('data-position="1B"', 1)[1].split('data-position=', 1)[0]
-        catcher = field.split('data-position="C"', 1)[1].split("</svg>", 1)[0]
-        self.assertIn('text-anchor="end"', ss)
-        self.assertIn('text-anchor="start"', first)
-        self.assertIn('y="-150"', catcher)
+        by_pos = {f["position"]: f for f in self.field_data(self.client.get(self.url))["fielders"]}
+        self.assertLess(by_pos["SS"]["x"], 0)
+        self.assertGreater(by_pos["1B"]["x"], 0)
+        self.assertEqual((by_pos["SS"]["x"], by_pos["SS"]["z"]), game_field.POS["SS"])
+        self.assertEqual((by_pos["1B"]["x"], by_pos["1B"]["z"]), game_field.POS["1B"])
 
-    def test_the_line_score_sits_under_the_field(self):
+    def test_the_line_score_is_html_with_nine_innings_and_dashes(self):
         self.post("open", seats="away,home")
         gf.set_rates([self.road.hitters[0]], gf.HOME_RUN_RATES)
         html = self.post("step", expected=self.expected()).content.decode()
         stage = html.split('class="game-stage"', 1)[1].split('class="game-below"', 1)[0]
         self.assertLess(stage.find('class="line-score'), stage.find('class="game-field"'))
         self.assertLess(html.find('class="line-score'), html.find("Play-by-play"))
+        self.assertNotIn("line-score", html.split('id="game-field-data"', 1)[1].split("</script>", 1)[0])
         table = stage.split('class="line-score', 1)[1].split("</table>", 1)[0]
+        self.assertIn(">1<", table)
+        self.assertIn(">9<", table)
         road = table.split(self.road.team.abbreviation, 1)[1].split("</tr>", 1)[0]
         home = table.split(self.home.team.abbreviation, 1)[1].split("</tr>", 1)[0]
         self.assertIn(">1<", road)
-        self.assertIn(">X<", home)
+        self.assertIn(">-</td>", home)
+        self.assertNotIn(">X<", home)
 
     def test_batting_calls_wait_for_the_manager_who_is_batting(self):
         # Top of the first, the home manager is on the mound. Bunt, steal and hit and run are the batter's.
@@ -259,7 +252,7 @@ class GameFieldPageTest(gf.EngineMixin, TestCase):
         self.assertNotContains(response, 'value="bunt"')
         self.assertNotContains(response, 'value="steal"')
         self.assertNotContains(response, 'value="hit_and_run"')
-        self.assertLess(html.find(">Substitution<"), html.find('class="game-scoreboard'))
+        self.assertLess(html.find('class="game-scoreboard'), html.find(">Substitution<"))
 
     def test_write_preview(self):
         if os.environ.get("SAVE_GAME_HTML") != "1":
@@ -288,7 +281,6 @@ class GameFieldPageTest(gf.EngineMixin, TestCase):
         row.pitch_stats = {**row.pitch_stats, "xfip": 3.37}
         row.save(update_fields=["pitch_stats"])
         gf.set_rates(self.road.hitters, gf.HOME_RUN_RATES)
-        # A single is the line drive. Home-run rates are certain, so swap the leadoff to a pure single.
         single = {"k": 0.0, "bb": 0.0, "hbp": 0.0, "single": 1.0, "double": 0.0, "triple": 0.0, "hr": 0.0, "bip_out": 0.0}
         gf.set_rates([self.road.hitters[0]], single)
         out = "/opt/cursor/artifacts"

@@ -96,7 +96,7 @@ ulmg-mcp = "ulmg.mcp_app.server:main"
 packages = ["config", "ulmg", "ulmg.mcp_app", "ulmg.views", "ulmg.management", "ulmg.management.commands", "ulmg.templatetags"]
 
 [tool.setuptools.package-data]
-"*" = ["*.json", "*.txt", "*.csv", "*.html"]
+"*" = ["*.json", "*.txt", "*.csv", "*.html", "*.js", "*.mjs"]
 
 [dependency-groups]
 dev = [

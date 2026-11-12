@@ -1,73 +1,30 @@
-# ABOUTME: The view of one live game drawn as a field: nine fielders, the mound, the batter's box and the last batted ball.
-# ABOUTME: The screen is 16:9, seen from the second deck behind home plate, so the plate is large and the outfield shrinks.
+# ABOUTME: Live game state for the SNES field: world-space fielders, the batter's hand, the mound card and the last ball.
+# ABOUTME: The SVG itself is composed in the browser from pixelkit.mjs; this module is the JSON the page feeds it.
 
 from ulmg import cards, usage
 
-# A 16:9 screen about 900 pixels tall. The marquee is the bottom strip, under every landing.
-WIDTH = 1600
-HEIGHT = 900
-PLAY_HEIGHT = 848
-MARQUEE_HEIGHT = HEIGHT - PLAY_HEIGHT
-BANNER_Y = 884
-
-# Feet on the ground, in feet. +x is toward first base. +z is toward center field. Home is (0, 0).
-# The camera sits behind the plate and a little above it, far enough that the tilt stays mild.
-Z_NEAR = -40
-Z_FAR = 360
-SHRINK = 0.36
-SY0 = 810
-VDROP = 640
-SPREAD = 4.6
-# Foreground sprites are this many times the symbol's own size. Center field stays above half of that.
-SPRITE = 2.15
-
-GROUND = {
-    "CF": (0, 310),
-    "LF": (-145, 250),
-    "RF": (150, 248),
-    "SS": (-70, 142),
-    "2B": (74, 140),
-    "3B": (-80, 76),
-    "1B": (80, 76),
+# World feet. +x is toward first, +z toward center. Matches pixelkit POS.
+POS = {
     "P": (0, 60.5),
-    "C": (0, -22),
+    "C": (0, -10),
+    "1B": (52, 80),
+    "2B": (36, 136),
+    "SS": (-36, 136),
+    "3B": (-52, 80),
+    "LF": (-150, 255),
+    "CF": (0, 315),
+    "RF": (150, 255),
 }
 BASE_GROUND = {
     "first": (63.6, 63.6),
     "second": (0, 127.3),
     "third": (-63.6, 63.6),
 }
-# Off the bag, in foul ground or past second, so a runner's name clears the fielder.
-RUNNER_GROUND = {
-    "first": (112, 36),
-    "second": (86, 160),
-    "third": (-112, 36),
-}
-# A right-handed batter stands on the third-base side of the plate, which is the left of this view.
-BATTER_GROUND = {
-    "left": (-52, 16),
-    "right": (52, 16),
-}
-# The nameplate sits beside the body. Under the feet, the infield stacks and the marquee covers the catcher.
-LABELS = {
-    "CF": (0, 22, "middle"),
-    "LF": (0, 22, "middle"),
-    "RF": (0, 22, "middle"),
-    "SS": (-96, -72, "end"),
-    "2B": (96, -72, "start"),
-    "3B": (-100, -48, "end"),
-    "1B": (100, -48, "start"),
-    "C": (140, -150, "start"),
-}
-BATTER_LABEL = {
-    "left": (0, -160, "middle"),
-    "right": (0, -160, "middle"),
-}
+FIELDER_POSITIONS = ("CF", "LF", "RF", "SS", "2B", "3B", "1B", "C")
+SKINS = ("light", "medium", "dark")
+LOGICAL = {"width": 320, "height": 180}
+MIN_SCALE = 4
 
-# Far players are painted first. The catcher is nearest the camera, so he is last.
-DRAW_ORDER = ["CF", "LF", "RF", "SS", "2B", "3B", "1B", "C"]
-
-# Where a batted ball comes down, in the same ground feet. The index is chosen from the result.
 LANDINGS = {
     "ground_out": [(48, 100), (-42, 105), (78, 82), (-74, 80)],
     "grounded_into_double_play": [(36, 120), (-32, 118)],
@@ -83,7 +40,6 @@ LANDINGS = {
     "bunt_sacrifice": [(-12, 30), (14, 28)],
     "bip_out": [(0, 150)],
 }
-# How high the ball climbs on the way. A line drive stays low; a fly ball climbs.
 KINDS = {
     "ground_out": "ground",
     "grounded_into_double_play": "ground",
@@ -99,7 +55,7 @@ KINDS = {
     "home_run": "fly",
     "bip_out": "line",
 }
-LIFTS = {"bunt": 28, "ground": 48, "line": 110, "fly": 220}
+HEIGHT_FT = {"bunt": 4, "ground": 8, "line": 18, "fly": 40}
 BANNERS = {
     "strikeout": "STRIKEOUT",
     "walk": "WALK",
@@ -121,77 +77,10 @@ BANNERS = {
     "bip_out": "IN PLAY",
 }
 
-# Home whites, road grays. The cap and pants keep a white jersey from disappearing into the dirt.
-HOME_JERSEY = "#f4f1e8"
-AWAY_JERSEY = "#3a4150"
-STANCES = ("ready", "stand", "hands")
 
-
-def project(gx, gz):
-    """Screen x, screen y and a raw size for one spot on the ground. Larger y is closer to the camera."""
-    t = (gz - Z_NEAR) / (Z_FAR - Z_NEAR)
-    raw = 1 - SHRINK * t
-    sy = SY0 - VDROP * t
-    sx = WIDTH / 2 + gx * SPREAD * raw
-    return sx, sy, raw
-
-
-def place(gx, gz):
-    """The same spot as integers, with the sprite scale the field actually draws."""
-    x, y, raw = project(gx, gz)
-    catcher = project(*GROUND["C"])[2]
-    return round(x), round(y), round(raw / catcher * SPRITE, 3)
-
-
-def _anchors(spots):
-    return {name: place(*ground)[:2] for name, ground in spots.items()}
-
-
-def _scales(spots):
-    return {name: place(*ground)[2] for name, ground in spots.items()}
-
-
-ANCHORS = _anchors(GROUND)
-SCALES = _scales(GROUND)
-BASE_ANCHORS = _anchors(BASE_GROUND)
-RUNNER_ANCHORS = _anchors(RUNNER_GROUND)
-RUNNER_SCALES = _scales(RUNNER_GROUND)
-BATTER_BOXES = _anchors(BATTER_GROUND)
-BATTER_SCALES = _scales(BATTER_GROUND)
-HOME = place(0, 0)[:2]
-CONTACT = place(0, 12)[:2]
-
-
-def _ray(origin, through, x_limit):
-    """Follow the foul line until it leaves the frame."""
-    ox, oy = origin
-    tx, ty = through
-    dx = tx - ox
-    k = (x_limit - ox) / dx
-    return (round(ox + dx * k), round(oy + (ty - oy) * k))
-
-
-FOUL_RIGHT = _ray(HOME, BASE_ANCHORS["first"], WIDTH - 8)
-FOUL_LEFT = _ray(HOME, BASE_ANCHORS["third"], 8)
-
-
-def uniform(side):
-    """Home is in white. The road team is in gray, dark enough to read against the grass."""
-    if side == "home":
-        return {"name": "home", "jersey": HOME_JERSEY, "pants": "#f7f4ec", "cap": "#1b2430", "trim": "#c45c26"}
-    return {"name": "away", "jersey": AWAY_JERSEY, "pants": "#2a303a", "cap": "#141820", "trim": "#d5d8e0"}
-
-
-def stance(position, player_id):
-    """
-    Two or three poses, stable for one player, so the defense is not nine copies of one drawing.
-    The middle infielders are down and ready. The others share the rest.
-    """
-    if position in ("SS", "2B", "3B"):
-        return "ready"
-    if position == "1B":
-        return "stand"
-    return STANCES[(int(player_id or 0) + ord((position or "P")[:1])) % 3]
+def skin_for(player_id):
+    """A stable kit skin for one player, from his id so it does not flicker."""
+    return SKINS[int(player_id or 0) % 3]
 
 
 def fielding_label(rating):
@@ -200,6 +89,10 @@ def fielding_label(rating):
     if runs > 0:
         return f"+{runs:.1f}"
     return f"{runs:.1f}"
+
+
+def fielding_runs(rating):
+    return round(float(rating or 0) * 10, 1)
 
 
 def batter_box(bats, throws):
@@ -211,6 +104,11 @@ def batter_box(bats, throws):
     if cards.batting_side(bats, throws) == "L":
         return "right"
     return "left"
+
+
+def batter_flip(box):
+    """A left-handed batter is mirrored and stands on the first-base side."""
+    return box == "right"
 
 
 def short_name(name):
@@ -233,7 +131,7 @@ def jersey_name(player):
 
 
 def ball_track(result):
-    """The arc of one batted ball, or None when the plate appearance was not in play."""
+    """World landing of one batted ball, or None when the plate appearance was not in play."""
     if not result:
         return None
     outcome = result.get("outcome")
@@ -241,22 +139,20 @@ def ball_track(result):
     if not spots:
         return None
     gx, gz = _pick(spots, result)
-    landing = place(gx, gz)[:2]
     kind = KINDS[outcome]
-    path = _arc(CONTACT, landing, LIFTS[kind])
     return {
         "outcome": outcome,
         "kind": kind,
         "label": BANNERS.get(outcome, outcome.replace("_", " ").upper()),
-        "path": path,
-        "x": landing[0],
-        "y": landing[1],
+        "x": gx,
+        "z": gz,
+        "height_ft": HEIGHT_FT[kind],
         "count": _count(result),
     }
 
 
 def result_banner(result):
-    """The banner for the last plate appearance. In-play results also carry their track."""
+    """The banner for the last plate appearance. In-play results also carry their landing."""
     if not result or not result.get("outcome"):
         return None
     outcome = result["outcome"]
@@ -264,7 +160,10 @@ def result_banner(result):
         "outcome": outcome,
         "label": BANNERS.get(outcome, outcome.replace("_", " ").upper()),
         "count": _count(result),
-        "path": None,
+        "kind": None,
+        "x": None,
+        "z": None,
+        "height_ft": None,
     }
     track = ball_track(result)
     if track:
@@ -273,7 +172,7 @@ def result_banner(result):
 
 
 def field_view(play):
-    """Everything the field draws for a game in progress, or None once it is final."""
+    """JSON for the field composer, or None once the game is final."""
     from ulmg import sim_game
     from ulmg.models import GameEvent
 
@@ -288,73 +187,57 @@ def field_view(play):
     runners = _runners(play, state, batting)
     bases = state.get("bases") or {}
     banner = result_banner(_recent_result(play, GameEvent.PLATE_APPEARANCE))
-    fielding_uniform = uniform(fielding)
-    batting_uniform = uniform(batting)
     return {
         "fielders": fielders,
         "pitcher": pitcher,
         "batter": batter,
         "runners": runners,
         "banner": banner,
-        "fielding_color": fielding_uniform["jersey"],
-        "batting_color": batting_uniform["jersey"],
-        "fielding_uniform": fielding_uniform,
-        "batting_uniform": batting_uniform,
-        "home": {"x": HOME[0], "y": HOME[1]},
-        "mound": {"x": ANCHORS["P"][0], "y": ANCHORS["P"][1]},
-        "bases": {name: {"x": point[0], "y": point[1]} for name, point in BASE_ANCHORS.items()},
-        "foul_left": {"x": FOUL_LEFT[0], "y": FOUL_LEFT[1]},
-        "foul_right": {"x": FOUL_RIGHT[0], "y": FOUL_RIGHT[1]},
+        "bases": {
+            "first": bool(bases.get("first")),
+            "second": bool(bases.get("second")),
+            "third": bool(bases.get("third")),
+        },
         "steal_live": bool((bases.get("first") and not bases.get("second")) or (bases.get("second") and not bases.get("third"))),
         "hit_and_run_live": bool(bases.get("first")),
-        "width": WIDTH,
-        "height": HEIGHT,
-        "play_height": PLAY_HEIGHT,
-        "marquee_height": MARQUEE_HEIGHT,
-        "banner_y": BANNER_Y,
+        "width": LOGICAL["width"],
+        "height": LOGICAL["height"],
+        "scale": MIN_SCALE,
     }
 
 
-def _actor(player, x, y, scale, kit):
+def _actor(player, x, z, side):
     return {
         "name": player.name,
         "short_name": jersey_name(player),
         "player_id": player.id,
         "x": x,
-        "y": y,
-        "scale": scale,
-        "uniform": kit["name"],
-        "jersey": kit["jersey"],
-        "pants": kit["pants"],
-        "cap": kit["cap"],
-        "trim": kit["trim"],
+        "z": z,
+        "team": side,
+        "skin": skin_for(player.id),
     }
 
 
 def _fielders(play, lineup, side):
     by_position = {}
-    kit = uniform(side)
     for entry in lineup:
         position = entry.get("position")
-        if position == "DH" or position not in ANCHORS:
+        if position not in FIELDER_POSITIONS:
             continue
         player = play.player(entry["id"])
         rating = (entry.get("defense") or {}).get("rating") or 0
-        x, y = ANCHORS[position]
-        actor = _actor(player, x, y, SCALES[position], kit)
-        lx, ly, anchor = LABELS[position]
+        x, z = POS[position]
+        actor = _actor(player, x, z, side)
         actor.update(
             {
                 "position": position,
+                "rating": fielding_runs(rating),
                 "fielding": fielding_label(rating),
-                "stance": stance(position, player.id),
-                "lx": lx,
-                "ly": ly,
-                "anchor": anchor,
+                "sprite": "catcher" if position == "C" else "fielder_ready",
             }
         )
         by_position[position] = actor
-    return [by_position[position] for position in DRAW_ORDER if position in by_position]
+    return [by_position[position] for position in FIELDER_POSITIONS if position in by_position]
 
 
 def _pitcher(play, state, fielding):
@@ -366,9 +249,9 @@ def _pitcher(play, state, fielding):
     effort = 0 if fatigue.get("effort") is None else fatigue.get("effort")
     ceiling = 0 if fatigue.get("ceiling") is None else fatigue.get("ceiling")
     pitches = 0 if fatigue.get("pitches") is None else fatigue.get("pitches")
-    width = 0 if not ceiling else max(0, min(150, round(150 * float(effort) / float(ceiling))))
+    width = 0 if not ceiling else max(0, min(72, round(72 * float(pitches) / float(ceiling))))
     _hit, pitch = usage.card_stats(player, play.season)
-    actor = _actor(player, ANCHORS["P"][0], ANCHORS["P"][1], SCALES["P"], uniform(fielding))
+    actor = _actor(player, POS["P"][0], POS["P"][1], fielding)
     actor.update(
         {
             "xfip": _xfip(pitch),
@@ -378,8 +261,9 @@ def _pitcher(play, state, fielding):
             "ceiling": ceiling,
             "fatigue_label": f"{round(float(effort))}/{round(float(ceiling))}",
             "fatigue_width": width,
-            "fatigue_tone": _fatigue_tone(effort, ceiling),
+            "fatigue_tone": _fatigue_tone(pitches, ceiling),
             "throws": player.throws or "?",
+            "sprite": "pitch_set",
         }
     )
     return actor
@@ -394,25 +278,43 @@ def _batter(play, state, batting, pitcher):
         throws = None
     box = batter_box(player.bats, throws)
     hand = cards.batting_side(player.bats, throws) or player.bats or "?"
-    x, y = BATTER_BOXES[box]
-    actor = _actor(player, x, y, BATTER_SCALES[box], uniform(batting))
-    lx, ly, anchor = BATTER_LABEL[box]
-    actor.update({"hand": hand, "box": box, "lx": lx, "ly": ly, "anchor": anchor})
+    actor = _actor(player, 0, 0, batting)
+    actor.update(
+        {
+            "hand": hand,
+            "box": box,
+            "flip": batter_flip(box),
+            "slash": _slash(play, player),
+            "sprite": "bat_stance",
+        }
+    )
     return actor
 
 
 def _runners(play, state, batting):
     runners = []
-    kit = uniform(batting)
-    for base, anchor in RUNNER_ANCHORS.items():
+    for base, ground in BASE_GROUND.items():
         runner_id = (state.get("bases") or {}).get(base)
         if not runner_id:
             continue
         player = play.player(runner_id)
-        actor = _actor(player, anchor[0], anchor[1], RUNNER_SCALES[base], kit)
+        actor = _actor(player, ground[0], ground[1], batting)
         actor["base"] = base
+        actor["sprite"] = "run_a"
         runners.append(actor)
     return runners
+
+
+def _slash(play, player):
+    card = play.card(player)
+    line = card.hitter_line() if card else None
+    if not line or line.get("avg") is None or line.get("slg") is None:
+        return "—"
+    return f"{_three(line['avg'])} {_three(line['obp'])} {_three(line['slg'])}"
+
+
+def _three(n):
+    return f"{float(n):.3f}".replace("0.", ".")
 
 
 def _recent_result(play, plate_appearance):
@@ -425,13 +327,13 @@ def _recent_result(play, plate_appearance):
     return None
 
 
-def _fatigue_tone(effort, ceiling):
+def _fatigue_tone(pitches, ceiling):
     if not ceiling:
         return "ok"
-    share = float(effort) / float(ceiling)
-    if share >= 0.85:
+    share = float(pitches) / float(ceiling)
+    if share > 0.9:
         return "hot"
-    if share >= 0.7:
+    if share > 0.7:
         return "warm"
     return "ok"
 
@@ -459,11 +361,3 @@ def _pick(options, result):
     for char in key:
         total = (total * 33 + ord(char)) & 0xFFFFFFFF
     return options[total % len(options)]
-
-
-def _arc(start, landing, lift):
-    sx, sy = start
-    lx, ly = landing
-    cx = round((sx + lx) / 2)
-    cy = max(8, round((sy + ly) / 2 - lift))
-    return f"M {sx},{sy} Q {cx},{cy} {lx},{ly}"

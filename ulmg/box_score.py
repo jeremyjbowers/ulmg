@@ -26,6 +26,9 @@ BATTER_OUTS = {
 }
 GIDP = "grounded_into_double_play"
 DH = "DH"
+UNPLAYED = "-"
+SKIPPED = "X"
+MIN_LINE_INNINGS = 9
 # Box score notation for the substitution roles the game log records.
 PINCH_RUNNER = "pinch_runner"
 PINCH_NOTES = {"pinch_hitter": "ph", PINCH_RUNNER: "pr"}
@@ -163,6 +166,36 @@ def _runner(event):
 
 def _bases(bases):
     return [int(pid) for pid in bases.values() if pid is not None]
+
+
+def line_score_cells(by_inning, *, inning, half, final):
+    """
+    One cell per inning for each side: the runs, '-' if that half has not
+    been played, or 'X' if the home club did not need to bat.
+    Always at least nine innings; extra innings extend the line.
+    """
+    last = max([inning, 1] + [i for side in SIDES for i in by_inning[side]])
+    innings = list(range(1, max(MIN_LINE_INNINGS, last) + 1))
+    return {
+        "innings": innings,
+        AWAY: [_line_cell(AWAY, i, by_inning, inning, half, final) for i in innings],
+        HOME: [_line_cell(HOME, i, by_inning, inning, half, final) for i in innings],
+    }
+
+
+def _line_cell(side, i, by_inning, inning, half, final):
+    if i in by_inning[side]:
+        return by_inning[side][i]
+    if i < inning:
+        return 0
+    if i > inning:
+        return UNPLAYED
+    started = side == AWAY or half == "bottom"
+    if started:
+        return 0
+    if final and side == HOME:
+        return SKIPPED
+    return UNPLAYED
 
 
 def substitute_line(player, payload):
@@ -331,12 +364,12 @@ def box_score(log, events=None):
             PlateAppearance(index, fields, pitcher_id, score_before, dict(score), len(_bases(before["bases"])))
         )
 
-    innings = max([1] + [inning for side in SIDES for inning in by_inning[side]])
-    box.innings = list(range(1, innings + 1))
-    box.line = {
-        side: [by_inning[side].get(i, "X" if side == HOME and i == innings else 0) for i in box.innings]
-        for side in SIDES
-    }
+    played = max([1] + [inning for side in SIDES for inning in by_inning[side]])
+    current = (log.state or {}).get("inning") or played
+    half = (log.state or {}).get("half") or "top"
+    cells = line_score_cells(by_inning, inning=current, half=half, final=box.final)
+    box.innings = cells["innings"]
+    box.line = {AWAY: cells[AWAY], HOME: cells[HOME]}
     box.totals = {side: {"r": score[side], "h": hits[side], "e": 0} for side in SIDES}
     box.batting = {side: [line for slot in slots[side] for line in slot] for side in SIDES}
     box.batting_totals = {
