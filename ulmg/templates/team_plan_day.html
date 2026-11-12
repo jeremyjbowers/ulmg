@@ -47,14 +47,11 @@
             <div class="lg:col-span-8 space-y-4">
                 <div data-starter-grid>
                     <h3 class="font-bold mb-1">Starter</h3>
-                    <div class="rotation-slot lineup-slot border border-dashed border-gray-300 p-1 max-w-md">
-                        <div class="flex justify-between text-xs text-gray-500">
-                            <span>Spot start</span>
-                            <button type="button" data-clear class="underline">Rotation</button>
-                        </div>
-                        <div class="slot-body">
+                    <div class="rotation-slot lineup-slot slot-frame relative border border-dashed border-gray-300 p-1 max-w-md">
+                        <div class="slot-body slot-well">
                             {% if starter_card %}{% include "includes/decision_card.html" with card=starter_card %}{% endif %}
                         </div>
+                        <button type="button" data-clear class="slot-remove absolute top-0.5 right-0.5 z-10 border border-gray-400 bg-white px-1 leading-none text-gray-700" aria-label="Remove from this start" title="Remove from this start">&times;</button>
                         <input type="hidden" class="player-id" name="starter" value="{{ starter_id }}">
                     </div>
                     <p class="text-xs text-gray-600 mt-1">A spot start must be rested inside the series and fit his start cap. Clear it to use the rotation.</p>

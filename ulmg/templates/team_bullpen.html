@@ -8,9 +8,7 @@
 {% include "includes/game_tabs.html" with game_section="bullpen" %}
 
 <div>
-    <h2 class="text-lg font-bold mb-1">Bullpen</h2>
-    <p class="text-sm text-gray-600 mb-1">{{ half_note }} Name a closer, then the single-inning relievers (SIRP) and the multi-inning relievers (MIRP), in the order the computer should try them. A pitcher goes in one role. The buttons choose when the computer uses each column. The notes on the columns are the traditional usage.</p>
-    <p class="text-sm text-gray-600 card-season mb-4">These cards use the {{ plan_season|add:"-1" }} MLB cards.</p>
+    <h2 class="text-lg font-bold mb-4">Bullpen</h2>
     {% include 'includes/plan_errors.html' %}
 
     {% if not is_open %}

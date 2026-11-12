@@ -1,11 +1,11 @@
 {# ABOUTME: One starter cell: a name, or the drop slot on the owner's side of an open game. #}
-{# ABOUTME: Expects starter, drop, ours and row. A manual starter shows a star. #}
+{# ABOUTME: Expects starter, drop, ours and row. A manual starter shows a star. The X clears that drop. #}
 {% spaceless %}
 {% if drop %}
-<div class="starter-slot lineup-slot border border-dashed border-gray-300 p-1 w-60 max-w-full" data-auto="{{ row.auto_name }}">
-<div class="slot-body">{% if row.starter_manual and row.starter_card %}{% include "includes/decision_card.html" with card=row.starter_card %}{% else %}{{ starter.name|default:"-" }}{% endif %}</div>
+<div class="starter-slot lineup-slot slot-frame relative border border-dashed border-gray-300 p-1 w-60 max-w-full" data-auto-starter="{{ row.auto_starter_id|default_if_none:'' }}" data-auto="{{ row.auto_name }}">
+<div class="slot-body slot-well">{% if row.starter_manual and row.starter_card %}{% include "includes/decision_card.html" with card=row.starter_card %}{% else %}{{ starter.name|default:"-" }}{% endif %}</div>
 <input type="hidden" class="player-id" name="starter_{{ row.game.day }}" value="{% if row.starter_manual and row.starter %}{{ row.starter.id }}{% endif %}">
-<button type="button" data-clear class="underline text-xs">Rotation</button>
+<button type="button" data-clear class="slot-remove absolute top-0.5 right-0.5 z-10 border border-gray-400 bg-white px-1 leading-none text-gray-700" aria-label="Remove from this start" title="Remove from this start">&times;</button>
 </div>{% if row.starter_manual %}*{% endif %}
 {% else %}{{ starter.name|default:"-" }}{% if ours and row.starter_manual %}*{% endif %}{% endif %}
 {% if ours and row.lineup_gap %} <span class="plan-unavailable font-bold text-red-700">not on this game's roster</span>{% endif %}

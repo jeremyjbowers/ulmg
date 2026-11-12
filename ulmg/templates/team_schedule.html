@@ -10,16 +10,39 @@
 {% include "includes/game_tabs.html" with game_section="schedule" %}
 {% include 'includes/plan_errors.html' %}
 
+<style>
+    @media (min-width: 1024px) {
+        .schedule-board {
+            display: grid;
+            grid-template-columns: minmax(26rem, 34rem) minmax(0, 1fr);
+            gap: 1rem;
+            align-items: start;
+        }
+        .pitcher-stack {
+            position: sticky;
+            top: var(--header-offset, 0px);
+            z-index: 20;
+            align-self: start;
+            max-height: calc(100vh - var(--header-offset, 0px));
+            overflow-y: auto;
+        }
+    }
+    .pitcher-stack .decision-card .truncate {
+        overflow: visible;
+        text-overflow: unset;
+        white-space: normal;
+    }
+</style>
+
 <div class="mb-8">
-    <h2 class="text-lg font-bold mb-2">{{ schedule_season }} schedule</h2>
-    <p class="text-sm text-gray-600 mb-4">Game numbers are league days. This is where starters are set.{% if can_edit %} The link on an open game sets that day's lineup.{% endif %}{% if not second_half_open %} Games 82–162 are hidden until the second half is enabled.{% endif %} <a href="/schedule/{{ schedule_season }}/" class="underline">League schedule</a></p>
+    <h2 class="text-lg font-bold mb-4">{{ schedule_season }} schedule</h2>
 
     {% if rows %}
     {% if can_edit %}
     <form method="post">
         {% csrf_token %}
-        <div class="lg:flex lg:gap-4">
-            <div class="mb-4 w-60 shrink-0" data-stack>
+        <div class="schedule-board">
+            <div class="pitcher-stack mb-4" data-stack>
                 <h3 class="font-bold border-b border-gray-300 mb-2">Starters</h3>
                 {% if pitcher_cards %}
                 <div class="space-y-2">
@@ -31,7 +54,7 @@
                 <p class="text-xs text-gray-600">No starters selected. <a href="{{ rotation_url }}" class="underline">Set the rotation</a> to choose who appears here.</p>
                 {% endif %}
             </div>
-            <div class="min-w-0 flex-1" data-starter-grid>
+            <div data-starter-grid>
                 {% include "includes/schedule_rows.html" %}
                 <button type="submit" class="mt-4 bg-gray-800 text-white rounded px-4 py-2 font-bold">Save starters</button>
             </div>

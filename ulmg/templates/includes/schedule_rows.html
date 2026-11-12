@@ -1,5 +1,23 @@
 {# ABOUTME: The games on a team's schedule. The owner drops a starter onto his side of an open game. #}
-{# ABOUTME: His away games are marked. Expects rows, schedule_season and own_team. #}
+{# ABOUTME: Away games he plays are marked. A start is a drag well and an X, not a lineup link. #}
+<style>
+    .starter-slot .slot-well {
+        box-sizing: border-box;
+        display: flex;
+        min-height: 52px;
+    }
+    .starter-slot .slot-well:not(:has(.decision-card)) {
+        background: #e5e7eb;
+    }
+    .starter-slot:not(:has(.decision-card)) .slot-remove {
+        display: none;
+    }
+    .starter-slot .slot-well .decision-card {
+        flex: 1 1 auto;
+        width: 100%;
+        padding-right: 1.25rem;
+    }
+</style>
 <div class="overflow-x-auto">
     <table class="w-full text-sm border-collapse border border-gray-200 table-fixed">
         <colgroup>
@@ -21,11 +39,11 @@
         <tbody>
             {% for row in rows %}
             <tr id="day-{{ row.game.day }}" class="schedule-game{% if row.mine_away %} schedule-away{% endif %}"{% if row.mine_away %} style="background-color: #fff3c4"{% endif %} data-day="{{ row.game.day }}">
-                <td class="py-1 px-2 border-r border-gray-100 align-top">{{ row.game.day }}{% if row.day_url %}<br><a href="{{ row.day_url }}" class="day-lineup underline text-xs">change this game's lineup</a>{% endif %}</td>
+                <td class="py-1 px-2 border-r border-gray-100 align-top">Game {{ row.game.day }}</td>
                 <td class="py-1 px-2 border-r border-gray-100 align-top">{% if row.is_home %}vs{% else %}at{% endif %} <a href="/teams/{{ row.opponent.abbreviation|lower }}/schedule/{{ schedule_season }}/" class="underline">{{ row.opponent.abbreviation }}</a></td>
                 <td class="home-starter py-1 px-2 border-r border-gray-100 align-top">{% include "includes/starter_cell.html" with starter=row.home_starter drop=row.drop_home ours=row.is_home %}</td>
                 <td class="away-starter py-1 px-2 border-r border-gray-100 align-top">{% include "includes/starter_cell.html" with starter=row.away_starter drop=row.drop_away ours=row.is_away %}</td>
-                <td class="schedule-result py-1 px-2 align-top">{{ row.result }}{% if row.locked %} <span class="plan-locked text-gray-600">{% if row.game.is_played %}Final{% else %}Opened{% endif %}</span>{% endif %}{% if row.has_box %} <a href="/games/{{ row.game.id }}/box/" class="schedule-box underline">Box score</a>{% endif %}{% if row.can_play %} <a href="/games/{{ row.game.id }}/" class="schedule-play underline font-bold">Play</a>{% endif %}</td>
+                <td class="schedule-result py-1 px-2 align-top">{{ row.result }}{% if row.locked %} <span class="plan-locked text-gray-600">{% if row.game.is_played %}Final{% else %}Opened{% endif %}</span>{% endif %}{% if row.has_box %} <a href="/games/{{ row.game.id }}/box/" class="schedule-box underline">Box score</a>{% endif %}</td>
             </tr>
             {% endfor %}
         </tbody>

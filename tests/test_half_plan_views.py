@@ -2,11 +2,12 @@
 # ABOUTME: Posts real forms over the test client as the owner, another owner, the commissioner and logged out.
 
 import re
+from unittest.mock import patch
 
 from django.contrib.auth.models import User
 from django.test import Client, TestCase, override_settings
 
-from ulmg import decision_cards, models, plans, usage
+from ulmg import decision_cards, models, plans, schedule, usage
 from ulmg.views.plan import by_last_name
 from tests.plan_fixtures import SEASON, Roster, create_hitter, create_pitcher, create_season
 
@@ -127,8 +128,11 @@ class PublicPlanTestCase(PlanViewsTestCase):
         self.assertIn(">MIRP<", bullpen)
         self.assertNotIn("Bullpen logic", bullpen)
         self.assertNotIn("Save bullpen", bullpen)
-        self.assertLess(bullpen.index(">Schedule<"), bullpen.index(">Bullpen<"))
-        self.assertLess(bullpen.index(">Bullpen<"), bullpen.index(">Results<"))
+        self.assertLess(bullpen.index(">Schedule<"), bullpen.index(">Lineups<"))
+        self.assertLess(bullpen.index(">Lineups<"), bullpen.index(">Rotation<"))
+        self.assertLess(bullpen.index(">Rotation<"), bullpen.index(">Bullpen<"))
+        self.assertNotIn(">Results<", bullpen)
+        self.assertNotIn(">Up next<", bullpen)
 
     def test_plan_shows_cards_and_usage(self):
         self.roster.file()
@@ -229,6 +233,7 @@ class EditPlanTestCase(PlanViewsTestCase):
         self.assertFalse(plan.days.exists())
         self.assertIn("with a runner on", response.content.decode())
         self.assertIn("One inning from the 6th on", response.content.decode())
+        self.assertNotIn("Name a closer", response.content.decode())
         saved = client.get(BULLPEN_URL).content.decode()
         self.assertIn('name="bullpen_logic" value="leverage"', saved)
         self.assertRegex(saved, r'data-bullpen-choice="leverage"[^>]*\bis-selected\b')
@@ -290,10 +295,13 @@ class EditPlanTestCase(PlanViewsTestCase):
         self.assertNotIn('type="radio"', body)
         self.assertIn("Before the 6th", body)
         self.assertIn("from the sixth", body)
-        self.assertLess(body.index(">Set lineups<"), body.index(">Set rotation<"))
-        self.assertLess(body.index(">Set rotation<"), body.index(">Schedule<"))
-        self.assertLess(body.index(">Schedule<"), body.index(">Bullpen</span>"))
-        self.assertLess(body.index(">Bullpen</span>"), body.index(">Results<"))
+        self.assertNotIn("Name a closer", body)
+        self.assertLess(body.index(">Schedule<"), body.index(">Lineups<"))
+        self.assertLess(body.index(">Lineups<"), body.index(">Rotation<"))
+        self.assertLess(body.index(">Rotation<"), body.index(">Bullpen</span>"))
+        self.assertNotIn(">Results<", body)
+        self.assertNotIn(">Set lineups<", body)
+        self.assertNotIn(">Set rotation<", body)
 
         response = client.post(
             BULLPEN_URL,
@@ -339,7 +347,9 @@ class EditPlanTestCase(PlanViewsTestCase):
         self.roster.file()
         body = self.as_user(self.owner).get(ROTATION_URL).content.decode()
         self.assertIn(f'name="rotation" value="{self.roster.starters[0].id}"', body)
-        self.assertIn("32 GS (max 34)", body)
+        self.assertIn("34 starts", body)
+        self.assertNotIn("32 GS", body)
+        self.assertNotIn("Put one to six", body)
         self.assertIn("190.0 IP", body)
 
     def test_commissioner_can_edit_any_plan(self):
@@ -515,7 +525,8 @@ class EditDayTestCase(PlanViewsTestCase):
         day_body = page.content.decode()
         self.assertEqual(day_body.count(">Clear all<"), 1)
         self.assertEqual(day_body.count('aria-label="Remove from this spot"'), 9)
-        self.assertIn(">Rotation<", day_body)
+        self.assertNotIn(">Rotation</button>", day_body)
+        self.assertIn('aria-label="Remove from this start"', day_body)
         response = client.post(day_url(20), day_data(starter=self.roster.swingman, lineup=lineup), follow=True)
         self.assertRedirects(response, SCHEDULE_URL + "#day-20", fetch_redirect_response=False)
         body = response.content.decode()
@@ -546,9 +557,10 @@ class EditDayTestCase(PlanViewsTestCase):
         self.assertEqual(response.status_code, 400)
         body = client.get(SCHEDULE_URL).content.decode()
         self.assertRegex(body, r'(?s)data-day="1".*?Opened')
-        self.assertEqual(body.count("starter-slot"), 80)
+        self.assertEqual(body.count('class="starter-slot '), 80)
         self.assertNotIn(f'href="/teams/atl/plan/1/{SEASON}/day/1/"', body)
-        self.assertEqual(body.count("day-lineup"), 80)
+        self.assertNotIn("day-lineup", body)
+        self.assertIn(">Game 1<", body)
 
     def test_a_road_day_page_says_a_call_up_can_play_and_a_home_day_says_he_cannot(self):
         games = plans.half_games(self.atl, SEASON, 1)
@@ -572,27 +584,57 @@ class EditDayTestCase(PlanViewsTestCase):
 
 
 class SchedulePlannedStartersTestCase(PlanViewsTestCase):
-    def test_open_days_link_to_that_days_lineup(self):
+    def test_the_schedule_names_games_and_does_not_edit_lineups(self):
         self.roster.file()
         body = self.as_user(self.owner).get(SCHEDULE_URL).content.decode()
         games = list(plans.half_games(self.atl, SEASON, 1).values())
-        home = [game for game in games if game.series.home_team_id == self.atl.id]
-        road = [game for game in games if game.series.road_team_id == self.atl.id]
-        self.assertEqual(body.count("day-lineup"), len(games))
-        self.assertEqual(body.count(">change this game's lineup</a>"), len(games))
-        self.assertNotIn(">Home lineup</a>", body)
-        self.assertNotIn(">Road lineup</a>", body)
-        self.assertIn("The link on an open game sets that day's lineup.", body)
-        for game in (home[0], road[0]):
-            self.assertIn(f'id="day-{game.day}"', body)
-            self.assertIn(
-                f'href="/teams/atl/plan/1/{SEASON}/day/{game.day}/" class="day-lineup underline text-xs">change this game\'s lineup</a>',
-                body,
-            )
+        self.assertNotIn("day-lineup", body)
+        self.assertNotIn("Home lineup", body)
+        self.assertNotIn("Road lineup", body)
+        self.assertNotIn("Game numbers are league days", body)
+        self.assertNotIn(">Rotation</button>", body)
+        self.assertIn('aria-label="Remove from this start"', body)
+        self.assertIn("pitcher-stack", body)
+        self.assertIn("position: sticky", body)
+        self.assertIn(">Home starter<", body)
+        self.assertIn(">Away starter<", body)
+        self.assertEqual(body.count('class="starter-slot '), len(games))
+        for game in games[:2]:
+            self.assertIn(f">Game {game.day}<", body)
+            self.assertNotIn(f'href="/teams/atl/plan/1/{SEASON}/day/{game.day}/"', body)
+        first = articles(stack_html(body), self.roster.starters[0].id)[0]
+        self.assertIn("34 starts", first)
+        self.assertIn("17 scheduled", first)
+        self.assertIn("34 remaining", first)
+        self.assertIn('draggable="true"', first)
+        self.assertNotIn("schedule-play", body)
+        nxt = schedule.next_unplayed_road_game(self.atl, SEASON)
+        self.assertIn(f'href="/games/{nxt.id}/" class="play-next', body)
+        with patch("ulmg.utils.league_season", return_value=1999):
+            dated = self.as_user(self.owner).get(SCHEDULE_URL).content.decode()
+        self.assertIn(f'href="/games/{nxt.id}/" class="play-next', dated)
         public = Client().get(SCHEDULE_URL).content.decode()
         self.assertNotIn("day-lineup", public)
-        self.assertNotIn("The link on an open game sets", public)
+        self.assertNotIn("play-next", public)
+        self.assertIn(">Game 1<", public)
         self.assertIn('id="day-1"', public)
+
+    def test_a_pitcher_with_no_starts_left_cannot_be_added_to_the_schedule(self):
+        capped = create_pitcher(self.atl, "ATL Capped", stats={"g": 2, "gs": 2, "ip": "10.0"})
+        rotation = list(self.roster.starters[:4])
+        rotation.insert(1, capped)
+        self.roster.file(rotation=rotation)
+        client = self.as_user(self.owner)
+        page = client.get(SCHEDULE_URL).content.decode()
+        card = articles(stack_html(page), capped.id)[0]
+        self.assertIn("2 starts", card)
+        self.assertIn("2 scheduled", card)
+        self.assertIn("2 remaining", card)
+        self.assertNotIn("2 GS", card)
+        self.assertIn('draggable="false"', card)
+        response = client.post(SCHEDULE_URL, {"starter_30": capped.id})
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("cap is 2 starts", response.content.decode())
 
     def test_team_schedule_shows_the_plans_starters(self):
         plan = self.roster.file()
@@ -624,7 +666,8 @@ class SchedulePlannedStartersTestCase(PlanViewsTestCase):
         self.assertEqual(body.count("schedule-away"), len(road))
         self.assertEqual(body.count("#fff3c4"), len(road))
         self.assertNotIn("unplayed", body)
-        self.assertEqual(body.count("schedule-play"), 1)
+        self.assertEqual(body.count("play-next"), 1)
+        self.assertNotIn("schedule-play", body)
         for game in games:
             row = re.search(rf'(?s)<tr id="day-{game.day}".*?</tr>', body).group(0)
             is_home = game.series.home_team_id == self.atl.id

@@ -224,14 +224,9 @@ def _lineup_positions(card, player):
     return codes
 
 
-def _starts(pitch, caps):
-    starts = usage._count(pitch, "gs")
-    cap = caps["starts_cap"] or 0
-    if starts == 0 and cap == 0:
-        return "0 GS"
-    if cap and cap != starts:
-        return f"{starts} GS (max {cap})"
-    return f"{starts} GS"
+def _starts(_pitch, caps):
+    """The ULMG starts limit. Real starts are not shown: 30 real starts and a 35-start cap shows 35."""
+    return f"{caps['starts_cap'] or 0} starts"
 
 
 def _innings(pitch, caps):

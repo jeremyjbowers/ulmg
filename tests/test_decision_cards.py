@@ -90,7 +90,7 @@ class DecisionCardTestCase(TestCase):
         above_60 = {"g": 60, "gs": 0, "ip": "65.0", "relief_minusip": "65.0", "xfip": 3.21, "war": 1.25, "k_9": 9.4, "bb_9": 2.2}
         shown = decision_cards.pitcher_card(player, above_60, None)
         cap = usage.outs_to_innings(usage.reliever_innings_cap(usage.innings_to_outs("65.0")))
-        self.assertEqual(shown["starts_label"], "0 GS")
+        self.assertEqual(shown["starts_label"], "0 starts")
         self.assertEqual(shown["innings_label"], f"65.0 IP (max {cap})")
         self.assertEqual(cap, "81.0")
         self.assertEqual(shown["xfip_label"], "3.21")
@@ -110,7 +110,7 @@ class DecisionCardTestCase(TestCase):
         shown = decision_cards.pitcher_card(
             player, {"g": 32, "gs": 32, "ip": "190.0", "start_minusip": "190.0", "war": 3}, None
         )
-        self.assertEqual(shown["starts_label"], "32 GS (max 34)")
+        self.assertEqual(shown["starts_label"], "34 starts")
         self.assertEqual(shown["innings_label"], "190.0 IP")
         self.assertEqual(shown["designation"], usage.ROTATION)
 

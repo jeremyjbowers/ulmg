@@ -69,16 +69,20 @@ class GamePageTestCase(TestCase):
         self.assertLess(body.index(">Game</"), body.index("Trades & picks"))
         self.assertNotIn("First half, home", body)
         self.assertNotIn("This half", body)
-        self.assertIn(">Up next<", body)
+        self.assertNotIn(">Up next<", body)
         year = utils.league_season()
         self.assertIn(f'href="/teams/atl/plan/1/{year}/edit/"', body)
         self.assertIn(f'href="/teams/atl/schedule/{year}/"', body)
-        self.assertIn(f'href="/teams/atl/results/{year}/"', body)
-        self.assertIn(">Set lineups<", body)
-        self.assertIn(">Set rotation<", body)
+        self.assertNotIn(f'href="/teams/atl/results/{year}/"', body)
+        self.assertIn(">Lineups<", body)
+        self.assertIn(">Rotation<", body)
+        self.assertNotIn(">Set lineups<", body)
+        self.assertNotIn(">Set rotation<", body)
         self.assertIn(f'href="/teams/atl/plan/1/{year}/bullpen/"', body)
-        self.assertLess(body.index(">Schedule<"), body.index(">Bullpen<"))
-        self.assertLess(body.index(">Bullpen<"), body.index(">Results<"))
+        self.assertLess(body.index(">Schedule<"), body.index(">Lineups<"))
+        self.assertLess(body.index(">Lineups<"), body.index(">Rotation<"))
+        self.assertLess(body.index(">Rotation<"), body.index(">Bullpen<"))
+        self.assertNotIn(">Results<", body)
         self.assertIn('id="plan-gaps"', body)
         for note in (
             "Lineups are not filed.",
@@ -96,8 +100,9 @@ class GamePageTestCase(TestCase):
         self.assertIn('data-day="1"', series)
         self.assertIn("No starter", series)
         game = models.ScheduleGame.objects.get(series__road_team=self.atl, day=1)
-        self.assertIn(f'href="/games/{game.id}/"', series)
-        self.assertEqual(series.count("schedule-play"), 1)
+        self.assertIn(f'href="/games/{game.id}/" class="play-next', body)
+        self.assertEqual(body.count("play-next"), 1)
+        self.assertNotIn("schedule-play", body)
 
     def test_a_played_road_game_counts_and_drops_off_the_list(self):
         game = models.ScheduleGame.objects.get(series__road_team=self.atl, day=1)
@@ -112,8 +117,9 @@ class GamePageTestCase(TestCase):
         self.assertIn("1 played, 2 left", listed)
         self.assertNotIn('data-side="home"', body)
         nxt = models.ScheduleGame.objects.get(series__road_team=self.atl, day=2)
-        self.assertEqual(body.count("schedule-play"), 1)
-        self.assertIn(f'href="/games/{nxt.id}/"', body)
+        self.assertEqual(body.count("play-next"), 1)
+        self.assertIn(f'href="/games/{nxt.id}/" class="play-next', body)
+        self.assertNotIn("schedule-play", body)
 
     def test_a_home_series_stays_off_the_list(self):
         foe = models.Team.objects.create(
@@ -161,7 +167,7 @@ class GamePageTestCase(TestCase):
         self.assertIn('class="opening-roster-player', roster)
         self.assertNotIn("Send down</a>", roster)
         self.assertNotIn('href="/teams/atl/plan/', roster)
-        self.assertNotIn('href="/teams/atl/schedule/"', roster)
+        self.assertIn(f'href="/teams/atl/schedule/{utils.league_season()}/"', roster)
 
 
 def _club(abbreviation):
