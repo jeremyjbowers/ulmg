@@ -4,7 +4,17 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 <style>
-    .game-shell { max-width: 52rem; margin-left: auto; margin-right: auto; }
+    .game-shell { max-width: none; }
+    .game-stage {
+        height: calc(100dvh - var(--header-offset, 10rem) - 4.75rem);
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        min-height: 0;
+        overflow: hidden;
+    }
+    .game-below { max-width: 52rem; margin: 1.25rem auto 0; }
+    .game-hud, .game-line, .game-paused, .game-need { flex: 0 0 auto; }
     .game-hud {
         background: #14161f;
         color: #f4efe2;
@@ -13,7 +23,11 @@
         font-family: "Press Start 2P", ui-monospace, monospace;
         font-size: 9px;
         line-height: 1.8;
+        padding: 8px 10px;
     }
+    .game-scoreboard { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+    .game-score-copy { flex: 0 1 auto; }
+    .game-line { flex: 1 1 16rem; min-width: 14rem; }
     .game-hud .game-scoreline { color: #ffb000; font-size: 12px; line-height: 1.6; }
     .out-pips { display: inline-flex; gap: 4px; margin-left: 8px; vertical-align: middle; }
     .out-pips span {
@@ -21,17 +35,42 @@
     }
     .out-pips span.is-out { background: #ffb000; border-color: #ffb000; }
 
+    .game-line .line-score {
+        background: #14161f;
+        color: #f4efe2;
+        border: 4px solid #0c0d12;
+        box-shadow: inset 0 0 0 3px #3a3d55;
+        font-family: "Press Start 2P", ui-monospace, monospace;
+        font-size: 8px;
+        line-height: 1.6;
+    }
+    .game-line .line-score thead,
+    .game-line .line-score tr { background: #14161f; color: #f4efe2; }
+    .game-line .line-score th,
+    .game-line .line-score td {
+        border-color: #2a2d3a;
+        padding: 5px 4px;
+        color: #f4efe2;
+    }
+    .game-line .line-score .is-now { color: #ffb000; }
     .game-screen {
         background: #10131a;
         border: 4px solid #0c0d12;
         box-shadow: inset 0 0 0 4px #3a3d55, 0 8px 0 #0c0d12;
-        padding: 8px;
-        margin: 0 0 1rem;
+        padding: 0;
+        margin: 0;
+        flex: 1 1 0;
+        min-height: 0;
+        position: relative;
+        overflow: hidden;
     }
     .game-field {
-        width: 100%;
-        height: auto;
-        display: block;
+        position: absolute;
+        top: 6px;
+        left: 6px;
+        width: calc(100% - 12px);
+        height: calc(100% - 12px);
+        min-height: 0;
         shape-rendering: crispEdges;
         background: #1f7a34;
     }
@@ -44,29 +83,29 @@
         font-family: "Press Start 2P", ui-monospace, monospace;
         fill: #f7f3ea;
     }
-    .game-field .plate-name { font-size: 6px; stroke: #102616; stroke-width: 2px; paint-order: stroke fill; }
-    .game-field .plate-meta, .game-field .card-line { font-size: 5px; fill: #ffe7a3; }
-    .game-field .plate-meta { stroke: #102616; stroke-width: 2px; paint-order: stroke fill; }
-    .game-field .card-name { font-size: 6px; fill: #ffb000; }
+    .game-field .plate-name { font-size: 18px; stroke: #102616; stroke-width: 4px; paint-order: stroke fill; }
+    .game-field .plate-meta, .game-field .card-line { font-size: 14px; fill: #ffe7a3; }
+    .game-field .plate-meta { stroke: #102616; stroke-width: 4px; paint-order: stroke fill; }
+    .game-field .card-name { font-size: 18px; fill: #ffb000; }
     .game-field a:hover .plate-name { fill: #ffffff; }
     .game-field .banner-word {
-        font-size: 13px;
+        font-size: 32px;
         fill: #ffb000;
         stroke: #3a2200;
-        stroke-width: 4px;
+        stroke-width: 6px;
         paint-order: stroke fill;
     }
     .game-field .banner-count {
-        font-size: 7px;
+        font-size: 16px;
         fill: #fff8e8;
         stroke: #1a1a1a;
-        stroke-width: 3px;
+        stroke-width: 4px;
         paint-order: stroke fill;
     }
     .ball-track {
         fill: none;
         stroke: #fff8e8;
-        stroke-width: 2;
+        stroke-width: 6;
         stroke-dasharray: 2 2;
         stroke-dashoffset: 100;
         animation: draw-track 1.05s linear forwards;
@@ -81,8 +120,9 @@
     @keyframes draw-track { to { stroke-dashoffset: 0; } }
     @keyframes puff { to { opacity: 1; } }
 
-    .game-controls { margin: 0 0 1rem; }
-    .game-calls, .game-subs { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; }
+    .game-actions { flex: 0 0 auto; }
+    .game-calls { display: flex; flex-wrap: wrap; gap: 8px; align-items: stretch; }
+    .game-step { display: flex; flex-wrap: wrap; gap: 8px; align-items: stretch; }
     .game-btn {
         font-family: "Press Start 2P", ui-monospace, monospace;
         font-size: 8px;
@@ -98,7 +138,7 @@
     }
     .game-btn:hover { transform: translate(1px, 1px); box-shadow: 3px 3px 0 #1a1a1a; color: #1a1a1a; }
     .game-btn:active { transform: translate(4px, 4px); box-shadow: 0 0 0 #1a1a1a; }
-    .game-btn-swing { background: #ffb000; font-size: 9px; }
+    .game-btn-swing { background: #ffb000; font-size: 11px; min-height: 52px; padding: 12px 16px; }
     .game-btn-call.is-live { background: #fff1b8; outline: 2px dashed #8d1e2f; outline-offset: 2px; }
     .game-sub-note { font-size: 12px; color: #4b5563; margin-bottom: 8px; }
 

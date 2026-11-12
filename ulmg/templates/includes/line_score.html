@@ -1,0 +1,31 @@
+{# ABOUTME: The inning line score: runs by inning, then runs, hits and errors. #}
+{# ABOUTME: Shared by the live game screen and the final box. `box` and `game` come from the page. #}
+<div class="overflow-x-auto">
+    <table class="line-score w-full text-xs border-collapse border border-gray-200">
+        <thead class="bg-gray-50">
+            <tr class="border-b border-gray-300">
+                <th class="text-left py-1 px-2"></th>
+                {% for number in box.innings %}<th class="text-center py-1 px-1{% if inning == number %} is-now{% endif %}">{{ number }}</th>{% endfor %}
+                <th class="text-center py-1 px-1 font-bold">R</th>
+                <th class="text-center py-1 px-1 font-bold">H</th>
+                <th class="text-center py-1 px-1 font-bold">E</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr class="border-b border-gray-100">
+                <td class="py-1 px-2 font-bold">{{ game.series.road_team.abbreviation }}</td>
+                {% for runs in box.line.away %}<td class="text-center py-1 px-1">{{ runs }}</td>{% endfor %}
+                <td class="text-center py-1 px-1 font-bold">{{ box.totals.away.r }}</td>
+                <td class="text-center py-1 px-1">{{ box.totals.away.h }}</td>
+                <td class="text-center py-1 px-1">{{ box.totals.away.e }}</td>
+            </tr>
+            <tr>
+                <td class="py-1 px-2 font-bold">{{ game.series.home_team.abbreviation }}</td>
+                {% for runs in box.line.home %}<td class="text-center py-1 px-1">{{ runs }}</td>{% endfor %}
+                <td class="text-center py-1 px-1 font-bold">{{ box.totals.home.r }}</td>
+                <td class="text-center py-1 px-1">{{ box.totals.home.h }}</td>
+                <td class="text-center py-1 px-1">{{ box.totals.home.e }}</td>
+            </tr>
+        </tbody>
+    </table>
+</div>

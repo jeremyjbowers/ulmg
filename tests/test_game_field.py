@@ -60,6 +60,35 @@ class FieldGeometryTest(SimpleTestCase):
         self.assertGreaterEqual(game_field.BANNER_Y, game_field.PLAY_HEIGHT)
         self.assertGreater(game_field.HEIGHT, game_field.BANNER_Y)
 
+    def test_the_screen_is_sixteen_by_nine_and_about_900_tall(self):
+        self.assertEqual(game_field.HEIGHT, 900)
+        self.assertEqual(game_field.WIDTH * 9, game_field.HEIGHT * 16)
+
+    def test_the_catcher_is_larger_and_closer_than_the_outfield(self):
+        # Second deck, not a helicopter: the plate is in the foreground and center field shrinks, mildly.
+        catcher = game_field.ANCHORS["C"]
+        center = game_field.ANCHORS["CF"]
+        pitcher = game_field.ANCHORS["P"]
+        self.assertGreater(catcher[1], pitcher[1])
+        self.assertGreater(pitcher[1], center[1])
+        self.assertGreater(game_field.SCALES["C"], game_field.SCALES["CF"])
+        ratio = game_field.SCALES["CF"] / game_field.SCALES["C"]
+        self.assertGreater(ratio, 0.55)
+        self.assertLess(ratio, 0.8)
+
+    def test_home_wears_white_and_the_road_wears_dark(self):
+        home = game_field.uniform("home")
+        away = game_field.uniform("away")
+        self.assertEqual(home["jersey"], "#f4f1e8")
+        self.assertEqual(away["jersey"], "#3a4150")
+        self.assertNotEqual(home["pants"], away["pants"])
+
+    def test_the_fielders_do_not_all_use_one_stance(self):
+        poses = {game_field.stance(position, 4) for position in ("SS", "1B", "LF", "CF", "RF")}
+        self.assertGreaterEqual(len(poses), 2)
+        self.assertEqual(game_field.stance("LF", 4), game_field.stance("LF", 4))
+        self.assertIn(game_field.stance("SS", 4), game_field.STANCES)
+
 
 class GameFieldPageTest(gf.EngineMixin, TestCase):
     @classmethod
@@ -117,8 +146,8 @@ class GameFieldPageTest(gf.EngineMixin, TestCase):
         self.post("open", seats="away,home")
         leadoff = self.road.hitters[0]
         response = self.client.get(self.url)
-        # No plate appearance yet, so the screen is the grass only. The marquee appears with the result.
-        self.assertIn(f'viewBox="0 0 {game_field.WIDTH} {game_field.PLAY_HEIGHT}"', response.content.decode())
+        # The screen is 16:9 whether or not a ball has been put in play.
+        self.assertIn(f'viewBox="0 0 {game_field.WIDTH} {game_field.HEIGHT}"', response.content.decode())
         self.assertIn('data-box="left"', self.field_markup(response))
         self.assertIn(f'translate({game_field.BATTER_BOXES["left"][0]},', self.field_markup(response))
 
@@ -171,19 +200,66 @@ class GameFieldPageTest(gf.EngineMixin, TestCase):
         self.post("step", expected=self.expected())
         response = self.client.get(self.url)
         html = response.content.decode()
-        self.assertIn(">Offensive substitution<", html)
-        self.assertIn(">Pitching change<", html)
-        self.assertIn(">Defensive substitution<", html)
-        offense = html.split('id="offense-sub"', 1)[1].split('id="pitching-change"', 1)[0]
-        pitching = html.split('id="pitching-change"', 1)[1].split('id="defense-sub"', 1)[0]
-        defense = html.split('id="defense-sub"', 1)[1].split('id="game-after-modals"', 1)[0]
-        self.assertIn(f'action="/games/{self.game.id}/pinch_hit/"', offense)
-        self.assertIn(f'value="{self.road.bench[0].id}"', offense)
-        self.assertIn(f'action="/games/{self.game.id}/pitcher/"', pitching)
-        self.assertIn(f'value="{self.home.relievers[0].id}"', pitching)
-        self.assertIn(f'action="/games/{self.game.id}/defense/"', defense)
-        self.assertIn(f'value="{self.home.bench[0].id}"', defense)
-        self.assertIn(f'action="/games/{self.game.id}/positions/"', defense)
+        self.assertIn(">Substitution<", html)
+        self.assertNotIn(">Offensive substitution<", html)
+        self.assertNotIn(">Defensive substitution<", html)
+        self.assertLess(html.find("Play the next plate appearance"), html.find('class="game-scoreboard'))
+        self.assertLess(html.find('class="game-scoreboard'), html.find('class="game-field"'))
+        self.assertIn("100dvh", html)
+        modal = html.split('id="substitution"', 1)[1].split('id="game-after-modals"', 1)[0]
+        self.assertIn(f'action="/games/{self.game.id}/pinch_hit/"', modal)
+        self.assertIn(f'value="{self.road.bench[0].id}"', modal)
+        self.assertIn(f'action="/games/{self.game.id}/pitcher/"', modal)
+        self.assertIn(f'value="{self.home.relievers[0].id}"', modal)
+        self.assertIn(f'action="/games/{self.game.id}/defense/"', modal)
+        self.assertIn(f'value="{self.home.bench[0].id}"', modal)
+        self.assertIn(f'action="/games/{self.game.id}/positions/"', modal)
+
+    def test_the_home_club_is_in_white_and_the_road_club_is_in_the_dark(self):
+        self.post("open", seats="away,home")
+        field = self.field_markup(self.client.get(self.url))
+        self.assertIn('data-position="C"', field)
+        self.assertIn('data-uniform="home"', field)
+        self.assertIn('data-uniform="away"', field)
+        self.assertIn(game_field.HOME_JERSEY, field)
+        self.assertIn(game_field.AWAY_JERSEY, field)
+        stances = {piece for piece in game_field.STANCES if f'data-stance="{piece}"' in field}
+        self.assertGreaterEqual(len(stances), 2)
+
+    def test_infield_names_sit_beside_the_player(self):
+        self.post("open", seats="away,home")
+        field = self.field_markup(self.client.get(self.url))
+        ss = field.split('data-position="SS"', 1)[1].split('data-position=', 1)[0]
+        first = field.split('data-position="1B"', 1)[1].split('data-position=', 1)[0]
+        catcher = field.split('data-position="C"', 1)[1].split("</svg>", 1)[0]
+        self.assertIn('text-anchor="end"', ss)
+        self.assertIn('text-anchor="start"', first)
+        self.assertIn('y="-150"', catcher)
+
+    def test_the_line_score_sits_under_the_field(self):
+        self.post("open", seats="away,home")
+        gf.set_rates([self.road.hitters[0]], gf.HOME_RUN_RATES)
+        html = self.post("step", expected=self.expected()).content.decode()
+        stage = html.split('class="game-stage"', 1)[1].split('class="game-below"', 1)[0]
+        self.assertLess(stage.find('class="line-score'), stage.find('class="game-field"'))
+        self.assertLess(html.find('class="line-score'), html.find("Play-by-play"))
+        table = stage.split('class="line-score', 1)[1].split("</table>", 1)[0]
+        road = table.split(self.road.team.abbreviation, 1)[1].split("</tr>", 1)[0]
+        home = table.split(self.home.team.abbreviation, 1)[1].split("</tr>", 1)[0]
+        self.assertIn(">1<", road)
+        self.assertIn(">X<", home)
+
+    def test_batting_calls_wait_for_the_manager_who_is_batting(self):
+        # Top of the first, the home manager is on the mound. Bunt, steal and hit and run are the batter's.
+        self.post("open", seats="home")
+        response = self.client.get(self.url)
+        html = response.content.decode()
+        self.assertContains(response, "Play the next plate appearance")
+        self.assertContains(response, ">Substitution<")
+        self.assertNotContains(response, 'value="bunt"')
+        self.assertNotContains(response, 'value="steal"')
+        self.assertNotContains(response, 'value="hit_and_run"')
+        self.assertLess(html.find(">Substitution<"), html.find('class="game-scoreboard'))
 
     def test_write_preview(self):
         if os.environ.get("SAVE_GAME_HTML") != "1":
@@ -222,4 +298,6 @@ class GameFieldPageTest(gf.EngineMixin, TestCase):
         open(f"{out}/game-before.html", "w").write(before.content.decode())
         response = self.post("step", expected=self.expected())
         open(f"{out}/game-line-drive.html", "w").write(response.content.decode())
+        homer = self.post("step", expected=self.expected())
+        open(f"{out}/game-line-score.html", "w").write(homer.content.decode())
         print("OUTCOME", self.log().state["last_result"]["outcome"])
