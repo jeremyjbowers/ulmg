@@ -2,8 +2,12 @@
 {# ABOUTME: Every form carries the log position it expects; a seat nobody holds is the computer's, and the box score shows at the final. #}
 {% extends "base.html" %}
 
+{% block extrahead %}
+{% include "includes/game_style.html" %}
+{% endblock %}
+
 {% block content %}
-<div class="max-w-3xl">
+<div class="{% if log and not final and not engine_down %}game-shell{% else %}max-w-3xl{% endif %}">
     <h1 class="text-lg font-bold mb-1">Day {{ game.day }}: {{ game.series.road_team.abbreviation }} at {{ game.series.home_team.abbreviation }}</h1>
     <p class="text-sm text-gray-600 mb-4">
         <a href="/teams/{{ game.series.road_team.abbreviation|lower }}/schedule/{{ game.series.slot.season }}/" class="underline">{{ game.series.road_team.abbreviation }} schedule</a> ·
@@ -61,9 +65,11 @@
     {% include 'includes/box_score.html' %}
     {% else %}
 
-    <div class="game-scoreboard border border-gray-300 p-3 mb-4 text-sm">
-        <p class="text-lg font-bold">{{ away_team.abbreviation }} {{ score.away }} · {{ home_team.abbreviation }} {{ score.home }}</p>
-        <p>{{ half }} {{ inning }} · {{ outs }} out{{ outs|pluralize }} · {{ batting_team.abbreviation }} batting</p>
+    <div class="game-scoreboard game-hud p-3 mb-4">
+        <p class="game-scoreline">{{ away_team.abbreviation }} {{ score.away }} · {{ home_team.abbreviation }} {{ score.home }}</p>
+        <p>{{ half }} {{ inning }} · {{ outs }} out{{ outs|pluralize }}
+            <span class="out-pips" aria-hidden="true">{% for pip in "123" %}<span class="{% if forloop.counter <= outs %}is-out{% endif %}"></span>{% endfor %}</span>
+            · {{ batting_team.abbreviation }} batting</p>
         <p class="game-runners">Runners: {% for base, runner in runners %}{{ runner.name }} on {{ base }}{% if not forloop.last %}, {% endif %}{% empty %}none{% endfor %}</p>
     </div>
 
@@ -91,114 +97,25 @@
     </div>
     {% endif %}
 
+    {% include "includes/game_field.html" %}
+
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 text-sm">
         {% with block=batter role="Batting" %}{% include 'includes/game_player.html' %}{% endwith %}
         {% if pitcher %}{% with block=pitcher role="Pitching" %}{% include 'includes/game_player.html' %}{% endwith %}{% else %}<div class="border border-gray-300 p-3">The mound is empty.</div>{% endif %}
     </div>
 
     {% if matchup %}
-    <div class="game-matchup mb-4 text-sm">
-        <h2 class="font-bold mb-1">This plate appearance</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-3 text-xs">
-            {% for label, percent in matchup %}<div class="flex border-b border-gray-100 py-1"><span>{{ label }}</span><span class="ml-5 font-mono">{{ percent|floatformat:1 }}%</span></div>{% endfor %}
+    <div class="game-matchup mb-4">
+        <h2>This plate appearance</h2>
+        <div class="grid grid-cols-2 gap-x-4">
+            {% for label, percent in matchup %}<div class="game-odd"><span>{{ label }}</span><span>{{ percent|floatformat:1 }}%</span></div>{% endfor %}
         </div>
     </div>
     {% endif %}
 
-    {% if can_step %}
-    <form method="post" action="/games/{{ game.id }}/step/" class="game-step space-y-2 text-sm mb-6">
-        {% csrf_token %}
-        <input type="hidden" name="expected" value="{{ expected }}">
-        {% if calls %}
-        <label class="block font-bold" for="call">Call</label>
-        <select name="call" id="call" class="w-full sm:w-auto border border-gray-300 px-2 py-1">
-            <option value="">Play it straight</option>
-            {% for value, label in calls %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
-        </select>
-        {% endif %}
-        <button type="submit" class="w-full sm:w-auto bg-black text-white px-4 py-2 font-bold">Play the next plate appearance</button>
-    </form>
-    {% endif %}
+    {% include "includes/game_controls.html" %}
 
     {% include 'includes/game_autoplay.html' %}
-
-    {% if pitcher_options and not need %}
-    <form method="post" action="/games/{{ game.id }}/pitcher/" class="game-pitching-change space-y-2 text-sm mb-6">
-        {% csrf_token %}
-        <input type="hidden" name="expected" value="{{ expected }}">
-        <input type="hidden" name="side" value="{{ pitching_side }}">
-        <label class="block font-bold" for="pitcher-change">Pitching change</label>
-        <select name="player" id="pitcher-change" class="w-full border border-gray-300 px-2 py-1">
-            {% for option in pitcher_options %}<option value="{{ option.player.id }}"{% if not option.legal %} disabled{% endif %}>{{ option.player.name }}{% if not option.legal %}: {{ option.problem }}{% endif %}</option>{% endfor %}
-        </select>
-        <button type="submit" class="w-full sm:w-auto border border-gray-300 px-4 py-2">Bring him in</button>
-    </form>
-    {% endif %}
-
-    {% if pinch %}
-    <form method="post" action="/games/{{ game.id }}/pinch_hit/" class="game-pinch-hit space-y-2 text-sm mb-6">
-        {% csrf_token %}
-        <input type="hidden" name="expected" value="{{ expected }}">
-        <input type="hidden" name="side" value="{{ pinch.side }}">
-        <label class="block font-bold" for="pinch-hitter">Pinch hit for {{ pinch.batter.name }}</label>
-        <select name="player" id="pinch-hitter" class="w-full border border-gray-300 px-2 py-1">
-            {% for option in pinch.options %}<option value="{{ option.player.id }}"{% if not option.legal %} disabled{% endif %}>{{ option.player.name }}{% if not option.legal %}: {{ option.problem }}{% endif %}</option>{% endfor %}
-        </select>
-        <button type="submit" class="w-full sm:w-auto border border-gray-300 px-4 py-2">Send him up</button>
-    </form>
-    {% if pinch.runners %}
-    <form method="post" action="/games/{{ game.id }}/pinch_run/" class="game-pinch-run space-y-2 text-sm mb-6">
-        {% csrf_token %}
-        <input type="hidden" name="expected" value="{{ expected }}">
-        <input type="hidden" name="side" value="{{ pinch.side }}">
-        <label class="block font-bold" for="pinch-base">Pinch run</label>
-        <select name="base" id="pinch-base" class="w-full border border-gray-300 px-2 py-1">
-            {% for base, runner in pinch.runners %}<option value="{{ base }}">for {{ runner.name }} on {{ base }}</option>{% endfor %}
-        </select>
-        <select name="player" class="w-full border border-gray-300 px-2 py-1">
-            {% for option in pinch.options %}<option value="{{ option.player.id }}"{% if not option.legal %} disabled{% endif %}>{{ option.player.name }}{% if not option.legal %}: {{ option.problem }}{% endif %}</option>{% endfor %}
-        </select>
-        <button type="submit" class="w-full sm:w-auto border border-gray-300 px-4 py-2">Put him on base</button>
-    </form>
-    {% endif %}
-    {% endif %}
-
-    {% if defense %}
-    <form method="post" action="/games/{{ game.id }}/positions/" class="game-positions space-y-1 text-sm mb-6">
-        {% csrf_token %}
-        <input type="hidden" name="expected" value="{{ expected }}">
-        <input type="hidden" name="side" value="{{ defense.side }}">
-        <h2 class="font-bold">Positions</h2>
-        <p class="text-xs text-gray-600">A pinch hitter or runner must be given a position before the next pitch. The designated hitter stays the designated hitter.</p>
-        {% for row in defense.rows %}
-        <div class="flex gap-2 items-center">
-            <span class="w-6">{{ row.order }}</span>
-            <span class="w-full">{{ row.player.name }}{% if row.pending %} (needs a position){% endif %}</span>
-            {% if row.position == "DH" %}
-            <span class="px-1 py-1">DH</span>
-            {% else %}
-            <select name="position-{{ row.order }}" class="border border-gray-300 px-1 py-1">
-                {% for code in defense.positions %}<option value="{{ code }}"{% if code == row.position %} selected{% endif %}>{{ code }}</option>{% endfor %}
-            </select>
-            {% endif %}
-        </div>
-        {% endfor %}
-        <button type="submit" class="w-full sm:w-auto border border-gray-300 px-4 py-2">Set positions</button>
-    </form>
-    <form method="post" action="/games/{{ game.id }}/defense/" class="game-defense space-y-2 text-sm mb-6">
-        {% csrf_token %}
-        <input type="hidden" name="expected" value="{{ expected }}">
-        <input type="hidden" name="side" value="{{ defense.side }}">
-        <label class="block font-bold" for="defense-slot">Defensive replacement</label>
-        <select name="slot" id="defense-slot" class="w-full border border-gray-300 px-2 py-1">
-            {% for row in defense.rows %}<option value="{{ row.order }}"{% if row.pending %} selected{% endif %}>for {{ row.player.name }} ({{ row.order }}, {{ row.position }})</option>{% endfor %}
-        </select>
-        <select name="player" class="w-full border border-gray-300 px-2 py-1">
-            {% for option in defense.options %}<option value="{{ option.player.id }}"{% if not option.legal %} disabled{% endif %}>{{ option.player.name }}{% if not option.legal %}: {{ option.problem }}{% endif %}</option>{% endfor %}
-        </select>
-        <button type="submit" class="w-full sm:w-auto border border-gray-300 px-4 py-2">Put him in</button>
-    </form>
-    {% endif %}
 
     {% for lineup in pregame %}
     <form method="post" action="/games/{{ game.id }}/lineup/" class="game-lineup space-y-1 text-sm mb-6">
