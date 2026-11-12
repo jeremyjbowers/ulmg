@@ -176,7 +176,7 @@ class PlayingTestCase(SimGameTestCase):
             self.assertEqual(box.totals[side]["r"], state["score"][side])
             self.assertEqual(box.batting_totals[side]["r"], state["score"][side])
             self.assertEqual(sum(line.r for line in box.pitching[sim_game.other_side(side)]), state["score"][side])
-            line_runs = sum(r for r in box.line[side] if r != "X")
+            line_runs = sum(r for r in box.line[side] if r not in ("X", "-"))
             self.assertEqual(line_runs, state["score"][side])
             self.assertEqual(box.line[side][: len(state["line_score"][side])], state["line_score"][side][: len(box.line[side])])
             self.assertEqual(box.totals[side]["h"], box.batting_totals[side]["h"])
