@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 from django.db import transaction
 from django.utils import timezone
 
-from ulmg import box_score, cards, computer_manager, engine_client, models, plans, roster_moves, schedule, season_record, usage, utils
+from ulmg import box_score, cards, computer_manager, engine_client, game_field, models, plans, roster_moves, schedule, season_record, usage, utils
 
 Event = models.GameEvent
 
@@ -1855,6 +1855,7 @@ def page(log, user):
             "need": need,
             "first_pitch": fold.first_pitch,
             "can_step": bool(context["user_sides"]) and need is None and fold.pause is None,
+            "field": game_field.field_view(play),
         }
     )
     if need is None and pitcher is not None:

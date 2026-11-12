@@ -1,0 +1,210 @@
+{# ABOUTME: The live game, drawn from behind home plate: grass, nine fielders, the mound and the batter's box. #}
+{# ABOUTME: Expects `field` from game_field.field_view. A batted ball carries a track; a strikeout carries only the banner. #}
+{% if field %}
+<div class="game-screen">
+    <svg class="game-field" viewBox="0 0 {{ field.width }} {% if field.banner %}{{ field.height }}{% else %}{{ field.play_height }}{% endif %}" role="img" aria-label="The field from behind home plate">
+        <defs>
+            <pattern id="grass" width="4" height="4" patternUnits="userSpaceOnUse">
+                <rect width="4" height="4" fill="#1f7a34"/>
+                <rect width="2" height="2" fill="#2b9444"/>
+                <rect x="2" y="2" width="2" height="2" fill="#2b9444"/>
+                <rect x="3" y="1" width="1" height="1" fill="#17632a"/>
+            </pattern>
+            <pattern id="dirt" width="4" height="4" patternUnits="userSpaceOnUse">
+                <rect width="4" height="4" fill="#b07a45"/>
+                <rect width="2" height="2" fill="#946338"/>
+                <rect x="2" y="2" width="2" height="2" fill="#946338"/>
+            </pattern>
+            <symbol id="sprite-fielder" viewBox="0 0 16 24">
+                <rect x="4" y="0" width="8" height="2" fill="#1c2430"/>
+                <rect x="3" y="2" width="10" height="1" fill="#1c2430"/>
+                <rect x="4" y="3" width="8" height="3" fill="#f0c7a0"/>
+                <rect x="5" y="4" width="1" height="1" fill="#1a1a1a"/>
+                <rect x="9" y="4" width="1" height="1" fill="#1a1a1a"/>
+                <rect x="3" y="6" width="10" height="1" fill="#1c2430"/>
+                <rect class="jersey" x="4" y="7" width="8" height="6" fill="currentColor"/>
+                <rect class="jersey" x="2" y="8" width="2" height="4" fill="currentColor"/>
+                <rect class="jersey" x="12" y="8" width="2" height="4" fill="currentColor"/>
+                <rect x="5" y="8" width="6" height="1" fill="#ffffff" opacity="0.85"/>
+                <rect x="13" y="11" width="3" height="3" fill="#d7b172"/>
+                <rect x="14" y="12" width="1" height="1" fill="#8d6733"/>
+                <rect x="4" y="13" width="3" height="6" fill="#242424"/>
+                <rect x="9" y="13" width="3" height="6" fill="#242424"/>
+                <rect x="3" y="19" width="4" height="2" fill="#111111"/>
+                <rect x="9" y="19" width="4" height="2" fill="#111111"/>
+            </symbol>
+            <symbol id="sprite-pitcher" viewBox="0 0 16 24">
+                <rect x="4" y="0" width="8" height="2" fill="#f2efe6"/>
+                <rect x="3" y="2" width="10" height="1" fill="#1c2430"/>
+                <rect x="4" y="3" width="8" height="3" fill="#f0c7a0"/>
+                <rect x="5" y="4" width="1" height="1" fill="#1a1a1a"/>
+                <rect x="9" y="4" width="1" height="1" fill="#1a1a1a"/>
+                <rect class="jersey" x="4" y="7" width="8" height="6" fill="currentColor"/>
+                <rect class="jersey" x="1" y="4" width="2" height="5" fill="currentColor"/>
+                <rect x="0" y="3" width="2" height="2" fill="#f4f0e6"/>
+                <rect class="jersey" x="12" y="8" width="2" height="4" fill="currentColor"/>
+                <rect x="13" y="11" width="3" height="3" fill="#d7b172"/>
+                <rect x="5" y="8" width="6" height="1" fill="#ffffff" opacity="0.85"/>
+                <rect x="4" y="13" width="3" height="6" fill="#242424"/>
+                <rect x="9" y="13" width="3" height="6" fill="#242424"/>
+                <rect x="3" y="19" width="4" height="2" fill="#111111"/>
+                <rect x="9" y="19" width="4" height="2" fill="#111111"/>
+            </symbol>
+            <symbol id="sprite-catcher" viewBox="0 0 18 20">
+                <rect x="4" y="0" width="10" height="3" fill="#d9dee8"/>
+                <rect x="5" y="1" width="2" height="1" fill="#1a1a1a"/>
+                <rect x="11" y="1" width="2" height="1" fill="#1a1a1a"/>
+                <rect x="6" y="3" width="6" height="2" fill="#f0c7a0"/>
+                <rect class="jersey" x="3" y="5" width="12" height="7" fill="currentColor"/>
+                <rect x="5" y="6" width="8" height="1" fill="#ffffff" opacity="0.85"/>
+                <rect x="0" y="8" width="3" height="4" fill="#d7b172"/>
+                <rect x="15" y="8" width="3" height="4" fill="#d7b172"/>
+                <rect x="4" y="12" width="4" height="5" fill="#242424"/>
+                <rect x="10" y="12" width="4" height="5" fill="#242424"/>
+                <rect x="3" y="17" width="5" height="2" fill="#111111"/>
+                <rect x="10" y="17" width="5" height="2" fill="#111111"/>
+            </symbol>
+            <symbol id="sprite-batter" viewBox="0 0 24 24">
+                <rect x="6" y="0" width="8" height="2" fill="#1c2430"/>
+                <rect x="5" y="2" width="10" height="1" fill="#1c2430"/>
+                <rect x="6" y="3" width="8" height="3" fill="#f0c7a0"/>
+                <rect x="7" y="4" width="1" height="1" fill="#1a1a1a"/>
+                <rect x="11" y="4" width="1" height="1" fill="#1a1a1a"/>
+                <rect x="5" y="6" width="10" height="1" fill="#1c2430"/>
+                <rect class="jersey" x="6" y="7" width="8" height="6" fill="currentColor"/>
+                <rect class="jersey" x="4" y="8" width="2" height="4" fill="currentColor"/>
+                <rect x="7" y="8" width="6" height="1" fill="#ffffff" opacity="0.85"/>
+                <rect x="14" y="11" width="4" height="2" fill="#e6d2a2"/>
+                <rect x="17" y="9" width="3" height="2" fill="#e6d2a2"/>
+                <rect x="19" y="7" width="3" height="2" fill="#c4a56a"/>
+                <rect x="21" y="6" width="2" height="2" fill="#8d6733"/>
+                <rect x="6" y="13" width="3" height="6" fill="#242424"/>
+                <rect x="11" y="13" width="3" height="6" fill="#242424"/>
+                <rect x="5" y="19" width="4" height="2" fill="#111111"/>
+                <rect x="11" y="19" width="4" height="2" fill="#111111"/>
+            </symbol>
+        </defs>
+
+        <rect width="320" height="320" fill="url(#grass)"/>
+        <rect y="78" width="320" height="26" fill="#000000" opacity="0.06"/>
+        <rect y="130" width="320" height="26" fill="#000000" opacity="0.06"/>
+        <rect width="320" height="16" fill="#6b4a32"/>
+        <rect y="16" width="320" height="6" fill="#e2c98a"/>
+        <rect y="22" width="320" height="8" fill="#c4a574"/>
+        <rect x="0" y="22" width="10" height="8" fill="#f4f0e6"/>
+        <rect x="40" y="22" width="10" height="8" fill="#f4f0e6"/>
+        <rect x="80" y="22" width="10" height="8" fill="#f4f0e6"/>
+        <rect x="120" y="22" width="10" height="8" fill="#f4f0e6"/>
+        <rect x="160" y="22" width="10" height="8" fill="#f4f0e6"/>
+        <rect x="200" y="22" width="10" height="8" fill="#f4f0e6"/>
+        <rect x="240" y="22" width="10" height="8" fill="#f4f0e6"/>
+        <rect x="280" y="22" width="10" height="8" fill="#f4f0e6"/>
+        <rect x="310" y="22" width="10" height="8" fill="#f4f0e6"/>
+
+        <polygon points="160,240 226,176 160,118 94,176" fill="url(#dirt)"/>
+        <ellipse cx="160" cy="214" rx="18" ry="8" fill="#8d5e36"/>
+        <ellipse cx="160" cy="212" rx="10" ry="4" fill="#c4894e"/>
+        <ellipse cx="160" cy="252" rx="46" ry="22" fill="url(#dirt)"/>
+
+        <line x1="160" y1="240" x2="4" y2="78" stroke="#f7f3ea" stroke-width="2"/>
+        <line x1="160" y1="240" x2="316" y2="78" stroke="#f7f3ea" stroke-width="2"/>
+        <polyline points="94,176 160,240 226,176 160,118 94,176" fill="none" stroke="#f7f3ea" stroke-width="1.5"/>
+
+        <polygon points="152,232 168,232 168,240 160,248 152,240" fill="#f7f3ea"/>
+        <g transform="translate(226, 176)"><rect x="-4" y="-4" width="8" height="8" transform="rotate(45)" fill="#f7f3ea"/></g>
+        <g transform="translate(160, 118)"><rect x="-4" y="-4" width="8" height="8" transform="rotate(45)" fill="#f7f3ea"/></g>
+        <g transform="translate(94, 176)"><rect x="-4" y="-4" width="8" height="8" transform="rotate(45)" fill="#f7f3ea"/></g>
+
+        {% for fielder in field.fielders %}
+        <g class="fielder" transform="translate({{ fielder.x }}, {{ fielder.y }})" data-name="{{ fielder.name }}" data-position="{{ fielder.position }}" data-fielding="{{ fielder.fielding }}">
+            <title>{{ fielder.name }}, {{ fielder.position }}, {{ fielder.fielding }}</title>
+            <ellipse cx="0" cy="1" rx="8" ry="2.2" fill="#102616" opacity="0.45"/>
+            {% if fielder.position == "C" %}
+            <use href="#sprite-catcher" x="-9" y="-20" width="18" height="20" style="color: {{ field.fielding_color }}"/>
+            {% else %}
+            <use href="#sprite-fielder" x="-8" y="-22" width="16" height="24" style="color: {{ field.fielding_color }}"/>
+            {% endif %}
+            <a href="/players/{{ fielder.player_id }}/">
+                <text class="plate-name" y="12" text-anchor="middle">{{ fielder.short_name }}</text>
+            </a>
+            <text class="plate-meta" y="21" text-anchor="middle">{{ fielder.position }} {{ fielder.fielding }}</text>
+        </g>
+        {% endfor %}
+
+        {% if field.pitcher %}
+        <g class="pitcher" transform="translate({{ field.pitcher.x }}, {{ field.pitcher.y }})" data-name="{{ field.pitcher.name }}">
+            <title>{{ field.pitcher.name }}</title>
+            <ellipse cx="0" cy="1" rx="8" ry="2.2" fill="#102616" opacity="0.45"/>
+            <use href="#sprite-pitcher" x="-8" y="-22" width="16" height="24" style="color: {{ field.fielding_color }}"/>
+            <a href="/players/{{ field.pitcher.player_id }}/">
+                <text class="plate-name" x="-14" y="-2" text-anchor="end">{{ field.pitcher.short_name }}</text>
+            </a>
+            <text class="plate-meta" x="-14" y="8" text-anchor="end">P {{ field.pitcher.throws }}</text>
+        </g>
+        <g class="mound-card" transform="translate(178, 2)" data-xfip="{{ field.pitcher.xfip|default_if_none:'' }}" data-pitches="{{ field.pitcher.pitches }}" data-effort="{{ field.pitcher.effort }}" data-ceiling="{{ field.pitcher.ceiling }}">
+            <rect width="138" height="32" fill="#14161f" stroke="#ffb000" stroke-width="2"/>
+            <text class="card-name" x="6" y="11">{{ field.pitcher.short_name }}</text>
+            <text class="card-line" x="6" y="21">xFIP {{ field.pitcher.xfip_label }}</text>
+            <text class="card-line" x="70" y="21">{{ field.pitcher.pitches }} pitches</text>
+            <rect class="fatigue-track" x="6" y="25" width="52" height="4" fill="#4a4e66"/>
+            <rect class="fatigue-fill fatigue-{{ field.pitcher.fatigue_tone }}" x="6" y="25" width="{{ field.pitcher.fatigue_width }}" height="4"/>
+            <text class="card-line" x="62" y="30">Fatigue {{ field.pitcher.fatigue_label }}</text>
+        </g>
+        {% endif %}
+
+        {% for runner in field.runners %}
+        <g class="runner" transform="translate({{ runner.x }}, {{ runner.y }})" data-base="{{ runner.base }}" data-name="{{ runner.name }}">
+            <title>{{ runner.name }} on {{ runner.base }}</title>
+            <use href="#sprite-fielder" x="-6" y="-18" width="12" height="18" style="color: {{ field.batting_color }}"/>
+            {% if runner.base == "first" %}
+            <text class="plate-name" x="-8" y="-8" text-anchor="end">{{ runner.short_name }}</text>
+            {% elif runner.base == "third" %}
+            <text class="plate-name" x="8" y="-8" text-anchor="start">{{ runner.short_name }}</text>
+            {% else %}
+            <text class="plate-name" y="-22" text-anchor="middle">{{ runner.short_name }}</text>
+            {% endif %}
+        </g>
+        {% endfor %}
+
+        {% if field.batter %}
+        <g class="batter" transform="translate({{ field.batter.x }}, {{ field.batter.y }})" data-box="{{ field.batter.box }}" data-bats="{{ field.batter.hand }}" data-name="{{ field.batter.name }}">
+            <title>{{ field.batter.name }}, bats {{ field.batter.hand }}</title>
+            <ellipse cx="0" cy="1" rx="8" ry="2.2" fill="#102616" opacity="0.45"/>
+            <g {% if field.batter.box == "right" %}transform="scale(-1, 1)"{% endif %}>
+                <use href="#sprite-batter" x="-12" y="-22" width="24" height="24" style="color: {{ field.batting_color }}"/>
+            </g>
+            <a href="/players/{{ field.batter.player_id }}/">
+                <text class="plate-name" y="12" text-anchor="middle">{{ field.batter.short_name }}</text>
+            </a>
+            <text class="plate-meta" y="21" text-anchor="middle">{{ field.batter.hand }}HB</text>
+        </g>
+        {% endif %}
+
+        {% if field.banner %}
+        <g class="result-banner" data-outcome="{{ field.banner.outcome }}">
+            <rect class="marquee" y="{{ field.play_height }}" width="{{ field.width }}" height="{{ field.marquee_height }}" fill="#14161f"/>
+            <rect y="{{ field.play_height }}" width="{{ field.width }}" height="3" fill="#ffb000"/>
+            <text class="banner-word" x="160" y="{{ field.banner_y }}" text-anchor="middle">{{ field.banner.label }}{% if field.banner.count %} {{ field.banner.count }}{% endif %}</text>
+        </g>
+        {% if field.banner.path %}
+        <g class="ball-play" data-kind="{{ field.banner.kind }}" data-outcome="{{ field.banner.outcome }}">
+            <path id="ball-track" class="ball-track ball-track-{{ field.banner.kind }}" pathLength="100" d="{{ field.banner.path }}"/>
+            <g class="ball-puff" transform="translate({{ field.banner.x }}, {{ field.banner.y }})">
+                <rect x="-1" y="-1" width="2" height="2" fill="#ffffff"/>
+                <rect x="-5" y="1" width="2" height="2" fill="#f7f3ea"/>
+                <rect x="3" y="-3" width="2" height="2" fill="#f7f3ea"/>
+            </g>
+            <g class="ball">
+                <animateMotion dur="1.05s" fill="freeze" calcMode="linear">
+                    <mpath href="#ball-track"/>
+                </animateMotion>
+                <rect x="-4" y="-4" width="8" height="8" fill="#ffffff"/>
+                <rect x="-3" y="-3" width="2" height="2" fill="#d23b3b"/>
+                <rect x="1" y="1" width="2" height="2" fill="#d23b3b"/>
+            </g>
+        </g>
+        {% endif %}
+        {% endif %}
+    </svg>
+</div>
+{% endif %}
