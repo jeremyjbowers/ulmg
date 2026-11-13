@@ -1,4 +1,4 @@
-{# ABOUTME: A sim game's box score: line score, batting and pitching lines for both sides, LOB and the W/L/S decisions. #}
+{# ABOUTME: A sim game's box score: line score, batting and pitching lines, the notes, and the W/L/S decisions. #}
 {# ABOUTME: Expects `box` from ulmg.box_score.box_score and `game`; every number is computed from the game log. #}
 <div class="box-score mb-6 text-sm">
     <div class="mb-4">{% include "includes/line_score.html" %}</div>
@@ -73,5 +73,12 @@
         </table>
     </div>
     {% endfor %}
+    {% if box.notes %}
+    <ul class="box-notes text-xs leading-5 mb-4">
+        {% for note in box.notes %}
+        <li><span class="font-bold">{{ note.label }}</span>: {{ note.text }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
     <p class="text-xs text-gray-600">The sim has no errors, so every run is earned except one scored by the runner placed on second in extra innings.</p>
 </div>

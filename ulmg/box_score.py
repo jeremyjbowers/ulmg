@@ -1,5 +1,5 @@
-# ABOUTME: The box score of a sim game, computed from its log alone: line score, batting and pitching lines, LOB.
-# ABOUTME: Also credits the win, loss and save under MLB rules 9.17 and 9.19, charging each run to the pitcher responsible for it.
+# ABOUTME: The box score of a sim game, computed from its log alone: line score, batting and pitching lines, and the notes.
+# ABOUTME: The notes name the doubles, triples, homers and the rest; the win, loss and save follow rules 9.17 and 9.19.
 
 from dataclasses import dataclass, field
 
@@ -128,6 +128,23 @@ class PlateAppearance:
 
 
 @dataclass
+class BoxNote:
+    """One named line under the pitching tables: "HR" and "Juan Soto (4th inning off Sean Burke, 1 on, 2 outs)"."""
+
+    label: str
+    text: str
+
+
+# Named in this order. An empty one is left out; a double play the defense turned and the two clubs' LOB follow.
+PLAY_NOTES = ("2B", "3B", "HR", "SB", "CS", "SF", "SH", "GIDP", "HBP", "IBB")
+INTENTIONAL_WALK = "intentional_walk"
+BASE_WORDS = {
+    "First": "1st", "Second": "2nd", "Third": "3rd",
+    "first": "1st", "second": "2nd", "third": "3rd",
+}
+
+
+@dataclass
 class BoxScore:
     innings: list = field(default_factory=list)
     line: dict = field(default_factory=dict)
@@ -141,6 +158,7 @@ class BoxScore:
     save: object = None
     final: bool = False
     teams: dict = field(default_factory=dict)
+    notes: list = field(default_factory=list)
 
     @property
     def sides(self):
@@ -159,9 +177,67 @@ class BoxScore:
 
 
 def _runner(event):
-    """(kind, runner id) of an engine baserunning event such as {"Scored": {"runner": "12"}}."""
+    """(kind, runner id, body) of an engine baserunning event such as {"Scored": {"runner": "12"}}."""
     (kind, body), = event.items()
-    return kind, int(body["runner"])
+    return kind, int(body["runner"]), body
+
+
+def _ordinal(number):
+    """1st, 2nd, 3rd, 4th; the teens stay "th"."""
+    if 10 <= number % 100 <= 20:
+        suffix = "th"
+    else:
+        suffix = {1: "st", 2: "nd", 3: "rd"}.get(number % 10, "th")
+    return f"{number}{suffix}"
+
+
+def _on_phrase(count):
+    return "1 on" if count == 1 else f"{count} on"
+
+
+def _out_phrase(outs):
+    if outs == 1:
+        return "1 out"
+    if outs == 0:
+        return "0 out"
+    return f"{outs} outs"
+
+
+def _hit_detail(inning, pitcher, *, on=None, outs=None):
+    """Where an extra-base hit came: the inning and the pitcher, and for a homer who was on and how many were out."""
+    text = f"{_ordinal(inning)} inning off {pitcher.name}"
+    if on is not None:
+        text += f", {_on_phrase(on)}, {_out_phrase(outs)}"
+    return text
+
+
+def _base_word(body):
+    raw = body.get("to", body.get("at", ""))
+    return BASE_WORDS.get(raw, str(raw).lower())
+
+
+def _format_players(occurrences):
+    """"Name 2 (detail; detail); Other (detail)", grouping a player's occurrences in the order they happened."""
+    groups = []
+    index = {}
+    for player, detail in occurrences:
+        if player.id not in index:
+            index[player.id] = len(groups)
+            groups.append((player, []))
+        groups[index[player.id]][1].append(detail)
+    parts = []
+    for player, details in groups:
+        shown = [detail for detail in details if detail]
+        count = len(details)
+        if count == 1 and not shown:
+            parts.append(player.name)
+        elif count == 1:
+            parts.append(f"{player.name} ({shown[0]})")
+        elif not shown:
+            parts.append(f"{player.name} {count}")
+        else:
+            parts.append(f"{player.name} {count} ({'; '.join(shown)})")
+    return "; ".join(parts)
 
 
 def _bases(bases):
@@ -258,6 +334,8 @@ def box_score(log, events=None):
     hits = {AWAY: 0, HOME: 0}
     by_inning = {AWAY: {}, HOME: {}}
     team_lob = {AWAY: 0, HOME: 0}
+    occurrences = {label: [] for label in PLAY_NOTES}
+    dp = {AWAY: 0, HOME: 0}
     runs = []
     appearances = []
     half = None
@@ -316,32 +394,46 @@ def box_score(log, events=None):
                 hits[bats] += 1
             if outcome == "double":
                 line.doubles += 1
+                occurrences["2B"].append((line.player, _hit_detail(before["inning"], pitcher.player)))
             if outcome == "triple":
                 line.triples += 1
+                occurrences["3B"].append((line.player, _hit_detail(before["inning"], pitcher.player)))
             if outcome == "home_run":
                 line.hr += 1
                 pitcher.hr += 1
+                on_base = len(_bases(before["bases"]))
+                occurrences["HR"].append((
+                    line.player,
+                    _hit_detail(before["inning"], pitcher.player, on=on_base, outs=before["outs"]),
+                ))
             if outcome in WALKS:
                 line.bb += 1
                 pitcher.bb += 1
+            if outcome == INTENTIONAL_WALK:
+                occurrences["IBB"].append((line.player, f"by {pitcher.player.name}"))
             if outcome == "strikeout":
                 line.so += 1
                 pitcher.so += 1
             if outcome == GIDP:
                 line.gidp += 1
+                occurrences["GIDP"].append((line.player, None))
+                dp[fields] += 1
             if outcome == SACRIFICE_FLY:
                 line.sf += 1
+                occurrences["SF"].append((line.player, None))
             if outcome == HIT_BY_PITCH:
                 line.hbp += 1
+                occurrences["HBP"].append((line.player, f"by {pitcher.player.name}"))
             if outcome == SACRIFICE_BUNT:
                 line.sh += 1
+                occurrences["SH"].append((line.player, None))
             if outcome != GIDP:
                 line.rbi += change["runs_scored"]
             if outcome in BATTER_OUTS:
                 line.lob += len(_bases(change["bases"]))
 
         for running in result["baserunning"]:
-            kind, runner = _runner(running)
+            kind, runner, body = _runner(running)
             if kind == "Scored":
                 charged = responsible.get(runner, pitcher_id)
                 earned = runner not in unearned
@@ -354,8 +446,14 @@ def box_score(log, events=None):
                 runs.append(Run(bats, runner, charged, earned, index, pitcher_id, dict(score)))
             elif kind == "StolenBase":
                 batting[bats][runner].sb += 1
+                occurrences["SB"].append((
+                    batting[bats][runner].player, f"{_base_word(body)} base off {pitcher.player.name}",
+                ))
             elif kind == "CaughtStealing":
                 batting[bats][runner].cs += 1
+                occurrences["CS"].append((
+                    batting[bats][runner].player, f"{_base_word(body)} base by {pitcher.player.name}",
+                ))
 
         responsible = {rid: responsible.get(rid, pitcher_id) for rid in _bases(change["bases"])}
         if before["outs"] + change["outs_added"] >= 3:
@@ -378,6 +476,13 @@ def box_score(log, events=None):
     }
     box.team_lob = team_lob
     box.pitching = {side: list(pitching[side].values()) for side in SIDES}
+    box.notes = [
+        BoxNote(label, _format_players(occurrences[label])) for label in PLAY_NOTES if occurrences[label]
+    ]
+    turned = [f"{box.teams[side].abbreviation} {dp[side]}" for side in SIDES if dp[side]]
+    if turned:
+        box.notes.append(BoxNote("DP", ", ".join(turned)))
+    box.notes.append(BoxNote("LOB", ", ".join(f"{box.teams[side].abbreviation} {team_lob[side]}" for side in SIDES)))
 
     if box.final and score[AWAY] != score[HOME]:
         box.win, box.loss, box.save = decisions(score, runs, appearances, pitching, starters)
