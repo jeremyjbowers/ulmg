@@ -35,6 +35,16 @@ class LoginRequiredMiddleware:
         """
         Check if the current URL should be exempt from login requirements.
         """
+        # These paths load without a login. Checked before resolve() so a
+        # route the URL conf does not name still skips the login redirect.
+        if (
+            request.path.startswith('/static/')
+            or request.path.startswith('/media/')
+            or request.path.startswith('/favicon.ico')
+            or request.path == '/sw.js'
+        ):
+            return True
+
         # Get the URL name
         try:
             url_name = resolve(request.path_info).url_name
@@ -75,12 +85,6 @@ class LoginRequiredMiddleware:
             'league_leaders',
         ]
         if url_name in public_urls:
-            return True
-            
-        # Exempt static files and media
-        if (request.path.startswith('/static/') or 
-            request.path.startswith('/media/') or
-            request.path.startswith('/favicon.ico')):
             return True
 
         # Exempt API endpoints (may need public access for external consumers)
