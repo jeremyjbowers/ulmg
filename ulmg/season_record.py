@@ -1,5 +1,5 @@
 # ABOUTME: The ULMG season record: 6-ulmg PlayerStatSeason lines and TeamSeasonRecord rows, summed from final game logs.
-# ABOUTME: Also answers standings with games behind and the wild-card race, a team's results, its overrides and the leaders.
+# ABOUTME: Also answers standings with games behind, games out of the wild card, a team's results, its overrides and the leaders.
 
 from dataclasses import dataclass, field
 
@@ -295,6 +295,10 @@ class StandingRow:
     status: str = None
     # "20" or "10": the worst usage penalty line one of the club's players is over.
     penalty: str = None
+    # Games out of the last wild-card spot. None when the club is not in that race.
+    games_out: float = None
+    # The club wins its division for the playoffs: the best record still eligible.
+    playoff_division_winner: bool = False
 
     @property
     def pct(self):
@@ -307,10 +311,16 @@ class StandingRow:
 
     @property
     def games_behind_display(self):
-        if self.games_behind == 0:
-            return "-"
-        text = f"{abs(self.games_behind):g}"
-        return f"+{text}" if self.games_behind < 0 else text
+        return _gap_display(self.games_behind)
+
+    @property
+    def games_out_display(self):
+        """Games out of the wild card, Div for a division winner, blank when the club is out of the race."""
+        if self.playoff_division_winner:
+            return "Div"
+        if self.games_out is None:
+            return ""
+        return _gap_display(self.games_out)
 
     def same_record(self, other):
         """Tied: the same winning percentage and the same wins minus losses."""
@@ -321,6 +331,21 @@ class StandingRow:
 
 def games_behind(leader, row):
     return ((leader.wins - row.wins) + (row.losses - leader.losses)) / 2
+
+
+def _gap_display(gap):
+    """A games-behind figure: - at the mark, +N ahead of it, N behind it."""
+    if gap == 0:
+        return "-"
+    text = f"{abs(gap):g}"
+    return f"+{text}" if gap < 0 else text
+
+
+def _ahead(row, other):
+    """True when row's record ranks ahead of other's. A tie is not ahead."""
+    if row.same_record(other):
+        return False
+    return (row.pct, row.wins - row.losses) > (other.pct, other.wins - other.losses)
 
 
 def _ranked(rows):
@@ -359,44 +384,71 @@ def _division(name, rows):
 
 def _wild_card(divisions):
     """
-    Everyone but the outright division winners, in record order. The places
-    open are the two wild cards plus one for each division whose lead is
-    tied. Teams level with the last place, when there are more of them than
-    places left, are shown as tied for it.
+    The conference's two wild cards: the next-best records after each
+    division winner.
+
+    A club more than 20% over a usage cap is out of the playoffs, so it
+    neither wins its division nor takes a wild-card spot. When a division
+    lead is tied, every co-leader could miss the title, so each is possibly
+    eligible. One of them will win it. They share a record, so the clubs
+    left behind are the same whichever one wins. Games out are measured
+    against the last of the two wild-card spots.
     """
-    race = []
-    places = WILD_CARDS
+    shown = []
+    field = []
     for division in divisions:
-        leader = division.outright_leader
-        if leader is None and division.rows:
-            places += 1
         for row in division.rows:
-            if row is leader:
+            row.games_out = None
+            row.playoff_division_winner = False
+        eligible = [row for row in division.rows if row.penalty != "20"]
+        if not eligible:
+            continue
+        leaders = [row for row in eligible if row.same_record(eligible[0])]
+        if len(leaders) == 1:
+            leaders[0].playoff_division_winner = True
+        for row in eligible:
+            if row.playoff_division_winner:
                 continue
-            race.append(
-                StandingRow(
-                    row.team, row.wins, row.losses, tied_for_division_lead=row.tied_for_lead, penalty=row.penalty
-                )
-            )
-    race = _ranked(race)
-    if not race:
-        return race
-    cutoff = race[min(places, len(race)) - 1]
-    ahead = [row for row in race if not row.same_record(cutoff) and race.index(row) < race.index(cutoff)]
-    level = [row for row in race if row.same_record(cutoff)]
-    for row in race:
-        row.games_behind = games_behind(cutoff, row)
-        if row in ahead:
-            row.status = IN
-        elif row in level:
-            row.status = IN if len(ahead) + len(level) <= places else TIED
+            shown.append(row)
+            # Drop one co-leader, the division winner. An outright winner was already skipped.
+            if row is not leaders[0]:
+                field.append(row)
+
+    ranked = _ranked(field)
+    if not ranked:
+        return []
+    cutoff = ranked[min(WILD_CARDS, len(ranked)) - 1]
+    level_start = next(index for index, row in enumerate(ranked) if row.same_record(cutoff))
+    level_count = sum(1 for row in ranked if row.same_record(cutoff))
+    holds = level_start + level_count <= WILD_CARDS
+
+    race = []
+    for row in shown:
+        gap = games_behind(cutoff, row)
+        row.games_out = gap
+        if _ahead(row, cutoff):
+            status = IN
+        elif row.same_record(cutoff):
+            status = IN if holds else TIED
         else:
-            row.status = OUT
-    return race
+            status = OUT
+        race.append(
+            StandingRow(
+                row.team,
+                row.wins,
+                row.losses,
+                games_behind=gap,
+                games_out=gap,
+                tied_for_division_lead=row.tied_for_lead,
+                status=status,
+                penalty=row.penalty,
+            )
+        )
+    return _ranked(race)
 
 
 def standings(season):
-    """Each conference's divisions, with games behind, and its wild-card race."""
+    """Each conference's divisions, with games behind and games out of the wild card, and its wild-card race."""
     records = {r.team_id: r for r in models.TeamSeasonRecord.objects.filter(season=season)}
     flags = penalty_flags(season)
     by_division = {}

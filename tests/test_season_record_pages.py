@@ -1,4 +1,4 @@
-# ABOUTME: Tests standings, games behind and the wild-card race, and the public standings, results and leaders pages.
+# ABOUTME: Tests standings, games behind and games out of the wild card, and the public standings, results and leaders pages.
 # ABOUTME: Also checks the team and player pages' ULMG lines and that real-stat lookups never pick a 6-ulmg row.
 
 from django.contrib.auth.models import User
@@ -28,6 +28,16 @@ def create_records(teams, season=SEASON):
 
 def by_abbreviation(rows):
     return {row.team.abbreviation: row for row in rows}
+
+
+def make_ineligible(team, season=SEASON):
+    """A player more than 20% over a cap: the club is out of the playoffs."""
+    player = models.Player.objects.create(
+        name=f"Overused {team.abbreviation}", position="OF", level="V", team=team
+    )
+    models.UsageCounter.objects.create(
+        player=player, season=season, plate_appearances=121, plate_appearances_cap=100
+    )
 
 
 class StandingsTestCase(TestCase):
@@ -69,6 +79,15 @@ class StandingsTestCase(TestCase):
                     return division.rows
         raise AssertionError(name)
 
+    def conference_rows(self, name):
+        for conference in season_record.standings(SEASON):
+            if conference.name == name:
+                return conference.wild_card
+        raise AssertionError(name)
+
+    def teams_by_abbreviation(self):
+        return {team.abbreviation: team for team in self.teams}
+
     def test_a_tied_division_lead_is_shown_as_a_tie(self):
         ringen = by_abbreviation(self.division("Ringen").rows)
         self.assertTrue(ringen["ABQ"].tied_for_lead)
@@ -94,15 +113,102 @@ class StandingsTestCase(TestCase):
         self.assertEqual((east["CAR"].status, east["DCM"].status), (season_record.IN, season_record.IN))
         self.assertEqual((east["CLE"].status, east["KCB"].status), (season_record.OUT, season_record.OUT))
 
-    def test_a_tied_division_lead_leaves_both_teams_in_the_wild_card_race(self):
+    def test_a_tied_division_lead_leaves_both_clubs_possibly_eligible(self):
         west = self.standings["West"].wild_card
         self.assertEqual([r.team.abbreviation for r in west], ["LNG", "NYH", "ABQ", "ADK", "CHI", "HCH", "PEN"])
         rows = by_abbreviation(west)
         self.assertTrue(rows["ABQ"].tied_for_division_lead)
+        # Two wild cards, not an extra spot for the undecided title. LNG and NYH hold them.
         self.assertEqual((rows["LNG"].status, rows["NYH"].status), (season_record.IN, season_record.IN))
-        # Three places are open: two wild cards and Ringen's undecided title.
-        self.assertEqual((rows["ABQ"].status, rows["ADK"].status), (season_record.TIED, season_record.TIED))
-        self.assertEqual(rows["CHI"].status, season_record.OUT)
+        self.assertEqual((rows["LNG"].games_behind, rows["NYH"].games_behind), (0, 0))
+        # One of ABQ and ADK wins Ringen. The other is a game out of the wild card.
+        self.assertEqual((rows["ABQ"].status, rows["ADK"].status), (season_record.OUT, season_record.OUT))
+        self.assertEqual((rows["ABQ"].games_behind, rows["ADK"].games_behind), (1, 1))
+        self.assertEqual((rows["CHI"].status, rows["CHI"].games_behind), (season_record.OUT, 2))
+
+        ringen = by_abbreviation(self.division("Ringen").rows)
+        self.assertEqual((ringen["ABQ"].games_out, ringen["ADK"].games_out), (1, 1))
+        self.assertFalse(ringen["ABQ"].playoff_division_winner)
+        orzol = by_abbreviation(self.division("Orzol").rows)
+        self.assertTrue(orzol["CIN"].playoff_division_winner)
+        self.assertIsNone(orzol["CIN"].games_out)
+        self.assertEqual(orzol["LNG"].games_out, 0)
+
+    def test_division_lines_give_games_out_only_to_clubs_that_could_take_a_wild_card(self):
+        rickey = by_abbreviation(self.division("Rickey").rows)
+        self.assertTrue(rickey["ATL"].playoff_division_winner)
+        self.assertIsNone(rickey["ATL"].games_out)
+        self.assertEqual(rickey["ATL"].games_out_display, "Div")
+        # CAR is a game up on the last spot. DCM is tied for it. PIT is five out.
+        self.assertEqual(rickey["CAR"].games_out, -1)
+        self.assertEqual(rickey["CAR"].games_out_display, "+1")
+        self.assertEqual(rickey["DCM"].games_out_display, "-")
+        self.assertEqual(rickey["PIT"].games_out, 5)
+        fernandez = by_abbreviation(self.division("Fernandez").rows)
+        self.assertTrue(fernandez["DET"].playoff_division_winner)
+        self.assertEqual(fernandez["KCB"].games_out, 1)
+
+    def test_half_a_game_out_of_the_wild_card(self):
+        models.TeamSeasonRecord.objects.filter(team__abbreviation="KCB").update(wins=7, losses=6)
+        rows = by_abbreviation(self.division_rows("Fernandez"))
+        self.assertEqual(rows["KCB"].games_out, 0.5)
+        self.assertEqual(rows["KCB"].games_out_display, "0.5")
+
+    def test_a_co_leader_ahead_of_the_field_is_a_wild_card_if_he_misses_the_division(self):
+        models.TeamSeasonRecord.objects.filter(team__abbreviation="ABQ").update(wins=10, losses=2)
+        models.TeamSeasonRecord.objects.filter(team__abbreviation="ADK").update(wins=10, losses=2)
+        models.TeamSeasonRecord.objects.filter(team__abbreviation="NYH").update(wins=6, losses=6)
+        west = by_abbreviation(self.conference_rows("West"))
+        # One 10-2 club wins Ringen. The other leads the wild card, three up on LNG, who holds the last spot.
+        self.assertEqual((west["ABQ"].status, west["ADK"].status), (season_record.IN, season_record.IN))
+        self.assertEqual((west["ABQ"].games_behind, west["ADK"].games_behind), (-3, -3))
+        self.assertEqual((west["LNG"].status, west["LNG"].games_behind), (season_record.IN, 0))
+        self.assertEqual((west["NYH"].status, west["NYH"].games_behind), (season_record.OUT, 1))
+
+    def test_tied_leads_in_both_divisions_still_leave_two_wild_cards(self):
+        models.TeamSeasonRecord.objects.filter(team__abbreviation="ABQ").update(wins=9, losses=3)
+        models.TeamSeasonRecord.objects.filter(team__abbreviation="ADK").update(wins=9, losses=3)
+        models.TeamSeasonRecord.objects.filter(team__abbreviation="CIN").update(wins=8, losses=4)
+        models.TeamSeasonRecord.objects.filter(team__abbreviation="LNG").update(wins=8, losses=4)
+        west = by_abbreviation(self.conference_rows("West"))
+        self.assertEqual((west["ABQ"].status, west["ADK"].status), (season_record.IN, season_record.IN))
+        self.assertEqual(west["ABQ"].games_behind, -1)
+        self.assertEqual((west["CIN"].status, west["LNG"].status), (season_record.IN, season_record.IN))
+        self.assertEqual((west["CIN"].games_behind, west["LNG"].games_behind), (0, 0))
+        self.assertEqual((west["NYH"].status, west["NYH"].games_behind), (season_record.OUT, 1))
+
+    def test_a_club_more_than_20_percent_over_does_not_take_a_wild_card_spot(self):
+        make_ineligible(self.teams_by_abbreviation()["CAR"])
+        east = by_abbreviation(self.conference_rows("East"))
+        self.assertNotIn("CAR", east)
+        # CLE and DCM were tied for the last spot behind CAR. With CAR out, both hold a spot.
+        self.assertEqual((east["CLE"].status, east["DCM"].status), (season_record.IN, season_record.IN))
+        self.assertEqual(east["KCB"].games_behind, 1)
+        rickey = by_abbreviation(self.division_rows("Rickey"))
+        self.assertIsNone(rickey["CAR"].games_out)
+        self.assertEqual(rickey["CAR"].games_out_display, "")
+        self.assertTrue(rickey["ATL"].playoff_division_winner)
+
+    def test_an_ineligible_leader_does_not_win_the_division(self):
+        make_ineligible(self.teams_by_abbreviation()["ATL"])
+        east = by_abbreviation(self.conference_rows("East"))
+        self.assertNotIn("ATL", east)
+        self.assertNotIn("CAR", east)
+        rickey = by_abbreviation(self.division_rows("Rickey"))
+        self.assertFalse(rickey["ATL"].playoff_division_winner)
+        self.assertIsNone(rickey["ATL"].games_out)
+        self.assertTrue(rickey["CAR"].playoff_division_winner)
+        self.assertEqual(rickey["DCM"].games_out, 0)
+
+    def test_ten_percent_over_still_leaves_the_club_eligible(self):
+        team = self.teams_by_abbreviation()["CAR"]
+        player = models.Player.objects.create(name="Overused CAR", position="OF", level="V", team=team)
+        models.UsageCounter.objects.create(
+            player=player, season=SEASON, plate_appearances=111, plate_appearances_cap=100
+        )
+        east = by_abbreviation(self.conference_rows("East"))
+        self.assertEqual(east["CAR"].status, season_record.IN)
+        self.assertEqual(east["CAR"].penalty, "10")
 
     def test_a_team_with_no_games_is_listed_at_0_0(self):
         models.TeamSeasonRecord.objects.filter(team__abbreviation="PIT").delete()
@@ -180,6 +286,9 @@ class PagesTestCase(TestCase):
             self.assertIn(name, content)
         self.assertLess(content.index(">ATL<"), content.index(">CAR<"))
         self.assertContains(response, "Tied")
+        self.assertContains(response, 'title="Games out of the wild card"')
+        self.assertContains(response, ">Div<")
+        self.assertContains(response, ">+1<")
 
     def test_the_results_page_lists_final_games_with_box_score_links(self):
         response = self.client.get(f"/teams/atl/results/{SEASON}/")
