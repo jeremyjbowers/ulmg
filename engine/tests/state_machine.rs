@@ -455,3 +455,11 @@ fn batted_ball_rates_that_do_not_sum_to_one_are_rejected() {
     fixture.home.pitchers[0].batted_balls.gb = -0.1;
     assert!(Game::start(fixture, 1).is_err());
 }
+
+#[test]
+fn a_park_event_factor_of_zero_is_refused() {
+    let mut fixture = baseball_engine::harness::scripted_fixture(false);
+    fixture.parks[0].hr_factor = Some(0.0);
+    let err = Game::start(fixture, 1).unwrap_err();
+    assert!(matches!(err, GameError::InvalidFixture(msg) if msg.contains("home run")));
+}

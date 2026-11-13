@@ -11,7 +11,7 @@ use rand::{Rng, SeedableRng};
 
 use crate::model::{
     Base, BaseOutRunChange, BaserunningEvent, Bases, BattedBallRates, Count, Fielding, HitterRates,
-    PaInput, PaResult, Pitch, PitchKind, PitcherRates, PlateOutcome, PlayerId, Running,
+    PaInput, PaResult, Park, Pitch, PitchKind, PitcherRates, PlateOutcome, PlayerId, Running,
 };
 
 /// League line used as the odds-ratio baseline, per plate appearance.
@@ -129,11 +129,16 @@ pub fn log5(batter: f64, pitcher: f64, league: f64) -> f64 {
 }
 
 /// Matchup, park, and defense. wRC+ is not an input. Weather is not an input.
+///
+/// Singles, doubles, triples and home runs scale by their own park factors.
+/// An event with no factor uses the park's run factor, so a park that only has
+/// a run factor still scales every hit the way it used to. A factor of 1 leaves
+/// that event where the matchup put it.
 pub fn outcome_probabilities(
     hitter: &HitterRates,
     pitcher: &PitcherRates,
     defense: f64,
-    run_factor: f64,
+    park: &Park,
 ) -> OutcomeProbs {
     let mut k = log5(hitter.k, pitcher.k, LEAGUE_K);
     let mut bb = log5(hitter.bb, pitcher.bb, LEAGUE_BB);
@@ -154,31 +159,6 @@ pub fn outcome_probabilities(
         1.0 - matched
     };
 
-    // A run factor of 1 leaves the rates where they are, then the renormalize is a no-op.
-    hits *= run_factor;
-    hr *= run_factor;
-    let scaled = k + bb + hbp + hr + hits + bip;
-    if scaled > 0.0 {
-        let scale = 1.0 / scaled;
-        k *= scale;
-        bb *= scale;
-        hbp *= scale;
-        hr *= scale;
-        hits *= scale;
-        bip *= scale;
-    }
-
-    let delta = defense * DEFENSE_HIT_DELTA;
-    if delta >= 0.0 {
-        let shift = delta.min(hits);
-        hits -= shift;
-        bip += shift;
-    } else {
-        let shift = (-delta).min(bip);
-        hits += shift;
-        bip -= shift;
-    }
-
     let denom = hitter.non_hr_hits();
     let (single_share, double_share, triple_share) = if denom <= 1e-12 {
         (1.0, 0.0, 0.0)
@@ -190,15 +170,89 @@ pub fn outcome_probabilities(
         )
     };
 
+    let mut single = hits * single_share * park.event_factor(park.single_factor);
+    let mut double = hits * double_share * park.event_factor(park.double_factor);
+    let mut triple = hits * triple_share * park.event_factor(park.triple_factor);
+    hr *= park.event_factor(park.hr_factor);
+
+    let scaled = k + bb + hbp + hr + single + double + triple + bip;
+    if scaled > 0.0 {
+        let scale = 1.0 / scaled;
+        k *= scale;
+        bb *= scale;
+        hbp *= scale;
+        hr *= scale;
+        single *= scale;
+        double *= scale;
+        triple *= scale;
+        bip *= scale;
+    }
+
+    let hits = single + double + triple;
+    let delta = defense * DEFENSE_HIT_DELTA;
+    let (single, double, triple, bip) = if delta >= 0.0 {
+        let shift = delta.min(hits);
+        let (single, double, triple) = scale_hits(
+            single,
+            double,
+            triple,
+            hits,
+            hits - shift,
+            single_share,
+            double_share,
+            triple_share,
+        );
+        (single, double, triple, bip + shift)
+    } else {
+        let shift = (-delta).min(bip);
+        let (single, double, triple) = scale_hits(
+            single,
+            double,
+            triple,
+            hits,
+            hits + shift,
+            single_share,
+            double_share,
+            triple_share,
+        );
+        (single, double, triple, bip - shift)
+    };
+
     OutcomeProbs {
         k,
         bb,
         hbp,
-        single: hits * single_share,
-        double: hits * double_share,
-        triple: hits * triple_share,
+        single,
+        double,
+        triple,
         hr,
         bip_out: bip,
+    }
+}
+
+/// Move the non-home-run hits to `next` without changing how they are split.
+/// With nothing to split, the hitter's own shares receive the new hits.
+fn scale_hits(
+    single: f64,
+    double: f64,
+    triple: f64,
+    hits: f64,
+    next: f64,
+    single_share: f64,
+    double_share: f64,
+    triple_share: f64,
+) -> (f64, f64, f64) {
+    if hits > 0.0 {
+        let ratio = next / hits;
+        (single * ratio, double * ratio, triple * ratio)
+    } else if next > 0.0 {
+        (
+            next * single_share,
+            next * double_share,
+            next * triple_share,
+        )
+    } else {
+        (single, double, triple)
     }
 }
 
@@ -649,12 +703,8 @@ impl Sim {
             return self.package(input, outcome, merge(outs_from_running, events, adv));
         }
 
-        let mut probs = outcome_probabilities(
-            &input.rates,
-            &input.pitcher,
-            input.defense,
-            input.park.run_factor,
-        );
+        let mut probs =
+            outcome_probabilities(&input.rates, &input.pitcher, input.defense, &input.park);
         if input.calls.hit_and_run && input.situation.bases.first.is_some() {
             apply_hit_and_run(&mut probs);
         }
@@ -968,6 +1018,24 @@ mod tests {
     use super::*;
     use crate::model::{BaseRunners, Half, Park, PrePaCalls, RunnerRating, Running, Situation};
 
+    #[test]
+    fn a_park_json_without_event_factors_uses_the_run_factor() {
+        let park: Park = serde_json::from_str(r#"{"id":"p","run_factor":1.1}"#).unwrap();
+        assert!(park.single_factor.is_none());
+        assert!((park.event_factor(park.hr_factor) - 1.1).abs() < 1e-12);
+    }
+
+    fn average_park() -> Park {
+        Park::default()
+    }
+
+    fn run_park(run_factor: f64) -> Park {
+        Park {
+            run_factor,
+            ..Park::default()
+        }
+    }
+
     fn average_pitcher() -> PitcherRates {
         PitcherRates {
             k: LEAGUE_K,
@@ -994,7 +1062,7 @@ mod tests {
     #[test]
     fn league_pitcher_returns_the_hitter_card() {
         let hitter = stub_300();
-        let probs = outcome_probabilities(&hitter, &average_pitcher(), 0.0, 1.0);
+        let probs = outcome_probabilities(&hitter, &average_pitcher(), 0.0, &average_park());
         assert!((probs.sum() - 1.0).abs() < 1e-9);
         assert!((probs.k - hitter.k).abs() < 1e-9);
         assert!((probs.bb - hitter.bb).abs() < 1e-9);
@@ -1012,9 +1080,9 @@ mod tests {
     fn defense_moves_hits_and_outs_in_the_stated_direction() {
         let hitter = stub_300();
         let pitcher = average_pitcher();
-        let even = outcome_probabilities(&hitter, &pitcher, 0.0, 1.0);
-        let good = outcome_probabilities(&hitter, &pitcher, 10.0, 1.0);
-        let poor = outcome_probabilities(&hitter, &pitcher, -10.0, 1.0);
+        let even = outcome_probabilities(&hitter, &pitcher, 0.0, &average_park());
+        let good = outcome_probabilities(&hitter, &pitcher, 10.0, &average_park());
+        let poor = outcome_probabilities(&hitter, &pitcher, -10.0, &average_park());
         assert!(good.non_hr_hits() < even.non_hr_hits());
         assert!(good.bip_out > even.bip_out);
         assert!(poor.non_hr_hits() > even.non_hr_hits());
@@ -1027,11 +1095,96 @@ mod tests {
     fn neutral_park_is_a_no_op_and_a_higher_factor_raises_home_runs() {
         let hitter = stub_300();
         let pitcher = average_pitcher();
-        let neutral = outcome_probabilities(&hitter, &pitcher, 0.0, 1.0);
-        let hitter_park = outcome_probabilities(&hitter, &pitcher, 0.0, 1.2);
+        let neutral = outcome_probabilities(&hitter, &pitcher, 0.0, &average_park());
+        let hitter_park = outcome_probabilities(&hitter, &pitcher, 0.0, &run_park(1.2));
         assert!((neutral.hr - hitter.hr).abs() < 1e-9);
         assert!(hitter_park.hr > neutral.hr);
         assert!((hitter_park.sum() - 1.0).abs() < 1e-9);
+        let explicit = outcome_probabilities(
+            &hitter,
+            &pitcher,
+            0.0,
+            &Park {
+                run_factor: 1.2,
+                single_factor: Some(1.2),
+                double_factor: Some(1.2),
+                triple_factor: Some(1.2),
+                hr_factor: Some(1.2),
+                ..Park::default()
+            },
+        );
+        assert!((explicit.hr - hitter_park.hr).abs() < 1e-12);
+        assert!((explicit.double - hitter_park.double).abs() < 1e-12);
+    }
+
+    #[test]
+    fn coors_scores_more_than_the_trop() {
+        let hitter = stub_300();
+        let pitcher = average_pitcher();
+        let neutral = outcome_probabilities(&hitter, &pitcher, 0.0, &average_park());
+        // 2016-2018 park indexes: Coors carries, the Trop suppresses.
+        let coors = outcome_probabilities(
+            &hitter,
+            &pitcher,
+            0.0,
+            &Park {
+                id: "coors".into(),
+                run_factor: 1.32,
+                single_factor: Some(1.10),
+                double_factor: Some(1.30),
+                triple_factor: Some(1.77),
+                hr_factor: Some(1.19),
+            },
+        );
+        let trop = outcome_probabilities(
+            &hitter,
+            &pitcher,
+            0.0,
+            &Park {
+                id: "trop".into(),
+                run_factor: 0.90,
+                single_factor: Some(0.98),
+                double_factor: Some(0.82),
+                triple_factor: Some(0.98),
+                hr_factor: Some(0.95),
+            },
+        );
+        assert!(coors.hr > neutral.hr && neutral.hr > trop.hr);
+        assert!(coors.double > neutral.double && neutral.double > trop.double);
+        assert!(run_value(&coors) > run_value(&neutral));
+        assert!(run_value(&neutral) > run_value(&trop));
+        assert!((coors.sum() - 1.0).abs() < 1e-9);
+        assert!((trop.sum() - 1.0).abs() < 1e-9);
+    }
+
+    #[test]
+    fn a_doubles_park_raises_doubles_without_raising_home_runs() {
+        let hitter = stub_300();
+        let pitcher = average_pitcher();
+        let neutral = outcome_probabilities(&hitter, &pitcher, 0.0, &average_park());
+        let alley = outcome_probabilities(
+            &hitter,
+            &pitcher,
+            0.0,
+            &Park {
+                id: "alley".into(),
+                double_factor: Some(1.40),
+                hr_factor: Some(0.90),
+                ..Park::default()
+            },
+        );
+        assert!(alley.double > neutral.double);
+        assert!(alley.hr < neutral.hr);
+        assert!((alley.sum() - 1.0).abs() < 1e-9);
+    }
+
+    fn run_value(probs: &OutcomeProbs) -> f64 {
+        0.47 * probs.single
+            + 0.78 * probs.double
+            + 1.03 * probs.triple
+            + 1.40 * probs.hr
+            + 0.31 * probs.bb
+            + 0.33 * probs.hbp
     }
 
     #[test]
@@ -1714,10 +1867,7 @@ mod tests {
                 pitcher_ceiling: 100.0,
                 postseason: false,
             },
-            park: Park {
-                id: "neutral".into(),
-                run_factor: 1.0,
-            },
+            park: average_park(),
             weather: Some("crosswind".into()),
             calls: PrePaCalls {
                 intentional_walk,

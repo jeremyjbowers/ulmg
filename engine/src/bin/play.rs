@@ -46,7 +46,24 @@ fn print_game(game: &Game) {
         .iter()
         .find(|park| park.id == game.home.home_park_id);
     let park_line = match park {
-        Some(park) => format!("{} (run factor {:.1})", park.id, park.run_factor),
+        Some(park) => {
+            if park.single_factor.is_some()
+                || park.double_factor.is_some()
+                || park.triple_factor.is_some()
+                || park.hr_factor.is_some()
+            {
+                format!(
+                    "{} (1B {:.2}, 2B {:.2}, 3B {:.2}, HR {:.2})",
+                    park.id,
+                    park.event_factor(park.single_factor),
+                    park.event_factor(park.double_factor),
+                    park.event_factor(park.triple_factor),
+                    park.event_factor(park.hr_factor),
+                )
+            } else {
+                format!("{} (run factor {:.1})", park.id, park.run_factor)
+            }
+        }
         None => "unknown park".to_string(),
     };
     let season = if game.postseason {

@@ -1,5 +1,5 @@
 # ABOUTME: Live game state for the SNES field: world-space fielders, the batter's hand, the mound card and the last ball.
-# ABOUTME: The SVG itself is composed in the browser from pixelkit.mjs; this module is the JSON the page feeds it.
+# ABOUTME: The SVG is composed in the browser. The home field's scores, rules and plate ride along in the JSON.
 
 from ulmg import cards, usage
 
@@ -203,7 +203,15 @@ def field_view(play):
         "width": LOGICAL["width"],
         "height": LOGICAL["height"],
         "scale": MIN_SCALE,
+        "park": _park(sim_game.team_for(play.game, sim_game.HOME)),
     }
+
+
+def _park(team):
+    """The home club's field: scores, dimensions and the plate, for the composer."""
+    from ulmg import park
+
+    return park.art(team)
 
 
 def _actor(player, x, z, side):

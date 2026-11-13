@@ -1004,6 +1004,21 @@ fn validate_fixture(fixture: &GameFixture) -> Result<(), GameError> {
                 park.id, park.run_factor
             )));
         }
+        for (name, factor) in [
+            ("single", park.single_factor),
+            ("double", park.double_factor),
+            ("triple", park.triple_factor),
+            ("home run", park.hr_factor),
+        ] {
+            if let Some(factor) = factor {
+                if !factor.is_finite() || factor <= 0.0 {
+                    return Err(GameError::InvalidFixture(format!(
+                        "park {} has {name} factor {factor}",
+                        park.id
+                    )));
+                }
+            }
+        }
     }
     validate_team(&fixture.away, fixture)?;
     validate_team(&fixture.home, fixture)?;

@@ -68,7 +68,7 @@ fn stub_hitter_rated_300_lands_near_300() {
     assert!((fixture.defense.rating - 0.0).abs() < 1e-12);
     assert!((fixture.park.run_factor - 1.0).abs() < 1e-12);
 
-    let analytic = outcome_probabilities(&fixture.rates, &fixture.pitcher, 0.0, 1.0);
+    let analytic = outcome_probabilities(&fixture.rates, &fixture.pitcher, 0.0, &fixture.park);
     let card = card_batting_average(&fixture.rates);
     assert!((card - 0.300).abs() < 1e-9, "card batting average {card}");
     assert!(
@@ -163,6 +163,7 @@ fn neutral_park_constant_is_one() {
     let park = Park {
         id: "neutral".into(),
         run_factor: 1.0,
+        ..Park::default()
     };
     assert!((park.run_factor - 1.0).abs() < 1e-12);
 }
@@ -220,6 +221,7 @@ fn league_input(bases: Bases, outs: u8, calls: PrePaCalls) -> PaInput {
         park: Park {
             id: "neutral".into(),
             run_factor: 1.0,
+            ..Park::default()
         },
         weather: None,
         calls,
@@ -594,6 +596,7 @@ fn league_fixture() -> GameFixture {
         parks: vec![Park {
             id: "neutral".into(),
             run_factor: 1.0,
+            ..Park::default()
         }],
         weather: None,
         away: league_team("away"),

@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 from django.db import transaction
 from django.utils import timezone
 
-from ulmg import box_score, cards, computer_manager, engine_client, game_field, models, plans, roster_moves, schedule, season_record, usage, utils
+from ulmg import box_score, cards, computer_manager, engine_client, game_field, models, park as home_park, plans, roster_moves, schedule, season_record, usage, utils
 
 Event = models.GameEvent
 
@@ -199,13 +199,8 @@ def pitcher_card(player, card):
 
 
 def park(team):
-    """The team's park for the engine: its Venue's park factor / 100, or 1.0 without one."""
-    venue = models.Venue.objects.filter(team=team).first()
-    factor = venue.park_factor if venue is not None else None
-    return {
-        "id": f"park-{team.abbreviation.lower()}",
-        "run_factor": factor / 100 if factor else 1.0,
-    }
+    """The team's home field for the engine: event scores where they exist, otherwise one run factor, otherwise 1."""
+    return home_park.engine_park(team)
 
 
 def build_fixture(game, starters, lineups, cards_for):

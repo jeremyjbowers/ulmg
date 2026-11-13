@@ -121,7 +121,7 @@ pub fn matchup(game: &Game) -> Result<Matchup, GameError> {
             &input.rates,
             &input.pitcher,
             input.defense,
-            input.park.run_factor,
+            &input.park,
         ),
         batter_id: input.hitter_id,
         batter_name: input.hitter_name,

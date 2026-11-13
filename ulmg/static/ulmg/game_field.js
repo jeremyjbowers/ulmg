@@ -1,5 +1,5 @@
 // ABOUTME: Composes the live SNES field from pixelkit.mjs and the JSON Django puts on the page.
-// ABOUTME: Integer scale only; the field plate is generated once and sprites are <use> of kit symbols.
+// ABOUTME: Integer scale only. A stored field plate replaces the generic park; player sprites stay kit symbols.
 
 import {
   SPRITES, outlined, mirror, paletteFor, gridRects, shadowAt, text, box, textWidth,
@@ -9,7 +9,7 @@ import {
 const MIN_SCALE = 4;
 const MAX_SCALE = 5;
 const BAT_DX = 22;
-let plate = null;
+let generatedPlate = null;
 const symbolCache = new Map();
 
 export function kitTeam(side) {
@@ -28,9 +28,11 @@ export function tagSide(ax) {
   return 'under';
 }
 
-function fieldPlate() {
-  if (!plate) plate = buildField();
-  return plate.svg;
+function fieldPlate(state) {
+  const stored = state && state.park && state.park.sprites && state.park.sprites.plate_svg;
+  if (stored) return stored;
+  if (!generatedPlate) generatedPlate = buildField();
+  return generatedPlate.svg;
 }
 
 function spriteGrid(name, flip) {
@@ -197,7 +199,7 @@ export function composeField(state, scale = MIN_SCALE) {
   const h = VIEW.H * scale;
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${VIEW.W} ${VIEW.H}" width="${w}" height="${h}" shape-rendering="crispEdges">`
     + `<defs>${symbols}</defs>`
-    + fieldPlate()
+    + fieldPlate(state)
     + layer
     + '</svg>';
 }

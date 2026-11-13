@@ -39,6 +39,14 @@ assert(svg.includes('width="1280"') && svg.includes('height="720"'), '4× scale 
 assert(svg.includes('shape-rendering="crispEdges"'), 'crispEdges on the root');
 assert(!/<circle|<path |font-family|<ellipse/i.test(svg), 'no anti-aliased primitives or fonts');
 assert(svg.includes('id="t-grassA"'), 'field plate uses the kit tiles');
+
+const custom = composeField({
+  ...state,
+  park: { sprites: { plate_svg: '<g id="coors-plate"></g>' } },
+}, 4);
+assert(custom.includes('id="coors-plate"'), 'a stored plate replaces the generated field');
+assert(!custom.includes('id="t-grassA"'), 'the generated grass is not drawn under a stored plate');
+assert(custom.includes('data-sprite="fielder_ready"'), 'players still stand on a stored plate');
 assert(svg.includes('data-sprite="fielder_ready"'), 'fielders use the ready sprite');
 assert(svg.includes('data-sprite="catcher"'), 'the catcher uses the catcher sprite');
 assert(svg.includes('data-sprite="pitch_set"'), 'the pitcher is in the set');
