@@ -225,6 +225,28 @@ class GameFieldPageTest(gf.EngineMixin, TestCase):
         self.assertEqual(field["batter"]["team"], "away")
         self.assertIn(catcher["skin"], game_field.SKINS)
 
+    def test_the_home_field_plate_and_rules_reach_the_page(self):
+        venue = models.Venue.objects.create(
+            name="Coors Field",
+            mlb_team="Rockies",
+            mlb_venue_id="19",
+            mlb_venue_url="u",
+            team=self.home.team,
+            pf_hr=119,
+            rules={"distances_ft": {"center": 415}, "roof": "open", "ground_rules": "The ball carries."},
+            sprites={"version": 1, "plate_svg": '<g id="coors-plate"></g>'},
+        )
+        self.home.team.home_field = venue
+        self.home.team.save()
+        self.post("open", seats="away,home")
+        field = self.field_data(self.client.get(self.url))
+        self.assertEqual(field["park"]["name"], "Coors Field")
+        self.assertEqual(field["park"]["scores"]["home_run"], 119)
+        self.assertEqual(field["park"]["rules"]["distances_ft"]["center"], 415)
+        self.assertEqual(field["park"]["rules"]["distances_ft"]["lf_line"], 330)
+        self.assertEqual(field["park"]["rules"]["ground_rules"], "The ball carries.")
+        self.assertEqual(field["park"]["sprites"]["plate_svg"], '<g id="coors-plate"></g>')
+
     def test_infield_names_are_tagged_from_world_positions(self):
         self.post("open", seats="away,home")
         by_pos = {f["position"]: f for f in self.field_data(self.client.get(self.url))["fielders"]}

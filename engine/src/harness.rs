@@ -23,6 +23,7 @@ pub fn scripted_fixture(postseason: bool) -> GameFixture {
         parks: vec![Park {
             id: "neutral".into(),
             run_factor: 1.0,
+            ..Park::default()
         }],
         weather: None,
         away: scripted_team("away", "Visitors"),

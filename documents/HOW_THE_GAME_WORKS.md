@@ -51,13 +51,13 @@ The engine is handed finished numbers. It does not compute a rating from raw sta
 
 **Fatigue sample.** For a pitcher, the card also carries his age, whether he started at least half his appearances, his pitches per appearance that season and in his career, and how many appearances the season sample is. That sample is what the engine draws a fatigue line from. It is not an outcome rating, and it does not change his strikeouts or his hits. The usage ledger classifies pitchers separately, from starts and relief appearances. A pitcher can be a starter for fatigue and a swingman for usage.
 
-**Park.** The home venue's run factor, as a percentage of average. A missing park plays at 100.
+**Park.** The home club's field. Singles, doubles, triples and home runs each have a score, and 100 is average, so 115 is a factor of 1.15. An event with no score uses the park's overall factor, the wOBA index, or the runs index when that is all the park has. A club with no field plays at 100. A high set of scores, Coors Field, produces more hits and more home runs than a low set, Tropicana Field. The dimensions, the ground rules and the field plate are stored on the same field for the art. Until a plate has been written, the page draws a generic park.
 
 ## One plate appearance
 
 The draw is an odds-ratio matchup, the log5 method. For each event, the batter's rate and the pitcher's rate are combined against a league line. A pitcher who matches the league line gives the batter his own card back. The league line, per plate appearance, is a strikeout 22.6 percent of the time, a walk 8.4, a hit by pitch 1.1, a home run 3.1, and a non-home-run hit 19.2. Whatever is left is a ball in play that is out.
 
-The park's run factor then scales hits and home runs, and every rate is scaled so the eight still sum to 1. A factor of 1 leaves the matchup where it was.
+The park multiplies singles, doubles, triples and home runs by their own factors. Every rate, including the strikeouts and walks, is then scaled so the eight still sum to 1. Factors of 1 leave the matchup where it was.
 
 Defense moves probability between non-home-run hits and balls in play that are out. The eight fielders and the pitcher are summed — the designated hitter does not field — and each point of that sum moves 0.002 of a plate appearance. Four fifths of that movement is hits and outs. One fifth is reached-on-error and outs. A good defense turns hits and errors into outs. A bad one does the reverse. Home runs are not touched. wRC+ is not an input to this draw.
 
@@ -234,6 +234,7 @@ The play-by-play under the forms is the log: the starters, each call, each compu
 | The stateless HTTP routes | `engine/src/service.rs`, `engine/src/http.rs` |
 | Django's client for those routes | `ulmg/engine_client.py` |
 | Building a card from FanGraphs | `ulmg/cards.py` |
+| The home field: scores, dimensions, the plate | `ulmg/park.py` |
 | Caps, rest, overrides, penalties | `ulmg/usage.py` |
 | The half plan and the frozen game sheet | `ulmg/plans.py` |
 | The computer's starter, bullpen, hook, and steal | `ulmg/computer_manager.py` |

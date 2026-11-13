@@ -171,7 +171,37 @@ pub struct DefenseRating {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Park {
     pub id: String,
+    /// Fallback multiplier for an event with no score of its own. 1.0 is average.
     pub run_factor: f64,
+    /// Singles, doubles, triples and home runs. 1.0 is average. Absent uses `run_factor`.
+    #[serde(default)]
+    pub single_factor: Option<f64>,
+    #[serde(default)]
+    pub double_factor: Option<f64>,
+    #[serde(default)]
+    pub triple_factor: Option<f64>,
+    #[serde(default)]
+    pub hr_factor: Option<f64>,
+}
+
+impl Default for Park {
+    fn default() -> Self {
+        Self {
+            id: "neutral".into(),
+            run_factor: 1.0,
+            single_factor: None,
+            double_factor: None,
+            triple_factor: None,
+            hr_factor: None,
+        }
+    }
+}
+
+impl Park {
+    /// The multiplier for one event. A missing score uses the park's run factor.
+    pub fn event_factor(&self, factor: Option<f64>) -> f64 {
+        factor.unwrap_or(self.run_factor)
+    }
 }
 
 /// Sample the fatigue line is drawn from. Not an outcome rating.

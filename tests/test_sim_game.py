@@ -52,6 +52,18 @@ class SimGameTestCase(gf.EngineMixin, TestCase):
         raise AssertionError("the condition never came")
 
 
+def _run_value(odds):
+    """A linear-weight reading of one matchup, enough to order two parks."""
+    return (
+        0.47 * odds["Single"]
+        + 0.78 * odds["Double"]
+        + 1.03 * odds["Triple"]
+        + 1.40 * odds["Home run"]
+        + 0.31 * odds["Walk"]
+        + 0.33 * odds["Hit by pitch"]
+    )
+
+
 class OpeningTestCase(SimGameTestCase):
     def test_each_side_starts_its_planned_starter_and_lineup(self):
         sheet = plans.game_sheet(self.game)
@@ -154,6 +166,45 @@ class OpeningTestCase(SimGameTestCase):
         models.ScheduleGame.objects.filter(pk=self.game.pk).update(opened_at=None, opening_sheet=None)
         flat = sim_game.matchup(self.play(self.open()))
         self.assertGreater(dict(neutral)["Home run"], dict(flat)["Home run"])
+
+    def test_coors_scores_more_than_the_trop(self):
+        coors = self._matchup_at(
+            name="Coors Field", park_factor=115, pf_runs=132, pf_1b=110, pf_2b=130, pf_3b=177, pf_hr=119,
+        )
+        trop = self._matchup_at(
+            name="Tropicana Field", park_factor=95, pf_runs=90, pf_1b=98, pf_2b=82, pf_3b=98, pf_hr=95,
+        )
+        self.assertGreater(coors["Home run"], trop["Home run"])
+        self.assertGreater(coors["Double"], trop["Double"])
+        self.assertGreater(coors["Single"], trop["Single"])
+        self.assertGreater(_run_value(coors), _run_value(trop))
+
+    def _matchup_at(self, **scores):
+        name = scores.pop("name")
+        venue, _created = models.Venue.objects.update_or_create(
+            mlb_venue_id="home-park",
+            defaults={
+                "team": self.home.team,
+                "name": name,
+                "mlb_team": "X",
+                "mlb_venue_url": "https://example.com/park",
+                "pf_1b": None,
+                "pf_2b": None,
+                "pf_3b": None,
+                "pf_hr": None,
+                **scores,
+            },
+        )
+        self.home.team.home_field = venue
+        self.home.team.save()
+        models.GameLog.objects.all().delete()
+        models.ScheduleGame.objects.filter(pk=self.game.pk).update(opened_at=None, opening_sheet=None)
+        log = self.open()
+        state = gf.refresh(log).state
+        home_park = next(p for p in state["parks"] if p["id"] == state[HOME]["home_park_id"])
+        if scores.get("pf_hr"):
+            self.assertEqual(home_park["hr_factor"], scores["pf_hr"] / 100)
+        return dict(sim_game.matchup(self.play(log)))
 
 
 class PlayingTestCase(SimGameTestCase):

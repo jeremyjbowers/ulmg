@@ -414,7 +414,7 @@ class DraftPickAdmin(admin.ModelAdmin):
 @admin.register(Team)
 class TeamAdmin(admin.ModelAdmin):
     model = Team
-    list_display = ["city", "division", "owner_obj"]
+    list_display = ["city", "division", "owner_obj", "home_field"]
     list_filter = ["division"]
     search_fields = ["city", "abbreviation", "owner"]
     readonly_fields = ["active", "division"]
@@ -430,6 +430,7 @@ class TeamAdmin(admin.ModelAdmin):
                     "owner_obj",
                     ("owner", "owner_email"),
                     "championships",
+                    "home_field",
                 ),
             },
         ),

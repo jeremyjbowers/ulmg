@@ -130,6 +130,14 @@ class Team(BaseModel):
     owner = models.CharField(max_length=255, null=True, blank=True)
     owner_email = models.CharField(max_length=255, null=True, blank=True)
     championships = ArrayField(models.CharField(max_length=4), blank=True, null=True)
+    home_field = models.OneToOneField(
+        "Venue",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="home_club",
+        help_text="The park this club plays in. Scores, dimensions and the field plate live on that park.",
+    )
 
     # LIVE STATS!
     ls_hits = models.IntegerField(blank=True, null=True)
@@ -177,6 +185,11 @@ class Team(BaseModel):
     def __unicode__(self):
         return self.abbreviation
 
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        if self.home_field_id:
+            Venue.objects.filter(pk=self.home_field_id).exclude(team_id=self.id).update(team_id=self.id)
+
     def to_api_obj(self):
         payload = {
             "city": self.city,
@@ -222,6 +235,25 @@ class Venue(BaseModel):
     pf_so = models.IntegerField(null=True, blank=True)
     pf_years = models.CharField(max_length=255, null=True, blank=True)
     pf_pa = models.IntegerField(null=True, blank=True)
+    rules = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text=(
+            "Dimensions and ground rules the field-art builder reads. "
+            "distances_ft and wall_ft use lf_line, left_center, center, right_center and rf_line, in feet. "
+            "Also foul_ft, surface (grass or turf), roof (open, retractable or dome) and ground_rules. "
+            "Missing keys use a 330/380/400 park."
+        ),
+    )
+    sprites = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text=(
+            "Art the field builder writes. version is an integer. "
+            "plate_svg is the inner SVG of the 320 by 180 field plate, with no player sprites. "
+            "Leave plate_svg empty and the game draws the generic plate."
+        ),
+    )
 
     def __unicode__(self):
         if self.team:
