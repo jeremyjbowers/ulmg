@@ -1,5 +1,5 @@
 # ABOUTME: The box score of a sim game, computed from its log alone: line score, batting and pitching lines, LOB, errors.
-# ABOUTME: Also credits the win, loss and save under MLB rules 9.17 and 9.19, charging each run to the pitcher responsible for it.
+# ABOUTME: Also credits the win, loss, save and holds under MLB rules 9.17 and 9.19, charging each run to the pitcher responsible for it.
 
 from dataclasses import dataclass, field
 
@@ -147,6 +147,7 @@ class BoxScore:
     win: object = None
     loss: object = None
     save: object = None
+    holds: list = field(default_factory=list)
     final: bool = False
     teams: dict = field(default_factory=dict)
 
@@ -409,6 +410,7 @@ def box_score(log, events=None):
 
     if box.final and score[AWAY] != score[HOME]:
         box.win, box.loss, box.save = decisions(score, runs, appearances, pitching, starters)
+        box.holds = holds(score, appearances, pitching, starters, box.win)
     return box
 
 
@@ -485,3 +487,51 @@ def decisions(score, runs, appearances, pitching, starters):
             if lead > 0 and held and outs >= SAVE_MIN_OUTS and situation:
                 save = lines[finisher].player
     return lines[win].player, loss.player, save
+
+
+def _save_situation(lead, runners, outs):
+    """
+    Rule 9.19's three ways a reliever can be in line for a save: a lead of
+    three or fewer, the tying run on base or at bat or on deck, or an outing
+    of at least three innings. One out is enough for a hold; the full inning
+    in 9.19(a) is what the finisher needs to earn the save.
+    """
+    if lead <= 0:
+        return False
+    return lead <= SAVE_LEAD or lead <= runners + 2 or outs >= SAVE_LONG_OUTS
+
+
+def holds(score, appearances, pitching, starters, win):
+    """
+    Relief pitchers credited with a hold. Each entered in a save situation,
+    recorded at least one out, left before the game ended, and never gave up
+    the lead. The winning pitcher and the finisher are not holds. Nobody is,
+    when the game is tied or his team lost.
+    """
+    if score[AWAY] == score[HOME]:
+        return []
+    winner = AWAY if score[AWAY] > score[HOME] else HOME
+    loser = other(winner)
+    lines = pitching[winner]
+    order = list(lines)
+    if len(order) < 2:
+        return []
+    starter = starters[winner]
+    finisher = order[-1]
+    win_id = None if win is None else win.id
+    credited = []
+    for pid in order:
+        if pid in (starter, finisher, win_id):
+            continue
+        line = lines[pid]
+        if line.outs < SAVE_MIN_OUTS:
+            continue
+        outing = [pa for pa in appearances if pa.fielding == winner and pa.pitcher == pid]
+        if not outing:
+            continue
+        entry = outing[0]
+        lead = entry.before[winner] - entry.before[loser]
+        kept = all(pa.after[winner] > pa.after[loser] for pa in outing)
+        if kept and _save_situation(lead, entry.runners, line.outs):
+            credited.append(line.player)
+    return credited
