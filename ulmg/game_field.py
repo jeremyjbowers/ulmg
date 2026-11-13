@@ -23,7 +23,8 @@ BASE_GROUND = {
 FIELDER_POSITIONS = ("CF", "LF", "RF", "SS", "2B", "3B", "1B", "C")
 SKINS = ("light", "medium", "dark")
 LOGICAL = {"width": 320, "height": 180}
-MIN_SCALE = 4
+# 3× is 540px tall, the crisp step nearest a 600px field.
+MIN_SCALE = 3
 
 LANDINGS = {
     "ground_out": [(48, 100), (-42, 105), (78, 82), (-74, 80)],

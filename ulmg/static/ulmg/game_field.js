@@ -6,7 +6,8 @@ import {
   buildField, project, POS, VIEW, HUD, OUTLINE,
 } from './pixelkit.mjs';
 
-const MIN_SCALE = 4;
+// 3× is 540px tall, the crisp step nearest a 600px field. 5× is 900px.
+const MIN_SCALE = 3;
 const MAX_SCALE = 5;
 const BAT_DX = 22;
 let generatedPlate = null;
@@ -16,10 +17,10 @@ export function kitTeam(side) {
   return side === 'away' ? 'ATL' : 'CHI';
 }
 
-export function integerScale(cssWidth, logicalW = VIEW.W, minHeight = 720) {
-  const minScale = Math.max(MIN_SCALE, Math.ceil(minHeight / VIEW.H));
-  const fitted = Math.max(1, Math.floor((cssWidth || logicalW * minScale) / logicalW));
-  return Math.min(MAX_SCALE, Math.max(minScale, fitted));
+export function integerScale(cssWidth, cssHeight, logicalW = VIEW.W, logicalH = VIEW.H) {
+  const byWidth = Math.max(1, Math.floor((cssWidth || logicalW * MIN_SCALE) / logicalW));
+  const byHeight = cssHeight > 0 ? Math.max(1, Math.floor(cssHeight / logicalH)) : MAX_SCALE;
+  return Math.min(MAX_SCALE, Math.max(MIN_SCALE, Math.min(byWidth, byHeight)));
 }
 
 export function tagSide(ax) {
@@ -65,7 +66,8 @@ function place(name, ax, ay, { team = 'CHI', skin = 'light', flip = false, shado
   return {
     ay,
     shadow: shade,
-    sprite: `<use href="#${sym.id}" x="${ox}" y="${oy}" data-sprite="${name}"/>`,
+    // A bare <use> of a <symbol> is stretched to the scaled viewport. Pin it to the sprite.
+    sprite: `<use href="#${sym.id}" x="${ox}" y="${oy}" width="${sym.w}" height="${sym.h}" data-sprite="${name}"/>`,
   };
 }
 
@@ -204,13 +206,31 @@ export function composeField(state, scale = MIN_SCALE) {
     + '</svg>';
 }
 
-function hostWidth(host) {
+function fieldBudget(host) {
   const screen = host.closest('.game-screen');
-  return (screen && screen.clientWidth) || host.clientWidth || window.innerWidth;
+  const stage = host.closest('.game-stage');
+  const screenStyle = screen ? getComputedStyle(screen) : null;
+  const padX = screenStyle ? parseFloat(screenStyle.paddingLeft) + parseFloat(screenStyle.paddingRight) : 0;
+  const padY = screenStyle ? parseFloat(screenStyle.paddingTop) + parseFloat(screenStyle.paddingBottom) : 0;
+  const rawWidth = (screen && screen.clientWidth) || host.clientWidth || window.innerWidth;
+  const width = Math.max(0, rawWidth - (Number.isFinite(padX) ? padX : 0));
+  if (!stage) return { width, height: 0 };
+  const top = stage.getBoundingClientRect().top + window.scrollY;
+  let taken = 0;
+  for (const child of stage.children) {
+    if (child.contains(host)) continue;
+    taken += child.offsetHeight;
+  }
+  const stageStyle = getComputedStyle(stage);
+  const gap = parseFloat(stageStyle.rowGap || stageStyle.gap) || 0;
+  const gaps = gap * Math.max(0, stage.children.length - 1);
+  const height = window.innerHeight - top - taken - gaps - (Number.isFinite(padY) ? padY : 0);
+  return { width, height: Math.max(0, height) };
 }
 
 function paint(host, state) {
-  host.innerHTML = composeField(state, integerScale(hostWidth(host)));
+  const box = fieldBudget(host);
+  host.innerHTML = composeField(state, integerScale(box.width, box.height));
 }
 
 function boot() {
