@@ -11,7 +11,7 @@
     </p>
     {% endif %}
 
-    {% for side, team, lines, totals, lob, pitchers in box.sides %}
+    {% for side, team, lines, totals, lob, pitchers, errors in box.sides %}
     <h3 class="font-bold mb-1">{{ team.abbreviation }} batting</h3>
     <div class="overflow-x-auto mb-2">
         <table class="box-batting w-full text-xs border-collapse border border-gray-200">
@@ -47,7 +47,7 @@
             </tbody>
         </table>
     </div>
-    <p class="text-xs text-gray-600 mb-3">Team LOB: {{ lob }}</p>
+    <p class="text-xs text-gray-600 mb-3">Team LOB: {{ lob }}{% if errors %} · E—{{ errors }}{% endif %}</p>
 
     <h3 class="font-bold mb-1">{{ team.abbreviation }} pitching</h3>
     <div class="overflow-x-auto mb-6">
@@ -73,5 +73,5 @@
         </table>
     </div>
     {% endfor %}
-    <p class="text-xs text-gray-600">The sim has no errors, so every run is earned except one scored by the runner placed on second in extra innings.</p>
+    <p class="text-xs text-gray-600">A run is unearned when the runner reached on an error, when it scored on the error, or when the error would have been the third out. The runner placed on second in extra innings scores unearned too.</p>
 </div>

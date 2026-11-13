@@ -32,6 +32,7 @@ pub use sim::{
     LEAGUE_LD, SF_RATE,
 };
 pub use sim::{
-    card_batting_average, outcome_probabilities, OutcomeProbs, Sim, DEFENSE_HIT_DELTA,
-    EXTRA_BASE_RATE, LEAGUE_BB, LEAGUE_H, LEAGUE_HBP, LEAGUE_HR, LEAGUE_K,
+    card_batting_average, outcome_probabilities, OutcomeProbs, Sim, DEFENSE_ERROR_SHARE,
+    DEFENSE_HIT_DELTA, EXTRA_BASE_RATE, LEAGUE_BB, LEAGUE_ERROR_RATE, LEAGUE_H, LEAGUE_HBP,
+    LEAGUE_HR, LEAGUE_K,
 };
