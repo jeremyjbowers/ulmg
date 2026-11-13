@@ -116,6 +116,10 @@ workon ulmg && django-admin live_download_fg_stats
 workon ulmg && django-admin live_download_fg_rosters
 workon ulmg && django-admin live_download_mlb_depthcharts
 
+# Park factors (Statcast leaderboard; 3-year roll, current season)
+workon ulmg && django-admin load_park_factors
+workon ulmg && django-admin load_park_factors --year 2025 --rolling 1 --dry-run
+
 # Update player statistics
 workon ulmg && django-admin live_update_stats_from_fg_stats
 workon ulmg && django-admin live_update_status_from_fg_rosters
