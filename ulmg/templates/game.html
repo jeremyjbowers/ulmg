@@ -1,7 +1,6 @@
 {# ABOUTME: The sim game page: open a game, then play it one plate appearance per POST with both cards, the odds and usage in view. #}
 {# ABOUTME: Every form carries the log position it expects; a seat nobody holds is the computer's, and the box score shows at the final. #}
 {% extends "base.html" %}
-{% load static %}
 
 {% block extrahead %}
 {% include "includes/game_style.html" %}
@@ -197,5 +196,5 @@
 {% endblock %}
 
 {% block extrascript %}
-{% if field %}<script type="module" src="{% static 'ulmg/game_field.js' %}"></script>{% endif %}
+{% if field %}<script type="module" src="{% url 'game_field_js' %}"></script>{% endif %}
 {% endblock %}

@@ -6,7 +6,7 @@ import os
 import subprocess
 from pathlib import Path
 
-from django.test import SimpleTestCase, TestCase
+from django.test import SimpleTestCase, TestCase, override_settings
 
 from tests import game_fixtures as gf
 from ulmg import game_field, models, sim_game
@@ -128,6 +128,16 @@ class GameFieldPageTest(gf.EngineMixin, TestCase):
             self.assertIn(fielder.name, names)
         self.assertNotIn(self.home.hitters[-1].name, names)
         self.assertContains(response, 'src="/static/ulmg/game_field.js"')
+
+    @override_settings(STATIC_URL="https://static-theulmg.nyc3.cdn.digitaloceanspaces.com/static/")
+    def test_the_field_script_stays_on_this_site_when_other_static_files_use_the_cdn(self):
+        self.post("open", seats="away,home")
+        response = self.client.get(self.url)
+        self.assertContains(response, 'src="/static/ulmg/game_field.js"')
+        self.assertNotContains(
+            response,
+            "https://static-theulmg.nyc3.cdn.digitaloceanspaces.com/static/ulmg/game_field.js",
+        )
 
     def test_the_mound_shows_xfip_pitches_and_fatigue(self):
         self.post("open", seats="away,home")
