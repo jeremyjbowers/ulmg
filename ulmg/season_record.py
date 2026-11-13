@@ -42,7 +42,8 @@ BATTING_LEADERS = (
     ("sb", "Stolen bases"), ("bb", "Walks"), ("so", "Strikeouts"),
 )
 PITCHING_LEADERS = (
-    ("w", "Wins"), ("sv", "Saves"), ("so", "Strikeouts"), ("ip", "Innings"), ("g", "Games"), ("gs", "Starts"),
+    ("w", "Wins"), ("sv", "Saves"), ("hld", "Holds"), ("so", "Strikeouts"), ("ip", "Innings"),
+    ("g", "Games"), ("gs", "Starts"),
 )
 LEADERS_SHOWN = 10
 
@@ -94,7 +95,7 @@ class Totals:
             for index, line in enumerate(box.pitching[side]):
                 row = self.pitching.setdefault(
                     line.player.id,
-                    dict.fromkeys(["g", "gs", "w", "l", "sv", "outs"] + [k for k, _ in PITCHING_COUNTS], 0),
+                    dict.fromkeys(["g", "gs", "w", "l", "sv", "hld", "outs"] + [k for k, _ in PITCHING_COUNTS], 0),
                 )
                 row["g"] += 1
                 if index == 0:
@@ -105,6 +106,8 @@ class Totals:
         for key, player in (("w", box.win), ("l", box.loss), ("sv", box.save)):
             if player is not None:
                 self.pitching[player.id][key] += 1
+        for player in box.holds:
+            self.pitching[player.id]["hld"] += 1
 
         runs = {side: box.totals[side]["r"] for side in box_score.SIDES}
         for side in box_score.SIDES:

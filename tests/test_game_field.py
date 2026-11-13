@@ -25,6 +25,14 @@ class FieldGeometryTest(SimpleTestCase):
         self.assertEqual(game_field.fielding_label(-0.2), "-2.0")
         self.assertEqual(game_field.fielding_label(0), "0.0")
 
+    def test_an_error_lands_as_a_ground_ball_and_says_error(self):
+        shown = game_field.result_banner(
+            {"outcome": "reached_on_error", "batter_id": "4", "count": {"balls": 1, "strikes": 1}}
+        )
+        self.assertEqual(shown["label"], "ERROR")
+        self.assertEqual(shown["kind"], "ground")
+        self.assertIsNotNone(shown["x"])
+
     def test_a_right_handed_batter_stands_on_the_third_base_side(self):
         self.assertEqual(game_field.batter_box("R", "R"), "left")
         self.assertFalse(game_field.batter_flip("left"))

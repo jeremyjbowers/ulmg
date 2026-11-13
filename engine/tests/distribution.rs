@@ -13,8 +13,8 @@ use baseball_engine::{
     FatigueProfile, Game, GameFixture, Governance, Half, HitterRates, PaInput, PaResult, Park,
     PitcherCard, PitcherRates, PitcherRole, PlateOutcome, Position, PrePaCalls, Running, Sim,
     Situation, TeamFixture, COMPUTER_BUNT_RATE, DP_RATE, FLY_SECOND_TO_THIRD, GB_SCORE_FROM_THIRD,
-    GB_SECOND_TO_THIRD, INFIELD_IN_SINGLE_SHIFT, LEAGUE_BB, LEAGUE_FB, LEAGUE_GB, LEAGUE_H,
-    LEAGUE_HBP, LEAGUE_HR, LEAGUE_K, LEAGUE_LD, SF_RATE,
+    GB_SECOND_TO_THIRD, INFIELD_IN_SINGLE_SHIFT, LEAGUE_BB, LEAGUE_ERROR_RATE, LEAGUE_FB,
+    LEAGUE_GB, LEAGUE_H, LEAGUE_HBP, LEAGUE_HR, LEAGUE_K, LEAGUE_LD, SF_RATE,
 };
 
 const DISTRIBUTION_SEED: u64 = 20_261_004;
@@ -38,6 +38,7 @@ fn input_from(fixture: &DistributionFixture, wrc_plus: f64, weather: Option<Stri
         hitter_batted_balls: BattedBallRates::default(),
         pitcher_batted_balls: BattedBallRates::default(),
         defense: fixture.defense.rating,
+        fielders: Vec::new(),
         situation: Situation {
             inning: 1,
             half: Half::Top,
@@ -207,6 +208,7 @@ fn league_input(bases: Bases, outs: u8, calls: PrePaCalls) -> PaInput {
         hitter_batted_balls: BattedBallRates::default(),
         pitcher_batted_balls: BattedBallRates::default(),
         defense: 0.0,
+        fielders: Vec::new(),
         situation: Situation {
             inning: 1,
             half: Half::Top,
@@ -609,6 +611,8 @@ fn league_average_games_land_in_the_run_and_double_play_bands() {
     let mut runs = 0u64;
     let mut opportunities = 0u64;
     let mut double_plays = 0u64;
+    let mut errors = 0u64;
+    let mut named = false;
     let mut manager = ComputerManager::from_seed(CALIBRATION_SEED);
     let mut sim = Sim::from_seed(CALIBRATION_SEED);
     let governance = Governance::new();
@@ -635,6 +639,24 @@ fn league_average_games_land_in_the_run_and_double_play_bands() {
                     double_plays += 1;
                 }
             }
+            let result = game.last_result.as_ref().unwrap();
+            if result.outcome == PlateOutcome::ReachedOnError {
+                errors += 1;
+                assert!(result.fielding.error.is_some());
+                // A spent pitcher is pulled after the plate appearance, so the error line is not always last.
+                let line = game
+                    .log
+                    .iter()
+                    .rev()
+                    .find(|entry| entry.text.contains(" pitch"))
+                    .expect("the plate appearance is in the log");
+                assert!(
+                    line.text.contains("reached on an error by"),
+                    "{}",
+                    line.text
+                );
+                named = true;
+            }
         }
         runs += u64::from(game.score.away + game.score.home);
     }
@@ -647,5 +669,10 @@ fn league_average_games_land_in_the_run_and_double_play_bands() {
     assert!(
         (0.09..=0.13).contains(&dp_rate),
         "double plays on {dp_rate} of {opportunities} opportunities (seed {CALIBRATION_SEED})"
+    );
+    let per_team_errors = errors as f64 / (2 * CALIBRATION_GAMES) as f64;
+    assert!(
+        named && (0.12..=0.45).contains(&per_team_errors),
+        "{per_team_errors} reached-on-error per team per game (league rate {LEAGUE_ERROR_RATE} per plate appearance)"
     );
 }

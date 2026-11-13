@@ -262,6 +262,10 @@
                 <th class="text-center py-1">AVG</th>
                 <th class="text-center py-1">OBP</th>
                 <th class="text-center py-1">SLG</th>
+                <th class="text-center py-1">OPS</th>
+                <th class="text-center py-1">ISO</th>
+                <th class="text-center py-1">K%</th>
+                <th class="text-center py-1">BB%</th>
             </tr>
         </thead>
         <tbody>
@@ -282,6 +286,10 @@
                 <td class="text-center py-1">{{ s.avg|floatformat:3|kill_leading_zero|default_if_none:"-" }}</td>
                 <td class="text-center py-1">{{ s.obp|floatformat:3|kill_leading_zero|default_if_none:"-" }}</td>
                 <td class="text-center py-1">{{ s.slg|floatformat:3|kill_leading_zero|default_if_none:"-" }}</td>
+                <td class="text-center py-1">{{ s.ops|floatformat:3|kill_leading_zero|default_if_none:"-" }}</td>
+                <td class="text-center py-1">{{ s.iso|floatformat:3|kill_leading_zero|default_if_none:"-" }}</td>
+                <td class="text-center py-1">{% with pct=s.k_pct|default_if_none:"" %}{% if pct != "" %}{{ pct|percents_to_hundreds|floatformat:"1" }}{% else %}-{% endif %}{% endwith %}</td>
+                <td class="text-center py-1">{% with pct=s.bb_pct|default_if_none:"" %}{% if pct != "" %}{{ pct|percents_to_hundreds|floatformat:"1" }}{% else %}-{% endif %}{% endwith %}</td>
             </tr>
             {% endwith %}
         </tbody>
@@ -298,6 +306,7 @@
                 <th class="text-center py-1">W</th>
                 <th class="text-center py-1">L</th>
                 <th class="text-center py-1">SV</th>
+                <th class="text-center py-1">HLD</th>
                 <th class="text-center py-1">IP</th>
                 <th class="text-center py-1">H</th>
                 <th class="text-center py-1">R</th>
@@ -307,6 +316,8 @@
                 <th class="text-center py-1">SO</th>
                 <th class="text-center py-1">ERA</th>
                 <th class="text-center py-1">WHIP</th>
+                <th class="text-center py-1">K/9</th>
+                <th class="text-center py-1">BB/9</th>
             </tr>
         </thead>
         <tbody>
@@ -317,6 +328,7 @@
                 <td class="text-center py-1">{{ s.w }}</td>
                 <td class="text-center py-1">{{ s.l }}</td>
                 <td class="text-center py-1">{{ s.sv }}</td>
+                <td class="text-center py-1">{{ s.hld|default:"0" }}</td>
                 <td class="text-center py-1">{{ s.ip|floatformat:1 }}</td>
                 <td class="text-center py-1">{{ s.h }}</td>
                 <td class="text-center py-1">{{ s.r }}</td>
@@ -326,6 +338,8 @@
                 <td class="text-center py-1">{{ s.so }}</td>
                 <td class="text-center py-1">{{ s.era|floatformat:2|default_if_none:"-" }}</td>
                 <td class="text-center py-1">{{ s.whip|floatformat:2|default_if_none:"-" }}</td>
+                <td class="text-center py-1">{{ s.k_9|floatformat:1|default_if_none:"-" }}</td>
+                <td class="text-center py-1">{{ s.bb_9|floatformat:1|default_if_none:"-" }}</td>
             </tr>
             {% endwith %}
         </tbody>

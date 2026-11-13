@@ -149,17 +149,27 @@ class PagesTestCase(TestCase):
         )
         models.PlayerStatSeason.objects.create(
             player=self.slugger, season=SEASON, classification=ULMG,
-            hit_stats={"g": 2, "pa": 9, "ab": 8, "h": 4, "hr": 3, "rbi": 5, "r": 3, "sb": 0, "avg": 0.5, "obp": 0.555, "slg": 1.625},
+            hit_stats={
+                "g": 2, "pa": 9, "ab": 8, "h": 4, "hr": 3, "rbi": 5, "r": 3, "sb": 0,
+                "avg": 0.5, "obp": 0.555, "slg": 1.625, "ops": 2.18, "iso": 1.125,
+                "k_pct": 0.222, "bb_pct": 0.111,
+            },
         )
         self.other = models.Player.objects.create(name="Ulmg Contact", position="OF", level="A", team=self.car)
         models.PlayerStatSeason.objects.create(
             player=self.other, season=SEASON, classification=ULMG,
-            hit_stats={"g": 2, "pa": 9, "ab": 9, "h": 5, "hr": 1, "rbi": 1, "r": 1, "sb": 2, "avg": 0.555},
+            hit_stats={
+                "g": 2, "pa": 9, "ab": 9, "h": 5, "hr": 1, "rbi": 1, "r": 1, "sb": 2, "avg": 0.555,
+                "k_pct": 0, "bb_pct": 0,
+            },
         )
         self.ace = models.Player.objects.create(name="Ulmg Ace", position="P", level="V", team=self.atl)
         models.PlayerStatSeason.objects.create(
             player=self.ace, season=SEASON, classification=ULMG,
-            pitch_stats={"g": 2, "gs": 2, "w": 2, "l": 0, "sv": 0, "ip": 14.1, "so": 17, "era": 1.88},
+            pitch_stats={
+                "g": 2, "gs": 2, "w": 2, "l": 0, "sv": 0, "hld": 7, "ip": 14.1, "so": 17,
+                "era": 1.88, "whip": 0.91, "k_9": 10.8, "bb_9": 2.5,
+            },
         )
 
     def test_the_standings_page_is_public(self):
@@ -226,7 +236,10 @@ class PagesTestCase(TestCase):
         self.assertEqual([row.value for row in hits.rows], [5, 4])
         wins = next(board for board in leaders.pitching if board.key == "w")
         self.assertEqual([row.player for row in wins.rows], [self.ace])
+        holds = next(board for board in leaders.pitching if board.key == "hld")
+        self.assertEqual([(row.player, row.value) for row in holds.rows], [(self.ace, 7)])
         self.assertContains(response, "Ulmg Slugger")
+        self.assertContains(response, 'data-stat="hld"')
         self.assertContains(response, "14.1")
         self.assertNotContains(response, ">11<", msg_prefix="the MLB line is not a ULMG leader")
 
@@ -253,6 +266,39 @@ class PagesTestCase(TestCase):
         ulmg_section = content[content.index(f"{SEASON} ULMG season"):content.index("Hitting Stats")]
         self.assertIn(".500", ulmg_section)
         self.assertIn("1.625", ulmg_section)
+        for label in ("OPS", "ISO", "K%", "BB%"):
+            self.assertIn(label, ulmg_section)
+        self.assertIn("2.180", ulmg_section)
+        self.assertIn("1.125", ulmg_section)
+        self.assertIn("22.2", ulmg_section)
+        self.assertIn("11.1", ulmg_section)
+
+    def test_the_player_page_shows_the_ulmg_pitching_rates_and_holds(self):
+        self.client.force_login(User.objects.create_user("pitching"))
+        response = self.client.get(f"/players/{self.ace.id}/")
+        content = response.content.decode()
+        ulmg_section = content[content.index(f"{SEASON} ULMG season"):]
+        for label in ("HLD", "ERA", "WHIP", "K/9", "BB/9"):
+            self.assertIn(label, ulmg_section)
+        self.assertIn("1.88", ulmg_section)
+        self.assertIn("0.91", ulmg_section)
+        self.assertIn("10.8", ulmg_section)
+        self.assertIn("2.5", ulmg_section)
+        self.assertIn(">7<", ulmg_section)
+
+    def test_a_zero_rate_is_shown_and_a_line_without_rate_keys_still_renders(self):
+        self.client.force_login(User.objects.create_user("partial"))
+        response = self.client.get(f"/players/{self.other.id}/")
+        content = response.content.decode()
+        ulmg_section = content[content.index(f"{SEASON} ULMG season"):]
+        self.assertIn("0.0", ulmg_section)
+        bare = models.Player.objects.create(name="No Rates", position="OF", level="A", team=self.car)
+        models.PlayerStatSeason.objects.create(
+            player=bare, season=SEASON, classification=ULMG, hit_stats={"g": 1, "pa": 4, "ab": 4, "h": 1}
+        )
+        response = self.client.get(f"/players/{bare.id}/")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, f"{SEASON} ULMG season")
 
     def test_the_player_page_without_a_ulmg_line_has_no_ulmg_block(self):
         self.client.force_login(User.objects.create_user("viewer"))

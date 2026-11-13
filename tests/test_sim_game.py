@@ -1,6 +1,8 @@
 # ABOUTME: Tests the sim game against the real engine: opening, stepping, the log, replay, usage, the computer manager and the final.
 # ABOUTME: Plays real games on a generated schedule with filed half plans; seeds come from a counter so every game is repeatable.
 
+from types import SimpleNamespace
+
 from django.db import connection
 from django.test import TestCase
 from django.test.utils import CaptureQueriesContext
@@ -233,6 +235,13 @@ class PlayingTestCase(SimGameTestCase):
             self.assertEqual(box.totals[side]["h"], box.batting_totals[side]["h"])
             outs = sum(line.outs for line in box.pitching[side])
             self.assertGreaterEqual(outs, 24)
+        reached = [e for e in pas if e.payload["result"]["outcome"] == "reached_on_error"]
+        for event in reached:
+            self.assertIn("reached on an error by", event.text)
+            self.assertIsNotNone(event.payload["result"]["fielding"]["error"])
+        for side in (AWAY, HOME):
+            charged = [e for e in reached if box_score.other(e.payload["batting"]) == side]
+            self.assertEqual(box.totals[side]["e"], len(charged))
         self.assertIsNotNone(box.win)
         self.assertIsNotNone(box.loss)
 
@@ -624,3 +633,87 @@ class SeatsTestCase(SimGameTestCase):
         )
         self.assertEqual(self.play(log).fold.seats, {AWAY: self.manager.id, HOME: self.tester.id})
         self.assertIn(self.manager.username, gf.events(log, Event.SEAT)[2].text)
+
+
+class ErrorBoxScoreTest(SimGameTestCase):
+    def _pa(self, batting, batter, pitcher, outcome, *, outs, before_bases, after_bases, runs, outs_added, baserunning, error=None):
+        return SimpleNamespace(
+            kind=Event.PLATE_APPEARANCE,
+            side=batting,
+            payload={
+                "batting": batting,
+                "batter": batter,
+                "pitcher": pitcher,
+                "before": {"inning": 1, "half": "top" if batting == AWAY else "bottom", "outs": outs, "bases": before_bases},
+                "result": {
+                    "outcome": outcome,
+                    "batter_completed": True,
+                    "change": {"outs_added": outs_added, "runs_scored": runs, "bases": after_bases},
+                    "pitches": [],
+                    "baserunning": baserunning,
+                    "fielding": {"rating": 0, "in_play": True, "error": error},
+                },
+            },
+        )
+
+    def test_a_reached_on_error_is_not_a_hit_and_the_run_he_scores_is_unearned(self):
+        log = self.open()
+        start = gf.events(log, Event.START)[0]
+        batter = start.payload["lineups"][AWAY][0]["player"]
+        fielder = next(entry for entry in start.payload["lineups"][HOME] if entry["position"] == "SS")
+        pitcher = start.payload["starters"][HOME]
+        name = models.Player.objects.get(pk=fielder["player"]).name
+        empty = {"first": None, "second": None, "third": None}
+        on_first = {"first": str(batter), "second": None, "third": None}
+        charged = {"fielder_id": str(fielder["player"]), "fielder_name": name, "position": "SS"}
+        error = self._pa(
+            AWAY, batter, pitcher, "reached_on_error",
+            outs=0, before_bases=empty, after_bases=on_first, runs=0, outs_added=0, baserunning=[], error=charged,
+        )
+        single = self._pa(
+            AWAY, batter, pitcher, "single",
+            outs=0, before_bases=on_first, after_bases=empty, runs=1, outs_added=0,
+            baserunning=[{"Scored": {"runner": str(batter)}}],
+        )
+        box = box_score.box_score(log, [start, error, single])
+        self.assertEqual(box.totals[HOME]["e"], 1)
+        self.assertEqual(box.totals[AWAY]["h"], 1)
+        self.assertEqual(box.batting_totals[AWAY]["ab"], 2)
+        self.assertEqual(box.batting_totals[AWAY]["h"], 1)
+        self.assertEqual(box.error_notes[HOME], name)
+        self.assertEqual(box.pitching[HOME][0].r, 1)
+        self.assertEqual(box.pitching[HOME][0].er, 0)
+        self.assertEqual(box.pitching[HOME][0].h, 1)
+
+    def test_a_two_out_error_makes_the_runs_that_follow_unearned(self):
+        log = self.open()
+        start = gf.events(log, Event.START)[0]
+        lineup = start.payload["lineups"][AWAY]
+        batter, follower = lineup[0]["player"], lineup[1]["player"]
+        fielder = next(entry for entry in start.payload["lineups"][HOME] if entry["position"] == "SS")
+        pitcher = start.payload["starters"][HOME]
+        name = models.Player.objects.get(pk=fielder["player"]).name
+        empty = {"first": None, "second": None, "third": None}
+        on_first = {"first": str(batter), "second": None, "third": None}
+        events = [
+            start,
+            self._pa(AWAY, batter, pitcher, "ground_out", outs=0, before_bases=empty, after_bases=empty, runs=0, outs_added=1, baserunning=[]),
+            self._pa(AWAY, batter, pitcher, "fly_out", outs=1, before_bases=empty, after_bases=empty, runs=0, outs_added=1, baserunning=[]),
+            self._pa(
+                AWAY, batter, pitcher, "reached_on_error",
+                outs=2, before_bases=empty, after_bases=on_first, runs=0, outs_added=0, baserunning=[],
+                error={"fielder_id": str(fielder["player"]), "fielder_name": name, "position": "SS"},
+            ),
+            self._pa(
+                AWAY, follower, pitcher, "home_run",
+                outs=2, before_bases=on_first, after_bases=empty, runs=2, outs_added=0,
+                baserunning=[{"Scored": {"runner": str(batter)}}, {"Scored": {"runner": str(follower)}}],
+            ),
+        ]
+        box = box_score.box_score(log, events)
+        self.assertEqual(box.totals[HOME]["e"], 1)
+        self.assertEqual(box.totals[AWAY]["h"], 1)
+        self.assertEqual(box.batting_totals[AWAY]["ab"], 4)
+        self.assertEqual(box.pitching[HOME][0].r, 2)
+        self.assertEqual(box.pitching[HOME][0].er, 0)
+        self.assertEqual(box.error_notes[HOME], name)

@@ -4,14 +4,16 @@
 //! A bunt or an intentional walk is resolved only when that call is present.
 //! A ball-in-play out is a ground out, fly out, or line out, drawn from the batted-ball mix,
 //! and runners move by the rules on `advance_on_out`.
+//! Some of those outs are a reached-on-error instead: the batter is safe and a fielder is charged.
 
 use rand::rngs::StdRng;
 use rand::seq::SliceRandom;
 use rand::{Rng, SeedableRng};
 
 use crate::model::{
-    Base, BaseOutRunChange, BaserunningEvent, Bases, BattedBallRates, Count, Fielding, HitterRates,
-    PaInput, PaResult, Park, Pitch, PitchKind, PitcherRates, PlateOutcome, PlayerId, Running,
+    Base, BaseOutRunChange, BaserunningEvent, Bases, BattedBallRates, ChargedError, Count, Fielder,
+    Fielding, HitterRates, PaInput, PaResult, Park, Pitch, PitchKind, PitcherRates, PlateOutcome,
+    PlayerId, Position, Running,
 };
 
 /// League line used as the odds-ratio baseline, per plate appearance.
@@ -27,8 +29,18 @@ pub const LEAGUE_GB: f64 = 0.43;
 pub const LEAGUE_FB: f64 = 0.36;
 pub const LEAGUE_LD: f64 = 0.21;
 
-/// Hit probability moved into a ball-in-play out, per point of defense, per plate appearance.
+/// Baserunners a point of defense moves, per plate appearance.
+/// Four fifths of it moves hits into outs. One fifth moves reached-on-error into outs.
 pub const DEFENSE_HIT_DELTA: f64 = 0.002;
+/// Share of `DEFENSE_HIT_DELTA` that is errors rather than hits.
+pub const DEFENSE_ERROR_SHARE: f64 = 0.20;
+/// Reached-on-error per plate appearance at league-average defense.
+/// About 1.5 percent of the league ball-in-play-out rate. The card's residual had buried these reaches.
+pub const LEAGUE_ERROR_RATE: f64 = 0.007;
+/// Share of those reaches that come off each kind of batted ball.
+pub const GROUND_ERROR_SHARE: f64 = 0.70;
+pub const LINE_ERROR_SHARE: f64 = 0.20;
+pub const FLY_ERROR_SHARE: f64 = 0.10;
 
 /// Chance a runner takes one extra base at league speed, or when his speed or the league's is not given.
 pub const EXTRA_BASE_RATE: f64 = 0.25;
@@ -189,7 +201,8 @@ pub fn outcome_probabilities(
     }
 
     let hits = single + double + triple;
-    let delta = defense * DEFENSE_HIT_DELTA;
+    // The rest of the defense movement is reached-on-error, drawn later from the outs.
+    let delta = defense * DEFENSE_HIT_DELTA * (1.0 - DEFENSE_ERROR_SHARE);
     let (single, double, triple, bip) = if delta >= 0.0 {
         let shift = delta.min(hits);
         let (single, double, triple) = scale_hits(
@@ -270,6 +283,105 @@ pub fn batted_ball_mix(hitter: &BattedBallRates, pitcher: &BattedBallRates) -> B
         fb: fb / total,
         ld: ld / total,
     }
+}
+
+/// Reached-on-error per plate appearance. A good defense makes fewer. A bad one makes more.
+pub fn error_rate(defense: f64) -> f64 {
+    (LEAGUE_ERROR_RATE - defense * DEFENSE_HIT_DELTA * DEFENSE_ERROR_SHARE).clamp(0.0, 0.05)
+}
+
+/// Chance this kind of ball-in-play out is a reached-on-error instead.
+///
+/// `bip_out` is the plate-appearance probability of any ball-in-play out, and `mix` is
+/// how those outs split. The product of the two keeps the plate-appearance rate at `error_rate`.
+pub fn error_chance(kind: PlateOutcome, defense: f64, bip_out: f64, mix: &BattedBallRates) -> f64 {
+    let (share, portion) = match kind {
+        PlateOutcome::GroundOut => (GROUND_ERROR_SHARE, mix.gb),
+        PlateOutcome::LineOut => (LINE_ERROR_SHARE, mix.ld),
+        PlateOutcome::FlyOut => (FLY_ERROR_SHARE, mix.fb),
+        _ => return 0.0,
+    };
+    let opportunities = bip_out * portion;
+    if opportunities <= 1e-12 {
+        return 0.0;
+    }
+    (share * error_rate(defense) / opportunities).clamp(0.0, 1.0)
+}
+
+/// How often each position is charged, before the batted-ball bias and the glove.
+/// The shares are the shape of a major-league season and sum to 1.
+fn position_error_weight(position: Position) -> f64 {
+    match position {
+        Position::Pitcher => 0.16,
+        Position::Catcher => 0.09,
+        Position::First => 0.10,
+        Position::Second => 0.12,
+        Position::Third => 0.13,
+        Position::Shortstop => 0.18,
+        Position::Left => 0.08,
+        Position::Center => 0.06,
+        Position::Right => 0.08,
+        Position::Dh => 0.0,
+    }
+}
+
+fn error_weight(position: Position, kind: PlateOutcome, rating: f64) -> f64 {
+    let outfield = matches!(
+        position,
+        Position::Left | Position::Center | Position::Right
+    );
+    let place = match kind {
+        PlateOutcome::FlyOut => {
+            if outfield {
+                4.0
+            } else {
+                0.2
+            }
+        }
+        PlateOutcome::GroundOut => {
+            if outfield {
+                0.15
+            } else {
+                3.0
+            }
+        }
+        _ => 1.0,
+    };
+    // Rating is fielding runs / 10. A point better than average is charged half as often.
+    let glove = (1.0 - rating * 0.5).clamp(0.25, 2.5);
+    position_error_weight(position) * place * glove
+}
+
+/// The fielder charged with this error, or None when the defense has nobody to charge.
+pub fn charge_error(
+    rng: &mut impl Rng,
+    fielders: &[Fielder],
+    kind: PlateOutcome,
+) -> Option<ChargedError> {
+    let weights: Vec<f64> = fielders
+        .iter()
+        .map(|fielder| error_weight(fielder.position, kind, fielder.rating))
+        .collect();
+    let total: f64 = weights.iter().sum();
+    if total <= 0.0 {
+        return None;
+    }
+    let mut roll = rng.gen::<f64>() * total;
+    for (fielder, weight) in fielders.iter().zip(weights) {
+        roll -= weight;
+        if roll <= 0.0 {
+            return Some(ChargedError {
+                fielder_id: fielder.id.clone(),
+                fielder_name: fielder.name.clone(),
+                position: fielder.position,
+            });
+        }
+    }
+    fielders.last().map(|fielder| ChargedError {
+        fielder_id: fielder.id.clone(),
+        fielder_name: fielder.name.clone(),
+        position: fielder.position,
+    })
 }
 
 /// Halve the strikeout rate and give that mass to hits and ball-in-play outs.
@@ -416,7 +528,10 @@ pub fn advance(
                 OutAdvanceOptions::default(),
             );
         }
-        PlateOutcome::Walk | PlateOutcome::HitByPitch | PlateOutcome::IntentionalWalk => {
+        PlateOutcome::Walk
+        | PlateOutcome::HitByPitch
+        | PlateOutcome::IntentionalWalk
+        | PlateOutcome::ReachedOnError => {
             next = bases.clone();
             if first.is_some() {
                 if second.is_some() {
@@ -714,6 +829,25 @@ impl Sim {
             let infield_in = input.calls.infield_in && bases.third.is_some() && outs < 2;
             let mix = batted_ball_mix(&input.hitter_batted_balls, &input.pitcher_batted_balls);
             let kind = self.draw_batted_ball_out(&mix);
+            if self.rng.gen::<f64>() < error_chance(kind, input.defense, probs.bip_out, &mix) {
+                let charged = charge_error(&mut self.rng, &input.fielders, kind);
+                let adv = advance(
+                    &bases,
+                    &input.hitter_id,
+                    PlateOutcome::ReachedOnError,
+                    outs,
+                    AdvanceOptions {
+                        take_extra_base: false,
+                    },
+                );
+                let mut result = self.package(
+                    input,
+                    PlateOutcome::ReachedOnError,
+                    merge(outs_from_running, events, adv),
+                );
+                result.fielding.error = charged;
+                return result;
+            }
             if kind == PlateOutcome::GroundOut
                 && infield_in
                 && self.rng.gen::<f64>() < INFIELD_IN_SINGLE_SHIFT
@@ -874,6 +1008,7 @@ impl Sim {
                 | PlateOutcome::BuntSingle
                 | PlateOutcome::BuntOut
                 | PlateOutcome::BuntSacrifice
+                | PlateOutcome::ReachedOnError
         );
         PaResult {
             batter_id: input.hitter_id.clone(),
@@ -891,6 +1026,7 @@ impl Sim {
             fielding: Fielding {
                 rating: input.defense,
                 in_play,
+                error: None,
             },
         }
     }
@@ -1089,6 +1225,12 @@ mod tests {
         assert!(poor.bip_out < even.bip_out);
         assert!((good.hr - even.hr).abs() < 1e-12);
         assert!((good.k - even.k).abs() < 1e-12);
+        let moved = even.non_hr_hits() - good.non_hr_hits();
+        let expected = 10.0 * DEFENSE_HIT_DELTA * (1.0 - DEFENSE_ERROR_SHARE);
+        assert!(
+            (moved - expected).abs() < 1e-9,
+            "defense moved {moved} of hits, expected {expected}"
+        );
     }
 
     #[test]
@@ -1856,6 +1998,7 @@ mod tests {
             hitter_batted_balls: BattedBallRates::default(),
             pitcher_batted_balls: BattedBallRates::default(),
             defense: 0.0,
+            fielders: Vec::new(),
             situation: Situation {
                 inning: 1,
                 half: Half::Top,
@@ -1875,5 +2018,188 @@ mod tests {
             },
             running: Running::default(),
         }
+    }
+
+    fn fielder(id: &str, position: Position, rating: f64) -> Fielder {
+        Fielder {
+            id: id.into(),
+            name: id.into(),
+            position,
+            rating,
+        }
+    }
+
+    fn league_fielders() -> Vec<Fielder> {
+        vec![
+            fielder("p", Position::Pitcher, 0.0),
+            fielder("c", Position::Catcher, 0.0),
+            fielder("1b", Position::First, 0.0),
+            fielder("2b", Position::Second, 0.0),
+            fielder("3b", Position::Third, 0.0),
+            fielder("ss", Position::Shortstop, 0.0),
+            fielder("lf", Position::Left, 0.0),
+            fielder("cf", Position::Center, 0.0),
+            fielder("rf", Position::Right, 0.0),
+        ]
+    }
+
+    #[test]
+    fn a_reached_on_error_forces_runners_and_is_not_a_hit() {
+        let bases = Bases {
+            first: Some("r1".into()),
+            second: Some("r2".into()),
+            third: Some("r3".into()),
+        };
+        let adv = advance(
+            &bases,
+            "batter",
+            PlateOutcome::ReachedOnError,
+            0,
+            AdvanceOptions {
+                take_extra_base: false,
+            },
+        );
+        assert_eq!(adv.outs_added, 0);
+        assert_eq!(adv.runs_scored, 1);
+        assert_eq!(adv.bases.first.as_deref(), Some("batter"));
+        assert_eq!(adv.bases.second.as_deref(), Some("r1"));
+        assert_eq!(adv.bases.third.as_deref(), Some("r2"));
+        assert!(PlateOutcome::ReachedOnError.is_at_bat());
+        assert!(!PlateOutcome::ReachedOnError.is_hit());
+    }
+
+    #[test]
+    fn league_average_defense_reaches_on_error_about_seven_times_in_a_thousand() {
+        let mut input = sample_input(false);
+        input.rates = HitterRates {
+            k: LEAGUE_K,
+            bb: LEAGUE_BB,
+            hbp: LEAGUE_HBP,
+            single: LEAGUE_H * 0.75,
+            double: LEAGUE_H * 0.22,
+            triple: LEAGUE_H * 0.03,
+            hr: LEAGUE_HR,
+            bip_out: 1.0 - (LEAGUE_K + LEAGUE_BB + LEAGUE_HBP + LEAGUE_H + LEAGUE_HR),
+        };
+        input.pitcher = average_pitcher();
+        input.fielders = league_fielders();
+        let sample = 40_000;
+        let mut sim = Sim::from_seed(20_261_113);
+        let mut errors = 0;
+        for _ in 0..sample {
+            let result = sim.resolve(&input);
+            if result.outcome == PlateOutcome::ReachedOnError {
+                errors += 1;
+                assert!(result.fielding.error.is_some());
+                assert_eq!(result.change.outs_added, 0);
+                assert!(!result.outcome.is_hit());
+            }
+        }
+        let rate = errors as f64 / sample as f64;
+        assert!(
+            (rate - LEAGUE_ERROR_RATE).abs() < 0.002,
+            "reached on error {rate} over {sample} plate appearances"
+        );
+    }
+
+    #[test]
+    fn a_poor_defense_is_charged_with_more_errors_than_a_good_one() {
+        let mut input = sample_input(false);
+        input.rates = HitterRates {
+            k: LEAGUE_K,
+            bb: LEAGUE_BB,
+            hbp: LEAGUE_HBP,
+            single: LEAGUE_H * 0.75,
+            double: LEAGUE_H * 0.22,
+            triple: LEAGUE_H * 0.03,
+            hr: LEAGUE_HR,
+            bip_out: 1.0 - (LEAGUE_K + LEAGUE_BB + LEAGUE_HBP + LEAGUE_H + LEAGUE_HR),
+        };
+        input.pitcher = average_pitcher();
+        input.fielders = league_fielders();
+        let sample = 30_000;
+        let mut poor_input = input.clone();
+        poor_input.defense = -10.0;
+        let mut good_input = input;
+        good_input.defense = 10.0;
+        let mut poor_sim = Sim::from_seed(20_261_114);
+        let mut good_sim = Sim::from_seed(20_261_114);
+        let poor = (0..sample)
+            .filter(|_| poor_sim.resolve(&poor_input).outcome == PlateOutcome::ReachedOnError)
+            .count();
+        let good = (0..sample)
+            .filter(|_| good_sim.resolve(&good_input).outcome == PlateOutcome::ReachedOnError)
+            .count();
+        assert!(
+            poor > good,
+            "poor defense {poor} errors, good defense {good} errors"
+        );
+    }
+
+    #[test]
+    fn a_ground_ball_error_is_usually_an_infielder_and_a_fly_ball_an_outfielder() {
+        let fielders = league_fielders();
+        let mut sim = Sim::from_seed(20_261_115);
+        let mut ground_infield = 0;
+        let mut fly_outfield = 0;
+        let sample = 400;
+        for _ in 0..sample {
+            let ground = charge_error(&mut sim.rng, &fielders, PlateOutcome::GroundOut).unwrap();
+            if !matches!(
+                ground.position,
+                Position::Left | Position::Center | Position::Right
+            ) {
+                ground_infield += 1;
+            }
+            let fly = charge_error(&mut sim.rng, &fielders, PlateOutcome::FlyOut).unwrap();
+            if matches!(
+                fly.position,
+                Position::Left | Position::Center | Position::Right
+            ) {
+                fly_outfield += 1;
+            }
+        }
+        assert!(
+            ground_infield * 4 > sample * 3,
+            "{ground_infield} of {sample} ground-ball errors were infielders"
+        );
+        assert!(
+            fly_outfield * 10 > sample * 7,
+            "{fly_outfield} of {sample} fly-ball errors were outfielders"
+        );
+    }
+
+    #[test]
+    fn a_poor_glove_is_charged_more_often_than_a_good_one() {
+        let poor = vec![
+            fielder("ss", Position::Shortstop, -2.0),
+            fielder("2b", Position::Second, 0.0),
+        ];
+        let good = vec![
+            fielder("ss", Position::Shortstop, 2.0),
+            fielder("2b", Position::Second, 0.0),
+        ];
+        let mut sim = Sim::from_seed(20_261_116);
+        let sample = 2_000;
+        let poor_ss = (0..sample)
+            .filter(|_| {
+                charge_error(&mut sim.rng, &poor, PlateOutcome::GroundOut)
+                    .unwrap()
+                    .fielder_id
+                    == "ss"
+            })
+            .count();
+        let good_ss = (0..sample)
+            .filter(|_| {
+                charge_error(&mut sim.rng, &good, PlateOutcome::GroundOut)
+                    .unwrap()
+                    .fielder_id
+                    == "ss"
+            })
+            .count();
+        assert!(
+            poor_ss > good_ss + sample / 5,
+            "poor {poor_ss}, good {good_ss}"
+        );
     }
 }

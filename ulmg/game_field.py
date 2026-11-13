@@ -39,6 +39,7 @@ LANDINGS = {
     "bunt_out": [(-8, 28), (10, 26)],
     "bunt_sacrifice": [(-12, 30), (14, 28)],
     "bip_out": [(0, 150)],
+    "reached_on_error": [(40, 95), (-36, 100), (70, 78)],
 }
 KINDS = {
     "ground_out": "ground",
@@ -54,6 +55,7 @@ KINDS = {
     "triple": "fly",
     "home_run": "fly",
     "bip_out": "line",
+    "reached_on_error": "ground",
 }
 HEIGHT_FT = {"bunt": 4, "ground": 8, "line": 18, "fly": 40}
 BANNERS = {
@@ -75,6 +77,7 @@ BANNERS = {
     "bunt_out": "BUNT OUT",
     "caught_stealing": "CAUGHT STEALING",
     "bip_out": "IN PLAY",
+    "reached_on_error": "ERROR",
 }
 
 

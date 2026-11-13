@@ -30,6 +30,23 @@ pub enum Position {
     Dh,
 }
 
+impl Position {
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::Pitcher => "P",
+            Self::Catcher => "C",
+            Self::First => "1B",
+            Self::Second => "2B",
+            Self::Third => "3B",
+            Self::Shortstop => "SS",
+            Self::Left => "LF",
+            Self::Center => "CF",
+            Self::Right => "RF",
+            Self::Dh => "DH",
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum PitcherRole {
@@ -399,6 +416,8 @@ pub struct PaInput {
     pub pitcher_batted_balls: BattedBallRates,
     /// One higher-is-better number for the defense on the field.
     pub defense: f64,
+    /// The fielders who can be charged when a ball in play is an error.
+    pub fielders: Vec<Fielder>,
     pub situation: Situation,
     pub park: Park,
     pub weather: Option<String>,
@@ -454,6 +473,8 @@ pub enum PlateOutcome {
     BuntSingle,
     BuntOut,
     CaughtStealing,
+    /// The batter reaches and a fielder is charged. An at-bat, and not a hit.
+    ReachedOnError,
 }
 
 impl PlateOutcome {
@@ -477,6 +498,7 @@ impl PlateOutcome {
             Self::BuntSingle => "bunted for a hit",
             Self::BuntOut => "bunted into an out",
             Self::CaughtStealing => "was caught stealing",
+            Self::ReachedOnError => "reached on an error",
         }
     }
 
@@ -514,11 +536,31 @@ pub enum BaserunningEvent {
     CaughtStealing { runner: PlayerId, at: Base },
 }
 
+/// A fielder charged with a reached-on-error.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ChargedError {
+    pub fielder_id: PlayerId,
+    pub fielder_name: String,
+    pub position: Position,
+}
+
+/// One defender the sim can charge with an error.
+#[derive(Debug, Clone, PartialEq)]
+pub struct Fielder {
+    pub id: PlayerId,
+    pub name: String,
+    pub position: Position,
+    pub rating: f64,
+}
+
 /// Fielding resolved inside the plate appearance. Not a separate catch and throw.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Fielding {
     pub rating: f64,
     pub in_play: bool,
+    /// Set when the batter reached on an error.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<ChargedError>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
