@@ -1,5 +1,5 @@
-# ABOUTME: Unit tests for the line score and the box score notes that follow the pitching lines.
-# ABOUTME: A played zero stays 0; X is only for a home club that does not need to bat. Notes name the extras.
+# ABOUTME: Unit tests for the line score, the box score notes, and hold credits.
+# ABOUTME: A played zero stays 0; X is a home club that does not bat. Notes name the extras. A hold is not a win, a loss or a save.
 
 from types import SimpleNamespace
 
@@ -7,7 +7,19 @@ from django.template.loader import render_to_string
 from django.test import SimpleTestCase, TestCase
 
 from ulmg import models
-from ulmg.box_score import AWAY, HOME, SKIPPED, UNPLAYED, _ordinal, box_score, line_score_cells
+from ulmg.box_score import (
+    AWAY,
+    HOME,
+    SKIPPED,
+    UNPLAYED,
+    BoxScore,
+    PitchingLine,
+    PlateAppearance,
+    _ordinal,
+    box_score,
+    holds,
+    line_score_cells,
+)
 
 Event = models.GameEvent
 
@@ -201,7 +213,162 @@ class BoxScoreNotesTest(TestCase):
         box = self.box(events)
         html = render_to_string("includes/box_score.html", {"box": box, "game": self.log(events).game})
         self.assertLess(html.find("box-pitching"), html.find("box-notes"))
-        self.assertLess(html.find("box-notes"), html.find("The sim has no errors"))
+        self.assertLess(html.find("box-notes"), html.find("A run is unearned"))
         self.assertIn('<span class="font-bold">HR</span>: Juan Soto (11th inning off Sean Burke, 0 on, 0 out)', html)
         self.assertIn('<span class="font-bold">LOB</span>: ATL 0, CHI 0', html)
         self.assertLess(html.find(">HR</span>"), html.find(">LOB</span>"))
+
+
+def _pitcher(pid, name):
+    return SimpleNamespace(id=pid, name=name)
+
+
+def _hold_pa(pitcher_id, before, after, runners=0, fielding=HOME):
+    """A plate appearance. before and after are (away, home) scores."""
+    return PlateAppearance(
+        0,
+        fielding,
+        pitcher_id,
+        {AWAY: before[0], HOME: before[1]},
+        {AWAY: after[0], HOME: after[1]},
+        runners,
+    )
+
+
+def _credited(final, lines, appearances, starter, win, fielding=HOME):
+    """Holds for one side's staff. lines is in the order they entered."""
+    pitching = {AWAY: {}, HOME: {}}
+    for line in lines:
+        pitching[fielding][line.player.id] = line
+    starters = {AWAY: None, HOME: None}
+    starters[fielding] = starter.id
+    return holds({AWAY: final[0], HOME: final[1]}, appearances, pitching, starters, win)
+
+
+class HoldsTest(SimpleTestCase):
+    def test_one_out_with_a_three_run_lead_is_a_hold_and_the_starter_and_finisher_are_not(self):
+        starter, setup, closer = _pitcher(1, "Starter"), _pitcher(2, "Setup"), _pitcher(3, "Closer")
+        lines = [PitchingLine(starter, outs=18), PitchingLine(setup, outs=1), PitchingLine(closer, outs=3)]
+        appearances = [
+            _hold_pa(setup.id, (0, 3), (0, 3)),
+            _hold_pa(closer.id, (0, 3), (0, 3)),
+        ]
+        self.assertEqual(_credited((0, 3), lines, appearances, starter, starter), [setup])
+
+    def test_two_setup_men_are_credited_in_the_order_they_pitched(self):
+        starter, seventh, eighth, closer = (
+            _pitcher(1, "Starter"), _pitcher(2, "Seventh"), _pitcher(3, "Eighth"), _pitcher(4, "Closer")
+        )
+        lines = [
+            PitchingLine(starter, outs=18),
+            PitchingLine(seventh, outs=3),
+            PitchingLine(eighth, outs=3),
+            PitchingLine(closer, outs=3),
+        ]
+        appearances = [
+            _hold_pa(seventh.id, (0, 2), (0, 2)),
+            _hold_pa(eighth.id, (0, 2), (1, 2)),
+            _hold_pa(closer.id, (1, 2), (1, 2)),
+        ]
+        self.assertEqual(_credited((1, 2), lines, appearances, starter, starter), [seventh, eighth])
+
+    def test_a_four_run_lead_with_the_bases_empty_is_not_a_hold_until_he_pitches_three_innings(self):
+        starter, short, long, closer = (
+            _pitcher(1, "Starter"), _pitcher(2, "Short"), _pitcher(3, "Long"), _pitcher(4, "Closer")
+        )
+        lines = [
+            PitchingLine(starter, outs=9),
+            PitchingLine(short, outs=3),
+            PitchingLine(long, outs=9),
+            PitchingLine(closer, outs=3),
+        ]
+        appearances = [
+            _hold_pa(short.id, (0, 4), (0, 4), runners=0),
+            _hold_pa(long.id, (0, 5), (0, 5), runners=0),
+            _hold_pa(closer.id, (0, 5), (0, 5)),
+        ]
+        self.assertEqual(_credited((0, 5), lines, appearances, starter, starter), [long])
+
+    def test_the_tying_run_on_base_is_a_hold_even_with_a_lead_of_more_than_three(self):
+        starter, setup, closer = _pitcher(1, "Starter"), _pitcher(2, "Setup"), _pitcher(3, "Closer")
+        lines = [PitchingLine(starter, outs=18), PitchingLine(setup, outs=1), PitchingLine(closer, outs=3)]
+        appearances = [_hold_pa(setup.id, (0, 4), (0, 4), runners=3), _hold_pa(closer.id, (0, 4), (0, 4))]
+        self.assertEqual(_credited((0, 4), lines, appearances, starter, starter), [setup])
+
+    def test_giving_up_the_lead_or_recording_no_out_is_not_a_hold(self):
+        starter, blown, quiet, closer = (
+            _pitcher(1, "Starter"), _pitcher(2, "Blown"), _pitcher(3, "Quiet"), _pitcher(4, "Closer")
+        )
+        lines = [
+            PitchingLine(starter, outs=15),
+            PitchingLine(blown, outs=3),
+            PitchingLine(quiet, outs=0),
+            PitchingLine(closer, outs=3),
+        ]
+        appearances = [
+            _hold_pa(blown.id, (0, 2), (2, 2)),
+            _hold_pa(quiet.id, (2, 3), (2, 3)),
+            _hold_pa(closer.id, (2, 3), (2, 3)),
+        ]
+        self.assertEqual(_credited((2, 3), lines, appearances, starter, starter), [])
+
+    def test_a_reliever_who_is_the_winning_pitcher_does_not_also_get_a_hold(self):
+        starter, winner, closer = _pitcher(1, "Starter"), _pitcher(2, "Winner"), _pitcher(3, "Closer")
+        lines = [PitchingLine(starter, outs=6), PitchingLine(winner, outs=15), PitchingLine(closer, outs=3)]
+        appearances = [_hold_pa(winner.id, (0, 2), (0, 2)), _hold_pa(closer.id, (0, 2), (0, 2))]
+        self.assertEqual(_credited((0, 2), lines, appearances, starter, winner), [])
+
+    def test_a_complete_game_and_a_tie_have_no_hold(self):
+        starter = _pitcher(1, "Starter")
+        complete = _credited((0, 1), [PitchingLine(starter, outs=27)], [], starter, starter)
+        self.assertEqual(complete, [])
+        tied = holds(
+            {AWAY: 2, HOME: 2},
+            [_hold_pa(2, (0, 2), (0, 2))],
+            {HOME: {2: PitchingLine(_pitcher(2, "Setup"), outs=3)}, AWAY: {}},
+            {HOME: 1, AWAY: None},
+            None,
+        )
+        self.assertEqual(tied, [])
+
+    def test_a_reliever_on_the_losing_side_does_not_get_a_hold(self):
+        starter, setup, closer = _pitcher(1, "Starter"), _pitcher(2, "Setup"), _pitcher(3, "Closer")
+        lines = [PitchingLine(starter, outs=18), PitchingLine(setup, outs=3), PitchingLine(closer, outs=3)]
+        appearances = [_hold_pa(setup.id, (0, 3), (0, 3)), _hold_pa(closer.id, (0, 3), (1, 3))]
+        # Home led while these relievers worked, then lost. A hold is only credited to the winning side.
+        self.assertEqual(_credited((4, 3), lines, appearances, starter, starter, fielding=HOME), [])
+
+    def test_the_box_score_names_each_hold(self):
+        starter, setup, closer = _pitcher(1, "Starter"), _pitcher(2, "Setup"), _pitcher(3, "Closer")
+        loser = _pitcher(4, "Loser")
+        road, home = SimpleNamespace(abbreviation="CAR"), SimpleNamespace(abbreviation="ATL")
+        zeros = {
+            name: 0
+            for name in ("ab", "r", "h", "rbi", "bb", "so", "doubles", "triples", "hr", "sb", "cs", "gidp", "sf", "lob")
+        }
+        box = BoxScore(
+            innings=[1],
+            line={AWAY: [0], HOME: [1]},
+            totals={AWAY: {"r": 0, "h": 0, "e": 0}, HOME: {"r": 1, "h": 1, "e": 0}},
+            batting={AWAY: [], HOME: []},
+            batting_totals={AWAY: dict(zeros), HOME: dict(zeros)},
+            team_lob={AWAY: 0, HOME: 0},
+            pitching={
+                AWAY: [PitchingLine(loser, outs=3)],
+                HOME: [PitchingLine(starter, outs=18), PitchingLine(setup, outs=3), PitchingLine(closer, outs=3)],
+            },
+            teams={AWAY: road, HOME: home},
+            win=starter,
+            loss=loser,
+            save=closer,
+            holds=[setup],
+            final=True,
+        )
+        game = SimpleNamespace(series=SimpleNamespace(road_team=road, home_team=home))
+        html = render_to_string("includes/box_score.html", {"box": box, "game": game})
+        self.assertIn(">H<", html.replace(" ", ""))
+        self.assertIn("Setup", html)
+        self.assertIn("(H)", html)
+        self.assertIn("(S)", html)
+        self.assertNotIn("Starter (H)", html)
+        self.assertNotIn("Closer (H)", html)

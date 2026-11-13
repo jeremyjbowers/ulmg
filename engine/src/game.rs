@@ -12,8 +12,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::fatigue::{draw_ceiling, effort_per_pitch};
 use crate::model::{
-    Bases, BatterCard, DefenseRating, FatigueState, GameFixture, Half, LineScore, LogEntry,
-    PaInput, PaResult, PitcherCard, PlayerId, Position, PrePaCalls, Running, Score, Side,
+    Bases, BatterCard, DefenseRating, FatigueState, Fielder, GameFixture, Half, LineScore,
+    LogEntry, PaInput, PaResult, PitcherCard, PlayerId, Position, PrePaCalls, Running, Score, Side,
     Situation, Status, TeamFixture,
 };
 
@@ -293,6 +293,7 @@ impl Game {
             hitter_batted_balls: batter.batted_balls,
             pitcher_batted_balls: pitcher.batted_balls,
             defense: self.defense_rating(fielding),
+            fielders: self.fielders(fielding),
             situation: Situation {
                 inning: self.inning,
                 half: self.half,
@@ -327,6 +328,34 @@ impl Game {
             }
         }
         total
+    }
+
+    /// The eight fielders and the pitcher. The designated hitter does not field.
+    fn fielders(&self, fielding: Side) -> Vec<Fielder> {
+        let club = self.club(fielding);
+        let mut fielders = Vec::new();
+        for batter in &club.lineup {
+            if batter.position == Position::Dh {
+                continue;
+            }
+            fielders.push(Fielder {
+                id: batter.id.clone(),
+                name: batter.name.clone(),
+                position: batter.position,
+                rating: batter.defense.rating,
+            });
+        }
+        if let Some(pitcher_id) = &club.pitcher_slot {
+            if let Some(pitcher) = club.pitchers.iter().find(|card| &card.id == pitcher_id) {
+                fielders.push(Fielder {
+                    id: pitcher.id.clone(),
+                    name: pitcher.name.clone(),
+                    position: Position::Pitcher,
+                    rating: pitcher.defense.rating,
+                });
+            }
+        }
+        fielders
     }
 
     pub fn begin_plate_appearance(&self) -> Result<(), GameError> {
@@ -387,15 +416,22 @@ impl Game {
         }
 
         let count = format!("{}-{}", result.count.balls, result.count.strikes);
+        let action = match &result.fielding.error {
+            Some(error) => format!(
+                "reached on an error by {} ({})",
+                error.fielder_name,
+                error.position.label()
+            ),
+            None => result.outcome.name().to_string(),
+        };
         self.log.push(LogEntry {
             inning,
             half,
             text: format!(
-                "{} {}, {count}: {} {}. {} pitch{}.",
+                "{} {}, {count}: {} {action}. {} pitch{}.",
                 half.name(),
                 inning,
                 batter.name,
-                result.outcome.name(),
                 pitches,
                 if pitches == 1 { "" } else { "es" }
             ),

@@ -70,7 +70,7 @@ class TwoFinalGamesTestCase(gf.EngineMixin, TestCase):
                 for index, line in enumerate(box.pitching[side]):
                     row = pitching.setdefault(
                         line.player.id,
-                        {key: 0 for key in PITCHING_KEYS} | {"g": 0, "gs": 0, "w": 0, "l": 0, "sv": 0, "outs": 0},
+                        {key: 0 for key in PITCHING_KEYS} | {"g": 0, "gs": 0, "w": 0, "l": 0, "sv": 0, "hld": 0, "outs": 0},
                     )
                     row["g"] += 1
                     row["gs"] += 1 if index == 0 else 0
@@ -80,6 +80,8 @@ class TwoFinalGamesTestCase(gf.EngineMixin, TestCase):
             for key, player in (("w", box.win), ("l", box.loss), ("sv", box.save)):
                 if player is not None:
                     pitching[player.id][key] += 1
+            for player in box.holds:
+                pitching[player.id]["hld"] += 1
         return batting, pitching
 
     def test_both_games_are_final(self):

@@ -1,11 +1,11 @@
-{# ABOUTME: ULMG standings: each conference's divisions with games behind, then its wild-card race. #}
+{# ABOUTME: ULMG standings: each conference's divisions with games behind and games out of the wild card. #}
 {# ABOUTME: Public; ties are shown as ties, and clubs with a player over a usage penalty line are flagged. #}
 {% extends "base.html" %}
 
 {% block content %}
 <div class="max-w-6xl mx-auto py-4">
     <h1 class="text-2xl font-bold mb-2 border-b border-gray-300 pb-2">{{ record_season }} standings</h1>
-    <p class="text-sm text-gray-600 mb-6">From final games only. Each conference sends its two division winners and the next two best records. Ties stand until the playoff tiebreakers are applied. <a href="/leaders/{{ record_season }}/" class="underline">Leaders</a> &middot; <a href="/schedule/{{ record_season }}/" class="underline">Schedule</a></p>
+    <p class="text-sm text-gray-600 mb-6">From final games only. Each conference sends its two division winners and the next two best records. WC is games out of that last wild-card spot, for a club that could still take one: +N leads the spot, a dash holds it, and Div is a division winner. A club ineligible for the playoffs leaves it blank. Ties stand until the playoff tiebreakers are applied. <a href="/leaders/{{ record_season }}/" class="underline">Leaders</a> &middot; <a href="/schedule/{{ record_season }}/" class="underline">Schedule</a></p>
     <p class="text-xs text-gray-600 mb-6"><span class="font-bold">*</span> a player more than 10% over a usage cap; <span class="font-bold">**</span> more than 20% over.</p>
 
     {% for conference in conferences %}
@@ -23,11 +23,12 @@
                             <th class="text-right py-1 px-2">L</th>
                             <th class="text-right py-1 px-2">Pct</th>
                             <th class="text-right py-1 px-2">GB</th>
+                            <th class="text-right py-1 px-2" title="Games out of the wild card">WC</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for row in division.rows %}
-                        {% include "includes/standings_row.html" with games_behind=row.games_behind_display %}
+                        {% include "includes/standings_row.html" with games_behind=row.games_behind_display show_games_out=True %}
                         {% endfor %}
                     </tbody>
                 </table>
@@ -44,7 +45,7 @@
                     <th class="text-right py-1 px-2">W</th>
                     <th class="text-right py-1 px-2">L</th>
                     <th class="text-right py-1 px-2">Pct</th>
-                    <th class="text-right py-1 px-2">WCGB</th>
+                    <th class="text-right py-1 px-2" title="Games out of the wild card">WC</th>
                     <th class="text-left py-1 px-2">Place</th>
                 </tr>
             </thead>

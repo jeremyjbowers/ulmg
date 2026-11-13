@@ -1,4 +1,4 @@
-{# ABOUTME: A sim game's box score: line score, batting and pitching lines, the notes, and the W/L/S decisions. #}
+{# ABOUTME: A sim game's box score: line score, batting and pitching lines, the notes, errors, and the W/L/S/H decisions. #}
 {# ABOUTME: Expects `box` from ulmg.box_score.box_score and `game`; every number is computed from the game log. #}
 <div class="box-score mb-6 text-sm">
     <div class="mb-4">{% include "includes/line_score.html" %}</div>
@@ -7,11 +7,12 @@
     <p class="box-decisions mb-4">
         <span class="font-bold">W</span> {{ box.win.name }} ·
         <span class="font-bold">L</span> {{ box.loss.name }}{% if box.save %} ·
-        <span class="font-bold">S</span> {{ box.save.name }}{% endif %}
+        <span class="font-bold">S</span> {{ box.save.name }}{% endif %}{% if box.holds %} ·
+        <span class="font-bold">H</span> {% for holder in box.holds %}{{ holder.name }}{% if not forloop.last %}, {% endif %}{% endfor %}{% endif %}
     </p>
     {% endif %}
 
-    {% for side, team, lines, totals, lob, pitchers in box.sides %}
+    {% for side, team, lines, totals, lob, pitchers, errors in box.sides %}
     <h3 class="font-bold mb-1">{{ team.abbreviation }} batting</h3>
     <div class="overflow-x-auto mb-2">
         <table class="box-batting w-full text-xs border-collapse border border-gray-200">
@@ -47,7 +48,7 @@
             </tbody>
         </table>
     </div>
-    <p class="text-xs text-gray-600 mb-3">Team LOB: {{ lob }}</p>
+    <p class="text-xs text-gray-600 mb-3">Team LOB: {{ lob }}{% if errors %} · E—{{ errors }}{% endif %}</p>
 
     <h3 class="font-bold mb-1">{{ team.abbreviation }} pitching</h3>
     <div class="overflow-x-auto mb-6">
@@ -63,7 +64,7 @@
             <tbody>
                 {% for line in pitchers %}
                 <tr class="border-b border-gray-100">
-                    <td class="py-1 px-2">{{ line.player.name }}{% if line.player == box.win %} (W){% elif line.player == box.loss %} (L){% elif line.player == box.save %} (S){% endif %}</td>
+                    <td class="py-1 px-2">{{ line.player.name }}{% if line.player == box.win %} (W){% elif line.player == box.loss %} (L){% elif line.player == box.save %} (S){% elif line.player in box.holds %} (H){% endif %}</td>
                     <td class="text-center px-1">{{ line.ip }}</td><td class="text-center px-1">{{ line.h }}</td><td class="text-center px-1">{{ line.r }}</td>
                     <td class="text-center px-1">{{ line.er }}</td><td class="text-center px-1">{{ line.bb }}</td><td class="text-center px-1">{{ line.so }}</td>
                     <td class="text-center px-1">{{ line.hr }}</td><td class="text-center px-1">{{ line.pitches }}</td>
@@ -80,5 +81,5 @@
         {% endfor %}
     </ul>
     {% endif %}
-    <p class="text-xs text-gray-600">The sim has no errors, so every run is earned except one scored by the runner placed on second in extra innings.</p>
+    <p class="text-xs text-gray-600">A run is unearned when the runner reached on an error, when it scored on the error, or when the error would have been the third out. The runner placed on second in extra innings scores unearned too.</p>
 </div>

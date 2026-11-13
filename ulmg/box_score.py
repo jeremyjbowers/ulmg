@@ -1,5 +1,5 @@
-# ABOUTME: The box score of a sim game, computed from its log alone: line score, batting and pitching lines, and the notes.
-# ABOUTME: The notes name the doubles, triples, homers and the rest; the win, loss and save follow rules 9.17 and 9.19.
+# ABOUTME: The box score of a sim game, computed from its log alone: line score, batting and pitching lines, notes, LOB, errors.
+# ABOUTME: The notes name the doubles, triples, homers and the rest; the win, loss, save and holds follow rules 9.17 and 9.19.
 
 from dataclasses import dataclass, field
 
@@ -35,6 +35,7 @@ PINCH_NOTES = {"pinch_hitter": "ph", PINCH_RUNNER: "pr"}
 SACRIFICE_FLY = "sacrifice_fly"
 HIT_BY_PITCH = "hit_by_pitch"
 SACRIFICE_BUNT = "bunt_sacrifice"
+REACHED_ON_ERROR = "reached_on_error"
 
 # Rule 9.17(b): a starter needs five complete innings for the win.
 STARTER_WIN_OUTS = 15
@@ -51,6 +52,12 @@ SAVE_LONG_OUTS = 9
 
 def other(side):
     return HOME if side == AWAY else AWAY
+
+
+def _error_note(counts):
+    """Newspaper style: "Lindor (2), Judge" for the fielders charged in the game."""
+    names = sorted(counts.items(), key=lambda item: (-item[1], item[0]))
+    return ", ".join(f"{name} ({count})" if count > 1 else name for name, count in names)
 
 
 @dataclass
@@ -152,17 +159,19 @@ class BoxScore:
     batting: dict = field(default_factory=dict)
     batting_totals: dict = field(default_factory=dict)
     team_lob: dict = field(default_factory=dict)
+    error_notes: dict = field(default_factory=dict)
     pitching: dict = field(default_factory=dict)
     win: object = None
     loss: object = None
     save: object = None
+    holds: list = field(default_factory=list)
     final: bool = False
     teams: dict = field(default_factory=dict)
     notes: list = field(default_factory=list)
 
     @property
     def sides(self):
-        """(side, team, batting lines, batting totals, team LOB, pitching lines) for the visitors, then the home team."""
+        """(side, team, batting lines, batting totals, team LOB, pitching lines, error note) for the visitors, then the home team."""
         return [
             (
                 side,
@@ -171,6 +180,7 @@ class BoxScore:
                 self.batting_totals.get(side, {}),
                 self.team_lob.get(side, 0),
                 self.pitching.get(side, []),
+                self.error_notes.get(side, ""),
             )
             for side in SIDES
         ]
@@ -341,6 +351,10 @@ def box_score(log, events=None):
     half = None
     responsible = {}
     unearned = set()
+    # Outs the defense should have recorded: real outs, plus each reached-on-error.
+    phantom = 0
+    errors = {AWAY: 0, HOME: 0}
+    error_counts = {AWAY: {}, HOME: {}}
 
     for event in events:
         if event.kind == Event.SUBSTITUTION and event.payload.get("role") == PINCH_RUNNER:
@@ -369,6 +383,7 @@ def box_score(log, events=None):
             half = key
             responsible = {}
             unearned = set()
+            phantom = 0
             ghost = before["bases"].get("second")
             if before["inning"] >= 10 and ghost is not None and before["outs"] == 0:
                 # The placed extra-inning runner: he scores unearned, charged to the pitcher who starts the half.
@@ -427,16 +442,28 @@ def box_score(log, events=None):
             if outcome == SACRIFICE_BUNT:
                 line.sh += 1
                 occurrences["SH"].append((line.player, None))
-            if outcome != GIDP:
+            if outcome not in (GIDP, REACHED_ON_ERROR):
                 line.rbi += change["runs_scored"]
             if outcome in BATTER_OUTS:
                 line.lob += len(_bases(change["bases"]))
+
+        on_error = outcome == REACHED_ON_ERROR
+        if on_error:
+            # The out the defense should have made, before any run on this play is judged.
+            phantom += 1
+            unearned.add(int(batter_id))
+            errors[fields] += 1
+            charged_error = (result.get("fielding") or {}).get("error") or {}
+            name = charged_error.get("fielder_name") or "Unknown"
+            error_counts[fields][name] = error_counts[fields].get(name, 0) + 1
 
         for running in result["baserunning"]:
             kind, runner, body = _runner(running)
             if kind == "Scored":
                 charged = responsible.get(runner, pitcher_id)
-                earned = runner not in unearned
+                # A run on the error itself did not score without the misplay. So did any run
+                # after the error would have been the third out, and any run by a runner who reached on one.
+                earned = (not on_error) and runner not in unearned and phantom < 3
                 score[bats] += 1
                 by_inning[bats][before["inning"]] += 1
                 batting[bats][runner].r += 1
@@ -455,6 +482,7 @@ def box_score(log, events=None):
                     batting[bats][runner].player, f"{_base_word(body)} base by {pitcher.player.name}",
                 ))
 
+        phantom += change["outs_added"]
         responsible = {rid: responsible.get(rid, pitcher_id) for rid in _bases(change["bases"])}
         if before["outs"] + change["outs_added"] >= 3:
             team_lob[bats] += len(_bases(change["bases"]))
@@ -468,7 +496,8 @@ def box_score(log, events=None):
     cells = line_score_cells(by_inning, inning=current, half=half, final=box.final)
     box.innings = cells["innings"]
     box.line = {AWAY: cells[AWAY], HOME: cells[HOME]}
-    box.totals = {side: {"r": score[side], "h": hits[side], "e": 0} for side in SIDES}
+    box.totals = {side: {"r": score[side], "h": hits[side], "e": errors[side]} for side in SIDES}
+    box.error_notes = {side: _error_note(error_counts[side]) for side in SIDES}
     box.batting = {side: [line for slot in slots[side] for line in slot] for side in SIDES}
     box.batting_totals = {
         side: {name: sum(getattr(line, name) for line in box.batting[side]) for name in BattingLine.COUNTS}
@@ -486,6 +515,7 @@ def box_score(log, events=None):
 
     if box.final and score[AWAY] != score[HOME]:
         box.win, box.loss, box.save = decisions(score, runs, appearances, pitching, starters)
+        box.holds = holds(score, appearances, pitching, starters, box.win)
     return box
 
 
@@ -562,3 +592,51 @@ def decisions(score, runs, appearances, pitching, starters):
             if lead > 0 and held and outs >= SAVE_MIN_OUTS and situation:
                 save = lines[finisher].player
     return lines[win].player, loss.player, save
+
+
+def _save_situation(lead, runners, outs):
+    """
+    Rule 9.19's three ways a reliever can be in line for a save: a lead of
+    three or fewer, the tying run on base or at bat or on deck, or an outing
+    of at least three innings. One out is enough for a hold; the full inning
+    in 9.19(a) is what the finisher needs to earn the save.
+    """
+    if lead <= 0:
+        return False
+    return lead <= SAVE_LEAD or lead <= runners + 2 or outs >= SAVE_LONG_OUTS
+
+
+def holds(score, appearances, pitching, starters, win):
+    """
+    Relief pitchers credited with a hold. Each entered in a save situation,
+    recorded at least one out, left before the game ended, and never gave up
+    the lead. The winning pitcher and the finisher are not holds. Nobody is,
+    when the game is tied or his team lost.
+    """
+    if score[AWAY] == score[HOME]:
+        return []
+    winner = AWAY if score[AWAY] > score[HOME] else HOME
+    loser = other(winner)
+    lines = pitching[winner]
+    order = list(lines)
+    if len(order) < 2:
+        return []
+    starter = starters[winner]
+    finisher = order[-1]
+    win_id = None if win is None else win.id
+    credited = []
+    for pid in order:
+        if pid in (starter, finisher, win_id):
+            continue
+        line = lines[pid]
+        if line.outs < SAVE_MIN_OUTS:
+            continue
+        outing = [pa for pa in appearances if pa.fielding == winner and pa.pitcher == pid]
+        if not outing:
+            continue
+        entry = outing[0]
+        lead = entry.before[winner] - entry.before[loser]
+        kept = all(pa.after[winner] > pa.after[loser] for pa in outing)
+        if kept and _save_situation(lead, entry.runners, line.outs):
+            credited.append(line.player)
+    return credited
