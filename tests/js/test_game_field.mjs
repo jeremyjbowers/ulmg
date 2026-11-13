@@ -37,6 +37,17 @@ const svg = composeField(state, 4);
 assert(svg.includes('viewBox="0 0 320 180"'), 'logical field is 320×180');
 assert(svg.includes('width="1280"') && svg.includes('height="720"'), '4× scale is 1280×720');
 assert(svg.includes('shape-rendering="crispEdges"'), 'crispEdges on the root');
+
+const uses = [...svg.matchAll(/<use href="#([^"]+)"[^>]*width="(\d+)" height="(\d+)"/g)];
+assert(uses.length >= 8, 'every sprite declares its own width and height');
+for (const [, id, w, h] of uses) {
+  assert(
+    svg.includes(`<symbol id="${id}" viewBox="0 0 ${w} ${h}"`),
+    `${id} is drawn at its own ${w}×${h}, not stretched to the scaled viewport`,
+  );
+}
+const batter = svg.match(/<use href="#sp-bat_stance[^"]+"[^>]*width="(\d+)"/);
+assert(batter && Number(batter[1]) < 40, 'the batter stays sprite-sized inside the 320-wide field');
 assert(!/<circle|<path |font-family|<ellipse/i.test(svg), 'no anti-aliased primitives or fonts');
 assert(svg.includes('id="t-grassA"'), 'field plate uses the kit tiles');
 
@@ -60,9 +71,14 @@ assert(tagSide(Math.round(project(...POS.SS)[0])) === 'left', 'SS tag sits to th
 assert(tagSide(Math.round(project(...POS['1B'])[0])) === 'right', '1B tag sits to the right');
 assert(tagSide(Math.round(project(...POS.CF)[0])) === 'under', 'CF tag sits under the feet');
 
-assert(integerScale(2000) === 5, 'wide laptop gets 5× (900px tall)');
-assert(integerScale(1100) === 4, 'normal laptop stays 4× (720px tall), never shrinks below');
-assert(integerScale(800) === 4, 'narrow width still holds 4× rather than a fractional scale');
+assert(integerScale(2000) === 5, 'a wide, tall window gets 5× (900px)');
+assert(integerScale(1400) === 4, 'a 1400px-wide window gets 4× (720px)');
+assert(integerScale(1100) === 3, 'a normal laptop gets 3× (540px), the crisp height nearest 600');
+assert(integerScale(800) === 3, 'a narrow window holds 3× rather than a fractional scale');
+assert(integerScale(2000, 700) === 3, 'a short laptop keeps the field at 540px instead of 720');
+assert(integerScale(2000, 800) === 4, '800px of vertical room fits 4× and not 5×');
+assert(integerScale(2000, 1100) === 5, 'a tall window still reaches 5×');
+assert(integerScale(1000, 1100) === 3, 'width still caps the scale when the window is tall');
 assert(kitTeam('home') === 'CHI' && kitTeam('away') === 'ATL', 'home whites, road grays');
 
 const ready = outlined(SPRITES.fielder_ready);

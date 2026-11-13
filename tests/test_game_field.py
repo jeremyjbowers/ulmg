@@ -66,7 +66,7 @@ class FieldGeometryTest(SimpleTestCase):
 
     def test_the_logical_field_is_the_kit_320_by_180(self):
         self.assertEqual(game_field.LOGICAL, {"width": 320, "height": 180})
-        self.assertEqual(game_field.MIN_SCALE, 4)
+        self.assertEqual(game_field.MIN_SCALE, 3)
 
     def test_world_positions_match_the_kit(self):
         self.assertEqual(game_field.POS["CF"], (0, 315))
@@ -161,7 +161,7 @@ class GameFieldPageTest(gf.EngineMixin, TestCase):
         response = self.client.get(self.url)
         html = response.content.decode()
         self.assertIn('id="game-field-data"', html)
-        self.assertIn("min-height: 720px", html)
+        self.assertIn("min-height: 540px", html)
         batter = self.field_data(response)["batter"]
         self.assertEqual(batter["box"], "left")
         self.assertFalse(batter["flip"])
