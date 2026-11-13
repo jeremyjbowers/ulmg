@@ -59,11 +59,13 @@ The draw is an odds-ratio matchup, the log5 method. For each event, the batter's
 
 The park's run factor then scales hits and home runs, and every rate is scaled so the eight still sum to 1. A factor of 1 leaves the matchup where it was.
 
-Defense moves probability between non-home-run hits and balls in play that are out. The eight fielders and the pitcher are summed — the designated hitter does not field — and each point of that sum moves 0.002 of a plate appearance. A good defense turns hits into outs. A bad one does the reverse. Home runs are not touched. wRC+ is not an input to this draw.
+Defense moves probability between non-home-run hits and balls in play that are out. The eight fielders and the pitcher are summed — the designated hitter does not field — and each point of that sum moves 0.002 of a plate appearance. Four fifths of that movement is hits and outs. One fifth is reached-on-error and outs. A good defense turns hits and errors into outs. A bad one does the reverse. Home runs are not touched. wRC+ is not an input to this draw.
 
 The engine then rolls one number and reads the outcome off those eight probabilities.
 
-A ball in play that is out is then called a ground out, a fly out, or a line out, from the matchup's batted-ball mix, and the runners move from there:
+A ball in play that is out is then called a ground out, a fly out, or a line out, from the matchup's batted-ball mix. At a league-average defense, 0.7 percent of plate appearances are a reached-on-error instead of that out: about one every four games for a team, which is the major-league rate of a batter reaching on an error. Seven of ten of those are ground balls. The fielder charged is usually an infielder on a ground ball and an outfielder on a fly, and his own rating tilts it: a poor glove is charged more often than a good one at the same position. The batter is safe at first and runners advance only when forced. It is an at-bat and not a hit. The run he scores is unearned, and so is every run that scores on the play, and every run after the error would have been the third out.
+
+The runners then move from the out that remains:
 
 - With a runner on first and fewer than two outs, a ground out is a double play 52 percent of the time. That constant is set so a league-average game turns two on about 10 percent of its double-play chances.
 - An unforced runner on third scores on a ground out half the time, and an unforced runner on second takes third half the time.
@@ -103,7 +105,7 @@ From the tenth inning on, the batter immediately before that half's leadoff man 
 
 Pitchers do not hit. The designated hitter does not field. He cannot be moved to a position, and nobody else can be moved onto his spot. A pinch hitter or a pinch runner for anyone but the designated hitter has no position yet, and his club cannot throw a pitch until he is given one or replaced. Replacing the designated hitter makes the new man the designated hitter, and he needs no position.
 
-The box score is computed from the log alone: the line score, the batting and pitching lines, runners left on base, and the notation for a pinch hitter or a pinch runner. The win, the loss, and the save follow MLB rules 9.17 and 9.19.
+The box score is computed from the log alone: the line score, the batting and pitching lines, runners left on base, errors, and the notation for a pinch hitter or a pinch runner. The E column counts reached-on-error charged to that club, and the note under the batting line names the fielders. The win, the loss, and the save follow MLB rules 9.17 and 9.19.
 
 ## Fatigue
 

@@ -320,7 +320,7 @@ def _one_decimal(value):
 
 
 def sim_defense(card_runs):
-    """The engine sums nine fielders and moves 0.002 of hit probability per point, so it takes runs / 10."""
+    """The engine sums nine fielders and moves 0.002 of a plate appearance per point, so it takes runs / 10."""
     return card_runs / 10
 
 

@@ -119,6 +119,7 @@ pub fn holding_out(bases: &Bases) -> crate::model::PaResult {
         fielding: Fielding {
             rating: 0.0,
             in_play: true,
+            error: None,
         },
     }
 }
@@ -150,6 +151,7 @@ pub fn solo_home_run() -> crate::model::PaResult {
         fielding: Fielding {
             rating: 0.0,
             in_play: true,
+            error: None,
         },
     }
 }
@@ -183,6 +185,7 @@ pub fn pitches_only(count: usize) -> crate::model::PaResult {
         fielding: Fielding {
             rating: 0.0,
             in_play: false,
+            error: None,
         },
     }
 }
