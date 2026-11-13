@@ -121,6 +121,11 @@ class GamePageTestCase(gf.EngineMixin, TestCase):
         self.assertContains(response, "box-batting")
         self.assertContains(response, "(W)")
         self.assertContains(response, "(L)")
+        html = response.content.decode()
+        notes_at = html.find("box-notes")
+        self.assertGreaterEqual(notes_at, 0, "the box score names the extras before the play-by-play")
+        self.assertLess(notes_at, html.find("Play-by-play"))
+        self.assertIn(">LOB</span>:", html)
         self.game.refresh_from_db()
         for team in (self.road.team, self.home.team):
             schedule_page = self.client.get(f"/teams/{team.abbreviation.lower()}/schedule/{gf.SEASON}/")
@@ -129,6 +134,8 @@ class GamePageTestCase(gf.EngineMixin, TestCase):
         box = self.client.get(f"/games/{self.game.id}/box/")
         self.assertEqual(box.status_code, 200, "the box score is public")
         self.assertContains(box, "box-pitching")
+        self.assertContains(box, "box-notes")
+        self.assertContains(box, ">LOB</span>:")
 
     @override_settings(TEAM_SEASON_HALF="2h")
     def test_the_schedule_offers_play_next_for_the_managers_next_road_game_only(self):

@@ -1,4 +1,4 @@
-{# ABOUTME: A sim game's box score: line score, batting and pitching lines for both sides, LOB and the W/L/S/H decisions. #}
+{# ABOUTME: A sim game's box score: line score, batting and pitching lines, the notes, errors, and the W/L/S/H decisions. #}
 {# ABOUTME: Expects `box` from ulmg.box_score.box_score and `game`; every number is computed from the game log. #}
 <div class="box-score mb-6 text-sm">
     <div class="mb-4">{% include "includes/line_score.html" %}</div>
@@ -74,5 +74,12 @@
         </table>
     </div>
     {% endfor %}
+    {% if box.notes %}
+    <ul class="box-notes text-xs leading-5 mb-4">
+        {% for note in box.notes %}
+        <li><span class="font-bold">{{ note.label }}</span>: {{ note.text }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
     <p class="text-xs text-gray-600">A run is unearned when the runner reached on an error, when it scored on the error, or when the error would have been the third out. The runner placed on second in extra innings scores unearned too.</p>
 </div>
