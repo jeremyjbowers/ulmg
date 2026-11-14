@@ -1,0 +1,116 @@
+{# ABOUTME: The game HUD: line score, batter card, the field, pitcher card with this plate appearance's odds, the calls and the last plays. #}
+{# ABOUTME: Expects the context sim_game.page builds. Every call is a plain form POST carrying the log position it was drawn from. #}
+<div id="hud" class="hud" data-game="{{ game.id }}">
+    {% if paused %}
+    <div class="hud-alert game-paused" role="status">
+        {{ paused.reason }} The game waits for a roster move or a commissioner override.
+        {% if user_sides %}<form method="post" action="/games/{{ game.id }}/check/">{% csrf_token %}<input type="hidden" name="expected" value="{{ expected }}"><button type="submit" class="hud-btn small">Check again</button></form>{% endif %}
+    </div>
+    {% elif need %}
+    <div class="hud-alert game-need" role="status">
+        {{ need.reason }}
+        {% if panel.open %}<a class="hud-btn small" href="#sub-{{ panel.open }}">Choose</a>{% endif %}
+    </div>
+    {% endif %}
+
+    <section class="hud-board" aria-label="Scoreboard">
+        <table class="hud-line line-score">
+            <thead>
+                <tr><th scope="col"><span class="visually-hidden">Team</span></th>{% for cell in scoreboard.header %}<th scope="col" class="{% if cell.now %}now{% endif %}{% if cell.early %} early{% endif %}">{{ cell.number }}</th>{% endfor %}<th scope="col" class="tot">R</th><th scope="col">H</th><th scope="col">E</th></tr>
+            </thead>
+            <tbody>
+                {% for row in scoreboard.rows %}
+                <tr id="line-{{ row.side }}">
+                    <td class="team">{{ row.team.abbreviation }}</td>
+                    {% for cell in row.cells %}<td class="{% if cell.now %}now{% endif %}{% if cell.dim %} dim{% endif %}{% if cell.early %} early{% endif %}" data-inning="{{ cell.inning }}">{{ cell.value }}</td>{% endfor %}
+                    <td class="tot runs" data-total="r">{{ row.r }}</td><td>{{ row.h }}</td><td>{{ row.e }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <div class="hud-situation">
+            <p class="hud-inning">{{ scoreboard.inning }}</p>
+            <div class="hud-outs"><span>{{ scoreboard.outs_text }}</span>{% for on in scoreboard.lights %}<span class="out-light{% if on %} on{% endif %}" aria-hidden="true"></span>{% endfor %}</div>
+        </div>
+    </section>
+
+    <section class="hud-mid">
+        <div class="hud-card hud-batter">
+            <p class="hud-eyebrow">At bat · {{ batter.team.abbreviation }} · {{ batter.slot }}</p>
+            <p class="hud-who"><a href="/players/{{ batter.player.id }}/">{{ batter.player.name }}</a></p>
+            <p class="hud-sub">{{ batter.position }} · bats {{ batter.bats }} · {{ batter.today }}</p>
+            <table class="hud-splits">
+                <thead><tr><th scope="col"><span class="visually-hidden">Split</span></th><th scope="col">AVG</th><th scope="col">OBP</th><th scope="col">SLG</th><th scope="col">HR%</th></tr></thead>
+                <tbody>
+                    {% for split in batter.splits %}<tr class="{% if split.hot %}hot{% endif %}"><td>{{ split.label }}</td><td>{{ split.avg }}</td><td>{{ split.obp }}</td><td>{{ split.slg }}</td><td>{{ split.hr }}</td></tr>{% endfor %}
+                </tbody>
+            </table>
+            <p class="hud-note game-usage">Speed <b>{{ batter.speed }}</b> · steals <b>{{ batter.steals }}</b> · PA left: {{ batter.pa_left }}</p>
+            <ul class="hud-due">
+                {% for due in batter.due %}<li><span>{{ due.label }}: <b>{{ due.player.name }}</b></span><span class="pos">{{ due.position }} · {{ due.avg }}</span></li>{% endfor %}
+            </ul>
+        </div>
+
+        {% include "includes/game_field.html" %}
+
+        <div class="hud-card hud-pitcher">
+            {% if pitcher %}
+            <p class="hud-eyebrow">Pitching · {{ pitcher.team.abbreviation }}</p>
+            <p class="hud-who"><a href="/players/{{ pitcher.player.id }}/">{{ pitcher.player.name }}</a></p>
+            <p class="hud-sub">{{ pitcher.role }} · throws {{ pitcher.throws }} · {{ pitcher.today }}</p>
+            <div class="hud-meter {{ pitcher.tone }}" role="meter" aria-label="Fatigue" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ pitcher.meter }}"><i style="width:{{ pitcher.meter }}%"></i></div>
+            <p class="hud-note game-usage" style="margin-top:0"><b>{{ pitcher.pitches }}</b> pitches · tires near <b>{{ pitcher.ceiling }}</b> · IP left this outing: <b>{{ pitcher.ip_left }}</b></p>
+            {% if pitcher.odds %}
+            <p class="hud-eyebrow" style="margin-top:14px">This plate appearance</p>
+            <ul class="hud-odds game-matchup">
+                {% for odd in pitcher.odds %}<li class="{% if odd.good %}good{% endif %}"><span>{{ odd.label }}</span><span class="bar" aria-hidden="true"><i style="width:{{ odd.bar|floatformat:1 }}%"></i></span><span class="pct">{{ odd.pct|floatformat:1 }}%</span></li>{% endfor %}
+            </ul>
+            {% endif %}
+            {% else %}
+            <p class="hud-eyebrow">Pitching · {{ fielding_team.abbreviation }}</p>
+            <p class="hud-who">The mound is empty.</p>
+            {% endif %}
+        </div>
+    </section>
+
+    <section class="hud-controls" aria-label="Calls">
+        <div class="hud-playdock">
+            <form method="post" action="/games/{{ game.id }}/step/" class="game-step">
+                {% csrf_token %}
+                <input type="hidden" name="expected" value="{{ expected }}">
+                {% if controls.play.enabled %}
+                <button type="submit" name="call" value="" class="hud-btn play" id="hud-play" aria-label="Play the next plate appearance: {{ controls.play.sub }}" aria-keyshortcuts="Space">Play <small>{{ controls.play.sub }}</small></button>
+                {% else %}
+                <button type="button" class="hud-btn play" id="hud-play" disabled>Play <small>{{ controls.play.sub }}</small></button>
+                {% endif %}
+            </form>
+            {% if controls.play.why %}<p class="hud-why">{{ controls.play.why }}</p>{% endif %}
+            <label class="hud-pace" hidden id="hud-pace"><input type="checkbox" id="hud-fast"> Fast (no animation)</label>
+        </div>
+        <div class="hud-group hud-offense">
+            <h3>Offense · <b>{{ controls.offense.team.abbreviation }} {% if controls.offense.mine %}(you){% else %}computer{% endif %}</b></h3>
+            <form method="post" action="/games/{{ game.id }}/step/" class="hud-btns">
+                {% csrf_token %}
+                <input type="hidden" name="expected" value="{{ expected }}">
+                {% for button in controls.offense.buttons %}{% include "includes/game_button.html" %}{% endfor %}
+            </form>
+            {% if controls.offense.why %}<p class="hud-why">{{ controls.offense.why }}</p>{% endif %}
+        </div>
+        <div class="hud-group hud-defense">
+            <h3>Defense · <b>{{ controls.defense.team.abbreviation }} {% if controls.defense.mine %}(you){% else %}computer{% endif %}</b></h3>
+            <form method="post" action="/games/{{ game.id }}/step/" class="hud-btns">
+                {% csrf_token %}
+                <input type="hidden" name="expected" value="{{ expected }}">
+                {% for button in controls.defense.buttons %}{% include "includes/game_button.html" %}{% endfor %}
+            </form>
+            {% if controls.defense.why %}<p class="hud-why">{{ controls.defense.why }}</p>{% endif %}
+        </div>
+    </section>
+
+    <section class="hud-recent" aria-label="Last plays">
+        <p class="hud-eyebrow">Last plays</p>
+        <ol>
+            {% for item in recent_plays %}<li><span class="when">{{ item.when }}</span><span>{{ item.text }}</span></li>{% empty %}<li><span>No pitches yet.</span></li>{% endfor %}
+        </ol>
+    </section>
+</div>

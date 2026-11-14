@@ -1,4 +1,4 @@
-{# ABOUTME: The sim game page: open a game, then play it one plate appearance per POST with both cards, the odds and usage in view. #}
+{# ABOUTME: The sim game page: open a game, then play it from the HUD one plate appearance per POST, with the substitution panel beside it. #}
 {# ABOUTME: Every form carries the log position it expects; a seat nobody holds is the computer's, and the box score shows at the final. #}
 {% extends "base.html" %}
 
@@ -7,7 +7,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="{% if log and not final and not engine_down %}game-shell{% else %}max-w-3xl{% endif %}">
+<div class="hud-page{% if not log or final or engine_down %} max-w-3xl{% endif %}">
     {% if not log or final or engine_down %}
     <h1 class="text-lg font-bold mb-1">Day {{ game.day }}: {{ game.series.road_team.abbreviation }} at {{ game.series.home_team.abbreviation }}</h1>
     <p class="text-sm text-gray-600 mb-4">
@@ -49,55 +49,11 @@
     {% else %}
 
     {% if not final %}
-    <div class="game-stage">
-        {% if paused %}
-        <div class="game-paused border border-red-300 bg-red-50 px-3 py-2 text-sm">
-            <p class="mb-2">{{ paused.reason }} The game waits for a roster move or a commissioner override.</p>
-            {% if user_sides %}
-            <form method="post" action="/games/{{ game.id }}/check/">{% csrf_token %}<input type="hidden" name="expected" value="{{ expected }}"><button type="submit" class="underline">Check again</button></form>
-            {% endif %}
-        </div>
-        {% elif need %}
-        <div class="game-need border border-red-300 bg-red-50 px-3 py-2 text-sm">
-            <p class="mb-2">{{ need.reason }}</p>
-            {% if need_mine %}
-            <form method="post" action="/games/{{ game.id }}/{% if need.kind == 'pitcher' %}pitcher{% else %}replace{% endif %}/" class="space-y-2">
-                {% csrf_token %}
-                <input type="hidden" name="expected" value="{{ expected }}">
-                <input type="hidden" name="side" value="{{ need.side }}">
-                <select name="player" class="w-full border border-gray-300 px-2 py-1">
-                    {% for option in need_options %}<option value="{{ option.player.id }}"{% if not option.legal %} disabled{% endif %}>{{ option.player.name }}{% if not option.legal %}: {{ option.problem }}{% endif %}</option>{% endfor %}
-                </select>
-                <button type="submit" class="w-full sm:w-auto bg-black text-white px-4 py-2 font-bold">{% if need.kind == 'pitcher' %}Bring him in{% else %}Put him in{% endif %}</button>
-            </form>
-            {% endif %}
-        </div>
-        {% endif %}
-        <div class="game-scoreboard game-hud">
-            <div class="game-score-copy">
-                <p class="game-scoreline">{{ away_team.abbreviation }} {{ score.away }} · {{ home_team.abbreviation }} {{ score.home }}</p>
-                <p>Day {{ game.day }} · {{ half }} {{ inning }} · {{ outs }} out{{ outs|pluralize }}
-                    <span class="out-pips" aria-hidden="true">{% for pip in "123" %}<span class="{% if forloop.counter <= outs %}is-out{% endif %}"></span>{% endfor %}</span>
-                    · {{ batting_team.abbreviation }} batting
-                    <span class="base-diamond" aria-hidden="true">
-                        <span class="base base-2{% if field.bases.second %} is-on{% endif %}"></span>
-                        <span class="base base-3{% if field.bases.third %} is-on{% endif %}"></span>
-                        <span class="base base-1{% if field.bases.first %} is-on{% endif %}"></span>
-                    </span>
-                </p>
-                <p class="game-runners">Runners: {% for base, runner in runners %}{{ runner.name }} on {{ base }}{% if not forloop.last %}, {% endif %}{% empty %}none{% endfor %}</p>
-                {% if field.banner %}<p class="game-result">{{ field.banner.label }}{% if field.banner.count %} {{ field.banner.count }}{% endif %}</p>{% endif %}
-            </div>
-        </div>
-        {% if box.innings %}
-        <div class="game-line">{% include "includes/line_score.html" %}</div>
-        {% endif %}
-        {% include "includes/game_field.html" %}
-        {% include "includes/game_controls.html" %}
-    </div>
+    {% include "includes/game_hud.html" %}
+    {% include "includes/game_panel.html" %}
     {% endif %}
 
-    <div class="game-below">
+    <div class="game-below hud-below">
     {% if not final %}
     <h1 class="text-lg font-bold mb-1">Day {{ game.day }}: {{ game.series.road_team.abbreviation }} at {{ game.series.home_team.abbreviation }}</h1>
     <p class="text-sm text-gray-600 mb-4">
@@ -105,9 +61,9 @@
         <a href="/teams/{{ game.series.home_team.abbreviation|lower }}/schedule/{{ game.series.slot.season }}/" class="underline">{{ game.series.home_team.abbreviation }} schedule</a>
     </p>
     {% endif %}
-    <div class="game-seats flex flex-wrap gap-4 text-sm mb-4">
+    <div class="game-seats {% if final %}flex flex-wrap gap-4 text-sm mb-4{% else %}hud-seats{% endif %}">
         {% for seat in seats %}
-        <div class="border border-gray-300 px-3 py-2">
+        <div class="{% if final %}border border-gray-300 px-3 py-2{% endif %}">
             <span class="font-bold">{{ seat.team.abbreviation }}</span>:
             <span class="game-seat-holder">{% if seat.holder %}{{ seat.holder.username }}{% else %}computer{% endif %}</span>
             {% if seat.mine and not final %}
@@ -124,77 +80,65 @@
     {% include 'includes/box_score.html' %}
     {% else %}
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 text-sm">
-        {% with block=batter role="Batting" %}{% include 'includes/game_player.html' %}{% endwith %}
-        {% if pitcher %}{% with block=pitcher role="Pitching" %}{% include 'includes/game_player.html' %}{% endwith %}{% else %}<div class="border border-gray-300 p-3">The mound is empty.</div>{% endif %}
-    </div>
-
-    {% if matchup %}
-    <div class="game-matchup mb-4">
-        <h2>This plate appearance</h2>
-        <div class="grid grid-cols-2 gap-x-4">
-            {% for label, percent in matchup %}<div class="game-odd"><span>{{ label }}</span><span>{{ percent|floatformat:1 }}%</span></div>{% endfor %}
-        </div>
-    </div>
-    {% endif %}
-
     {% include 'includes/game_autoplay.html' %}
 
     {% for lineup in pregame %}
-    <form method="post" action="/games/{{ game.id }}/lineup/" class="game-lineup space-y-1 text-sm mb-6">
+    <form method="post" action="/games/{{ game.id }}/lineup/" class="game-lineup hud-box space-y-1">
         {% csrf_token %}
         <input type="hidden" name="expected" value="{{ expected }}">
         <input type="hidden" name="side" value="{{ lineup.side }}">
         <h2 class="font-bold">{{ lineup.team.abbreviation }} lineup for this game</h2>
-        <p class="text-xs text-gray-600">Before the first pitch you can change it from this game's roster, call-ups included. Your plan doesn't change.</p>
+        <p class="hud-note" style="margin:0 0 6px">Before the first pitch you can change it from this game's roster, call-ups included. Your plan doesn't change.</p>
         {% for row in lineup.rows %}
         <div class="flex gap-2 items-center">
             <span class="w-6">{{ row.order }}</span>
-            <select name="player-{{ row.order }}" class="w-full border border-gray-300 px-1 py-1">
+            <select name="player-{{ row.order }}" class="w-full" aria-label="Batter {{ row.order }}">
                 {% for p in lineup.hitters %}<option value="{{ p.id }}"{% if p.id == row.player_id %} selected{% endif %}>{{ p.name }}</option>{% endfor %}
             </select>
-            <select name="position-{{ row.order }}" class="border border-gray-300 px-1 py-1">
+            <select name="position-{{ row.order }}" aria-label="Position {{ row.order }}">
                 {% for code in lineup.positions %}<option value="{{ code }}"{% if code == row.position %} selected{% endif %}>{{ code }}</option>{% endfor %}
             </select>
         </div>
         {% endfor %}
-        <button type="submit" class="w-full sm:w-auto border border-gray-300 px-4 py-2">Use this lineup</button>
+        <button type="submit" class="hud-btn">Use this lineup</button>
     </form>
     {% endfor %}
 
     {% for move in moves %}
-    <form method="post" action="/games/{{ game.id }}/move/" class="game-move grid grid-cols-1 md:grid-cols-3 gap-4 items-end text-sm mb-6">
+    <form method="post" action="/games/{{ game.id }}/move/" class="game-move hud-box grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
         {% csrf_token %}
         <input type="hidden" name="expected" value="{{ expected }}">
         <input type="hidden" name="side" value="{{ move.side }}">
         <div>
             <label class="block text-xs font-bold mb-1">{{ move.team.abbreviation }} call up</label>
-            <select name="player_up" class="w-full border border-gray-300 px-2 py-1">
+            <select name="player_up" class="w-full">
                 <option value="">-</option>
                 {% for p in move.up %}<option value="{{ p.id }}">{{ p.name }} ({{ p.position }})</option>{% endfor %}
             </select>
         </div>
         <div>
             <label class="block text-xs font-bold mb-1">Send down</label>
-            <select name="player_down" class="w-full border border-gray-300 px-2 py-1">
+            <select name="player_down" class="w-full">
                 <option value="">-</option>
                 {% for p in move.down %}<option value="{{ p.id }}">{{ p.name }} ({{ p.position }})</option>{% endfor %}
             </select>
         </div>
-        <div><button type="submit" class="w-full border border-gray-300 px-3 py-1">Make roster move</button></div>
+        <div><button type="submit" class="hud-btn w-full">Make roster move</button></div>
     </form>
     {% endfor %}
     {% endif %}
 
-    <h2 class="font-bold mb-1 text-sm">Play-by-play</h2>
-    <ol class="game-play-by-play text-xs space-y-1 mb-6">
-        {% for event in events %}<li class="border-b border-gray-100 py-1">{{ event.text }}</li>{% endfor %}
+    <section class="hud-box">
+    <h2>Play-by-play</h2>
+    <ol class="game-play-by-play hud-pbp">
+        {% for event in events %}<li>{{ event.text }}</li>{% endfor %}
     </ol>
+    </section>
     </div>
     {% endif %}
 </div>
 {% endblock %}
 
 {% block extrascript %}
-{% if field %}<script type="module" src="{% url 'game_field_js' %}"></script>{% endif %}
+{% if field %}{% include "includes/game_script.html" %}{% endif %}
 {% endblock %}

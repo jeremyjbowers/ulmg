@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 from django.db import transaction
 from django.utils import timezone
 
-from ulmg import box_score, cards, computer_manager, engine_client, game_field, models, park as home_park, plans, roster_moves, schedule, season_record, usage, utils
+from ulmg import box_score, cards, computer_manager, engine_client, game_field, game_hud, models, park as home_park, plans, roster_moves, schedule, season_record, usage, utils
 
 Event = models.GameEvent
 
@@ -1698,36 +1698,6 @@ def play_plate_appearance(play, call, *, user=None, computer=False):
 # Reading the game for its page
 
 
-def _usage_line(play, side, player, pitching):
-    """Remaining usage for one player, for the page."""
-    summary = usage.usage_summary(player, play.season, reads=play.usage)
-    if not pitching:
-        left = summary["plate_appearances_left"]
-        return f"PA left: {'unlimited' if left is None else left}"
-    check = usage.check_pitcher(player, play.game, starting=play.is_starter(side, player), reads=play.usage)
-    remaining = check.remaining
-    season_outs = remaining.get("season_outs")
-    innings = "unlimited" if season_outs is None else usage.outs_to_innings(season_outs)
-    return (
-        f"Starts left: {remaining.get('starts')} · IP left this season: {innings} · "
-        f"IP left this outing: {usage.outs_to_innings(remaining.get('game_outs') or 0)}"
-    )
-
-
-def _player_block(play, side, player, pitching):
-    if player is None:
-        return None
-    card = play.card(player)
-    return {
-        "player": player,
-        "side": side,
-        "team": team_for(play.game, side),
-        "card": card,
-        "lines": (card.pitcher_lines() if pitching else card.hitter_lines()) if card else [],
-        "usage": _usage_line(play, side, player, pitching),
-    }
-
-
 MATCHUP_LABELS = [
     ("k", "Strikeout"),
     ("bb", "Walk"),
@@ -1740,11 +1710,16 @@ MATCHUP_LABELS = [
 ]
 
 
-def matchup(play):
-    """The engine's outcome probabilities for the next normal plate appearance, with the platoon split rates."""
+def matchup_odds(play):
+    """(engine key, label, percent) for each outcome of the next normal plate appearance, with the platoon split rates."""
     _, _, inputs = plate_appearance_inputs(play, None)
     odds = engine_client.matchup(with_rates(play.state, inputs["hitter_rates"], inputs["pitcher_rates"]))
-    return [(label, odds["probabilities"][key] * 100) for key, label in MATCHUP_LABELS]
+    return [(key, label, odds["probabilities"][key] * 100) for key, label in MATCHUP_LABELS]
+
+
+def matchup(play):
+    """The engine's outcome probabilities for the next normal plate appearance, with the platoon split rates."""
+    return [(label, percent) for _key, label, percent in matchup_odds(play)]
 
 
 def substitution_choices(play, user, need):
@@ -1828,43 +1803,40 @@ def page(log, user):
     batting, fielding = batting_side(state), fielding_side(state)
     pitcher_id = current_pitcher_id(state)
     pitcher = play.player(pitcher_id) if pitcher_id else None
-    batter = play.player(current_batter_id(state))
     need = play.need()
+    teams = {AWAY: team_for(game, AWAY), HOME: team_for(game, HOME)}
+    can_step = bool(context["user_sides"]) and need is None and fold.pause is None
+    odds = matchup_odds(play) if need is None and pitcher is not None else []
+    choices = substitution_choices(play, user, need)
+    pitcher_options = None
+    if fold.holds(user, fielding) and (fold.first_pitch or (need and need.kind == PITCHER_NEED)):
+        pitcher_options = play.pitcher_options(fielding)
+    recent = game_field.recent_plate_appearance(play.events, Event.PLATE_APPEARANCE)
     context.update(
         {
             "inning": state["inning"],
             "half": "Top" if state["half"] == "top" else "Bottom",
             "outs": state["outs"],
             "score": state["score"],
-            "away_team": team_for(game, AWAY),
-            "home_team": team_for(game, HOME),
-            "runners": [
-                (base, play.player(state["bases"][base]))
-                for base in ("first", "second", "third")
-                if state["bases"].get(base)
-            ],
-            "batting_team": team_for(game, batting),
-            "fielding_team": team_for(game, fielding),
-            "batter": _player_block(play, batting, batter, pitching=False),
-            "pitcher": _player_block(play, fielding, pitcher, pitching=True),
+            "away_team": teams[AWAY],
+            "home_team": teams[HOME],
+            "batting_team": teams[batting],
+            "fielding_team": teams[fielding],
             "need": need,
             "first_pitch": fold.first_pitch,
-            "can_step": bool(context["user_sides"]) and need is None and fold.pause is None,
-            "field": game_field.field_view(play),
+            "can_step": can_step,
+            "scoreboard": game_hud.scoreboard(play, context["box"], teams),
+            "batter": game_hud.batter_card(play, context["box"], teams),
+            "pitcher": game_hud.pitcher_card(play, context["box"], teams, odds),
+            "controls": game_hud.controls(play, user, need, can_step, teams),
+            "field": game_hud.field(play, teams),
+            "recent_plays": game_hud.recent_plays(play.events, Event.PLATE_APPEARANCE),
+            "last_play": game_field.last_play(play, recent) if recent is not None else None,
+            "panel": game_hud.panel(play, user, need, choices, pitcher_options, teams),
         }
     )
-    if need is None and pitcher is not None:
-        context["matchup"] = matchup(play)
-    offense = OFFENSE_CALLS if fold.holds(user, batting) else ()
-    defense = DEFENSE_CALLS if fold.holds(user, fielding) else ()
-    context["calls"] = [(call, CALL_LABELS[call]) for call in offense + defense]
-    if need is not None and fold.holds(user, need.side) and need.kind != POSITION_NEED:
-        context["need_options"] = play.options_for(need)
-        context["need_mine"] = True
-    context.update(substitution_choices(play, user, need))
-    if fold.holds(user, fielding) and (fold.first_pitch or (need and need.kind == PITCHER_NEED)):
-        context["pitcher_options"] = play.pitcher_options(fielding)
-        context["pitching_side"] = fielding
+    if choices.get("defense"):
+        context["defense"] = choices["defense"]
 
     context["pregame"] = []
     if not fold.first_pitch:

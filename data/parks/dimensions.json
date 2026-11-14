@@ -1,0 +1,632 @@
+{
+  "1": {
+    "name": "Angel Stadium",
+    "club": "LAA",
+    "distances_ft": {
+      "lf_line": 347,
+      "left_center": 390,
+      "center": 396,
+      "right_center": 370,
+      "rf_line": 350
+    },
+    "wall_ft": {
+      "lf_line": 8,
+      "left_center": 8,
+      "center": 8,
+      "right_center": 18,
+      "rf_line": 8
+    },
+    "surface": "grass",
+    "roof": "open",
+    "ground_rules": "The rock pile beyond left-center is out of play."
+  },
+  "15": {
+    "name": "Chase Field",
+    "club": "ARI",
+    "distances_ft": {
+      "lf_line": 330,
+      "left_center": 374,
+      "center": 407,
+      "right_center": 374,
+      "rf_line": 335
+    },
+    "wall_ft": {
+      "lf_line": 8,
+      "left_center": 8,
+      "center": 25,
+      "right_center": 8,
+      "rf_line": 8
+    },
+    "surface": "turf",
+    "roof": "retractable",
+    "ground_rules": "A ball into the pool beyond right-center is a home run."
+  },
+  "2": {
+    "name": "Oriole Park at Camden Yards",
+    "club": "BAL",
+    "distances_ft": {
+      "lf_line": 333,
+      "left_center": 376,
+      "center": 400,
+      "right_center": 373,
+      "rf_line": 318
+    },
+    "wall_ft": {
+      "lf_line": 13,
+      "left_center": 13,
+      "center": 7,
+      "right_center": 7,
+      "rf_line": 25
+    },
+    "surface": "grass",
+    "roof": "open",
+    "ground_rules": "The warehouse stands beyond the right-field flag court."
+  },
+  "3": {
+    "name": "Fenway Park",
+    "club": "BOS",
+    "distances_ft": {
+      "lf_line": 310,
+      "left_center": 379,
+      "center": 390,
+      "right_center": 380,
+      "rf_line": 302
+    },
+    "wall_ft": {
+      "lf_line": 37,
+      "left_center": 37,
+      "center": 17,
+      "right_center": 5,
+      "rf_line": 3
+    },
+    "surface": "grass",
+    "roof": "open",
+    "ground_rules": "The Green Monster in left is 37 feet tall. Pesky's Pole is 302 feet down the right-field line."
+  },
+  "17": {
+    "name": "Wrigley Field",
+    "club": "CHC",
+    "distances_ft": {
+      "lf_line": 355,
+      "left_center": 368,
+      "center": 400,
+      "right_center": 368,
+      "rf_line": 353
+    },
+    "wall_ft": {
+      "lf_line": 12,
+      "left_center": 12,
+      "center": 12,
+      "right_center": 12,
+      "rf_line": 12
+    },
+    "surface": "grass",
+    "roof": "open",
+    "ground_rules": "A ball lodged in the ivy is a ground-rule double."
+  },
+  "4": {
+    "name": "Rate Field",
+    "club": "CWS",
+    "distances_ft": {
+      "lf_line": 330,
+      "left_center": 375,
+      "center": 400,
+      "right_center": 375,
+      "rf_line": 335
+    },
+    "wall_ft": {
+      "lf_line": 8,
+      "left_center": 8,
+      "center": 8,
+      "right_center": 8,
+      "rf_line": 8
+    },
+    "surface": "grass",
+    "roof": "open",
+    "ground_rules": ""
+  },
+  "2602": {
+    "name": "Great American Ball Park",
+    "club": "CIN",
+    "distances_ft": {
+      "lf_line": 328,
+      "left_center": 379,
+      "center": 404,
+      "right_center": 370,
+      "rf_line": 325
+    },
+    "wall_ft": {
+      "lf_line": 12,
+      "left_center": 12,
+      "center": 8,
+      "right_center": 8,
+      "rf_line": 8
+    },
+    "surface": "grass",
+    "roof": "open",
+    "ground_rules": ""
+  },
+  "5": {
+    "name": "Progressive Field",
+    "club": "CLE",
+    "distances_ft": {
+      "lf_line": 325,
+      "left_center": 370,
+      "center": 400,
+      "right_center": 375,
+      "rf_line": 325
+    },
+    "wall_ft": {
+      "lf_line": 19,
+      "left_center": 19,
+      "center": 9,
+      "right_center": 9,
+      "rf_line": 9
+    },
+    "surface": "grass",
+    "roof": "open",
+    "ground_rules": "The 19-foot wall in left is the Little Green Monster."
+  },
+  "19": {
+    "name": "Coors Field",
+    "club": "COL",
+    "distances_ft": {
+      "lf_line": 347,
+      "left_center": 390,
+      "center": 415,
+      "right_center": 375,
+      "rf_line": 350
+    },
+    "wall_ft": {
+      "lf_line": 8,
+      "left_center": 8,
+      "center": 8,
+      "right_center": 14,
+      "rf_line": 14
+    },
+    "surface": "grass",
+    "roof": "open",
+    "ground_rules": "A mile high, with the deepest outfield in the majors."
+  },
+  "2394": {
+    "name": "Comerica Park",
+    "club": "DET",
+    "distances_ft": {
+      "lf_line": 345,
+      "left_center": 370,
+      "center": 412,
+      "right_center": 365,
+      "rf_line": 330
+    },
+    "wall_ft": {
+      "lf_line": 7,
+      "left_center": 7,
+      "center": 8,
+      "right_center": 8,
+      "rf_line": 8
+    },
+    "surface": "grass",
+    "roof": "open",
+    "ground_rules": ""
+  },
+  "2392": {
+    "name": "Daikin Park",
+    "club": "HOU",
+    "distances_ft": {
+      "lf_line": 315,
+      "left_center": 362,
+      "center": 409,
+      "right_center": 373,
+      "rf_line": 326
+    },
+    "wall_ft": {
+      "lf_line": 19,
+      "left_center": 21,
+      "center": 10,
+      "right_center": 7,
+      "rf_line": 7
+    },
+    "surface": "grass",
+    "roof": "retractable",
+    "ground_rules": "The Crawford Boxes in left sit on a 19-foot wall 315 feet from home."
+  },
+  "7": {
+    "name": "Kauffman Stadium",
+    "club": "KC",
+    "distances_ft": {
+      "lf_line": 330,
+      "left_center": 387,
+      "center": 410,
+      "right_center": 387,
+      "rf_line": 330
+    },
+    "wall_ft": {
+      "lf_line": 10,
+      "left_center": 10,
+      "center": 10,
+      "right_center": 10,
+      "rf_line": 10
+    },
+    "surface": "grass",
+    "roof": "open",
+    "ground_rules": ""
+  },
+  "22": {
+    "name": "Dodger Stadium",
+    "club": "LAD",
+    "distances_ft": {
+      "lf_line": 330,
+      "left_center": 375,
+      "center": 395,
+      "right_center": 375,
+      "rf_line": 330
+    },
+    "wall_ft": {
+      "lf_line": 8,
+      "left_center": 8,
+      "center": 8,
+      "right_center": 8,
+      "rf_line": 8
+    },
+    "surface": "grass",
+    "roof": "open",
+    "ground_rules": ""
+  },
+  "4169": {
+    "name": "loanDepot park",
+    "club": "MIA",
+    "distances_ft": {
+      "lf_line": 344,
+      "left_center": 386,
+      "center": 400,
+      "right_center": 387,
+      "rf_line": 335
+    },
+    "wall_ft": {
+      "lf_line": 8,
+      "left_center": 8,
+      "center": 11,
+      "right_center": 8,
+      "rf_line": 8
+    },
+    "surface": "turf",
+    "roof": "retractable",
+    "ground_rules": ""
+  },
+  "32": {
+    "name": "American Family Field",
+    "club": "MIL",
+    "distances_ft": {
+      "lf_line": 344,
+      "left_center": 371,
+      "center": 400,
+      "right_center": 374,
+      "rf_line": 345
+    },
+    "wall_ft": {
+      "lf_line": 8,
+      "left_center": 8,
+      "center": 8,
+      "right_center": 8,
+      "rf_line": 8
+    },
+    "surface": "grass",
+    "roof": "retractable",
+    "ground_rules": ""
+  },
+  "3312": {
+    "name": "Target Field",
+    "club": "MIN",
+    "distances_ft": {
+      "lf_line": 339,
+      "left_center": 377,
+      "center": 404,
+      "right_center": 367,
+      "rf_line": 328
+    },
+    "wall_ft": {
+      "lf_line": 8,
+      "left_center": 8,
+      "center": 8,
+      "right_center": 23,
+      "rf_line": 23
+    },
+    "surface": "grass",
+    "roof": "open",
+    "ground_rules": "The wall in right is 23 feet tall."
+  },
+  "3289": {
+    "name": "Citi Field",
+    "club": "NYM",
+    "distances_ft": {
+      "lf_line": 335,
+      "left_center": 358,
+      "center": 408,
+      "right_center": 380,
+      "rf_line": 330
+    },
+    "wall_ft": {
+      "lf_line": 8,
+      "left_center": 8,
+      "center": 8,
+      "right_center": 8,
+      "rf_line": 8
+    },
+    "surface": "grass",
+    "roof": "open",
+    "ground_rules": ""
+  },
+  "3313": {
+    "name": "Yankee Stadium",
+    "club": "NYY",
+    "distances_ft": {
+      "lf_line": 318,
+      "left_center": 399,
+      "center": 408,
+      "right_center": 385,
+      "rf_line": 314
+    },
+    "wall_ft": {
+      "lf_line": 8,
+      "left_center": 8,
+      "center": 8,
+      "right_center": 8,
+      "rf_line": 8
+    },
+    "surface": "grass",
+    "roof": "open",
+    "ground_rules": "The short porch in right is 314 feet down the line."
+  },
+  "2529": {
+    "name": "Sutter Health Park",
+    "club": "ATH",
+    "distances_ft": {
+      "lf_line": 330,
+      "left_center": 388,
+      "center": 403,
+      "right_center": 388,
+      "rf_line": 325
+    },
+    "wall_ft": {
+      "lf_line": 8,
+      "left_center": 8,
+      "center": 8,
+      "right_center": 8,
+      "rf_line": 8
+    },
+    "surface": "grass",
+    "roof": "open",
+    "ground_rules": ""
+  },
+  "2681": {
+    "name": "Citizens Bank Park",
+    "club": "PHI",
+    "distances_ft": {
+      "lf_line": 329,
+      "left_center": 374,
+      "center": 401,
+      "right_center": 369,
+      "rf_line": 330
+    },
+    "wall_ft": {
+      "lf_line": 10,
+      "left_center": 13,
+      "center": 6,
+      "right_center": 13,
+      "rf_line": 13
+    },
+    "surface": "grass",
+    "roof": "open",
+    "ground_rules": ""
+  },
+  "31": {
+    "name": "PNC Park",
+    "club": "PIT",
+    "distances_ft": {
+      "lf_line": 325,
+      "left_center": 389,
+      "center": 399,
+      "right_center": 375,
+      "rf_line": 320
+    },
+    "wall_ft": {
+      "lf_line": 6,
+      "left_center": 6,
+      "center": 10,
+      "right_center": 21,
+      "rf_line": 21
+    },
+    "surface": "grass",
+    "roof": "open",
+    "ground_rules": "The Clemente Wall in right is 21 feet tall, for Roberto Clemente's number."
+  },
+  "2680": {
+    "name": "Petco Park",
+    "club": "SD",
+    "distances_ft": {
+      "lf_line": 334,
+      "left_center": 367,
+      "center": 396,
+      "right_center": 382,
+      "rf_line": 322
+    },
+    "wall_ft": {
+      "lf_line": 8,
+      "left_center": 8,
+      "center": 8,
+      "right_center": 8,
+      "rf_line": 8
+    },
+    "surface": "grass",
+    "roof": "open",
+    "ground_rules": "The Western Metal Supply Co. building forms the left-field corner."
+  },
+  "2395": {
+    "name": "Oracle Park",
+    "club": "SF",
+    "distances_ft": {
+      "lf_line": 339,
+      "left_center": 364,
+      "center": 391,
+      "right_center": 415,
+      "rf_line": 309
+    },
+    "wall_ft": {
+      "lf_line": 8,
+      "left_center": 8,
+      "center": 8,
+      "right_center": 25,
+      "rf_line": 25
+    },
+    "surface": "grass",
+    "roof": "open",
+    "ground_rules": "The arcade wall in right is 25 feet tall, and McCovey Cove is beyond it."
+  },
+  "680": {
+    "name": "T-Mobile Park",
+    "club": "SEA",
+    "distances_ft": {
+      "lf_line": 331,
+      "left_center": 378,
+      "center": 401,
+      "right_center": 381,
+      "rf_line": 326
+    },
+    "wall_ft": {
+      "lf_line": 8,
+      "left_center": 8,
+      "center": 8,
+      "right_center": 8,
+      "rf_line": 8
+    },
+    "surface": "grass",
+    "roof": "retractable",
+    "ground_rules": ""
+  },
+  "2889": {
+    "name": "Busch Stadium",
+    "club": "STL",
+    "distances_ft": {
+      "lf_line": 336,
+      "left_center": 375,
+      "center": 400,
+      "right_center": 375,
+      "rf_line": 335
+    },
+    "wall_ft": {
+      "lf_line": 8,
+      "left_center": 8,
+      "center": 8,
+      "right_center": 8,
+      "rf_line": 8
+    },
+    "surface": "grass",
+    "roof": "open",
+    "ground_rules": ""
+  },
+  "12": {
+    "name": "Tropicana Field",
+    "club": "TB",
+    "distances_ft": {
+      "lf_line": 315,
+      "left_center": 370,
+      "center": 404,
+      "right_center": 370,
+      "rf_line": 322
+    },
+    "wall_ft": {
+      "lf_line": 9,
+      "left_center": 11,
+      "center": 9,
+      "right_center": 11,
+      "rf_line": 9
+    },
+    "surface": "turf",
+    "roof": "dome",
+    "ground_rules": "A ball that hits a catwalk is ruled by which ring it strikes."
+  },
+  "5325": {
+    "name": "Globe Life Field",
+    "club": "TEX",
+    "distances_ft": {
+      "lf_line": 329,
+      "left_center": 372,
+      "center": 407,
+      "right_center": 374,
+      "rf_line": 326
+    },
+    "wall_ft": {
+      "lf_line": 8,
+      "left_center": 8,
+      "center": 8,
+      "right_center": 8,
+      "rf_line": 8
+    },
+    "surface": "turf",
+    "roof": "retractable",
+    "ground_rules": ""
+  },
+  "14": {
+    "name": "Rogers Centre",
+    "club": "TOR",
+    "distances_ft": {
+      "lf_line": 328,
+      "left_center": 368,
+      "center": 400,
+      "right_center": 359,
+      "rf_line": 328
+    },
+    "wall_ft": {
+      "lf_line": 12,
+      "left_center": 14,
+      "center": 10,
+      "right_center": 14,
+      "rf_line": 12
+    },
+    "surface": "turf",
+    "roof": "retractable",
+    "ground_rules": ""
+  },
+  "3309": {
+    "name": "Nationals Park",
+    "club": "WSH",
+    "distances_ft": {
+      "lf_line": 336,
+      "left_center": 377,
+      "center": 402,
+      "right_center": 370,
+      "rf_line": 335
+    },
+    "wall_ft": {
+      "lf_line": 8,
+      "left_center": 8,
+      "center": 8,
+      "right_center": 14,
+      "rf_line": 14
+    },
+    "surface": "grass",
+    "roof": "open",
+    "ground_rules": ""
+  },
+  "4705": {
+    "name": "Truist Park",
+    "club": "ATL",
+    "distances_ft": {
+      "lf_line": 335,
+      "left_center": 385,
+      "center": 400,
+      "right_center": 375,
+      "rf_line": 325
+    },
+    "wall_ft": {
+      "lf_line": 6,
+      "left_center": 6,
+      "center": 8,
+      "right_center": 16,
+      "rf_line": 16
+    },
+    "surface": "grass",
+    "roof": "open",
+    "ground_rules": ""
+  }
+}

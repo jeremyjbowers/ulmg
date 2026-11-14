@@ -1,0 +1,122 @@
+{# ABOUTME: The substitution side panel: pinch hit, pinch run, new pitcher and defense, each a server-rendered table inside the same form as before. #}
+{# ABOUTME: Each tab opens on its #sub-<tab> anchor; a forced change opens its tab by itself. Illegal players are greyed with the reason. #}
+<a class="hud-scrim" href="#hud" aria-label="Close the substitution panel" tabindex="-1"></a>
+{% for tab in panel.tabs %}
+<aside id="sub-{{ tab.key }}" class="hud-drawer{% if panel.open == tab.key %} open{% endif %}" aria-label="Substitution: {{ tab.label }}" data-tab="{{ tab.key }}">
+    {% if tab.action %}<form method="post" action="/games/{{ game.id }}/{{ tab.action }}/" class="hud-sub-form game-sub-{{ tab.key }}" data-confirmable>
+        {% csrf_token %}
+        <input type="hidden" name="expected" value="{{ expected }}">
+        <input type="hidden" name="side" value="{{ tab.side }}">
+    {% else %}<div class="hud-sub-form">{% endif %}
+        <div class="hud-drawer-head">
+            <div>
+                <h2>{{ tab.title }}</h2>
+                {% if tab.sub %}<p class="hud-sub" style="margin:2px 0 0">{{ tab.sub }}</p>{% endif %}
+            </div>
+            <a class="hud-btn" href="#hud" data-close>Close <kbd>Esc</kbd></a>
+        </div>
+        <nav class="hud-tabs" aria-label="Substitution tabs">
+            {% for other in panel.tabs %}<a class="hud-tab{% if other.key == tab.key %} on{% endif %}" href="#sub-{{ other.key }}" data-open="{{ other.key }}"{% if other.key == tab.key %} aria-current="page"{% endif %}>{{ other.label }}</a>{% endfor %}
+        </nav>
+        <div class="body">
+            {% if tab.missing %}
+            <p class="hud-note">{{ tab.missing }}</p>
+            {% elif tab.key == "ph" %}
+            <table class="hud-pick game-pinch-table">
+                <thead><tr><th scope="col"><span class="visually-hidden">Pick</span></th><th scope="col">Bench</th><th scope="col">B</th><th scope="col" class="wide">Pos</th><th scope="col">AVG</th><th scope="col">OBP</th><th scope="col">SLG</th><th scope="col" class="wide">HR%</th><th scope="col">Speed</th><th scope="col">On base<br>this PA</th><th scope="col" class="wide">PA left</th></tr></thead>
+                <tbody>
+                    {% for row in tab.rows %}
+                    <tr class="{% if row.legal %}row{% else %}no{% endif %}" data-compare="{{ row.compare|default:'' }}"{% if row.reach_value %} data-reach="{{ row.reach_value }}"{% endif %}>
+                        <td class="pickcell"><input type="radio" name="player" value="{{ row.player.id }}" id="ph-{{ row.player.id }}"{% if not row.legal %} disabled{% endif %}></td>
+                        <td class="name"><label for="ph-{{ row.player.id }}">{{ row.player.name }}</label>{% if not row.legal %}<small>{{ row.problem }}</small>{% endif %}</td>
+                        <td>{{ row.bats }}</td><td class="wide">{{ row.positions }}</td>
+                        <td>{{ row.line.avg }}</td><td>{{ row.line.obp }}</td><td>{{ row.line.slg }}</td><td class="wide">{{ row.line.hr }}</td>
+                        <td>{{ row.speed }}</td>
+                        <td class="reach{% if row.up %} up{% elif row.down %} down{% endif %}">{% if row.reach %}{{ row.reach }} ({{ row.delta }}){% else %}—{% endif %}</td>
+                        <td class="wide">{{ row.pa_left }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% if tab.base_reach %}<p class="hud-note">{{ tab.batter.name }} reaches base {{ tab.base_reach }} of the time here.</p>{% endif %}
+            {% elif tab.key == "pr" %}
+            <p class="hud-section">Run for</p>
+            <div class="hud-choices">
+                {% for runner in tab.runners %}<label><input type="radio" name="base" value="{{ runner.base }}"{% if forloop.first %} checked{% endif %}> {{ runner.player.name }} on {{ runner.base }} (speed {{ runner.speed }})</label>{% endfor %}
+            </div>
+            <table class="hud-pick game-pinch-run-table">
+                <thead><tr><th scope="col"><span class="visually-hidden">Pick</span></th><th scope="col">Bench</th><th scope="col">B</th><th scope="col" class="wide">Pos</th><th scope="col">Speed</th><th scope="col">Steals</th><th scope="col" class="wide">PA left</th></tr></thead>
+                <tbody>
+                    {% for row in tab.rows %}
+                    <tr class="{% if row.legal %}row{% else %}no{% endif %}" data-compare="{{ row.compare|default:'' }}">
+                        <td class="pickcell"><input type="radio" name="player" value="{{ row.player.id }}" id="pr-{{ row.player.id }}"{% if not row.legal %} disabled{% endif %}></td>
+                        <td class="name"><label for="pr-{{ row.player.id }}">{{ row.player.name }}</label>{% if not row.legal %}<small>{{ row.problem }}</small>{% endif %}</td>
+                        <td>{{ row.bats }}</td><td class="wide">{{ row.positions }}</td><td>{{ row.speed }}</td><td>{{ row.steals }}</td><td class="wide">{{ row.pa_left }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% elif tab.key == "pit" %}
+            <table class="hud-pick game-pitcher-table">
+                <thead><tr><th scope="col"><span class="visually-hidden">Pick</span></th><th scope="col">Bullpen</th><th scope="col">T</th><th scope="col" class="wide">Role</th><th scope="col">xFIP</th><th scope="col">K%</th><th scope="col">BB%</th><th scope="col">OBP<br>vs L</th><th scope="col">OBP<br>vs R</th><th scope="col" class="wide">Rest</th><th scope="col">IP he<br>can go</th></tr></thead>
+                <tbody>
+                    {% for row in tab.rows %}
+                    <tr class="{% if row.legal %}row{% else %}no{% endif %}" data-compare="{{ row.compare|default:'' }}">
+                        <td class="pickcell"><input type="radio" name="player" value="{{ row.player.id }}" id="pit-{{ row.player.id }}"{% if not row.legal %} disabled{% endif %}></td>
+                        <td class="name"><label for="pit-{{ row.player.id }}">{{ row.player.name }}</label>{% if not row.legal %}<small>{{ row.problem }}</small>{% endif %}</td>
+                        <td>{{ row.throws }}</td><td class="wide">{{ row.role }}</td><td>{{ row.xfip }}</td><td>{{ row.k }}</td><td>{{ row.bb }}</td><td>{{ row.obp_l }}</td><td>{{ row.obp_r }}</td><td class="wide">{{ row.rest }}</td><td>{{ row.ip }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% elif tab.key == "def" %}
+            <p class="hud-section">Replace</p>
+            <div class="hud-choices">
+                {% for row in tab.rows %}<label><input type="radio" name="slot" value="{{ row.order }}"{% if row.pending %} checked{% endif %}> {{ row.order }}. {{ row.player.name }} {{ row.position }}{% if row.rating %} {{ row.rating }}{% endif %}{% if row.pending %} (needs a position){% endif %}</label>{% endfor %}
+            </div>
+            <p class="hud-section">With</p>
+            <table class="hud-pick game-defense-table">
+                <thead><tr><th scope="col"><span class="visually-hidden">Pick</span></th><th scope="col">Bench</th><th scope="col">B</th><th scope="col">Rating at each position</th><th scope="col" class="wide">Speed</th></tr></thead>
+                <tbody>
+                    {% for row in tab.bench %}
+                    <tr class="{% if row.legal %}row{% else %}no{% endif %}" data-compare="{{ row.compare|default:'' }}">
+                        <td class="pickcell"><input type="radio" name="player" value="{{ row.player.id }}" id="def-{{ row.player.id }}"{% if not row.legal %} disabled{% endif %}></td>
+                        <td class="name"><label for="def-{{ row.player.id }}">{{ row.player.name }}</label>{% if not row.legal %}<small>{{ row.problem }}</small>{% endif %}</td>
+                        <td>{{ row.bats }}</td><td>{{ row.glove|default:"—" }}</td><td class="wide">{{ row.speed }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% endif %}
+        </div>
+        {% if tab.action %}
+        <div class="hud-compare">
+            <p data-compare-text>Pick a player to compare. Greyed-out players can't be used, and the reason is shown.</p>
+            <button type="submit" class="hud-btn play" data-confirm>{{ tab.confirm }}</button>
+        </div>
+        {% endif %}
+    {% if tab.action %}</form>{% else %}</div>{% endif %}
+    {% if tab.key == "def" and defense %}
+    <form method="post" action="/games/{{ game.id }}/positions/" class="game-positions hud-compare" style="display:block">
+        {% csrf_token %}
+        <input type="hidden" name="expected" value="{{ expected }}">
+        <input type="hidden" name="side" value="{{ defense.side }}">
+        <p class="hud-section" style="margin-top:0">Positions</p>
+        <p class="hud-note" style="margin:0 0 6px">A pinch hitter or runner must be given a position before the next pitch. The designated hitter stays the designated hitter.</p>
+        <table class="hud-pick">
+            <tbody>
+            {% for row in defense.rows %}
+            <tr><td>{{ row.order }}</td><td>{{ row.player.name }}{% if row.pending %} (needs a position){% endif %}</td><td>
+                {% if row.position == "DH" %}DH{% else %}
+                <select name="position-{{ row.order }}" aria-label="Position for {{ row.player.name }}">
+                    {% for code in defense.positions %}<option value="{{ code }}"{% if code == row.position %} selected{% endif %}>{{ code }}</option>{% endfor %}
+                </select>{% endif %}
+            </td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        <button type="submit" class="hud-btn" style="margin-top:8px">Set positions</button>
+    </form>
+    {% endif %}
+</aside>
+{% endfor %}
