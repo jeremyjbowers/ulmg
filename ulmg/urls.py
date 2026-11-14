@@ -5,9 +5,7 @@ from django.contrib.auth import views as auth_views
 from ulmg import views
 
 urlpatterns = [
-    # Field scripts and the service worker. These stay on this origin.
-    path("static/ulmg/game_field.js", views.assets.game_field_js, name="game_field_js"),
-    path("static/ulmg/pixelkit.mjs", views.assets.pixelkit_mjs, name="pixelkit_mjs"),
+    # The service worker has to come from this origin.
     path("sw.js", views.assets.service_worker, name="service_worker"),
 
     # Custom admin login

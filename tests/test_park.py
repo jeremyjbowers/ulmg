@@ -1,5 +1,5 @@
-# ABOUTME: Tests the home field: which park a team plays in, the scores the sim reads, and the rules and plate a builder stores.
-# ABOUTME: Uses real venue rows for the team link, and plain objects for the score and sprite contract.
+# ABOUTME: Tests the home field: which park a team plays in, the scores the sim reads, and the rules the page draws from.
+# ABOUTME: Uses real venue rows for the team link, and plain objects for the score and rules contract.
 
 from types import SimpleNamespace
 
@@ -71,21 +71,6 @@ class FieldContractTest(SimpleTestCase):
         self.assertEqual(drawn["foul_ft"], 52)
         self.assertEqual(drawn["distances_ft"]["center"], 400)
 
-    def test_a_plate_is_inner_svg_and_a_script_is_not_a_plate(self):
-        plate = park.sprites(_venue(sprites={
-            "version": 2,
-            "plate_svg": '<svg viewBox="0 0 320 180"><g id="coors-plate"></g></svg>',
-        }))
-        self.assertEqual(plate["version"], 2)
-        self.assertEqual(plate["plate_svg"], '<g id="coors-plate"></g>')
-
-        refused = park.sprites(_venue(sprites={"version": 2, "plate_svg": '<g></g><script>alert(1)</script>'}))
-        self.assertEqual(refused["version"], 2)
-        self.assertIsNone(refused["plate_svg"])
-        self.assertIsNone(park.sprites(_venue(sprites={"plate_svg": '<g onload="alert(1)"></g>'}))["plate_svg"])
-        self.assertIsNone(park.sprites(_venue())["plate_svg"])
-        self.assertIsNone(park.sprites(_venue(sprites={"version": True}))["version"])
-
     def test_event_scores_become_the_factors_the_sim_reads(self):
         team = _team("COL", _venue(park_factor=115, pf_runs=132, pf_1b=110, pf_2b=130, pf_3b=177, pf_hr=119))
         self.assertEqual(park.engine_park(team), {
@@ -111,7 +96,7 @@ class FieldContractTest(SimpleTestCase):
         self.assertEqual(shown["name"], "")
         self.assertEqual(shown["scores"], {})
         self.assertEqual(shown["rules"]["distances_ft"]["center"], 400)
-        self.assertIsNone(shown["sprites"]["plate_svg"])
+        self.assertNotIn("sprites", shown)
 
 
 class HomeFieldTest(TestCase):

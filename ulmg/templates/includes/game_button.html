@@ -1,0 +1,9 @@
+{# ABOUTME: One HUD call button: a submit carrying the call, a link that opens a substitution tab, or the same button disabled. #}
+{# ABOUTME: Expects `button` from game_hud.controls. A disabled button stays on screen; its group names the reason. #}
+{% if not button.enabled %}
+<button type="button" class="hud-btn" disabled{% if button.key %} data-key="{{ button.key }}"{% endif %}>{{ button.label }}{% if button.key %} <kbd>{{ button.key }}</kbd>{% endif %}</button>
+{% elif button.call %}
+<button type="submit" name="call" value="{{ button.call }}" class="hud-btn{% if button.live %} live{% endif %}" data-key="{{ button.key }}" aria-keyshortcuts="{{ button.key }}">{{ button.label }} <kbd>{{ button.key }}</kbd></button>
+{% else %}
+<a class="hud-btn" href="#sub-{{ button.tab }}" data-open="{{ button.tab }}">{{ button.label }}</a>
+{% endif %}

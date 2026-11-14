@@ -1,8 +1,42 @@
-{# ABOUTME: Mount for the SNES field: Django writes the live JSON, game_field.js draws the 320×180 SVG. #}
-{# ABOUTME: Expects `field` from game_field.field_view. The line score and call buttons stay in HTML. #}
-{% if field %}
-<div class="game-screen">
-    {{ field|json_script:"game-field-data" }}
-    <div id="game-field" class="game-field" role="img" aria-label="The field from behind home plate"></div>
+{# ABOUTME: The field from above: the home park drawn from its dimensions, fielders tagged with their ratings, runners with their speed. #}
+{# ABOUTME: Expects `field` from game_hud.field. The SVG is the end state; the page script animates the last play onto it. #}
+{% with d=field.drawing %}
+<div class="hud-field{% if d.turf %} turf{% endif %}" id="hud-field">
+    <div class="hud-park"><span>{{ field.park.name }}</span><small>{{ field.park.facts }}</small></div>
+    <svg viewBox="{{ d.viewbox }}" role="img" aria-labelledby="hud-field-title" aria-describedby="hud-field-text" id="hud-svg">
+        <title id="hud-field-title">The field from above at {{ field.park.name }}</title>
+        <path d="{{ d.fence }}" fill="{% if d.turf %}var(--turf){% else %}var(--grass){% endif %}" stroke="var(--wall)" stroke-width="8" stroke-linejoin="round"/>
+        {% for wall in d.tall_walls %}<path class="tall-wall" d="{{ wall }}" fill="none" stroke="var(--wall-tall)" stroke-width="14" stroke-linecap="round"/>{% endfor %}
+        <path d="{{ d.dirt }}" fill="{% if d.turf %}var(--dirt-turf){% else %}var(--dirt){% endif %}"/>
+        <polygon points="{{ d.infield_grass }}" fill="{% if d.turf %}var(--turf){% else %}var(--grass){% endif %}"/>
+        <polygon points="{{ d.baselines }}" fill="none" stroke="#fff" stroke-width="2" opacity=".9"/>
+        {% for x, y in d.foul_lines %}<line x1="{{ d.home.0 }}" y1="{{ d.home.1 }}" x2="{{ x }}" y2="{{ y }}" stroke="#fff" stroke-width="2"/>{% endfor %}
+        <circle cx="{{ d.mound.0 }}" cy="{{ d.mound.1 }}" r="11" fill="var(--dirt)"/>
+        {% for label in d.labels %}<text class="lbl-dist" x="{{ label.x }}" y="{{ label.y }}" text-anchor="middle">{{ label.text }}</text>{% endfor %}
+        {% for b in d.bases %}<rect class="base" x="{{ b.left }}" y="{{ b.top }}" width="16" height="16" transform="rotate(45 {{ b.x }} {{ b.y }})"/>{% endfor %}
+        <polygon class="base" points="{{ d.plate }}"/>
+        <g id="hud-fielders">
+            {% for f in field.fielders %}
+            <g class="fielder" data-position="{{ f.position }}">
+                <rect class="tag{% if f.below %} low{% endif %}" x="{{ f.box.x }}" y="{{ f.box.y }}" width="{{ f.box.width }}" height="21" rx="4"/>
+                <text class="lbl-pos" x="{{ f.x }}" y="{{ f.box.text_y }}" text-anchor="middle">{{ f.tag }}</text>
+                <text class="lbl-name" x="{{ f.name_at.x }}" y="{{ f.name_at.y }}" text-anchor="{{ f.name_at.anchor }}">{{ f.name }}</text>
+            </g>
+            {% endfor %}
+        </g>
+        <g id="hud-runners">
+            {% for r in field.runners %}
+            <g class="runner" data-base="{{ r.base }}" style="transform: translate({{ r.x }}px, {{ r.y }}px)">
+                <rect x="-11" y="-11" width="22" height="22" transform="rotate(45)"/>
+                <text class="lbl-name" x="{{ r.label.dx }}" y="{{ r.label.dy }}" text-anchor="{{ r.label.anchor }}">{{ r.name }}</text>
+                <text class="lbl-rate" x="{{ r.label.dx }}" y="{{ r.label.dy|add:16 }}" text-anchor="{{ r.label.anchor }}">{{ r.speed }}</text>
+            </g>
+            {% endfor %}
+        </g>
+        <g id="hud-moving"></g>
+        <circle id="hud-ball" class="ball" r="6" cx="0" cy="0"/>
+    </svg>
+    <p id="hud-field-text" class="visually-hidden">{{ field.text }}{% if field.park.ground_rules %} Ground rules: {{ field.park.ground_rules }}{% endif %}</p>
+    <div class="hud-banner{% if last_play %} js-banner{% endif %}" id="hud-banner" aria-live="polite"><div class="big" id="hud-banner-big"></div><div class="small" id="hud-banner-small"></div></div>
 </div>
-{% endif %}
+{% endwith %}
