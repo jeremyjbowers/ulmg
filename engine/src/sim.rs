@@ -68,6 +68,19 @@ pub const FLY_SECOND_TO_THIRD: f64 = 0.20;
 /// Infield in: share of ground outs that get through for a single.
 pub const INFIELD_IN_SINGLE_SHIFT: f64 = 0.10;
 
+/// Balls before a ball in play or a hit by pitch. Weights for 0, 1, 2, 3. Mean 1.0.
+const BIP_BALLS: [u32; 4] = [4, 3, 2, 1];
+/// Strikes before a ball in play or a hit by pitch. Weights for 0, 1, 2. Mean 1.0.
+const BIP_STRIKES: [u32; 3] = [3, 4, 3];
+/// Balls before the two strikes of a strikeout. Weights for 0, 1, 2, 3. Mean 0.95.
+const STRIKEOUT_BALLS: [u32; 4] = [7, 8, 4, 1];
+/// Strikes before ball four of a walk. Weights for 0, 1, 2. Mean 0.70.
+const WALK_STRIKES: [u32; 3] = [9, 8, 3];
+/// Foul balls once the count has two strikes. Weights for 0, 1, 2. Mean 0.60.
+/// With the weights above, a league-average plate appearance runs about 3.62 pitches:
+/// 3.18 on a ball in play, 4.55 on a strikeout, 4.79 on a walk.
+const FOULS_AT_TWO_STRIKES: [u32; 3] = [11, 6, 3];
+
 #[derive(Debug, Clone, PartialEq, serde::Serialize)]
 pub struct OutcomeProbs {
     pub k: f64,
@@ -1035,16 +1048,16 @@ impl Sim {
         match outcome {
             PlateOutcome::IntentionalWalk => four_balls(),
             PlateOutcome::Strikeout => {
-                let balls = self.rng.gen_range(0..4);
+                let balls = self.pick_weighted(&STRIKEOUT_BALLS);
                 self.sequence(balls, 2, true, PitchKind::SwingingStrike)
             }
             PlateOutcome::Walk => {
-                let strikes = self.rng.gen_range(0..3);
+                let strikes = self.pick_weighted(&WALK_STRIKES);
                 self.sequence(3, strikes, true, PitchKind::Ball)
             }
             PlateOutcome::HitByPitch => {
-                let balls = self.rng.gen_range(0..4);
-                let strikes = self.rng.gen_range(0..3);
+                let balls = self.pick_weighted(&BIP_BALLS);
+                let strikes = self.pick_weighted(&BIP_STRIKES);
                 self.sequence(balls, strikes, true, PitchKind::HitByPitch)
             }
             PlateOutcome::CaughtStealing => {
@@ -1056,11 +1069,23 @@ impl Sim {
                 self.sequence(0, 0, false, kind)
             }
             _ => {
-                let balls = self.rng.gen_range(0..4);
-                let strikes = self.rng.gen_range(0..3);
+                let balls = self.pick_weighted(&BIP_BALLS);
+                let strikes = self.pick_weighted(&BIP_STRIKES);
                 self.sequence(balls, strikes, true, PitchKind::InPlay)
             }
         }
+    }
+
+    fn pick_weighted(&mut self, weights: &[u32]) -> u8 {
+        let total: u32 = weights.iter().sum();
+        let mut roll = self.rng.gen_range(0..total);
+        for (index, weight) in weights.iter().enumerate() {
+            if roll < *weight {
+                return index as u8;
+            }
+            roll -= weight;
+        }
+        (weights.len() - 1) as u8
     }
 
     fn sequence(
@@ -1079,7 +1104,7 @@ impl Sim {
             built.push(kind);
         }
         if fouls_at_two_strikes && built.strikes >= 2 {
-            let fouls = self.rng.gen_range(0..3);
+            let fouls = self.pick_weighted(&FOULS_AT_TWO_STRIKES);
             for _ in 0..fouls {
                 built.push(PitchKind::Foul);
             }
@@ -1493,6 +1518,27 @@ mod tests {
         let mut quiet = Sim::from_seed(7);
         let other = quiet.resolve(&input);
         assert_ne!(other.outcome, PlateOutcome::IntentionalWalk);
+    }
+
+    /// League-average plate appearances, empty bases. The band is the pitch half of 15 to 16 an inning.
+    #[test]
+    fn a_league_plate_appearance_is_told_in_about_three_and_a_half_pitches() {
+        let mut input = sample_input(false);
+        input.rates = league_line_hitter();
+        input.pitcher = average_pitcher();
+        let mut sim = Sim::from_seed(20_261_115);
+        let sample = 20_000;
+        let mut pitches = 0.0;
+        for _ in 0..sample {
+            let result = sim.resolve(&input);
+            assert_legal_count(&result);
+            pitches += result.pitches.len() as f64;
+        }
+        let mean = pitches / f64::from(sample);
+        assert!(
+            (3.55..=3.70).contains(&mean),
+            "mean pitches {mean} over {sample} league plate appearances (seed 20261115)"
+        );
     }
 
     #[test]
@@ -1983,6 +2029,63 @@ mod tests {
                 runner: "r2".into(),
                 to: Base::Third,
             }));
+        }
+    }
+
+    fn league_line_hitter() -> HitterRates {
+        let single = 0.1425;
+        let double = 0.0453;
+        let triple = LEAGUE_H - single - double;
+        HitterRates {
+            k: LEAGUE_K,
+            bb: LEAGUE_BB,
+            hbp: LEAGUE_HBP,
+            single,
+            double,
+            triple,
+            hr: LEAGUE_HR,
+            bip_out: 1.0 - (LEAGUE_K + LEAGUE_BB + LEAGUE_HBP + LEAGUE_H + LEAGUE_HR),
+        }
+    }
+
+    fn assert_legal_count(result: &PaResult) {
+        assert!(!result.pitches.is_empty());
+        let last = result.pitches.last().unwrap();
+        match result.outcome {
+            PlateOutcome::Strikeout => {
+                assert_eq!(last.kind, PitchKind::SwingingStrike);
+                assert_eq!(last.strikes, 3);
+                assert!(last.balls <= 3);
+                assert!(result.pitches.len() >= 3);
+            }
+            PlateOutcome::Walk => {
+                assert_eq!(last.kind, PitchKind::Ball);
+                assert_eq!(last.balls, 4);
+                assert!(last.strikes <= 2);
+                assert!(result.pitches.len() >= 4);
+            }
+            PlateOutcome::IntentionalWalk => {
+                assert_eq!(result.pitches.len(), 4);
+                assert!(result
+                    .pitches
+                    .iter()
+                    .all(|pitch| pitch.kind == PitchKind::Ball));
+            }
+            PlateOutcome::HitByPitch => {
+                assert_eq!(last.kind, PitchKind::HitByPitch);
+                assert!(last.balls <= 3 && last.strikes <= 2);
+            }
+            PlateOutcome::CaughtStealing => {
+                assert_eq!(result.pitches.len(), 1);
+            }
+            _ => {
+                assert_eq!(last.kind, PitchKind::InPlay);
+                assert!(last.balls <= 3 && last.strikes <= 2);
+            }
+        }
+        for pitch in &result.pitches {
+            assert!(pitch.balls <= 4);
+            assert!(pitch.strikes <= 3);
         }
     }
 
