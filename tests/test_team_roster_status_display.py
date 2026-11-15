@@ -1,9 +1,11 @@
-# ABOUTME: Tests for roster UI on team pages: stat columns, org/roster display, no row actions by default.
+# ABOUTME: Tests for roster UI on team pages: stat columns, org/roster display, and MLB/AAA buttons.
+# ABOUTME: Owners set those rosters from their own team page while TEAM_ROSTER_TAB is on.
 
 from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.test import Client, TestCase, override_settings
 
+from tests.usage_fixtures import create_hitter, create_pitcher
 from ulmg import models
 
 
@@ -21,12 +23,65 @@ class TeamRosterStatusDisplayTestCase(TestCase):
             owner_obj=self.owner,
         )
 
+    @override_settings(TEAM_ROSTER_TAB=False)
     def test_team_page_hides_mlb_roster_badge_when_roster_tab_off(self):
         self.client.login(username="mgr", password="secret")
         response = self.client.get("/teams/tst/")
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, "MLB Roster")
         self.assertNotContains(response, 'id="roster-mlb-count"')
+
+    def test_owner_sets_mlb_and_aaa_rosters_from_the_team_page(self):
+        hitter = create_hitter("Roster Hitter", team=self.team, pa=100, g=30)
+        pitcher = create_pitcher("Roster Pitcher", team=self.team, g=30, ip="60.0")
+        self.client.login(username="mgr", password="secret")
+        response = self.client.get("/teams/tst/")
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        self.assertIn("MLB Roster", content)
+        self.assertIn('id="roster-mlb-count"', content)
+        for name in ("Roster Hitter", "Roster Pitcher"):
+            player_idx = content.find(name)
+            self.assertNotEqual(player_idx, -1)
+            row = content[player_idx : player_idx + 2500]
+            self.assertIn('data-action="to_mlb"', row)
+            self.assertIn('data-action="to_aaa"', row)
+
+        other = User.objects.create_user(username="other", password="secret")
+        other_owner = models.Owner.objects.create(user=other, name="Other")
+        models.Team.objects.create(
+            city="Other City",
+            abbreviation="OTH",
+            nickname="Others",
+            owner_obj=other_owner,
+        )
+        other_client = Client()
+        other_client.login(username="other", password="secret")
+        other_page = other_client.get("/teams/tst/")
+        self.assertEqual(other_page.status_code, 200)
+        self.assertNotContains(other_page, 'data-action="to_mlb"')
+        self.assertNotContains(other_page, 'data-action="to_aaa"')
+
+        mlb = self.client.get(f"/api/v1/player/{hitter.id}/to_mlb/")
+        self.assertEqual(mlb.content, b"ok")
+        aaa = self.client.get(f"/api/v1/player/{pitcher.id}/to_aaa/")
+        self.assertEqual(aaa.content, b"ok")
+        hitter.refresh_from_db()
+        pitcher.refresh_from_db()
+        self.assertTrue(hitter.is_ulmg_mlb_roster)
+        self.assertFalse(hitter.is_ulmg_aaa_roster)
+        self.assertTrue(pitcher.is_ulmg_aaa_roster)
+        self.assertFalse(pitcher.is_ulmg_mlb_roster)
+
+        again = self.client.get("/teams/tst/").content.decode()
+        hitter_idx = again.find("Roster Hitter")
+        pitcher_idx = again.find("Roster Pitcher")
+        hitter_row = again[hitter_idx : hitter_idx + 2500]
+        pitcher_row = again[pitcher_idx : pitcher_idx + 2500]
+        self.assertIn('data-action="off_roster">MLB</a>', hitter_row)
+        self.assertIn('data-action="to_aaa">AAA</a>', hitter_row)
+        self.assertIn('data-action="to_mlb">MLB</a>', pitcher_row)
+        self.assertIn('data-action="off_roster">AAA</a>', pitcher_row)
 
     def test_team_page_shows_mlb_roster_badge_only_when_roster_tab_on(self):
         self.client.login(username="mgr", password="secret")
@@ -41,6 +96,7 @@ class TeamRosterStatusDisplayTestCase(TestCase):
         self.assertContains(response, 'id="roster-mlb-count"')
         self.assertContains(response, "/30")
 
+    @override_settings(TEAM_ROSTER_TAB=False)
     def test_team_page_hides_removed_metadata_columns(self):
         p = models.Player.objects.create(
             name="Big Leaguer",
