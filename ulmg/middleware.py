@@ -79,6 +79,7 @@ class LoginRequiredMiddleware:
             'team_plan',
             'team_plan_rotation',
             'team_plan_bullpen',
+            'team_roster_board',
             'game_box_score',
             'league_standings',
             'team_results',

@@ -104,6 +104,16 @@ urlpatterns = [
         name="team_plan_bullpen",
     ),
     path(
+        "teams/<str:abbreviation>/plan/<int:half>/roster/",
+        views.roster.team_roster_board,
+        name="team_roster_board",
+    ),
+    path(
+        "teams/<str:abbreviation>/plan/<int:half>/<int:season>/roster/",
+        views.roster.team_roster_board,
+        name="team_roster_board",
+    ),
+    path(
         "teams/<str:abbreviation>/plan/<int:half>/designation/",
         views.plan.team_plan_designation,
         name="team_plan_designation",
