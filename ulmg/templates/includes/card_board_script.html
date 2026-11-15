@@ -119,7 +119,12 @@
         return room > 0;
     }
 
+    function tracksStarts() {
+        return !!document.querySelector("[data-starter-grid]");
+    }
+
     function refreshStartCards() {
+        if (!tracksStarts()) return;
         document.querySelectorAll("[data-stack] .decision-card[data-starts-cap]").forEach(function (card) {
             var open = startsRoom(card) > 0;
             card.draggable = open;
@@ -218,7 +223,7 @@
         if (event.target.closest("a, input, label, button")) return;
         var card = event.target.closest(".decision-card");
         if (card && card.closest("[data-stack]")) {
-            if (card.dataset.startsCap !== undefined && card.dataset.startsCap !== "" && startsRoom(card) <= 0) return;
+            if (tracksStarts() && card.dataset.startsCap !== undefined && card.dataset.startsCap !== "" && startsRoom(card) <= 0) return;
             if (picked) picked.classList.remove("is-picked");
             picked = card;
             card.classList.add("is-picked");
@@ -235,7 +240,7 @@
         }
         var card = event.target.closest(".decision-card");
         if (!card) return;
-        if (card.closest("[data-stack]") && card.dataset.startsCap !== undefined && card.dataset.startsCap !== "" && startsRoom(card) <= 0) {
+        if (tracksStarts() && card.closest("[data-stack]") && card.dataset.startsCap !== undefined && card.dataset.startsCap !== "" && startsRoom(card) <= 0) {
             event.preventDefault();
             return;
         }

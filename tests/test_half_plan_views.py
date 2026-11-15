@@ -343,6 +343,46 @@ class EditPlanTestCase(PlanViewsTestCase):
         self.assertIn("The starter hook must be quick, normal or slow.", response.content.decode())
         self.assertEqual(self.saved_plan().starter_hook, models.HalfPlan.NORMAL_HOOK)
 
+    def test_the_rotation_page_counts_scheduled_and_completed_starts_against_remaining(self):
+        self.roster.file()
+        starter = self.roster.starters[0]
+        counter = usage.counter_for(starter, SEASON)
+        counter.starts = 4
+        counter.save(update_fields=["starts"])
+        counted = plans.start_usage(self.atl, SEASON, [starter])[starter.id]
+        self.assertEqual(counted["made"], 4)
+        self.assertGreater(counted["scheduled"], 0)
+        self.assertEqual(
+            counted["remaining"],
+            counted["cap"] - counted["made"] - counted["scheduled"],
+        )
+        card = articles(
+            stack_html(self.as_user(self.owner).get(ROTATION_URL).content.decode()),
+            starter.id,
+        )[0]
+        self.assertIn(f"{counted['made']} completed", card)
+        self.assertIn(f"{counted['scheduled']} scheduled", card)
+        self.assertIn(f"{counted['remaining']} remaining", card)
+
+    def test_rotation_starters_are_not_offered_for_the_bullpen(self):
+        self.roster.file()
+        body = self.as_user(self.owner).get(BULLPEN_URL).content.decode()
+        stack = stack_html(body)
+        for starter in self.roster.starters:
+            self.assertNotIn(f'data-player="{starter.id}"', stack)
+        for reliever in self.roster.relievers:
+            self.assertIn(f'data-player="{reliever.id}"', stack)
+        self.assertIn(f'data-player="{self.roster.swingman.id}"', stack)
+
+    def test_a_rotation_starter_kept_in_a_bullpen_role_stays_in_that_role(self):
+        starter = self.roster.starters[0]
+        self.roster.file(closer=starter)
+        body = self.as_user(self.owner).get(BULLPEN_URL).content.decode()
+        self.assertNotIn(f'data-player="{starter.id}"', stack_html(body))
+        role = body.split('data-bullpen-group="closer"', 1)[1].split('data-bullpen-group="sirp"', 1)[0]
+        self.assertIn(starter.name, role)
+        self.assertIn(f'data-player="{starter.id}"', role)
+
     def test_editor_shows_the_saved_plan(self):
         self.roster.file()
         body = self.as_user(self.owner).get(ROTATION_URL).content.decode()
@@ -584,6 +624,38 @@ class EditDayTestCase(PlanViewsTestCase):
 
 
 class SchedulePlannedStartersTestCase(PlanViewsTestCase):
+    def test_the_schedule_opens_with_what_is_still_unfiled(self):
+        body = self.as_user(self.owner).get(SCHEDULE_URL).content.decode()
+        self.assertIn('id="plan-gaps"', body)
+        self.assertLess(body.index('id="plan-gaps"'), body.index("schedule-game"))
+        gaps = body.split('id="plan-gaps"', 1)[1].split("</aside>", 1)[0]
+        self.assertIn("Still to file", gaps)
+        self.assertIn("Lineups are not filed.", gaps)
+        self.assertIn("The rotation has not been pushed to the schedule.", gaps)
+        self.assertIn("No closer is named.", gaps)
+        self.assertIn("No one is in single-inning relief.", gaps)
+        self.assertIn("No one is in multi-inning relief.", gaps)
+        self.assertIn(f'href="/teams/atl/plan/1/{SEASON}/edit/"', gaps)
+        self.assertIn(f'href="/teams/atl/plan/1/{SEASON}/rotation/"', gaps)
+        self.assertIn(f'href="/teams/atl/plan/1/{SEASON}/bullpen/"', gaps)
+        self.assertNotIn('id="plan-gaps"', self.as_user(self.other_owner).get(SCHEDULE_URL).content.decode())
+        self.assertNotIn('id="plan-gaps"', Client().get(SCHEDULE_URL).content.decode())
+
+        self.roster.file()
+        plan = self.saved_plan()
+        plan.lineup_vs_lhp = []
+        plan.save(update_fields=["lineup_vs_lhp"])
+        partial = self.as_user(self.owner).get(SCHEDULE_URL).content.decode()
+        named = partial.split('id="plan-gaps"', 1)[1].split("</aside>", 1)[0]
+        self.assertIn("The lineup vs LHP is not filed.", named)
+        self.assertNotIn("Lineups are not filed.", named)
+        self.assertNotIn("The rotation has not been pushed to the schedule.", named)
+        self.assertNotIn("No closer is named.", named)
+
+        plan.lineup_vs_lhp = self.roster.file().lineup_vs_lhp
+        plan.save(update_fields=["lineup_vs_lhp"])
+        self.assertNotIn('id="plan-gaps"', self.as_user(self.owner).get(SCHEDULE_URL).content.decode())
+
     def test_the_schedule_names_games_and_does_not_edit_lineups(self):
         self.roster.file()
         body = self.as_user(self.owner).get(SCHEDULE_URL).content.decode()
@@ -605,8 +677,12 @@ class SchedulePlannedStartersTestCase(PlanViewsTestCase):
         first = articles(stack_html(body), self.roster.starters[0].id)[0]
         self.assertIn("34 starts", first)
         self.assertIn("17 scheduled", first)
-        self.assertIn("34 remaining", first)
+        self.assertIn("17 remaining", first)
+        self.assertNotIn("34 remaining", first)
         self.assertIn('draggable="true"', first)
+        self.assertIn('class="play-next" style="', body)
+        self.assertIn("background:#f2c230", body)
+        self.assertNotIn('class="play-next underline', body)
         self.assertNotIn("schedule-play", body)
         nxt = schedule.next_unplayed_road_game(self.atl, SEASON)
         self.assertIn(f'href="/games/{nxt.id}/" class="play-next', body)
@@ -629,7 +705,8 @@ class SchedulePlannedStartersTestCase(PlanViewsTestCase):
         card = articles(stack_html(page), capped.id)[0]
         self.assertIn("2 starts", card)
         self.assertIn("2 scheduled", card)
-        self.assertIn("2 remaining", card)
+        self.assertIn("0 remaining", card)
+        self.assertNotIn("2 remaining", card)
         self.assertNotIn("2 GS", card)
         self.assertIn('draggable="false"', card)
         response = client.post(SCHEDULE_URL, {"starter_30": capped.id})
@@ -664,7 +741,8 @@ class SchedulePlannedStartersTestCase(PlanViewsTestCase):
         games = list(plans.half_games(self.atl, SEASON, 1).values())
         road = [game for game in games if game.series.road_team_id == self.atl.id]
         self.assertEqual(body.count("schedule-away"), len(road))
-        self.assertEqual(body.count("#fff3c4"), len(road))
+        self.assertEqual(body.count("#fff8e4"), len(road))
+        self.assertNotIn("#fff3c4", body)
         self.assertNotIn("unplayed", body)
         self.assertEqual(body.count("play-next"), 1)
         self.assertNotIn("schedule-play", body)

@@ -842,7 +842,7 @@ def start_usage(team, season, players):
     ULMG starts for each pitcher. cap is the calculated starts limit, not
     his real starts. made is starts he has actually made. scheduled is
     unplayed starts either half's plan has him down for. remaining is the
-    cap minus starts made. days lists the scheduled days.
+    cap minus starts made and starts scheduled. days lists the scheduled days.
     """
     players = list(players)
     ids = [player.id for player in players]
@@ -879,7 +879,7 @@ def start_usage(team, season, players):
             "cap": cap,
             "made": made,
             "scheduled": len(days),
-            "remaining": max(cap - made, 0),
+            "remaining": max(cap - made - len(days), 0),
             "days": days,
         }
     return rows
@@ -922,7 +922,7 @@ def _lineup_gap(plan):
 
 def _rotation_gap(plan, team, season, half):
     if plan is None or not plan.rotation:
-        return "No rotation is set."
+        return "The rotation has not been pushed to the schedule."
     covered = {
         row.day
         for row in plan.days.select_related("auto_starter", "manual_starter")

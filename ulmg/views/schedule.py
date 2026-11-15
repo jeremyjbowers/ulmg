@@ -7,7 +7,7 @@ from django.views.decorators.cache import never_cache
 
 from ulmg import models, plans, schedule, utils
 from ulmg.season_paths import bounce, season_url
-from ulmg.views.plan import _built_cards, _int_or_none
+from ulmg.views.plan import _annotate_start_usage, _built_cards, _int_or_none
 
 
 def _team_result(game, is_home):
@@ -84,6 +84,20 @@ def _rotation_starters(team, season):
     ]
 
 
+def _prep_gaps(team, season):
+    """What this half still needs filed, each note linking to the page that files it."""
+    half = plans.current_half()
+    if half not in plans.visible_halves():
+        return []
+    base = f"/teams/{team.abbreviation.lower()}/plan/{half}/{season}"
+    links = {
+        "lineups": f"{base}/edit/",
+        "rotation": f"{base}/rotation/",
+        "bullpen": f"{base}/bullpen/",
+    }
+    return [{**gap, "href": links[gap["kind"]]} for gap in plans.plan_gaps(team, season, half)]
+
+
 def _auto_names(team, season):
     """day → the rotation's name for that day, or '-' when auto-fill left it empty."""
     names = {}
@@ -152,6 +166,7 @@ def team_schedule(request, abbreviation, season=None):
     context["schedule_season"] = season
     context["can_edit"] = can_edit
     context["errors"] = errors
+    context["prep_gaps"] = _prep_gaps(team, season) if can_edit else []
 
     owner = utils.get_owner_for_user(request.user)
     own_team = owner is not None and owner.team() == team
@@ -216,16 +231,7 @@ def team_schedule(request, abbreviation, season=None):
         )
     if pitcher_cards:
         on_grid = {row["game"].day for row in rows if row["editable"]}
-        counted = plans.start_usage(team, season, [card["player"] for card in pitcher_cards.values()])
-        for player_id, card in pitcher_cards.items():
-            usage_row = counted[player_id]
-            card["show_start_usage"] = True
-            card["starts_cap"] = usage_row["cap"]
-            card["starts_made"] = usage_row["made"]
-            card["starts_scheduled"] = usage_row["scheduled"]
-            card["starts_remaining"] = usage_row["remaining"]
-            card["starts_elsewhere"] = sum(1 for day in usage_row["days"] if day not in on_grid)
-            card["can_schedule"] = usage_row["made"] + usage_row["scheduled"] < usage_row["cap"]
+        _annotate_start_usage(pitcher_cards, team, season, on_grid)
     context["rows"] = rows
     context["pitcher_cards"] = [pitcher_cards[player.id] for player in starters if player.id in pitcher_cards]
     context["rotation_url"] = season_url(

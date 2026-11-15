@@ -21,7 +21,7 @@
     <div>PA {{ card.pa_label }} &middot; {{ card.war_label }} WAR{% if card.rate_label %} &middot; {{ card.rate_label }}/600{% endif %} &middot; {{ card.wrc_label }} wRC+ &middot; {{ card.slash }} &middot; Spd {{ card.speed_label }}</div>
     <div>{{ card.defense_label }}</div>
     {% else %}
-    <div>{{ card.starts_label }}{% if card.show_start_usage %} &middot; {{ card.starts_scheduled }} scheduled &middot; {{ card.starts_remaining }} remaining{% endif %} &middot; {{ card.innings_label }} &middot; {{ card.xfip_label }} xFIP &middot; {{ card.war_label }} WAR</div>
+    <div>{{ card.starts_label }}{% if card.show_start_usage %}{% if card.starts_made %} &middot; {{ card.starts_made }} completed{% endif %} &middot; {{ card.starts_scheduled }} scheduled &middot; {{ card.starts_remaining }} remaining{% endif %} &middot; {{ card.innings_label }} &middot; {{ card.xfip_label }} xFIP &middot; {{ card.war_label }} WAR</div>
     <div>{{ card.k9_label }} K/9 &middot; {{ card.bb9_label }} BB/9</div>
     {% endif %}
 </article>

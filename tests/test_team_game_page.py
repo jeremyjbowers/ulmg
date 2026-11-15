@@ -90,7 +90,7 @@ class GamePageTestCase(TestCase):
         self.assertIn('id="plan-gaps"', body)
         for note in (
             "Lineups are not filed.",
-            "No rotation is set.",
+            "The rotation has not been pushed to the schedule.",
             "No closer is named.",
             "No one is in single-inning relief.",
             "No one is in multi-inning relief.",
@@ -209,7 +209,7 @@ class PlanGapTestCase(TestCase):
             notes,
             [
                 ("lineups", "Lineups are not filed."),
-                ("rotation", "No rotation is set."),
+                ("rotation", "The rotation has not been pushed to the schedule."),
                 ("bullpen", "No closer is named."),
                 ("bullpen", "No one is in single-inning relief."),
                 ("bullpen", "No one is in multi-inning relief."),
