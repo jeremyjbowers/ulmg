@@ -3,7 +3,7 @@
 {% load ulmg_tags %}
 
 {% block prenav %}
-        {% if own_team and protect_tab or own_team and roster_tab %}{% include "includes/roster_status.html" %}{% endif %}
+        {% if show_roster_tools or own_team and protect_tab or own_team and roster_tab %}{% include "includes/roster_status.html" %}{% endif %}
 {% endblock %}
 
 
@@ -89,7 +89,7 @@
                 <th class="text-center py-1 sortable" data-sortable-type="alpha" title="Bats / throws">B/T</th>
                 <th class="text-center py-1 sortable" data-sortable-type="alpha" title="ULMG player level (V, A, or B)">Lvl</th>
                 {% include "includes/hitter_stat_headers.html" %}
-                {% if own_team %}{% include "includes/player_protect_headers.html" %}{% endif %}
+                {% if show_roster_tools or own_team %}{% include "includes/player_protect_headers.html" %}{% endif %}
             </tr>
         </thead>
         <tbody>
@@ -102,7 +102,7 @@
             <td class="text-center py-1">{{ p.bats_throws_display|default:"—" }}</td>
             <td class="text-center py-1">{{ p.level|default_if_none:"" }}</td>
             {% include "includes/hitter_stat_cells_player.html" %}
-            {% if own_team %}{% include "includes/player_protect_actions.html" %}{% endif %}
+            {% if show_roster_tools or own_team %}{% include "includes/player_protect_actions.html" %}{% endif %}
         </tr>
         {% endfor %}
         </tbody>
@@ -124,7 +124,7 @@
                 <th class="text-center py-1 sortable" data-sortable-type="alpha" title="Throwing arm">Arm</th>
                 <th class="text-center py-1 sortable" data-sortable-type="alpha" title="ULMG player level (V, A, or B)">Lvl</th>
                 {% include "includes/pitcher_stat_headers.html" %}
-                {% if own_team %}{% include "includes/player_protect_headers.html" %}{% endif %}
+                {% if show_roster_tools or own_team %}{% include "includes/player_protect_headers.html" %}{% endif %}
             </tr>
         </thead>
         <tbody>
@@ -137,7 +137,7 @@
             <td class="text-center py-1">{{ p.throwing_arm_display|default:"—" }}</td>
             <td class="text-center py-1">{{ p.level|default_if_none:"" }}</td>
             {% include "includes/pitcher_stat_cells_player.html" %}
-            {% if own_team %}{% include "includes/player_protect_actions.html" %}{% endif %}
+            {% if show_roster_tools or own_team %}{% include "includes/player_protect_actions.html" %}{% endif %}
         </tr>
         {% endfor %}
         </tbody>
@@ -145,7 +145,7 @@
     </div>
 </div>
 
-{% if own_team and roster_tab %}
+{% if show_roster_tools or own_team and roster_tab %}
 <div id="drop-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50"
      data-mlb-roster-count="{{ mlb_roster_count|default:0 }}"
      data-mlb-roster-size="{{ mlb_roster_size|default:30 }}">
@@ -169,5 +169,5 @@
 
 {% block extrascript %}
 {% include "includes/my/wishlistjs.html" %}
-{% if own_team and roster_tab %}{% include "includes/player_protect_actions_script.html" %}{% endif %}
+{% if show_roster_tools or own_team and roster_tab %}{% include "includes/player_protect_actions_script.html" %}{% endif %}
 {% endblock %}

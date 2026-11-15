@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block prenav %}
-        {% if own_team and protect_tab or own_team and roster_tab %}{% include "includes/roster_status.html" %}{% endif %}
+        {% if show_roster_tools or own_team and protect_tab or own_team and roster_tab %}{% include "includes/roster_status.html" %}{% endif %}
 {% endblock %}
 
 {% block content %}

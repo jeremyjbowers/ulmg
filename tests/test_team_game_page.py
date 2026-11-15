@@ -48,6 +48,8 @@ class GamePageTestCase(TestCase):
         cls.home, cls.atl = create_teams()
         create_series(cls.home, cls.atl, length=3)
         cls.owner = create_owner("atl", cls.atl)
+        cls.owner.is_staff = True
+        cls.owner.save()
         cls.starter = create_pitcher("ATL Starter", team=cls.atl, g=10, gs=10, ip="60.0")
         cls.starter.is_ulmg_mlb_roster = True
         cls.starter.save()

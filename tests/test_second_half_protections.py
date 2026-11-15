@@ -19,7 +19,7 @@ class SecondHalfProtectionUITestCase(TestCase):
     def setUp(self):
         cache.clear()
         self.client = Client()
-        self.user = User.objects.create_user(username="mgr", password="secret")
+        self.user = User.objects.create_user(username="mgr", password="secret", is_staff=True)
         self.owner = models.Owner.objects.create(user=self.user, name="Manager")
         self.team = models.Team.objects.create(
             city="Test City",
@@ -163,7 +163,7 @@ class SecondHalfProtectionAPITestCase(TestCase):
     def setUp(self):
         cache.clear()
         self.client = Client()
-        self.user = User.objects.create_user(username="mgr", password="secret")
+        self.user = User.objects.create_user(username="mgr", password="secret", is_staff=True)
         self.owner = models.Owner.objects.create(user=self.user, name="Manager")
         self.team = models.Team.objects.create(
             city="Test City",

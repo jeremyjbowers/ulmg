@@ -75,6 +75,8 @@ class BeforeTheHalfTestCase(OwnerClients, TestCase):
         cls.starter = carded("ATL Starter", cls.atl, mlb=True)
         cls.prospect = carded("ATL Prospect", cls.atl, aaa=True)
         cls.owner = create_owner("atl", cls.atl)
+        cls.owner.is_staff = True
+        cls.owner.save()
 
     def test_the_team_page_shows_the_single_mlb_and_aaa_buttons(self):
         page = self.client_for(self.owner).get(TEAM_URL)
@@ -102,6 +104,8 @@ class PairedMovePagesTestCase(OwnerClients, TestCase):
         cls.home, cls.atl = create_teams()
         cls.games = create_series(cls.home, cls.atl, length=5)
         cls.owner = create_owner("atl", cls.atl)
+        cls.owner.is_staff = True
+        cls.owner.save()
         cls.other = create_owner("hch", cls.home)
         cls.commish = User.objects.create_superuser("commish", "c@example.com", "password")
 
