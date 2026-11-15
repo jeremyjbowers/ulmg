@@ -143,6 +143,8 @@ PROTECT_ROSTER_SIZE = 40
 TEAM_PROTECT_TAB = False
 # Owners set MLB and AAA rosters from the buttons on their team page when this is True.
 TEAM_ROSTER_TAB = True
+# While this is True, those roster controls are shown to staff only.
+TEAM_ROSTER_STAFF_ONLY = True
 TEAM_LIVE_TAB = False
 TEAM_WISHLIST_TAB = False
 

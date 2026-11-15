@@ -1,5 +1,5 @@
 # ABOUTME: Tests for roster UI on team pages: stat columns, org/roster display, and MLB/AAA buttons.
-# ABOUTME: Owners set those rosters from their own team page while TEAM_ROSTER_TAB is on.
+# ABOUTME: Staff set those rosters from a team page while TEAM_ROSTER_TAB is on.
 
 from django.contrib.auth.models import User
 from django.core.cache import cache
@@ -32,6 +32,8 @@ class TeamRosterStatusDisplayTestCase(TestCase):
         self.assertNotContains(response, 'id="roster-mlb-count"')
 
     def test_owner_sets_mlb_and_aaa_rosters_from_the_team_page(self):
+        self.user.is_staff = True
+        self.user.save()
         hitter = create_hitter("Roster Hitter", team=self.team, pa=100, g=30)
         pitcher = create_pitcher("Roster Pitcher", team=self.team, g=30, ip="60.0")
         self.client.login(username="mgr", password="secret")
@@ -83,7 +85,28 @@ class TeamRosterStatusDisplayTestCase(TestCase):
         self.assertIn('data-roster="mlb" data-action="to_mlb">MLB</a>', pitcher_row)
         self.assertIn('data-roster="aaa" data-action="off_roster">AAA</a>', pitcher_row)
 
+    def test_roster_tools_show_for_staff_and_stay_off_an_owners_page(self):
+        create_hitter("Roster Hitter", team=self.team, pa=100, g=30)
+        self.client.login(username="mgr", password="secret")
+        owner_page = self.client.get("/teams/tst/")
+        self.assertEqual(owner_page.status_code, 200)
+        self.assertNotContains(owner_page, 'data-action="to_mlb"')
+        self.assertNotContains(owner_page, 'data-action="to_aaa"')
+        self.assertNotContains(owner_page, "drop-button")
+        self.assertNotContains(owner_page, 'id="roster-mlb-count"')
+
+        User.objects.create_user(username="staff", password="secret", is_staff=True)
+        staff_client = Client()
+        staff_client.login(username="staff", password="secret")
+        staff_page = staff_client.get("/teams/tst/")
+        self.assertContains(staff_page, 'data-action="to_mlb"')
+        self.assertContains(staff_page, 'data-action="to_aaa"')
+        self.assertContains(staff_page, "drop-button")
+        self.assertContains(staff_page, 'id="roster-mlb-count"')
+
     def test_team_page_shows_mlb_roster_badge_only_when_roster_tab_on(self):
+        self.user.is_staff = True
+        self.user.save()
         self.client.login(username="mgr", password="secret")
         with override_settings(
             CURRENT_SEASON_TYPE="midseason",
@@ -270,7 +293,7 @@ class RosterCardYearTestCase(TestCase):
     def setUp(self):
         cache.clear()
         self.client = Client()
-        self.user = User.objects.create_user(username="mgr", password="secret")
+        self.user = User.objects.create_user(username="mgr", password="secret", is_staff=True)
         self.owner = models.Owner.objects.create(user=self.user, name="Manager")
         self.team = models.Team.objects.create(
             city="Test City",

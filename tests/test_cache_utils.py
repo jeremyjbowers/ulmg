@@ -91,6 +91,8 @@ class TeamRosterQueryCacheTestCase(TestCase):
         self.assertIsNone(cache.get(team_roster_cache_key("TST", 2025, None)))
 
     def test_protection_change_visible_without_cache_clear(self):
+        self.user.is_staff = True
+        self.user.save()
         self.player.level = "V"
         self.player.position = "P"
         self.player.save()

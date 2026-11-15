@@ -564,7 +564,16 @@ def build_context(request):
     context["teamnav"] = models.Team.objects.all().order_by("division", "abbreviation")
     context["draftnav"] = settings.DRAFTS
     context["mlb_roster_size"] = settings.MLB_ROSTER_SIZE
-    context["roster_tab"] = settings.TEAM_ROSTER_TAB
+    # Staff see the roster controls on every team page while TEAM_ROSTER_STAFF_ONLY is set.
+    user = request.user
+    staff = user.is_authenticated and user.is_staff
+    roster_tab = settings.TEAM_ROSTER_TAB
+    if roster_tab and getattr(settings, "TEAM_ROSTER_STAFF_ONLY", False):
+        roster_tab = staff
+        context["show_roster_tools"] = staff
+    else:
+        context["show_roster_tools"] = False
+    context["roster_tab"] = roster_tab
     context["protect_tab"] = settings.TEAM_PROTECT_TAB
     context["live_tab"] = settings.TEAM_LIVE_TAB
     context["season_half"] = settings.TEAM_SEASON_HALF
