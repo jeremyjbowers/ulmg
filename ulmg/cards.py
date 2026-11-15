@@ -31,6 +31,10 @@ FIRST_BASE = "1B"
 INFIELD_POSITIONS = ("1B", "2B", "3B", "SS")
 OUTFIELD_POSITIONS = ("LF", "CF", "RF")
 
+# An outfielder is listed at 2B, 3B, or SS when his rating there is better than this.
+# First base stays listed either way. A rating of -1.0 is not better than -1.
+OUTFIELDER_INFIELD_CUTOFF = -1
+
 # The spectrum already treats the outfield as easier than the infield.
 # An infielder gives back this many runs on top of that when he is read out there.
 INF_TO_OF_PENALTY = 5
@@ -342,12 +346,26 @@ def playing_primary(card, player=None):
 
 
 def eligible_positions(primary, defense):
-    """Defensive positions a manager may slot him at. DH is always added by the lineup."""
+    """
+    Defensive positions a manager may slot him at. DH is always added by the lineup.
+    An outfielder is always listed at first base and the outfield, and at 2B, 3B, or SS
+    when his rating there is better than OUTFIELDER_INFIELD_CUTOFF.
+    """
     defense = defense or {}
     if primary == CATCHER:
         return [CATCHER, FIRST_BASE]
     if primary in OUTFIELD_POSITIONS:
-        return [FIRST_BASE, "LF", "CF", "RF"]
+        listed = []
+        for position in DEFENSE_POSITIONS:
+            if position in OUTFIELD_POSITIONS or position == FIRST_BASE:
+                listed.append(position)
+                continue
+            if position == CATCHER:
+                continue
+            runs = slotted_runs(defense, primary, position)
+            if runs is not None and runs > OUTFIELDER_INFIELD_CUTOFF:
+                listed.append(position)
+        return listed
     if primary in INFIELD_POSITIONS:
         positions = ["1B", "2B", "3B", "SS", "LF", "CF", "RF"]
         if defense.get(CATCHER) is not None:

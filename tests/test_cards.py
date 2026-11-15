@@ -318,6 +318,21 @@ class CatcherDefenseTestCase(SimpleTestCase):
         )
         self.assertEqual(cards.eligible_positions("SS", {"SS": -12.0, "C": 1.0})[0], "C")
 
+    def test_an_outfielder_lists_infield_spots_better_than_minus_one(self):
+        defense = {"CF": 3.0, "1B": 8.0, "2B": -0.9, "3B": -1.0, "SS": -1.1}
+        self.assertEqual(
+            cards.eligible_positions("CF", defense),
+            ["1B", "2B", "LF", "CF", "RF"],
+        )
+        self.assertEqual(
+            cards.shown_defense(defense, "CF"),
+            [("1B", 8.0), ("2B", -0.9), ("CF", 3.0)],
+        )
+        self.assertEqual(
+            cards.eligible_positions("LF", {"LF": 1.0, "3B": 4.0, "SS": 0.0, "2B": -4.0}),
+            ["1B", "3B", "SS", "LF", "CF", "RF"],
+        )
+
 
 class NoFieldingRowTestCase(SimpleTestCase):
     def test_no_fielding_row_is_zero_at_first_base(self):
