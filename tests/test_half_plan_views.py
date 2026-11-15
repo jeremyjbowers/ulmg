@@ -149,7 +149,7 @@ class PublicPlanTestCase(PlanViewsTestCase):
         self.assertIn(built["background"], shown)
         self.assertLess(shown.index(built["shade_vs_l"]), shown.index(built["shade_vs_r"]))
 
-    def test_a_glove_worse_than_minus_five_is_listed_as_emergency_only(self):
+    def test_a_glove_worse_than_minus_six_and_a_half_is_listed_as_emergency_only(self):
         shortstop = next(player for player in self.roster.fielders if player.name.endswith("SS"))
         card = models.Card.objects.get(player=shortstop)
         card.defense = {"SS": -12.0, "2B": 2.0}
