@@ -14,7 +14,7 @@ from django.test import Client, SimpleTestCase, TestCase, override_settings
 from tests.engine_process import FIXTURE_PATH, shared_engine
 from tests.test_cards import FG_HITTER_ROW, FG_PITCHER_ROW, processed
 from ulmg import cards, engine_client, models, utils
-from ulmg.management.commands import live_download_fg_splits
+from ulmg.management.commands import live_download_fg_splits, live_update_splits_from_fg_splits
 
 FIXTURE_SPLITS_DIR = os.path.join(os.path.dirname(__file__), "fixtures", "fg_mlb_splits_sample")
 
@@ -283,6 +283,20 @@ class FgPostTestCase(SimpleTestCase):
         self.assertEqual(echoed["body"], {"strSplitArr": [1]})
 
 
+class SplitPlayerIdTestCase(SimpleTestCase):
+    def test_saved_rows_name_the_fangraphs_id_player_id(self):
+        fg_id, mlbam_id = live_update_splits_from_fg_splits.split_player_ids({"playerId": 2396, "PA": 4})
+        self.assertEqual(fg_id, "2396")
+        self.assertIsNone(mlbam_id)
+
+    def test_column_rows_name_the_fangraphs_id_playerid(self):
+        fg_id, mlbam_id = live_update_splits_from_fg_splits.split_player_ids(
+            {"playerid": "2396.0", "xMLBAMID": 467793}
+        )
+        self.assertEqual(fg_id, "2396")
+        self.assertEqual(mlbam_id, "467793")
+
+
 class LoadSplitsTestCase(TestCase):
     def setUp(self):
         self.hitter = models.Player.objects.create(name="Utility Infielder", position="IF", fg_id="990001")
@@ -329,6 +343,51 @@ class LoadSplitsTestCase(TestCase):
         self.hitter_pss.refresh_from_db()
         self.assertIsNone(self.hitter_pss.split_stats)
         self.assertIn("DRY RUN", output)
+
+    def test_saved_player_id_column_matches_the_player(self):
+        scratch = os.path.join(os.path.dirname(FIXTURE_SPLITS_DIR), "_splits_player_id")
+        os.makedirs(scratch, exist_ok=True)
+        try:
+            for key in live_download_fg_splits.SPLITS:
+                with open(os.path.join(FIXTURE_SPLITS_DIR, f"fg_mlb_splits_{key}.json")) as f:
+                    rows = json.load(f)
+                renamed = []
+                for row in rows:
+                    row = dict(row)
+                    row["playerId"] = row.pop("playerid")
+                    renamed.append(row)
+                with open(os.path.join(scratch, f"fg_mlb_splits_{key}.json"), "w") as f:
+                    json.dump(renamed, f)
+            output = self.run_load(directory=scratch)
+        finally:
+            for name in os.listdir(scratch):
+                os.remove(os.path.join(scratch, name))
+            os.rmdir(scratch)
+        self.hitter_pss.refresh_from_db()
+        self.pitcher_pss.refresh_from_db()
+        self.assertEqual(self.hitter_pss.split_stats["bat_vs_lhp"]["pa"], 150)
+        self.assertEqual(self.pitcher_pss.split_stats["pit_vs_rhh"]["tbf"], 450)
+        self.assertIn("Updated splits for 2 players", output)
+
+    def test_rows_without_an_id_fail_loudly(self):
+        scratch = os.path.join(os.path.dirname(FIXTURE_SPLITS_DIR), "_splits_missing_id")
+        os.makedirs(scratch, exist_ok=True)
+        try:
+            for key in live_download_fg_splits.SPLITS:
+                with open(os.path.join(FIXTURE_SPLITS_DIR, f"fg_mlb_splits_{key}.json")) as f:
+                    rows = json.load(f)
+                stripped = [{k: v for k, v in row.items() if k != "playerid"} for row in rows]
+                with open(os.path.join(scratch, f"fg_mlb_splits_{key}.json"), "w") as f:
+                    json.dump(stripped, f)
+            with self.assertRaises(CommandError) as caught:
+                self.run_load(directory=scratch)
+        finally:
+            for name in os.listdir(scratch):
+                os.remove(os.path.join(scratch, name))
+            os.rmdir(scratch)
+        self.assertIn("playerId", str(caught.exception))
+        self.hitter_pss.refresh_from_db()
+        self.assertIsNone(self.hitter_pss.split_stats)
 
     def test_rows_without_counting_columns_fail_loudly(self):
         scratch = os.path.join(os.path.dirname(FIXTURE_SPLITS_DIR), "_splits_missing_columns")
