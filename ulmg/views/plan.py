@@ -186,6 +186,27 @@ def _designation_flags(players, season):
     )
 
 
+def _annotate_start_usage(cards, team, season, on_grid=(), lock_spent=True):
+    """Add scheduled, completed and remaining starts onto pitcher cards.
+
+    on_grid is the days this page can still change. lock_spent keeps a pitcher
+    with nothing left from being dragged onto another start.
+    """
+    if not cards:
+        return
+    on_grid = set(on_grid)
+    counted = plans.start_usage(team, season, [card["player"] for card in cards.values()])
+    for player_id, card in cards.items():
+        row = counted[player_id]
+        card["show_start_usage"] = True
+        card["starts_cap"] = row["cap"]
+        card["starts_made"] = row["made"]
+        card["starts_scheduled"] = row["scheduled"]
+        card["starts_remaining"] = row["remaining"]
+        card["starts_elsewhere"] = sum(1 for day in row["days"] if day not in on_grid)
+        card["can_schedule"] = row["remaining"] > 0 if lock_spent else True
+
+
 def _built_cards(players, season, kind):
     stats, cards = decision_cards.load(players, season)
     flags = _designation_flags(players, season) if kind == "p" else {}
@@ -421,6 +442,8 @@ def team_plan_rotation(request, abbreviation, half, season=None):
     context = _common(request, team, half, season)
     roster = _roster(team, season, half)
     cards = _built_cards(roster["pitchers"], season, "p")
+    # The rotation is an order, not a place to add starts, so a spent arm stays draggable.
+    _annotate_start_usage(cards, team, season, lock_spent=False)
     context.update(
         {
             "errors": errors,
@@ -442,10 +465,13 @@ def _bullpen_players(state, errors):
     return {name: [players[player_id] for player_id in state[name]] for name, _, _, _ in BULLPEN_GROUPS}
 
 
-def _bullpen_context(request, team, half, season, state, errors):
+def _bullpen_context(request, team, half, season, state, errors, rotation_ids=()):
     context = _common(request, team, half, season)
     roster = _roster(team, season, half)
-    cards = _built_cards(roster["pitchers"], season, "p")
+    # Starters already in this half's rotation are not bullpen arms.
+    taken = set(rotation_ids)
+    available = [player for player in roster["pitchers"] if player.id not in taken]
+    cards = _built_cards(available, season, "p")
     labels = dict(models.HalfPlan.BULLPEN_LOGIC_CHOICES)
     logic = state["bullpen_logic"] or models.HalfPlan.TRADITIONAL_PEN
     context.update(
@@ -495,6 +521,7 @@ def team_plan_bullpen(request, abbreviation, half, season=None):
     season = int(season)
     plan = plans.find_plan(team, season, half) or models.HalfPlan(team=team, season=season, half=half)
     state = _bullpen_from_plan(plan)
+    rotation_ids = list(plan.rotation or []) if plan.pk else []
 
     errors = []
     if request.method == "POST":
@@ -519,7 +546,7 @@ def team_plan_bullpen(request, abbreviation, half, season=None):
                 messages.success(request, "Saved the bullpen.")
                 return redirect(_bullpen_url(team, half, season))
 
-    context = _bullpen_context(request, team, half, season, state, errors)
+    context = _bullpen_context(request, team, half, season, state, errors, rotation_ids)
     return render(request, "team_bullpen.html", context, status=400 if errors else 200)
 
 

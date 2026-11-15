@@ -27,7 +27,7 @@
     </div>
     <div>{% for row in card.defense_rows %}<span{% if row.emergency %} class="text-gray-400" title="Emergency only"{% endif %}>{{ row.text }}</span>{% if not forloop.last %}, {% endif %}{% empty %}-{% endfor %}</div>
     {% else %}
-    <div>{{ card.starts_label }}{% if card.show_start_usage %} &middot; {{ card.starts_scheduled }} scheduled &middot; {{ card.starts_remaining }} remaining{% endif %} &middot; {{ card.innings_label }} &middot; {{ card.xfip_label }} xFIP &middot; {{ card.war_label }} WAR</div>
+    <div>{{ card.starts_label }}{% if card.show_start_usage %}{% if card.starts_made %} &middot; {{ card.starts_made }} completed{% endif %} &middot; {{ card.starts_scheduled }} scheduled &middot; {{ card.starts_remaining }} remaining{% endif %} &middot; {{ card.innings_label }} &middot; {{ card.xfip_label }} xFIP &middot; {{ card.war_label }} WAR</div>
     <div>{{ card.k9_label }} K/9 &middot; {{ card.bb9_label }} BB/9</div>
     {% endif %}
 </article>
