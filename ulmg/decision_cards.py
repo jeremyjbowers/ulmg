@@ -1,5 +1,5 @@
 # ABOUTME: The card a manager reads while setting a lineup or a starter.
-# ABOUTME: A hitter is three lines: the summary, vsL and vsR slashes, and defense. A glove below -5 runs is emergency only.
+# ABOUTME: A hitter is three lines: the summary, vsL and vsR slashes, and defense. A glove below -6.5 runs is emergency only.
 
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 
@@ -27,8 +27,8 @@ OPS_AVERAGE = 0.720
 OPS_SPAN = 0.200
 
 # A shown defensive rating below this, in runs, is not a normal button.
-# -5.0 itself still shows. The button stays available under Emergency only.
-EMERGENCY_DEFENSE = -5
+# -6.5 itself still shows. The button stays available under Emergency only.
+EMERGENCY_DEFENSE = -6.5
 
 
 def load(players, season):
