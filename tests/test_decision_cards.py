@@ -161,3 +161,48 @@ class DecisionCardTestCase(TestCase):
         player = self.player("Named", position="P")
         shown = decision_cards.pitcher_card(player, {"g": 60, "gs": 0}, None, designation=usage.ROTATION)
         self.assertEqual(shown["designation"], usage.ROTATION)
+        self.assertIsNone(shown["splits_label"])
+
+    def test_a_hitter_with_split_samples_shows_ops_against_each_hand(self):
+        player = self.player("Platoon")
+        card = models.Card.objects.create(
+            player=player,
+            season=2026,
+            hitter_rates_vs_rhp={"k": 0, "bb": 0, "hbp": 0, "single": 0.2, "double": 0, "triple": 0, "hr": 0.1},
+            hitter_rates_vs_lhp={"k": 0, "bb": 0.1, "hbp": 0, "single": 0.1, "double": 0, "triple": 0, "hr": 0},
+            plate_appearances_vs_rhp=400,
+            plate_appearances_vs_lhp=200,
+        )
+        shown = decision_cards.hitter_card(player, {"pa": 600}, card)
+        self.assertEqual(shown["splits_label"], "OPS R .900 L .311")
+        self.assertEqual(shown["splits_title"], "OPS vs RHP .900 (400 PA), vs LHP .311 (200 PA)")
+
+    def test_a_hitter_without_a_split_sample_shows_no_platoon_line(self):
+        player = self.player("Overall")
+        overall = {"k": 0.2, "bb": 0.08, "hbp": 0.01, "single": 0.14, "double": 0.04, "triple": 0, "hr": 0.03}
+        card = models.Card.objects.create(
+            player=player,
+            season=2026,
+            hitter_rates=dict(overall),
+            hitter_rates_vs_rhp=dict(overall),
+            hitter_rates_vs_lhp=dict(overall),
+            plate_appearances_vs_rhp=0,
+            plate_appearances_vs_lhp=0,
+        )
+        shown = decision_cards.hitter_card(player, {"pa": 600}, card)
+        self.assertIsNone(shown["splits_label"])
+        self.assertIsNone(shown["splits_title"])
+
+    def test_a_pitcher_with_split_samples_shows_obp_allowed_against_each_side(self):
+        player = self.player("Split arm", position="P")
+        card = models.Card.objects.create(
+            player=player,
+            season=2026,
+            pitcher_rates_vs_rhh={"k": 0, "bb": 0, "hbp": 0, "h": 0.2, "hr": 0},
+            pitcher_rates_vs_lhh={"k": 0, "bb": 0.1, "hbp": 0, "h": 0.2, "hr": 0.1},
+            batters_faced_vs_rhh=450,
+            batters_faced_vs_lhh=350,
+        )
+        shown = decision_cards.pitcher_card(player, {"g": 30, "gs": 30, "ip": "180.0"}, card)
+        self.assertEqual(shown["splits_label"], "OBP R .200 L .400")
+        self.assertEqual(shown["splits_title"], "OBP allowed vs RHH .200 (450 BF), vs LHH .400 (350 BF)")

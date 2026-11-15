@@ -112,6 +112,7 @@ class PublicPlanTestCase(PlanViewsTestCase):
         self.assertNotIn("Clear all", body)
         self.assertNotIn('aria-label="Remove from this spot"', body)
         self.assertIn("ATL Catcher", body)
+        self.assertNotIn("OPS R", body)
         self.assertNotIn('class="plan-day ', body)
         self.assertIn("These lineups use the 2026 MLB cards", body)
         self.assertNotIn("Set lineups", body)
@@ -133,6 +134,24 @@ class PublicPlanTestCase(PlanViewsTestCase):
         self.assertLess(bullpen.index(">Rotation<"), bullpen.index(">Bullpen<"))
         self.assertNotIn(">Results<", bullpen)
         self.assertNotIn(">Up next<", bullpen)
+
+    def test_a_lineup_card_shows_platoon_ops_when_the_splits_have_a_sample(self):
+        self.roster.file()
+        catcher = self.roster.catcher
+        card = models.Card.objects.get(player=catcher)
+        card.hitter_rates_vs_rhp = {"k": 0, "bb": 0, "hbp": 0, "single": 0.2, "double": 0, "triple": 0, "hr": 0.1}
+        card.hitter_rates_vs_lhp = {"k": 0, "bb": 0.1, "hbp": 0, "single": 0.1, "double": 0, "triple": 0, "hr": 0}
+        card.plate_appearances_vs_rhp = 400
+        card.plate_appearances_vs_lhp = 200
+        card.save()
+        body = self.client.get(PLAN_URL).content.decode()
+        shown = articles(body, catcher.id)
+        self.assertTrue(shown)
+        self.assertIn("OPS R .900 L .311", shown[0])
+        self.assertIn("OPS vs RHP .900 (400 PA), vs LHP .311 (200 PA)", shown[0])
+        fielder = articles(body, self.roster.fielders[0].id)
+        self.assertTrue(fielder)
+        self.assertNotIn("OPS ", fielder[0])
 
     def test_plan_shows_cards_and_usage(self):
         self.roster.file()
