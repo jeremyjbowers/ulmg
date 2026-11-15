@@ -75,6 +75,17 @@ class DecisionCardTestCase(TestCase):
         self.assertNotIn("SS", shown["defense_label"])
         self.assertEqual(shown["positions"], ["1B", "LF", "CF", "RF", "DH"])
 
+        utility = self.player("Corner", position="LF")
+        card = models.Card.objects.create(
+            player=utility, season=2026, primary_position="LF",
+            defense={"LF": 2.0, "1B": 6.0, "2B": -0.9, "3B": -1.0, "SS": -8.0},
+        )
+        shown = decision_cards.hitter_card(utility, {}, card)
+        self.assertIn("2B -0.9", shown["defense_label"])
+        self.assertNotIn("3B", shown["defense_label"])
+        self.assertNotIn("SS", shown["defense_label"])
+        self.assertEqual(shown["positions"], ["1B", "2B", "LF", "CF", "RF", "DH"])
+
         catcher = self.player("Backstop", position="C")
         card = models.Card.objects.create(
             player=catcher, season=2026, primary_position="C",
