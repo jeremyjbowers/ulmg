@@ -1,5 +1,5 @@
 {# ABOUTME: One lineup column, batting order 1-9, with a position on each slot. #}
-{# ABOUTME: Expects prefix, label, slots, positions and editable. vs Righty and vs Lefty each get one. #}
+{# ABOUTME: Emergency gloves stay on that same button row, after the words Emergency only. #}
 <style>
     /* The drop well stays the height of a player card. An empty one is a grey well. */
     .lineup-column .slot-well {
@@ -36,18 +36,14 @@
             </div>
             {% if editable %}
             <div class="mt-0.5" data-position-buttons data-all="{{ positions|join:',' }}">
-                <div class="flex flex-wrap gap-1" data-position-main>
+                <div class="flex flex-wrap items-center gap-1" data-position-main>
                     {% for code in slot.choices %}{% if code not in slot.emergency %}
                     <button type="button" data-position="{{ code }}" class="border border-gray-400 px-1 leading-none{% if code == slot.position %} bg-gray-800 text-white{% endif %}">{{ code }}</button>
                     {% endif %}{% endfor %}
-                </div>
-                <div class="mt-0.5{% if not slot.emergency %} hidden{% endif %}" data-position-emergency>
-                    <div class="flex flex-wrap items-center gap-1" data-emergency-row>
-                        <span class="text-gray-400">Emergency only</span>
-                        {% for code in slot.emergency %}
-                        <button type="button" data-position="{{ code }}" data-emergency title="Emergency only" class="border border-gray-300 px-1 leading-none{% if code == slot.position %} bg-gray-800 text-white{% else %} text-gray-400{% endif %}">{{ code }}</button>
-                        {% endfor %}
-                    </div>
+                    {% if slot.emergency %}<span class="text-gray-400 whitespace-nowrap">Emergency only:</span>{% endif %}
+                    {% for code in slot.emergency %}
+                    <button type="button" data-position="{{ code }}" data-emergency title="Emergency only" class="border border-gray-300 px-1 leading-none{% if code == slot.position %} bg-gray-800 text-white{% else %} text-gray-400{% endif %}">{{ code }}</button>
+                    {% endfor %}
                 </div>
                 <input type="hidden" class="position-value" name="{{ prefix }}_position_{{ slot.order }}" value="{{ slot.position }}">
             </div>
