@@ -111,6 +111,7 @@ class PublicPlanTestCase(PlanViewsTestCase):
         self.assertNotIn(">vR<", body)
         self.assertNotIn(">vL<", body)
         self.assertNotIn("Clear all", body)
+        self.assertNotIn("Clear lineup", body)
         self.assertNotIn('aria-label="Remove from this spot"', body)
         self.assertIn("ATL Catcher", body)
         self.assertNotIn("OPS R", body)
@@ -236,7 +237,10 @@ class EditPlanTestCase(PlanViewsTestCase):
         self.assertIn("background: #e5e7eb", body)
         self.assertIn(">vs Righty<", body)
         self.assertIn(">vs Lefty<", body)
-        self.assertEqual(body.count(">Clear all<"), 2)
+        self.assertEqual(body.count(">Clear lineup<"), 2)
+        self.assertIn('name="clear_lineup" value="vs_lhp"', body)
+        self.assertIn('name="clear_lineup" value="vs_rhp"', body)
+        self.assertNotIn(">Clear all<", body)
         self.assertEqual(body.count('aria-label="Remove from this spot"'), 18)
         self.assertNotIn(">Clear<", body)
         self.assertNotIn("slot-remove", stack_html(body))
@@ -282,6 +286,35 @@ class EditPlanTestCase(PlanViewsTestCase):
         plan.refresh_from_db()
         self.assertEqual(plans.starters(plan)[6], self.roster.starters[0])
         self.assertFalse(usage.counter_for(self.roster.starters[0], SEASON).confined_to_relief)
+
+    def test_the_owner_clears_one_lineup_and_leaves_the_other(self):
+        vs_lhp = self.roster.lineup(self.roster.hitters[:-1] + [self.roster.bench[1]])
+        client = self.as_user(self.owner)
+        client.post(EDIT_URL, form_data(self.roster, vs_lhp=vs_lhp))
+        plan = self.saved_plan()
+        rhp = list(plan.lineup_vs_rhp)
+        hook = plan.starter_hook
+
+        posted = form_data(self.roster)
+        posted["clear_lineup"] = "vs_lhp"
+        response = client.post(EDIT_URL, posted, follow=True)
+        self.assertRedirects(response, EDIT_URL)
+        self.assertIn("Cleared the vs Lefty lineup.", response.content.decode())
+        plan.refresh_from_db()
+        self.assertEqual(plan.lineup_vs_lhp, [])
+        self.assertEqual(plan.lineup_vs_rhp, rhp)
+        self.assertEqual(plan.starter_hook, hook)
+
+        refused = self.as_user(self.other_owner).post(EDIT_URL, {"clear_lineup": "vs_rhp"})
+        self.assertEqual(refused.status_code, 403)
+        plan.refresh_from_db()
+        self.assertEqual(plan.lineup_vs_rhp, rhp)
+
+        bad = self.as_user(self.owner).post(EDIT_URL, {"clear_lineup": "bench"})
+        self.assertEqual(bad.status_code, 400)
+        self.assertIn("Choose the lineup vs LHP or the lineup vs RHP.", bad.content.decode())
+        plan.refresh_from_db()
+        self.assertEqual(plan.lineup_vs_rhp, rhp)
 
     def test_a_day_page_exists_before_the_cards_are_filed(self):
         self.assertIsNone(self.saved_plan())
@@ -599,6 +632,7 @@ class EditDayTestCase(PlanViewsTestCase):
         self.assertEqual(page.status_code, 200)
         day_body = page.content.decode()
         self.assertEqual(day_body.count(">Clear all<"), 1)
+        self.assertNotIn(">Clear lineup<", day_body)
         self.assertEqual(day_body.count('aria-label="Remove from this spot"'), 9)
         self.assertNotIn(">Rotation</button>", day_body)
         self.assertIn('aria-label="Remove from this start"', day_body)
@@ -762,6 +796,45 @@ class SchedulePlannedStartersTestCase(PlanViewsTestCase):
             away = re.search(r'class="away-starter[^"]*"[^>]*>(.*?)</td>', row, re.S).group(1).strip()
             name = starters[game.day].name
             self.assertEqual((home, away), (name, "-") if is_home else ("-", name))
+
+    def test_the_owner_clears_every_open_starter(self):
+        self.roster.file()
+        client = self.as_user(self.owner)
+        page = client.get(SCHEDULE_URL).content.decode()
+        self.assertEqual(page.count(">Clear all starters<"), 1)
+        self.assertIn('name="clear_starters"', page)
+        self.assertNotIn(">Clear all starters<", Client().get(SCHEDULE_URL).content.decode())
+        self.assertNotIn(
+            ">Clear all starters<", self.as_user(self.other_owner).get(SCHEDULE_URL).content.decode()
+        )
+
+        refused = self.as_user(self.other_owner).post(SCHEDULE_URL, {"clear_starters": "1"})
+        self.assertEqual(refused.status_code, 403)
+        self.assertEqual(
+            Client().post(SCHEDULE_URL, {"clear_starters": "1"}).status_code, 403
+        )
+        self.assertIsNotNone(plans.starters(self.saved_plan())[1])
+
+        client = self.as_user(self.owner)
+        response = client.post(
+            SCHEDULE_URL,
+            {"clear_starters": "1", "starter_20": self.roster.swingman.id},
+            follow=True,
+        )
+        self.assertRedirects(response, SCHEDULE_URL)
+        body = response.content.decode()
+        self.assertIn("Cleared the starters.", body)
+        self.assertIn("81 open days have no starter.", body)
+        plan = self.saved_plan()
+        self.assertEqual(plan.rotation, [p.id for p in self.roster.starters])
+        self.assertTrue(all(starter is None for starter in plans.starters(plan).values()))
+        grid = body.split("data-starter-grid", 1)[1].split("</form>", 1)[0]
+        self.assertNotIn(self.roster.starters[0].name, grid)
+
+        client.post(SCHEDULE_URL, {f"starter_{day}": "" for day in plans.starters(plan)})
+        self.assertTrue(all(starter is None for starter in plans.starters(self.saved_plan()).values()))
+        client.post(ROTATION_URL, {"rotation": [p.id for p in self.roster.starters]})
+        self.assertTrue(all(plans.starters(self.saved_plan()).values()))
 
     def test_the_owner_drops_a_rotation_starter_on_his_side(self):
         self.roster.file()

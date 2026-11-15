@@ -199,6 +199,43 @@ class SpotStartTestCase(PlanTestCase):
         plans.save_day(self.plan, 20, starter=None)
         self.assertEqual(plans.starters(self.plan)[20], self.roster.starters[(20 - 1) % 5])
 
+    def test_clearing_starters_blanks_open_days_until_the_rotation_is_pushed(self):
+        plan = self.plan
+        lineup = [{"player": self.roster.catcher.id, "position": "C"}]
+        day = plan.days.get(day=2)
+        day.manual_lineup = lineup
+        day.save(update_fields=["manual_lineup"])
+        plans.open_game(game_on(self.atl, 1))
+        kept = plans.starters(plan)[1]
+
+        plans.clear_starters(plan)
+        plan.refresh_from_db()
+        self.assertEqual(plan.rotation, [p.id for p in self.roster.starters])
+        starters = plans.starters(plan)
+        self.assertEqual(starters[1], kept)
+        self.assertIsNone(starters[2])
+        self.assertTrue(all(starter is None for day_no, starter in starters.items() if day_no != 1))
+        cleared = plan.days.get(day=2)
+        self.assertTrue(cleared.blank_starter)
+        self.assertIsNone(cleared.manual_starter)
+        self.assertIsNone(cleared.auto_starter)
+        self.assertEqual(cleared.manual_lineup, lineup)
+        self.assertFalse(plan.days.get(day=1).blank_starter)
+
+        plans.assign_starters(plan, {20: self.first})
+        starters = plans.starters(plan)
+        self.assertEqual(starters[20], self.first)
+        self.assertIsNone(starters[21])
+        self.assertFalse(plan.days.get(day=20).blank_starter)
+        self.assertTrue(plan.days.get(day=21).blank_starter)
+
+        plans.push_rotation(plan, list(self.roster.starters))
+        starters = plans.starters(plan)
+        self.assertEqual(starters[20], self.first)
+        self.assertEqual(starters[21], self.roster.starters[(21 - 1) % 5])
+        self.assertFalse(plan.days.get(day=21).blank_starter)
+        self.assertIsNotNone(starters[2])
+
 
 class LineupTestCase(PlanTestCase):
     @classmethod
@@ -251,6 +288,31 @@ class LineupTestCase(PlanTestCase):
         sheet = side(game_on(self.atl, other_day), self.atl)
         self.assertEqual(sheet["vs"], "R")
         self.assertIsNone(sheet["opponent_starter"])
+
+    def test_clearing_one_lineup_card_leaves_the_other(self):
+        rhp = list(self.plan.lineup_vs_rhp)
+        plans.clear_lineup(self.plan, "vs_lhp")
+        self.plan.refresh_from_db()
+        self.assertEqual(self.plan.lineup_vs_lhp, [])
+        self.assertEqual(self.plan.lineup_vs_rhp, rhp)
+        self.assertEqual(self.plan.starter_hook, models.HalfPlan.NORMAL_HOOK)
+
+    def test_an_unknown_lineup_card_is_refused(self):
+        with self.assertRaises(plans.PlanError) as raised:
+            plans.clear_lineup(self.plan, "bench")
+        self.assertIn("Choose the lineup vs LHP or the lineup vs RHP.", str(raised.exception))
+        self.plan.refresh_from_db()
+        self.assertEqual(len(self.plan.lineup_vs_lhp), 9)
+        self.assertEqual(len(self.plan.lineup_vs_rhp), 9)
+
+    def test_a_closed_half_lineup_cannot_be_cleared(self):
+        with self.settings(TEAM_SEASON_HALF="2h"):
+            plan = self.roster.file(half=2, lineup_vs_lhp=self.vs_lhp, lineup_vs_rhp=self.vs_rhp)
+        with self.assertRaises(plans.PlanError) as raised:
+            plans.clear_lineup(plan, "vs_rhp")
+        self.assertIn("opens after the trade break", str(raised.exception))
+        plan.refresh_from_db()
+        self.assertEqual(len(plan.lineup_vs_rhp), 9)
 
 
 class LineupValidationTestCase(PlanTestCase):

@@ -143,6 +143,23 @@ def _save_starters(request, team, season):
     return None
 
 
+def _clear_starters(request, team, season):
+    """Blank every open day's starter in the halves on this schedule. Returns errors, or None."""
+    warnings = []
+    try:
+        for half in plans.visible_halves():
+            plan = plans.find_plan(team, season, half)
+            if plan is None:
+                continue
+            warnings += plans.clear_starters(plan)
+    except plans.PlanError as error:
+        return error.errors
+    for warning in warnings:
+        messages.warning(request, warning)
+    messages.success(request, "Cleared the starters.")
+    return None
+
+
 @never_cache
 def team_schedule(request, abbreviation, season=None):
     team = get_object_or_404(models.Team, abbreviation__icontains=abbreviation)
@@ -156,7 +173,10 @@ def team_schedule(request, abbreviation, season=None):
     if request.method == "POST":
         if not can_edit:
             return HttpResponseForbidden("Only this team's owner and the commissioner can set starters.")
-        errors = _save_starters(request, team, season)
+        if request.POST.get("clear_starters"):
+            errors = _clear_starters(request, team, season)
+        else:
+            errors = _save_starters(request, team, season)
         if errors is None:
             return redirect(season_url("teams", team.abbreviation.lower(), "schedule", season=season))
     errors = errors or []

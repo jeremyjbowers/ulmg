@@ -45,6 +45,12 @@ def _edit_url(team, half, season):
     )
 
 
+def _edit_url(team, half, season):
+    return season_url(
+        "teams", team.abbreviation.lower(), "plan", half, season=season, tail=("edit",)
+    )
+
+
 def _rotation_url(team, half, season):
     return season_url(
         "teams", team.abbreviation.lower(), "plan", half, season=season, tail=("rotation",)
@@ -379,7 +385,17 @@ def team_plan_edit(request, abbreviation, half, season=None):
     plan = plans.find_plan(team, season, half) or models.HalfPlan(team=team, season=season, half=half)
 
     errors = []
-    if request.method == "POST":
+    if request.method == "POST" and request.POST.get("clear_lineup"):
+        which = request.POST.get("clear_lineup")
+        try:
+            plans.clear_lineup(plan, which)
+        except plans.PlanError as error:
+            errors = error.errors
+            state = FormState.from_plan(plan)
+        else:
+            messages.success(request, f"Cleared the {dict(LINEUP_COLUMNS)[which]} lineup.")
+            return redirect(_edit_url(team, half, season))
+    elif request.method == "POST":
         state = FormState.from_post(request.POST)
         fields, errors = _lineup_fields(state)
         if not errors:

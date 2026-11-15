@@ -22,7 +22,13 @@
 <div class="lineup-column" data-lineup="{{ prefix }}">
     <div class="flex items-end justify-between gap-3 border-b border-gray-300 mb-2 pb-1">
         <h3 class="text-2xl font-bold leading-none">{{ label }}</h3>
-        {% if editable %}<button type="button" data-clear-lineup class="shrink-0 border border-gray-400 px-2 py-1 text-xs leading-none">Clear all</button>{% endif %}
+        {% if editable %}
+        {% if prefix == "vs_lhp" or prefix == "vs_rhp" %}
+        <button type="submit" name="clear_lineup" value="{{ prefix }}" class="shrink-0 border border-gray-400 px-2 py-1 text-xs leading-none" onclick="return confirm('Clear this lineup?');">Clear lineup</button>
+        {% else %}
+        <button type="button" data-clear-lineup class="shrink-0 border border-gray-400 px-2 py-1 text-xs leading-none">Clear all</button>
+        {% endif %}
+        {% endif %}
     </div>
     <ol class="space-y-1">
         {% for slot in slots %}
