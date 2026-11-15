@@ -112,6 +112,7 @@ class PublicPlanTestCase(PlanViewsTestCase):
         self.assertNotIn("Clear all", body)
         self.assertNotIn('aria-label="Remove from this spot"', body)
         self.assertIn("ATL Catcher", body)
+        self.assertNotIn("OPS R", body)
         self.assertNotIn('class="plan-day ', body)
         self.assertIn("These lineups use the 2026 MLB cards", body)
         self.assertNotIn("Set lineups", body)
@@ -133,6 +134,35 @@ class PublicPlanTestCase(PlanViewsTestCase):
         self.assertLess(bullpen.index(">Rotation<"), bullpen.index(">Bullpen<"))
         self.assertNotIn(">Results<", bullpen)
         self.assertNotIn(">Up next<", bullpen)
+
+    def test_a_lineup_card_shows_vs_l_on_the_left_and_vs_r_on_the_right(self):
+        self.roster.file()
+        catcher = self.roster.catcher
+        card = models.Card.objects.get(player=catcher)
+        card.hitter_rates_vs_rhp = {"k": 0, "bb": 0, "hbp": 0, "single": 0.2, "double": 0, "triple": 0, "hr": 0.1}
+        card.hitter_rates_vs_lhp = {"k": 0, "bb": 0.1, "hbp": 0, "single": 0.1, "double": 0, "triple": 0, "hr": 0}
+        card.save()
+        body = self.client.get(PLAN_URL).content.decode()
+        shown = articles(body, catcher.id)[0]
+        built = decision_cards.hitter_card(catcher, {"pa": 600}, card)
+        self.assertLess(shown.index("vsL .111/.200/.111"), shown.index("vsR .300/.300/.600"))
+        self.assertIn(built["background"], shown)
+        self.assertLess(shown.index(built["shade_vs_l"]), shown.index(built["shade_vs_r"]))
+
+    def test_a_glove_worse_than_minus_five_is_listed_as_emergency_only(self):
+        shortstop = next(player for player in self.roster.fielders if player.name.endswith("SS"))
+        card = models.Card.objects.get(player=shortstop)
+        card.defense = {"SS": -12.0, "2B": 2.0}
+        card.primary_position = "SS"
+        card.save()
+        self.roster.file()
+        body = self.as_user(self.owner).get(EDIT_URL).content.decode()
+        article = articles(body, shortstop.id)[0]
+        self.assertIn('data-emergency="SS"', article)
+        self.assertIn('title="Emergency only"', article)
+        self.assertIn(">Emergency only<", body)
+        self.assertIn('data-position="SS" data-emergency', body)
+        self.assertIn('data-position="2B"', body)
 
     def test_plan_shows_cards_and_usage(self):
         self.roster.file()
@@ -417,7 +447,7 @@ class EditPlanTestCase(PlanViewsTestCase):
         pitchers = stack_html(client.get(ROTATION_URL).content.decode())
         self.assertLess(pitchers.index("Zack Aaron"), pitchers.index("Adam Zulu"))
 
-    def test_cards_wash_green_above_average_and_pink_below(self):
+    def test_cards_still_show_war_per_600_on_the_summary_line(self):
         self.set_war(self.roster.catcher, 4)
         self.set_war(self.roster.bench[0], 0)
         client = self.as_user(self.owner)
@@ -425,12 +455,9 @@ class EditPlanTestCase(PlanViewsTestCase):
         good = articles(body, self.roster.catcher.id)[0]
         bad = articles(body, self.roster.bench[0].id)[0]
         self.assertIn("4.0/600", good)
-        self.assertIn(f"background-color: {decision_cards.hitter_shade(4)}", good)
         self.assertIn("0.0/600", bad)
-        self.assertIn(f"background-color: {decision_cards.hitter_shade(0)}", bad)
         plain = articles(body, self.roster.bench[1].id)[0]
         self.assertNotIn("/600", plain)
-        self.assertNotIn("background-color", plain)
 
     def set_war(self, player, war):
         row = models.PlayerStatSeason.objects.get(player=player, season=SEASON - 1, classification="1-mlb")

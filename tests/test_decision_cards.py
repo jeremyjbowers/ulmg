@@ -161,3 +161,40 @@ class DecisionCardTestCase(TestCase):
         player = self.player("Named", position="P")
         shown = decision_cards.pitcher_card(player, {"g": 60, "gs": 0}, None, designation=usage.ROTATION)
         self.assertEqual(shown["designation"], usage.ROTATION)
+
+    def test_a_hitter_shows_the_vs_l_and_vs_r_slash_lines(self):
+        player = self.player("Platoon")
+        card = models.Card.objects.create(
+            player=player,
+            season=2026,
+            hitter_rates_vs_rhp={"k": 0, "bb": 0, "hbp": 0, "single": 0.2, "double": 0, "triple": 0, "hr": 0.1},
+            hitter_rates_vs_lhp={"k": 0, "bb": 0.1, "hbp": 0, "single": 0.1, "double": 0, "triple": 0, "hr": 0},
+            plate_appearances_vs_rhp=400,
+            plate_appearances_vs_lhp=200,
+        )
+        shown = decision_cards.hitter_card(player, {"pa": 600}, card)
+        self.assertEqual(shown["slash_vs_l"], ".111/.200/.111")
+        self.assertEqual(shown["slash_vs_r"], ".300/.300/.600")
+        self.assertNotEqual(shown["shade_vs_l"], shown["shade_vs_r"])
+        self.assertTrue(shown["background"].startswith("linear-gradient(to right, "))
+        self.assertLess(shown["background"].index(shown["shade_vs_l"]), shown["background"].index(shown["shade_vs_r"]))
+
+    def test_a_missing_split_uses_the_overall_slash_on_both_sides(self):
+        player = self.player("Overall")
+        overall = {"k": 0, "bb": 0, "hbp": 0, "single": 0.2, "double": 0, "triple": 0, "hr": 0.1}
+        card = models.Card.objects.create(player=player, season=2026, hitter_rates=dict(overall))
+        shown = decision_cards.hitter_card(player, {"pa": 600}, card)
+        self.assertEqual(shown["slash_vs_l"], ".300/.300/.600")
+        self.assertEqual(shown["slash_vs_r"], ".300/.300/.600")
+
+    def test_a_glove_below_minus_five_runs_is_emergency_only(self):
+        player = self.player("Shortstop", position="SS")
+        card = models.Card.objects.create(
+            player=player, season=2026, primary_position="SS",
+            defense={"SS": -12.0, "2B": -5.0, "1B": 6.0},
+        )
+        shown = decision_cards.hitter_card(player, {}, card)
+        self.assertIn("SS", shown["emergency_positions"])
+        self.assertNotIn("2B", shown["emergency_positions"])
+        self.assertNotIn("1B", shown["emergency_positions"])
+        self.assertNotIn("DH", shown["emergency_positions"])

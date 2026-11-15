@@ -70,22 +70,43 @@
         return card.dataset.positions.split(",").filter(function (code) { return code; });
     }
 
-    function renderPositions(slot, codes) {
+    function emergencyCodes(card) {
+        if (!card || !card.dataset.emergency) return [];
+        return card.dataset.emergency.split(",").filter(function (code) { return code; });
+    }
+
+    function renderPositions(slot, codes, emergency) {
         var box = slot.querySelector("[data-position-buttons]");
         if (!box || !codes.length) return;
+        emergency = emergency || [];
         var hidden = box.querySelector(".position-value");
         var current = hidden.value;
         if (codes.indexOf(current) < 0) current = codes.indexOf("DH") >= 0 ? "DH" : codes[0];
         hidden.value = current;
-        box.querySelectorAll("button[data-position]").forEach(function (button) { button.remove(); });
+        var main = box.querySelector("[data-position-main]");
+        var extra = box.querySelector("[data-position-emergency]");
+        var row = extra ? extra.querySelector("[data-emergency-row]") : null;
+        if (main) main.replaceChildren();
+        if (row) row.querySelectorAll("button").forEach(function (button) { button.remove(); });
+        var anyEmergency = false;
         codes.forEach(function (code) {
             var button = document.createElement("button");
             button.type = "button";
             button.dataset.position = code;
-            button.className = "border border-gray-400 px-1 leading-none" + (code === current ? " bg-gray-800 text-white" : "");
             button.textContent = code;
-            box.insertBefore(button, hidden);
+            var on = code === current;
+            if (emergency.indexOf(code) >= 0 && row) {
+                anyEmergency = true;
+                button.dataset.emergency = "";
+                button.title = "Emergency only";
+                button.className = "border border-gray-300 px-1 leading-none" + (on ? " bg-gray-800 text-white" : " text-gray-400");
+                row.appendChild(button);
+            } else {
+                button.className = "border border-gray-400 px-1 leading-none" + (on ? " bg-gray-800 text-white" : "");
+                (main || box).appendChild(button);
+            }
         });
+        if (extra) extra.classList.toggle("hidden", !anyEmergency);
     }
 
     function effectivePitcher(slot) {
@@ -157,7 +178,7 @@
         var input = slot.querySelector(".player-id");
         if (input) input.value = card.dataset.player;
         var codes = positionCodes(card);
-        if (codes) renderPositions(slot, codes);
+        if (codes) renderPositions(slot, codes, emergencyCodes(card));
         refreshStartCards();
     }
 
@@ -212,6 +233,7 @@
                 var on = button === positionButton;
                 button.classList.toggle("bg-gray-800", on);
                 button.classList.toggle("text-white", on);
+                if (button.hasAttribute("data-emergency")) button.classList.toggle("text-gray-400", !on);
             });
             return;
         }

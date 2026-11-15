@@ -225,6 +225,7 @@ def _slots(rows, cards, season, kind):
                 "position": position,
                 "card": card,
                 "choices": (card or {}).get("positions") or plans.LINEUP_POSITIONS,
+                "emergency": (card or {}).get("emergency_positions") or [],
             }
         )
     return slots

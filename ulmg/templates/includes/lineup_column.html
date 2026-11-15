@@ -35,10 +35,20 @@
                 {% if editable %}<button type="button" data-clear class="slot-remove absolute top-0.5 right-0.5 z-10 border border-gray-400 bg-white px-1 leading-none text-gray-700" aria-label="Remove from this spot" title="Remove from this spot">&times;</button>{% endif %}
             </div>
             {% if editable %}
-            <div class="flex flex-wrap gap-1 mt-0.5" data-position-buttons data-all="{{ positions|join:',' }}">
-                {% for code in slot.choices %}
-                <button type="button" data-position="{{ code }}" class="border border-gray-400 px-1 leading-none{% if code == slot.position %} bg-gray-800 text-white{% endif %}">{{ code }}</button>
-                {% endfor %}
+            <div class="mt-0.5" data-position-buttons data-all="{{ positions|join:',' }}">
+                <div class="flex flex-wrap gap-1" data-position-main>
+                    {% for code in slot.choices %}{% if code not in slot.emergency %}
+                    <button type="button" data-position="{{ code }}" class="border border-gray-400 px-1 leading-none{% if code == slot.position %} bg-gray-800 text-white{% endif %}">{{ code }}</button>
+                    {% endif %}{% endfor %}
+                </div>
+                <div class="mt-0.5{% if not slot.emergency %} hidden{% endif %}" data-position-emergency>
+                    <div class="flex flex-wrap items-center gap-1" data-emergency-row>
+                        <span class="text-gray-400">Emergency only</span>
+                        {% for code in slot.emergency %}
+                        <button type="button" data-position="{{ code }}" data-emergency title="Emergency only" class="border border-gray-300 px-1 leading-none{% if code == slot.position %} bg-gray-800 text-white{% else %} text-gray-400{% endif %}">{{ code }}</button>
+                        {% endfor %}
+                    </div>
+                </div>
                 <input type="hidden" class="position-value" name="{{ prefix }}_position_{{ slot.order }}" value="{{ slot.position }}">
             </div>
             <input type="hidden" name="{{ prefix }}_order_{{ slot.order }}" value="{{ slot.order }}">
