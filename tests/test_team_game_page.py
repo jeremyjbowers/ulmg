@@ -82,6 +82,10 @@ class GamePageTestCase(TestCase):
         self.assertLess(body.index(">Schedule<"), body.index(">Lineups<"))
         self.assertLess(body.index(">Lineups<"), body.index(">Rotation<"))
         self.assertLess(body.index(">Rotation<"), body.index(">Bullpen<"))
+        self.assertLess(body.index(">Bullpen<"), body.index(f"/plan/1/{year}/roster/"))
+        self.assertNotIn("Send down</a>", body)
+        self.assertNotIn("Call up</a>", body)
+        self.assertNotIn('id="call-up-pool"', body)
         self.assertNotIn(">Results<", body)
         self.assertIn('id="plan-gaps"', body)
         for note in (
@@ -111,7 +115,7 @@ class GamePageTestCase(TestCase):
         game.save()
         body = self.client.get("/teams/atl/game/").content.decode()
         self.assertIn("Away: 1 played, 2 left. Home: 0 played, 0 left.", body)
-        listed = body.split('id="away-series"', 1)[1].split('id="away-roster"', 1)[0]
+        listed = body.split('id="away-series"', 1)[1]
         self.assertNotIn('data-day="1"', listed)
         self.assertIn('data-day="2"', listed)
         self.assertIn("1 played, 2 left", listed)
@@ -156,17 +160,23 @@ class GamePageTestCase(TestCase):
         page = self.client.get("/teams/atl/game/")
         body = page.content.decode()
         self.assertNotIn('id="home-roster"', body)
-        away = body.split('id="away-roster"', 1)[1].split('id="call-up-pool"', 1)[0]
-        self.assertIn(self.call_up.name, away)
-        self.assertNotIn(self.starter.name, away)
+        self.assertNotIn('id="away-roster"', body)
+        self.assertNotIn('id="call-up-pool"', body)
         self.assertIn("Away: 0 played, 3 left. Home: 0 played, 0 left.", body)
         self.assertIn("the computer will not use a player who is out of plate appearances or innings", body)
+
+        board = self.client.get(f"/teams/atl/plan/1/{utils.league_season()}/roster/").content.decode()
+        mlb = board.split('id="mlb-roster"', 1)[1].split('id="aaa-roster"', 1)[0]
+        aaa = board.split('id="aaa-roster"', 1)[1]
+        self.assertIn(self.call_up.name, mlb)
+        self.assertNotIn(self.starter.name, mlb)
+        self.assertIn(self.starter.name, aaa)
 
         roster = self.client.get("/teams/atl/").content.decode()
         self.assertIn("opening-roster-note", roster)
         self.assertIn('class="opening-roster-player', roster)
         self.assertNotIn("Send down</a>", roster)
-        self.assertNotIn('href="/teams/atl/plan/', roster)
+        self.assertIn(f'href="/teams/atl/plan/1/{utils.league_season()}/roster/"', roster)
         self.assertIn(f'href="/teams/atl/schedule/{utils.league_season()}/"', roster)
 
 

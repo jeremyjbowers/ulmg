@@ -1,0 +1,9 @@
+{# ABOUTME: One player on the Roster tab: his card, why he is held, and a no-JavaScript move link. #}
+{# ABOUTME: Expects `row` (player, card, reason, can_drag, choice_href) and `side` (`mlb` or `aaa`). #}
+<div class="roster-card mb-2" data-player="{{ row.player.id }}" data-side="{{ side }}" data-can-drag="{% if row.can_drag %}true{% else %}false{% endif %}">
+    {% include "includes/decision_card.html" with card=row.card can_edit=False %}
+    {% if row.reason %}<p class="roster-held text-xs text-gray-600 mt-0.5">{{ row.reason }}</p>{% endif %}
+    {% if row.choice_href %}
+    <noscript><a class="roster-choice underline text-xs" href="{{ row.choice_href }}">{% if side == "mlb" %}Send down{% else %}Call up{% endif %}</a></noscript>
+    {% endif %}
+</div>

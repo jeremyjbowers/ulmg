@@ -1,0 +1,120 @@
+{# ABOUTME: Drag a player onto the player he replaces, or click one card and then the other. #}
+{# ABOUTME: The drop posts the pair. Dropping on empty space does not move anyone. #}
+<style>
+    .roster-card.is-picked .decision-card,
+    .roster-card.is-over .decision-card { outline: 2px solid #111; }
+    .roster-card[data-can-drag="false"] .decision-card { cursor: default; }
+</style>
+<script>
+(function () {
+    var board = document.getElementById("roster-board");
+    if (!board) return;
+    var form = document.getElementById("roster-drag-form");
+    var note = document.getElementById("roster-drop-note");
+    var countEl = document.getElementById("mlb-count");
+    var picked = null;
+
+    function limit() {
+        return countEl ? Number(countEl.dataset.limit) : 30;
+    }
+
+    function count() {
+        return countEl ? Number(countEl.dataset.count) : 0;
+    }
+
+    function say(text) {
+        if (note) note.textContent = text;
+    }
+
+    function cardOf(node) {
+        return node && node.closest ? node.closest(".roster-card") : null;
+    }
+
+    function canDrag(card) {
+        return !!(card && card.dataset.canDrag === "true");
+    }
+
+    function submit(up, down) {
+        if (!form || count() > limit()) {
+            say("The MLB roster can't go over " + limit() + ".");
+            return;
+        }
+        form.querySelector("[name=player_up]").value = up;
+        form.querySelector("[name=player_down]").value = down;
+        form.submit();
+    }
+
+    function pair(from, onto) {
+        if (!canDrag(from) || !canDrag(onto)) {
+            say("That player can't be moved.");
+            return;
+        }
+        if (from.dataset.side === onto.dataset.side) {
+            say("Drop him on a player on the other roster. A move calls one player up and sends one down, and the MLB roster stays at " + count() + " of " + limit() + ".");
+            return;
+        }
+        var up = from.dataset.side === "aaa" ? from.dataset.player : onto.dataset.player;
+        var down = from.dataset.side === "mlb" ? from.dataset.player : onto.dataset.player;
+        submit(up, down);
+    }
+
+    function fromPayload(payload) {
+        if (!payload || payload.indexOf(":") < 0) return null;
+        var parts = payload.split(":");
+        return board.querySelector('.roster-card[data-side="' + parts[0] + '"][data-player="' + parts[1] + '"]');
+    }
+
+    document.addEventListener("dragstart", function (event) {
+        var card = cardOf(event.target);
+        if (!card || !board.contains(card)) return;
+        if (!canDrag(card) || event.target.closest("a, button")) {
+            event.preventDefault();
+            return;
+        }
+        event.dataTransfer.setData("text/plain", card.dataset.side + ":" + card.dataset.player);
+        event.dataTransfer.effectAllowed = "move";
+        picked = card;
+    });
+
+    document.addEventListener("dragover", function (event) {
+        if (event.target.closest("#roster-board")) event.preventDefault();
+    });
+
+    document.addEventListener("dragenter", function (event) {
+        var card = cardOf(event.target);
+        if (card && board.contains(card)) card.classList.add("is-over");
+    });
+
+    document.addEventListener("dragleave", function (event) {
+        var card = cardOf(event.target);
+        if (card) card.classList.remove("is-over");
+    });
+
+    document.addEventListener("drop", function (event) {
+        var onto = cardOf(event.target);
+        var column = event.target.closest("#mlb-roster, #aaa-roster");
+        if ((!onto && !column) || !board.contains(column || onto)) return;
+        event.preventDefault();
+        board.querySelectorAll(".is-over").forEach(function (el) { el.classList.remove("is-over"); });
+        var from = fromPayload(event.dataTransfer.getData("text/plain")) || picked;
+        if (onto) pair(from, onto);
+        else say("Drop him on the player he replaces. The MLB roster can't go over " + limit() + ".");
+    });
+
+    document.addEventListener("click", function (event) {
+        if (event.target.closest("a, button, input, label")) return;
+        var card = cardOf(event.target);
+        if (!card || !board.contains(card) || !canDrag(card)) return;
+        if (picked && picked !== card && picked.dataset.side !== card.dataset.side) {
+            var from = picked;
+            picked.classList.remove("is-picked");
+            picked = null;
+            pair(from, card);
+            return;
+        }
+        if (picked) picked.classList.remove("is-picked");
+        picked = card;
+        card.classList.add("is-picked");
+    });
+})();
+</script>

@@ -1,4 +1,4 @@
-{# ABOUTME: The Game section's pages: the schedule, lineups, the rotation and the bullpen. #}
+{# ABOUTME: The Game section's pages: the schedule, lineups, the rotation, the bullpen and the roster. #}
 {# ABOUTME: Play next opens this team's next away game. Results lives on the schedule and in the top of the team page. #}
 {% load ulmg_tags %}
 {% firstof record_season schedule_season plan_season league_season as game_season %}
@@ -8,5 +8,6 @@
     {% if game_section == "lineups" %}<span class="font-bold">Lineups</span>{% else %}<a href="/teams/{{ team.abbreviation|lower }}/plan/{% if season_half == "2h" %}2{% else %}1{% endif %}/{{ game_season }}/{% if can_edit %}edit/{% endif %}" class="underline">Lineups</a>{% endif %}
     {% if game_section == "rotation" %}<span class="font-bold">Rotation</span>{% else %}<a href="/teams/{{ team.abbreviation|lower }}/plan/{% if season_half == "2h" %}2{% else %}1{% endif %}/{{ game_season }}/rotation/" class="underline">Rotation</a>{% endif %}
     {% if game_section == "bullpen" %}<span class="font-bold">Bullpen</span>{% else %}<a href="/teams/{{ team.abbreviation|lower }}/plan/{% if season_half == "2h" %}2{% else %}1{% endif %}/{{ game_season }}/bullpen/" class="underline">Bullpen</a>{% endif %}
+    {% if game_section == "roster" %}<span class="font-bold">Roster</span>{% else %}<a href="/teams/{{ team.abbreviation|lower }}/plan/{% if season_half == "2h" %}2{% else %}1{% endif %}/{{ game_season }}/roster/" class="underline">Roster</a>{% endif %}
     {% if play_next %}<a href="{{ play_next }}" class="play-next underline font-bold">Play next</a>{% endif %}
 </div>

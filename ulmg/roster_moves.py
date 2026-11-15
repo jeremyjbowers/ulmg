@@ -3,6 +3,7 @@
 
 from collections import namedtuple
 
+from django.conf import settings
 from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
@@ -238,6 +239,32 @@ def cap_error(team, season, half):
     return None
 
 
+def mlb_roster_count(team):
+    """How many of the team's players are on the MLB roster."""
+    return models.Player.objects.filter(team=team, is_ulmg_mlb_roster=True).count()
+
+
+def roster_cap_error(team, player_up, player_down):
+    """Why this pair would leave the MLB roster over its limit, or None.
+
+    A move swaps one player for another, so the count holds. The check still
+    refuses a roster that is already over the limit, and any pair that would
+    push it over.
+    """
+    limit = settings.MLB_ROSTER_SIZE
+    count = mlb_roster_count(team)
+    if not player_up.is_ulmg_mlb_roster:
+        count += 1
+    if player_down.is_ulmg_mlb_roster:
+        count -= 1
+    if count > limit:
+        return (
+            f"{team.abbreviation} would have {count} players on the MLB roster. "
+            f"The limit is {limit}."
+        )
+    return None
+
+
 def _move_errors(team, player_up, player_down, season, half):
     if player_up.pk == player_down.pk:
         return f"{player_up.name} can't be called up and sent down in the same move."
@@ -245,6 +272,7 @@ def _move_errors(team, player_up, player_down, season, half):
         call_up_error(team, player_up, season)
         or send_down_error(team, player_down, season)
         or cap_error(team, season, half)
+        or roster_cap_error(team, player_up, player_down)
     )
 
 

@@ -1,4 +1,4 @@
-# ABOUTME: End-to-end tests for the team page's paired roster moves: Send down / Call up controls and the move page.
+# ABOUTME: End-to-end tests for paired roster moves: the Roster tab's drag board and the move page.
 # ABOUTME: Uses one small road series, real players and the test client; no JavaScript is needed to make a move.
 
 import re
@@ -13,6 +13,7 @@ from tests.usage_fixtures import ULMG_SEASON, create_pitcher, create_series, cre
 
 TEAM_URL = "/teams/atl/"
 GAME_URL = "/teams/atl/game/"
+ROSTER_URL = f"/teams/atl/plan/1/{ULMG_SEASON}/roster/"
 MOVE_URL = "/teams/atl/moves/"
 CHOICE_URL = "/teams/atl/moves/new/"
 MOVE_FORM = f'<form method="post" action="{MOVE_URL}"'
@@ -86,6 +87,12 @@ class BeforeTheHalfTestCase(OwnerClients, TestCase):
         self.assertContains(game, 'id="plan-gaps"')
         self.assertContains(game, "Lineups are not filed.")
         self.assertNotContains(game, "Send down</a>")
+        board = self.client_for(self.owner).get(ROSTER_URL)
+        self.assertContains(board, "roster-not-started")
+        self.assertContains(board, 'id="mlb-roster"')
+        self.assertContains(board, self.starter.name)
+        self.assertNotContains(board, "Send down</a>")
+        self.assertNotContains(board, 'id="roster-drag-form"')
 
 
 @override_settings(CURRENT_SEASON=ULMG_SEASON, CURRENT_SEASON_TYPE="midseason", TEAM_SEASON_HALF="1h", TEAM_ROSTER_TAB=True)
@@ -172,20 +179,85 @@ class PairedMovePagesTestCase(OwnerClients, TestCase):
         self.assertContains(page, 'class="2h-draft-locked-mlb ', count=1)
         self.assertNotContains(page, f"?down={self.open_pick.id}")
 
-    def test_the_game_page_shows_paired_controls_once_the_half_has_started(self):
+    def test_the_game_page_has_no_call_up_or_send_down_display(self):
         page = self.client_for(self.owner).get(GAME_URL)
+        self.assertNotContains(page, "Send down</a>")
+        self.assertNotContains(page, "Call up</a>")
+        self.assertNotContains(page, 'id="away-roster"')
+        self.assertNotContains(page, 'id="call-up-pool"')
+        self.assertNotContains(page, 'id="roster-moves"')
+        self.assertNotContains(page, 'name="player_up"')
+        self.assertContains(page, f'href="{ROSTER_URL}"')
+
+    def test_the_roster_tab_lists_both_rosters_and_who_can_be_dragged(self):
+        page = self.client_for(self.owner).get(ROSTER_URL)
         self.assertContains(page, f'href="{CHOICE_URL}?down={self.starter.id}"', count=1)
         self.assertContains(page, f'href="{CHOICE_URL}?up={self.prospect.id}"', count=1)
         self.assertContains(page, "Send down</a>", count=4)
         self.assertContains(page, "Call up</a>", count=3)
         self.assertNotContains(page, f"?down={self.open_pick.id}")
         self.assertNotContains(page, 'id="home-roster"')
-        away = page.content.decode().split('id="away-roster"', 1)[1].split('id="call-up-pool"', 1)[0]
-        self.assertNotIn(self.returner.name, away)
-        self.assertNotIn(self.prospect.name, away)
+        body = page.content.decode()
+        self.assertLess(body.index(">Bullpen</a>"), body.index(">Roster</span>"))
+        mlb = body.split('id="mlb-roster"', 1)[1].split('id="aaa-roster"', 1)[0]
+        aaa = body.split('id="aaa-roster"', 1)[1].split('id="roster-moves"', 1)[0]
+        self.assertNotIn(self.returner.name, mlb)
+        self.assertNotIn(self.prospect.name, mlb)
+        self.assertIn(self.prospect.name, aaa)
+        self.assertIn(f'draggable="true" data-player="{self.starter.id}"', mlb)
+        self.assertIn(f'draggable="true" data-player="{self.reliever.id}"', mlb)
+        self.assertIn(f'draggable="false" data-player="{self.open_pick.id}"', mlb)
+        self.assertIn(f'draggable="false" data-player="{self.stayer.id}"', mlb)
+        self.assertIn(f'draggable="false" data-player="{self.appeared.id}"', mlb)
+        self.assertIn(f'draggable="true" data-player="{self.prospect.id}"', aaa)
+        self.assertIn(f'draggable="true" data-player="{self.returner.id}"', aaa)
+        self.assertIn(f'draggable="false" data-player="{self.uncarded.id}"', aaa)
+        self.assertIn('id="mlb-count" data-count="5" data-limit="30"', mlb)
+        self.assertIn('id="roster-drag-form"', body)
+        self.assertIn('id="moves-left"', body)
+        self.assertIn("stays on the 30-man for 15 road games", mlb)
+        self.assertIn("Only carded players", aaa)
+
+    def test_a_hitter_can_be_dragged_between_the_rosters(self):
+        from tests.usage_fixtures import create_hitter
+
+        coming = create_hitter("ATL Hitter Up", team=self.atl, pa=100)
+        going = create_hitter("ATL Hitter Down", team=self.atl, pa=100)
+        models.Player.objects.filter(pk=coming.pk).update(is_ulmg_aaa_roster=True, is_ulmg_mlb_roster=False)
+        models.Player.objects.filter(pk=going.pk).update(is_ulmg_mlb_roster=True, is_ulmg_aaa_roster=False)
+        body = self.client_for(self.owner).get(ROSTER_URL).content.decode()
+        mlb_hitters = body.split('id="mlb-hitters"', 1)[1].split('id="mlb-pitchers"', 1)[0]
+        aaa_hitters = body.split('id="aaa-hitters"', 1)[1].split('id="aaa-pitchers"', 1)[0]
+        self.assertIn(f'draggable="true" data-player="{going.id}"', mlb_hitters)
+        self.assertIn(f'draggable="true" data-player="{coming.id}"', aaa_hitters)
+        self.assertNotIn(going.name, aaa_hitters)
+        self.assertNotIn(coming.name, mlb_hitters)
+
+    def test_an_mlb_roster_already_over_the_limit_cannot_be_dragged(self):
+        from django.conf import settings
+
+        have = models.Player.objects.filter(team=self.atl, is_ulmg_mlb_roster=True).count()
+        for i in range(settings.MLB_ROSTER_SIZE + 1 - have):
+            models.Player.objects.create(
+                name=f"ATL Extra {i}", position="OF", level="A", team=self.atl,
+                is_ulmg_mlb_roster=True, carded_seasons=[ULMG_SEASON - 1],
+            )
+        page = self.client_for(self.owner).get(ROSTER_URL)
+        self.assertContains(page, 'id="mlb-over-cap"')
+        self.assertContains(page, "The limit is 30")
+        self.assertNotContains(page, 'id="roster-drag-form"')
+        self.assertContains(page, f'draggable="false" data-player="{self.starter.id}"')
+
+    def test_the_roster_tab_is_public_and_a_missing_year_redirects(self):
+        page = self.client_for(None).get(ROSTER_URL)
+        self.assertEqual(page.status_code, 200)
+        self.assertContains(page, 'id="mlb-roster"')
+        self.assertNotContains(page, 'id="roster-drag-form"')
+        response = self.client_for(self.owner).get("/teams/atl/plan/1/roster/")
+        self.assertRedirects(response, ROSTER_URL, fetch_redirect_response=False)
 
     def test_the_commissioner_sees_the_paired_controls(self):
-        page = self.client_for(self.commish).get(GAME_URL)
+        page = self.client_for(self.commish).get(ROSTER_URL)
         self.assertContains(page, f'href="{CHOICE_URL}?down={self.starter.id}"')
 
     # The move page lists exactly the legal choices
@@ -267,7 +339,7 @@ class PairedMovePagesTestCase(OwnerClients, TestCase):
         response = self.client_for(self.owner).post(
             MOVE_URL, {"player_down": self.starter.id, "player_up": self.prospect.id}
         )
-        self.assertRedirects(response, GAME_URL + "#roster-moves", fetch_redirect_response=False)
+        self.assertRedirects(response, ROSTER_URL + "#roster-moves", fetch_redirect_response=False)
         self.assertEqual(models.RosterMove.objects.filter(team=self.atl).count(), 2)
         self.assertEqual(roster_moves.moves_left(self.atl, ULMG_SEASON, 1), before - 1)
 
@@ -276,19 +348,19 @@ class PairedMovePagesTestCase(OwnerClients, TestCase):
         self.assertTrue(self.prospect.is_ulmg_mlb_roster)
         self.assertTrue(self.starter.is_ulmg_aaa_roster)
 
-        game_page = self.client_for(self.owner).get(GAME_URL)
-        self.assertContains(game_page, "Called up ATL Prospect and sent down ATL Starter.")
-        self.assertContains(game_page, '<span id="moves-left">8</span> of 10', html=False)
-        self.assertContains(game_page, f'href="{CHOICE_URL}?down={self.prospect.id}"')
-        self.assertContains(game_page, f'href="{CHOICE_URL}?up={self.starter.id}"')
-        self.assertContains(game_page, "ATL Prospect</a>: 5 road games left")
+        board = self.client_for(self.owner).get(ROSTER_URL)
+        self.assertContains(board, "Called up ATL Prospect and sent down ATL Starter.")
+        self.assertContains(board, '<span id="moves-left">8</span> of 10', html=False)
+        self.assertContains(board, f'href="{CHOICE_URL}?down={self.prospect.id}"')
+        self.assertContains(board, f'href="{CHOICE_URL}?up={self.starter.id}"')
+        self.assertContains(board, "ATL Prospect</a>: 5 road games left")
 
     def test_a_refused_move_goes_back_with_the_reason(self):
         response = self.client_for(self.owner).post(
             MOVE_URL, {"player_down": self.stayer.id, "player_up": self.prospect.id}
         )
-        self.assertRedirects(response, GAME_URL + "#roster-moves", fetch_redirect_response=False)
-        page = self.client_for(self.owner).get(GAME_URL)
+        self.assertRedirects(response, ROSTER_URL + "#roster-moves", fetch_redirect_response=False)
+        page = self.client_for(self.owner).get(ROSTER_URL)
         self.assertContains(page, "road games left on his stay")
         self.assertEqual(models.RosterMove.objects.filter(team=self.atl).count(), 1)
 
@@ -296,7 +368,7 @@ class PairedMovePagesTestCase(OwnerClients, TestCase):
 
     def test_at_the_cap_the_controls_give_way_to_the_cap_message(self):
         self.fill_to_cap()
-        page = self.client_for(self.owner).get(GAME_URL)
+        page = self.client_for(self.owner).get(ROSTER_URL)
         self.assertContains(page, NO_MOVES_LEFT, count=1)
         self.assertNotContains(page, "Send down</a>")
         self.assertNotContains(page, "Call up</a>")
@@ -310,7 +382,7 @@ class PairedMovePagesTestCase(OwnerClients, TestCase):
     def test_the_eleventh_move_is_refused_with_the_cap_message(self):
         self.fill_to_cap()
         self.client_for(self.owner).post(MOVE_URL, {"player_down": self.reliever.id, "player_up": self.prospect.id})
-        page = self.client_for(self.owner).get(GAME_URL)
+        page = self.client_for(self.owner).get(ROSTER_URL)
         self.assertContains(page, "ATL has made its 10 moves for half 1.")
         self.assertEqual(models.RosterMove.objects.filter(team=self.atl).count(), 10)
         self.reliever.refresh_from_db()
@@ -319,9 +391,12 @@ class PairedMovePagesTestCase(OwnerClients, TestCase):
     # Who can move
 
     def test_another_owner_sees_no_controls_and_is_refused_the_move_page(self):
-        page = self.client_for(self.other).get(GAME_URL)
+        page = self.client_for(self.other).get(ROSTER_URL)
         self.assertNotContains(page, "Send down</a>")
         self.assertNotContains(page, "Call up</a>")
+        self.assertNotContains(page, 'id="roster-drag-form"')
+        game = self.client_for(self.other).get(GAME_URL)
+        self.assertNotContains(game, "Send down</a>")
         roster = self.client_for(self.other).get(TEAM_URL)
         self.assertNotContains(roster, "Send down</a>")
         with self.assertLogs("django.request", "WARNING") as logs:
@@ -338,14 +413,14 @@ class PairedMovePagesTestCase(OwnerClients, TestCase):
         for params in ({}, {"down": "x"}, {"down": self.starter.id, "up": self.prospect.id}):
             with self.subTest(params=params):
                 response = self.choice_page(**params)
-                self.assertRedirects(response, GAME_URL + "#roster-moves", fetch_redirect_response=False)
-        page = self.client_for(self.owner).get(GAME_URL)
-        self.assertContains(page, "Start a move from a player on the game page.")
+                self.assertRedirects(response, ROSTER_URL + "#roster-moves", fetch_redirect_response=False)
+        page = self.client_for(self.owner).get(ROSTER_URL)
+        self.assertContains(page, "Start a move from a player on the roster tab.")
 
     # Without JavaScript
 
     def test_the_controls_and_the_move_page_work_without_javascript(self):
-        team_page = self.client_for(self.owner).get(GAME_URL).content.decode()
+        team_page = self.client_for(self.owner).get(ROSTER_URL).content.decode()
         send_down = re.search(r'<a [^>]*href="/teams/atl/moves/new/\?down=\d+"[^>]*>', team_page).group(0)
         self.assertNotIn("player-action", send_down)
         self.assertNotIn("data-action", send_down)

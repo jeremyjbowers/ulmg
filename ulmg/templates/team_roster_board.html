@@ -1,0 +1,65 @@
+{# ABOUTME: The Roster tab: drag a player from AAA onto the MLB player he replaces, and the other way. #}
+{# ABOUTME: A move is one call-up and one send-down. The MLB roster cannot go over its limit. #}
+{% extends "base.html" %}
+
+{% block content %}
+{% include 'includes/team_topper.html' %}
+{% include "includes/team_tabs.html" with team_tab="game" %}
+{% include "includes/game_tabs.html" with game_section="roster" %}
+
+<div id="roster-board">
+    <h2 class="text-lg font-bold mb-2">Roster</h2>
+    {% include 'includes/plan_errors.html' %}
+
+    {% if not half_started %}
+    <p class="roster-not-started mb-4 text-sm">The half has not started. Set the opening roster on the <a href="/teams/{{ team.abbreviation|lower }}/" class="underline">Roster</a> page. Once the half is in play, drag a player onto the player he replaces.</p>
+    {% elif can_drag %}
+    <p class="mb-2 text-sm">Drag a player onto the player he replaces on the other roster, or click one and then the other. A move calls one up and sends one down. It changes the away roster only. The MLB roster stays at {{ mlb_count }} of {{ mlb_roster_size }}.</p>
+    <p id="roster-drop-note" class="mb-4 text-sm text-gray-600"></p>
+    {% endif %}
+
+    {% if over_cap %}
+    <p id="mlb-over-cap" class="mb-4 border border-gray-300 bg-gray-50 px-3 py-2 text-sm">The MLB roster has {{ mlb_count }} players. The limit is {{ mlb_roster_size }}. A move swaps one player for another, so it can't bring the roster back to the limit.</p>
+    {% endif %}
+
+    {% if half_started and not moves_left %}
+    <p id="no-moves-left" class="mb-4 border border-gray-300 bg-gray-50 px-3 py-2 text-sm">No moves left this half ({{ moves_per_half }} of {{ moves_per_half }} used)</p>
+    {% endif %}
+
+    <div class="lg:grid lg:grid-cols-2 lg:gap-4 mb-6">
+        <div id="mlb-roster">
+            <h3 class="font-bold border-b border-gray-300 mb-2">MLB <span id="mlb-count" data-count="{{ mlb_count }}" data-limit="{{ mlb_roster_size }}">{{ mlb_count }}</span> of {{ mlb_roster_size }}</h3>
+            <div id="mlb-hitters" class="mb-4">
+                <h4 class="font-bold mb-1">Hitters</h4>
+                {% for row in mlb_hitters %}{% include "includes/roster_card.html" with side="mlb" %}{% empty %}<p class="text-sm text-gray-600 mb-2">No hitters.</p>{% endfor %}
+            </div>
+            <div id="mlb-pitchers" class="mb-4">
+                <h4 class="font-bold mb-1">Pitchers</h4>
+                {% for row in mlb_pitchers %}{% include "includes/roster_card.html" with side="mlb" %}{% empty %}<p class="text-sm text-gray-600 mb-2">No pitchers.</p>{% endfor %}
+            </div>
+        </div>
+        <div id="aaa-roster">
+            <h3 class="font-bold border-b border-gray-300 mb-2">AAA</h3>
+            <div id="aaa-hitters" class="mb-4">
+                <h4 class="font-bold mb-1">Hitters</h4>
+                {% for row in aaa_hitters %}{% include "includes/roster_card.html" with side="aaa" %}{% empty %}<p class="text-sm text-gray-600 mb-2">No hitters.</p>{% endfor %}
+            </div>
+            <div id="aaa-pitchers" class="mb-4">
+                <h4 class="font-bold mb-1">Pitchers</h4>
+                {% for row in aaa_pitchers %}{% include "includes/roster_card.html" with side="aaa" %}{% empty %}<p class="text-sm text-gray-600 mb-2">No pitchers.</p>{% endfor %}
+            </div>
+        </div>
+    </div>
+
+    {% if can_drag %}
+    <form id="roster-drag-form" method="post" action="/teams/{{ team.abbreviation|lower }}/moves/" class="hidden">
+        {% csrf_token %}
+        <input type="hidden" name="player_up" value="">
+        <input type="hidden" name="player_down" value="">
+    </form>
+    {% include "includes/roster_board_script.html" %}
+    {% endif %}
+</div>
+
+{% include "includes/roster_moves.html" %}
+{% endblock %}
