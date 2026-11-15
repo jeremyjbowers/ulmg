@@ -1,5 +1,5 @@
 # ABOUTME: The card a manager reads while setting a lineup or a starter.
-# ABOUTME: Hitters show playing time, offense, defense, speed, and platoon OPS when a split has a sample. Pitchers add platoon OBP allowed.
+# ABOUTME: A hitter is three lines: the summary, vsL and vsR slashes, and defense. A glove below -5 runs is emergency only.
 
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 
@@ -22,6 +22,14 @@ PITCHER_SPAN = 0.80
 PALE_GREEN = (198, 228, 208)
 LIGHT_PINK = (250, 214, 220)
 
+# League-average OPS the platoon wash is centered on. Two tenths of OPS is the full wash.
+OPS_AVERAGE = 0.720
+OPS_SPAN = 0.200
+
+# A shown defensive rating below this, in runs, is not a normal button.
+# -5.0 itself still shows. The button stays available under Emergency only.
+EMERGENCY_DEFENSE = -5
+
 
 def load(players, season):
     """Card-season stats and cards for many players: ({id: (hit, pitch)}, {id: Card})."""
@@ -38,9 +46,11 @@ def load(players, season):
 
 
 def hitter_card(player, hit, card):
-    """What a hitter's card shows: PA, WAR, WAR per 600 PA, wRC+, the slash line, defense and speed."""
+    """What a hitter's card shows: name and hand, PA, speed, WAR, the two platoon slashes, and defense."""
     hit = hit or {}
-    splits_label, splits_title = _hitter_splits(card)
+    versus_left = _platoon_side(card, card.hitter_rates_vs_lhp if card is not None else None)
+    versus_right = _platoon_side(card, card.hitter_rates_vs_rhp if card is not None else None)
+    rows = _defense_rows(card, player)
     return {
         "player": player,
         "kind": "h",
@@ -49,11 +59,16 @@ def hitter_card(player, hit, card):
         "rate_label": _rate_label(hit),
         "wrc_label": _wrc(hit, card),
         "slash": _slash(card),
-        "splits_label": splits_label,
-        "splits_title": splits_title,
+        "slash_vs_l": versus_left["slash"],
+        "slash_vs_r": versus_right["slash"],
+        "shade_vs_l": versus_left["shade"],
+        "shade_vs_r": versus_right["shade"],
+        "background": _split_background(versus_left["shade"], versus_right["shade"]),
         "defense_label": _defense(card, player),
+        "defense_rows": rows,
         "speed_label": speed_label(card.spd if card is not None else None),
         "positions": _lineup_positions(card, player),
+        "emergency_positions": [row["position"] for row in rows if row["emergency"]],
         "shade": hitter_shade(war_per_600(hit)),
     }
 
@@ -69,7 +84,6 @@ def pitcher_card(player, pitch, card, designation=None):
     if designation not in usage.DESIGNATIONS:
         designation = shown_designation(pitch, None)
     caps = usage.caps_from_stats({}, pitch)
-    splits_label, splits_title = _pitcher_splits(card)
     return {
         "player": player,
         "kind": "p",
@@ -79,8 +93,6 @@ def pitcher_card(player, pitch, card, designation=None):
         "war_label": _decimal(pitch.get("war"), 1),
         "k9_label": _decimal(pitch.get("k_9"), 1),
         "bb9_label": _decimal(pitch.get("bb_9"), 1),
-        "splits_label": splits_label,
-        "splits_title": splits_title,
         "shade": pitcher_shade(_stat_number(pitch.get("xfip"))),
         "designation": designation,
         "starts": usage._count(pitch, "gs"),
@@ -138,6 +150,14 @@ def pitcher_shade(xfip):
     if value is None:
         return None
     return shade_color((PITCHER_AVERAGE - value) / PITCHER_SPAN)
+
+
+def ops_shade(ops):
+    """Pale green above a .720 OPS, light pink below. None at average or with no OPS."""
+    value = _stat_number(ops)
+    if value is None:
+        return None
+    return shade_color((value - OPS_AVERAGE) / OPS_SPAN)
 
 
 def speed_label(spd):
@@ -206,77 +226,64 @@ def _drop_zero(value):
     return text
 
 
-def _split_summary(sides, word, title_word):
-    """
-    One platoon token and its hover text. sides are (mark, sample, number, opponent, unit),
-    right-handed opponent first. A side with no sample is omitted. None when neither side has one.
-    """
-    marks = []
-    details = []
-    for mark, sample, number, opponent, unit in sides:
-        if not sample or number is None:
-            continue
-        text = _drop_zero(number)
-        marks.append(f"{mark} {text}")
-        details.append(f"vs {opponent} {text} ({sample} {unit})")
-    if not marks:
-        return None, None
-    return f"{word} " + " ".join(marks), f"{title_word} " + ", ".join(details)
-
-
-def _hitter_splits(card):
-    """OPS vs RHP and vs LHP. A side with no plate appearances is the overall card and is left off."""
-    if card is None:
-        return None, None
-    sides = []
-    for mark, sample, rates, opponent in (
-        ("R", card.plate_appearances_vs_rhp, card.hitter_rates_vs_rhp, "RHP"),
-        ("L", card.plate_appearances_vs_lhp, card.hitter_rates_vs_lhp, "LHP"),
-    ):
-        line = models.Card._hitter_line_from(rates)
-        ops = None
-        if line and line["obp"] is not None and line["slg"] is not None:
-            ops = line["obp"] + line["slg"]
-        sides.append((mark, sample, ops, opponent, "PA"))
-    return _split_summary(sides, "OPS", "OPS")
-
-
-def _pitcher_splits(card):
-    """OBP allowed vs RHH and vs LHH. A side with no batters faced is left off."""
-    if card is None:
-        return None, None
-    sides = []
-    for mark, sample, rates, opponent in (
-        ("R", card.batters_faced_vs_rhh, card.pitcher_rates_vs_rhh, "RHH"),
-        ("L", card.batters_faced_vs_lhh, card.pitcher_rates_vs_lhh, "LHH"),
-    ):
-        line = models.Card._pitcher_line_from(rates)
-        sides.append((mark, sample, line["obp"] if line else None, opponent, "BF"))
-    return _split_summary(sides, "OBP", "OBP allowed")
-
-
-def _slash(card):
-    line = card.hitter_line() if card is not None else None
+def _format_slash(line):
     if not line:
         return "-"
 
     def fmt(value):
         if value is None:
             return "-"
-        text = f"{value:.3f}"
-        return text[1:] if text.startswith("0") else text
+        return _drop_zero(value)
 
     return f"{fmt(line['avg'])}/{fmt(line['obp'])}/{fmt(line['slg'])}"
 
 
-def _defense(card, player):
+def _line_ops(line):
+    if not line or line["obp"] is None or line["slg"] is None:
+        return None
+    return line["obp"] + line["slg"]
+
+
+def _platoon_side(card, rates):
+    """The slash and wash for one side. Missing split rates fall back to the overall card."""
+    line = models.Card._hitter_line_from(rates) if rates else None
+    if line is None and card is not None:
+        line = card.hitter_line()
+    return {"slash": _format_slash(line), "shade": ops_shade(_line_ops(line))}
+
+
+def _split_background(left, right):
+    """Left half is vsL, right half is vsR. No wash when both sides are average."""
+    left = left or "#ffffff"
+    right = right or "#ffffff"
+    if left == "#ffffff" and right == "#ffffff":
+        return None
+    return f"linear-gradient(to right, {left} 50%, {right} 50%)"
+
+
+def _slash(card):
+    line = card.hitter_line() if card is not None else None
+    return _format_slash(line)
+
+
+def _defense_rows(card, player):
+    """Eligible ratings, with a glove below EMERGENCY_DEFENSE marked emergency."""
     if card is None:
-        return "-"
-    parts = []
+        return []
+    rows = []
     for position, runs in cards.shown_defense(card.defense, cards.playing_primary(card, player)):
         sign = "+" if runs > 0 else ""
-        parts.append(f"{position} {sign}{runs:.1f}")
-    return ", ".join(parts) if parts else "-"
+        rows.append({
+            "position": position,
+            "text": f"{position} {sign}{runs:.1f}",
+            "emergency": runs < EMERGENCY_DEFENSE,
+        })
+    return rows
+
+
+def _defense(card, player):
+    rows = _defense_rows(card, player)
+    return ", ".join(row["text"] for row in rows) if rows else "-"
 
 
 def _lineup_positions(card, player):

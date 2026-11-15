@@ -161,9 +161,8 @@ class DecisionCardTestCase(TestCase):
         player = self.player("Named", position="P")
         shown = decision_cards.pitcher_card(player, {"g": 60, "gs": 0}, None, designation=usage.ROTATION)
         self.assertEqual(shown["designation"], usage.ROTATION)
-        self.assertIsNone(shown["splits_label"])
 
-    def test_a_hitter_with_split_samples_shows_ops_against_each_hand(self):
+    def test_a_hitter_shows_the_vs_l_and_vs_r_slash_lines(self):
         player = self.player("Platoon")
         card = models.Card.objects.create(
             player=player,
@@ -174,35 +173,28 @@ class DecisionCardTestCase(TestCase):
             plate_appearances_vs_lhp=200,
         )
         shown = decision_cards.hitter_card(player, {"pa": 600}, card)
-        self.assertEqual(shown["splits_label"], "OPS R .900 L .311")
-        self.assertEqual(shown["splits_title"], "OPS vs RHP .900 (400 PA), vs LHP .311 (200 PA)")
+        self.assertEqual(shown["slash_vs_l"], ".111/.200/.111")
+        self.assertEqual(shown["slash_vs_r"], ".300/.300/.600")
+        self.assertNotEqual(shown["shade_vs_l"], shown["shade_vs_r"])
+        self.assertTrue(shown["background"].startswith("linear-gradient(to right, "))
+        self.assertLess(shown["background"].index(shown["shade_vs_l"]), shown["background"].index(shown["shade_vs_r"]))
 
-    def test_a_hitter_without_a_split_sample_shows_no_platoon_line(self):
+    def test_a_missing_split_uses_the_overall_slash_on_both_sides(self):
         player = self.player("Overall")
-        overall = {"k": 0.2, "bb": 0.08, "hbp": 0.01, "single": 0.14, "double": 0.04, "triple": 0, "hr": 0.03}
-        card = models.Card.objects.create(
-            player=player,
-            season=2026,
-            hitter_rates=dict(overall),
-            hitter_rates_vs_rhp=dict(overall),
-            hitter_rates_vs_lhp=dict(overall),
-            plate_appearances_vs_rhp=0,
-            plate_appearances_vs_lhp=0,
-        )
+        overall = {"k": 0, "bb": 0, "hbp": 0, "single": 0.2, "double": 0, "triple": 0, "hr": 0.1}
+        card = models.Card.objects.create(player=player, season=2026, hitter_rates=dict(overall))
         shown = decision_cards.hitter_card(player, {"pa": 600}, card)
-        self.assertIsNone(shown["splits_label"])
-        self.assertIsNone(shown["splits_title"])
+        self.assertEqual(shown["slash_vs_l"], ".300/.300/.600")
+        self.assertEqual(shown["slash_vs_r"], ".300/.300/.600")
 
-    def test_a_pitcher_with_split_samples_shows_obp_allowed_against_each_side(self):
-        player = self.player("Split arm", position="P")
+    def test_a_glove_below_minus_five_runs_is_emergency_only(self):
+        player = self.player("Shortstop", position="SS")
         card = models.Card.objects.create(
-            player=player,
-            season=2026,
-            pitcher_rates_vs_rhh={"k": 0, "bb": 0, "hbp": 0, "h": 0.2, "hr": 0},
-            pitcher_rates_vs_lhh={"k": 0, "bb": 0.1, "hbp": 0, "h": 0.2, "hr": 0.1},
-            batters_faced_vs_rhh=450,
-            batters_faced_vs_lhh=350,
+            player=player, season=2026, primary_position="SS",
+            defense={"SS": -12.0, "2B": -5.0, "1B": 6.0},
         )
-        shown = decision_cards.pitcher_card(player, {"g": 30, "gs": 30, "ip": "180.0"}, card)
-        self.assertEqual(shown["splits_label"], "OBP R .200 L .400")
-        self.assertEqual(shown["splits_title"], "OBP allowed vs RHH .200 (450 BF), vs LHH .400 (350 BF)")
+        shown = decision_cards.hitter_card(player, {}, card)
+        self.assertIn("SS", shown["emergency_positions"])
+        self.assertNotIn("2B", shown["emergency_positions"])
+        self.assertNotIn("1B", shown["emergency_positions"])
+        self.assertNotIn("DH", shown["emergency_positions"])
