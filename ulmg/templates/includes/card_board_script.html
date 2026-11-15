@@ -84,29 +84,34 @@
         if (codes.indexOf(current) < 0) current = codes.indexOf("DH") >= 0 ? "DH" : codes[0];
         hidden.value = current;
         var main = box.querySelector("[data-position-main]");
-        var extra = box.querySelector("[data-position-emergency]");
-        var row = extra ? extra.querySelector("[data-emergency-row]") : null;
+        var home = main || box;
         if (main) main.replaceChildren();
-        if (row) row.querySelectorAll("button").forEach(function (button) { button.remove(); });
-        var anyEmergency = false;
-        codes.forEach(function (code) {
+        function addButton(code, isEmergency) {
             var button = document.createElement("button");
             button.type = "button";
             button.dataset.position = code;
             button.textContent = code;
             var on = code === current;
-            if (emergency.indexOf(code) >= 0 && row) {
-                anyEmergency = true;
+            if (isEmergency) {
                 button.dataset.emergency = "";
                 button.title = "Emergency only";
                 button.className = "border border-gray-300 px-1 leading-none" + (on ? " bg-gray-800 text-white" : " text-gray-400");
-                row.appendChild(button);
             } else {
                 button.className = "border border-gray-400 px-1 leading-none" + (on ? " bg-gray-800 text-white" : "");
-                (main || box).appendChild(button);
             }
+            home.appendChild(button);
+        }
+        codes.forEach(function (code) {
+            if (emergency.indexOf(code) < 0) addButton(code, false);
         });
-        if (extra) extra.classList.toggle("hidden", !anyEmergency);
+        var extras = codes.filter(function (code) { return emergency.indexOf(code) >= 0; });
+        if (extras.length) {
+            var label = document.createElement("span");
+            label.className = "text-gray-400 whitespace-nowrap";
+            label.textContent = "Emergency only:";
+            home.appendChild(label);
+            extras.forEach(function (code) { addButton(code, true); });
+        }
     }
 
     function effectivePitcher(slot) {

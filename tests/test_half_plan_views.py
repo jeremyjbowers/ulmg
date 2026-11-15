@@ -160,9 +160,15 @@ class PublicPlanTestCase(PlanViewsTestCase):
         article = articles(body, shortstop.id)[0]
         self.assertIn('data-emergency="SS"', article)
         self.assertIn('title="Emergency only"', article)
-        self.assertIn(">Emergency only<", body)
-        self.assertIn('data-position="SS" data-emergency', body)
-        self.assertIn('data-position="2B"', body)
+        slot = re.search(
+            rf'<li class="lineup-slot\b[^>]*>.*?data-player="{shortstop.id}".*?</li>',
+            body,
+            re.S,
+        ).group(0)
+        label = slot.index(">Emergency only:<")
+        self.assertLess(slot.index('data-position="2B"'), label)
+        self.assertLess(label, slot.index('data-position="SS" data-emergency'))
+        self.assertNotIn("data-position-emergency", slot)
 
     def test_plan_shows_cards_and_usage(self):
         self.roster.file()
