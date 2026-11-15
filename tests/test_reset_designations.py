@@ -6,7 +6,7 @@ from ulmg import models, sim_data, usage
 from tests.plan_fixtures import SEASON, Roster, create_season
 
 
-@override_settings(CURRENT_SEASON=SEASON, TEAM_SEASON_HALF="1h")
+@override_settings(CURRENT_SEASON=SEASON, CURRENT_SEASON_TYPE="midseason", TEAM_SEASON_HALF="1h")
 class ResetKeepsPlanDesignationsTestCase(TestCase):
     @classmethod
     def setUpTestData(cls):

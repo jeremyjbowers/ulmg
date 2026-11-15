@@ -84,7 +84,7 @@ class LiveUpdateStatusFromFgRostersHandednessTestCase(TestCase):
         self.assertEqual(p.throws, "R")
 
 
-@override_settings(CURRENT_SEASON=2026)
+@override_settings(CURRENT_SEASON=2026, CURRENT_SEASON_TYPE="midseason")
 class PlayerHandednessPageDisplayTestCase(TestCase):
     def setUp(self):
         self.client = Client()

@@ -111,7 +111,7 @@ class DefaultPlanTestCase(TestCase):
         self.assertEqual(len(fields["lineup_vs_rhp"]), 8)
 
 
-@override_settings(CURRENT_SEASON=SEASON, TEAM_SEASON_HALF="1h")
+@override_settings(CURRENT_SEASON=SEASON, CURRENT_SEASON_TYPE="midseason", TEAM_SEASON_HALF="1h")
 class SetupSimSeasonCommandTestCase(TestCase):
     @classmethod
     def setUpTestData(cls):

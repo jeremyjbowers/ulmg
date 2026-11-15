@@ -50,7 +50,7 @@ def stat_flags(player, season=SEASON):
     return (row.is_ulmg_mlb_roster, row.is_ulmg_aaa_roster) if row else None
 
 
-@override_settings(CURRENT_SEASON=SEASON, TEAM_SEASON_HALF="1h")
+@override_settings(CURRENT_SEASON=SEASON, CURRENT_SEASON_TYPE="midseason", TEAM_SEASON_HALF="1h")
 class RosterMoveTestCase(TestCase):
     @classmethod
     def setUpTestData(cls):
@@ -396,7 +396,7 @@ class PlanEligibilityTestCase(RosterMoveTestCase):
         plans.save_day(self.plan, home_games(self.atl)[1].day, lineup=self.roster.lineup())
 
 
-@override_settings(CURRENT_SEASON=SEASON, TEAM_SEASON_HALF="1h")
+@override_settings(CURRENT_SEASON=SEASON, CURRENT_SEASON_TYPE="midseason", TEAM_SEASON_HALF="1h")
 class SnapshotTestCase(TestCase):
     @classmethod
     def setUpTestData(cls):
