@@ -48,8 +48,9 @@ def splits_payload(season, position, split_id):
 
 def rows_from_response(response):
     """
-    The splits tool answers player queries with column names in "k" and rows of values in "v",
-    and team queries with a "data" list of row dicts. Either becomes a list of row dicts.
+    The splits tool answers with column names in "k" and rows of values in "v",
+    and also a "data" list of row dicts. "data" is kept when both are present:
+    it names the FanGraphs id playerId, while "k" names it playerid.
     """
     if isinstance(response, dict):
         if isinstance(response.get("data"), list):

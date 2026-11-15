@@ -8,7 +8,7 @@ import requests
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 
-from ulmg import models
+from ulmg import models, utils
 from ulmg.management.commands.live_download_fg_splits import SPLITS, splits_local_path
 from ulmg.management.commands.live_update_stats_from_fg_stats import Command as FgStatsCommand
 
@@ -19,12 +19,27 @@ REQUIRED_COLUMNS = {
 }
 
 
+def split_player_ids(row):
+    """
+    The FanGraphs id and MLBAM id on one splits row, as stored on Player.
+    Saved files and the splits tool's "data" rows call the FanGraphs id playerId.
+    The column array "k" calls it playerid. Either value is that id.
+    """
+    fg_id = None
+    for key in ("playerid", "playerId"):
+        if key in row and row[key] not in (None, ""):
+            fg_id = utils.fangraphs_id(row[key])
+            if fg_id:
+                break
+    return fg_id, utils.fangraphs_id(row.get("xMLBAMID"))
+
+
 class Command(BaseCommand):
     """
         Split rows are the splits tool's standard (strType 1) player lines. Cards read PA, SO, BB, HBP,
         1B, 2B, 3B and HR from hitter splits and TBF, SO, BB, HBP, H and HR from pitcher splits,
-        the same columns the overall card reads from the leaderboards. Rows are matched on
-        'playerid' (FanGraphs id), then 'xMLBAMID' when a row carries it.
+        the same columns the overall card reads from the leaderboards. Rows are matched on the
+        FanGraphs id, then 'xMLBAMID' when a row carries it.
     """
 
     help = 'Store a season of FanGraphs platoon splits on 1-mlb PlayerStatSeason records'
@@ -67,8 +82,7 @@ class Command(BaseCommand):
                 )
 
     def find_player(self, row):
-        fg_id = row.get('playerid')
-        mlbam_id = row.get('xMLBAMID')
+        fg_id, mlbam_id = split_player_ids(row)
         if fg_id:
             player = models.Player.objects.filter(fg_id=fg_id).first()
             if player:
@@ -90,9 +104,15 @@ class Command(BaseCommand):
         for key, (position, _split_id) in SPLITS.items():
             rows = self.get_rows(season, key, options.get('dir'))
             self.check_columns(key, position, rows)
+            if rows and not any(any(split_player_ids(row)) for row in rows):
+                raise CommandError(
+                    f"FanGraphs {key} rows have no playerid, playerId, or xMLBAMID; "
+                    f"a row has columns {', '.join(sorted(rows[0].keys()))}"
+                )
             self.stdout.write(f"Read {len(rows)} FanGraphs {key} rows for {season}")
             for row in rows:
-                player_key = row.get('playerid') or row.get('xMLBAMID')
+                fg_id, mlbam_id = split_player_ids(row)
+                player_key = fg_id or mlbam_id
                 if not player_key:
                     continue
                 first_rows.setdefault(player_key, row)
@@ -101,16 +121,20 @@ class Command(BaseCommand):
                 }
 
         updated = 0
+        unmatched = 0
+        missing_season = 0
         total = len(by_player)
         for idx, (player_key, split_stats) in enumerate(by_player.items(), start=1):
             player = self.find_player(first_rows[player_key])
             if not player:
+                unmatched += 1
                 continue
 
             pss = models.PlayerStatSeason.objects.filter(
                 player=player, season=season, classification="1-mlb", is_career=False
             ).first()
             if not pss:
+                missing_season += 1
                 continue
 
             pss.split_stats = split_stats
@@ -120,3 +144,8 @@ class Command(BaseCommand):
             self.stdout.write(f"[{idx}/{total}] {player}: {', '.join(sorted(split_stats))}")
 
         self.stdout.write(self.style.SUCCESS(f"Updated splits for {updated} players"))
+        if unmatched or missing_season:
+            self.stdout.write(
+                f"Skipped {unmatched} with no matching player, "
+                f"{missing_season} with no 1-mlb PlayerStatSeason"
+            )
