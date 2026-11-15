@@ -517,8 +517,9 @@ fn infield_in_is_ignored_without_a_runner_on_third_or_with_two_outs() {
 
 /// Layer C. Whole games. Seed `20261069`. 2_000 games of league-average lineups against
 /// league-average pitching in a neutral park, under the computer manager.
-/// Bands: 4.2 to 4.9 runs per team per game; double plays on 9% to 13% of opportunities,
-/// an opportunity being a plate appearance with a runner on first and fewer than two outs.
+/// Bands: 4.2 to 4.9 runs per team per game; 15 to 16 pitches per inning; double plays on
+/// 9% to 13% of opportunities, an opportunity being a plate appearance with a runner on
+/// first and fewer than two outs.
 const CALIBRATION_SEED: u64 = 20_261_069;
 const CALIBRATION_GAMES: u64 = 2_000;
 
@@ -609,6 +610,8 @@ fn league_fixture() -> GameFixture {
 #[test]
 fn league_average_games_land_in_the_run_and_double_play_bands() {
     let mut runs = 0u64;
+    let mut pitches = 0u64;
+    let mut outs = 0u64;
     let mut opportunities = 0u64;
     let mut double_plays = 0u64;
     let mut errors = 0u64;
@@ -640,6 +643,8 @@ fn league_average_games_land_in_the_run_and_double_play_bands() {
                 }
             }
             let result = game.last_result.as_ref().unwrap();
+            pitches += result.pitches.len() as u64;
+            outs += u64::from(result.change.outs_added);
             if result.outcome == PlateOutcome::ReachedOnError {
                 errors += 1;
                 assert!(result.fielding.error.is_some());
@@ -661,10 +666,15 @@ fn league_average_games_land_in_the_run_and_double_play_bands() {
         runs += u64::from(game.score.away + game.score.home);
     }
     let per_team = runs as f64 / (2 * CALIBRATION_GAMES) as f64;
+    let per_inning = pitches as f64 / (outs as f64 / 3.0);
     let dp_rate = double_plays as f64 / opportunities as f64;
     assert!(
         (4.2..=4.9).contains(&per_team),
         "{per_team} runs per team per game over {CALIBRATION_GAMES} games (seed {CALIBRATION_SEED})"
+    );
+    assert!(
+        (15.0..=16.0).contains(&per_inning),
+        "{per_inning} pitches per inning over {CALIBRATION_GAMES} games ({pitches} pitches, {outs} outs, seed {CALIBRATION_SEED})"
     );
     assert!(
         (0.09..=0.13).contains(&dp_rate),

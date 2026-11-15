@@ -91,7 +91,7 @@ When the batting side is the computer, and the plate appearance was not sent in 
 
 ### The count
 
-The outcome is drawn first. The engine then builds a legal pitch sequence that ends in that outcome: a random count, up to two foul balls with two strikes, and a final pitch of the kind the outcome needs. An intentional walk is four balls. A caught stealing is one pitch.
+The outcome is drawn first. The engine then builds a legal pitch sequence that ends in that outcome. Balls and strikes come from a short-count distribution, a two-strike count adds zero, one, or two fouls, and the last pitch is the kind the outcome needs. An intentional walk is four balls. A caught stealing is one pitch. A league-average game throws 15 to 16 pitches an inning.
 
 Those pitches are what the log prints, what fatigue charges, and what the usage ledger stores as the pitch count. They are a telling of a result that has already been decided. The count does not cause the out or the hit.
 
