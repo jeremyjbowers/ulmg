@@ -23,7 +23,8 @@ BULLPEN_GROUPS = (
     ("sirp", "SIRP", 4, "One inning from the 6th on, when the game is within three runs."),
     ("mirp", "MIRP", 4, "Before the 6th, or when the game is not that close."),
 )
-LINEUP_COLUMNS = (("vs_rhp", "vs Righty"), ("vs_lhp", "vs Lefty"))
+# vs Lefty is the left column and vs Righty is the right column.
+LINEUP_COLUMNS = (("vs_lhp", "vs Lefty"), ("vs_rhp", "vs Righty"))
 
 
 def _team_and_half(abbreviation, half):
