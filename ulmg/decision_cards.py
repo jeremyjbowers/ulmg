@@ -1,5 +1,5 @@
 # ABOUTME: The card a manager reads while setting a lineup or a starter.
-# ABOUTME: A hitter is three lines: the summary, vsL and vsR slashes, and defense. A glove below -6.5 runs is emergency only.
+# ABOUTME: A hitter is three lines: the summary, vsL and vsR slashes, and defense. A glove of -10 runs or worse is emergency only.
 
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 
@@ -26,9 +26,9 @@ LIGHT_PINK = (250, 214, 220)
 OPS_AVERAGE = 0.720
 OPS_SPAN = 0.200
 
-# A shown defensive rating below this, in runs, is not a normal button.
-# -6.5 itself still shows. The button stays available under Emergency only.
-EMERGENCY_DEFENSE = -6.5
+# A shown defensive rating of this or worse, in runs, is not a normal button.
+# -10 itself is emergency. The button stays available under Emergency only.
+EMERGENCY_DEFENSE = -10
 
 
 def load(players, season):
@@ -267,7 +267,7 @@ def _slash(card):
 
 
 def _defense_rows(card, player):
-    """Eligible ratings, with a glove below EMERGENCY_DEFENSE marked emergency."""
+    """Eligible ratings, with a glove at EMERGENCY_DEFENSE or worse marked emergency."""
     if card is None:
         return []
     rows = []
@@ -276,7 +276,7 @@ def _defense_rows(card, player):
         rows.append({
             "position": position,
             "text": f"{position} {sign}{runs:.1f}",
-            "emergency": runs < EMERGENCY_DEFENSE,
+            "emergency": runs <= EMERGENCY_DEFENSE,
         })
     return rows
 

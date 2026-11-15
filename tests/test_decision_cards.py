@@ -198,11 +198,11 @@ class DecisionCardTestCase(TestCase):
         self.assertEqual(shown["slash_vs_l"], ".300/.300/.600")
         self.assertEqual(shown["slash_vs_r"], ".300/.300/.600")
 
-    def test_a_glove_below_minus_six_and_a_half_runs_is_emergency_only(self):
+    def test_a_glove_of_minus_ten_or_worse_is_emergency_only(self):
         player = self.player("Shortstop", position="SS")
         card = models.Card.objects.create(
             player=player, season=2026, primary_position="SS",
-            defense={"SS": -12.0, "3B": -6.6, "2B": -6.5, "1B": 6.0},
+            defense={"SS": -12.0, "3B": -10.0, "2B": -9.9, "1B": 6.0},
         )
         shown = decision_cards.hitter_card(player, {}, card)
         self.assertIn("SS", shown["emergency_positions"])
