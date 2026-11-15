@@ -2342,6 +2342,8 @@ class HalfPlanDay(BaseModel):
     One day of a half plan. auto_starter is what rotation auto-fill chose.
     manual_starter and manual_lineup are the manager's overrides, kept apart
     so that a re-fill never touches them. A null override follows auto-fill.
+    blank_starter means the manager cleared the starter, and a re-fill leaves
+    the day empty until the rotation is pushed again.
     """
 
     plan = models.ForeignKey(HalfPlan, on_delete=models.CASCADE, related_name="days")
@@ -2353,6 +2355,7 @@ class HalfPlanDay(BaseModel):
         Player, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
     )
     manual_lineup = models.JSONField(null=True, blank=True)
+    blank_starter = models.BooleanField(default=False)
 
     class Meta:
         ordering = ["plan", "day"]

@@ -367,10 +367,11 @@ def _auto_fill(plan, games, rows, rosters, reads):
     eligible for, and the rest of his slots are left empty. A slot whose
     pitcher isn't rested inside the series, or isn't on that game's roster
     (a call-up at home, a sent-down pitcher on the road), goes to the next
-    legal pitcher in order, and the cycle continues from him. Returns the
-    days no one could start for a reason other than the start cap. reads
-    are the ledger reads for this refill; filling days writes nothing to
-    the ledger.
+    legal pitcher in order, and the cycle continues from him. A day the
+    manager cleared (blank_starter) stays empty and still consumes its turn
+    in the cycle. Returns the days no one could start for a reason other
+    than the start cap. reads are the ledger reads for this refill; filling
+    days writes nothing to the ledger.
     """
     rotation = _ordered_players(plan.rotation)
     reads.preload(rotation)
@@ -391,6 +392,12 @@ def _auto_fill(plan, games, rows, rosters, reads):
             continue
         if row.manual_starter_id:
             pointer += 1
+            continue
+        if row.blank_starter:
+            pointer += 1
+            if row.auto_starter_id is not None:
+                row.auto_starter = None
+                row.save(update_fields=["auto_starter", "last_modified"])
             continue
 
         chosen = None
@@ -472,6 +479,14 @@ def _refill(plan, rosters):
     errors, unfilled = _refill_problems(plan, rosters)
     if errors:
         raise PlanError(errors, unfilled)
+
+
+def _release_blanks(plan):
+    """Let the next auto-fill put starters back on days the manager cleared."""
+    games = half_games(plan.team, plan.season, plan.half)
+    open_days = [day for day, game in games.items() if not is_locked(game)]
+    if open_days:
+        plan.days.filter(day__in=open_days, blank_starter=True).update(blank_starter=False)
 
 
 def _bullpen_ids(plan):
@@ -592,11 +607,28 @@ def save_lineups(plan, *, lineup_vs_lhp, lineup_vs_rhp, starter_hook=None):
     return []
 
 
+def clear_lineup(plan, which):
+    """
+    Unfile one lineup card. which is vs_lhp or vs_rhp. The other card, the
+    starter hook, the rotation and the schedule's starters stay as they are.
+    """
+    field = {"vs_lhp": "lineup_vs_lhp", "vs_rhp": "lineup_vs_rhp"}.get(which)
+    if field is None:
+        raise PlanError(["Choose the lineup vs LHP or the lineup vs RHP."])
+    if not is_open(plan.half):
+        raise PlanError([closed_message(plan.half)])
+    if not plan.pk:
+        return
+    setattr(plan, field, [])
+    plan.save(update_fields=[field, "last_modified"])
+
+
 def push_rotation(plan, rotation):
     """
     Write a rotation of one to six starters and fill the half's open days
-    from it. Days with a manual starter stay as they are. The rotation is a
-    way to fill the schedule, not a lineup that keeps applying itself.
+    from it, including days the manager cleared. Days with a manual starter
+    stay as they are. The rotation is a way to fill the schedule, not a
+    lineup that keeps applying itself.
     """
     if not is_open(plan.half):
         raise PlanError([closed_message(plan.half)])
@@ -610,6 +642,7 @@ def push_rotation(plan, rotation):
     with transaction.atomic():
         plan.rotation = [player.id for player in rotation]
         plan.save()
+        _release_blanks(plan)
         _refill(plan, rosters)
         return _designate(plan)
 
@@ -617,8 +650,9 @@ def push_rotation(plan, rotation):
 def assign_starters(plan, assignments):
     """
     Set or clear manual starters. assignments maps a day to a Player or to
-    None, and None returns that day to the rotation. Locked days and illegal
-    starts are refused and nothing is saved.
+    None, and None returns that day to the rotation. A day the manager
+    cleared stays empty until the rotation is pushed. Locked days and
+    illegal starts are refused and nothing is saved.
     """
     if not is_open(plan.half):
         raise PlanError([closed_message(plan.half)])
@@ -638,12 +672,35 @@ def assign_starters(plan, assignments):
         rows = _day_rows(plan, games)
         for day, starter in assignments.items():
             rows[day].manual_starter = starter
+            if starter is not None:
+                rows[day].blank_starter = False
         errors = _manual_start_problems(plan, games, rows, rosters)
         if errors:
             raise PlanError(errors)
         for day in assignments:
-            rows[day].save(update_fields=["manual_starter", "last_modified"])
+            rows[day].save(update_fields=["manual_starter", "blank_starter", "last_modified"])
         _refill(plan, rosters)
+        return _designate(plan)
+
+
+def clear_starters(plan):
+    """
+    Blank every unopened day's starter. The rotation list stays, so pushing
+    it fills these days again. An opened day and any one-day lineup stay.
+    """
+    if not is_open(plan.half):
+        raise PlanError([closed_message(plan.half)])
+    games = half_games(plan.team, plan.season, plan.half)
+    with transaction.atomic():
+        rows = _day_rows(plan, games)
+        for day, game in games.items():
+            if is_locked(game):
+                continue
+            row = rows[day]
+            row.manual_starter = None
+            row.auto_starter = None
+            row.blank_starter = True
+            row.save(update_fields=["manual_starter", "auto_starter", "blank_starter", "last_modified"])
         return _designate(plan)
 
 
@@ -717,6 +774,7 @@ def save_plan(
         if bullpen_logic is not None:
             plan.bullpen_logic = bullpen_logic
         plan.save()
+        _release_blanks(plan)
         _refill(plan, rosters)
         return _designate(plan, previous)
 
@@ -784,6 +842,7 @@ def fill_plan(
         plan.lineup_vs_lhp = stored_lineup(lineup_vs_lhp)
         plan.lineup_vs_rhp = stored_lineup(lineup_vs_rhp)
         plan.save()
+        _release_blanks(plan)
         errors, _ = _refill_problems(plan, rosters)
         _designate(plan, previous)
     return problems + errors
@@ -828,6 +887,8 @@ def save_day(plan, day, *, starter=None, lineup=None):
     with transaction.atomic():
         row = rows[day]
         row.manual_starter = starter
+        if starter is not None:
+            row.blank_starter = False
         row.manual_lineup = stored_lineup(lineup) if lineup is not None else None
         row.save()
         _refill(plan, rosters)
