@@ -43,7 +43,7 @@ def slot_of(day):
     raise AssertionError(f"No slot holds day {day}")
 
 
-@override_settings(CURRENT_SEASON=SEASON, TEAM_SEASON_HALF="1h")
+@override_settings(CURRENT_SEASON=SEASON, CURRENT_SEASON_TYPE="midseason", TEAM_SEASON_HALF="1h")
 class PlanTestCase(TestCase):
     @classmethod
     def setUpTestData(cls):

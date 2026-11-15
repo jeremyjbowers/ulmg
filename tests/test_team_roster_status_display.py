@@ -9,7 +9,7 @@ from tests.usage_fixtures import create_hitter, create_pitcher
 from ulmg import models
 
 
-@override_settings(CURRENT_SEASON=2026)
+@override_settings(CURRENT_SEASON=2026, CURRENT_SEASON_TYPE="midseason")
 class TeamRosterStatusDisplayTestCase(TestCase):
     def setUp(self):
         cache.clear()
@@ -78,10 +78,10 @@ class TeamRosterStatusDisplayTestCase(TestCase):
         pitcher_idx = again.find("Roster Pitcher")
         hitter_row = again[hitter_idx : hitter_idx + 2500]
         pitcher_row = again[pitcher_idx : pitcher_idx + 2500]
-        self.assertIn('data-action="off_roster">MLB</a>', hitter_row)
-        self.assertIn('data-action="to_aaa">AAA</a>', hitter_row)
-        self.assertIn('data-action="to_mlb">MLB</a>', pitcher_row)
-        self.assertIn('data-action="off_roster">AAA</a>', pitcher_row)
+        self.assertIn('data-roster="mlb" data-action="off_roster">MLB</a>', hitter_row)
+        self.assertIn('data-roster="aaa" data-action="to_aaa">AAA</a>', hitter_row)
+        self.assertIn('data-roster="mlb" data-action="to_mlb">MLB</a>', pitcher_row)
+        self.assertIn('data-roster="aaa" data-action="off_roster">AAA</a>', pitcher_row)
 
     def test_team_page_shows_mlb_roster_badge_only_when_roster_tab_on(self):
         self.client.login(username="mgr", password="secret")
@@ -262,3 +262,69 @@ class TeamRosterStatusDisplayTestCase(TestCase):
         self.assertNotEqual(player_idx, -1)
         row_chunk = content[player_idx : player_idx + 2500]
         self.assertNotIn('data-action="to_mlb"', row_chunk)
+
+
+class RosterCardYearTestCase(TestCase):
+    """Roster buttons follow the card year in settings, not whichever stat line is on screen."""
+
+    def setUp(self):
+        cache.clear()
+        self.client = Client()
+        self.user = User.objects.create_user(username="mgr", password="secret")
+        self.owner = models.Owner.objects.create(user=self.user, name="Manager")
+        self.team = models.Team.objects.create(
+            city="Test City",
+            abbreviation="TST",
+            nickname="Testers",
+            owner_obj=self.owner,
+        )
+
+    def _row(self, content, name):
+        idx = content.find(name)
+        self.assertNotEqual(idx, -1, name)
+        return content[idx : idx + 2500]
+
+    def test_a_2026_debut_gets_roster_buttons_and_a_2025_only_card_does_not(self):
+        debut = models.Player.objects.create(
+            name="Joshua Baez", position="OF", level="B", team=self.team, is_owned=True,
+        )
+        models.PlayerStatSeason.objects.create(
+            player=debut, season=2026, classification="1-mlb",
+            hit_stats={"pa": 188, "g": 29, "k_pct": 0.23, "bb_pct": 0.10}, is_career=False,
+        )
+        older = models.Player.objects.create(
+            name="Older Card", position="OF", level="A", team=self.team, is_owned=True,
+        )
+        models.PlayerStatSeason.objects.create(
+            player=older, season=2025, classification="1-mlb",
+            hit_stats={"pa": 500, "g": 140, "k_pct": 0.20, "bb_pct": 0.08}, is_career=False,
+        )
+        minor = models.Player.objects.create(
+            name="Eric Booth Jr.", position="OF", level="B", team=self.team, is_owned=True,
+        )
+        models.PlayerStatSeason.objects.create(
+            player=minor, season=2026, classification="2-milb", level="A",
+            hit_stats={"pa": 82, "g": 20, "k_pct": 0.22, "bb_pct": 0.09}, is_career=False,
+        )
+        self.client.login(username="mgr", password="secret")
+        content = self.client.get("/teams/tst/").content.decode()
+
+        debut_row = self._row(content, "Joshua Baez")
+        self.assertIn('data-roster="mlb" data-action="to_mlb"', debut_row)
+        self.assertIn('data-roster="aaa" data-action="to_aaa"', debut_row)
+        placed = self.client.get(f"/api/v1/player/{debut.id}/to_mlb/")
+        self.assertEqual(placed.content, b"ok")
+        debut.refresh_from_db()
+        self.assertTrue(debut.is_ulmg_mlb_roster)
+
+        older_row = self._row(content, "Older Card")
+        self.assertNotIn('data-action="to_mlb"', older_row)
+        self.assertNotIn('data-action="to_aaa"', older_row)
+        self.assertIn("drop-button", older_row)
+        refused = self.client.get(f"/api/v1/player/{older.id}/to_mlb/")
+        self.assertEqual(refused.status_code, 400)
+
+        minor_row = self._row(content, "Eric Booth Jr.")
+        self.assertNotIn('data-action="to_mlb"', minor_row)
+        self.assertNotIn('data-action="to_aaa"', minor_row)
+        self.assertIn("drop-button", minor_row)

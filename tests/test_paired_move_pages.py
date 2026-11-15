@@ -65,7 +65,7 @@ class OwnerClients:
         return self.clients[user]
 
 
-@override_settings(CURRENT_SEASON=ULMG_SEASON, TEAM_SEASON_HALF="1h", TEAM_ROSTER_TAB=True)
+@override_settings(CURRENT_SEASON=ULMG_SEASON, CURRENT_SEASON_TYPE="midseason", TEAM_SEASON_HALF="1h", TEAM_ROSTER_TAB=True)
 class BeforeTheHalfTestCase(OwnerClients, TestCase):
     @classmethod
     def setUpTestData(cls):
@@ -77,9 +77,9 @@ class BeforeTheHalfTestCase(OwnerClients, TestCase):
 
     def test_the_team_page_shows_the_single_mlb_and_aaa_buttons(self):
         page = self.client_for(self.owner).get(TEAM_URL)
-        self.assertContains(page, f'data-playerid="{self.starter.id}" data-action="off_roster">MLB</a>', html=False)
-        self.assertContains(page, f'data-playerid="{self.prospect.id}" data-action="to_mlb">MLB</a>', html=False)
-        self.assertContains(page, f'data-playerid="{self.starter.id}" data-action="to_aaa">AAA</a>', html=False)
+        self.assertContains(page, f'data-playerid="{self.starter.id}" data-roster="mlb" data-action="off_roster">MLB</a>', html=False)
+        self.assertContains(page, f'data-playerid="{self.prospect.id}" data-roster="mlb" data-action="to_mlb">MLB</a>', html=False)
+        self.assertContains(page, f'data-playerid="{self.starter.id}" data-roster="aaa" data-action="to_aaa">AAA</a>', html=False)
         self.assertNotContains(page, "Send down</a>")
         self.assertNotContains(page, "Call up</a>")
         game = self.client_for(self.owner).get(GAME_URL)
@@ -88,7 +88,7 @@ class BeforeTheHalfTestCase(OwnerClients, TestCase):
         self.assertNotContains(game, "Send down</a>")
 
 
-@override_settings(CURRENT_SEASON=ULMG_SEASON, TEAM_SEASON_HALF="1h", TEAM_ROSTER_TAB=True)
+@override_settings(CURRENT_SEASON=ULMG_SEASON, CURRENT_SEASON_TYPE="midseason", TEAM_SEASON_HALF="1h", TEAM_ROSTER_TAB=True)
 class PairedMovePagesTestCase(OwnerClients, TestCase):
     @classmethod
     def setUpTestData(cls):
@@ -137,7 +137,7 @@ class PairedMovePagesTestCase(OwnerClients, TestCase):
 
     def test_an_aaa_player_keeps_his_off_roster_toggle_and_a_major_leaguer_has_none(self):
         page = self.client_for(self.owner).get(TEAM_URL).content.decode()
-        self.assertIn(f'data-playerid="{self.prospect.id}" data-action="off_roster"', page)
+        self.assertIn(f'data-playerid="{self.prospect.id}" data-roster="aaa" data-action="off_roster"', page)
         self.assertNotIn(f'data-playerid="{self.starter.id}" data-action="off_roster"', page)
 
     def test_an_owner_cannot_take_a_major_leaguer_off_his_roster_once_the_half_has_started(self):
@@ -366,7 +366,7 @@ class PairedMovePagesTestCase(OwnerClients, TestCase):
         self.assertTrue(self.reliever.is_ulmg_aaa_roster)
 
 
-@override_settings(CURRENT_SEASON=ULMG_SEASON)
+@override_settings(CURRENT_SEASON=ULMG_SEASON, CURRENT_SEASON_TYPE="midseason")
 class MoveChoicesAgreeWithMakeMoveTestCase(TestCase):
     """
     move_choices and make_move run the same checks: every AAA or 30-man player

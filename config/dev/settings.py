@@ -148,8 +148,10 @@ TEAM_WISHLIST_TAB = False
 
 # The second half of the schedule opens when this is "2h".
 TEAM_SEASON_HALF = "1h"
-CURRENT_SEASON = 2026
-CURRENT_SEASON_TYPE = "midseason"
+# ULMG year. MLB and AAA rosters take a card from the previous MLB season, so 2027 uses 2026 cards.
+CURRENT_SEASON = 2027
+# Offseason keeps stat pages on that card year while owners set rosters.
+CURRENT_SEASON_TYPE = "offseason"
 # Team-page Open/AA draft prep can look ahead of CURRENT_SEASON_TYPE.
 DRAFT_PREP_SEASON_TYPE = "offseason"
 # Set to an int to cap stat display to that year (e.g. prior year in preseason). None uses get_current_season().

@@ -31,14 +31,15 @@ document.addEventListener('DOMContentLoaded', function() {
     
     updateMlbButtonVisibility();
 
-    function updateButtonStates(playerId, action) {
+    function updateButtonStates(playerId, action, source) {
         const el = document.querySelector('[data-playerid="' + playerId + '"]');
         if (!el) return;
         const playerRow = el.closest('tr');
         if (!playerRow) return;
         
-        const mlbBtn = playerRow.querySelector('[data-action="to_mlb"], [data-action="off_roster"][data-playerid="' + playerId + '"]');
-        const aaaBtn = playerRow.querySelector('[data-action="to_aaa"], [data-action="off_roster"][data-playerid="' + playerId + '"]');
+        // MLB and AAA both use off_roster once selected, so the roster attribute is what tells them apart.
+        const mlbBtn = playerRow.querySelector('[data-roster="mlb"]');
+        const aaaBtn = playerRow.querySelector('[data-roster="aaa"]');
         const p1hBtn = playerRow.querySelector('[data-roster-type="1h_p"]');
         const c1hBtn = playerRow.querySelector('[data-roster-type="1h_c"]');
         const pos1hBtn = playerRow.querySelector('[data-roster-type="1h_pos"]');
@@ -56,12 +57,21 @@ document.addEventListener('DOMContentLoaded', function() {
         
         switch(action) {
             case 'to_mlb':
+                if (aaaBtn && aaaBtn.getAttribute('data-action') === 'off_roster') {
+                    setButtonState(aaaBtn, false, 'to_aaa', 'AAA', '', 'border-blue-400 text-blue-600 hover:bg-blue-50');
+                }
                 setButtonState(mlbBtn, true, 'off_roster', 'MLB', 'bg-black border-black text-white', '');
                 mlbRosterCount++;
                 updateRosterDisplay();
                 updateMlbButtonVisibility();
                 break;
             case 'to_aaa':
+                if (mlbBtn && mlbBtn.getAttribute('data-action') === 'off_roster') {
+                    setButtonState(mlbBtn, false, 'to_mlb', 'MLB', '', 'border-black text-black hover:bg-gray-50');
+                    mlbRosterCount--;
+                    updateRosterDisplay();
+                    updateMlbButtonVisibility();
+                }
                 setButtonState(aaaBtn, true, 'off_roster', 'AAA', 'bg-blue-400 border-blue-400 text-white', '');
                 break;
             case 'is_ulmg_reserve':
@@ -87,13 +97,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 setButtonState(pos1hBtn, false, 'is_ulmg_1h_pos', 'HIT', '', 'border-amber-500 text-amber-600 hover:bg-amber-50');
                 break;
             case 'off_roster':
-                if (mlbBtn && mlbBtn.textContent === 'MLB' && mlbBtn.classList.contains('bg-black')) {
+                if (source && source.dataset.roster === 'mlb') {
                     setButtonState(mlbBtn, false, 'to_mlb', 'MLB', '', 'border-black text-black hover:bg-gray-50');
                     mlbRosterCount--;
                     updateRosterDisplay();
                     updateMlbButtonVisibility();
-                }
-                if (aaaBtn && aaaBtn.textContent === 'AAA' && aaaBtn.classList.contains('bg-blue-400')) {
+                } else if (source && source.dataset.roster === 'aaa') {
                     setButtonState(aaaBtn, false, 'to_aaa', 'AAA', '', 'border-blue-400 text-blue-600 hover:bg-blue-50');
                 }
                 break;
@@ -161,7 +170,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 type: "POST",
                 url: '/api/v1/player/' + playerId + '/' + action + '/',
                 success: function(response) {
-                    updateButtonStates(playerId, action);
+                    updateButtonStates(playerId, action, e.target);
                 },
                 error: function(xhr, status, error) {
                     if (xhr.status === 400 && xhr.responseJSON && xhr.responseJSON.error) {

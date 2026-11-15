@@ -18,7 +18,7 @@ def create_owner(username, team):
     return user
 
 
-@override_settings(CURRENT_SEASON=ULMG_SEASON, TEAM_SEASON_HALF="1h")
+@override_settings(CURRENT_SEASON=ULMG_SEASON, CURRENT_SEASON_TYPE="midseason", TEAM_SEASON_HALF="1h")
 class PlayPeriodTestCase(TestCase):
     def test_before_the_first_half_the_four_stretches_are_named(self):
         periods = roster_moves.play_periods(ULMG_SEASON)
@@ -41,7 +41,7 @@ class PlayPeriodTestCase(TestCase):
         )
 
 
-@override_settings(CURRENT_SEASON=ULMG_SEASON, TEAM_SEASON_HALF="1h", TEAM_ROSTER_TAB=True)
+@override_settings(CURRENT_SEASON=ULMG_SEASON, CURRENT_SEASON_TYPE="midseason", TEAM_SEASON_HALF="1h", TEAM_ROSTER_TAB=True)
 class GamePageTestCase(TestCase):
     @classmethod
     def setUpTestData(cls):

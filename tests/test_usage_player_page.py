@@ -14,7 +14,7 @@ from tests.usage_fixtures import (
 )
 
 
-@override_settings(CURRENT_SEASON=ULMG_SEASON)
+@override_settings(CURRENT_SEASON=ULMG_SEASON, CURRENT_SEASON_TYPE="midseason")
 class PlayerPageUsageTestCase(TestCase):
     def setUp(self):
         self.client.force_login(User.objects.create_user("manager"))

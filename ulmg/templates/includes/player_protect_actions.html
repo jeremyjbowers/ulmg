@@ -54,7 +54,7 @@
         {% if p.is_ulmg_aaa_roster and not p.is_ulmg_reserve %}
             <!-- Taking an AAA player off the AAA roster leaves the 30-man as it is, so it stays a single action -->
             <a class="player-action text-xs px-1.5 py-0.5 border bg-blue-400 border-blue-400 text-white rounded"
-               data-playerid="{{ p.id }}" data-action="off_roster">AAA</a>
+               data-playerid="{{ p.id }}" data-roster="aaa" data-action="off_roster">AAA</a>
         {% endif %}
         {% else %}
         <!-- MLB Roster: midseason Open picks must stay on MLB or be released -->
@@ -65,10 +65,10 @@
             {% if p.is_carded_for_previous_season %}
                 {% if not p.is_ulmg_mlb_roster and mlb_roster_count < mlb_roster_size %}
                     <a class="player-action text-xs px-1.5 py-0.5 border border-black text-black hover:bg-gray-50 rounded" 
-                       data-playerid="{{ p.id }}" data-action="to_mlb">MLB</a>
+                       data-playerid="{{ p.id }}" data-roster="mlb" data-action="to_mlb">MLB</a>
                 {% elif p.is_ulmg_mlb_roster %}
                     <a class="player-action text-xs px-1.5 py-0.5 border bg-black border-black text-white rounded" 
-                       data-playerid="{{ p.id }}" data-action="off_roster">MLB</a>
+                       data-playerid="{{ p.id }}" data-roster="mlb" data-action="off_roster">MLB</a>
                 {% endif %}
             {% endif %}
         {% endif %}
@@ -78,10 +78,10 @@
             {% if p.is_carded_for_previous_season %}
                 {% if not p.is_ulmg_aaa_roster %}
                     <a class="player-action text-xs px-1.5 py-0.5 border border-blue-400 text-blue-600 hover:bg-blue-50 rounded" 
-                       data-playerid="{{ p.id }}" data-action="to_aaa">AAA</a>
+                       data-playerid="{{ p.id }}" data-roster="aaa" data-action="to_aaa">AAA</a>
                 {% elif p.is_ulmg_aaa_roster %}
                     <a class="player-action text-xs px-1.5 py-0.5 border bg-blue-400 border-blue-400 text-white rounded" 
-                       data-playerid="{{ p.id }}" data-action="off_roster">AAA</a>
+                       data-playerid="{{ p.id }}" data-roster="aaa" data-action="off_roster">AAA</a>
                 {% endif %}
             {% endif %}
         {% endif %}

@@ -22,7 +22,7 @@ def create_owner(username, team):
     return user
 
 
-@override_settings(CURRENT_SEASON=SEASON, TEAM_SEASON_HALF="1h", TEAM_ROSTER_TAB=True)
+@override_settings(CURRENT_SEASON=SEASON, CURRENT_SEASON_TYPE="midseason", TEAM_SEASON_HALF="1h", TEAM_ROSTER_TAB=True)
 class RosterMoveViewsTestCase(TestCase):
     @classmethod
     def setUpTestData(cls):
@@ -124,7 +124,7 @@ class RosterMoveViewsTestCase(TestCase):
         self.assertContains(page, 'class="roster-move-row ', count=10)
 
 
-@override_settings(CURRENT_SEASON=SEASON, TEAM_SEASON_HALF="1h")
+@override_settings(CURRENT_SEASON=SEASON, CURRENT_SEASON_TYPE="midseason", TEAM_SEASON_HALF="1h")
 class PlanPagesAfterAMoveTestCase(TestCase):
     @classmethod
     def setUpTestData(cls):

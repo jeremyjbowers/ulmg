@@ -235,6 +235,7 @@ def final_game(slot, home, road, day, home_score, road_score):
     return game
 
 
+@override_settings(CURRENT_SEASON=SEASON, CURRENT_SEASON_TYPE="midseason")
 class PagesTestCase(TestCase):
     def setUp(self):
         self.teams = {t.abbreviation: t for t in create_league_teams()}
