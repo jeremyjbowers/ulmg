@@ -149,6 +149,108 @@ class BullpenRolesTestCase(ComputerGameTestCase):
         self.assertEqual(inning_of(log, change), 3)
         self.assertEqual(decision_before(log, change).payload["role"], computer_manager.MIRP)
 
+    def test_a_multi_inning_reliever_who_enters_in_the_third_is_still_pitching_at_the_sixth(self):
+        # One out already in the 3rd, so a 3-inning cap still has an out left at the start of the 6th.
+        gf.set_rates([self.home.hitters[0]], gf.STRIKEOUT_RATES)
+        mirp = self.home.swingman
+        gf.counter(self.home.starters[0], start_limit_outs=7)
+        gf.counter(mirp, relief_limit_outs=9)
+        log = self.open()
+        entered = self.until_changes(log, HOME, 1)[0]
+        self.assertEqual(entered.payload["pitcher"], mirp.id)
+        self.assertEqual(inning_of(log, entered), 3)
+        self.assertEqual(decision_before(log, entered).payload["role"], computer_manager.MIRP)
+        self.assertEqual(self.play(log).state["outs"], 1)
+
+        play = self.step_until(log, lambda p: p.state["inning"] == 6 and p.state["half"] == "top" and p.state["outs"] == 0)
+        self.assertEqual(play.state["score"], {"away": 0, "home": 0})
+        self.assertEqual(play.bullpen_role(), computer_manager.SIRP)
+        self.assertEqual(play.state[HOME]["pitcher_slot"], str(mirp.id))
+        appearance = models.UsageAppearance.objects.get(game=self.game, player=mirp)
+        self.assertFalse(appearance.started)
+        self.assertEqual(appearance.outs, 8)
+        counter = usage.counter_for(mirp, gf.SEASON)
+        self.assertTrue(counter.confined_to_relief)
+        self.assertEqual(counter.starts, 0)
+
+        left = self.until_changes(log, HOME, 2)[1]
+        self.assertEqual(inning_of(log, left), 6)
+        self.assertIn("limit", decision_before(log, left).text)
+        self.assertEqual(left.payload["pitcher"], self.home.relievers[1].id)
+        appearance.refresh_from_db()
+        self.assertEqual(appearance.outs, 9)
+        self.assertFalse(appearance.started)
+        counter.refresh_from_db()
+        self.assertTrue(counter.confined_to_relief)
+        self.assertEqual(counter.starts, 0)
+
+        counter.outs = counter.innings_cap_outs
+        counter.save(update_fields=["outs"])
+        later = models.ScheduleGame.objects.get(series=self.game.series, day=self.game.day + 1)
+        check = usage.check_pitcher(mirp, later, starting=True)
+        self.assertFalse(check.legal)
+        self.assertIn("confinement", check.reason)
+
+    def test_a_one_inning_multi_inning_reliever_still_leaves_after_one_inning(self):
+        gf.set_rates([self.home.hitters[0]], gf.STRIKEOUT_RATES)
+        mirp = self.home.swingman
+        gf.counter(self.home.starters[0], start_limit_outs=6)
+        gf.counter(mirp, relief_limit_outs=3)
+        log = self.open()
+        entered, left = self.until_changes(log, HOME, 2)
+        self.assertEqual(entered.payload["pitcher"], mirp.id)
+        self.assertEqual(inning_of(log, entered), 3)
+        self.assertEqual(inning_of(log, left), 4)
+        self.assertIn("limit", decision_before(log, left).text)
+        appearance = models.UsageAppearance.objects.get(game=self.game, player=mirp)
+        self.assertEqual(appearance.outs, 3)
+        self.assertFalse(appearance.started)
+
+    def test_a_multi_inning_reliever_yields_when_the_closer_is_called(self):
+        gf.set_rates([self.home.hitters[0]], gf.STRIKEOUT_RATES)
+        self.home.file(half=1, bullpen_logic=models.HalfPlan.PROTECT_PEN)
+        mirp = self.home.swingman
+        gf.counter(self.home.starters[0], start_limit_outs=18)
+        gf.counter(mirp, relief_limit_outs=9)
+        log = self.open()
+        entered = self.until_changes(log, HOME, 1)[0]
+        self.assertEqual(entered.payload["pitcher"], mirp.id)
+        self.assertEqual(inning_of(log, entered), 7)
+        self.assertEqual(self.play(log).state["score"], {"away": 0, "home": 0})
+
+        self.step_until(log, lambda p: p.state["inning"] == 8 and p.state["half"] == "bottom" and p.state["outs"] == 0)
+        gf.set_rates(self.home.hitters[3:5], gf.HOME_RUN_RATES)
+        left = self.until_changes(log, HOME, 2)[1]
+        self.assertEqual(inning_of(log, left), 9)
+        self.assertEqual(left.payload["pitcher"], self.home.relievers[0].id)
+        decision = decision_before(log, left)
+        self.assertEqual(decision.payload["need"], "role")
+        self.assertEqual(decision.payload["role"], computer_manager.CLOSER)
+        appearance = models.UsageAppearance.objects.get(game=self.game, player=mirp)
+        self.assertEqual(appearance.outs, 6)
+        self.assertFalse(appearance.started)
+        self.assertTrue(usage.counter_for(mirp, gf.SEASON).confined_to_relief)
+
+    def test_a_single_inning_reliever_is_not_kept_past_his_own_window(self):
+        gf.set_rates([self.home.hitters[0]], gf.STRIKEOUT_RATES)
+        self.home.file(half=1, bullpen_logic=models.HalfPlan.SAVE_PEN)
+        setup = self.home.relievers[1]
+        gf.counter(self.home.starters[0], start_limit_outs=21)
+        gf.counter(setup, relief_limit_outs=9)
+        log = self.open()
+        first, second = self.until_changes(log, HOME, 2)
+        self.assertEqual(first.payload["pitcher"], setup.id)
+        self.assertEqual(inning_of(log, first), 8)
+        self.assertEqual(decision_before(log, first).payload["role"], computer_manager.SIRP)
+        self.assertEqual(second.payload["pitcher"], self.home.swingman.id)
+        self.assertEqual(inning_of(log, second), 9)
+        decision = decision_before(log, second)
+        self.assertEqual(decision.payload["need"], "role")
+        self.assertEqual(decision.payload["role"], computer_manager.MIRP)
+        appearance = models.UsageAppearance.objects.get(game=self.game, player=setup)
+        self.assertEqual(appearance.outs, 3)
+        self.assertFalse(appearance.started)
+
     def test_a_multi_inning_reliever_with_a_big_lead_in_the_seventh(self):
         gf.set_rates(self.home.hitters[:2], gf.HOME_RUN_RATES)
         gf.counter(self.home.starters[0], start_limit_outs=18)

@@ -854,8 +854,9 @@ def computer_pitching_change(play):
     """
     A change the computer makes when nothing forces one: its starter's hook,
     or, at the start of a half inning, a reliever whose role no longer
-    applies giving way to an available arm of the role that does. Returns
-    whether it made one.
+    applies giving way to an available arm of the role that does. A
+    multi-inning reliever finishes his own outing instead, until the closer
+    is called. Returns whether it made one.
     """
     side = fielding_side(play.state)
     pid = current_pitcher_id(play.state)
@@ -896,6 +897,9 @@ def computer_pitching_change(play):
 
     current = play.group_of(side, pitcher)
     if current == role or not play.at_half_inning_start():
+        return False
+    outs_left = usage.check_pitcher(pitcher, play.game, reads=play.usage).remaining["game_outs"]
+    if computer_manager.reliever_stays(current, role, outs_left):
         return False
     choice = computer_manager.preferred_arm(role, groups, problem)
     if choice.player is None:

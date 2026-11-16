@@ -21,7 +21,13 @@ ROTATION_SLOTS = 6
 BULLPEN_GROUPS = (
     ("closer", "Closer", 1, "The 9th or later, in a save."),
     ("sirp", "SIRP", 4, "One inning from the 6th on, when the game is within three runs."),
-    ("mirp", "MIRP", 4, "Before the 6th, or when the game is not that close."),
+    (
+        "mirp",
+        "MIRP",
+        4,
+        "As soon as the starter is out, before the 6th or when the game is not that close. "
+        "He stays up to his outing limit, at most 3 innings, and those innings are relief.",
+    ),
 )
 # vs Lefty is the left column and vs Righty is the right column.
 LINEUP_COLUMNS = (("vs_lhp", "vs Lefty"), ("vs_rhp", "vs Righty"))

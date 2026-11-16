@@ -279,6 +279,16 @@ def preferred_arm(role, groups, problem):
     return _first_in_groups([role], groups, problem)
 
 
+def reliever_stays(group, role, game_outs_left):
+    """
+    A multi-inning reliever who has entered finishes his own relief outing.
+    He is not lifted when the situation flips to single-inning relief. He
+    yields when the closer is called, and he leaves when the outing has no
+    outs left. A single-inning reliever is not kept this way.
+    """
+    return group == MIRP and role != CLOSER and game_outs_left > 0
+
+
 def hook_reason(hook, fatigue):
     """
     Why the starter's hook pulls him now, or None. fatigue is the engine's

@@ -172,6 +172,15 @@ class BullpenRoleTestCase(TestCase):
         self.assertEqual(cm.preferred_arm(cm.SIRP, groups, lambda p: None).player, sirp)
         self.assertIsNone(cm.preferred_arm(cm.MIRP, groups, lambda p: None).player)
 
+    def test_a_multi_inning_reliever_finishes_his_outing_through_a_single_inning_window(self):
+        stays = computer_manager.reliever_stays
+        self.assertTrue(stays(computer_manager.MIRP, computer_manager.SIRP, 3))
+        self.assertTrue(stays(computer_manager.MIRP, computer_manager.MIRP, 1))
+        self.assertFalse(stays(computer_manager.MIRP, computer_manager.CLOSER, 6), "he yields when the closer is called")
+        self.assertFalse(stays(computer_manager.MIRP, computer_manager.SIRP, 0), "no outs left in the outing")
+        self.assertFalse(stays(computer_manager.SIRP, computer_manager.MIRP, 6), "a single-inning reliever is not kept")
+        self.assertFalse(stays(computer_manager.OTHER, computer_manager.SIRP, 6))
+
 
 class StarterHookTestCase(TestCase):
     def fatigue(self, effort=0.0, ceiling=100.0, runs=0):
