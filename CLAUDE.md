@@ -125,6 +125,10 @@ workon ulmg && django-admin live_update_stats_from_fg_stats
 workon ulmg && django-admin live_update_status_from_fg_rosters
 workon ulmg && django-admin load_mlb_stats --season 2025
 
+# Sprint speed (Statcast). Run after the FanGraphs hitting lines exist; generate_cards reads them.
+workon ulmg && django-admin load_sprint_speed
+workon ulmg && django-admin load_sprint_speed --year 2026 --dry-run
+
 # Clean duplicate records
 workon ulmg && django-admin deduplicate_playerstatseason --dry-run
 workon ulmg && django-admin deduplicate_playerstatseason

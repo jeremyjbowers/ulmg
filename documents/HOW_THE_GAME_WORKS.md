@@ -45,7 +45,7 @@ The engine is handed finished numbers. It does not compute a rating from raw sta
 
 **Batted balls.** Ground-ball, fly-ball, and line-drive shares, from the FanGraphs counts. A card with none of them plays at the league mix: 43 percent ground balls, 36 percent fly balls, 21 percent line drives. The mix decides what kind of out a ball in play is. It does not change the chance of a hit.
 
-**Running.** Steal success is his stolen bases and caught stealings, regressed toward a 72 percent success rate over 10 attempts. His attempt rate is attempts per time he reached first base on a single, a walk, or a hit by pitch. His speed is FanGraphs Spd.
+**Running.** Steal success is his stolen bases and caught stealings, regressed toward a 72 percent success rate over 10 attempts. His attempt rate is attempts per time he reached first base on a single, a walk, or a hit by pitch. His speed is Statcast sprint speed, in feet per second: 27 is a 5, and each foot per second is one point. FanGraphs BsR nudges that. BsR is shrunk toward average with 600 plate appearances of zeros, four runs per 600 plate appearances is one point, and the nudge stops at a point and a half. `load_sprint_speed` reads the Statcast leaderboard, runners with at least five competitive runs, onto the hitting line. With no sprint speed, his speed is FanGraphs Spd.
 
 **Defense.** One number per position, in fielding runs, regressed toward average with 600 innings of regression and scaled to a 1,300-inning season. Catcher is rated only from innings actually caught; a player who never caught has no catcher rating and cannot be filed at catcher. Everywhere else, the rating starts from his primary position and slides along a spectrum with shortstop as the baseline. Second base is credited 12 runs from there, center field 13, third base 15, right field 16, left field 17, and first base 18. Innings he did play at another position pull that slot toward what he actually did there. The engine wants a smaller unit, so the site divides those runs by 10 before sending them. The pitcher's own fielding number is sent as zero.
 
@@ -72,7 +72,7 @@ The runners then move from the out that remains:
 - A fly out with a runner on third and fewer than two outs is a sacrifice fly 60 percent of the time. The runner on second tags to third 20 percent of the time.
 - With two outs, the out ends the half inning and nobody moves.
 
-On a single or a double, the runner on first takes one extra base 25 percent of the time at league speed. His chance scales with his Spd against the league's, and it is kept between 5 and 60 percent. With no speed on the card, he runs at 25 percent.
+On a single or a double, the runner on first takes one extra base 25 percent of the time at league speed. His chance scales with his speed against the league's, and it is kept between 5 and 60 percent. With no speed on the card, he runs at 25 percent.
 
 A league-average lineup against league-average pitching, in a neutral park, scores between 4.2 and 4.9 runs a team. That band is the check the engine's distribution test holds the whole model to.
 

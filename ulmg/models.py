@@ -1199,7 +1199,8 @@ class Card(BaseModel):
     Defense holds slotted runs per position to one decimal; the engine takes runs / 10.
     The _vs_ rate dicts are platoon splits regressed toward the overall rates; the
     counts beside them are the split's own PA or BF (0 when the split is the overall card).
-    Running (hitters only): regressed steal success, steal attempts per time on first, and FanGraphs Spd.
+    Running (hitters only): regressed steal success, steal attempts per time on first, and speed.
+    Speed is Statcast sprint speed on a 0-to-10 scale, nudged by FanGraphs BsR. FanGraphs Spd fills in when sprint speed is missing.
     """
     player = models.ForeignKey(Player, on_delete=models.CASCADE, related_name="cards")
     season = models.IntegerField()
