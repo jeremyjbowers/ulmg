@@ -7,11 +7,11 @@ import os
 from typing import Any, Optional
 
 import httpx
-from asgiref.sync import sync_to_async
 from mcp.server.fastmcp import FastMCP
 
 from ulmg.mcp_app import services
 from ulmg.mcp_app.context import get_current_owner, require_current_owner
+from ulmg.mcp_app.db import db_sync
 
 
 INSTRUCTIONS = (
@@ -61,21 +61,23 @@ def _register_local_tools(mcp: FastMCP) -> None:
     async def get_season_context() -> str:
         """Current ULMG season, half, roster limits, and the authenticated owner's team."""
         owner = get_current_owner()
-        data = await sync_to_async(services.get_season_context)(owner=owner)
+        data = await db_sync(services.get_season_context, owner=owner)
         return _dump(data)
 
     @mcp.tool()
     async def list_teams() -> str:
         """List all ULMG teams (abbreviation, city, nickname, division)."""
-        data = await sync_to_async(services.list_teams)()
+        data = await db_sync(services.list_teams)
         return _dump(data)
 
     @mcp.tool()
     async def get_team_roster(abbreviation: Optional[str] = None) -> str:
         """Full team roster split into mlb (30-man), aaa, and aa. Omitting abbreviation uses your team."""
         owner = get_current_owner()
-        data = await sync_to_async(services.get_team_roster)(
-            abbreviation=abbreviation, owner=owner
+        data = await db_sync(
+            services.get_team_roster,
+            abbreviation=abbreviation,
+            owner=owner,
         )
         return _dump(data)
 
@@ -83,8 +85,10 @@ def _register_local_tools(mcp: FastMCP) -> None:
     async def get_roster_compliance(abbreviation: Optional[str] = None) -> str:
         """Counts vs constitutional limits (30-man, 40-man protect, 75/76 org, 20 B-floor)."""
         owner = get_current_owner()
-        data = await sync_to_async(services.get_roster_compliance)(
-            abbreviation=abbreviation, owner=owner
+        data = await db_sync(
+            services.get_roster_compliance,
+            abbreviation=abbreviation,
+            owner=owner,
         )
         return _dump(data)
 
@@ -109,7 +113,8 @@ def _register_local_tools(mcp: FastMCP) -> None:
         limit: int = 100,
     ) -> str:
         """Search/filter players (level V/A/B, position, owned, stats cutoffs, roster flags)."""
-        data = await sync_to_async(services.search_players)(
+        data = await db_sync(
+            services.search_players,
             name=name,
             level=level,
             position=position,
@@ -140,7 +145,8 @@ def _register_local_tools(mcp: FastMCP) -> None:
         limit: int = 500,
     ) -> str:
         """List draft picks. season: offseason|midseason. draft_type: open|aa|balance."""
-        data = await sync_to_async(services.list_draft_picks)(
+        data = await db_sync(
+            services.list_draft_picks,
             team=team,
             year=year,
             season=season,
@@ -157,28 +163,28 @@ def _register_local_tools(mcp: FastMCP) -> None:
         limit: int = 200,
     ) -> str:
         """List trades as structured JSON (players and picks each side received)."""
-        data = await sync_to_async(services.list_trades)(
-            team=team, season=season, limit=limit
+        data = await db_sync(
+            services.list_trades, team=team, season=season, limit=limit
         )
         return _dump(data)
 
     @mcp.tool()
     async def list_trade_block() -> str:
         """Players currently marked on the league trade block."""
-        data = await sync_to_async(services.list_trade_block)()
+        data = await db_sync(services.list_trade_block)
         return _dump(data)
 
     @mcp.tool()
     async def list_draft_pool(pool: str = "unprotected") -> str:
         """Draft pools: unprotected | offseason_available | midseason_available."""
-        data = await sync_to_async(services.list_draft_pool)(pool=pool)
+        data = await db_sync(services.list_draft_pool, pool=pool)
         return _dump(data)
 
     @mcp.tool()
     async def get_my_wishlist() -> str:
         """Authenticated owner's wishlist with tier, rank, notes, and tags."""
         owner = require_current_owner()
-        data = await sync_to_async(services.get_my_wishlist)(owner)
+        data = await db_sync(services.get_my_wishlist, owner)
         return _dump(data)
 
 

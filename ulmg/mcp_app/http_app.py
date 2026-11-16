@@ -5,7 +5,6 @@ from __future__ import annotations
 import logging
 from contextlib import asynccontextmanager
 
-from asgiref.sync import sync_to_async
 from mcp.server.transport_security import TransportSecuritySettings
 from starlette.applications import Starlette
 from starlette.middleware import Middleware
@@ -16,6 +15,7 @@ from starlette.types import ASGIApp, Receive, Scope, Send
 
 from ulmg import models
 from ulmg.mcp_app.context import reset_current_owner, set_current_owner
+from ulmg.mcp_app.db import db_sync
 from ulmg.mcp_app.tools import build_mcp
 
 logger = logging.getLogger(__name__)
@@ -47,7 +47,7 @@ class OwnerBearerMiddleware:
         if not raw:
             raw = headers.get("x-ulmg-token", "").strip() or None
 
-        token = await sync_to_async(models.OwnerAPIToken.authenticate)(raw)
+        token = await db_sync(models.OwnerAPIToken.authenticate, raw)
         if token is None:
             body = b'{"error":"Unauthorized","detail":"Valid ULMG API token required"}'
             await send(
