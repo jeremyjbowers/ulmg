@@ -344,6 +344,23 @@ class LineupValidationTestCase(PlanTestCase):
         lineup[8]["player"] = stranger
         self.assertRejected(lineup, "CAR Hitter is not on ATL's 30-man")
 
+    def test_a_lefty_cannot_be_filed_at_short(self):
+        shortstop = next(player for player in self.roster.fielders if player.name.endswith("SS"))
+        shortstop.throws = "L"
+        shortstop.save()
+        self.assertRejected(self.roster.lineup(), f"{shortstop.name} throws left and cannot play SS")
+
+    def test_a_first_baseman_cannot_be_filed_where_he_did_not_play(self):
+        lineup = self.roster.lineup()
+        first = next(player for player in self.roster.fielders if player.name.endswith("1B"))
+        third = next(player for player in self.roster.fielders if player.name.endswith("3B"))
+        for entry in lineup:
+            if entry["player"] == first:
+                entry["player"] = third
+            elif entry["player"] == third:
+                entry["player"] = first
+        self.assertRejected(lineup, f"{first.name} cannot play 3B")
+
     def test_non_catcher_at_c_rejected(self):
         lineup = self.roster.lineup()
         lineup[0]["player"], lineup[1]["player"] = lineup[1]["player"], lineup[0]["player"]

@@ -7,7 +7,7 @@ from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
 
-from ulmg import models, roster_moves, schedule, usage, utils
+from ulmg import cards, models, roster_moves, schedule, usage, utils
 
 LINEUP_POSITIONS = ["C", "1B", "2B", "3B", "SS", "LF", "CF", "RF", "DH"]
 LINEUP_SIZE = len(LINEUP_POSITIONS)
@@ -149,7 +149,8 @@ def lineup_errors(team, season, entries, label, roster_problem):
     """
     Rule errors for one lineup. entries are dicts of order (1-9), player (a
     Player) and position. Nine batters, each order and each position once,
-    no pitchers, only the 30-man, and a catcher rating to play C.
+    no pitchers, only the 30-man, a lefty kept off 2B, 3B, SS and C, and a
+    player filed only where his card qualifies him.
     roster_problem(player) says why a player isn't on the roster the lineup
     is for, or returns None.
     """
@@ -175,6 +176,14 @@ def lineup_errors(team, season, entries, label, roster_problem):
             if position not in positions:
                 errors.append(f"{label}: nobody is filed at {position}.")
 
+    player_ids = [entry["player"].id for entry in entries]
+    cards_by_player = {}
+    if player_ids:
+        cards_by_player = {
+            card.player_id: card
+            for card in models.Card.objects.filter(player_id__in=player_ids, season=season - 1)
+        }
+
     seen = set()
     for entry in entries:
         player = entry["player"]
@@ -186,12 +195,16 @@ def lineup_errors(team, season, entries, label, roster_problem):
             errors.append(f"{label}: {roster}")
         if is_pitcher(player):
             errors.append(f"{label}: {player.name} is a pitcher; pitchers do not hit.")
-        if entry["position"] == CATCHER:
-            card = card_for(player, season)
-            if card is None or (card.defense or {}).get(CATCHER) is None:
-                errors.append(
-                    f"{label}: {player.name} has no catcher rating for {season - 1} and cannot be filed at C."
-                )
+        card = cards_by_player.get(player.id)
+        reason = cards.cannot_play(
+            player,
+            entry["position"],
+            card.defense if card is not None else None,
+            cards.playing_primary(card, player),
+            season,
+        )
+        if reason:
+            errors.append(f"{label}: {reason}")
     return errors
 
 

@@ -1235,10 +1235,19 @@ class Card(BaseModel):
     def __unicode__(self):
         return f"{self.player} @ {self.season} card"
 
+    def _defense_view(self):
+        """The primary position and throwing hand that decide where his glove is listed."""
+        player = self.player if self.player_id else None
+        primary_player = None if self.primary_position else player
+        throws = player.throws if player is not None else None
+        return cards.playing_primary(self, primary_player), throws
+
     def sim_defense_rating(self, position):
         """The engine's DefenseRating at a position, or None where he cannot be slotted."""
-        player = self.player if not self.primary_position and self.player_id else None
-        runs = cards.slotted_runs(self.defense, cards.playing_primary(self, player), position)
+        primary, throws = self._defense_view()
+        if position not in cards.eligible_positions(primary, self.defense, throws):
+            return None
+        runs = cards.slotted_runs(self.defense, primary, position)
         if runs is None:
             return None
         return {"rating": cards.sim_defense(runs), "measured_at": position}
@@ -1263,8 +1272,8 @@ class Card(BaseModel):
         return {"id": runner_id, "steal_success": self.steal_success, "spd": self.spd}
 
     def defense_display(self):
-        player = self.player if not self.primary_position and self.player_id else None
-        return cards.shown_defense(self.defense, cards.playing_primary(self, player))
+        primary, throws = self._defense_view()
+        return cards.shown_defense(self.defense, primary, throws)
 
     @staticmethod
     def _slash_line(hits, total_bases, bb, hbp, k, hr):

@@ -49,6 +49,13 @@ OUTFIELD_POSITIONS = ("LF", "CF", "RF")
 # First base stays listed either way. A rating of -1.0 is not better than -1.
 OUTFIELDER_INFIELD_CUTOFF = -1
 
+# Range at these positions can anchor the spectrum. Scooping and catching cannot:
+# a 1B or C rating qualifies him only at that position unless he also played one of these.
+SPECTRUM_POSITIONS = ("2B", "3B", "SS", "LF", "CF", "RF")
+
+# A left-handed thrower can play first base and the outfield.
+LEFTY_BLOCKED_POSITIONS = ("2B", "3B", "SS", "C")
+
 # The spectrum already treats the outfield as easier than the infield.
 # An infielder gives back this many runs on top of that when he is read out there.
 INF_TO_OF_PENALTY = 5
@@ -337,32 +344,22 @@ def primary_position(fielding):
     return max(DEFENSE_POSITIONS, key=lambda pos: (fielding.get(pos, (0, 0))[0], -DEFENSE_POSITIONS.index(pos)))
 
 
-def defense_ratings(fielding):
-    """
-    Slotted defense runs at every position, to one decimal.
-    Catcher is rated only from catcher innings and is None for a player who never caught.
-    Everywhere else follows the spectrum from the primary position; a primary catcher
-    or a player with no fielding row is a 0 first baseman.
-    """
-    primary = primary_position(fielding)
-    if primary is None or primary == CATCHER:
-        base_position, base_rating = FIRST_BASE, 0.0
-    else:
-        base_position = primary
-        base_rating = position_rating(fielding[primary][1], fielding[primary][0])
+def spectrum_anchor(fielding):
+    """The spectrum position he played the most, or None when he only played 1B and/or C."""
+    played = [position for position in SPECTRUM_POSITIONS if position in (fielding or {})]
+    if not played:
+        return None
+    return max(played, key=lambda position: (fielding[position][0], -SPECTRUM_POSITIONS.index(position)))
 
+
+def _spectrum_ratings(anchor, base_rating, fielding):
+    """Slotted runs from one anchor. Catcher is left unset."""
     ratings = {}
     for slot in DEFENSE_POSITIONS:
         if slot == CATCHER:
-            if CATCHER in fielding:
-                innings, runs = fielding[CATCHER]
-                ratings[slot] = _one_decimal(position_rating(runs, innings))
-            else:
-                ratings[slot] = None
             continue
-
-        spectrum = base_rating + SPECTRUM_GAINS[slot] - SPECTRUM_GAINS[base_position]
-        if slot == primary:
+        spectrum = base_rating + SPECTRUM_GAINS[slot] - SPECTRUM_GAINS[anchor]
+        if slot == anchor:
             rating = base_rating
         elif slot in fielding:
             innings, runs = fielding[slot]
@@ -372,6 +369,48 @@ def defense_ratings(fielding):
         else:
             rating = spectrum
         ratings[slot] = _one_decimal(rating)
+    return ratings
+
+
+def defense_ratings(fielding):
+    """
+    Slotted defense runs at every position, to one decimal.
+    Catcher is rated only from catcher innings and is None for a player who never caught.
+    First base and catcher do not anchor the spectrum. A player who only played those
+    is rated only there. Innings at 2B, 3B, SS, LF, CF, or RF anchor the spectrum, and
+    the other positions slide from that rating. When his most-played position is 1B or C,
+    first-base innings stay his scooping rating instead of being blended into the anchor.
+    A player with no fielding row is a 0 first baseman.
+    """
+    if not fielding:
+        ratings = _spectrum_ratings(FIRST_BASE, 0.0, {})
+        ratings[CATCHER] = None
+        return ratings
+
+    ratings = {position: None for position in DEFENSE_POSITIONS}
+    if CATCHER in fielding:
+        innings, runs = fielding[CATCHER]
+        ratings[CATCHER] = _one_decimal(position_rating(runs, innings))
+
+    anchor = spectrum_anchor(fielding)
+    primary = primary_position(fielding)
+    if anchor is None:
+        if FIRST_BASE in fielding:
+            innings, runs = fielding[FIRST_BASE]
+            ratings[FIRST_BASE] = _one_decimal(position_rating(runs, innings))
+        return ratings
+
+    base_rating = position_rating(fielding[anchor][1], fielding[anchor][0])
+    ratings.update(_spectrum_ratings(anchor, base_rating, fielding))
+    if FIRST_BASE in fielding and primary in (FIRST_BASE, CATCHER):
+        innings, runs = fielding[FIRST_BASE]
+        ratings[FIRST_BASE] = _one_decimal(position_rating(runs, innings))
+    if primary in (FIRST_BASE, CATCHER) and anchor in OUTFIELD_POSITIONS:
+        for slot in ("2B", "3B", "SS"):
+            if slot in fielding:
+                continue
+            if ratings[slot] is not None and ratings[slot] <= OUTFIELDER_INFIELD_CUTOFF:
+                ratings[slot] = None
     return ratings
 
 
@@ -402,16 +441,21 @@ def playing_primary(card, player=None):
     return None
 
 
-def eligible_positions(primary, defense):
+def eligible_positions(primary, defense, throws=None):
     """
     Defensive positions a manager may slot him at. DH is always added by the lineup.
     An outfielder is always listed at first base and the outfield, and at 2B, 3B, or SS
     when his rating there is better than OUTFIELDER_INFIELD_CUTOFF.
+    A primary first baseman or catcher is listed only where he has a rating, so scooping
+    and catching do not qualify him elsewhere. A left-handed thrower is never listed at
+    2B, 3B, SS, or C.
     """
     defense = defense or {}
-    if primary == CATCHER:
-        return [CATCHER, FIRST_BASE]
-    if primary in OUTFIELD_POSITIONS:
+    if primary in (CATCHER, FIRST_BASE):
+        listed = [position for position in DEFENSE_POSITIONS if defense.get(position) is not None]
+        if primary == FIRST_BASE and FIRST_BASE not in listed:
+            listed = [position for position in DEFENSE_POSITIONS if position == FIRST_BASE or position in listed]
+    elif primary in OUTFIELD_POSITIONS:
         listed = []
         for position in DEFENSE_POSITIONS:
             if position in OUTFIELD_POSITIONS or position == FIRST_BASE:
@@ -422,14 +466,30 @@ def eligible_positions(primary, defense):
             runs = slotted_runs(defense, primary, position)
             if runs is not None and runs > OUTFIELDER_INFIELD_CUTOFF:
                 listed.append(position)
-        return listed
-    if primary in INFIELD_POSITIONS:
-        positions = ["1B", "2B", "3B", "SS", "LF", "CF", "RF"]
+    elif primary in INFIELD_POSITIONS:
+        listed = ["1B", "2B", "3B", "SS", "LF", "CF", "RF"]
         if defense.get(CATCHER) is not None:
-            return [CATCHER, *positions]
-        return positions
-    rated = [position for position in DEFENSE_POSITIONS if defense.get(position) is not None]
-    return rated or ["1B", "2B", "3B", "SS", "LF", "CF", "RF"]
+            listed = [CATCHER, *listed]
+    else:
+        listed = [position for position in DEFENSE_POSITIONS if defense.get(position) is not None]
+        listed = listed or ["1B", "2B", "3B", "SS", "LF", "CF", "RF"]
+    if throws == "L":
+        listed = [position for position in listed if position not in LEFTY_BLOCKED_POSITIONS]
+    return listed
+
+
+def cannot_play(player, position, defense, primary, season):
+    """Why he cannot be filed at position, or None. DH is always allowed."""
+    if position in (None, "DH"):
+        return None
+    name = player.name
+    if getattr(player, "throws", None) == "L" and position in LEFTY_BLOCKED_POSITIONS:
+        return f"{name} throws left and cannot play {position}."
+    if position == CATCHER and (defense or {}).get(CATCHER) is None:
+        return f"{name} has no catcher rating for {season - 1} and cannot play {CATCHER}."
+    if position not in eligible_positions(primary, defense, getattr(player, "throws", None)):
+        return f"{name} cannot play {position}."
+    return None
 
 
 def slotted_runs(defense, primary, position):
@@ -440,10 +500,10 @@ def slotted_runs(defense, primary, position):
     return round(defense[position] - penalty, 1) + 0.0
 
 
-def shown_defense(defense, primary):
+def shown_defense(defense, primary, throws=None):
     """Eligible positions that have a rating, in display order, after the outfield penalty."""
     rows = []
-    for position in eligible_positions(primary, defense):
+    for position in eligible_positions(primary, defense, throws):
         runs = slotted_runs(defense, primary, position)
         if runs is None:
             continue

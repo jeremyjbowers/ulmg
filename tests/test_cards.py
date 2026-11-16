@@ -335,17 +335,28 @@ class CatcherDefenseTestCase(SimpleTestCase):
         ratings = cards.defense_ratings({"C": (1000, 8)})
         self.assertEqual(ratings["C"], round(8 * 1300 / 1600, 1))
 
-    def test_primary_catcher_elsewhere_is_a_zero_first_baseman(self):
+    def test_a_catcher_who_only_caught_is_rated_only_at_catcher(self):
         ratings = cards.defense_ratings({"C": (1000, 8)})
-        self.assertEqual(ratings["1B"], 0.0)
-        self.assertEqual(ratings["LF"], -1.0)
-        self.assertEqual(ratings["2B"], -6.0)
-        self.assertEqual(ratings["SS"], -18.0)
+        self.assertEqual(ratings["C"], round(8 * 1300 / 1600, 1))
+        self.assertIsNone(ratings["1B"])
+        self.assertIsNone(ratings["LF"])
+        self.assertIsNone(ratings["SS"])
+        self.assertEqual(cards.eligible_positions("C", ratings), ["C"])
 
-    def test_primary_catcher_at_a_position_he_played_regresses_toward_zero_first_base(self):
+    def test_a_catcher_who_played_first_is_rated_there_from_those_innings(self):
         ratings = cards.defense_ratings({"C": (900, 5), "1B": (100, 2)})
         self.assertEqual(ratings["C"], round(5 * 1300 / 1500, 1))
-        self.assertEqual(ratings["1B"], round((2 * 1300 + 600 * 0) / 700, 1))
+        self.assertEqual(ratings["1B"], round(2 * 1300 / 700, 1))
+        self.assertIsNone(ratings["LF"])
+        self.assertEqual(cards.eligible_positions("C", ratings), ["C", "1B"])
+
+    def test_a_catcher_who_played_third_cascades_from_third(self):
+        ratings = cards.defense_ratings({"C": (900, 5), "3B": (400, -8)})
+        third = -8 * 1300 / 1000
+        self.assertEqual(ratings["C"], round(5 * 1300 / 1500, 1))
+        self.assertEqual(ratings["3B"], round(third, 1))
+        self.assertEqual(ratings["SS"], round(third - 15, 1))
+        self.assertEqual(ratings["1B"], round(third + 3, 1))
 
     def test_player_without_catcher_innings_cannot_be_slotted_at_catcher(self):
         ratings = cards.defense_ratings({"SS": (700, -12)})
@@ -365,7 +376,8 @@ class CatcherDefenseTestCase(SimpleTestCase):
         self.assertIsNone(cards.slotted_runs(defense, "C", "LF"))
 
     def test_eligible_positions_follow_where_he_plays(self):
-        self.assertEqual(cards.eligible_positions("C", {"C": 4.0, "LF": -1.0}), ["C", "1B"])
+        self.assertEqual(cards.eligible_positions("C", {"C": 4.0}), ["C"])
+        self.assertEqual(cards.eligible_positions("C", {"C": 4.0, "LF": -1.0, "1B": 2.0}), ["C", "1B", "LF"])
         self.assertEqual(cards.eligible_positions("CF", {"CF": 3.0, "SS": -8.0}), ["1B", "LF", "CF", "RF"])
         self.assertEqual(
             cards.eligible_positions("SS", {"SS": -12.0}),
@@ -387,6 +399,70 @@ class CatcherDefenseTestCase(SimpleTestCase):
             cards.eligible_positions("LF", {"LF": 1.0, "3B": 4.0, "SS": 0.0, "2B": -4.0}),
             ["1B", "3B", "SS", "LF", "CF", "RF"],
         )
+
+
+class FirstBaseDefenseTestCase(SimpleTestCase):
+    def test_scooping_does_not_qualify_him_anywhere_but_first(self):
+        # 1,300 innings and +20 runs: a great scooper, and not a third baseman.
+        ratings = cards.defense_ratings({"1B": (1300, 20)})
+        self.assertEqual(ratings["1B"], round(20 * 1300 / 1900, 1))
+        for position in ("2B", "3B", "SS", "LF", "CF", "RF", "C"):
+            self.assertIsNone(ratings[position], position)
+        self.assertEqual(cards.eligible_positions("1B", ratings), ["1B"])
+
+    def test_third_base_innings_cascade_and_scooping_stays_at_first(self):
+        ratings = cards.defense_ratings({"1B": (1300, 20), "3B": (400, -8)})
+        third = -8 * 1300 / 1000
+        self.assertEqual(ratings["1B"], round(20 * 1300 / 1900, 1))
+        self.assertEqual(ratings["3B"], round(third, 1))
+        self.assertEqual(ratings["2B"], round(third - 3, 1))
+        self.assertEqual(ratings["SS"], round(third - 15, 1))
+        self.assertEqual(ratings["LF"], round(third + 2, 1))
+        self.assertNotEqual(ratings["2B"], round(20 * 1300 / 1900, 1) - 6)
+        self.assertEqual(
+            cards.eligible_positions("1B", ratings),
+            ["1B", "2B", "3B", "SS", "LF", "CF", "RF"],
+        )
+
+    def test_center_field_innings_cascade_like_an_outfielder(self):
+        ratings = cards.defense_ratings({"1B": (1300, 10), "CF": (700, 0)})
+        self.assertEqual(ratings["CF"], 0.0)
+        self.assertEqual(ratings["3B"], 2.0)
+        self.assertIsNone(ratings["2B"])
+        self.assertIsNone(ratings["SS"])
+        self.assertEqual(ratings["1B"], round(10 * 1300 / 1900, 1))
+        self.assertEqual(
+            cards.eligible_positions("1B", ratings),
+            ["1B", "3B", "LF", "CF", "RF"],
+        )
+
+
+class LeftyDefenseTestCase(SimpleTestCase):
+    def test_a_lefty_cannot_qualify_at_second_third_short_or_catcher(self):
+        defense = {"C": 3.0, "1B": 6.0, "2B": 1.0, "3B": 4.0, "SS": 2.0, "LF": 5.0, "CF": 4.0, "RF": 4.0}
+        self.assertEqual(
+            cards.eligible_positions("SS", defense, throws="L"),
+            ["1B", "LF", "CF", "RF"],
+        )
+        self.assertEqual(
+            cards.shown_defense(defense, "SS", throws="L"),
+            [("1B", 6.0), ("LF", 0.0), ("CF", -1.0), ("RF", -1.0)],
+        )
+        self.assertEqual(
+            cards.eligible_positions("CF", {"CF": 3.0, "2B": 1.0, "1B": 6.0}, throws="L"),
+            ["1B", "LF", "CF", "RF"],
+        )
+
+    def test_cannot_play_names_the_block(self):
+        lefty = type("Player", (), {"name": "Lefty", "throws": "L"})()
+        righty = type("Player", (), {"name": "Olson", "throws": "R"})()
+        self.assertIn("throws left", cards.cannot_play(lefty, "SS", {"SS": 2.0}, "SS", 2026))
+        self.assertIn("throws left", cards.cannot_play(lefty, "C", {"C": 3.0}, "C", 2026))
+        self.assertIsNone(cards.cannot_play(lefty, "1B", {"1B": 6.0}, "1B", 2026))
+        self.assertIsNone(cards.cannot_play(lefty, "LF", {"LF": 1.0}, "LF", 2026))
+        self.assertIsNone(cards.cannot_play(lefty, "DH", {"1B": 6.0}, "1B", 2026))
+        self.assertIn("cannot play 3B", cards.cannot_play(righty, "3B", {"1B": 13.7}, "1B", 2026))
+        self.assertIn("has no catcher rating for 2025", cards.cannot_play(righty, "C", {"SS": 1.0}, "SS", 2026))
 
 
 class NoFieldingRowTestCase(SimpleTestCase):

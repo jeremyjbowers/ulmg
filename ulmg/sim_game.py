@@ -514,11 +514,15 @@ class Play:
         return None if check.legal else check.reason
 
     def position_problem(self, player, position):
-        """Why a player can't be slotted at a position, or None. Only a catcher needs a rating."""
+        """Why a player can't be slotted at a position, or None."""
         card = self.card(player)
-        if position == CATCHER and (card is None or (card.defense or {}).get(CATCHER) is None):
-            return f"{player.name} has no catcher rating for {self.season - 1} and cannot play C."
-        return None
+        return cards.cannot_play(
+            player,
+            position,
+            card.defense if card is not None else None,
+            cards.playing_primary(card, player),
+            self.season,
+        )
 
     def pitcher_problem(self, side, player, starting=False):
         team = team_for(self.game, side)
