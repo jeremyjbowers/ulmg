@@ -73,6 +73,14 @@ def day_url(day, half=1):
     return f"/teams/atl/plan/{half}/{SEASON}/day/{day}/"
 
 
+def slot_html(body, index):
+    """The rotation slot numbered index, through the start of the next slot."""
+    chunk = body.split(f'data-index="{index}"', 1)[1]
+    if 'data-index="' in chunk:
+        chunk = chunk.split('data-index="', 1)[0]
+    return chunk
+
+
 @override_settings(CURRENT_SEASON=SEASON, CURRENT_SEASON_TYPE="midseason", TEAM_SEASON_HALF="1h")
 class PlanViewsTestCase(TestCase):
     @classmethod
@@ -121,6 +129,7 @@ class PublicPlanTestCase(PlanViewsTestCase):
         rotation = self.client.get(ROTATION_URL).content.decode()
         self.assertIn("ATL Starter 1", rotation)
         self.assertNotIn("Push rotation to schedule", rotation)
+        self.assertNotIn('name="hook_1"', rotation)
         bullpen = self.client.get(BULLPEN_URL).content.decode()
         self.assertIn("ATL Reliever 1", bullpen)
         self.assertIn("ATL Swingman", bullpen)
@@ -342,6 +351,8 @@ class EditPlanTestCase(PlanViewsTestCase):
         client = self.as_user(self.owner)
         page = client.get(EDIT_URL).content.decode()
         self.assertIn('value="normal" checked', page)
+        self.assertIn(">Default starter hook<", page)
+        self.assertIn("no hook of his own", page)
         response = client.post(EDIT_URL, dict(form_data(self.roster), starter_hook="quick"), follow=True)
         self.assertRedirects(response, PLAN_URL)
         self.assertEqual(self.saved_plan().starter_hook, models.HalfPlan.QUICK_HOOK)
@@ -419,6 +430,61 @@ class EditPlanTestCase(PlanViewsTestCase):
         self.assertEqual(response.status_code, 400)
         self.assertIn("The starter hook must be quick, normal or slow.", response.content.decode())
         self.assertEqual(self.saved_plan().starter_hook, models.HalfPlan.NORMAL_HOOK)
+
+    def test_the_owner_sets_a_hook_for_one_starter_and_leaves_another_on_the_default(self):
+        self.roster.file(starter_hook=models.HalfPlan.SLOW_HOOK)
+        client = self.as_user(self.owner)
+        first, second = self.roster.starters[0], self.roster.starters[1]
+        page = client.get(ROTATION_URL).content.decode()
+        self.assertIn("Default uses the starter hook", page)
+        self.assertIn('name="hook_1"', slot_html(page, 1))
+        self.assertIn('value="" checked', slot_html(page, 1))
+        response = client.post(
+            ROTATION_URL,
+            {
+                "rotation": [p.id for p in self.roster.starters],
+                "hook_1": "quick",
+                "hook_2": "",
+            },
+            follow=True,
+        )
+        self.assertRedirects(response, SCHEDULE_URL)
+        plan = self.saved_plan()
+        self.assertEqual(plan.starter_hook, models.HalfPlan.SLOW_HOOK)
+        self.assertEqual(plan.starter_hooks, {str(first.id): models.HalfPlan.QUICK_HOOK})
+        saved = client.get(ROTATION_URL).content.decode()
+        self.assertIn('value="quick" checked', slot_html(saved, 1))
+        self.assertIn('value="" checked', slot_html(saved, 2))
+        self.assertNotIn('value="quick" checked', slot_html(saved, 2))
+        summary = client.get(PLAN_URL).content.decode()
+        self.assertIn("Starter hook: Slow", summary)
+        self.assertIn(f"{first.name}: Quick hook", summary)
+        self.assertNotIn(f"{second.name}:", summary)
+
+    def test_the_plan_lists_a_starters_hook_only_when_it_differs_from_the_default(self):
+        first, second = self.roster.starters[0], self.roster.starters[1]
+        self.roster.file(
+            starter_hook=models.HalfPlan.NORMAL_HOOK,
+            starter_hooks={
+                str(first.id): models.HalfPlan.QUICK_HOOK,
+                str(second.id): models.HalfPlan.NORMAL_HOOK,
+            },
+        )
+        body = self.client.get(PLAN_URL).content.decode()
+        self.assertIn("Starter hook: Normal", body)
+        self.assertIn(f"{first.name}: Quick hook", body)
+        self.assertNotIn(f"{second.name}:", body)
+
+    def test_an_unknown_hook_for_one_starter_is_refused(self):
+        first = self.roster.starters[0]
+        self.roster.file(starter_hooks={str(first.id): models.HalfPlan.SLOW_HOOK})
+        response = self.as_user(self.owner).post(
+            ROTATION_URL,
+            {"rotation": [p.id for p in self.roster.starters], "hook_1": "lazy"},
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("The starter hook must be quick, normal or slow.", response.content.decode())
+        self.assertEqual(self.saved_plan().starter_hooks, {str(first.id): models.HalfPlan.SLOW_HOOK})
 
     def test_the_rotation_page_counts_scheduled_and_completed_starts_against_remaining(self):
         self.roster.file()

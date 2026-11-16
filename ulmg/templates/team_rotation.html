@@ -25,6 +25,9 @@
         </div>
         <form method="post" class="lg:col-span-8 space-y-2 text-sm" data-rotation>
             {% csrf_token %}
+            {% if can_edit %}
+            <p class="text-xs text-gray-600">Each starter can have his own hook. Default uses the starter hook set with the lineups.</p>
+            {% endif %}
             {% for slot in rotation_slots %}
             <div class="rotation-slot lineup-slot border border-dashed border-gray-300 p-1" data-index="{{ forloop.counter }}">
                 <div class="flex justify-between text-xs text-gray-500">
@@ -35,6 +38,15 @@
                     {% if slot.card %}{% include "includes/decision_card.html" with card=slot.card %}{% endif %}
                 </div>
                 {% if can_edit %}<input type="hidden" class="player-id" name="rotation" value="{{ slot.player_id }}">{% endif %}
+                {% if can_edit %}
+                <fieldset class="mt-1 flex flex-wrap gap-3 text-xs{% if not slot.player_id %} hidden{% endif %}" data-starter-hook>
+                    <legend class="text-gray-500">Hook</legend>
+                    <label><input type="radio" name="hook_{{ forloop.counter }}" value=""{% if not slot.hook %} checked{% endif %}> Default</label>
+                    {% for value, label in starter_hooks %}
+                    <label><input type="radio" name="hook_{{ forloop.parentloop.counter }}" value="{{ value }}"{% if slot.hook == value %} checked{% endif %}> {{ label }}</label>
+                    {% endfor %}
+                </fieldset>
+                {% endif %}
             </div>
             {% endfor %}
             {% if can_edit %}

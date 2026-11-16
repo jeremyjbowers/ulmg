@@ -14,6 +14,9 @@
     <p class="text-sm text-gray-600">{{ half_note }}</p>
     <p class="text-sm text-gray-600 card-season">These lineups use the {{ plan_season|add:"-1" }} MLB cards.</p>
     {% if plan %}<p class="plan-starter-hook text-sm">Starter hook: {{ plan.get_starter_hook_display }}</p>{% endif %}
+    {% for row in own_starter_hooks %}
+    <p class="plan-starter-hook text-sm">{{ row.player.name }}: {{ row.label }} hook</p>
+    {% endfor %}
     {% if not is_open %}
     <p class="plan-closed text-sm mt-2">{{ closed_message }}</p>
     {% elif can_edit %}

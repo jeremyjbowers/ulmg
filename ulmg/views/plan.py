@@ -274,8 +274,53 @@ def _padded_slots(ids, cards, season, count):
     return [{"player_id": player_id or "", "card": cards.get(player_id)} for player_id in ids]
 
 
-def _rotation_slots(ids, cards, season):
-    return _padded_slots(list(ids)[:ROTATION_SLOTS], cards, season, ROTATION_SLOTS)
+def _rotation_slots(ids, cards, season, hooks=None):
+    slots = _padded_slots(list(ids)[:ROTATION_SLOTS], cards, season, ROTATION_SLOTS)
+    hooks = hooks or {}
+    for slot in slots:
+        player_id = slot["player_id"]
+        slot["hook"] = hooks.get(str(player_id), "") if player_id else ""
+    return slots
+
+
+def _posted_starter_hooks(post):
+    """
+    Individual hooks posted with the rotation, or None when that form has
+    no hook fields. A blank choice is no hook of his own. The number on the
+    field is the rotation slot, including empty slots.
+    """
+    if not any(key.startswith("hook_") for key in post):
+        return None
+    hooks = {}
+    for index, value in enumerate(post.getlist("rotation"), start=1):
+        player_id = _int_or_none(value)
+        if player_id is None:
+            continue
+        choice = post.get(f"hook_{index}") or ""
+        if choice:
+            hooks[str(player_id)] = choice
+    return hooks
+
+
+def _own_starter_hooks(plan):
+    """Starters whose own hook is not the plan default, in rotation order."""
+    if plan is None:
+        return []
+    stored = plan.starter_hooks or {}
+    labels = dict(models.HalfPlan.STARTER_HOOK_CHOICES)
+    chosen = []
+    for player_id in plan.rotation or []:
+        choice = stored.get(str(player_id))
+        if choice and choice != plan.starter_hook:
+            chosen.append((player_id, labels.get(choice, choice)))
+    if not chosen:
+        return []
+    players = models.Player.objects.in_bulk([player_id for player_id, _ in chosen])
+    return [
+        {"player": players[player_id], "label": label}
+        for player_id, label in chosen
+        if player_id in players
+    ]
 
 
 def _posted_ids(post, name):
@@ -334,6 +379,7 @@ def team_plan(request, abbreviation, half, season=None):
     context = _common(request, team, half, season)
     plan = plans.find_plan(team, season, half)
     context["plan"] = plan
+    context["own_starter_hooks"] = _own_starter_hooks(plan)
     if plan is not None:
         hitters = {
             player_id
@@ -436,6 +482,7 @@ def team_plan_rotation(request, abbreviation, half, season=None):
     season = int(season)
     plan = plans.find_plan(team, season, half) or models.HalfPlan(team=team, season=season, half=half)
     ids = list(plan.rotation) if plan.pk else []
+    hooks = dict(plan.starter_hooks or {}) if plan.pk else {}
 
     errors = []
     if request.method == "POST":
@@ -443,13 +490,20 @@ def team_plan_rotation(request, abbreviation, half, season=None):
             return HttpResponseForbidden("Only this team's owner and the commissioner can set the rotation.")
         posted = [_int_or_none(value) for value in request.POST.getlist("rotation")]
         posted = [player_id for player_id in posted if player_id]
+        posted_hooks = _posted_starter_hooks(request.POST)
+        if posted_hooks is not None:
+            hooks = posted_hooks
         players = models.Player.objects.in_bulk(posted)
         unknown = [player_id for player_id in posted if player_id not in players]
         if unknown:
             errors.append("That starter is not a player.")
         if not errors:
             try:
-                warnings = plans.push_rotation(plan, [players[player_id] for player_id in posted])
+                warnings = plans.push_rotation(
+                    plan,
+                    [players[player_id] for player_id in posted],
+                    starter_hooks=posted_hooks,
+                )
             except plans.PlanError as error:
                 errors = error.errors
                 ids = posted
@@ -470,7 +524,8 @@ def team_plan_rotation(request, abbreviation, half, season=None):
         {
             "errors": errors,
             "pitcher_cards": list(cards.values()),
-            "rotation_slots": _rotation_slots(ids, cards, season),
+            "rotation_slots": _rotation_slots(ids, cards, season, hooks),
+            "starter_hooks": models.HalfPlan.STARTER_HOOK_CHOICES,
             "schedule_url": _schedule_url(team, season),
         }
     )

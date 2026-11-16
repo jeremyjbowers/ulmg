@@ -514,6 +514,105 @@ class StarterHookTestCase(PlanTestCase):
         other = opponent_on(self.atl, 1)
         self.assertEqual(side(game, other)["starter_hook"], models.HalfPlan.NORMAL_HOOK)
 
+    def test_a_starter_files_his_own_hook_and_the_others_keep_the_plan_default(self):
+        first, second = self.roster.starters[0], self.roster.starters[1]
+        plan = self.roster.file(
+            starter_hook=models.HalfPlan.SLOW_HOOK,
+            starter_hooks={first.id: models.HalfPlan.QUICK_HOOK},
+        )
+        plan.refresh_from_db()
+        self.assertEqual(plan.starter_hook, models.HalfPlan.SLOW_HOOK)
+        self.assertEqual(plan.starter_hooks, {str(first.id): models.HalfPlan.QUICK_HOOK})
+        self.assertEqual(plans.starters(plan)[1], first)
+        self.assertEqual(plans.starters(plan)[2], second)
+        self.assertEqual(side(game_on(self.atl, 1), self.atl)["starter_hook"], models.HalfPlan.QUICK_HOOK)
+        self.assertEqual(side(game_on(self.atl, 2), self.atl)["starter_hook"], models.HalfPlan.SLOW_HOOK)
+
+    def test_two_starters_in_one_rotation_keep_different_hooks(self):
+        first, second = self.roster.starters[0], self.roster.starters[1]
+        self.roster.file(
+            starter_hooks={
+                str(first.id): models.HalfPlan.SLOW_HOOK,
+                str(second.id): models.HalfPlan.QUICK_HOOK,
+            }
+        )
+        self.assertEqual(side(game_on(self.atl, 1), self.atl)["starter_hook"], models.HalfPlan.SLOW_HOOK)
+        self.assertEqual(side(game_on(self.atl, 2), self.atl)["starter_hook"], models.HalfPlan.QUICK_HOOK)
+        self.assertEqual(side(game_on(self.atl, 3), self.atl)["starter_hook"], models.HalfPlan.NORMAL_HOOK)
+
+    def test_the_opened_sheet_freezes_the_starters_own_hook(self):
+        first = self.roster.starters[0]
+        self.roster.file(starter_hooks={str(first.id): models.HalfPlan.SLOW_HOOK})
+        game = game_on(self.atl, 1)
+        self.assertEqual(side(game, self.atl)["starter_hook"], models.HalfPlan.SLOW_HOOK)
+        opened = plans.open_game(game)
+        key = "home" if game.series.home_team_id == self.atl.id else "road"
+        self.assertEqual(opened[key]["starter_hook"], models.HalfPlan.SLOW_HOOK)
+        self.roster.file(starter_hooks={str(first.id): models.HalfPlan.QUICK_HOOK})
+        game.refresh_from_db()
+        self.assertEqual(side(game, self.atl)["starter_hook"], models.HalfPlan.SLOW_HOOK)
+        self.assertEqual(side(game_on(self.atl, 6), self.atl)["starter_hook"], models.HalfPlan.QUICK_HOOK)
+
+    def test_a_spot_starter_uses_his_own_hook_or_the_plan_default(self):
+        own = self.roster.starters[0]
+        plan = self.roster.file(
+            starter_hook=models.HalfPlan.SLOW_HOOK,
+            starter_hooks={str(own.id): models.HalfPlan.QUICK_HOOK},
+        )
+        spot = create_pitcher(self.atl, "ATL Spot Starter")
+        plans.save_day(plan, 20, starter=spot)
+        self.assertEqual(plans.starters(plan)[20], spot)
+        self.assertEqual(side(game_on(self.atl, 20), self.atl)["starter_hook"], models.HalfPlan.SLOW_HOOK)
+
+        day = self.day_outside_his_series(plan, own)
+        plans.save_day(plan, day, starter=own)
+        self.assertEqual(plans.starters(plan)[day], own)
+        self.assertNotEqual((day - 1) % 5, 0)
+        self.assertEqual(side(game_on(self.atl, day), self.atl)["starter_hook"], models.HalfPlan.QUICK_HOOK)
+
+    def day_outside_his_series(self, plan, pitcher):
+        games = plans.half_games(plan.team, plan.season, plan.half)
+        starters = plans.starters(plan)
+        his_series = {games[day].series_id for day, starter in starters.items() if starter == pitcher}
+        for day, game in sorted(games.items()):
+            if plans.is_locked(game) or game.series_id in his_series:
+                continue
+            return day
+        self.fail(f"{pitcher.name} has no series he can spot start")
+
+    def test_an_unknown_individual_hook_is_refused_and_nothing_is_saved(self):
+        first = self.roster.starters[0]
+        plan = self.roster.file(starter_hooks={str(first.id): models.HalfPlan.SLOW_HOOK})
+        with self.assertRaises(plans.PlanError) as raised:
+            self.roster.file(starter_hooks={str(first.id): "lazy"})
+        self.assertIn("The starter hook must be quick, normal or slow.", raised.exception.errors)
+        plan.refresh_from_db()
+        self.assertEqual(plan.starter_hook, models.HalfPlan.NORMAL_HOOK)
+        self.assertEqual(plan.starter_hooks, {str(first.id): models.HalfPlan.SLOW_HOOK})
+
+    def test_a_hook_for_a_pitcher_outside_the_rotation_is_refused(self):
+        plan = self.roster.file(starter_hooks={str(self.roster.starters[0].id): models.HalfPlan.SLOW_HOOK})
+        with self.assertRaises(plans.PlanError) as raised:
+            self.roster.file(starter_hooks={str(self.roster.relievers[0].id): models.HalfPlan.QUICK_HOOK})
+        self.assertIn("A starter hook must name a pitcher in the rotation.", raised.exception.errors)
+        plan.refresh_from_db()
+        self.assertEqual(plan.starter_hooks, {str(self.roster.starters[0].id): models.HalfPlan.SLOW_HOOK})
+
+    def test_a_pitcher_who_leaves_the_rotation_loses_his_hook(self):
+        first, second = self.roster.starters[0], self.roster.starters[1]
+        plan = self.roster.file(
+            starter_hooks={
+                str(first.id): models.HalfPlan.SLOW_HOOK,
+                str(second.id): models.HalfPlan.QUICK_HOOK,
+            }
+        )
+        rotation = self.roster.starters[1:] + [self.roster.swingman]
+        self.roster.file(rotation=rotation)
+        plan.refresh_from_db()
+        self.assertNotIn(str(first.id), plan.starter_hooks)
+        self.assertEqual(plan.starter_hooks[str(second.id)], models.HalfPlan.QUICK_HOOK)
+        self.assertEqual(plan.rotation, [p.id for p in rotation])
+
 
 class BullpenSaveTestCase(PlanTestCase):
     def test_saving_the_bullpen_keeps_the_lineups_and_the_rotation(self):

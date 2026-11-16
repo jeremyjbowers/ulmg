@@ -581,6 +581,71 @@ def starter_hook_errors(starter_hook):
     return _choice_errors(starter_hook, models.HalfPlan.STARTER_HOOK_CHOICES, "starter hook")
 
 
+def _player_id_key(key):
+    """A player id as a string, or None when key is not a player id."""
+    if isinstance(key, bool) or key is None:
+        return None
+    if isinstance(key, int):
+        return str(key)
+    if isinstance(key, str) and key.strip().isdigit():
+        return str(int(key.strip()))
+    return None
+
+
+def starter_hooks_errors(starter_hooks, rotation_ids):
+    """
+    Rule errors for individual starter hooks. starter_hooks maps a player id
+    to quick, normal or slow. None keeps the plan's map. A blank value is no
+    hook of his own. Every named pitcher has to be in the rotation.
+    """
+    if starter_hooks is None:
+        return []
+    if not isinstance(starter_hooks, dict):
+        return ["Starter hooks must name a hook for each starter."]
+    allowed = {choice for choice, _ in models.HalfPlan.STARTER_HOOK_CHOICES}
+    rotation = {str(player_id) for player_id in rotation_ids}
+    errors = []
+    for key, value in starter_hooks.items():
+        if value in ("", None):
+            continue
+        player_id = _player_id_key(key)
+        if player_id is None or player_id not in rotation:
+            errors.append("A starter hook must name a pitcher in the rotation.")
+        if value not in allowed:
+            errors.append("The starter hook must be quick, normal or slow.")
+    return _unique_errors(errors)
+
+
+def _kept_starter_hooks(plan, rotation_ids, starter_hooks):
+    """
+    Individual hooks to store. None keeps hooks for pitchers still in the
+    rotation and drops the rest. A map replaces them; a blank value drops his.
+    """
+    allowed = {str(player_id) for player_id in rotation_ids}
+    if starter_hooks is None:
+        current = plan.starter_hooks or {}
+        return {str(key): value for key, value in current.items() if str(key) in allowed}
+    kept = {}
+    for key, value in starter_hooks.items():
+        if value in ("", None):
+            continue
+        player_id = _player_id_key(key)
+        if player_id is not None and player_id in allowed:
+            kept[player_id] = value
+    return kept
+
+
+def resolved_starter_hook(plan, starter):
+    """The hook for the pitcher who starts. His own hook, or the plan's when he has none."""
+    if plan is None:
+        return models.HalfPlan.NORMAL_HOOK
+    if starter is not None:
+        choice = (plan.starter_hooks or {}).get(str(starter.id))
+        if choice:
+            return choice
+    return plan.starter_hook
+
+
 def bullpen_logic_errors(bullpen_logic):
     return _choice_errors(bullpen_logic, models.HalfPlan.BULLPEN_LOGIC_CHOICES, "bullpen logic")
 
@@ -636,17 +701,19 @@ def clear_lineup(plan, which):
     plan.save(update_fields=[field, "last_modified"])
 
 
-def push_rotation(plan, rotation):
+def push_rotation(plan, rotation, starter_hooks=None):
     """
     Write a rotation of one to six starters and fill the half's open days
     from it, including days the manager cleared. Days with a manual starter
     stay as they are. The rotation is a way to fill the schedule, not a
-    lineup that keeps applying itself.
+    lineup that keeps applying itself. starter_hooks of None keeps each
+    remaining starter's hook; a map replaces them.
     """
     if not is_open(plan.half):
         raise PlanError([closed_message(plan.half)])
     rosters = roster_moves.HalfRosters(plan.team, plan.season, plan.half)
     errors = rotation_errors(plan.team, rotation, rosters.all)
+    errors += starter_hooks_errors(starter_hooks, [player.id for player in rotation])
     if errors:
         raise PlanError(errors)
     if len(rotation) > 6:
@@ -654,6 +721,7 @@ def push_rotation(plan, rotation):
 
     with transaction.atomic():
         plan.rotation = [player.id for player in rotation]
+        plan.starter_hooks = _kept_starter_hooks(plan, plan.rotation, starter_hooks)
         plan.save()
         _release_blanks(plan)
         _refill(plan, rosters)
@@ -745,12 +813,13 @@ def save_bullpen(plan, *, closer, sirp, mirp, bullpen_logic=None):
 
 def save_plan(
     plan, *, rotation, closer, sirp, mirp, bench, lineup_vs_lhp, lineup_vs_rhp,
-    starter_hook=None, bullpen_logic=None,
+    starter_hook=None, bullpen_logic=None, starter_hooks=None,
 ):
     """
     Save a half plan's rotation, bullpen, bench, lineup cards, starter hook
     and bullpen usage, re-run auto-fill and set swingman designations. A
-    starter_hook or bullpen_logic of None keeps the plan's. Nothing is saved
+    starter_hook, starter_hooks or bullpen_logic of None keeps the plan's.
+    A starter who leaves the rotation loses his own hook. Nothing is saved
     when a rule is broken or a day has no legal starter. Returns warnings to show.
     """
     if not is_open(plan.half):
@@ -767,6 +836,7 @@ def save_plan(
     errors = (
         plan_errors(plan.team, plan.season, plan.half, **fields)
         + starter_hook_errors(starter_hook)
+        + starter_hooks_errors(starter_hooks, [p.id for p in fields["rotation"]])
         + bullpen_logic_errors(bullpen_logic)
     )
     if errors:
@@ -784,6 +854,7 @@ def save_plan(
         plan.lineup_vs_rhp = stored_lineup(fields["lineup_vs_rhp"])
         if starter_hook is not None:
             plan.starter_hook = starter_hook
+        plan.starter_hooks = _kept_starter_hooks(plan, plan.rotation, starter_hooks)
         if bullpen_logic is not None:
             plan.bullpen_logic = bullpen_logic
         plan.save()
@@ -848,6 +919,7 @@ def fill_plan(
     previous = _bullpen_ids(plan) if plan.pk else set()
     with transaction.atomic():
         plan.rotation = [p.id for p in rotation]
+        plan.starter_hooks = _kept_starter_hooks(plan, plan.rotation, None)
         plan.closer = closer
         plan.sirp = [p.id for p in sirp]
         plan.mirp = [p.id for p in mirp]
@@ -1123,7 +1195,7 @@ class PlanBook:
             "closer": closer if closer is not None and closer.id in eligible else None,
             "sirp": on_roster(self._resolve(plan.sirp)) if plan else [],
             "mirp": on_roster(self._resolve(plan.mirp)) if plan else [],
-            "starter_hook": plan.starter_hook if plan else models.HalfPlan.NORMAL_HOOK,
+            "starter_hook": resolved_starter_hook(plan, starter),
             "bullpen_logic": plan.bullpen_logic if plan else models.HalfPlan.TRADITIONAL_PEN,
         }
 

@@ -160,6 +160,40 @@
         });
     }
 
+    function hookBox(slot) {
+        return slot.querySelector("[data-starter-hook]");
+    }
+
+    function hookValue(slot) {
+        var box = hookBox(slot);
+        if (!box) return "";
+        var selected = box.querySelector("input:checked");
+        return selected ? selected.value : "";
+    }
+
+    function setHook(slot, value) {
+        var box = hookBox(slot);
+        if (!box) return;
+        var wanted = value || "";
+        var matched = false;
+        box.querySelectorAll("input").forEach(function (input) {
+            var on = input.value === wanted;
+            input.checked = on;
+            if (on) matched = true;
+        });
+        if (!matched) {
+            var fallback = box.querySelector('input[value=""]');
+            if (fallback) fallback.checked = true;
+        }
+    }
+
+    function showHook(slot) {
+        var box = hookBox(slot);
+        if (!box) return;
+        var input = slot.querySelector(".player-id");
+        box.classList.toggle("hidden", !(input && input.value));
+    }
+
     function clearSlot(slot) {
         var body = slot.querySelector(".slot-body");
         if (body) {
@@ -170,15 +204,23 @@
         if (input) input.value = "";
         var box = slot.querySelector("[data-position-buttons]");
         if (box && box.dataset.all) renderPositions(slot, box.dataset.all.split(","));
+        setHook(slot, "");
+        showHook(slot);
     }
 
     function place(slot, card) {
         if (!accepts(slot, card) || !canTakeStart(card, slot)) return;
         var board = boardOf(slot);
+        var carried = null;
+        var here = slot.querySelector(".player-id");
+        if (here && here.value === card.dataset.player) carried = hookValue(slot);
         if (board && (board.hasAttribute("data-lineup") || board.hasAttribute("data-rotation") || board.hasAttribute("data-bullpen"))) {
             board.querySelectorAll(".lineup-slot, .rotation-slot").forEach(function (other) {
                 var input = other.querySelector(".player-id");
-                if (other !== slot && input && input.value === card.dataset.player) clearSlot(other);
+                if (other !== slot && input && input.value === card.dataset.player) {
+                    if (carried === null) carried = hookValue(other);
+                    clearSlot(other);
+                }
             });
         }
         var body = slot.querySelector(".slot-body");
@@ -189,6 +231,8 @@
         if (input) input.value = card.dataset.player;
         var codes = positionCodes(card);
         if (codes) renderPositions(slot, codes, emergencyCodes(card));
+        if (hookBox(slot)) setHook(slot, carried || "");
+        showHook(slot);
         refreshStartCards();
     }
 

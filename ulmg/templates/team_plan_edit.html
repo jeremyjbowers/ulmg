@@ -31,8 +31,8 @@
                 {% endfor %}
             </div>
             <fieldset>
-                <legend class="font-bold mb-1">Starter hook</legend>
-                <p class="text-xs text-gray-600 mb-2">When the computer manages this team, it pulls the starter at the engine's fatigue line or his per-game limit, or sooner: quick at 85% of his fatigue ceiling or 4 runs allowed, normal at 95% or 5 runs, slow at 100% or 6 runs.</p>
+                <legend class="font-bold mb-1">Default starter hook</legend>
+                <p class="text-xs text-gray-600 mb-2">The default for a starter with no hook of his own. Set a starter's own hook on the rotation page. When the computer manages this team, it pulls the starter at the engine's fatigue line or his per-game limit, or sooner: quick at 85% of his fatigue ceiling or 4 runs allowed, normal at 95% or 5 runs, slow at 100% or 6 runs.</p>
                 <div class="flex flex-wrap gap-3">
                     {% for value, label in starter_hooks %}
                     <label><input type="radio" name="starter_hook" value="{{ value }}"{% if value == starter_hook %} checked{% endif %}> {{ label }}</label>
