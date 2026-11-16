@@ -271,7 +271,9 @@ def _defense_rows(card, player):
     if card is None:
         return []
     rows = []
-    for position, runs in cards.shown_defense(card.defense, cards.playing_primary(card, player)):
+    for position, runs in cards.shown_defense(
+        card.defense, cards.playing_primary(card, player), getattr(player, "throws", None)
+    ):
         sign = "+" if runs > 0 else ""
         rows.append({
             "position": position,
@@ -288,7 +290,9 @@ def _defense(card, player):
 
 def _lineup_positions(card, player):
     defense = card.defense if card is not None else None
-    codes = list(cards.eligible_positions(cards.playing_primary(card, player), defense))
+    codes = list(cards.eligible_positions(
+        cards.playing_primary(card, player), defense, getattr(player, "throws", None)
+    ))
     if "DH" not in codes:
         codes.append("DH")
     return codes

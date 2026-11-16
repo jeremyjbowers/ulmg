@@ -228,7 +228,7 @@ class EditPlanTestCase(PlanViewsTestCase):
         self.assertIn("lg:grid-cols-2", body)
         self.assertNotIn("<select", body.split("<main", 1)[1])
         self.assertIn('data-position-buttons', body)
-        self.assertIn('data-positions="C,1B,DH"', body)
+        self.assertIn('data-positions="C,DH"', body)
         self.assertIn('data-positions="1B,2B,3B,SS,LF,CF,RF,DH"', body)
         self.assertIn('data-positions="1B,LF,CF,RF,DH"', body)
         self.assertNotIn('type="radio" name="vs_rhp_position_', body)

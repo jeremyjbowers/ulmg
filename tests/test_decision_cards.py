@@ -89,12 +89,32 @@ class DecisionCardTestCase(TestCase):
         catcher = self.player("Backstop", position="C")
         card = models.Card.objects.create(
             player=catcher, season=2026, primary_position="C",
-            defense={"C": 4.0, "1B": 0.0, "LF": -1.0},
+            defense={"C": 4.0},
         )
         shown = decision_cards.hitter_card(catcher, {}, card)
-        self.assertEqual(shown["defense_label"], "C +4.0, 1B 0.0")
-        self.assertNotIn("LF", shown["defense_label"])
-        self.assertEqual(shown["positions"], ["C", "1B", "DH"])
+        self.assertEqual(shown["defense_label"], "C +4.0")
+        self.assertEqual(shown["positions"], ["C", "DH"])
+
+        first = self.player("Scooper", position="1B")
+        card = models.Card.objects.create(
+            player=first, season=2026, primary_position="1B",
+            defense={"1B": 13.7},
+        )
+        shown = decision_cards.hitter_card(first, {}, card)
+        self.assertEqual(shown["defense_label"], "1B +13.7")
+        self.assertEqual(shown["positions"], ["1B", "DH"])
+
+        lefty = self.player("Lefty", position="SS")
+        lefty.throws = "L"
+        lefty.save()
+        card = models.Card.objects.create(
+            player=lefty, season=2026, primary_position="SS",
+            defense={"SS": 2.0, "2B": 4.0, "1B": 8.0, "LF": 5.0},
+        )
+        shown = decision_cards.hitter_card(lefty, {}, card)
+        self.assertNotIn("SS", shown["defense_label"])
+        self.assertNotIn("2B", shown["defense_label"])
+        self.assertEqual(shown["positions"], ["1B", "LF", "CF", "RF", "DH"])
 
     def test_a_reliever_shows_the_innings_max_from_the_rules(self):
         player = self.player("Reliever", position="P")
