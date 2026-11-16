@@ -424,17 +424,69 @@ class FirstBaseDefenseTestCase(SimpleTestCase):
             ["1B", "2B", "3B", "SS", "LF", "CF", "RF"],
         )
 
-    def test_center_field_innings_cascade_like_an_outfielder(self):
+    def test_center_field_innings_do_not_make_him_an_infielder(self):
+        # He played center, not third. The outfield spectrum would have called him a +2 third baseman.
         ratings = cards.defense_ratings({"1B": (1300, 10), "CF": (700, 0)})
         self.assertEqual(ratings["CF"], 0.0)
-        self.assertEqual(ratings["3B"], 2.0)
+        self.assertIsNone(ratings["3B"])
         self.assertIsNone(ratings["2B"])
         self.assertIsNone(ratings["SS"])
         self.assertEqual(ratings["1B"], round(10 * 1300 / 1900, 1))
         self.assertEqual(
             cards.eligible_positions("1B", ratings),
-            ["1B", "3B", "LF", "CF", "RF"],
+            ["1B", "LF", "CF", "RF"],
         )
+
+
+class OutfielderInfieldTestCase(SimpleTestCase):
+    def test_a_center_fielder_who_never_played_the_infield_is_not_an_infielder(self):
+        # Waldschmidt: a good center fielder. The spectrum would call him +5.8 at second and +8.8 at third.
+        ratings = cards.defense_ratings({"CF": (1300, 10)})
+        center = 10 * 1300 / 1900
+        self.assertEqual(ratings["CF"], round(center, 1))
+        self.assertIsNone(ratings["2B"])
+        self.assertIsNone(ratings["3B"])
+        self.assertIsNone(ratings["SS"])
+        self.assertEqual(ratings["1B"], round(center + 5, 1))
+        self.assertEqual(ratings["LF"], round(center + 4, 1))
+        self.assertEqual(ratings["RF"], round(center + 3, 1))
+        self.assertEqual(cards.eligible_positions("CF", ratings), ["1B", "LF", "CF", "RF"])
+
+    def test_an_outfielder_who_played_second_is_rated_from_those_innings(self):
+        # Betts: most of the season in right, and a real second-base sample.
+        ratings = cards.defense_ratings({"RF": (900, 8), "2B": (400, 6)})
+        second = 6 * 1300 / 1000
+        self.assertEqual(ratings["2B"], round(second, 1))
+        self.assertEqual(ratings["3B"], round(second + 3, 1))
+        self.assertEqual(ratings["SS"], round(second - 12, 1))
+        right = 8 * 1300 / 1500
+        self.assertNotEqual(ratings["2B"], round(right + 12 - 16, 1))
+        eligible = cards.eligible_positions("RF", ratings)
+        self.assertIn("2B", eligible)
+        self.assertIn("3B", eligible)
+        self.assertNotIn("SS", eligible)
+
+    def test_an_outfielder_who_played_short_cascades_from_short(self):
+        # Tatis: most of the season in right, and a real shortstop sample.
+        ratings = cards.defense_ratings({"RF": (800, 4), "SS": (500, 5)})
+        short = 5 * 1300 / 1100
+        self.assertEqual(ratings["SS"], round(short, 1))
+        self.assertEqual(ratings["2B"], round(short + 12, 1))
+        self.assertEqual(ratings["3B"], round(short + 15, 1))
+        eligible = cards.eligible_positions("RF", ratings)
+        self.assertIn("SS", eligible)
+        self.assertIn("2B", eligible)
+        self.assertIn("3B", eligible)
+
+    def test_a_second_infield_spot_regresses_toward_the_infield_not_the_outfield(self):
+        fielding = {"CF": (1000, 10), "SS": (400, -8), "2B": (100, 2)}
+        ratings = cards.defense_ratings(fielding)
+        short = -8 * 1300 / 1000
+        spectrum_2b = short + 12
+        expected_2b = (2 * 1300 + 600 * spectrum_2b) / (100 + 600)
+        self.assertEqual(ratings["SS"], round(short, 1))
+        self.assertEqual(ratings["2B"], round(expected_2b, 1))
+        self.assertEqual(ratings["3B"], round(short + 15, 1))
 
 
 class LeftyDefenseTestCase(SimpleTestCase):

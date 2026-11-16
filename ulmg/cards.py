@@ -51,7 +51,11 @@ OUTFIELDER_INFIELD_CUTOFF = -1
 
 # Range at these positions can anchor the spectrum. Scooping and catching cannot:
 # a 1B or C rating qualifies him only at that position unless he also played one of these.
+# An outfield anchor fills the outfield and first base. It does not fill 2B, 3B, or SS.
 SPECTRUM_POSITIONS = ("2B", "3B", "SS", "LF", "CF", "RF")
+
+# The infield spots an outfielder is rated at only when he played one of them.
+INFIELD_RANGE_POSITIONS = ("2B", "3B", "SS")
 
 # A left-handed thrower can play first base and the outfield.
 LEFTY_BLOCKED_POSITIONS = ("2B", "3B", "SS", "C")
@@ -352,6 +356,14 @@ def spectrum_anchor(fielding):
     return max(played, key=lambda position: (fielding[position][0], -SPECTRUM_POSITIONS.index(position)))
 
 
+def infield_anchor(fielding):
+    """The 2B, 3B, or SS he played the most, or None when he never played them."""
+    played = [position for position in INFIELD_RANGE_POSITIONS if position in (fielding or {})]
+    if not played:
+        return None
+    return max(played, key=lambda position: (fielding[position][0], -INFIELD_RANGE_POSITIONS.index(position)))
+
+
 def _spectrum_ratings(anchor, base_rating, fielding):
     """Slotted runs from one anchor. Catcher is left unset."""
     ratings = {}
@@ -372,14 +384,32 @@ def _spectrum_ratings(anchor, base_rating, fielding):
     return ratings
 
 
+def _infield_ratings_from_play(fielding):
+    """2B, 3B, and SS from innings actually played there.
+
+    The most-played of those is rated from its own innings, and the other two
+    slide from that rating. All three are None when he never played them.
+    An outfield rating is not mixed in.
+    """
+    blank = {position: None for position in INFIELD_RANGE_POSITIONS}
+    anchor = infield_anchor(fielding)
+    if anchor is None:
+        return blank
+    base = position_rating(fielding[anchor][1], fielding[anchor][0])
+    rated = _spectrum_ratings(anchor, base, fielding)
+    return {position: rated[position] for position in INFIELD_RANGE_POSITIONS}
+
+
 def defense_ratings(fielding):
     """
     Slotted defense runs at every position, to one decimal.
     Catcher is rated only from catcher innings and is None for a player who never caught.
     First base and catcher do not anchor the spectrum. A player who only played those
-    is rated only there. Innings at 2B, 3B, SS, LF, CF, or RF anchor the spectrum, and
-    the other positions slide from that rating. When his most-played position is 1B or C,
-    first-base innings stay his scooping rating instead of being blended into the anchor.
+    is rated only there. Innings at 2B, 3B, SS, LF, CF, or RF anchor the spectrum.
+    An outfield anchor fills the outfield and first base only. 2B, 3B, and SS stay
+    empty unless he played one of them; the most-played of those then anchors the
+    other two. When his most-played position is 1B or C, first-base innings stay his
+    scooping rating instead of being blended into the anchor.
     A player with no fielding row is a 0 first baseman.
     """
     if not fielding:
@@ -405,12 +435,8 @@ def defense_ratings(fielding):
     if FIRST_BASE in fielding and primary in (FIRST_BASE, CATCHER):
         innings, runs = fielding[FIRST_BASE]
         ratings[FIRST_BASE] = _one_decimal(position_rating(runs, innings))
-    if primary in (FIRST_BASE, CATCHER) and anchor in OUTFIELD_POSITIONS:
-        for slot in ("2B", "3B", "SS"):
-            if slot in fielding:
-                continue
-            if ratings[slot] is not None and ratings[slot] <= OUTFIELDER_INFIELD_CUTOFF:
-                ratings[slot] = None
+    if anchor in OUTFIELD_POSITIONS:
+        ratings.update(_infield_ratings_from_play(fielding))
     return ratings
 
 
