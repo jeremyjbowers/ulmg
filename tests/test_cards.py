@@ -133,8 +133,63 @@ class RunnerRatingsTestCase(SimpleTestCase):
         stats = processed(FG_HITTER_ROW, **{"1B": 0, "BB": 0, "HBP": 0})
         self.assertIsNone(cards.steal_attempt_rate(stats))
 
-    def test_speed_is_fangraphs_spd(self):
+    def test_speed_is_fangraphs_spd_without_a_sprint_speed(self):
         self.assertEqual(cards.speed(self.stats), 6.2)
+
+    def test_sprint_speed_is_feet_per_second_from_an_average_27(self):
+        stats = processed(FG_HITTER_ROW, sprint_speed=30.98)
+        self.assertEqual(cards.speed(stats), 9.0)
+        self.assertEqual(cards.speed(processed(FG_HITTER_ROW, sprint_speed=27)), 5.0)
+        self.assertEqual(cards.speed(processed(FG_HITTER_ROW, sprint_speed=24)), 2.0)
+
+    def test_sprint_speed_does_not_need_fangraphs_spd(self):
+        self.assertEqual(cards.speed(processed(FG_HITTER_ROW, sprint_speed=29, Spd=None)), 7.0)
+
+    def test_baserunning_nudges_sprint_speed(self):
+        # 8 runs in 600 PA, plus 600 PA of zeros: 4 runs per 600, which is one point.
+        stats = processed(FG_HITTER_ROW, sprint_speed=28.5, BaseRunning=8)
+        self.assertEqual(cards.speed(stats), 7.5)
+
+    def test_baserunning_is_regressed_toward_average(self):
+        # Without the 600 PA of zeros, 4 runs in 600 PA would be one full point (6.0).
+        self.assertEqual(cards.speed(processed(FG_HITTER_ROW, sprint_speed=27, BaseRunning=4)), 5.5)
+        # The same 4 runs spread over 1400 PA shrink further: 1.2 per 600, 0.3 points.
+        self.assertEqual(
+            cards.speed(processed(FG_HITTER_ROW, PA=1400, sprint_speed=27, BaseRunning=4)),
+            5.3,
+        )
+
+    def test_the_major_league_baserunning_column_wins_over_wbsr(self):
+        both = processed(FG_HITTER_ROW, sprint_speed=27, BaseRunning=8, wBsR=0)
+        self.assertEqual(cards.speed(both), 6.0)
+        only_weighted = processed(FG_HITTER_ROW, sprint_speed=27, wBsR=8)
+        self.assertEqual(cards.speed(only_weighted), 6.0)
+
+    def test_baserunning_without_sprint_speed_keeps_fangraphs_spd(self):
+        self.assertEqual(cards.speed(processed(FG_HITTER_ROW, BaseRunning=12)), 6.2)
+
+    def test_baserunning_nudge_is_capped_at_a_point_and_a_half(self):
+        self.assertEqual(cards.speed(processed(FG_HITTER_ROW, sprint_speed=27, BaseRunning=40)), 6.5)
+        self.assertEqual(cards.speed(processed(FG_HITTER_ROW, sprint_speed=29, BaseRunning=-40)), 5.5)
+
+    def test_baserunning_with_no_plate_appearances_does_not_nudge(self):
+        self.assertEqual(cards.speed(processed(FG_HITTER_ROW, PA=0, sprint_speed=28, BaseRunning=8)), 6.0)
+
+    def test_speed_does_not_go_below_zero(self):
+        self.assertEqual(cards.speed(processed(FG_HITTER_ROW, sprint_speed=22, BaseRunning=-40)), 0.0)
+
+    def test_a_blank_sprint_speed_falls_back_to_fangraphs_spd(self):
+        self.assertEqual(cards.speed(processed(FG_HITTER_ROW, sprint_speed=0)), 6.2)
+        self.assertEqual(cards.speed(processed(FG_HITTER_ROW, sprint_speed="")), 6.2)
+        stats = processed(FG_HITTER_ROW)
+        stats["sprint_speed"] = "fast"
+        self.assertEqual(cards.speed(stats), 6.2)
+
+    def test_speed_constants(self):
+        self.assertEqual(cards.SPRINT_AVERAGE, 27.0)
+        self.assertEqual(cards.BSR_PA, 600)
+        self.assertEqual(cards.BSR_RUNS_PER_POINT, 4.0)
+        self.assertEqual(cards.BSR_ADJUSTMENT_CAP, 1.5)
 
     def test_missing_speed_is_none(self):
         stats = processed(FG_HITTER_ROW)
@@ -583,6 +638,13 @@ class GenerateCardsTestCase(TestCase):
         self.assertAlmostEqual(card.steal_success, 27.2 / 35)
         self.assertAlmostEqual(card.steal_attempt_rate, 25 / 156)
         self.assertEqual(card.spd, 6.2)
+
+    def test_hitter_speed_blends_sprint_speed_and_baserunning(self):
+        self.hitter_pss.hit_stats = processed(FG_HITTER_ROW, sprint_speed=28.5, BaseRunning=8)
+        self.hitter_pss.save()
+        self.generate("--season", "2025")
+        card = models.Card.objects.get(player=self.hitter, season=2025)
+        self.assertEqual(card.spd, 7.5)
 
     def test_pitcher_card_has_no_running(self):
         self.generate("--season", "2025")

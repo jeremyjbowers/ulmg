@@ -1,10 +1,24 @@
 # ABOUTME: Builds engine card numbers (hitter/pitcher rates, platoon splits, running, fatigue, slotted defense) from FanGraphs stats.
 # ABOUTME: Keys match the engine's HitterRates, PitcherRates and FatigueProfile; the engine reads these and computes nothing.
+from decimal import Decimal, ROUND_HALF_UP
+
 from django.conf import settings
 
 # Steal success is regressed toward a league-average base stealer with this many attempts at this rate.
 STEAL_PRIOR_ATTEMPTS = 10
 STEAL_PRIOR_SUCCESS_RATE = 0.72
+
+# Statcast sprint speed, feet per second. 27 is an average runner.
+# One foot per second is one point, so 5 matches an average FanGraphs Spd.
+SPRINT_AVERAGE = 27.0
+
+# FanGraphs BsR is a season total. This many plate appearances of league-average (0) baserunning
+# are mixed in, and the result is read per the same number of plate appearances.
+# Four of those runs are one point of speed. The nudge stops at a point and a half:
+# BsR counts stolen bases, which the card already rates on their own.
+BSR_PA = 600
+BSR_RUNS_PER_POINT = 4.0
+BSR_ADJUSTMENT_CAP = 1.5
 
 FULL_SEASON_INNINGS = 1300
 DEFENSE_REGRESSION_INNINGS = 600
@@ -95,14 +109,57 @@ def steal_attempt_rate(hit_stats):
     return (_number(hit_stats, "sb") + _number(hit_stats, "cs")) / times_on_first
 
 
-def speed(hit_stats):
-    """FanGraphs Spd, or None when the payload has none."""
-    if not hit_stats or hit_stats.get("spd") in (None, ""):
+def _optional_float(stats, key):
+    """A stat as a float, or None when the key is missing or not a number."""
+    if not stats or key not in stats or stats.get(key) in (None, ""):
         return None
     try:
-        return float(hit_stats["spd"])
+        return float(stats[key])
     except (TypeError, ValueError):
         return None
+
+
+def _tenths(value):
+    """One decimal, halves away from zero. The card stores speed this way."""
+    score = Decimal(str(value)).quantize(Decimal("0.1"), rounding=ROUND_HALF_UP)
+    return float(score)
+
+
+def fangraphs_bsr(hit_stats):
+    """FanGraphs BsR. BaseRunning is the major-league column; wBsR is the column on the other leaderboards."""
+    baserunning = _optional_float(hit_stats, "baserunning")
+    if baserunning is not None:
+        return baserunning
+    return _optional_float(hit_stats, "wbsr")
+
+
+def speed(hit_stats):
+    """
+    Speed on a 0-to-10 scale, 5 average, one decimal, never below 0.
+    Sprint speed is the base: 27 ft/s is a 5, and each foot per second is one point.
+    FanGraphs BsR, shrunk toward 0 with BSR_PA plate appearances, then moves it by
+    up to BSR_ADJUSTMENT_CAP. Four baserunning runs per BSR_PA is one point.
+    With no sprint speed, FanGraphs Spd is the whole number. None when neither is present.
+    """
+    sprint = _optional_float(hit_stats, "sprint_speed")
+    if sprint is None or sprint <= 0:
+        return _optional_float(hit_stats, "spd")
+
+    score = Decimal(5) + (Decimal(str(sprint)) - Decimal(str(SPRINT_AVERAGE)))
+    bsr = fangraphs_bsr(hit_stats)
+    pa = _number(hit_stats, "pa")
+    if bsr is not None and pa > 0:
+        per_rate = Decimal(str(bsr)) * Decimal(BSR_PA) / (Decimal(str(pa)) + Decimal(BSR_PA))
+        adjust = per_rate / Decimal(str(BSR_RUNS_PER_POINT))
+        cap = Decimal(str(BSR_ADJUSTMENT_CAP))
+        if adjust > cap:
+            adjust = cap
+        elif adjust < -cap:
+            adjust = -cap
+        score += adjust
+    if score < 0:
+        score = Decimal(0)
+    return _tenths(score)
 
 
 def pitcher_rates(pitch_stats):

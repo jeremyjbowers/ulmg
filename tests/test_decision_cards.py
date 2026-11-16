@@ -33,7 +33,7 @@ class DecisionCardTestCase(TestCase):
         self.assertIn("/", shown["slash"])
         self.assertIn("CF +3.5", shown["defense_label"])
         self.assertIn("LF -1.2", shown["defense_label"])
-        self.assertEqual(shown["speed_label"], "+1")
+        self.assertEqual(shown["speed_label"], "+1.4")
         self.assertEqual(shown["positions"], ["1B", "LF", "CF", "RF", "DH"])
 
     def test_a_hitter_under_the_cap_shows_his_plate_appearances(self):
@@ -44,12 +44,13 @@ class DecisionCardTestCase(TestCase):
         self.assertIsNone(shown["rate_label"])
         self.assertIsNone(shown["shade"])
 
-    def test_speed_is_whole_steps_from_an_average_five(self):
-        self.assertEqual(decision_cards.speed_label(1.5), "-4")
-        self.assertEqual(decision_cards.speed_label(4), "-1")
-        self.assertEqual(decision_cards.speed_label(5), "0")
-        self.assertEqual(decision_cards.speed_label(6), "+1")
-        self.assertEqual(decision_cards.speed_label(8), "+3")
+    def test_speed_is_tenths_from_an_average_five(self):
+        self.assertEqual(decision_cards.speed_label(1.5), "-3.5")
+        self.assertEqual(decision_cards.speed_label(4), "-1.0")
+        self.assertEqual(decision_cards.speed_label(5), "0.0")
+        self.assertEqual(decision_cards.speed_label(6), "+1.0")
+        self.assertEqual(decision_cards.speed_label(6.4), "+1.4")
+        self.assertEqual(decision_cards.speed_label(8), "+3.0")
         self.assertEqual(decision_cards.speed_label(None), "-")
 
     def test_eligibility_follows_the_primary_position(self):

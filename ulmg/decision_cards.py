@@ -5,7 +5,8 @@ from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 
 from ulmg import cards, models, usage
 
-# FanGraphs Spd runs about 0 to 10. Zero on the card is an average 5.
+# Speed runs about 0 to 10. Zero on the card is an average 5:
+# a 27 ft/s sprint, or a FanGraphs Spd of 5 when the line has no sprint speed.
 SPD_AVERAGE = 5
 
 # FanGraphs WAR already counts hitting, baserunning and defense. Per 600
@@ -161,17 +162,18 @@ def ops_shade(ops):
 
 
 def speed_label(spd):
-    """Whole steps from an average FanGraphs Spd. 8 is +3 and 4 is -1. None when the card has no Spd."""
+    """Tenths from an average of 5. 6.4 is +1.4 and 4 is -1.0. "-" when the card has no speed."""
     if spd is None:
         return "-"
     try:
         shifted = Decimal(str(spd)) - Decimal(SPD_AVERAGE)
-        score = int(shifted.quantize(Decimal("1"), rounding=ROUND_HALF_UP))
+        score = shifted.quantize(Decimal("0.1"), rounding=ROUND_HALF_UP)
     except (InvalidOperation, ValueError):
         return "-"
+    text = f"{score:.1f}"
     if score > 0:
-        return f"+{score}"
-    return str(score)
+        return f"+{text}"
+    return text
 
 
 def _plate_appearances(hit):
