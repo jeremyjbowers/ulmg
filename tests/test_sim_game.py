@@ -151,6 +151,54 @@ class OpeningTestCase(SimGameTestCase):
         self.assertIn(capped.name, decision.text)
         self.assertIn(self.road.bench[0].name, decision.text)
 
+    def _replace_capped_batter(self):
+        capped = self.road.hitters[3]
+        gf.counter(capped, plate_appearances_cap=100, plate_appearances=100)
+        log = self.open()
+        return gf.refresh(log).state[AWAY]["lineup"][3]["id"]
+
+    def test_an_empty_pinch_list_keeps_the_bench_order_at_the_opening(self):
+        self.road.file(pinch_vs_rhp=[], pinch_vs_lhp=[], defensive_replacements=[])
+        gf.counter(self.road.bench[0], plate_appearances_cap=50, plate_appearances=50)
+        self.assertEqual(self._replace_capped_batter(), str(self.road.bench[1].id))
+
+    def test_against_a_right_hander_the_pinch_list_comes_before_the_bench(self):
+        self.road.file(
+            pinch_vs_rhp=[self.road.bench[1]], pinch_vs_lhp=[self.road.bench[0]]
+        )
+        self.assertEqual(self._replace_capped_batter(), str(self.road.bench[1].id))
+
+    def test_against_a_left_hander_the_computer_uses_the_lhp_pinch_list(self):
+        starter = self.home.starters[0]
+        starter.throws = "L"
+        starter.save(update_fields=["throws"])
+        self.road.file(
+            pinch_vs_rhp=[self.road.bench[0]], pinch_vs_lhp=[self.road.bench[1]]
+        )
+        self.assertEqual(self._replace_capped_batter(), str(self.road.bench[1].id))
+
+    def test_an_unknown_opposing_hand_uses_the_rhp_pinch_list(self):
+        starter = self.home.starters[0]
+        starter.throws = None
+        starter.save(update_fields=["throws"])
+        self.road.file(
+            pinch_vs_rhp=[self.road.bench[1]], pinch_vs_lhp=[self.road.bench[0]]
+        )
+        self.assertEqual(self._replace_capped_batter(), str(self.road.bench[1].id))
+
+    def test_an_illegal_pinch_hitter_is_skipped_for_the_next_name_on_that_list(self):
+        from tests.plan_fixtures import create_hitter
+
+        spare = create_hitter(self.road.team, "Road Spare Bat", position="IF")
+        gf.set_rates([spare], gf.HITTER_RATES)
+        gf.counter(spare, plate_appearances_cap=10, plate_appearances=10)
+        self.road.file(pinch_vs_rhp=[spare, self.road.bench[1]])
+        gf.counter(self.road.hitters[3], plate_appearances_cap=100, plate_appearances=100)
+        log = self.open()
+        lineup = gf.refresh(log).state[AWAY]["lineup"]
+        self.assertEqual(lineup[3]["id"], str(self.road.bench[1].id))
+        self.assertIn(spare.name, gf.events(log, Event.DECISION)[0].text)
+
     def test_the_park_is_the_home_teams_venue(self):
         models.Venue.objects.create(
             team=self.home.team, name="Home Park", mlb_team="X", mlb_venue_id="1", mlb_venue_url="u", park_factor=110
@@ -355,6 +403,20 @@ class PlayingTestCase(SimGameTestCase):
         self.assertIn(str(second.id), play.state[AWAY]["unavailable"])
         log = self.step(log)
         self.assertEqual(gf.events(log, Event.PLATE_APPEARANCE)[-1].payload["batter"], replacement.id)
+
+    def test_an_opened_game_keeps_the_pinch_list_it_opened_with(self):
+        first, later = self.home.bench[1], self.home.bench[0]
+        self.home.file(pinch_vs_rhp=[first])
+        leadoff = self.home.hitters[1]
+        gf.counter(leadoff, plate_appearances_cap=1, plate_appearances=0)
+        log = self.open()
+        self.home.file(pinch_vs_rhp=[later])
+        self.step_until(log, lambda p: any(e.kind == Event.SUBSTITUTION and e.computer for e in p.events))
+        substitution = gf.events(log, Event.SUBSTITUTION)[0]
+        self.assertTrue(substitution.computer)
+        self.assertEqual(substitution.side, HOME)
+        self.assertEqual(substitution.payload["player"], first.id)
+        self.assertEqual(substitution.payload["replaced"], leadoff.id)
 
     def test_the_home_computer_replaces_a_batter_who_runs_out_from_its_bench_order(self):
         leadoff = self.home.hitters[1]

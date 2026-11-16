@@ -911,6 +911,25 @@ def computer_pitching_change(play):
     return True
 
 
+def _designation_ids(play, side, defense):
+    """Player ids of the computer's pinch-hitter list, or its defensive-replacement list."""
+    sheet = play.sheet_side(side)
+    if defense:
+        return list(sheet.get("defensive_replacements") or [])
+    return computer_manager.pinch_hitters(
+        sheet.get("vs"), sheet.get("pinch_vs_rhp") or [], sheet.get("pinch_vs_lhp") or []
+    )
+
+
+def _designated_choice(play, side, candidates, problem, *, defense=False, skip_ids=()):
+    """The computer's replacement: its designated list, then these candidates. skip_ids are already used."""
+    skip = set(skip_ids)
+    designated = [
+        player for player in play.players(_designation_ids(play, side, defense)) if player.id not in skip
+    ]
+    return computer_manager.designated_then_bench(designated, candidates, problem)
+
+
 def computer_move(play, need, options):
     if need.kind == PITCHER_NEED:
         legal = {o.player.id for o in options}
@@ -929,7 +948,10 @@ def computer_move(play, need, options):
                 return play.position_problem(p, position)
             return play.batter_problem(need.side, p, position)
 
-        choice = computer_manager.bench_replacement([o.player for o in options], problem)
+        choice = _designated_choice(
+            play, need.side, [o.player for o in options], problem,
+            defense=True, skip_ids=used_ids(play.state, need.side),
+        )
         stays = choice.player == need.player
         decision(
             play,
@@ -945,8 +967,12 @@ def computer_move(play, need, options):
             put_in_lineup(play, need.side, need.slot, choice.player, role=DEFENSE, computer=True)
     else:
         position = play.state[need.side]["lineup"][need.slot]["position"]
-        choice = computer_manager.bench_replacement(
-            [o.player for o in options], lambda p: play.batter_problem(need.side, p, position)
+        choice = _designated_choice(
+            play,
+            need.side,
+            [o.player for o in options],
+            lambda p: play.batter_problem(need.side, p, position),
+            skip_ids=used_ids(play.state, need.side),
         )
         decision(
             play,
@@ -1092,7 +1118,7 @@ def _opening_starter(play, side, human, planned):
 
 
 def _opening_lineup(play, side, planned, starter):
-    """The side's lineup at the opening: a capped or unavailable planned batter gives way to the bench order."""
+    """The side's lineup at the opening: a capped or unavailable planned batter gives way to the pinch-hitter list, then the bench."""
     team = team_for(play.game, side)
     lineup = []
     taken = {p.id for p, _ in planned} | {starter.id}
@@ -1103,7 +1129,9 @@ def _opening_lineup(play, side, planned, starter):
             lineup.append((player, position))
             continue
         bench = [p for p in play.players(play.sheet_side(side)["bench"]) if p.id not in taken]
-        choice = computer_manager.bench_replacement(bench, lambda p: play.batter_problem(side, p, position))
+        choice = _designated_choice(
+            play, side, bench, lambda p: play.batter_problem(side, p, position), skip_ids=taken,
+        )
         if choice.player is None:
             problems.append(
                 f"{team.abbreviation}'s {player.name} cannot play ({problem}) and no one on the bench can replace him at {position}."
@@ -1113,8 +1141,8 @@ def _opening_lineup(play, side, planned, starter):
         decision(
             play,
             side,
-            f"{team.abbreviation} computer: {player.name} cannot play. {problem} {choice.player.name}, "
-            f"the first legal player in the bench order, takes his place at {position}. {skipped_text(choice.skipped)}",
+            f"{team.abbreviation} computer: {player.name} cannot play. {problem} {choice.player.name} "
+            f"takes his place at {position}. {skipped_text(choice.skipped)}",
             {"need": "lineup", "replaced": player.id, "chose": choice.player.id,
              "skipped": [[p.id, r] for p, r in choice.skipped]},
         )

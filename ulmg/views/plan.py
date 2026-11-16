@@ -1,4 +1,4 @@
-# ABOUTME: Lineup, rotation and bullpen pages for one half, plus the one-day lineup override.
+# ABOUTME: Lineup, pinch hitter, defensive replacement, rotation and bullpen pages for one half, plus the one-day lineup override.
 # ABOUTME: Anyone can read them. Only the team's owner and the commissioner can change them.
 from django.contrib import messages
 from django.http import (
@@ -31,6 +31,24 @@ BULLPEN_GROUPS = (
 )
 # vs Lefty is the left column and vs Righty is the right column.
 LINEUP_COLUMNS = (("vs_lhp", "vs Lefty"), ("vs_rhp", "vs Righty"))
+# Ordered hitter lists on the lineup page. Empty means the computer uses the bench order.
+ORDER_LISTS = (
+    (
+        "pinch_vs_rhp",
+        "Pinch vs RHP",
+        "Against a right-handed starter, or when his hand isn't known, in this order. Empty uses the bench order.",
+    ),
+    (
+        "pinch_vs_lhp",
+        "Pinch vs LHP",
+        "Against a left-handed starter, in this order. Empty uses the bench order.",
+    ),
+    (
+        "defensive_replacements",
+        "Defensive replacements",
+        "When a fielder has to be replaced, in this order. Empty uses the bench order.",
+    ),
+)
 
 
 def _team_and_half(abbreviation, half):
@@ -112,9 +130,10 @@ def _int_or_none(value):
 class FormState:
     """The lineup editor's selections, from a saved plan or from a posted form."""
 
-    def __init__(self, lineups, starter_hook):
+    def __init__(self, lineups, starter_hook, orders):
         self.lineups = lineups
         self.starter_hook = starter_hook
+        self.orders = orders
 
     @classmethod
     def from_plan(cls, plan):
@@ -124,6 +143,7 @@ class FormState:
                 "vs_rhp": _lineup_rows(plan.lineup_vs_rhp),
             },
             plan.starter_hook,
+            {name: list(getattr(plan, name) or []) for name, _, _ in ORDER_LISTS},
         )
 
     @classmethod
@@ -131,6 +151,7 @@ class FormState:
         return cls(
             {prefix: _posted_lineup_rows(post, prefix) for prefix, _ in LINEUP_COLUMNS},
             post.get("starter_hook"),
+            {name: _posted_ids(post, name) for name, _, _ in ORDER_LISTS},
         )
 
 
@@ -160,10 +181,12 @@ def _entries(rows, players, errors, label):
 
 
 def _lineup_fields(state):
-    """Lineup entries for save_lineups, plus errors for unknown players."""
+    """Lineup entries and designation lists for save_lineups, plus errors for unknown players."""
     ids = set()
     for rows in state.lineups.values():
         ids |= {player_id for _, player_id, _ in rows if player_id is not None}
+    for player_ids in state.orders.values():
+        ids |= set(player_ids)
     players = models.Player.objects.in_bulk(ids)
     errors = []
     fields = {
@@ -171,6 +194,15 @@ def _lineup_fields(state):
         "lineup_vs_rhp": _entries(state.lineups["vs_rhp"], players, errors, "Lineup vs RHP"),
         "starter_hook": state.starter_hook,
     }
+    for name, label, _ in ORDER_LISTS:
+        found = []
+        for player_id in state.orders[name]:
+            player = players.get(player_id)
+            if player is None:
+                errors.append(f"{label}: that player is not a player.")
+                continue
+            found.append(player)
+        fields[name] = found
     return fields, errors
 
 
@@ -265,12 +297,12 @@ def _slots(rows, cards, season, kind):
     return slots
 
 
-def _padded_slots(ids, cards, season, count):
-    """Slots for a role: at least count of them, and one for every pitcher already named."""
+def _padded_slots(ids, cards, season, count, kind="p"):
+    """Slots for an ordered list: at least count of them, and one for every player already named."""
     ids = [player_id for player_id in ids if player_id]
     width = max(count, len(ids))
     ids = ids + [None] * (width - len(ids))
-    cards = _with_missing(cards, ids, season, "p")
+    cards = _with_missing(cards, ids, season, kind)
     return [{"player_id": player_id or "", "card": cards.get(player_id)} for player_id in ids]
 
 
@@ -406,6 +438,7 @@ def _editor_context(request, team, half, season, state, errors):
     context = _common(request, team, half, season)
     roster = _roster(team, season, half)
     cards = _built_cards(roster["hitters"], season, "h")
+    hitter_count = len(roster["hitters"]) or 1
     context.update(roster)
     context.update(
         {
@@ -416,6 +449,15 @@ def _editor_context(request, team, half, season, state, errors):
             "lineup_columns": [
                 (prefix, label, _slots(state.lineups[prefix], cards, season, "h"))
                 for prefix, label in LINEUP_COLUMNS
+            ],
+            "order_lists": [
+                {
+                    "name": name,
+                    "label": label,
+                    "note": note,
+                    "slots": _padded_slots(state.orders[name], cards, season, hitter_count, "h"),
+                }
+                for name, label, note in ORDER_LISTS
             ],
             "editable": True,
         }

@@ -1,4 +1,4 @@
-# ABOUTME: The computer manager's choices in a sim game: its starter and his hook, bullpen roles, steals and bench replacements.
+# ABOUTME: The computer manager's choices in a sim game: its starter and his hook, bullpen roles, steals, pinch hitters and defensive replacements.
 # ABOUTME: Each choice walks an order from the half plan and takes the first player a legality check passes.
 
 from dataclasses import dataclass, field
@@ -324,3 +324,22 @@ def calls_steal(attempt_rate, draw):
 def bench_replacement(bench, problem):
     """The first legal player in the side's bench order."""
     return _first_legal(bench, problem)
+
+
+def designated_then_bench(designated, bench, problem):
+    """
+    The first legal player on the designated list, then the first legal
+    player left on the bench order. A player named on both is considered
+    once, where the designated list names him.
+    """
+    return _first_legal([*(designated or ()), *(bench or ())], problem)
+
+
+def pinch_hitters(vs, pinch_vs_rhp, pinch_vs_lhp):
+    """
+    The pinch-hitter list for the opposing starter's throwing hand. A lefty
+    uses the LHP list. A righty, or a hand that isn't known, uses the RHP list.
+    """
+    if vs == "L":
+        return list(pinch_vs_lhp or [])
+    return list(pinch_vs_rhp or [])

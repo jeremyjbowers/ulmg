@@ -269,6 +269,34 @@ class TesterAndComputerTestCase(SubstitutionTestCase):
         with self.assertRaises(sim_game.GameRefused):
             sim_game.pinch_hit(log, self.manager, AWAY, self.road.bench[0], self.sequence(log), seeds=self.next_seed)
 
+    def test_a_human_can_pinch_hit_someone_off_the_designated_list(self):
+        self.road.file(pinch_vs_rhp=[self.road.bench[1]])
+        log = self.open()
+        self.batting_with(log, AWAY, slot=FIRST_BASE_SLOT)
+        chosen = self.road.bench[0]
+        self.pinch_hit(log, chosen)
+        self.assertEqual(self.play(log).state[AWAY]["lineup"][FIRST_BASE_SLOT]["id"], str(chosen.id))
+
+    def test_the_computer_walks_defensive_replacements_before_the_bench(self):
+        glove = self.home.bench[1]
+        spare = plan_fixtures.create_hitter(
+            self.home.team, "Home Spare Catcher", position="C", defense={"C": 2.0}
+        )
+        gf.set_rates([spare], gf.HITTER_RATES)
+        self.home.file(defensive_replacements=[spare, glove])
+        log = self.open(user=self.tester, seats=(AWAY, HOME))
+        self.batting_with(log, HOME, slot=FIRST_BASE_SLOT, user=self.tester)
+        bat = self.home.bench[0]
+        self.pinch_hit(log, bat, side=HOME, user=self.tester)
+        sim_game.leave_seat(log, self.tester, HOME, self.sequence(log), seeds=self.next_seed)
+        play = self.step_until(log, lambda p: sim_game.fielding_side(p.state) == HOME, user=self.tester)
+        self.assertEqual(play.state[HOME]["lineup"][FIRST_BASE_SLOT]["id"], str(glove.id))
+        substitution = gf.events(log, Event.SUBSTITUTION)[-1]
+        self.assertTrue(substitution.computer)
+        self.assertEqual(substitution.payload["role"], sim_game.DEFENSE)
+        self.assertEqual(substitution.payload["player"], glove.id)
+        self.assertIn(spare.name, gf.events(log, Event.DECISION)[-1].text)
+
     def test_the_computer_gives_a_pending_pinch_hitter_his_position_when_the_seat_is_left(self):
         log = self.open(user=self.tester, seats=(AWAY, HOME))
         self.batting_with(log, HOME, slot=FIRST_BASE_SLOT, user=self.tester)

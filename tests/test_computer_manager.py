@@ -1,5 +1,5 @@
 # ABOUTME: Tests the computer manager's rules: starter fallback, bullpen roles, the starter hook, steals and bench replacement.
-# ABOUTME: Also tests utils.is_sim_tester, which decides who may take any seat in any game.
+# ABOUTME: Also tests designated pinch hitters and defensive replacements, and utils.is_sim_tester.
 
 from django.contrib.auth.models import AnonymousUser, Group, User
 from django.test import TestCase
@@ -40,6 +40,40 @@ class ComputerManagerTestCase(TestCase):
         choice = computer_manager.bench_replacement([a, b], lambda p: "capped")
         self.assertIsNone(choice.player)
         self.assertEqual(choice.skipped, [(a, "capped"), (b, "capped")])
+
+    def test_an_empty_designation_uses_the_bench_order(self):
+        a, b = players("A", "B")
+        choice = computer_manager.designated_then_bench([], [a, b], lambda p: None)
+        self.assertEqual(choice.player, a)
+        self.assertEqual(choice.skipped, [])
+
+    def test_the_designated_list_comes_before_the_bench(self):
+        a, b, c = players("A", "B", "C")
+        choice = computer_manager.designated_then_bench([c], [a, b], lambda p: None)
+        self.assertEqual(choice.player, c)
+
+    def test_an_illegal_designation_gives_way_to_the_next_name_then_the_bench(self):
+        a, b, c = players("A", "B", "C")
+        choice = computer_manager.designated_then_bench(
+            [c, b], [a], lambda p: "capped" if p == c else None
+        )
+        self.assertEqual(choice.player, b)
+        self.assertEqual(choice.skipped, [(c, "capped")])
+
+    def test_a_player_named_on_the_list_and_the_bench_is_considered_once(self):
+        a, b = players("A", "B")
+        choice = computer_manager.designated_then_bench(
+            [a], [a, b], lambda p: "no" if p == a else None
+        )
+        self.assertEqual(choice.player, b)
+        self.assertEqual(choice.skipped, [(a, "no")])
+
+    def test_a_lefty_uses_the_lhp_list_and_any_other_hand_uses_the_rhp_list(self):
+        pinch = computer_manager.pinch_hitters
+        self.assertEqual(pinch("L", ["right"], ["left"]), ["left"])
+        self.assertEqual(pinch("R", ["right"], ["left"]), ["right"])
+        self.assertEqual(pinch(None, ["right"], ["left"]), ["right"])
+        self.assertEqual(pinch("", ["right"], ["left"]), ["right"])
 
 
 class BullpenRoleTestCase(TestCase):

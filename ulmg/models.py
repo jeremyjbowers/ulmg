@@ -2287,12 +2287,17 @@ class UsagePause(BaseModel):
 class HalfPlan(BaseModel):
     """
     One team's plan for one half of a season: the rotation, the two lineup
-    cards, the bench order and the bullpen roles. Ordered lists hold Player
-    ids. A lineup card is a list of {"player": id, "position": code} in
-    batting order. ulmg.plans validates and saves it. starter_hook is how
-    soon the computer pulls a starter who has no hook of his own.
-    starter_hooks maps a rotation pitcher's id, as a string, to that
-    starter's own quick, normal or slow hook. The bullpen is a closer,
+    cards, the bench order, the pinch-hitter lists, the defensive
+    replacements and the bullpen roles. Ordered lists hold Player ids.
+    pinch_vs_rhp and pinch_vs_lhp are the computer's pinch hitters, in
+    order, against a right-handed starter (or an unknown hand) and a
+    left-handed starter. defensive_replacements is who it uses, in order,
+    for a defensive replacement. An empty list means the bench order. A
+    lineup card is a list of {"player": id, "position": code} in batting
+    order. ulmg.plans validates and saves it. starter_hook is how soon the
+    computer pulls a starter who has no hook of his own. starter_hooks maps
+    a rotation pitcher's id, as a string, to that starter's own quick,
+    normal or slow hook. The bullpen is a closer,
     single-inning relief (sirp) and multi-inning relief (mirp), and
     bullpen_logic is which usage the computer follows (ulmg.computer_manager).
     """
@@ -2330,6 +2335,9 @@ class HalfPlan(BaseModel):
     sirp = ArrayField(models.IntegerField(), default=list, blank=True)
     mirp = ArrayField(models.IntegerField(), default=list, blank=True)
     bench = ArrayField(models.IntegerField(), default=list, blank=True)
+    pinch_vs_rhp = ArrayField(models.IntegerField(), default=list, blank=True)
+    pinch_vs_lhp = ArrayField(models.IntegerField(), default=list, blank=True)
+    defensive_replacements = ArrayField(models.IntegerField(), default=list, blank=True)
     lineup_vs_lhp = models.JSONField(default=list, blank=True)
     lineup_vs_rhp = models.JSONField(default=list, blank=True)
     starter_hook = models.CharField(max_length=6, choices=STARTER_HOOK_CHOICES, default=NORMAL_HOOK)

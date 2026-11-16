@@ -1,4 +1,4 @@
-{# ABOUTME: Set the two lineup cards by dragging hitters into vs Lefty and vs Righty. #}
+{# ABOUTME: Set the two lineup cards by dragging hitters into vs Lefty and vs Righty, plus pinch hitters and defensive replacements. #}
 {# ABOUTME: The columns sit side by side when the window is wide enough. Only the owner and the commissioner get here. #}
 {% extends "base.html" %}
 
@@ -28,6 +28,28 @@
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {% for prefix, label, slots in lineup_columns %}
                 {% include "includes/lineup_column.html" with editable=True %}
+                {% endfor %}
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {% for group in order_lists %}
+                <div data-lineup="{{ group.name }}">
+                    <h3 class="font-bold border-b border-gray-300 mb-1">{{ group.label }}</h3>
+                    <p class="text-xs text-gray-600 mb-2">{{ group.note }}</p>
+                    <div class="space-y-2">
+                        {% for slot in group.slots %}
+                        <div class="lineup-slot border border-dashed border-gray-300 px-1 py-0.5">
+                            <div class="text-xs leading-tight text-gray-500">{{ forloop.counter }}</div>
+                            <div class="slot-frame relative">
+                                <div class="slot-body slot-well">
+                                    {% if slot.card %}{% include "includes/decision_card.html" with card=slot.card %}{% endif %}
+                                </div>
+                                <button type="button" data-clear class="slot-remove absolute top-0.5 right-0.5 z-10 border border-gray-400 bg-white px-1 leading-none text-gray-700" aria-label="Remove from this list" title="Remove from this list">&times;</button>
+                            </div>
+                            <input type="hidden" class="player-id" name="{{ group.name }}" value="{{ slot.player_id }}">
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
                 {% endfor %}
             </div>
             <fieldset>

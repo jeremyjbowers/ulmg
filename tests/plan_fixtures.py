@@ -108,6 +108,9 @@ class Roster:
             "sirp": [self.relievers[1]],
             "mirp": [self.swingman],
             "bench": self.bench,
+            "pinch_vs_rhp": [],
+            "pinch_vs_lhp": [],
+            "defensive_replacements": [],
             "lineup_vs_lhp": lineup_vs_lhp or self.lineup(),
             "lineup_vs_rhp": lineup_vs_rhp or self.lineup(),
         }

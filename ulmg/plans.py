@@ -1,4 +1,4 @@
-# ABOUTME: Half plans: each team's rotation, lineup cards, bench and bullpen for one season half, on the league calendar.
+# ABOUTME: Half plans: each team's rotation, lineup cards, bench, pinch hitters, defensive replacements and bullpen for one season half.
 # ABOUTME: Auto-fills starters through the usage ledger, keeps manual edits apart, and freezes a game's sheet when it opens.
 
 from collections import defaultdict
@@ -277,23 +277,53 @@ def bullpen_errors(team, closer, sirp, mirp, roster_ids):
     return _unique_errors([e for e in errors if e])
 
 
-def bench_errors(team, bench, roster_ids):
-    """Rule errors for the bench order: 30-man non-pitchers, each once."""
+# Ordered lists of hitters the computer uses before the bench. The label is the one in a rule error.
+DESIGNATION_LISTS = (
+    ("pinch_vs_rhp", "pinch-hitter list vs RHP"),
+    ("pinch_vs_lhp", "pinch-hitter list vs LHP"),
+    ("defensive_replacements", "defensive-replacement list"),
+)
+
+
+def _listed_errors(team, players, roster_ids, label):
+    """Rule errors for an ordered list of 30-man non-pitchers, each once."""
     errors = []
-    for player in bench:
+    for player in players:
         errors.append(_roster_error(player, team, roster_ids))
         if is_pitcher(player):
-            errors.append(f"The bench is for non-pitchers; {player.name} is a pitcher.")
-        if bench.count(player) > 1:
-            errors.append(f"{player.name} is on the bench twice.")
+            errors.append(f"The {label} is for non-pitchers; {player.name} is a pitcher.")
+        if players.count(player) > 1:
+            errors.append(f"{player.name} is on the {label} twice.")
     return _unique_errors([e for e in errors if e])
 
 
-def plan_errors(team, season, half, *, rotation, closer, sirp, mirp, bench, lineup_vs_lhp, lineup_vs_rhp):
+def bench_errors(team, bench, roster_ids):
+    """Rule errors for the bench order: 30-man non-pitchers, each once."""
+    return _listed_errors(team, bench, roster_ids, "bench")
+
+
+def designation_errors(team, roster_ids, pinch_vs_rhp, pinch_vs_lhp, defensive_replacements):
+    """Rule errors for the pinch-hitter lists and the defensive-replacement list."""
+    lists = {
+        "pinch_vs_rhp": pinch_vs_rhp,
+        "pinch_vs_lhp": pinch_vs_lhp,
+        "defensive_replacements": defensive_replacements,
+    }
+    errors = []
+    for key, label in DESIGNATION_LISTS:
+        errors += _listed_errors(team, lists[key], roster_ids, label)
+    return _unique_errors(errors)
+
+
+def plan_errors(
+    team, season, half, *, rotation, closer, sirp, mirp, bench,
+    pinch_vs_rhp, pinch_vs_lhp, defensive_replacements, lineup_vs_lhp, lineup_vs_rhp,
+):
     """
-    Every rule error in a plan's rotation, bullpen, bench and lineup cards.
-    They are checked against everyone the team can play in some game of the
-    half; each game's own roster is applied day by day.
+    Every rule error in a plan's rotation, bullpen, bench, pinch-hitter
+    lists, defensive replacements and lineup cards. They are checked against
+    everyone the team can play in some game of the half; each game's own
+    roster is applied day by day.
     """
     rosters = roster_moves.HalfRosters(team, season, half)
     roster_ids = rosters.all
@@ -301,6 +331,9 @@ def plan_errors(team, season, half, *, rotation, closer, sirp, mirp, bench, line
     errors += rotation_errors(team, rotation, roster_ids)
     errors += bullpen_errors(team, closer, sirp, mirp, roster_ids)
     errors += bench_errors(team, bench, roster_ids)
+    errors += designation_errors(
+        team, roster_ids, pinch_vs_rhp, pinch_vs_lhp, defensive_replacements
+    )
 
     def roster_problem(player):
         return _roster_error(player, team, roster_ids)
@@ -321,6 +354,9 @@ def _stored_fields(plan):
         "sirp": _ordered_players(plan.sirp),
         "mirp": _ordered_players(plan.mirp),
         "bench": _ordered_players(plan.bench),
+        "pinch_vs_rhp": _ordered_players(plan.pinch_vs_rhp),
+        "pinch_vs_lhp": _ordered_players(plan.pinch_vs_lhp),
+        "defensive_replacements": _ordered_players(plan.defensive_replacements),
         "lineup_vs_lhp": lineup_entries(plan.lineup_vs_lhp),
         "lineup_vs_rhp": lineup_entries(plan.lineup_vs_rhp),
     }
@@ -650,10 +686,15 @@ def bullpen_logic_errors(bullpen_logic):
     return _choice_errors(bullpen_logic, models.HalfPlan.BULLPEN_LOGIC_CHOICES, "bullpen logic")
 
 
-def save_lineups(plan, *, lineup_vs_lhp, lineup_vs_rhp, starter_hook=None):
+def save_lineups(
+    plan, *, lineup_vs_lhp, lineup_vs_rhp, starter_hook=None,
+    pinch_vs_rhp=None, pinch_vs_lhp=None, defensive_replacements=None,
+):
     """
-    Save the two lineup cards and the starter hook. Lineups stay until the
-    next save. This does not touch the rotation or the schedule's starters.
+    Save the two lineup cards, the starter hook, and the pinch-hitter and
+    defensive-replacement lists. A list of None keeps the plan's. Lineups
+    stay until the next save. This does not touch the rotation or the
+    schedule's starters.
     """
     if not is_open(plan.half):
         raise PlanError([closed_message(plan.half)])
@@ -673,6 +714,18 @@ def save_lineups(plan, *, lineup_vs_lhp, lineup_vs_rhp, starter_hook=None):
         [("Lineup vs LHP", lineup_vs_lhp), ("Lineup vs RHP", lineup_vs_rhp)],
     )
     errors += starter_hook_errors(starter_hook)
+    orders = {
+        "pinch_vs_rhp": pinch_vs_rhp,
+        "pinch_vs_lhp": pinch_vs_lhp,
+        "defensive_replacements": defensive_replacements,
+    }
+    errors += designation_errors(
+        plan.team,
+        rosters.all,
+        pinch_vs_rhp or [],
+        pinch_vs_lhp or [],
+        defensive_replacements or [],
+    )
     if errors:
         raise PlanError(_unique_errors(errors))
 
@@ -681,6 +734,9 @@ def save_lineups(plan, *, lineup_vs_lhp, lineup_vs_rhp, starter_hook=None):
         plan.lineup_vs_rhp = stored_lineup(lineup_vs_rhp)
         if starter_hook is not None:
             plan.starter_hook = starter_hook
+        for key, players in orders.items():
+            if players is not None:
+                setattr(plan, key, [player.id for player in players])
         plan.save()
     return []
 
@@ -813,14 +869,16 @@ def save_bullpen(plan, *, closer, sirp, mirp, bullpen_logic=None):
 
 def save_plan(
     plan, *, rotation, closer, sirp, mirp, bench, lineup_vs_lhp, lineup_vs_rhp,
+    pinch_vs_rhp, pinch_vs_lhp, defensive_replacements,
     starter_hook=None, bullpen_logic=None, starter_hooks=None,
 ):
     """
-    Save a half plan's rotation, bullpen, bench, lineup cards, starter hook
-    and bullpen usage, re-run auto-fill and set swingman designations. A
-    starter_hook, starter_hooks or bullpen_logic of None keeps the plan's.
-    A starter who leaves the rotation loses his own hook. Nothing is saved
-    when a rule is broken or a day has no legal starter. Returns warnings to show.
+    Save a half plan's rotation, bullpen, bench, pinch-hitter lists,
+    defensive replacements, lineup cards, starter hook and bullpen usage,
+    re-run auto-fill and set swingman designations. A starter_hook,
+    starter_hooks or bullpen_logic of None keeps the plan's. A starter who
+    leaves the rotation loses his own hook. Nothing is saved when a rule is
+    broken or a day has no legal starter. Returns warnings to show.
     """
     if not is_open(plan.half):
         raise PlanError([closed_message(plan.half)])
@@ -830,6 +888,9 @@ def save_plan(
         "sirp": list(sirp),
         "mirp": list(mirp),
         "bench": list(bench),
+        "pinch_vs_rhp": list(pinch_vs_rhp),
+        "pinch_vs_lhp": list(pinch_vs_lhp),
+        "defensive_replacements": list(defensive_replacements),
         "lineup_vs_lhp": list(lineup_vs_lhp),
         "lineup_vs_rhp": list(lineup_vs_rhp),
     }
@@ -850,6 +911,9 @@ def save_plan(
         plan.sirp = [p.id for p in fields["sirp"]]
         plan.mirp = [p.id for p in fields["mirp"]]
         plan.bench = [p.id for p in fields["bench"]]
+        plan.pinch_vs_rhp = [p.id for p in fields["pinch_vs_rhp"]]
+        plan.pinch_vs_lhp = [p.id for p in fields["pinch_vs_lhp"]]
+        plan.defensive_replacements = [p.id for p in fields["defensive_replacements"]]
         plan.lineup_vs_lhp = stored_lineup(fields["lineup_vs_lhp"])
         plan.lineup_vs_rhp = stored_lineup(fields["lineup_vs_rhp"])
         if starter_hook is not None:
@@ -864,7 +928,8 @@ def save_plan(
 
 
 def fill_plan(
-    plan, *, rotation, closer, sirp, mirp, bench, lineup_vs_lhp, lineup_vs_rhp, ignore_half_lock=False
+    plan, *, rotation, closer, sirp, mirp, bench, lineup_vs_lhp, lineup_vs_rhp,
+    pinch_vs_rhp=None, pinch_vs_lhp=None, defensive_replacements=None, ignore_half_lock=False,
 ):
     """
     Save as much of a half plan as is legal, for building a test season
@@ -883,6 +948,9 @@ def fill_plan(
     rosters = roster_moves.HalfRosters(team, plan.season, plan.half)
     roster_ids = rosters.all
     rotation, sirp, mirp, bench = list(rotation), list(sirp), list(mirp), list(bench)
+    pinch_vs_rhp = list(pinch_vs_rhp or [])
+    pinch_vs_lhp = list(pinch_vs_lhp or [])
+    defensive_replacements = list(defensive_replacements or [])
     lineup_vs_lhp, lineup_vs_rhp = list(lineup_vs_lhp), list(lineup_vs_rhp)
 
     problems = []
@@ -898,6 +966,19 @@ def fill_plan(
     if errors:
         problems += errors
         bench = []
+    listed = {
+        "pinch_vs_rhp": pinch_vs_rhp,
+        "pinch_vs_lhp": pinch_vs_lhp,
+        "defensive_replacements": defensive_replacements,
+    }
+    for key, label in DESIGNATION_LISTS:
+        errors = _listed_errors(plan.team, listed[key], roster_ids, label)
+        if errors:
+            problems += errors
+            listed[key] = []
+    pinch_vs_rhp = listed["pinch_vs_rhp"]
+    pinch_vs_lhp = listed["pinch_vs_lhp"]
+    defensive_replacements = listed["defensive_replacements"]
 
     def roster_problem(player):
         return _roster_error(player, team, roster_ids)
@@ -924,6 +1005,9 @@ def fill_plan(
         plan.sirp = [p.id for p in sirp]
         plan.mirp = [p.id for p in mirp]
         plan.bench = [p.id for p in bench]
+        plan.pinch_vs_rhp = [p.id for p in pinch_vs_rhp]
+        plan.pinch_vs_lhp = [p.id for p in pinch_vs_lhp]
+        plan.defensive_replacements = [p.id for p in defensive_replacements]
         plan.lineup_vs_lhp = stored_lineup(lineup_vs_lhp)
         plan.lineup_vs_rhp = stored_lineup(lineup_vs_rhp)
         plan.save()
@@ -1127,6 +1211,7 @@ class PlanBook:
         ids = set()
         for plan in self.plans.values():
             ids |= set(plan.bench) | set(plan.sirp) | set(plan.mirp)
+            ids |= set(plan.pinch_vs_rhp) | set(plan.pinch_vs_lhp) | set(plan.defensive_replacements)
             ids |= {e["player"] for e in plan.lineup_vs_lhp + plan.lineup_vs_rhp}
         for row in self.rows.values():
             ids |= {e["player"] for e in row.manual_lineup or []}
@@ -1154,11 +1239,12 @@ class PlanBook:
 
     def live_side(self, game, team, opponent):
         """
-        A team's sheet for a game from the plans as they stand now. The bench
-        and bullpen hold only that game's roster. unavailable holds the
-        starter and batters who aren't on it, such as a sent-down player on
-        a road lineup card: the next plan save re-fills a starter, and the
-        bench replaces a batter when the game opens (#164).
+        A team's sheet for a game from the plans as they stand now. The bench,
+        pinch-hitter lists, defensive replacements and bullpen hold only
+        that game's roster. unavailable holds the starter and batters who
+        aren't on it, such as a sent-down player on a road lineup card: the
+        next plan save re-fills a starter, and the bench replaces a batter
+        when the game opens (#164).
         """
         eligible = self._rosters(team).for_game(game)
 
@@ -1192,6 +1278,9 @@ class PlanBook:
             "unavailable": {p.id for p, _ in lineup if p.id not in eligible}
             | ({starter.id} if starter is not None and starter.id not in eligible else set()),
             "bench": on_roster(self._resolve(plan.bench)) if plan else [],
+            "pinch_vs_rhp": on_roster(self._resolve(plan.pinch_vs_rhp)) if plan else [],
+            "pinch_vs_lhp": on_roster(self._resolve(plan.pinch_vs_lhp)) if plan else [],
+            "defensive_replacements": on_roster(self._resolve(plan.defensive_replacements)) if plan else [],
             "closer": closer if closer is not None and closer.id in eligible else None,
             "sirp": on_roster(self._resolve(plan.sirp)) if plan else [],
             "mirp": on_roster(self._resolve(plan.mirp)) if plan else [],
@@ -1217,6 +1306,9 @@ class PlanBook:
             "lineup_manual": sheet["lineup_manual"],
             "unavailable": set(),
             "bench": self._resolve(sheet["bench"]),
+            "pinch_vs_rhp": self._resolve(sheet.get("pinch_vs_rhp") or []),
+            "pinch_vs_lhp": self._resolve(sheet.get("pinch_vs_lhp") or []),
+            "defensive_replacements": self._resolve(sheet.get("defensive_replacements") or []),
             "closer": closer,
             "sirp": self._resolve(sirp_ids),
             "mirp": self._resolve(mirp_ids),
@@ -1240,7 +1332,7 @@ class PlanBook:
 
 
 def game_sheet(game):
-    """Both teams' starters, lineups, bench and bullpen for a game, frozen once it opens."""
+    """Both teams' starters, lineups, bench, pinch hitters, defensive replacements and bullpen, frozen once the game opens."""
     slot = game.series.slot
     book = PlanBook(slot.season, slot.half, teams=[game.series.home_team, game.series.road_team])
     return book.sheet(game)
@@ -1255,6 +1347,9 @@ def _frozen_side(side):
         "lineup": side["lineup_stored"],
         "lineup_manual": side["lineup_manual"],
         "bench": [p.id for p in side["bench"] if p],
+        "pinch_vs_rhp": [p.id for p in side["pinch_vs_rhp"] if p],
+        "pinch_vs_lhp": [p.id for p in side["pinch_vs_lhp"] if p],
+        "defensive_replacements": [p.id for p in side["defensive_replacements"] if p],
         "closer": side["closer"].id if side["closer"] else None,
         "sirp": [p.id for p in side["sirp"] if p],
         "mirp": [p.id for p in side["mirp"] if p],

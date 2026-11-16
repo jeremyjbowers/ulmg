@@ -424,6 +424,82 @@ class EditPlanTestCase(PlanViewsTestCase):
         self.assertEqual(response.status_code, 403)
         self.assertEqual(self.saved_plan().closer_id, self.roster.relievers[0].id)
 
+    def test_the_lineup_page_saves_pinch_hitters_and_defensive_replacements(self):
+        client = self.as_user(self.owner)
+        page = client.get(EDIT_URL).content.decode()
+        self.assertIn(">Pinch vs RHP<", page)
+        self.assertIn(">Pinch vs LHP<", page)
+        self.assertIn(">Defensive replacements<", page)
+        self.assertLess(page.index(">Pinch vs RHP<"), page.index(">Pinch vs LHP<"))
+        self.assertLess(page.index(">Pinch vs LHP<"), page.index(">Defensive replacements<"))
+        self.assertIn('name="pinch_vs_rhp"', page)
+        self.assertIn('name="pinch_vs_lhp"', page)
+        self.assertIn('name="defensive_replacements"', page)
+        self.assertIn("Empty uses the bench order.", page)
+
+        bench = self.roster.bench
+        data = form_data(self.roster)
+        data["pinch_vs_rhp"] = [bench[1].id, bench[0].id]
+        data["pinch_vs_lhp"] = [bench[0].id]
+        data["defensive_replacements"] = [bench[1].id]
+        response = client.post(EDIT_URL, data, follow=True)
+        self.assertRedirects(response, PLAN_URL)
+        plan = self.saved_plan()
+        self.assertEqual(plan.pinch_vs_rhp, [bench[1].id, bench[0].id])
+        self.assertEqual(plan.pinch_vs_lhp, [bench[0].id])
+        self.assertEqual(plan.defensive_replacements, [bench[1].id])
+        self.assertEqual(plan.lineup_vs_rhp[0], {"player": self.roster.catcher.id, "position": "C"})
+
+        again = client.get(EDIT_URL).content.decode()
+        self.assertLess(
+            again.index(f'name="pinch_vs_rhp" value="{bench[1].id}"'),
+            again.index(f'name="pinch_vs_rhp" value="{bench[0].id}"'),
+        )
+        self.assertIn(f'name="pinch_vs_lhp" value="{bench[0].id}"', again)
+        self.assertIn(f'name="defensive_replacements" value="{bench[1].id}"', again)
+
+    def test_an_empty_pinch_list_is_saved_and_clearing_a_lineup_leaves_the_lists(self):
+        client = self.as_user(self.owner)
+        data = form_data(self.roster)
+        data["pinch_vs_rhp"] = [self.roster.bench[0].id]
+        data["defensive_replacements"] = [self.roster.bench[1].id]
+        client.post(EDIT_URL, data)
+        plan = self.saved_plan()
+        self.assertEqual(plan.pinch_vs_rhp, [self.roster.bench[0].id])
+
+        cleared = client.post(EDIT_URL, {"clear_lineup": "vs_lhp"}, follow=True)
+        self.assertRedirects(cleared, EDIT_URL)
+        plan.refresh_from_db()
+        self.assertEqual(plan.lineup_vs_lhp, [])
+        self.assertEqual(plan.pinch_vs_rhp, [self.roster.bench[0].id])
+        self.assertEqual(plan.defensive_replacements, [self.roster.bench[1].id])
+
+        emptied = client.post(EDIT_URL, form_data(self.roster), follow=True)
+        self.assertRedirects(emptied, PLAN_URL)
+        plan.refresh_from_db()
+        self.assertEqual(plan.pinch_vs_rhp, [])
+        self.assertEqual(plan.pinch_vs_lhp, [])
+        self.assertEqual(plan.defensive_replacements, [])
+        self.assertEqual(len(plan.lineup_vs_rhp), 9)
+
+    def test_a_pinch_list_refuses_a_pitcher_and_a_duplicate(self):
+        self.roster.file(pinch_vs_lhp=[self.roster.bench[1]])
+        data = form_data(self.roster)
+        data["pinch_vs_rhp"] = [self.roster.relievers[0].id, self.roster.bench[0].id, self.roster.bench[0].id]
+        data["defensive_replacements"] = [self.roster.relievers[1].id]
+        response = self.as_user(self.owner).post(EDIT_URL, data)
+        self.assertEqual(response.status_code, 400)
+        body = response.content.decode()
+        self.assertIn("pinch-hitter list vs RHP", body)
+        self.assertIn("is a pitcher", body)
+        self.assertIn("twice", body)
+        self.assertIn("defensive-replacement list", body)
+        plan = self.saved_plan()
+        self.assertEqual(plan.pinch_vs_rhp, [])
+        self.assertEqual(plan.pinch_vs_lhp, [self.roster.bench[1].id])
+        self.assertEqual(plan.defensive_replacements, [])
+        self.assertEqual(len(plan.lineup_vs_rhp), 9)
+
     def test_an_unknown_starter_hook_is_refused(self):
         self.roster.file()
         response = self.as_user(self.owner).post(EDIT_URL, dict(form_data(self.roster), starter_hook="lazy"))

@@ -614,6 +614,111 @@ class StarterHookTestCase(PlanTestCase):
         self.assertEqual(plan.rotation, [p.id for p in rotation])
 
 
+class DesignationListTestCase(PlanTestCase):
+    def test_pinch_hitters_and_defensive_replacements_save_in_order(self):
+        rhp = [self.roster.bench[1], self.roster.bench[0]]
+        lhp = [self.roster.bench[0]]
+        defense = [self.roster.hitters[-1], self.roster.bench[1]]
+        plan = self.roster.file(
+            pinch_vs_rhp=rhp, pinch_vs_lhp=lhp, defensive_replacements=defense
+        )
+        plan.refresh_from_db()
+        self.assertEqual(plan.pinch_vs_rhp, [p.id for p in rhp])
+        self.assertEqual(plan.pinch_vs_lhp, [p.id for p in lhp])
+        self.assertEqual(plan.defensive_replacements, [p.id for p in defense])
+        self.assertEqual(plan.bench, [p.id for p in self.roster.bench])
+
+        same = self.roster.bench[0]
+        plan = self.roster.file(
+            pinch_vs_rhp=[same], pinch_vs_lhp=[same], defensive_replacements=[same]
+        )
+        plan.refresh_from_db()
+        self.assertEqual(plan.pinch_vs_rhp, [same.id])
+        self.assertEqual(plan.pinch_vs_lhp, [same.id])
+        self.assertEqual(plan.defensive_replacements, [same.id])
+
+    def test_empty_designation_lists_are_legal(self):
+        plan = self.roster.file(
+            pinch_vs_rhp=[self.roster.bench[0]],
+            pinch_vs_lhp=[self.roster.bench[1]],
+            defensive_replacements=[self.roster.bench[0]],
+        )
+        plan = self.roster.file(pinch_vs_rhp=[], pinch_vs_lhp=[], defensive_replacements=[])
+        plan.refresh_from_db()
+        self.assertEqual(plan.pinch_vs_rhp, [])
+        self.assertEqual(plan.pinch_vs_lhp, [])
+        self.assertEqual(plan.defensive_replacements, [])
+        self.assertEqual(len(plan.lineup_vs_rhp), 9)
+
+    def test_a_pitcher_or_a_duplicate_on_a_designation_list_is_refused(self):
+        plan = self.roster.file(pinch_vs_rhp=[self.roster.bench[0]])
+        pitcher = self.roster.relievers[0]
+        twin = self.roster.bench[1]
+        with self.assertRaises(plans.PlanError) as raised:
+            self.roster.file(
+                pinch_vs_rhp=[pitcher, twin, twin],
+                pinch_vs_lhp=[pitcher],
+                defensive_replacements=[pitcher, twin, twin],
+            )
+        message = str(raised.exception)
+        self.assertIn(
+            f"The pinch-hitter list vs RHP is for non-pitchers; {pitcher.name} is a pitcher.",
+            message,
+        )
+        self.assertIn(
+            f"The pinch-hitter list vs LHP is for non-pitchers; {pitcher.name} is a pitcher.",
+            message,
+        )
+        self.assertIn(
+            f"The defensive-replacement list is for non-pitchers; {pitcher.name} is a pitcher.",
+            message,
+        )
+        self.assertIn(f"{twin.name} is on the pinch-hitter list vs RHP twice.", message)
+        self.assertIn(f"{twin.name} is on the defensive-replacement list twice.", message)
+        plan.refresh_from_db()
+        self.assertEqual(plan.pinch_vs_rhp, [self.roster.bench[0].id])
+        self.assertEqual(plan.pinch_vs_lhp, [])
+        self.assertEqual(plan.defensive_replacements, [])
+
+    def test_a_player_off_the_roster_is_refused_on_a_designation_list(self):
+        outsider = create_hitter(self.atl, "ATL Outsider", roster=False)
+        with self.assertRaises(plans.PlanError) as raised:
+            self.roster.file(pinch_vs_rhp=[outsider], defensive_replacements=[outsider])
+        message = str(raised.exception)
+        self.assertIn(f"{outsider.name} is not on ATL's 30-man.", message)
+        self.assertFalse(
+            models.HalfPlan.objects.filter(team=self.atl, pinch_vs_rhp__contains=[outsider.id]).exists()
+        )
+
+    def test_the_opened_sheet_freezes_the_designation_lists(self):
+        rhp, lhp = self.roster.bench[1], self.roster.bench[0]
+        glove = self.roster.hitters[-1]
+        self.roster.file(pinch_vs_rhp=[rhp], pinch_vs_lhp=[lhp], defensive_replacements=[glove])
+        game = game_on(self.atl, 1)
+        before = side(game, self.atl)
+        self.assertEqual(before["pinch_vs_rhp"], [rhp])
+        self.assertEqual(before["pinch_vs_lhp"], [lhp])
+        self.assertEqual(before["defensive_replacements"], [glove])
+        other = opponent_on(self.atl, 1)
+        self.assertEqual(side(game, other)["pinch_vs_rhp"], [])
+        self.assertEqual(side(game, other)["pinch_vs_lhp"], [])
+        self.assertEqual(side(game, other)["defensive_replacements"], [])
+
+        opened = plans.open_game(game)
+        key = "home" if game.series.home_team_id == self.atl.id else "road"
+        self.assertEqual(opened[key]["pinch_vs_rhp"], [rhp.id])
+        self.assertEqual(opened[key]["pinch_vs_lhp"], [lhp.id])
+        self.assertEqual(opened[key]["defensive_replacements"], [glove.id])
+
+        self.roster.file(pinch_vs_rhp=[lhp], pinch_vs_lhp=[rhp], defensive_replacements=[rhp])
+        game.refresh_from_db()
+        after = side(game, self.atl)
+        self.assertEqual(after["pinch_vs_rhp"], [rhp])
+        self.assertEqual(after["pinch_vs_lhp"], [lhp])
+        self.assertEqual(after["defensive_replacements"], [glove])
+        self.assertEqual(plans.open_game(game)[key]["pinch_vs_rhp"], [rhp.id])
+
+
 class BullpenSaveTestCase(PlanTestCase):
     def test_saving_the_bullpen_keeps_the_lineups_and_the_rotation(self):
         plan = self.roster.file()
