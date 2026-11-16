@@ -1,8 +1,9 @@
 //! Layer A. Exact state-machine cases. These do not need the simulator.
 
 use baseball_engine::{
-    load_json, play_game, Bases, BattedBallRates, ComputerManager, Game, GameError, GameFixture,
-    Governance, Half, PlateOutcome, Position, Side, Sim, Status,
+    load_json, play_game, Base, BaserunningEvent, Bases, BattedBallRates, CallNote,
+    ComputerManager, Game, GameError, GameFixture, Governance, Half, PaResult, PlateOutcome,
+    Position, Side, Sim, Status,
 };
 
 fn game(postseason: bool) -> Game {
@@ -462,4 +463,110 @@ fn a_park_event_factor_of_zero_is_refused() {
     fixture.parks[0].hr_factor = Some(0.0);
     let err = Game::start(fixture, 1).unwrap_err();
     assert!(matches!(err, GameError::InvalidFixture(msg) if msg.contains("home run")));
+}
+
+fn play_line(result: PaResult) -> String {
+    let mut game = game(false);
+    game.apply_plate_appearance(result).unwrap();
+    game.log.last().unwrap().text.clone()
+}
+
+#[test]
+fn a_plate_appearance_without_a_call_does_not_mention_one() {
+    let text = play_line(baseball_engine::harness::pitches_only(4));
+    assert!(text.contains("walked"), "{text}");
+    assert!(!text.contains("Hit-and-run"), "{text}");
+    assert!(!text.contains("stole"), "{text}");
+    assert!(!text.contains("Steal not attempted"), "{text}");
+}
+
+#[test]
+fn a_stolen_base_is_named_before_the_batter() {
+    let game = game(false);
+    let runner = game.away.lineup[8].clone();
+    let batter = game.away.lineup[game.away.batter_index].clone();
+    let mut result = baseball_engine::harness::pitches_only(1);
+    result.batter_id = batter.id.clone();
+    result.baserunning = vec![BaserunningEvent::StolenBase {
+        runner: runner.id.clone(),
+        to: Base::Second,
+    }];
+    let text = play_line(result);
+    let stole = text.find("stole second").expect(&text);
+    let walked = text.find("walked").expect(&text);
+    assert!(
+        text.contains(&format!("{} stole second.", runner.name)),
+        "{text}"
+    );
+    assert!(text.contains(&format!("{} walked.", batter.name)), "{text}");
+    assert!(stole < walked, "{text}");
+}
+
+#[test]
+fn a_caught_stealing_that_ends_the_plate_appearance_names_the_runner() {
+    let mut game = game(false);
+    game.outs = 2;
+    let runner = game.away.lineup[8].clone();
+    let batter = game.away.lineup[game.away.batter_index].clone();
+    let mut result = baseball_engine::harness::pitches_only(1);
+    result.batter_id = batter.id.clone();
+    result.outcome = PlateOutcome::CaughtStealing;
+    result.batter_completed = false;
+    result.change.outs_added = 1;
+    result.baserunning = vec![BaserunningEvent::CaughtStealing {
+        runner: runner.id.clone(),
+        at: Base::Second,
+    }];
+    game.apply_plate_appearance(result).unwrap();
+    let text = game.log.last().unwrap().text.clone();
+    assert!(
+        text.contains(&format!("{} was caught stealing.", runner.name)),
+        "{text}"
+    );
+    assert!(
+        !text.contains(&format!("{} was caught stealing", batter.name)),
+        "{text}"
+    );
+}
+
+#[test]
+fn a_steal_that_was_not_tried_says_the_runner_held() {
+    let mut result = baseball_engine::harness::pitches_only(3);
+    result.outcome = PlateOutcome::Strikeout;
+    result.call_note = Some(CallNote::StealHeld);
+    let text = play_line(result);
+    let held = text.find("Steal not attempted (held).").expect(&text);
+    let struck = text.find("struck out").expect(&text);
+    assert!(held < struck, "{text}");
+}
+
+#[test]
+fn a_hit_and_run_is_named_after_the_batter() {
+    let mut result = baseball_engine::harness::pitches_only(2);
+    result.outcome = PlateOutcome::Single;
+    result.call_note = Some(CallNote::HitAndRunSucceeded);
+    let text = play_line(result.clone());
+    let singled = text.find("singled").expect(&text);
+    let succeeded = text.find("Hit-and-run succeeded.").expect(&text);
+    assert!(singled < succeeded, "{text}");
+
+    result.outcome = PlateOutcome::Strikeout;
+    result.call_note = Some(CallNote::HitAndRunFailed);
+    let text = play_line(result.clone());
+    assert!(text.contains("struck out."), "{text}");
+    assert!(text.contains("Hit-and-run failed."), "{text}");
+
+    result.outcome = PlateOutcome::GroundOut;
+    result.call_note = Some(CallNote::HitAndRun);
+    let text = play_line(result.clone());
+    assert!(text.contains("grounded out. Hit-and-run."), "{text}");
+
+    result.outcome = PlateOutcome::Walk;
+    result.call_note = Some(CallNote::HitAndRunNoRunner);
+    let text = play_line(result);
+    let skipped = text
+        .find("Hit-and-run not attempted (no runner on first).")
+        .expect(&text);
+    let walked = text.find("walked").expect(&text);
+    assert!(skipped < walked, "{text}");
 }

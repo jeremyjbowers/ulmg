@@ -12,10 +12,18 @@ use serde::{Deserialize, Serialize};
 
 use crate::fatigue::{draw_ceiling, effort_per_pitch};
 use crate::model::{
-    Bases, BatterCard, DefenseRating, FatigueState, Fielder, GameFixture, Half, LineScore,
-    LogEntry, PaInput, PaResult, PitcherCard, PlayerId, Position, PrePaCalls, Running, Score, Side,
-    Situation, Status, TeamFixture,
+    Base, BaserunningEvent, Bases, BatterCard, CallNote, DefenseRating, FatigueState, Fielder,
+    GameFixture, Half, LineScore, LogEntry, PaInput, PaResult, PitcherCard, PlayerId, Position,
+    PrePaCalls, Running, Score, Side, Situation, Status, TeamFixture,
 };
+
+fn base_name(base: Base) -> &'static str {
+    match base {
+        Base::First => "first",
+        Base::Second => "second",
+        Base::Third => "third",
+    }
+}
 
 const FIELD_POSITIONS: [Position; 8] = [
     Position::Catcher,
@@ -424,14 +432,20 @@ impl Game {
             ),
             None => result.outcome.name().to_string(),
         };
+        let (before, after) = self.call_sentences(&result);
+        // A caught stealing that ends the plate appearance is the whole play. The batter did not finish.
+        let batter_sentence = if !result.batter_completed && !before.is_empty() {
+            String::new()
+        } else {
+            format!("{} {action}. ", batter.name)
+        };
         self.log.push(LogEntry {
             inning,
             half,
             text: format!(
-                "{} {}, {count}: {} {action}. {} pitch{}.",
+                "{} {}, {count}: {before}{batter_sentence}{after}{} pitch{}.",
                 half.name(),
                 inning,
-                batter.name,
                 pitches,
                 if pitches == 1 { "" } else { "es" }
             ),
@@ -845,6 +859,54 @@ impl Game {
             .find(|card| card.id == player)
             .map(|card| card.name.clone())
             .unwrap_or_else(|| player.to_string())
+    }
+
+    fn player_name(&self, id: &str) -> String {
+        for club in [&self.away, &self.home] {
+            if let Some(card) = club.lineup.iter().find(|card| card.id == id) {
+                return card.name.clone();
+            }
+        }
+        id.to_string()
+    }
+
+    /// The steal or hit-and-run sentences that bracket the batter's line.
+    /// The first happens before the swing. The second is the hit-and-run verdict on the swing.
+    fn call_sentences(&self, result: &PaResult) -> (String, &'static str) {
+        let mut before = String::new();
+        for event in &result.baserunning {
+            match event {
+                BaserunningEvent::StolenBase { runner, to } => {
+                    before.push_str(&format!(
+                        "{} stole {}. ",
+                        self.player_name(runner),
+                        base_name(*to)
+                    ));
+                }
+                BaserunningEvent::CaughtStealing { runner, .. } => {
+                    before.push_str(&format!(
+                        "{} was caught stealing. ",
+                        self.player_name(runner)
+                    ));
+                }
+                _ => {}
+            }
+        }
+        let after = match result.call_note {
+            Some(CallNote::StealHeld) => {
+                before.push_str("Steal not attempted (held). ");
+                ""
+            }
+            Some(CallNote::HitAndRunNoRunner) => {
+                before.push_str("Hit-and-run not attempted (no runner on first). ");
+                ""
+            }
+            Some(CallNote::HitAndRunSucceeded) => "Hit-and-run succeeded. ",
+            Some(CallNote::HitAndRunFailed) => "Hit-and-run failed. ",
+            Some(CallNote::HitAndRun) => "Hit-and-run. ",
+            None => "",
+        };
+        (before, after)
     }
 
     fn home_park(&self) -> Result<&crate::model::Park, GameError> {

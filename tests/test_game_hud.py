@@ -4,6 +4,7 @@
 import json
 import re
 
+from django.db import transaction
 from django.test import TestCase
 
 from tests import game_fixtures as gf
@@ -330,3 +331,111 @@ class PanelTest(GameHudTestCase):
         self.assertIn(f"Replace {second.name}", drawer)
         self.assertIn('id="hud-play" disabled', html)
         self.assertNotIn("Play the next plate appearance", html)
+
+
+OUT = {"k": 0.0, "bb": 0.0, "hbp": 0.0, "single": 0.0, "double": 0.0, "triple": 0.0, "hr": 0.0, "bip_out": 1.0}
+WALK = {"k": 0.0, "bb": 1.0, "hbp": 0.0, "single": 0.0, "double": 0.0, "triple": 0.0, "hr": 0.0, "bip_out": 0.0}
+
+
+class CallTextTest(GameHudTestCase):
+    """A steal or a hit-and-run has to say so in the play the owner reads."""
+
+    def _open_and_single(self):
+        self.post("open", seats="away,home")
+        gf.set_rates([self.road.hitters[0]], SINGLE)
+        self.post("step", expected=self.expected())
+
+    def _play(self, html):
+        return self.last_play(html)["text"]
+
+    def _book(self, html):
+        return self.section(html, 'class="game-play-by-play', "</ol>")
+
+    def test_a_steal_and_a_single_names_the_stolen_base(self):
+        runner = self.road.hitters[0]
+        batter = self.road.hitters[1]
+        models.Card.objects.filter(player=runner).update(steal_success=1.0)
+        self._open_and_single()
+        gf.set_rates([batter], SINGLE)
+        html = self.post("step", expected=self.expected(), call="steal").content.decode()
+        text = self._play(html)
+        stole = f"{runner.name} stole second."
+        singled = f"{batter.name} singled."
+        self.assertIn(stole, text)
+        self.assertIn(singled, text)
+        self.assertLess(text.find(stole), text.find(singled))
+        self.assertIn(stole, self._book(html))
+
+    def test_a_caught_stealing_names_the_runner(self):
+        runner = self.road.hitters[0]
+        batter = self.road.hitters[1]
+        models.Card.objects.filter(player=runner).update(steal_success=0.0)
+        self._open_and_single()
+        gf.set_rates([batter], gf.STRIKEOUT_RATES)
+        html = self.post("step", expected=self.expected(), call="steal").content.decode()
+        text = self._play(html)
+        self.assertIn(f"{runner.name} was caught stealing.", text)
+        self.assertIn(f"{batter.name} struck out.", text)
+        self.assertNotIn(f"{batter.name} was caught stealing", text)
+        self.assertIn(f"{runner.name} was caught stealing.", self._book(html))
+
+    def test_a_steal_with_the_bases_loaded_says_the_runner_held(self):
+        self.post("open", seats="away,home")
+        gf.set_rates(self.road.hitters[:4], WALK)
+        for _ in range(3):
+            self.post("step", expected=self.expected())
+        html = self.post("step", expected=self.expected(), call="steal").content.decode()
+        text = self._play(html)
+        self.assertIn("Steal not attempted (held).", text)
+        self.assertIn("walked.", text)
+        self.assertLess(text.find("Steal not attempted (held)."), text.find("walked."))
+        self.assertIn("Steal not attempted (held).", self._book(html))
+
+    def test_a_hit_and_run_single_says_it_succeeded(self):
+        batter = self.road.hitters[1]
+        self._open_and_single()
+        gf.set_rates([batter], SINGLE)
+        html = self.post("step", expected=self.expected(), call="hit_and_run").content.decode()
+        text = self._play(html)
+        self.assertIn(f"{batter.name} singled.", text)
+        self.assertIn("Hit-and-run succeeded.", text)
+        self.assertLess(text.find(f"{batter.name} singled."), text.find("Hit-and-run succeeded."))
+        self.assertIn("Hit-and-run succeeded.", self._book(html))
+
+    def test_a_hit_and_run_strikeout_says_it_failed(self):
+        batter = self.road.hitters[1]
+        self._open_and_single()
+        gf.set_rates([batter], gf.STRIKEOUT_RATES)
+        # A hit-and-run keeps half the strikeouts, so the pure strikeout card is not a certain strikeout.
+        log = self.log()
+        for seed in range(40):
+            mark = transaction.savepoint()
+            sim_game.step(
+                gf.refresh(log),
+                self.tester,
+                sim_game.Play(gf.refresh(log)).sequence,
+                call="hit_and_run",
+                seeds=lambda s=seed: s,
+            )
+            event = gf.events(gf.refresh(log), Event.PLATE_APPEARANCE)[-1]
+            if event.payload["result"]["outcome"] == "strikeout":
+                break
+            transaction.savepoint_rollback(mark)
+        else:
+            self.fail("a hit-and-run still strikes out sometimes")
+        html = self.page()
+        text = self._play(html)
+        self.assertIn(f"{batter.name} struck out.", text)
+        self.assertIn("Hit-and-run failed.", text)
+        self.assertLess(text.find(f"{batter.name} struck out."), text.find("Hit-and-run failed."))
+        self.assertIn("Hit-and-run failed.", self._book(html))
+
+    def test_a_hit_and_run_out_says_the_call_was_on(self):
+        self._open_and_single()
+        gf.set_rates([self.road.hitters[1]], OUT)
+        html = self.post("step", expected=self.expected(), call="hit_and_run").content.decode()
+        text = self._play(html)
+        self.assertIn("Hit-and-run.", text)
+        self.assertNotIn("Hit-and-run succeeded", text)
+        self.assertNotIn("Hit-and-run failed", text)
+        self.assertIn("Hit-and-run.", self._book(html))
