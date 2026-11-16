@@ -1,9 +1,15 @@
 # ABOUTME: Tests the cards a manager reads while setting lineups and starters.
 # ABOUTME: Plate appearances, the reliever innings table, speed, and the pale good-to-bad wash.
 
+from django.template.loader import render_to_string
 from django.test import TestCase
 
 from ulmg import decision_cards, models, usage
+
+
+def _greenness(color):
+    red, green, _blue = [int(color[i:i + 2], 16) for i in (1, 3, 5)]
+    return green - red
 
 
 class DecisionCardTestCase(TestCase):
@@ -187,8 +193,64 @@ class DecisionCardTestCase(TestCase):
         self.assertEqual(shown["slash_vs_l"], ".111/.200/.111")
         self.assertEqual(shown["slash_vs_r"], ".300/.300/.600")
         self.assertNotEqual(shown["shade_vs_l"], shown["shade_vs_r"])
-        self.assertTrue(shown["background"].startswith("linear-gradient(to right, "))
-        self.assertLess(shown["background"].index(shown["shade_vs_l"]), shown["background"].index(shown["shade_vs_r"]))
+
+    def test_the_card_wash_is_the_war_rate_and_each_split_keeps_its_own(self):
+        # 4.4 WAR per 600 is a full green. A .311 OPS vs LHP is pink, and it
+        # belongs on that line: the name and the WAR stay on the player wash.
+        player = self.player("Glove first")
+        card = models.Card.objects.create(
+            player=player,
+            season=2026,
+            hitter_rates_vs_lhp={"k": 0, "bb": 0.1, "hbp": 0, "single": 0.1, "double": 0, "triple": 0, "hr": 0},
+            hitter_rates_vs_rhp={"k": 0, "bb": 0, "hbp": 0, "single": 0.2, "double": 0, "triple": 0, "hr": 0.1},
+        )
+        shown = decision_cards.hitter_card(player, {"pa": 600, "war": 4.4}, card)
+        self.assertEqual(shown["shade"], decision_cards.shade_color(1))
+        self.assertNotEqual(shown["shade_vs_l"], shown["shade"])
+        html = render_to_string("includes/decision_card.html", {"card": shown})
+        open_tag = html.split(">", 1)[0]
+        self.assertIn(f"background-color: {shown['shade']}", open_tag)
+        self.assertNotIn(shown["shade_vs_l"], open_tag)
+        self.assertNotIn("linear-gradient", html)
+        self.assertLess(html.index(f"background-color: {shown['shade_vs_l']}"), html.index("vsL"))
+        self.assertLess(html.index("vsL"), html.index(f"background-color: {shown['shade_vs_r']}"))
+        self.assertLess(html.index(f"background-color: {shown['shade_vs_r']}"), html.index("vsR"))
+
+    def test_a_couple_points_of_ops_do_not_wash_like_a_soft_line(self):
+        # .348 + .370 = .718, two points under the .720 center, so no wash.
+        # .329 + .356 = .685 is pink. .311 + .440 = .751 is green.
+        self.assertIsNone(decision_cards.ops_shade(0.348 + 0.370))
+        self.assertIsNotNone(decision_cards.ops_shade(0.329 + 0.356))
+        self.assertIsNotNone(decision_cards.ops_shade(0.311 + 0.440))
+        # 4.4 and 3.8 per 600 are both above a 2-win average, 4.4 at the full green.
+        self.assertGreaterEqual(
+            _greenness(decision_cards.hitter_shade(4.4)),
+            _greenness(decision_cards.hitter_shade(3.8)),
+        )
+        self.assertGreater(_greenness(decision_cards.hitter_shade(3.8)), 0)
+
+    def test_an_ordinary_line_against_righties_does_not_paint_over_the_war_wash(self):
+        player = self.player("Ordinary vs righties")
+        card = models.Card.objects.create(
+            player=player,
+            season=2026,
+            hitter_rates_vs_lhp={
+                "k": 0.2, "bb": 0.05, "hbp": 0.01, "single": 0.16,
+                "double": 0.05, "triple": 0, "hr": 0.04,
+            },
+            hitter_rates_vs_rhp={
+                "k": 0.2, "bb": 0.05, "hbp": 0, "single": 0.25,
+                "double": 0.05, "triple": 0, "hr": 0,
+            },
+        )
+        shown = decision_cards.hitter_card(player, {"pa": 600, "war": 4.4}, card)
+        self.assertIsNone(shown["shade_vs_r"])
+        self.assertIsNotNone(shown["shade_vs_l"])
+        html = render_to_string("includes/decision_card.html", {"card": shown})
+        open_tag = html.split(">", 1)[0]
+        self.assertIn(f"background-color: {shown['shade']}", open_tag)
+        self.assertIn(f"background-color: {shown['shade_vs_l']}", html)
+        self.assertNotIn('text-right" style=', html)
 
     def test_a_missing_split_uses_the_overall_slash_on_both_sides(self):
         player = self.player("Overall")

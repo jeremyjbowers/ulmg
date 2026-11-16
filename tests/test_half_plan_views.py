@@ -148,8 +148,10 @@ class PublicPlanTestCase(PlanViewsTestCase):
         shown = articles(body, catcher.id)[0]
         built = decision_cards.hitter_card(catcher, {"pa": 600}, card)
         self.assertLess(shown.index("vsL .111/.200/.111"), shown.index("vsR .300/.300/.600"))
-        self.assertIn(built["background"], shown)
-        self.assertLess(shown.index(built["shade_vs_l"]), shown.index(built["shade_vs_r"]))
+        self.assertNotIn("linear-gradient", shown)
+        self.assertLess(shown.index(f"background-color: {built['shade_vs_l']}"), shown.index("vsL"))
+        self.assertLess(shown.index("vsL"), shown.index(f"background-color: {built['shade_vs_r']}"))
+        self.assertLess(shown.index(f"background-color: {built['shade_vs_r']}"), shown.index("vsR"))
 
     def test_a_glove_of_minus_ten_or_worse_is_listed_as_emergency_only(self):
         shortstop = next(player for player in self.roster.fielders if player.name.endswith("SS"))

@@ -23,8 +23,10 @@ PALE_GREEN = (198, 228, 208)
 LIGHT_PINK = (250, 214, 220)
 
 # League-average OPS the platoon wash is centered on. Two tenths of OPS is the full wash.
+# Fewer than six points off that average is not a wash: it would read as a white patch on the card.
 OPS_AVERAGE = 0.720
 OPS_SPAN = 0.200
+OPS_QUIET = 0.006
 
 # A shown defensive rating of this or worse, in runs, is not a normal button.
 # -10 itself is emergency. The button stays available under Emergency only.
@@ -46,7 +48,7 @@ def load(players, season):
 
 
 def hitter_card(player, hit, card):
-    """What a hitter's card shows: name and hand, PA, speed, WAR, the two platoon slashes, and defense."""
+    """Name, hand, PA, speed, WAR, the two platoon slashes, and defense. The card wash is WAR per 600; each line has its own OPS wash."""
     hit = hit or {}
     versus_left = _platoon_side(card, card.hitter_rates_vs_lhp if card is not None else None)
     versus_right = _platoon_side(card, card.hitter_rates_vs_rhp if card is not None else None)
@@ -63,7 +65,6 @@ def hitter_card(player, hit, card):
         "slash_vs_r": versus_right["slash"],
         "shade_vs_l": versus_left["shade"],
         "shade_vs_r": versus_right["shade"],
-        "background": _split_background(versus_left["shade"], versus_right["shade"]),
         "defense_label": _defense(card, player),
         "defense_rows": rows,
         "speed_label": speed_label(card.spd if card is not None else None),
@@ -153,9 +154,9 @@ def pitcher_shade(xfip):
 
 
 def ops_shade(ops):
-    """Pale green above a .720 OPS, light pink below. None at average or with no OPS."""
+    """Pale green above a .720 OPS, light pink below. None within six points of average, or with no OPS."""
     value = _stat_number(ops)
-    if value is None:
+    if value is None or abs(value - OPS_AVERAGE) < OPS_QUIET:
         return None
     return shade_color((value - OPS_AVERAGE) / OPS_SPAN)
 
@@ -250,15 +251,6 @@ def _platoon_side(card, rates):
     if line is None and card is not None:
         line = card.hitter_line()
     return {"slash": _format_slash(line), "shade": ops_shade(_line_ops(line))}
-
-
-def _split_background(left, right):
-    """Left half is vsL, right half is vsR. No wash when both sides are average."""
-    left = left or "#ffffff"
-    right = right or "#ffffff"
-    if left == "#ffffff" and right == "#ffffff":
-        return None
-    return f"linear-gradient(to right, {left} 50%, {right} 50%)"
 
 
 def _slash(card):
