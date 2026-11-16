@@ -20,7 +20,13 @@ ROTATION_SLOTS = 6
 # Empty slots on the bullpen page. A role that already names more arms shows every one of them.
 BULLPEN_GROUPS = (
     ("closer", "Closer", 1, "The 9th or later, in a save."),
-    ("sirp", "SIRP", 4, "One inning from the 6th on, when the game is within three runs."),
+    (
+        "sirp",
+        "SIRP",
+        4,
+        "One inning from the 6th on, when the game is within three runs. "
+        "He may finish a messy inning (1.1 or 1.2), and he can pitch on consecutive days.",
+    ),
     (
         "mirp",
         "MIRP",

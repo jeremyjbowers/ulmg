@@ -533,7 +533,13 @@ class Play:
         problem = pitcher_card_problem(player, self.card(player))
         if problem:
             return problem
-        check = usage.check_pitcher(player, self.game, starting=starting, reads=self.usage)
+        check = usage.check_pitcher(
+            player,
+            self.game,
+            starting=starting,
+            reads=self.usage,
+            single_inning_finish=not starting and self.single_inning_finish(side, player),
+        )
         return None if check.legal else check.reason
 
     def is_starter(self, side, player):
@@ -593,6 +599,23 @@ class Play:
                 before = event.payload["before"]
                 return (before["inning"], before["half"]) != (self.state["inning"], self.state["half"])
         return True
+
+    def outing_outs(self, player):
+        """Outs this pitcher has recorded in this game."""
+        appearance = self.usage.appearance(player, self.game)
+        return appearance.outs if appearance is not None else 0
+
+    def single_inning_finish(self, side, player):
+        """
+        Whether he is the single-inning reliever on the mound with the half
+        inning he is pitching still going. The ledger then lets a one-inning
+        cap run to 1.2 so he can finish that inning.
+        """
+        if self.state is None or self.at_half_inning_start():
+            return False
+        if str(player.id) != str(current_pitcher_id(self.state)):
+            return False
+        return self.group_of(side, player) == computer_manager.SIRP
 
     def pitcher_options(self, side):
         """Every pitcher the side could bring in, in bullpen order then by name, with why not for the illegal."""
@@ -853,10 +876,12 @@ def bring_in_reliever(play, side, role, choice, text, payload):
 def computer_pitching_change(play):
     """
     A change the computer makes when nothing forces one: its starter's hook,
-    or, at the start of a half inning, a reliever whose role no longer
-    applies giving way to an available arm of the role that does. A
-    multi-inning reliever finishes his own outing instead, until the closer
-    is called. Returns whether it made one.
+    or a reliever giving way. At the start of a half inning, a reliever whose
+    role no longer applies gives way to an available arm of the role that
+    does. A multi-inning reliever finishes his own outing instead, until the
+    closer is called. A single-inning reliever also comes out when his outing
+    is over: one clean inning, or 1.2 when he is finishing the inning he is
+    in. Returns whether it made one.
     """
     side = fielding_side(play.state)
     pid = current_pitcher_id(play.state)
@@ -896,18 +921,30 @@ def computer_pitching_change(play):
         return True
 
     current = play.group_of(side, pitcher)
-    if current == role or not play.at_half_inning_start():
+    inning_unfinished = not play.at_half_inning_start()
+    # An outing pull only while his own role still wants him, or mid-inning at 1.2.
+    # A role change at the half inning is said as a role change, and a multi-inning arm may stay through it.
+    pull = None
+    if current == computer_manager.SIRP and (inning_unfinished or current == role):
+        pull = computer_manager.sirp_pull_reason(play.outing_outs(pitcher), inning_unfinished)
+    if pull is None and (current == role or inning_unfinished):
         return False
-    outs_left = usage.check_pitcher(pitcher, play.game, reads=play.usage).remaining["game_outs"]
-    if computer_manager.reliever_stays(current, role, outs_left):
-        return False
-    choice = computer_manager.preferred_arm(role, groups, problem)
+    if pull is None:
+        outs_left = usage.check_pitcher(pitcher, play.game, reads=play.usage).remaining["game_outs"]
+        if computer_manager.reliever_stays(current, role, outs_left):
+            return False
+        choice = computer_manager.preferred_arm(role, groups, problem)
+    else:
+        choice = computer_manager.reliever(role, groups, problem)
     if choice.player is None:
         return False
-    text = (
-        f"A new half inning: {pitcher.name}'s {computer_manager.ROLE_LABELS[current]} role no longer applies."
-    )
-    bring_in_reliever(play, side, role, choice, text, {"need": "role", "pitcher": pitcher.id})
+    if pull:
+        text = f"{pitcher.name} comes out: {pull}"
+        need = "outing"
+    else:
+        text = f"A new half inning: {pitcher.name}'s {computer_manager.ROLE_LABELS[current]} role no longer applies."
+        need = "role"
+    bring_in_reliever(play, side, role, choice, text, {"need": need, "pitcher": pitcher.id})
     return True
 
 
@@ -1709,6 +1746,7 @@ def play_plate_appearance(play, call, *, user=None, computer=False):
             outs=result["change"]["outs_added"],
             pitches=len(result["pitches"]),
             pitcher_starting=play.is_starter(fielding, pitcher),
+            single_inning_finish=play.single_inning_finish(fielding, pitcher),
         )
     except usage.UsageViolation as violation:
         raise GameRefused(violation.check.reason)

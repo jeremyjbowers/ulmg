@@ -115,7 +115,8 @@ class BullpenRolesTestCase(ComputerGameTestCase):
         self.assertEqual(decision.payload["skipped"][0][0], closer.id)
         self.assertIn("40 pitches", decision.text)
 
-    def test_a_single_inning_reliever_holds_the_seventh_and_eighth_and_the_closer_takes_the_ninth(self):
+    def test_a_single_inning_reliever_is_lifted_after_a_clean_inning(self):
+        # His card cap would let him pitch the 8th. The window still wants him. One clean inning ends it.
         gf.counter(self.home.starters[0], start_limit_outs=18)
         setup = self.home.relievers[1]
         gf.counter(setup, relief_limit_outs=9)
@@ -124,13 +125,60 @@ class BullpenRolesTestCase(ComputerGameTestCase):
         self.assertEqual(first.payload["pitcher"], setup.id)
         self.assertEqual(inning_of(log, first), 7)
         self.assertEqual(decision_before(log, first).payload["role"], computer_manager.SIRP)
-        self.assertEqual(second.payload["pitcher"], self.home.relievers[0].id)
-        self.assertEqual(inning_of(log, second), 9, "the single-inning reliever stays through the 8th, when his role still applies")
+        self.assertEqual(inning_of(log, second), 8)
+        self.assertEqual(second.payload["pitcher"], self.home.swingman.id)
         decision = decision_before(log, second)
-        self.assertEqual(decision.payload["need"], "role")
-        self.assertEqual(decision.payload["role"], computer_manager.CLOSER)
+        self.assertEqual(decision.payload["need"], "outing")
+        self.assertEqual(decision.payload["role"], computer_manager.SIRP)
+        self.assertEqual(decision.payload["group"], computer_manager.MIRP)
         self.assertIn(setup.name, decision.text)
-        self.assertEqual(models.UsageAppearance.objects.get(game=self.game, player=setup).outs, 6)
+        self.assertEqual(models.UsageAppearance.objects.get(game=self.game, player=setup).outs, 3)
+
+    def test_a_single_inning_reliever_finishes_a_messy_inning_through_one_and_two_thirds(self):
+        # The starter leaves after one out in the 6th. A one-inning cap would pull the reliever at 1.0.
+        gf.counter(self.home.starters[0], start_limit_outs=16)
+        setup = self.home.relievers[1]
+        gf.counter(setup, relief_limit_outs=usage.RELIEF_LIMIT_MIN_INNINGS * 3)
+        log = self.open()
+        first = self.until_changes(log, HOME, 1)[0]
+        self.assertEqual(first.payload["pitcher"], setup.id)
+        self.assertEqual(inning_of(log, first), 6)
+
+        def still_pitching(outs_recorded, inning_outs):
+            def ready(play):
+                if (play.state["inning"], play.state["half"], play.state["outs"]) != (7, "top", inning_outs):
+                    return False
+                if play.state[HOME]["pitcher_slot"] != str(setup.id):
+                    return False
+                appearance = models.UsageAppearance.objects.get(game=self.game, player=setup)
+                return appearance.outs == outs_recorded
+            return ready
+
+        play = self.step_until(log, still_pitching(3, 1))
+        self.assertIsNone(play.need(), "three outs recorded and the inning still open, so he faces the next batter")
+        play = self.step_until(log, still_pitching(4, 2))
+        self.assertIsNone(play.need(), "four outs recorded and the inning still open, so he faces the next batter")
+        second = self.until_changes(log, HOME, 2)[1]
+        self.assertEqual(inning_of(log, second), 8)
+        self.assertNotEqual(second.payload["pitcher"], setup.id)
+        appearance = models.UsageAppearance.objects.get(game=self.game, player=setup)
+        self.assertEqual(appearance.outs, 5)
+        self.assertEqual(appearance.allowance_outs, 0)
+
+    def test_a_multi_inning_reliever_is_not_lifted_after_one_inning(self):
+        gf.counter(self.home.starters[0], start_limit_outs=6)
+        mirp = self.home.swingman
+        gf.counter(mirp, relief_limit_outs=12)
+        log = self.open()
+        first = self.until_changes(log, HOME, 1)[0]
+        self.assertEqual(first.payload["pitcher"], mirp.id)
+        self.assertEqual(inning_of(log, first), 3)
+        play = self.step_until(
+            log, lambda p: p.state["inning"] == 6 and p.state["half"] == "top" and p.state["outs"] == 0
+        )
+        self.assertEqual(play.bullpen_role(), computer_manager.SIRP)
+        self.assertEqual(play.state[HOME]["pitcher_slot"], str(mirp.id))
+        self.assertEqual(models.UsageAppearance.objects.get(game=self.game, player=mirp).outs, 9)
 
     def test_a_single_inning_reliever_comes_in_late_in_a_tie(self):
         gf.set_rates([self.home.hitters[0]], gf.STRIKEOUT_RATES)

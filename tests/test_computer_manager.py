@@ -4,7 +4,7 @@
 from django.contrib.auth.models import AnonymousUser, Group, User
 from django.test import TestCase
 
-from ulmg import computer_manager, models, utils
+from ulmg import computer_manager, models, usage, utils
 
 
 def players(*names):
@@ -214,6 +214,22 @@ class BullpenRoleTestCase(TestCase):
         self.assertFalse(stays(computer_manager.MIRP, computer_manager.SIRP, 0), "no outs left in the outing")
         self.assertFalse(stays(computer_manager.SIRP, computer_manager.MIRP, 6), "a single-inning reliever is not kept")
         self.assertFalse(stays(computer_manager.OTHER, computer_manager.SIRP, 6))
+
+
+class SirpOutingTestCase(TestCase):
+    def test_a_single_inning_reliever_finishes_a_messy_inning_and_does_not_start_another(self):
+        pull = computer_manager.sirp_pull_reason
+        self.assertEqual(computer_manager.SIRP_INNING_OUTS, usage.RELIEF_LIMIT_MIN_INNINGS * 3)
+        self.assertEqual(computer_manager.SIRP_MAX_OUTS, usage.SINGLE_INNING_FINISH_OUTS)
+        self.assertEqual(usage.SINGLE_INNING_FINISH_OUTS, 5)
+        self.assertIsNone(pull(0, inning_unfinished=False))
+        self.assertIsNone(pull(2, inning_unfinished=False), "two outs of a messy inning, so he starts the next one")
+        self.assertIsNotNone(pull(3, inning_unfinished=False), "a clean inning is over, so he does not come back out")
+        self.assertIsNotNone(pull(4, inning_unfinished=False), "1.1 ends when that half inning ends")
+        self.assertIsNone(pull(3, inning_unfinished=True), "three outs with the inning still open, so he faces another batter")
+        self.assertIsNone(pull(4, inning_unfinished=True), "four outs with the inning still open, so he faces another batter")
+        self.assertIsNotNone(pull(5, inning_unfinished=True), "five outs is 1.2, and the outing is over")
+        self.assertIsNotNone(pull(5, inning_unfinished=False))
 
 
 class StarterHookTestCase(TestCase):

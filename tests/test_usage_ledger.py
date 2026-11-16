@@ -186,6 +186,49 @@ class PerGameLimitTestCase(TestCase):
         self.assertEqual(usage.card_caps(swing, ULMG_SEASON)["relief_limit_outs"], 6)
 
 
+class SingleInningFinishTestCase(TestCase):
+    def setUp(self):
+        home, road = create_teams()
+        self.games = create_series(home, road, length=5)
+        self.hitter = create_hitter("Everyday", ab=600, pa=650)
+        self.loogy = create_pitcher("LOOGY", ip=20, g=60, gs=0, relief_minusip=20)
+        self.setup_man = create_pitcher("Setup Man", ip=65, g=65, gs=0, relief_minusip=65)
+
+    def test_finishing_the_inning_allows_four_or_five_outs_and_not_a_sixth(self):
+        self.assertEqual(usage.card_caps(self.loogy, ULMG_SEASON)["relief_limit_outs"], 3)
+        game = self.games[0]
+        for _ in range(3):
+            strikeout(game, self.hitter, self.loogy, single_inning_finish=True)
+        self.assertEqual(usage.check_pitcher(self.loogy, game, single_inning_finish=True).remaining["game_outs"], 2)
+        strikeout(game, self.hitter, self.loogy, single_inning_finish=True)
+        self.assertTrue(usage.check_pitcher(self.loogy, game, single_inning_finish=True).legal)
+        strikeout(game, self.hitter, self.loogy, single_inning_finish=True)
+        appearance = models.UsageAppearance.objects.get(player=self.loogy, game=game)
+        self.assertEqual((appearance.outs, appearance.allowance_outs), (5, 0))
+        check = usage.check_pitcher(self.loogy, game, single_inning_finish=True)
+        self.assertFalse(check.legal)
+        self.assertIn("this outing", check.reason)
+        with self.assertRaises(usage.UsageViolation):
+            strikeout(game, self.hitter, self.loogy, single_inning_finish=True)
+        self.assertEqual(models.UsageAppearance.objects.get(player=self.loogy, game=game).outs, 5)
+
+    def test_without_the_inning_still_going_a_one_inning_cap_ends_at_one_inning(self):
+        game = self.games[0]
+        for _ in range(3):
+            strikeout(game, self.hitter, self.loogy)
+        self.assertFalse(usage.check_pitcher(self.loogy, game).legal)
+        with self.assertRaises(usage.UsageViolation):
+            strikeout(game, self.hitter, self.loogy)
+
+    def test_finishing_the_inning_does_not_lower_a_longer_outing(self):
+        self.assertEqual(usage.card_caps(self.setup_man, ULMG_SEASON)["relief_limit_outs"], 6)
+        game = self.games[0]
+        for _ in range(6):
+            strikeout(game, self.hitter, self.setup_man, single_inning_finish=True)
+        self.assertFalse(usage.check_pitcher(self.setup_man, game, single_inning_finish=True).legal)
+        self.assertEqual(models.UsageAppearance.objects.get(player=self.setup_man, game=game).outs, 6)
+
+
 class PitcherInGameTestCase(TestCase):
     def setUp(self):
         home, road = create_teams()
@@ -337,6 +380,16 @@ class RelieverRestTestCase(TestCase):
             self.game(4), self.hitter, self.closer, at_bat=True, outs=1, pitches=usage.RELIEVER_HEAVY_PITCHES - 1
         )
         self.assertTrue(usage.check_pitcher(self.closer, self.game(3)).legal)
+
+    def test_back_to_back_relief_is_legal_and_a_third_straight_game_is_not(self):
+        strikeout(self.game(1), self.hitter, self.closer)
+        self.assertTrue(usage.check_pitcher(self.closer, self.game(2)).legal)
+        strikeout(self.game(2), self.hitter, self.closer)
+        check = usage.check_pitcher(self.closer, self.game(3))
+        self.assertFalse(check.legal)
+        self.assertIn("consecutive games", check.reason)
+        self.assertEqual(usage.RELIEVER_CONSECUTIVE_GAMES, 3)
+        self.assertEqual(usage.RELIEVER_HEAVY_PITCHES, 30)
 
     def test_a_new_series_starts_everyone_fresh(self):
         strikeout(self.game(4), self.hitter, self.closer)

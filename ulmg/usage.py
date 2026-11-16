@@ -32,6 +32,8 @@ START_LIMIT_MIN_INNINGS = 4
 START_LIMIT_MAX_INNINGS = 9
 RELIEF_LIMIT_MIN_INNINGS = 1
 RELIEF_LIMIT_MAX_INNINGS = 3
+# A one-inning relief cap may stretch to 1.2 while he finishes the half inning he is in. Not a second inning.
+SINGLE_INNING_FINISH_OUTS = 5
 CONVERTED_STARTER_MIN_GS = 5
 
 # A pitcher who starts game n cannot start games n - 3 through n + 3 of that series.
@@ -489,7 +491,22 @@ def _batter_check(counter, overrides):
     return UsageCheck(True, None, remaining)
 
 
-def _pitcher_check(counter, game, starting, overrides, appearance, series_appearances):
+def _outing_limit(counter, starting, single_inning_finish):
+    """
+    Outs he may record in this outing. While a reliever whose cap is one
+    inning is finishing the half inning he is in, that cap stretches to 1.2.
+    A longer cap is left alone. The stretch is not a second inning: the
+    caller passes it only while the half inning is still going.
+    """
+    if starting:
+        return counter.start_limit_outs
+    limit = counter.relief_limit_outs
+    if single_inning_finish and limit == RELIEF_LIMIT_MIN_INNINGS * 3:
+        return SINGLE_INNING_FINISH_OUTS
+    return limit
+
+
+def _pitcher_check(counter, game, starting, overrides, appearance, series_appearances, single_inning_finish=False):
     name = counter.player.name
     if appearance is not None and _pitched(appearance):
         starting = appearance.started
@@ -497,7 +514,7 @@ def _pitcher_check(counter, game, starting, overrides, appearance, series_appear
     confined = season_innings_cap(counter) != counter.innings_cap_outs
 
     season_cap = season_innings_cap(counter)
-    game_limit = counter.start_limit_outs if starting else counter.relief_limit_outs
+    game_limit = _outing_limit(counter, starting, single_inning_finish)
     game_outs = appearance.outs if appearance else 0
     remaining = {
         "starts": _remaining(counter.starts_cap, counter.starts),
@@ -574,12 +591,14 @@ def check_batter(player, game, reads=None):
     return _batter_check(counter, _approved_overrides(player, game))
 
 
-def check_pitcher(player, game, starting=False, reads=None):
+def check_pitcher(player, game, starting=False, reads=None, *, single_inning_finish=False):
     """
     Before seating a pitcher and before each batter he faces. starting says
     he would be this game's starting pitcher; once he has pitched in the
     game his appearance decides. Covers starts, season innings, this
-    outing's limit and series rest. reads, a LedgerReads for this action,
+    outing's limit and series rest. single_inning_finish is true while a
+    one-inning reliever is finishing the half inning he is in, so a
+    one-inning cap may run to 1.2. reads, a LedgerReads for this action,
     saves reading the same rows again.
     """
     if reads is not None:
@@ -591,6 +610,7 @@ def check_pitcher(player, game, starting=False, reads=None):
             reads.approved_overrides(player, game),
             reads.appearance(player, game),
             reads.series_appearances(player, game),
+            single_inning_finish,
         )
     counter = _current_counter(player, _season(game))
     return _pitcher_check(
@@ -600,6 +620,7 @@ def check_pitcher(player, game, starting=False, reads=None):
         _approved_overrides(player, game),
         _appearance(player, game),
         _series_appearances(player, game),
+        single_inning_finish,
     )
 
 
@@ -644,14 +665,18 @@ def check_planned_start(player, game, planned_starts, reads=None):
 # Recording
 
 
-def record_plate_appearance(game, batter, pitcher, *, at_bat, outs, pitches=0, pitcher_starting=False):
+def record_plate_appearance(
+    game, batter, pitcher, *, at_bat, outs, pitches=0, pitcher_starting=False, single_inning_finish=False
+):
     """
     The one entry point a game calls as it appends to its log, inside the
     log's transaction. Locks both players' counters, checks the batter and
     the pitcher, and counts one plate appearance and the outs it recorded.
     Raises UsageViolation, with nothing counted, when either player is past
     a cap. A play that starts with an out left may record more outs than
-    remain; the extra outs are kept as allowance_outs.
+    remain; the extra outs are kept as allowance_outs. single_inning_finish
+    lets a one-inning reliever record the 4th or 5th out of the half inning
+    he is already pitching, and not a 6th.
 
     Pass batter=None for outs recorded on the bases during a plate
     appearance (a caught stealing): those count for the pitcher with no
@@ -683,6 +708,7 @@ def record_plate_appearance(game, batter, pitcher, *, at_bat, outs, pitches=0, p
                 pitcher_overrides,
                 pitcher_appearance,
                 _series_appearances(pitcher, game),
+                single_inning_finish,
             )
             if not pitcher_check.legal:
                 raise UsageViolation(pitcher_check)
@@ -711,11 +737,7 @@ def record_plate_appearance(game, batter, pitcher, *, at_bat, outs, pitches=0, p
         season_cap = season_innings_cap(pitcher_counter)
         if season_cap is not None and models.UsageOverride.SEASON_INNINGS not in pitcher_overrides:
             rooms.append(season_cap - pitcher_counter.outs)
-        game_limit = (
-            pitcher_counter.start_limit_outs
-            if pitcher_appearance.started
-            else pitcher_counter.relief_limit_outs
-        )
+        game_limit = _outing_limit(pitcher_counter, pitcher_appearance.started, single_inning_finish)
         if models.UsageOverride.GAME_INNINGS not in pitcher_overrides:
             rooms.append(game_limit - pitcher_appearance.outs)
         allowance = max(outs - max(min(rooms), 0), 0) if rooms else 0

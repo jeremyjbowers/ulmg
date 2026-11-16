@@ -286,6 +286,8 @@ class EditPlanTestCase(PlanViewsTestCase):
         self.assertFalse(plan.days.exists())
         self.assertIn("with a runner on", response.content.decode())
         self.assertIn("One inning from the 6th on", response.content.decode())
+        self.assertIn("messy inning (1.1 or 1.2)", response.content.decode())
+        self.assertIn("consecutive days", response.content.decode())
         self.assertNotIn("Name a closer", response.content.decode())
         saved = client.get(BULLPEN_URL).content.decode()
         self.assertIn('name="bullpen_logic" value="leverage"', saved)
