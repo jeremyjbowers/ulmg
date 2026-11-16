@@ -8,7 +8,12 @@ const template = fs.readFileSync(
   path.join(__dirname, '../../ulmg/templates/includes/player_protect_actions_script.html'),
   'utf8'
 );
-const script = template.match(/<script>([\s\S]*)<\/script>/)[1];
+const scriptOpen = template.indexOf('<script>');
+const scriptClose = template.lastIndexOf('</script>');
+if (scriptOpen < 0 || scriptClose < 0) {
+  throw new Error('player_protect_actions_script.html has no script block');
+}
+const script = template.slice(scriptOpen + '<script>'.length, scriptClose);
 
 const html = `<!DOCTYPE html>
 <html><body>
