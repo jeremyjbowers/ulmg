@@ -122,6 +122,7 @@ pub fn holding_out(bases: &Bases) -> crate::model::PaResult {
             in_play: true,
             error: None,
         },
+        call_note: None,
     }
 }
 
@@ -154,6 +155,7 @@ pub fn solo_home_run() -> crate::model::PaResult {
             in_play: true,
             error: None,
         },
+        call_note: None,
     }
 }
 
@@ -188,5 +190,6 @@ pub fn pitches_only(count: usize) -> crate::model::PaResult {
             in_play: false,
             error: None,
         },
+        call_note: None,
     }
 }

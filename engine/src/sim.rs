@@ -11,9 +11,9 @@ use rand::seq::SliceRandom;
 use rand::{Rng, SeedableRng};
 
 use crate::model::{
-    Base, BaseOutRunChange, BaserunningEvent, Bases, BattedBallRates, ChargedError, Count, Fielder,
-    Fielding, HitterRates, PaInput, PaResult, Park, Pitch, PitchKind, PitcherRates, PlateOutcome,
-    PlayerId, Position, Running,
+    Base, BaseOutRunChange, BaserunningEvent, Bases, BattedBallRates, CallNote, ChargedError,
+    Count, Fielder, Fielding, HitterRates, PaInput, PaResult, Park, Pitch, PitchKind, PitcherRates,
+    PlateOutcome, PlayerId, Position, Running,
 };
 
 /// League line used as the odds-ratio baseline, per plate appearance.
@@ -422,6 +422,30 @@ pub fn apply_hit_and_run(probs: &mut OutcomeProbs) {
     probs.triple += added_hits * (triple / denom);
 }
 
+/// What the log should say about a hit-and-run that was on for this at-bat.
+/// A hit is the call succeeding. A strikeout is it failing. Any other result was still the call.
+fn hit_and_run_note(outcome: PlateOutcome) -> CallNote {
+    if outcome == PlateOutcome::Strikeout {
+        CallNote::HitAndRunFailed
+    } else if outcome.is_hit() {
+        CallNote::HitAndRunSucceeded
+    } else {
+        CallNote::HitAndRun
+    }
+}
+
+fn noted(
+    call_note: Option<CallNote>,
+    hit_and_run: bool,
+    outcome: PlateOutcome,
+) -> Option<CallNote> {
+    if hit_and_run {
+        Some(hit_and_run_note(outcome))
+    } else {
+        call_note
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum StealTarget {
     Second,
@@ -770,6 +794,7 @@ impl Sim {
         let mut bases = input.situation.bases.clone();
         let mut events = Vec::new();
         let mut outs_from_running = 0u8;
+        let mut call_note = None;
 
         if input.calls.steal && !input.calls.hit_and_run {
             if let Some(target) = steal_target(&bases) {
@@ -794,9 +819,12 @@ impl Sim {
                                 events,
                                 batter_completed: false,
                             },
+                            None,
                         );
                     }
                 }
+            } else {
+                call_note = Some(CallNote::StealHeld);
             }
         }
 
@@ -814,6 +842,7 @@ impl Sim {
                 input,
                 PlateOutcome::IntentionalWalk,
                 merge(outs_from_running, events, adv),
+                call_note,
             );
         }
 
@@ -828,12 +857,21 @@ impl Sim {
                     take_extra_base: false,
                 },
             );
-            return self.package(input, outcome, merge(outs_from_running, events, adv));
+            return self.package(
+                input,
+                outcome,
+                merge(outs_from_running, events, adv),
+                call_note,
+            );
         }
 
+        let hit_and_run = input.calls.hit_and_run && input.situation.bases.first.is_some();
+        if input.calls.hit_and_run && !hit_and_run {
+            call_note = Some(CallNote::HitAndRunNoRunner);
+        }
         let mut probs =
             outcome_probabilities(&input.rates, &input.pitcher, input.defense, &input.park);
-        if input.calls.hit_and_run && input.situation.bases.first.is_some() {
+        if hit_and_run {
             apply_hit_and_run(&mut probs);
         }
         let mut outcome = self.draw_outcome(&probs);
@@ -857,6 +895,7 @@ impl Sim {
                     input,
                     PlateOutcome::ReachedOnError,
                     merge(outs_from_running, events, adv),
+                    noted(call_note, hit_and_run, PlateOutcome::ReachedOnError),
                 );
                 result.fielding.error = charged;
                 return result;
@@ -869,7 +908,12 @@ impl Sim {
             } else {
                 let (out, options) = self.roll_runners_on_out(kind, &bases, outs, infield_in);
                 let adv = advance_on_out(&bases, &input.hitter_id, out, outs, options);
-                return self.package(input, out, merge(outs_from_running, events, adv));
+                return self.package(
+                    input,
+                    out,
+                    merge(outs_from_running, events, adv),
+                    noted(call_note, hit_and_run, out),
+                );
             }
         }
         let take_extra =
@@ -883,7 +927,12 @@ impl Sim {
                 take_extra_base: take_extra,
             },
         );
-        self.package(input, outcome, merge(outs_from_running, events, adv))
+        self.package(
+            input,
+            outcome,
+            merge(outs_from_running, events, adv),
+            noted(call_note, hit_and_run, outcome),
+        )
     }
 
     fn take_extra_base(
@@ -1004,7 +1053,13 @@ impl Sim {
         PlateOutcome::BipOut
     }
 
-    fn package(&mut self, input: &PaInput, outcome: PlateOutcome, adv: Advancement) -> PaResult {
+    fn package(
+        &mut self,
+        input: &PaInput,
+        outcome: PlateOutcome,
+        adv: Advancement,
+        call_note: Option<CallNote>,
+    ) -> PaResult {
         let (pitches, count) = self.pitches_for(outcome);
         let in_play = matches!(
             outcome,
@@ -1041,6 +1096,7 @@ impl Sim {
                 in_play,
                 error: None,
             },
+            call_note,
         }
     }
 
@@ -2029,7 +2085,121 @@ mod tests {
                 runner: "r2".into(),
                 to: Base::Third,
             }));
+            assert_eq!(result.call_note, None);
         }
+    }
+
+    fn certain(which: &str) -> HitterRates {
+        let mut rates = HitterRates {
+            k: 0.0,
+            bb: 0.0,
+            hbp: 0.0,
+            single: 0.0,
+            double: 0.0,
+            triple: 0.0,
+            hr: 0.0,
+            bip_out: 0.0,
+        };
+        match which {
+            "k" => rates.k = 1.0,
+            "single" => rates.single = 1.0,
+            _ => rates.bip_out = 1.0,
+        }
+        rates
+    }
+
+    #[test]
+    fn a_certain_steal_is_a_stolen_base_and_not_a_call_note() {
+        let mut input = runner_on_first(Some(rated("r1", Some(1.0), None)), None);
+        input.calls.steal = true;
+        let result = Sim::from_seed(1).resolve(&input);
+        assert!(result.baserunning.iter().any(|event| matches!(
+            event,
+            BaserunningEvent::StolenBase { runner, to: Base::Second } if runner == "r1"
+        )));
+        assert_eq!(result.call_note, None);
+    }
+
+    #[test]
+    fn a_failed_steal_with_two_outs_ends_the_plate_appearance() {
+        let mut input = runner_on_first(Some(rated("r1", Some(0.0), None)), None);
+        input.calls.steal = true;
+        input.situation.outs = 2;
+        let result = Sim::from_seed(1).resolve(&input);
+        assert_eq!(result.outcome, PlateOutcome::CaughtStealing);
+        assert!(!result.batter_completed);
+        assert!(result.baserunning.iter().any(|event| matches!(
+            event,
+            BaserunningEvent::CaughtStealing { runner, at: Base::Second } if runner == "r1"
+        )));
+        assert_eq!(result.call_note, None);
+    }
+
+    #[test]
+    fn a_steal_with_no_open_base_is_held() {
+        let mut input = sample_input(false);
+        input.situation.bases = on(true, true, true);
+        input.calls.steal = true;
+        let result = Sim::from_seed(1).resolve(&input);
+        assert!(result.baserunning.iter().all(|event| !matches!(
+            event,
+            BaserunningEvent::StolenBase { .. } | BaserunningEvent::CaughtStealing { .. }
+        )));
+        assert_eq!(result.call_note, Some(CallNote::StealHeld));
+    }
+
+    #[test]
+    fn a_hit_and_run_hit_succeeds_and_a_strikeout_fails() {
+        let mut hit = runner_on_first(Some(rated("r1", None, None)), None);
+        hit.calls.hit_and_run = true;
+        hit.rates = certain("single");
+        let succeeded = Sim::from_seed(1).resolve(&hit);
+        assert_eq!(succeeded.outcome, PlateOutcome::Single);
+        assert_eq!(succeeded.call_note, Some(CallNote::HitAndRunSucceeded));
+        assert!(succeeded.baserunning.iter().any(|event| matches!(
+            event,
+            BaserunningEvent::TookExtraBase { runner, to: Base::Third } if runner == "r1"
+        )));
+
+        let mut punchout = runner_on_first(None, None);
+        punchout.calls.hit_and_run = true;
+        punchout.rates = certain("k");
+        let mut struck_out = false;
+        for seed in 0..40 {
+            let result = Sim::from_seed(seed).resolve(&punchout);
+            if result.outcome == PlateOutcome::Strikeout {
+                assert_eq!(result.call_note, Some(CallNote::HitAndRunFailed));
+                struck_out = true;
+            } else {
+                assert_eq!(result.call_note, Some(CallNote::HitAndRun));
+            }
+        }
+        assert!(struck_out, "a hit-and-run still strikes out sometimes");
+    }
+
+    #[test]
+    fn a_hit_and_run_that_is_not_a_hit_or_a_strikeout_stays_the_call() {
+        let mut input = runner_on_first(None, None);
+        input.calls.hit_and_run = true;
+        input.rates = certain("out");
+        let result = Sim::from_seed(1).resolve(&input);
+        assert!(!result.outcome.is_hit());
+        assert_ne!(result.outcome, PlateOutcome::Strikeout);
+        assert_eq!(result.call_note, Some(CallNote::HitAndRun));
+    }
+
+    #[test]
+    fn a_hit_and_run_with_nobody_on_first_is_not_attempted() {
+        let mut input = sample_input(false);
+        input.calls.hit_and_run = true;
+        let result = Sim::from_seed(1).resolve(&input);
+        assert_eq!(result.call_note, Some(CallNote::HitAndRunNoRunner));
+    }
+
+    #[test]
+    fn a_plain_plate_appearance_has_no_call_note() {
+        let result = Sim::from_seed(1).resolve(&sample_input(false));
+        assert_eq!(result.call_note, None);
     }
 
     fn league_line_hitter() -> HitterRates {

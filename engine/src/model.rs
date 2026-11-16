@@ -553,6 +553,24 @@ pub struct Fielder {
     pub rating: f64,
 }
 
+/// What a called steal or hit-and-run did, when the baserunning events do not already say.
+/// A steal that was tried is a `StolenBase` or `CaughtStealing`. The log names that event.
+/// One of these is set when the steal was not tried, or when a hit-and-run was called.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum CallNote {
+    /// Steal was called and no runner had the next base open.
+    StealHeld,
+    /// Hit-and-run was called with nobody on first.
+    HitAndRunNoRunner,
+    /// Hit-and-run was on and the batter got a hit.
+    HitAndRunSucceeded,
+    /// Hit-and-run was on and the batter struck out.
+    HitAndRunFailed,
+    /// Hit-and-run was on. The at-bat was neither a hit nor a strikeout.
+    HitAndRun,
+}
+
 /// Fielding resolved inside the plate appearance. Not a separate catch and throw.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Fielding {
@@ -575,6 +593,9 @@ pub struct PaResult {
     pub count: Count,
     pub baserunning: Vec<BaserunningEvent>,
     pub fielding: Fielding,
+    /// Set when a steal was called and not tried, or when a hit-and-run was called.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub call_note: Option<CallNote>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
