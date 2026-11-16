@@ -175,10 +175,11 @@ class GamePageTestCase(TestCase):
         self.assertIn(self.starter.name, aaa)
 
         roster = self.client.get("/teams/atl/").content.decode()
-        self.assertIn("opening-roster-note", roster)
-        self.assertIn('class="opening-roster-player', roster)
+        self.assertNotIn("opening-roster-note", roster)
+        self.assertNotIn("opening-roster-player", roster)
+        self.assertNotIn(">Home</span>", roster)
+        self.assertIn('data-action="to_mlb">MLB</a>', roster)
         self.assertNotIn("Send down</a>", roster)
-        self.assertIn(f'href="/teams/atl/plan/1/{utils.league_season()}/roster/"', roster)
         self.assertIn(f'href="/teams/atl/schedule/{utils.league_season()}/"', roster)
 
 

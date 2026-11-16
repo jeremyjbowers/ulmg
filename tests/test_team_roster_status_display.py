@@ -1,6 +1,7 @@
 # ABOUTME: Tests for roster UI on team pages: stat columns, org/roster display, and MLB/AAA buttons.
 # ABOUTME: Staff set those rosters from a team page while TEAM_ROSTER_TAB is on.
 
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.test import Client, TestCase, override_settings
@@ -92,7 +93,7 @@ class TeamRosterStatusDisplayTestCase(TestCase):
         self.assertEqual(owner_page.status_code, 200)
         self.assertNotContains(owner_page, 'data-action="to_mlb"')
         self.assertNotContains(owner_page, 'data-action="to_aaa"')
-        self.assertNotContains(owner_page, "drop-button")
+        self.assertNotContains(owner_page, 'class="drop-button')
         self.assertNotContains(owner_page, 'id="roster-mlb-count"')
 
         User.objects.create_user(username="staff", password="secret", is_staff=True)
@@ -101,7 +102,10 @@ class TeamRosterStatusDisplayTestCase(TestCase):
         staff_page = staff_client.get("/teams/tst/")
         self.assertContains(staff_page, 'data-action="to_mlb"')
         self.assertContains(staff_page, 'data-action="to_aaa"')
-        self.assertContains(staff_page, "drop-button")
+        self.assertNotContains(staff_page, 'class="drop-button')
+        self.assertContains(staff_page, ">Roster</th>")
+        self.assertNotContains(staff_page, ">Protect</th>")
+        self.assertNotContains(staff_page, ">Home</span>")
         self.assertContains(staff_page, 'id="roster-mlb-count"')
 
     def test_team_page_shows_mlb_roster_badge_only_when_roster_tab_on(self):
@@ -286,6 +290,73 @@ class TeamRosterStatusDisplayTestCase(TestCase):
         row_chunk = content[player_idx : player_idx + 2500]
         self.assertNotIn('data-action="to_mlb"', row_chunk)
 
+    def _carded(self, name, **fields):
+        fields.setdefault("position", "OF")
+        fields.setdefault("level", "A")
+        player = models.Player.objects.create(name=name, team=self.team, **fields)
+        models.Player.objects.filter(pk=player.pk).update(carded_seasons=[2025])
+        player.refresh_from_db()
+        return player
+
+    def test_roster_column_is_mlb_and_aaa_without_protections_or_home(self):
+        self.user.is_staff = True
+        self.user.save()
+        self._carded("Vet Chip", level="V")
+        self.client.login(username="mgr", password="secret")
+        content = self.client.get("/teams/tst/").content.decode()
+        self.assertIn(">Roster</th>", content)
+        self.assertNotIn(">Protect</th>", content)
+        self.assertNotIn(">Home</span>", content)
+        row = content[content.find("Vet Chip") : content.find("Vet Chip") + 2500]
+        self.assertNotIn('class="drop-button', row)
+        self.assertNotIn('data-roster-type="asr"', row)
+        self.assertNotIn('data-roster-type="1h_pos"', row)
+        self.assertNotIn('data-roster-type="2h_pos"', row)
+        self.assertIn('data-action="to_mlb"', row)
+        self.assertIn('data-action="to_aaa"', row)
+
+    def test_a_full_mlb_roster_keeps_add_buttons_in_the_page(self):
+        self.user.is_staff = True
+        self.user.save()
+        for i in range(settings.MLB_ROSTER_SIZE):
+            self._carded(f"Full Roster {i}", is_ulmg_mlb_roster=True)
+        self._carded("Waiting Bat", is_ulmg_aaa_roster=True)
+        self.client.login(username="mgr", password="secret")
+        content = self.client.get("/teams/tst/").content.decode()
+        self.assertIn('id="roster-mlb-count">30<', content)
+        waiting = content[content.find("Waiting Bat") : content.find("Waiting Bat") + 2500]
+        self.assertIn('data-roster="mlb" data-action="to_mlb"', waiting)
+        self.assertIn("hidden", waiting)
+        self.assertIn('style="display:none"', waiting)
+        on_roster = content[content.find("Full Roster 0") : content.find("Full Roster 0") + 2500]
+        self.assertIn('data-roster="mlb" data-action="off_roster">MLB</a>', on_roster)
+        self.assertNotIn('style="display:none"', on_roster)
+
+    def test_staff_still_set_rosters_after_the_half_has_started(self):
+        self.user.is_staff = True
+        self.user.save()
+        up = self._carded("Already Up", is_ulmg_mlb_roster=True)
+        down = self._carded("Send Down", is_ulmg_aaa_roster=True)
+        models.RosterMove.objects.create(
+            season=2026,
+            half=1,
+            team=self.team,
+            player_up=up,
+            player_down=down,
+            stay_games=0,
+        )
+        self.client.login(username="mgr", password="secret")
+        content = self.client.get("/teams/tst/").content.decode()
+        self.assertNotIn("opening-roster-note", content)
+        self.assertNotIn(">Home</span>", content)
+        self.assertIn('data-playerid="%s" data-roster="mlb" data-action="off_roster"' % up.id, content)
+        self.assertIn('data-playerid="%s" data-roster="mlb" data-action="to_mlb"' % down.id, content)
+        moved = self.client.get(f"/api/v1/player/{up.id}/to_aaa/")
+        self.assertEqual(moved.content, b"ok")
+        up.refresh_from_db()
+        self.assertFalse(up.is_ulmg_mlb_roster)
+        self.assertTrue(up.is_ulmg_aaa_roster)
+
 
 class RosterCardYearTestCase(TestCase):
     """Roster buttons follow the card year in settings, not whichever stat line is on screen."""
@@ -343,11 +414,11 @@ class RosterCardYearTestCase(TestCase):
         older_row = self._row(content, "Older Card")
         self.assertNotIn('data-action="to_mlb"', older_row)
         self.assertNotIn('data-action="to_aaa"', older_row)
-        self.assertIn("drop-button", older_row)
+        self.assertNotIn('class="drop-button', older_row)
         refused = self.client.get(f"/api/v1/player/{older.id}/to_mlb/")
         self.assertEqual(refused.status_code, 400)
 
         minor_row = self._row(content, "Eric Booth Jr.")
         self.assertNotIn('data-action="to_mlb"', minor_row)
         self.assertNotIn('data-action="to_aaa"', minor_row)
-        self.assertIn("drop-button", minor_row)
+        self.assertNotIn('class="drop-button', minor_row)

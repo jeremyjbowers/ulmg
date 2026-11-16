@@ -42,7 +42,7 @@
 
 {% include "includes/team_tabs.html" with team_tab="roster" %}
 
-{% if half_started %}
+{% if half_started and not can_set_rosters %}
 <p class="opening-roster-note mb-4 text-sm">This is the roster the half opened with. Roster moves are on the <a href="/teams/{{ team.abbreviation|lower }}/plan/{% if season_half == "2h" %}2{% else %}1{% endif %}/{{ league_season }}/roster/" class="underline">Roster</a> tab, and they change the away roster only.</p>
 {% endif %}
 

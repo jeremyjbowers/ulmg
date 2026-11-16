@@ -146,17 +146,29 @@ class PairedMovePagesTestCase(OwnerClients, TestCase):
 
     # Taking a player off his roster
 
-    def test_an_aaa_player_keeps_his_off_roster_toggle_and_a_major_leaguer_has_none(self):
+    def test_staff_set_mlb_and_aaa_after_the_half_has_started(self):
         page = self.client_for(self.owner).get(TEAM_URL).content.decode()
+        self.assertNotIn(">Home</span>", page)
+        self.assertNotIn("opening-roster-player", page)
+        self.assertIn(">Roster</th>", page)
+        self.assertNotIn(">Protect</th>", page)
+        self.assertNotIn('class="drop-button', page)
         self.assertIn(f'data-playerid="{self.prospect.id}" data-roster="aaa" data-action="off_roster"', page)
-        self.assertNotIn(f'data-playerid="{self.starter.id}" data-action="off_roster"', page)
+        self.assertIn(f'data-playerid="{self.prospect.id}" data-roster="mlb" data-action="to_mlb"', page)
+        self.assertIn(f'data-playerid="{self.starter.id}" data-roster="mlb" data-action="off_roster"', page)
 
     def test_an_owner_cannot_take_a_major_leaguer_off_his_roster_once_the_half_has_started(self):
-        response = self.client_for(self.owner).get(f"/api/v1/player/{self.starter.id}/off_roster/")
+        response = self.client_for(self.other).get(f"/api/v1/player/{self.starter.id}/off_roster/")
         self.assertEqual(response.status_code, 400)
         self.assertIn("roster move", response.json()["error"])
         self.starter.refresh_from_db()
         self.assertTrue(self.starter.is_ulmg_mlb_roster)
+
+    def test_staff_can_still_take_a_major_leaguer_off_while_setting_rosters(self):
+        response = self.client_for(self.owner).get(f"/api/v1/player/{self.starter.id}/off_roster/")
+        self.assertEqual(response.content, b"ok")
+        self.starter.refresh_from_db()
+        self.assertFalse(self.starter.is_ulmg_mlb_roster)
 
     def test_an_owner_can_still_take_an_aaa_player_off_his_roster(self):
         response = self.client_for(self.owner).get(f"/api/v1/player/{self.prospect.id}/off_roster/")
@@ -171,17 +183,21 @@ class PairedMovePagesTestCase(OwnerClients, TestCase):
     # The team page
 
     def test_the_roster_page_keeps_the_opening_roster_once_the_half_has_started(self):
-        page = self.client_for(self.owner).get(TEAM_URL)
+        page = self.client_for(self.other).get(TEAM_URL)
         self.assertContains(page, "opening-roster-note")
-        self.assertContains(page, 'class="opening-roster-player', count=5)
+        self.assertNotContains(page, "opening-roster-player")
+        self.assertNotContains(page, ">Home</span>")
         self.assertNotContains(page, "Send down</a>")
         self.assertNotContains(page, "Call up</a>")
         self.assertNotContains(page, 'data-action="to_mlb">MLB</a>')
         self.assertNotContains(page, 'data-action="to_aaa">AAA</a>')
         self.assertNotContains(page, f'data-playerid="{self.starter.id}" data-action="off_roster"')
+        staff = self.client_for(self.owner).get(TEAM_URL)
+        self.assertNotContains(staff, "opening-roster-note")
+        self.assertContains(staff, f'data-playerid="{self.prospect.id}" data-roster="mlb" data-action="to_mlb">MLB</a>')
         # Midseason Open picks stay up, as before.
-        self.assertContains(page, 'class="2h-draft-locked-mlb ', count=1)
-        self.assertNotContains(page, f"?down={self.open_pick.id}")
+        self.assertContains(staff, 'class="2h-draft-locked-mlb ', count=1)
+        self.assertNotContains(staff, f"?down={self.open_pick.id}")
 
     def test_the_game_page_has_no_call_up_or_send_down_display(self):
         page = self.client_for(self.owner).get(GAME_URL)
@@ -377,7 +393,7 @@ class PairedMovePagesTestCase(OwnerClients, TestCase):
         self.assertNotContains(page, "Send down</a>")
         self.assertNotContains(page, "Call up</a>")
         roster = self.client_for(self.owner).get(TEAM_URL)
-        self.assertNotContains(roster, 'data-action="to_mlb">MLB</a>')
+        self.assertContains(roster, 'data-action="to_mlb">MLB</a>')
 
         choice = self.choice_page(down=self.starter.id)
         self.assertContains(choice, "ATL has made its 10 moves for half 1.")

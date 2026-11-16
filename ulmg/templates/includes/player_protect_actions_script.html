@@ -23,9 +23,12 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function updateMlbButtonVisibility() {
+        // Add buttons stay in the page when the roster is full, hidden, so
+        // taking someone off MLB can show them again without a reload.
+        const open = mlbRosterCount < mlbRosterSize;
         document.querySelectorAll('[data-action="to_mlb"]').forEach(btn => {
-            if (mlbRosterCount >= mlbRosterSize) btn.style.display = 'none';
-            else btn.style.display = 'inline-block';
+            btn.classList.toggle('hidden', !open);
+            btn.style.display = open ? 'inline-block' : 'none';
         });
     }
     

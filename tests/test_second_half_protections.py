@@ -12,7 +12,7 @@ from ulmg import models
     CURRENT_SEASON=2026,
     CURRENT_SEASON_TYPE="midseason",
     TEAM_ROSTER_TAB=True,
-    TEAM_PROTECT_TAB=False,
+    TEAM_PROTECT_TAB=True,
     TEAM_SEASON_HALF="2h",
 )
 class SecondHalfProtectionUITestCase(TestCase):
@@ -151,6 +151,18 @@ class SecondHalfProtectionUITestCase(TestCase):
         response = self.client.get("/teams/tst/")
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, 'data-roster-type="2h_p"')
+
+    @override_settings(TEAM_PROTECT_TAB=False)
+    def test_protection_and_drop_stay_hidden_while_setting_mlb_and_aaa(self):
+        self.client.login(username="mgr", password="secret")
+        response = self.client.get("/teams/tst/")
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        row = content[content.find("Vet Pitcher") : content.find("Vet Pitcher") + 2500]
+        self.assertNotIn('data-roster-type="2h_p"', row)
+        self.assertNotIn('class="drop-button', row)
+        self.assertNotIn(">Home</span>", content)
+        self.assertIn(">Roster</th>", content)
 
 
 @override_settings(
