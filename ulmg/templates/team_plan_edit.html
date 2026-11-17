@@ -38,7 +38,7 @@
                     <div class="space-y-2">
                         {% for slot in group.slots %}
                         <div class="lineup-slot border border-dashed border-gray-300 px-1 py-0.5">
-                            <div class="text-xs leading-tight text-gray-500">{{ forloop.counter }}</div>
+                            <div class="text-xs leading-tight text-gray-500" data-slot-number>{{ forloop.counter }}</div>
                             <div class="slot-frame relative">
                                 <div class="slot-body slot-well">
                                     {% if slot.card %}{% include "includes/decision_card.html" with card=slot.card %}{% endif %}
@@ -49,6 +49,7 @@
                         </div>
                         {% endfor %}
                     </div>
+                    <button type="button" data-add-slot class="mt-2 border border-gray-400 px-2 py-1 text-xs leading-none">Add a slot</button>
                 </div>
                 {% endfor %}
             </div>

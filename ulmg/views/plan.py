@@ -37,6 +37,9 @@ BULLPEN_GROUPS = (
 )
 # vs Lefty is the left column and vs Righty is the right column.
 LINEUP_COLUMNS = (("vs_lhp", "vs Lefty"), ("vs_rhp", "vs Righty"))
+# Each pinch list and the defensive-replacement list opens with this many slots.
+# A list that already names more shows every name. The page can add more slots.
+ORDER_SLOTS = 3
 # Ordered hitter lists on the lineup page. Empty means the computer uses the bench order.
 ORDER_LISTS = (
     (
@@ -444,7 +447,6 @@ def _editor_context(request, team, half, season, state, errors):
     context = _common(request, team, half, season)
     roster = _roster(team, season, half)
     cards = _built_cards(roster["hitters"], season, "h")
-    hitter_count = len(roster["hitters"]) or 1
     context.update(roster)
     context.update(
         {
@@ -461,7 +463,7 @@ def _editor_context(request, team, half, season, state, errors):
                     "name": name,
                     "label": label,
                     "note": note,
-                    "slots": _padded_slots(state.orders[name], cards, season, hitter_count, "h"),
+                    "slots": _padded_slots(state.orders[name], cards, season, ORDER_SLOTS, "h"),
                 }
                 for name, label, note in ORDER_LISTS
             ],

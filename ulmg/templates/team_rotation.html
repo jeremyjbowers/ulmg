@@ -39,13 +39,16 @@
                 </div>
                 {% if can_edit %}<input type="hidden" class="player-id" name="rotation" value="{{ slot.player_id }}">{% endif %}
                 {% if can_edit %}
-                <fieldset class="mt-1 flex flex-wrap gap-3 text-xs{% if not slot.player_id %} hidden{% endif %}" data-starter-hook>
-                    <legend class="text-gray-500">Hook</legend>
-                    <label><input type="radio" name="hook_{{ forloop.counter }}" value=""{% if not slot.hook %} checked{% endif %}> Default</label>
-                    {% for value, label in starter_hooks %}
-                    <label><input type="radio" name="hook_{{ forloop.parentloop.counter }}" value="{{ value }}"{% if slot.hook == value %} checked{% endif %}> {{ label }}</label>
-                    {% endfor %}
-                </fieldset>
+                <div class="mt-1{% if not slot.player_id %} hidden{% endif %}" data-starter-hook>
+                    <div class="flex flex-wrap items-center gap-1">
+                        <span class="text-xs text-gray-500">Hook</span>
+                        <button type="button" data-hook="" class="border border-gray-400 px-1 leading-none{% if not slot.hook %} bg-gray-800 text-white{% endif %}">Default</button>
+                        {% for value, label in starter_hooks %}
+                        <button type="button" data-hook="{{ value }}" class="border border-gray-400 px-1 leading-none{% if slot.hook == value %} bg-gray-800 text-white{% endif %}">{{ label }}</button>
+                        {% endfor %}
+                        <input type="hidden" class="hook-value" name="hook_{{ forloop.counter }}" value="{{ slot.hook }}">
+                    </div>
+                </div>
                 {% endif %}
             </div>
             {% endfor %}
