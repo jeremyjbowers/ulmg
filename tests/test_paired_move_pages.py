@@ -238,6 +238,17 @@ class PairedMovePagesTestCase(OwnerClients, TestCase):
         self.assertIn("stays on the 30-man for 15 road games", mlb)
         self.assertIn("Only carded players", aaa)
 
+    def test_a_two_way_player_is_listed_with_the_hitters_and_the_pitchers(self):
+        two_way = carded("ATL Two Way", self.atl, mlb=True)
+        models.Player.objects.filter(pk=two_way.pk).update(position="DH-P")
+        body = self.client_for(self.owner).get(ROSTER_URL).content.decode()
+        hitters = body.split('id="mlb-hitters"', 1)[1].split('id="mlb-pitchers"', 1)[0]
+        pitchers = body.split('id="mlb-pitchers"', 1)[1].split('id="aaa-roster"', 1)[0]
+        self.assertEqual(hitters.count(two_way.name), 1)
+        self.assertEqual(pitchers.count(two_way.name), 1)
+        self.assertIn(f'data-player="{two_way.id}" data-kind="h"', hitters)
+        self.assertIn(f'data-player="{two_way.id}" data-kind="p"', pitchers)
+
     def test_a_hitter_can_be_dragged_between_the_rosters(self):
         from tests.usage_fixtures import create_hitter
 

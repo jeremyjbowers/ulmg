@@ -19,6 +19,8 @@ class ParseFgPosition1TestCase(TestCase):
 
     def test_keeps_hitter_positions_when_mixed_with_pitcher_tokens(self):
         self.assertEqual(utils.parse_fg_position1("1B/SP"), ["1B"])
+        self.assertEqual(utils.parse_fg_position1("DH/TWP"), ["DH"])
+        self.assertEqual(utils.parse_fg_position1("TWP"), [])
 
     def test_formats_display_in_standard_order(self):
         self.assertEqual(
@@ -116,6 +118,40 @@ class LiveUpdateFgPositionsTestCase(TestCase):
 
         pss = models.PlayerStatSeason.objects.get(player=player, season=2026)
         self.assertIsNone(pss.fg_positions)
+        player.refresh_from_db()
+        self.assertEqual(player.position, "P")
+
+    @patch(
+        "ulmg.management.commands.live_update_status_from_fg_rosters.settings.ROSTER_TEAM_IDS",
+        [(30, "SFG", "San Francisco Giants")],
+    )
+    @patch("ulmg.management.commands.live_update_status_from_fg_rosters.utils.get_current_season", return_value=2026)
+    @patch("ulmg.management.commands.live_update_status_from_fg_rosters.utils.s3_manager")
+    def test_a_pitcher_listed_as_a_hitter_becomes_two_way(self, mock_s3, _mock_season):
+        player = models.Player.objects.create(
+            name="Shohei Ohtani",
+            position="P",
+            fg_id="19755",
+        )
+        mock_s3.get_file_content.return_value = [
+            {
+                "player": "Shohei Ohtani",
+                "position": "DH/SP",
+                "position1": "DH/SP",
+                "oPlayerId": "19755",
+                "role": "DH",
+                "mlevel": "MLB",
+                "type": "mlb-sl",
+                "dbTeam": "LAD",
+            }
+        ]
+
+        Command().handle()
+
+        player.refresh_from_db()
+        pss = models.PlayerStatSeason.objects.get(player=player, season=2026)
+        self.assertEqual(player.position, "DH-P")
+        self.assertEqual(pss.fg_positions, ["DH"])
 
 
 @override_settings(CURRENT_SEASON=2026, CURRENT_SEASON_TYPE="midseason")

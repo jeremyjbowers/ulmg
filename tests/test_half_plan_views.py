@@ -7,9 +7,9 @@ from unittest.mock import patch
 from django.contrib.auth.models import User
 from django.test import Client, TestCase, override_settings
 
-from ulmg import decision_cards, models, plans, schedule, usage
+from ulmg import decision_cards, models, plans, schedule, usage, utils
 from ulmg.views.plan import by_last_name
-from tests.plan_fixtures import SEASON, Roster, create_hitter, create_pitcher, create_season
+from tests.plan_fixtures import HITTER_RATES, SEASON, Roster, create_hitter, create_pitcher, create_season
 
 
 def form_data(roster, rotation=None, vs_lhp=None, vs_rhp=None):
@@ -670,6 +670,41 @@ class EditPlanTestCase(PlanViewsTestCase):
         response = self.as_user(self.commissioner).post(EDIT_URL, form_data(self.roster))
         self.assertEqual(response.status_code, 302)
         self.assertIsNotNone(self.saved_plan())
+
+    def test_a_two_way_player_is_offered_as_a_hitter_and_a_pitcher(self):
+        two_way = create_pitcher(self.atl, "ATL Two Way")
+        card = models.Card.objects.get(player=two_way, season=SEASON - 1)
+        card.hitter_rates = dict(HITTER_RATES)
+        card.plate_appearances = 600
+        card.primary_position = "DH"
+        card.save()
+        utils.promote_two_way_pitchers()
+        two_way.refresh_from_db()
+        self.assertEqual(two_way.position, "DH-P")
+
+        client = self.as_user(self.owner)
+        hitters = stack_html(client.get(EDIT_URL).content.decode())
+        pitchers = stack_html(client.get(ROTATION_URL).content.decode())
+        self.assertIn('data-kind="h"', articles(hitters, two_way.id)[0])
+        self.assertIn('data-kind="p"', articles(pitchers, two_way.id)[0])
+
+        lineup = self.roster.lineup()
+        lineup[8]["player"] = two_way
+        response = client.post(EDIT_URL, form_data(self.roster, vs_lhp=lineup, vs_rhp=lineup))
+        self.assertEqual(response.status_code, 302, response.content.decode()[:500])
+
+    def test_a_pitcher_with_a_few_plate_appearances_is_not_a_hitter(self):
+        mop = create_pitcher(self.atl, "ATL Mop")
+        card = models.Card.objects.get(player=mop, season=SEASON - 1)
+        card.hitter_rates = dict(HITTER_RATES)
+        card.plate_appearances = 12
+        card.primary_position = "DH"
+        card.save()
+        utils.promote_two_way_pitchers()
+        mop.refresh_from_db()
+        self.assertEqual(mop.position, "P")
+        hitters = stack_html(self.as_user(self.owner).get(EDIT_URL).content.decode())
+        self.assertNotIn(f'data-player="{mop.id}"', hitters)
 
     def test_rule_errors_are_shown_and_nothing_is_saved(self):
         lineup = self.roster.lineup()

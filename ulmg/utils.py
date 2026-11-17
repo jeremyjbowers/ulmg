@@ -633,7 +633,7 @@ def parse_fg_position1(position1):
     seen = set()
     for part in str(position1).strip().split("/"):
         pos = part.strip().upper()
-        if not pos or pos in FG_PITCHER_POSITIONS or pos in seen:
+        if not pos or pos in FG_PITCHER_POSITIONS or pos == "TWP" or pos in seen:
             continue
         positions.append(pos)
         seen.add(pos)
@@ -686,10 +686,67 @@ def hands_from_fg_roster(player_data):
     return {"bats": bats, "throws": throws}
 
 
+# A pitcher who also has a hitter's season. A handful of plate appearances is still a pitcher.
+TWO_WAY_PLATE_APPEARANCES = 100
+
+_IF_TOKENS = {"1B", "2B", "3B", "SS", "IF", "C", "INFIELD", "SHORTSTOP"}
+_OF_TOKENS = {"LF", "CF", "RF", "OF", "OUTFIELD"}
+_DH_TOKENS = {"DH", "TWP"}
+_OF_PRIMARIES = {"LF", "CF", "RF", "OF"}
+_IF_PRIMARIES = {"1B", "2B", "3B", "SS", "C", "IF"}
+
+
+def _position_tokens(upper):
+    text = upper.replace("-", "/").replace(",", "/")
+    tokens = []
+    for part in text.split("/"):
+        tokens.extend(part.split())
+    return tokens
+
+
+def two_way_position(primary, plate_appearances):
+    """OF-P, IF-P, or DH-P for a pitcher with a hitter's season. None when the batting line is too short."""
+    try:
+        appearances = int(plate_appearances)
+    except (TypeError, ValueError):
+        return None
+    if appearances < TWO_WAY_PLATE_APPEARANCES:
+        return None
+    raw = (primary or "").upper()
+    if raw in _OF_PRIMARIES:
+        return "OF-P"
+    if raw in _IF_PRIMARIES:
+        return "IF-P"
+    return "DH-P"
+
+
+def promote_two_way_pitchers(player_model=None, card_model=None):
+    """
+    A pitcher whose latest card has a real batting season hits and pitches.
+    An older two-way card does not reclassify a current pitcher.
+    """
+    player_model = player_model or models.Player
+    card_model = card_model or models.Card
+    seen = set()
+    updated = 0
+    cards = card_model.objects.filter(player__position="P").order_by("player_id", "-season")
+    for card in cards:
+        if card.player_id in seen:
+            continue
+        seen.add(card.player_id)
+        if not card.hitter_rates or not card.pitcher_rates:
+            continue
+        code = two_way_position(card.primary_position, card.plate_appearances)
+        if not code:
+            continue
+        updated += player_model.objects.filter(pk=card.player_id, position="P").update(position=code)
+    return updated
+
+
 # covered
 def normalize_pos(pos):
     """
-    Normalize positions to P, C, IF, OF or IF/OF
+    Normalize positions to P, C, IF, OF, IF-OF, OF-P, IF-P, or DH-P.
     """
     # Handle None or empty positions
     if not pos or pos is None:
@@ -700,14 +757,31 @@ def normalize_pos(pos):
     if not pos:
         return "DH"
 
-    if pos.upper().strip() in ["OF", "OUTFIELD"]:
+    upper = pos.upper().strip()
+
+    if upper in ["OF", "OUTFIELD"]:
         return "OF"
 
-    if pos.upper().strip() in ['IF', "INFIELD", "SHORTSTOP", "SECOND BASE", "FIRST BASE", "THIRD BASE"]:
+    if upper in ['IF', "INFIELD", "SHORTSTOP", "SECOND BASE", "FIRST BASE", "THIRD BASE"]:
         return "IF"
 
-    # Any pitcher.
-    if "P" in pos.upper():
+    # A hitter who also pitches keeps both. A pitcher with no hitting side stays a pitcher.
+    tokens = _position_tokens(upper)
+    if_side = any(token in _IF_TOKENS for token in tokens)
+    of_side = any(token in _OF_TOKENS for token in tokens)
+    dh_side = any(token in _DH_TOKENS for token in tokens)
+    pitcher_side = any(
+        "P" in token and token not in _IF_TOKENS and token not in _OF_TOKENS and token != "DH"
+        for token in tokens
+    )
+    if pitcher_side and (if_side or of_side or dh_side):
+        if of_side and not if_side:
+            return "OF-P"
+        if if_side:
+            return "IF-P"
+        return "DH-P"
+
+    if "P" in upper:
         return "P"
 
     # Catcher-only.
