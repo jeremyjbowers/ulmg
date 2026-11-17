@@ -196,7 +196,20 @@ class Command(BaseCommand):
                                 player_obj.bats = hands["bats"]
                             if hands["throws"]:
                                 player_obj.throws = hands["throws"]
-                            if player_data.get('dbTeam') or hands["bats"] or hands["throws"]:
+                            # A player stored as a pitcher may be a hitter who also pitches.
+                            # Leave anyone who is not a pure pitcher where he is.
+                            position_raw = player_data.get("position") or player_data.get("position1") or ""
+                            promoted = False
+                            if player_obj.position == models.Player.PITCHER and position_raw:
+                                normalized = utils.normalize_pos(position_raw)
+                                if normalized in (
+                                    models.Player.PITCHER_OF,
+                                    models.Player.PITCHER_IF,
+                                    models.Player.PITCHER_DH,
+                                ):
+                                    player_obj.position = normalized
+                                    promoted = True
+                            if player_data.get('dbTeam') or hands["bats"] or hands["throws"] or promoted:
                                 player_obj.save()
                             
                             # Update PlayerStatSeason with roster status

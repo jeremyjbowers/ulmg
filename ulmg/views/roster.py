@@ -112,16 +112,16 @@ def _reasons(team, players, side, season):
 
 
 def _cards(players, season):
-    """Decision cards for the roster board, hitters and pitchers together."""
+    """Decision cards for the roster board. A two-way player gets a hitter card and a pitcher card."""
     stats, stored = decision_cards.load(players, season)
     built = {}
     for player in players:
         hit, pitch = stats.get(player.id, ({}, {}))
         card = stored.get(player.id)
-        if plans.is_pitcher(player):
-            built[player.id] = decision_cards.pitcher_card(player, pitch, card)
-        else:
-            built[player.id] = decision_cards.hitter_card(player, hit, card)
+        if not plans.is_pitcher(player):
+            built[(player.id, "h")] = decision_cards.hitter_card(player, hit, card)
+        if plans.can_pitch(player):
+            built[(player.id, "p")] = decision_cards.pitcher_card(player, pitch, card)
     return built
 
 
@@ -147,9 +147,23 @@ def _rows(team, players, side, reasons, *, can_offer, over_cap, other_open):
     return rows
 
 
-def _role_groups(rows):
-    hitters = [row for row in rows if not plans.is_pitcher(row["player"])]
-    pitchers = [row for row in rows if plans.is_pitcher(row["player"])]
+def _shown(row, card):
+    shown = dict(row)
+    shown["card"] = dict(card)
+    shown["card"]["can_drag"] = row["can_drag"]
+    return shown
+
+
+def _role_groups(rows, cards):
+    """Hitters, and pitchers. A two-way player is in both columns, each with its own card."""
+    hitters = []
+    pitchers = []
+    for row in rows:
+        player = row["player"]
+        if not plans.is_pitcher(player):
+            hitters.append(_shown(row, cards[(player.id, "h")]))
+        if plans.can_pitch(player):
+            pitchers.append(_shown(row, cards[(player.id, "p")]))
     return hitters, pitchers
 
 
@@ -191,11 +205,8 @@ def team_roster_board(request, abbreviation, half, season=None):
         can_offer=can_offer, over_cap=over_cap, other_open=mlb_open,
     )
     cards = _cards(mlb_players + aaa_players, season)
-    for row in mlb_rows + aaa_rows:
-        row["card"] = cards[row["player"].id]
-        row["card"]["can_drag"] = row["can_drag"]
-    mlb_hitters, mlb_pitchers = _role_groups(mlb_rows)
-    aaa_hitters, aaa_pitchers = _role_groups(aaa_rows)
+    mlb_hitters, mlb_pitchers = _role_groups(mlb_rows, cards)
+    aaa_hitters, aaa_pitchers = _role_groups(aaa_rows, cards)
     context = utils.build_context(request)
     context.update(
         {

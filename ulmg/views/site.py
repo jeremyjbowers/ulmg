@@ -48,6 +48,7 @@ def index(request):
             if_of_count=Count('player', filter=Q(player__position='IF-OF')),
             p_of_count=Count('player', filter=Q(player__position='OF-P')),
             p_if_count=Count('player', filter=Q(player__position='IF-P')),
+            p_dh_count=Count('player', filter=Q(player__position='DH-P')),
             v_level_count=Count('player', filter=Q(player__level='V')),
             a_level_count=Count('player', filter=Q(player__level='A')),
             b_level_count=Count('player', filter=Q(player__level='B')),
@@ -117,9 +118,12 @@ def player(request, playerid):
         player_stats = models.PlayerStatSeason.objects.filter(player_id=playerid, is_career=False).exclude(
             classification=models.PlayerStatSeason.ULMG
         ).order_by('-season', 'classification')
-        if p.position == "P":
+        if plans.is_pitcher(p):
             pitcher_stats = list(player_stats.filter(pitch_stats__isnull=False))
             hitter_stats = None
+        elif plans.can_pitch(p):
+            hitter_stats = list(player_stats.filter(hit_stats__isnull=False))
+            pitcher_stats = list(player_stats.filter(pitch_stats__isnull=False))
         else:
             hitter_stats = list(player_stats.filter(hit_stats__isnull=False))
             pitcher_stats = None

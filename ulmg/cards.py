@@ -464,6 +464,8 @@ def playing_primary(card, player=None):
         return "CF"
     if raw in ("IF", "IF-P", "IF-OF"):
         return "SS"
+    if raw == "DH-P":
+        return "DH"
     return None
 
 

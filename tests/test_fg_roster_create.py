@@ -52,6 +52,13 @@ class CreatePlayerFromFgRosterTestCase(TestCase):
         self.assertEqual(player.mlbam_id, '123456')
         self.assertEqual(player.position, 'P')
 
+    def test_creates_a_two_way_player_from_a_mixed_position(self):
+        player_data = {'player': 'Two Way', 'position': 'DH/SP'}
+        player = self.cmd.create_player_from_fg_roster(
+            player_data, fg_id='19755', mlbam_id=None
+        )
+        self.assertEqual(player.position, 'DH-P')
+
     def test_returns_none_when_no_ids(self):
         player_data = {'player': 'No ID Player', 'position': 'OF'}
         player = self.cmd.create_player_from_fg_roster(

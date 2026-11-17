@@ -137,11 +137,12 @@
                         </div>
                     </div>
                 </div>
-                {% if team.if_of_count or team.p_of_count or team.p_if_count %}
+                {% if team.if_of_count or team.p_of_count or team.p_if_count or team.p_dh_count %}
                 <div class="text-xs text-gray-500 mt-2">
                     {% if team.if_of_count %}<span class="mr-2">IF-OF: {{ team.if_of_count }}</span>{% endif %}
                     {% if team.p_of_count %}<span class="mr-2">OF-P: {{ team.p_of_count }}</span>{% endif %}
                     {% if team.p_if_count %}<span class="mr-2">IF-P: {{ team.p_if_count }}</span>{% endif %}
+                    {% if team.p_dh_count %}<span class="mr-2">DH-P: {{ team.p_dh_count }}</span>{% endif %}
                 </div>
                 {% endif %}
             </div>

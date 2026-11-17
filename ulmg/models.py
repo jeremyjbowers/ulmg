@@ -309,6 +309,7 @@ class Player(BaseModel):
     INFIELD_OUTFIELD = "IF-OF"
     PITCHER_OF = "OF-P"
     PITCHER_IF = "IF-P"
+    PITCHER_DH = "DH-P"
     PLAYER_POSITION_CHOICES = (
         (PITCHER, "Pitcher"),
         (CATCHER, "Catcher"),
@@ -317,6 +318,7 @@ class Player(BaseModel):
         (INFIELD_OUTFIELD, "Infield/Outfield"),
         (PITCHER_OF, "Pitcher/Outfield"),
         (PITCHER_IF, "Pitcher/Infield"),
+        (PITCHER_DH, "Pitcher/DH"),
     )
 
     JAPAN = "JPN"
