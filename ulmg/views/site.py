@@ -219,12 +219,13 @@ def team_detail(request, abbreviation):
     context["record_season"] = settings.CURRENT_SEASON
     context["ulmg_record"] = season_record.team_record(team, settings.CURRENT_SEASON)
 
-    # Once the half has started, this page shows the roster it opened with.
+    # Once the half has started, owners see the roster it opened with.
     # Roster moves live on the Roster tab and change the away roster only.
+    # Whoever may still set MLB and AAA one player at a time gets those buttons.
     move_season, move_half = settings.CURRENT_SEASON, plans.current_half()
     context["half_started"] = roster_moves.half_has_started(move_season, move_half)
-    context["home_roster_ids"] = (
-        roster_moves.HalfRosters(team, move_season, move_half).home if context["half_started"] else set()
+    context["can_set_rosters"] = roster_moves.viewer_can_set_rosters(
+        request.user, move_season, move_half
     )
     return render(request, "team.html", context)
 

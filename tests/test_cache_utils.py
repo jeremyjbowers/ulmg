@@ -97,7 +97,7 @@ class TeamRosterQueryCacheTestCase(TestCase):
         self.player.position = "P"
         self.player.save()
         self.client.login(username="mgr", password="secret")
-        with override_settings(TEAM_ROSTER_TAB=True, TEAM_SEASON_HALF="2h"):
+        with override_settings(TEAM_ROSTER_TAB=True, TEAM_PROTECT_TAB=True, TEAM_SEASON_HALF="2h"):
             response = self.client.get("/teams/tst/")
             content = response.content.decode()
             player_idx = content.find("Cached Guy")

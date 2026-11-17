@@ -474,12 +474,33 @@ def half_has_started(season, half):
     return started or models.RosterMove.objects.filter(season=season, half=half).exists()
 
 
+def viewer_can_set_rosters(user, season, half):
+    """
+    Whether this user may place players on MLB and AAA one at a time.
+    Open before a half starts and through the offseason. The commissioner
+    can always do it. While roster controls are staff-only, staff are the
+    ones setting those rosters, including after a half has opened.
+    """
+    if not getattr(user, "is_authenticated", False):
+        return False
+    if getattr(user, "is_superuser", False):
+        return True
+    if getattr(settings, "CURRENT_SEASON_TYPE", "") == "offseason":
+        return True
+    if not half_has_started(season, half):
+        return True
+    return bool(
+        getattr(settings, "TEAM_ROSTER_STAFF_ONLY", False) and getattr(user, "is_staff", False)
+    )
+
+
 def single_move_error(user, season, half):
     """
     Once a half has started, moving one player at a time would dodge the
-    10-move cap, so owners must use a paired move. The commissioner still can.
+    10-move cap, so owners must use a paired move. The commissioner, and
+    staff while they are the ones setting rosters, still can.
     """
-    if getattr(user, "is_superuser", False) or not half_has_started(season, half):
+    if viewer_can_set_rosters(user, season, half):
         return None
     return (
         "The half has started: make a roster move instead, calling one player up "
