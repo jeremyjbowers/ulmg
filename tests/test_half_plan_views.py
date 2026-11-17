@@ -81,6 +81,25 @@ def slot_html(body, index):
     return chunk
 
 
+def order_group(body, name):
+    """One pinch or defensive-replacement column, up to the next column."""
+    chunk = body.split(f'data-lineup="{name}"', 1)[1]
+    stops = [chunk.find(marker) for marker in ('data-lineup="', "<fieldset")]
+    stops = [index for index in stops if index >= 0]
+    if stops:
+        chunk = chunk[: min(stops)]
+    return chunk
+
+
+HOOK_ON = "bg-gray-800 text-white"
+HOOK_BUTTON = "border border-gray-400 px-1 leading-none"
+
+
+def hook_button(value, label, selected):
+    classes = HOOK_BUTTON + (f" {HOOK_ON}" if selected else "")
+    return f'data-hook="{value}" class="{classes}">{label}'
+
+
 @override_settings(CURRENT_SEASON=SEASON, CURRENT_SEASON_TYPE="midseason", TEAM_SEASON_HALF="1h")
 class PlanViewsTestCase(TestCase):
     @classmethod
@@ -438,6 +457,13 @@ class EditPlanTestCase(PlanViewsTestCase):
         self.assertIn('name="pinch_vs_lhp"', page)
         self.assertIn('name="defensive_replacements"', page)
         self.assertIn("Empty uses the bench order.", page)
+        for name in ("pinch_vs_rhp", "pinch_vs_lhp", "defensive_replacements"):
+            group = order_group(page, name)
+            self.assertEqual(group.count('class="lineup-slot'), 3, name)
+            self.assertEqual(group.count(f'name="{name}"'), 3, name)
+            self.assertEqual(group.count("data-add-slot"), 1, name)
+            self.assertIn(">Add a slot<", group)
+        self.assertIn("[data-add-slot]", page)
 
         bench = self.roster.bench
         data = form_data(self.roster)
@@ -502,6 +528,21 @@ class EditPlanTestCase(PlanViewsTestCase):
         self.assertEqual(plan.defensive_replacements, [])
         self.assertEqual(len(plan.lineup_vs_rhp), 9)
 
+    def test_a_saved_list_longer_than_three_keeps_every_name_and_the_add_button(self):
+        four = self.roster.bench + self.roster.fielders[:2]
+        self.roster.file(pinch_vs_rhp=four, defensive_replacements=four[:1])
+        page = self.as_user(self.owner).get(EDIT_URL).content.decode()
+        rhp = order_group(page, "pinch_vs_rhp")
+        defense = order_group(page, "defensive_replacements")
+        left = order_group(page, "pinch_vs_lhp")
+        self.assertEqual(rhp.count('class="lineup-slot'), 4)
+        self.assertLess(rhp.index(f'value="{four[0].id}"'), rhp.index(f'value="{four[3].id}"'))
+        self.assertEqual(defense.count('class="lineup-slot'), 3)
+        self.assertIn(f'value="{four[0].id}"', defense)
+        self.assertEqual(left.count('class="lineup-slot'), 3)
+        self.assertIn(">Add a slot<", rhp)
+        self.assertIn(">Add a slot<", defense)
+
     def test_an_unknown_starter_hook_is_refused(self):
         self.roster.file()
         response = self.as_user(self.owner).post(EDIT_URL, dict(form_data(self.roster), starter_hook="lazy"))
@@ -515,8 +556,15 @@ class EditPlanTestCase(PlanViewsTestCase):
         first, second = self.roster.starters[0], self.roster.starters[1]
         page = client.get(ROTATION_URL).content.decode()
         self.assertIn("Default uses the starter hook", page)
-        self.assertIn('name="hook_1"', slot_html(page, 1))
-        self.assertIn('value="" checked', slot_html(page, 1))
+        self.assertNotIn('type="radio"', page)
+        opened = slot_html(page, 1)
+        self.assertIn('class="mt-1" data-starter-hook', opened)
+        self.assertIn('name="hook_1" value=""', opened)
+        self.assertIn(hook_button("", "Default", True), opened)
+        self.assertIn(hook_button("quick", "Quick", False), opened)
+        self.assertIn(hook_button("normal", "Normal", False), opened)
+        self.assertIn(hook_button("slow", "Slow", False), opened)
+        self.assertIn('class="mt-1 hidden" data-starter-hook', slot_html(page, 6))
         response = client.post(
             ROTATION_URL,
             {
@@ -531,9 +579,14 @@ class EditPlanTestCase(PlanViewsTestCase):
         self.assertEqual(plan.starter_hook, models.HalfPlan.SLOW_HOOK)
         self.assertEqual(plan.starter_hooks, {str(first.id): models.HalfPlan.QUICK_HOOK})
         saved = client.get(ROTATION_URL).content.decode()
-        self.assertIn('value="quick" checked', slot_html(saved, 1))
-        self.assertIn('value="" checked', slot_html(saved, 2))
-        self.assertNotIn('value="quick" checked', slot_html(saved, 2))
+        chosen = slot_html(saved, 1)
+        other = slot_html(saved, 2)
+        self.assertIn('name="hook_1" value="quick"', chosen)
+        self.assertIn(hook_button("quick", "Quick", True), chosen)
+        self.assertIn(hook_button("", "Default", False), chosen)
+        self.assertIn('name="hook_2" value=""', other)
+        self.assertIn(hook_button("", "Default", True), other)
+        self.assertIn(hook_button("quick", "Quick", False), other)
         summary = client.get(PLAN_URL).content.decode()
         self.assertIn("Starter hook: Slow", summary)
         self.assertIn(f"{first.name}: Quick hook", summary)

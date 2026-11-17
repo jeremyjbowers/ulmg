@@ -167,24 +167,42 @@
     function hookValue(slot) {
         var box = hookBox(slot);
         if (!box) return "";
-        var selected = box.querySelector("input:checked");
-        return selected ? selected.value : "";
+        var input = box.querySelector(".hook-value");
+        return input ? input.value : "";
     }
 
     function setHook(slot, value) {
         var box = hookBox(slot);
         if (!box) return;
         var wanted = value || "";
+        var buttons = box.querySelectorAll("button[data-hook]");
         var matched = false;
-        box.querySelectorAll("input").forEach(function (input) {
-            var on = input.value === wanted;
-            input.checked = on;
-            if (on) matched = true;
+        buttons.forEach(function (button) {
+            if (button.dataset.hook === wanted) matched = true;
         });
-        if (!matched) {
-            var fallback = box.querySelector('input[value=""]');
-            if (fallback) fallback.checked = true;
-        }
+        if (!matched) wanted = "";
+        buttons.forEach(function (button) {
+            var on = button.dataset.hook === wanted;
+            button.classList.toggle("bg-gray-800", on);
+            button.classList.toggle("text-white", on);
+        });
+        var input = box.querySelector(".hook-value");
+        if (input) input.value = wanted;
+    }
+
+    function addOrderSlot(button) {
+        var board = button.closest("[data-lineup]");
+        if (!board) return;
+        var list = board.querySelector(".space-y-2");
+        if (!list) return;
+        var slots = list.querySelectorAll(".lineup-slot");
+        var last = slots[slots.length - 1];
+        if (!last) return;
+        var copy = last.cloneNode(true);
+        clearSlot(copy);
+        var number = copy.querySelector("[data-slot-number]");
+        if (number) number.textContent = String(slots.length + 1);
+        list.appendChild(copy);
     }
 
     function showHook(slot) {
@@ -276,6 +294,19 @@
             event.preventDefault();
             clearSlot(clearButton.closest(".lineup-slot, .rotation-slot"));
             refreshStartCards();
+            return;
+        }
+        var addSlot = event.target.closest("[data-add-slot]");
+        if (addSlot) {
+            event.preventDefault();
+            addOrderSlot(addSlot);
+            return;
+        }
+        var hookButton = event.target.closest("button[data-hook]");
+        if (hookButton) {
+            event.preventDefault();
+            var hookSlot = hookButton.closest(".lineup-slot, .rotation-slot");
+            if (hookSlot) setHook(hookSlot, hookButton.dataset.hook);
             return;
         }
         var positionButton = event.target.closest("button[data-position]");
