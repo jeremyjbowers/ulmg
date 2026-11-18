@@ -10,23 +10,39 @@ import httpx
 from mcp.server.fastmcp import FastMCP
 
 from ulmg.mcp_app import services
-from ulmg.mcp_app.context import get_current_owner, require_current_owner
+from ulmg.mcp_app import wishlist as wishlist_ops
+from ulmg.mcp_app.context import current_token_allows_write, require_current_owner
 from ulmg.mcp_app.db import db_sync
+from ulmg.mcp_app.wishlist import WishlistError
 
 
 INSTRUCTIONS = (
-    "Read-only ULMG league tools for roster review, draft prep, and trade "
-    "analysis. Roster terms: on_mlb_30man = Major League active roster; "
+    "ULMG league tools for roster review, draft prep, and trade analysis. "
+    "Roster terms: on_mlb_30man = Major League active roster; "
     "on_40man_protect = Open Draft protected V/A list (site field "
-    "is_ulmg_35man_roster). Phase 1 is read-only — no writes or trade execution."
+    "is_ulmg_35man_roster). Wishlist follow, unfollow, tier, and note tools "
+    "write the authenticated owner's board and need a read-write API key. "
+    "There are no roster writes and no trade execution."
 )
+
+
+_READ_ONLY = {
+    "error": "Forbidden",
+    "detail": "This API key is read-only",
+    "status": 403,
+}
 
 
 def _dump(data: Any) -> str:
     return json.dumps(data, indent=2, default=str)
 
 
-def _http_get(path: str, params: Optional[dict] = None) -> Any:
+def _http_json(
+    method: str,
+    path: str,
+    params: Optional[dict] = None,
+    body: Optional[dict] = None,
+) -> Any:
     base = (os.environ.get("ULMG_API_URL") or "").rstrip("/")
     token = os.environ.get("ULMG_API_TOKEN") or ""
     if not base or not token:
@@ -35,11 +51,29 @@ def _http_get(path: str, params: Optional[dict] = None) -> Any:
         )
     headers = {"Authorization": f"Bearer {token}"}
     with httpx.Client(timeout=60.0) as client:
-        resp = client.get(f"{base}{path}", params=params or {}, headers=headers)
+        resp = client.request(
+            method,
+            f"{base}{path}",
+            params=params or {},
+            json=body,
+            headers=headers,
+        )
         if resp.status_code == 401:
             raise RuntimeError("ULMG API token rejected (401)")
-        resp.raise_for_status()
-        return resp.json()
+        if resp.status_code >= 500:
+            resp.raise_for_status()
+        payload = resp.json()
+        if resp.status_code >= 400 and isinstance(payload, dict):
+            payload = {**payload, "status": resp.status_code}
+        return payload
+
+
+def _http_get(path: str, params: Optional[dict] = None) -> Any:
+    return _http_json("GET", path, params=params)
+
+
+def _wishlist_error(exc: WishlistError) -> dict:
+    return {"error": exc.message, "status": exc.status}
 
 
 def build_mcp(*, mode: str = "local") -> FastMCP:
@@ -182,9 +216,94 @@ def _register_local_tools(mcp: FastMCP) -> None:
 
     @mcp.tool()
     async def get_my_wishlist() -> str:
-        """Authenticated owner's wishlist with tier, rank, notes, and tags."""
+        """Authenticated owner's full wishlist with tier, rank, notes, and tags."""
         owner = require_current_owner()
         data = await db_sync(services.get_my_wishlist, owner)
+        return _dump(data)
+
+    @mcp.tool()
+    async def get_draft_board(
+        draft_type: str = "open",
+        list_type: Optional[str] = None,
+    ) -> str:
+        """Your draft-prep board: picks, draft order, tiers 1-5, and watched players. draft_type: open|aa. list_type: offseason|midseason."""
+        owner = require_current_owner()
+        try:
+            data = await db_sync(
+                wishlist_ops.get_draft_board,
+                owner,
+                draft_type=draft_type,
+                list_type=list_type,
+            )
+        except WishlistError as exc:
+            return _dump(_wishlist_error(exc))
+        return _dump(data)
+
+    @mcp.tool()
+    async def follow_player(player_id: int) -> str:
+        """Follow a player: add them to your wishlist as watched, with no tier. Leaves an existing tier in place. Needs a read-write API key."""
+        if not current_token_allows_write():
+            return _dump(_READ_ONLY)
+        owner = require_current_owner()
+        try:
+            data = await db_sync(
+                wishlist_ops.follow_player, owner, player_id=player_id
+            )
+        except WishlistError as exc:
+            return _dump(_wishlist_error(exc))
+        return _dump(data)
+
+    @mcp.tool()
+    async def unfollow_player(player_id: int) -> str:
+        """Unfollow a player: remove them from your wishlist. Needs a read-write API key."""
+        if not current_token_allows_write():
+            return _dump(_READ_ONLY)
+        owner = require_current_owner()
+        try:
+            data = await db_sync(
+                wishlist_ops.unfollow_player, owner, player_id=player_id
+            )
+        except WishlistError as exc:
+            return _dump(_wishlist_error(exc))
+        return _dump(data)
+
+    @mcp.tool()
+    async def set_wishlist_tier(
+        player_id: int,
+        tier: int,
+        rank: Optional[int] = None,
+    ) -> str:
+        """Set a wishlist tier. tier is 1-5 (max 20 players) or 0 for watched. rank is the slot in that tier; omit it to append. Follows the player when needed. Needs a read-write API key."""
+        if not current_token_allows_write():
+            return _dump(_READ_ONLY)
+        owner = require_current_owner()
+        try:
+            data = await db_sync(
+                wishlist_ops.set_wishlist_tier,
+                owner,
+                player_id=player_id,
+                tier=tier,
+                rank=rank,
+            )
+        except WishlistError as exc:
+            return _dump(_wishlist_error(exc))
+        return _dump(data)
+
+    @mcp.tool()
+    async def set_wishlist_note(player_id: int, note: str) -> str:
+        """Set the note on a wishlist player. Follows them first when they are not on the list. Needs a read-write API key."""
+        if not current_token_allows_write():
+            return _dump(_READ_ONLY)
+        owner = require_current_owner()
+        try:
+            data = await db_sync(
+                wishlist_ops.set_wishlist_note,
+                owner,
+                player_id=player_id,
+                note=note,
+            )
+        except WishlistError as exc:
+            return _dump(_wishlist_error(exc))
         return _dump(data)
 
 
@@ -315,5 +434,63 @@ def _register_remote_tools(mcp: FastMCP) -> None:
 
     @mcp.tool()
     def get_my_wishlist() -> str:
-        """Your wishlist with tiers and notes."""
+        """Your full wishlist with tiers and notes."""
         return _dump(_http_get("/api/mcp/v1/wishlist/"))
+
+    @mcp.tool()
+    def get_draft_board(
+        draft_type: str = "open",
+        list_type: Optional[str] = None,
+    ) -> str:
+        """Your draft-prep board: picks, draft order, tiers 1-5, and watched players."""
+        params = {"draft_type": draft_type}
+        if list_type:
+            params["list_type"] = list_type
+        return _dump(_http_get("/api/mcp/v1/draft-board/", params=params))
+
+    @mcp.tool()
+    def follow_player(player_id: int) -> str:
+        """Follow a player on your wishlist as watched. Needs a read-write API key."""
+        return _dump(
+            _http_json(
+                "POST",
+                "/api/mcp/v1/wishlist/follow/",
+                body={"player_id": player_id},
+            )
+        )
+
+    @mcp.tool()
+    def unfollow_player(player_id: int) -> str:
+        """Remove a player from your wishlist. Needs a read-write API key."""
+        return _dump(
+            _http_json(
+                "POST",
+                "/api/mcp/v1/wishlist/unfollow/",
+                body={"player_id": player_id},
+            )
+        )
+
+    @mcp.tool()
+    def set_wishlist_tier(
+        player_id: int,
+        tier: int,
+        rank: Optional[int] = None,
+    ) -> str:
+        """Set a wishlist tier (1-5, or 0 for watched). Needs a read-write API key."""
+        body = {"player_id": player_id, "tier": tier}
+        if rank is not None:
+            body["rank"] = rank
+        return _dump(
+            _http_json("POST", "/api/mcp/v1/wishlist/tier/", body=body)
+        )
+
+    @mcp.tool()
+    def set_wishlist_note(player_id: int, note: str) -> str:
+        """Set the note on a wishlist player. Needs a read-write API key."""
+        return _dump(
+            _http_json(
+                "POST",
+                "/api/mcp/v1/wishlist/note/",
+                body={"player_id": player_id, "note": note},
+            )
+        )

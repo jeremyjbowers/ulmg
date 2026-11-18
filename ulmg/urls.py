@@ -53,7 +53,7 @@ urlpatterns = [
     path("api/v1/player/autocomplete/", views.api.player_autocomplete),
     path("api/v1/detail/player/", views.api.player_detail),
     path("api/v1/players/owned/", views.api.owned_players),
-    # MCP Phase 1 read-only JSON API (OwnerAPIToken Bearer auth)
+    # MCP JSON API (OwnerAPIToken Bearer auth). Wishlist writes need read_write.
     path("api/mcp/v1/season/", views.mcp.season_context),
     path("api/mcp/v1/teams/", views.mcp.teams_list),
     path("api/mcp/v1/roster/", views.mcp.my_roster),
@@ -68,7 +68,12 @@ urlpatterns = [
     path("api/mcp/v1/trades/", views.mcp.trades_list),
     path("api/mcp/v1/trade-block/", views.mcp.trade_block),
     path("api/mcp/v1/draft-pool/", views.mcp.draft_pool),
+    path("api/mcp/v1/draft-board/", views.mcp.draft_board),
     path("api/mcp/v1/wishlist/", views.mcp.my_wishlist),
+    path("api/mcp/v1/wishlist/follow/", views.mcp.wishlist_follow),
+    path("api/mcp/v1/wishlist/unfollow/", views.mcp.wishlist_unfollow),
+    path("api/mcp/v1/wishlist/tier/", views.mcp.wishlist_tier),
+    path("api/mcp/v1/wishlist/note/", views.mcp.wishlist_note),
     path("teams/csv/", views.csv.all_csv),
     path("teams/<str:abbreviation>/csv/", views.csv.team_csv),
     path("teams/<str:abbreviation>/other/", views.site.team_other),

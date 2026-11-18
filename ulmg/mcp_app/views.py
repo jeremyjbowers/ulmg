@@ -1,10 +1,15 @@
-# ABOUTME: Django JSON views for the Phase 1 read-only MCP API.
-# ABOUTME: All endpoints require an OwnerAPIToken Bearer credential.
+# ABOUTME: Django JSON views for the MCP API.
+# ABOUTME: Reads take any OwnerAPIToken. Wishlist writes require a read-write key.
+import json
+
 from django.http import JsonResponse
-from django.views.decorators.http import require_GET
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_GET, require_POST
 
 from ulmg.mcp_app.auth import require_owner_api_token
 from ulmg.mcp_app import services
+from ulmg.mcp_app.wishlist import WishlistError
+from ulmg.mcp_app import wishlist as wishlist_ops
 
 
 @require_GET
@@ -139,3 +144,88 @@ def draft_pool(request):
 @require_owner_api_token
 def my_wishlist(request):
     return JsonResponse(services.get_my_wishlist(request.mcp_owner))
+
+
+def _json_body(request):
+    raw = request.body.decode("utf-8") if request.body else ""
+    if not raw.strip():
+        return {}
+    try:
+        data = json.loads(raw)
+    except (UnicodeDecodeError, json.JSONDecodeError, TypeError):
+        return None
+    if not isinstance(data, dict):
+        return None
+    return data
+
+
+def _wishlist_response(fn, request, extras=None):
+    body = _json_body(request)
+    if body is None:
+        return JsonResponse({"error": "Body must be a JSON object"}, status=400)
+    if "player_id" not in body:
+        return JsonResponse({"error": "player_id is required"}, status=400)
+    try:
+        kwargs = extras(body) if extras else {}
+        payload = fn(request.mcp_owner, player_id=body.get("player_id"), **kwargs)
+    except WishlistError as exc:
+        return JsonResponse(
+            {"error": exc.message, "status": exc.status}, status=exc.status
+        )
+    return JsonResponse(payload)
+
+
+@require_GET
+@require_owner_api_token
+def draft_board(request):
+    try:
+        payload = wishlist_ops.get_draft_board(
+            request.mcp_owner,
+            draft_type=request.GET.get("draft_type", "open"),
+            list_type=request.GET.get("list_type"),
+        )
+    except WishlistError as exc:
+        return JsonResponse(
+            {"error": exc.message, "status": exc.status}, status=exc.status
+        )
+    return JsonResponse(payload)
+
+
+@csrf_exempt
+@require_POST
+@require_owner_api_token(write=True)
+def wishlist_follow(request):
+    return _wishlist_response(wishlist_ops.follow_player, request)
+
+
+@csrf_exempt
+@require_POST
+@require_owner_api_token(write=True)
+def wishlist_unfollow(request):
+    return _wishlist_response(wishlist_ops.unfollow_player, request)
+
+
+@csrf_exempt
+@require_POST
+@require_owner_api_token(write=True)
+def wishlist_tier(request):
+    def extra(body):
+        if "tier" not in body:
+            raise WishlistError(
+                "tier is required (1-5, or 0 to move the player to watched)"
+            )
+        return {"tier": body.get("tier"), "rank": body.get("rank")}
+
+    return _wishlist_response(wishlist_ops.set_wishlist_tier, request, extras=extra)
+
+
+@csrf_exempt
+@require_POST
+@require_owner_api_token(write=True)
+def wishlist_note(request):
+    def extra(body):
+        if "note" not in body:
+            raise WishlistError("note is required")
+        return {"note": body.get("note")}
+
+    return _wishlist_response(wishlist_ops.set_wishlist_note, request, extras=extra)

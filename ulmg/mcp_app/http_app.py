@@ -14,7 +14,12 @@ from starlette.routing import Mount, Route
 from starlette.types import ASGIApp, Receive, Scope, Send
 
 from ulmg import models
-from ulmg.mcp_app.context import reset_current_owner, set_current_owner
+from ulmg.mcp_app.context import (
+    reset_current_owner,
+    reset_current_token,
+    set_current_owner,
+    set_current_token,
+)
 from ulmg.mcp_app.db import db_sync
 from ulmg.mcp_app.tools import build_mcp
 
@@ -64,11 +69,13 @@ class OwnerBearerMiddleware:
             await send({"type": "http.response.body", "body": body})
             return
 
-        ctx_token = set_current_owner(token.owner)
+        owner_token = set_current_owner(token.owner)
+        api_token = set_current_token(token)
         try:
             await self.app(scope, receive, send)
         finally:
-            reset_current_owner(ctx_token)
+            reset_current_token(api_token)
+            reset_current_owner(owner_token)
 
 
 class SlashlessMcpMiddleware:
@@ -98,6 +105,7 @@ async def mcp_health(request: Request) -> Response:
             "phase": 1,
             "auth": "bearer",
             "transport": "streamable-http",
+            "writes": ["wishlist"],
         }
     )
 

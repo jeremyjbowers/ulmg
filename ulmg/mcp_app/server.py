@@ -1,11 +1,12 @@
 # ABOUTME: Stdio MCP entry point for clients that cannot use remote HTTPS MCP.
 # ABOUTME: Proxies to the site's token-auth JSON API via ULMG_API_URL + token.
-"""ULMG read-only MCP server (Phase 1) — stdio transport.
+"""ULMG MCP server — stdio transport.
 
 Preferred for most owners: connect over HTTPS to https://YOUR-HOST/mcp
 with Authorization: Bearer <token> (see documents/MCP.md).
 
 This stdio bridge is for clients that only support local MCP processes.
+Wishlist writes need a read-write token. Roster and trade changes stay off.
 """
 from __future__ import annotations
 

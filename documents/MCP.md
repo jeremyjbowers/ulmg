@@ -1,10 +1,11 @@
 # ABOUTME: Owner guide for connecting any MCP client to ULMG over HTTPS.
 # ABOUTME: Primary path is URL + Bearer token; stdio bridge is optional fallback.
 
-# ULMG MCP (Phase 1 — read-only)
+# ULMG MCP
 
 Agents look up rosters, draft history, trades, draft pools, and wishlists for you.
-**No roster writes or trade execution in Phase 1.**
+A read-write key can also follow and unfollow players and set wishlist tiers and notes.
+**No roster writes or trade execution.**
 
 Works with Claude Desktop / Cowork, OpenAI Codex, GitHub Copilot, Cursor, Windsurf,
 and any other client that speaks MCP.
@@ -27,6 +28,9 @@ to curl or script against the data without MCP.
 export DJANGO_SETTINGS_MODULE=config.do_app_platform.settings  # or your prod settings
 django-admin create_owner_api_token --list-owners
 django-admin create_owner_api_token --email OWNER@EMAIL --label "claude cowork"
+
+# Draft prep (follow, unfollow, tiers, notes) needs a read-write key.
+django-admin create_owner_api_token --email OWNER@EMAIL --label "draft agent" --scope read_write
 ```
 
 Copy the `ulmg_…` value and send it privately (1Password / Signal). Revoke anytime in
@@ -90,7 +94,10 @@ calls the same JSON API:
 }
 ```
 
-## Tools (Phase 1)
+## Tools
+
+Read tools work with any key. The wishlist write tools need `--scope read_write`
+(or a read-write key from `/my/api-keys/`). A read-only key is refused.
 
 | Tool | Purpose |
 |------|---------|
@@ -103,7 +110,23 @@ calls the same JSON API:
 | `list_trades` | Structured trade history |
 | `list_trade_block` | Trade block |
 | `list_draft_pool` | Unprotected / available pools |
-| `get_my_wishlist` | Your tiers, ranks, notes |
+| `get_my_wishlist` | Your full wishlist: tiers, ranks, notes |
+| `get_draft_board` | Your prep board for `open` or `aa`: your picks, the order, tiers, watched |
+| `follow_player` | **Write.** Add a player to your wishlist as watched |
+| `unfollow_player` | **Write.** Remove a player from your wishlist |
+| `set_wishlist_tier` | **Write.** Tier 1–5 (20 players max) or `0` for watched. Optional `rank` |
+| `set_wishlist_note` | **Write.** Set the note. Follows the player if you have not yet |
+
+`get_draft_board` uses the same eligibility as the draft-prep pages. AA is unowned
+B-level players. Offseason Open is unowned V and A. Midseason Open is unowned
+players with a card from the prior season. Pass `list_type` of `offseason` or
+`midseason` when you want the other board. Players the site's + button followed
+land in tier 6, which this board shows under watched, same as a tier of `0`.
+
+The JSON twin of the write tools is `POST /api/mcp/v1/wishlist/follow/`,
+`/unfollow/`, `/tier/`, and `/note/` with a JSON body (`player_id`, and `tier`
+/ `rank` / `note` when that call needs them). The board is
+`GET /api/mcp/v1/draft-board/?draft_type=open`.
 
 Every player object includes a `stats` block when a `PlayerStatSeason` exists:
 
