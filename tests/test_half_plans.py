@@ -332,6 +332,17 @@ class LineupValidationTestCase(PlanTestCase):
         lineup[8]["player"] = self.roster.starters[0]
         self.assertRejected(lineup, "is a pitcher; pitchers do not hit")
 
+    def test_a_two_way_player_can_be_the_dh_and_in_the_rotation(self):
+        two_way = self.roster.starters[0]
+        two_way.position = models.Player.PITCHER_DH
+        two_way.save()
+        lineup = self.roster.lineup()
+        lineup[8]["player"] = two_way
+        plan = self.roster.file(lineup_vs_lhp=lineup, lineup_vs_rhp=lineup)
+        self.assertEqual(plan.rotation[0], two_way.id)
+        self.assertEqual(plan.lineup_vs_rhp[8]["player"], two_way.id)
+        self.assertEqual(plan.lineup_vs_rhp[8]["position"], "DH")
+
     def test_player_not_on_the_30_man_rejected(self):
         minor = create_hitter(self.atl, "ATL Minor Leaguer", roster=False)
         lineup = self.roster.lineup()

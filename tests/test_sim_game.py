@@ -255,6 +255,37 @@ class OpeningTestCase(SimGameTestCase):
         return dict(sim_game.matchup(self.play(log)))
 
 
+class TwoWaySimTestCase(SimGameTestCase):
+    def test_a_two_way_starter_hits_and_pitches(self):
+        two_way = gf.make_two_way(self.road.starters[0])
+        lineup = self.road.lineup()
+        lineup[8]["player"] = two_way
+        lineup[8]["order"] = 1
+        lineup[0]["order"] = 9
+        self.road.file(lineup_vs_lhp=lineup, lineup_vs_rhp=lineup)
+
+        log = self.open()
+        state = gf.refresh(log).state
+        self.assertEqual(state[AWAY]["pitcher_slot"], str(two_way.id))
+        self.assertEqual(state[AWAY]["lineup"][0]["id"], str(two_way.id))
+        self.assertEqual(state[AWAY]["lineup"][0]["position"], "DH")
+
+        log = self.step(log)
+        self.assertEqual(gf.events(log, Event.PLATE_APPEARANCE)[-1].payload["batter"], two_way.id)
+
+        play = self.step_until(
+            log,
+            lambda p: sim_game.fielding_side(p.state) == AWAY and p.need() is None,
+        )
+        self.assertEqual(play.state[AWAY]["pitcher_slot"], str(two_way.id))
+        log = self.step(log)
+        self.assertEqual(gf.events(log, Event.PLATE_APPEARANCE)[-1].payload["pitcher"], two_way.id)
+
+        box = box_score.box_score(gf.refresh(log))
+        self.assertTrue(any(line.player == two_way for line in box.batting[AWAY]))
+        self.assertTrue(any(line.player == two_way for line in box.pitching[AWAY]))
+
+
 class PlayingTestCase(SimGameTestCase):
     def test_a_game_plays_to_a_final_with_a_box_score_and_the_schedule_marked(self):
         log = gf.play_out(self.open(), self.manager, self.next_seed)

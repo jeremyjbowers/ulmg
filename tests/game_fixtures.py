@@ -36,6 +36,23 @@ STRIKEOUT_RATES = {"k": 1.0, "bb": 0.0, "hbp": 0.0, "single": 0.0, "double": 0.0
 HOME_RUN_RATES = {"k": 0.0, "bb": 0.0, "hbp": 0.0, "single": 0.0, "double": 0.0, "triple": 0.0, "hr": 1.0, "bip_out": 0.0}
 
 
+def make_two_way(player):
+    """A pitcher who also hits: DH-P, with a batting line and a full plate-appearance season."""
+    models.Player.objects.filter(pk=player.pk).update(position=models.Player.PITCHER_DH)
+    player.refresh_from_db()
+    models.PlayerStatSeason.objects.filter(
+        player=player, season=CARD_SEASON, classification="1-mlb"
+    ).update(hit_stats=dict(plan_fixtures.HITTER_STATS))
+    models.Card.objects.filter(player=player, season=CARD_SEASON).update(
+        hitter_rates=dict(HITTER_RATES),
+        wrc_plus=100.0,
+        plate_appearances=600,
+        primary_position="DH",
+    )
+    models.UsageCounter.objects.filter(player=player, season=SEASON).delete()
+    return player
+
+
 def complete_cards(roster):
     """Give a plan_fixtures roster the full engine cards a game needs: rates summing to 1 and fatigue lines."""
     for pitcher in roster.starters + [roster.swingman]:
