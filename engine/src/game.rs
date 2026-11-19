@@ -386,7 +386,7 @@ impl Game {
             });
         }
         let batter = &self.club(batting).lineup[self.club(batting).batter_index];
-        if self.is_pitcher(&batter.id) {
+        if self.pitcher_does_not_hit(&batter.id) {
             return Err(GameError::PitcherDoesNotHit {
                 player: batter.id.clone(),
             });
@@ -506,6 +506,11 @@ impl Game {
             }
             return Ok(());
         }
+        if self.club(side).fatigue.contains_key(player) {
+            return Err(GameError::Reentry {
+                player: player.to_string(),
+            });
+        }
         if !self.club(side).available.iter().any(|id| id == player) {
             return Err(GameError::InvalidFixture(format!(
                 "{player} is not available"
@@ -513,7 +518,7 @@ impl Game {
         }
 
         if let Some(current) = self.club(side).pitcher_slot.clone() {
-            self.move_to_unavailable(side, &current);
+            self.leave_the_mound(side, &current);
         }
         let profile = self
             .club(side)
@@ -530,7 +535,9 @@ impl Game {
         if !club.in_game.iter().any(|id| id == player) {
             club.in_game.push(player.to_string());
         }
-        club.positions.insert(player.to_string(), Position::Pitcher);
+        if !club.lineup.iter().any(|batter| batter.id == player) {
+            club.positions.insert(player.to_string(), Position::Pitcher);
+        }
         club.pitcher_slot = Some(player.to_string());
         club.fatigue.insert(
             player.to_string(),
@@ -562,28 +569,35 @@ impl Game {
             return Err(GameError::GameOver);
         }
         check_pitcher_card(&card)?;
-        let in_a_lineup = self
-            .away
-            .lineup
-            .iter()
-            .chain(&self.home.lineup)
-            .any(|batter| batter.id == card.id);
-        if in_a_lineup {
-            return Err(GameError::InvalidFixture(format!(
-                "{} is in a batting order and cannot pitch",
-                card.id
-            )));
-        }
         let side = self.fielding_side();
         let other = match side {
             Side::Away => Side::Home,
             Side::Home => Side::Away,
         };
-        if self.club(other).pitchers.iter().any(|p| p.id == card.id) {
+        if self
+            .club(other)
+            .lineup
+            .iter()
+            .any(|batter| batter.id == card.id)
+            || self.club(other).pitchers.iter().any(|p| p.id == card.id)
+        {
             return Err(GameError::InvalidFixture(format!(
                 "{} pitches for the other club",
                 card.id
             )));
+        }
+        if let Some(batter) = self
+            .club(side)
+            .lineup
+            .iter()
+            .find(|batter| batter.id == card.id)
+        {
+            if batter.position != Position::Dh {
+                return Err(GameError::InvalidFixture(format!(
+                    "{} is in a batting order and cannot pitch",
+                    card.id
+                )));
+            }
         }
         let id = card.id.clone();
         let club = self.club_mut(side);
@@ -626,7 +640,7 @@ impl Game {
                 "batting-order index is out of range".into(),
             ));
         }
-        if self.is_pitcher(&card.id) {
+        if self.pitcher_does_not_hit(&card.id) {
             return Err(GameError::PitcherDoesNotHit { player: card.id });
         }
         if self.club(side).unavailable.iter().any(|id| id == &card.id) {
@@ -822,7 +836,7 @@ impl Game {
         index: usize,
         player: PlayerId,
     ) -> Result<(), GameError> {
-        if self.is_pitcher(&player) {
+        if self.pitcher_does_not_hit(&player) {
             return Err(GameError::PitcherDoesNotHit { player });
         }
         if self.club(side).unavailable.iter().any(|id| id == &player) {
@@ -850,6 +864,15 @@ impl Game {
     fn is_pitcher(&self, player: &str) -> bool {
         self.away.pitchers.iter().any(|card| card.id == player)
             || self.home.pitchers.iter().any(|card| card.id == player)
+    }
+
+    fn bats(&self, player: &str) -> bool {
+        self.away.lineup.iter().any(|card| card.id == player)
+            || self.home.lineup.iter().any(|card| card.id == player)
+    }
+
+    fn pitcher_does_not_hit(&self, player: &str) -> bool {
+        self.is_pitcher(player) && !self.bats(player)
     }
 
     fn pitcher_name(&self, side: Side, player: &str) -> String {
@@ -948,12 +971,29 @@ impl Game {
         }
         let pitcher_id = self.club(side).pitcher_slot.clone().unwrap();
         let name = self.pitcher_name(side, &pitcher_id);
-        self.move_to_unavailable(side, &pitcher_id);
+        self.leave_the_mound(side, &pitcher_id);
         self.log.push(LogEntry {
             inning: self.inning,
             half: self.half,
             text: format!("{name} is pulled. The mound is empty."),
         });
+    }
+
+    fn leave_the_mound(&mut self, side: Side, player: &str) {
+        // A designated hitter who also pitched stays in the batting order.
+        if self
+            .club(side)
+            .lineup
+            .iter()
+            .any(|batter| batter.id == player)
+        {
+            let club = self.club_mut(side);
+            if club.pitcher_slot.as_deref() == Some(player) {
+                club.pitcher_slot = None;
+            }
+            return;
+        }
+        self.move_to_unavailable(side, player);
     }
 
     fn move_to_unavailable(&mut self, side: Side, player: &str) {
@@ -1057,8 +1097,10 @@ fn seat_club(team: TeamFixture, rng: &mut impl Rng) -> Club {
     let mut pitcher_slot = None;
     for (index, pitcher) in team.pitchers.iter().enumerate() {
         if index == 0 {
-            in_game.push(pitcher.id.clone());
-            positions.insert(pitcher.id.clone(), Position::Pitcher);
+            if !in_game.iter().any(|id| id == &pitcher.id) {
+                in_game.push(pitcher.id.clone());
+                positions.insert(pitcher.id.clone(), Position::Pitcher);
+            }
             pitcher_slot = Some(pitcher.id.clone());
             fatigue.insert(
                 pitcher.id.clone(),
@@ -1120,13 +1162,36 @@ fn validate_fixture(fixture: &GameFixture) -> Result<(), GameError> {
     }
     validate_team(&fixture.away, fixture)?;
     validate_team(&fixture.home, fixture)?;
-    let mut ids = Vec::new();
-    for batter in fixture.away.lineup.iter().chain(&fixture.home.lineup) {
-        ids.push(batter.id.clone());
+    unique_ids(
+        fixture
+            .away
+            .lineup
+            .iter()
+            .chain(&fixture.home.lineup)
+            .map(|batter| batter.id.clone()),
+    )?;
+    unique_ids(
+        fixture
+            .away
+            .pitchers
+            .iter()
+            .chain(&fixture.home.pitchers)
+            .map(|pitcher| pitcher.id.clone()),
+    )?;
+    let away_ids = club_ids(&fixture.away);
+    let home_ids = club_ids(&fixture.home);
+    for id in &away_ids {
+        if home_ids.iter().any(|other| other == id) {
+            return Err(GameError::InvalidFixture(format!(
+                "duplicate player id {id}"
+            )));
+        }
     }
-    for pitcher in fixture.away.pitchers.iter().chain(&fixture.home.pitchers) {
-        ids.push(pitcher.id.clone());
-    }
+    Ok(())
+}
+
+fn unique_ids(ids: impl IntoIterator<Item = String>) -> Result<(), GameError> {
+    let mut ids: Vec<String> = ids.into_iter().collect();
     ids.sort();
     for pair in ids.windows(2) {
         if pair[0] == pair[1] {
@@ -1137,6 +1202,18 @@ fn validate_fixture(fixture: &GameFixture) -> Result<(), GameError> {
         }
     }
     Ok(())
+}
+
+fn club_ids(team: &TeamFixture) -> Vec<String> {
+    let mut ids: Vec<String> = team
+        .lineup
+        .iter()
+        .map(|batter| batter.id.clone())
+        .chain(team.pitchers.iter().map(|pitcher| pitcher.id.clone()))
+        .collect();
+    ids.sort();
+    ids.dedup();
+    ids
 }
 
 fn validate_team(team: &TeamFixture, fixture: &GameFixture) -> Result<(), GameError> {
@@ -1165,9 +1242,11 @@ fn validate_team(team: &TeamFixture, fixture: &GameFixture) -> Result<(), GameEr
     let mut seen = [false; 8];
     let mut dh = 0;
     for batter in &team.lineup {
-        if team.pitchers.iter().any(|pitcher| pitcher.id == batter.id) {
+        if team.pitchers.iter().any(|pitcher| pitcher.id == batter.id)
+            && batter.position != Position::Dh
+        {
             return Err(GameError::InvalidFixture(format!(
-                "pitcher {} is in the batting order",
+                "pitcher {} is batting; a pitcher in the order must be the designated hitter",
                 batter.id
             )));
         }

@@ -203,7 +203,7 @@ mod tests {
     use tower::ServiceExt;
 
     use crate::game::Game;
-    use crate::model::{load_json, GameFixture, PlateOutcome};
+    use crate::model::{load_json, GameFixture, PlateOutcome, Position};
 
     fn fixture() -> GameFixture {
         let path = format!("{}/fixtures/game.json", env!("CARGO_MANIFEST_DIR"));
@@ -241,6 +241,20 @@ mod tests {
         body["state"].clone()
     }
 
+    fn two_way_json() -> Value {
+        let mut fixture = serde_json::to_value(fixture()).unwrap();
+        for team in ["away", "home"] {
+            let starter = fixture[team]["pitchers"][0].clone();
+            for batter in fixture[team]["lineup"].as_array_mut().unwrap() {
+                if batter["position"] == "DH" {
+                    batter["id"] = starter["id"].clone();
+                    batter["name"] = starter["name"].clone();
+                }
+            }
+        }
+        fixture
+    }
+
     fn game(state: &Value) -> Game {
         serde_json::from_value(state.clone()).expect("game state")
     }
@@ -271,6 +285,34 @@ mod tests {
             state,
             "the same seed opened a different game"
         );
+    }
+
+    #[tokio::test]
+    async fn start_accepts_a_two_way_starter_who_also_hits() {
+        let (status, body) = post("/start", json!({ "fixture": two_way_json(), "seed": 7 })).await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+        let mut opening = game(&body["state"]);
+        let home = opening.home.pitcher_slot.clone().unwrap();
+        let away = opening.away.pitcher_slot.clone().unwrap();
+        assert!(opening
+            .home
+            .lineup
+            .iter()
+            .any(|batter| batter.id == home && batter.position == Position::Dh));
+        opening.away.batter_index = opening
+            .away
+            .lineup
+            .iter()
+            .position(|batter| batter.position == Position::Dh)
+            .unwrap();
+        let (status, stepped) = post(
+            "/step",
+            json!({ "state": serde_json::to_value(&opening).unwrap(), "seed": 3 }),
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK, "{stepped}");
+        assert_eq!(stepped["result"]["batter_id"], away);
+        assert_eq!(stepped["result"]["pitcher_id"], home);
     }
 
     #[tokio::test]
@@ -658,6 +700,32 @@ mod tests {
         )
         .await;
         assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY, "{body}");
+    }
+
+    #[tokio::test]
+    async fn the_designated_hitter_can_take_the_mound() {
+        let state = started(2).await;
+        let dh = game(&state)
+            .home
+            .lineup
+            .iter()
+            .find(|batter| batter.position == Position::Dh)
+            .unwrap()
+            .id
+            .clone();
+        let (status, body) = post(
+            "/pitcher",
+            json!({ "state": state, "pitcher": relief_card(&dh), "seed": 9 }),
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+        let changed = game(&body["state"]);
+        assert_eq!(changed.home.pitcher_slot.as_deref(), Some(dh.as_str()));
+        assert!(changed
+            .home
+            .lineup
+            .iter()
+            .any(|batter| batter.id == dh && batter.position == Position::Dh));
     }
 
     fn bench_card(id: &str, position: &str) -> Value {

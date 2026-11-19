@@ -31,6 +31,22 @@ pub fn scripted_fixture(postseason: bool) -> GameFixture {
     }
 }
 
+/// A scripted game whose starters also hit as the designated hitter.
+pub fn two_way_fixture(postseason: bool) -> GameFixture {
+    let mut fixture = scripted_fixture(postseason);
+    for team in [&mut fixture.away, &mut fixture.home] {
+        let pitcher = team.pitchers[0].clone();
+        let dh = team
+            .lineup
+            .iter_mut()
+            .find(|batter| batter.position == Position::Dh)
+            .expect("scripted lineup has a designated hitter");
+        dh.id = pitcher.id;
+        dh.name = pitcher.name;
+    }
+    fixture
+}
+
 fn scripted_team(id: &str, name: &str) -> TeamFixture {
     let lineup = POSITIONS
         .iter()

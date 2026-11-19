@@ -117,6 +117,26 @@ class EngineClientTestCase(SimpleTestCase):
         self.assertEqual(state["results"], [])
         self.assertEqual(state["status"], "in_progress")
 
+    def test_a_two_way_starter_can_hit_and_pitch(self):
+        fixture = load_fixture()
+        for team in ("away", "home"):
+            starter = fixture[team]["pitchers"][0]
+            dh = next(batter for batter in fixture[team]["lineup"] if batter["position"] == "DH")
+            dh["id"] = starter["id"]
+            dh["name"] = starter["name"]
+        state = engine_client.start(fixture, seed=7)
+        home = state["home"]["pitcher_slot"]
+        away = state["away"]["pitcher_slot"]
+        self.assertEqual(
+            next(b for b in state["home"]["lineup"] if b["position"] == "DH")["id"],
+            home,
+        )
+        dh_index = next(i for i, batter in enumerate(state["away"]["lineup"]) if batter["position"] == "DH")
+        state["away"]["batter_index"] = dh_index
+        stepped = engine_client.step(state, seed=3)
+        self.assertEqual(stepped["result"]["batter_id"], away)
+        self.assertEqual(stepped["result"]["pitcher_id"], home)
+
     def test_the_second_step_follows_the_first(self):
         first = engine_client.step(self.opening_state(), seed=11)
         self.assertEqual(len(first["state"]["results"]), 1)

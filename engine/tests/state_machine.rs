@@ -10,6 +10,18 @@ fn game(postseason: bool) -> Game {
     Game::start(baseball_engine::harness::scripted_fixture(postseason), 1).unwrap()
 }
 
+fn two_way_game() -> Game {
+    Game::start(baseball_engine::harness::two_way_fixture(false), 1).unwrap()
+}
+
+fn dh_index(game: &Game, side: Side) -> usize {
+    game.club(side)
+        .lineup
+        .iter()
+        .position(|batter| batter.position == Position::Dh)
+        .expect("each club has a designated hitter")
+}
+
 #[test]
 fn four_outs_are_rejected_and_do_not_change_state() {
     let mut game = game(false);
@@ -240,6 +252,70 @@ fn putting_a_pitcher_in_the_order_is_rejected() {
         .iter()
         .chain(&game.away.pitchers)
         .all(|pitcher| pitcher.id != input.hitter_id));
+}
+
+#[test]
+fn a_two_way_starter_hits_as_the_designated_hitter_and_pitches() {
+    let mut game = two_way_game();
+    let home = game.home.pitcher_slot.clone().unwrap();
+    let away = game.away.pitcher_slot.clone().unwrap();
+    assert_eq!(game.home.lineup[dh_index(&game, Side::Home)].id, home);
+    assert_eq!(game.away.lineup[dh_index(&game, Side::Away)].id, away);
+    assert_eq!(
+        game.home.in_game.iter().filter(|id| *id == &home).count(),
+        1
+    );
+
+    game.apply_plate_appearance(baseball_engine::harness::holding_out(&game.bases))
+        .unwrap();
+    assert_eq!(game.home.fatigue[&home].pitches, 1);
+
+    game.apply_plate_appearance(baseball_engine::harness::holding_out(&game.bases))
+        .unwrap();
+    assert_eq!(game.away.batter_index, dh_index(&game, Side::Away));
+    assert_eq!(game.away.lineup[game.away.batter_index].id, away);
+    game.apply_plate_appearance(baseball_engine::harness::holding_out(&game.bases))
+        .unwrap();
+}
+
+#[test]
+fn a_pitcher_who_is_not_the_designated_hitter_still_cannot_bat() {
+    let mut fixture = baseball_engine::harness::scripted_fixture(false);
+    let pitcher = fixture.home.pitchers[0].id.clone();
+    fixture.home.lineup[0].id = pitcher.clone();
+    let err = Game::start(fixture, 1).unwrap_err();
+    assert!(
+        matches!(err, GameError::InvalidFixture(ref msg) if msg.contains(&pitcher)),
+        "{err}"
+    );
+}
+
+#[test]
+fn a_two_way_pitcher_stays_in_the_order_when_he_leaves_the_mound() {
+    let mut game = two_way_game();
+    let two_way = game.home.pitcher_slot.clone().unwrap();
+    {
+        let state = game.home.fatigue.get_mut(&two_way).unwrap();
+        state.effort = 0.0;
+        state.ceiling = 3.0;
+    }
+    game.apply_plate_appearance(baseball_engine::harness::pitches_only(4))
+        .unwrap();
+    assert!(game.home.pitcher_slot.is_none());
+    assert_eq!(game.home.lineup[dh_index(&game, Side::Home)].id, two_way);
+    assert!(game.home.in_game.contains(&two_way));
+    assert!(!game.home.unavailable.contains(&two_way));
+
+    let mut manager = ComputerManager::from_seed(2);
+    let err = manager.choose(&mut game, &two_way).unwrap_err();
+    assert_eq!(
+        err,
+        GameError::Reentry {
+            player: two_way.clone()
+        }
+    );
+    manager.assign_next(&mut game).unwrap();
+    assert_ne!(game.home.pitcher_slot.as_deref(), Some(two_way.as_str()));
 }
 
 #[test]
