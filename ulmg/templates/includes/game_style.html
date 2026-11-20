@@ -116,6 +116,9 @@ body:has(#hud) header { background: #ffffff; color: #000000; }
 .hud-pace { margin-top: 8px; font-size: 14px; color: var(--muted); display: flex; gap: 10px; align-items: center; min-height: 44px; }
 
 /* Recent plays */
+.hud-boxscore { background: var(--panel); border: 1px solid var(--rule); border-radius: 10px; margin: 12px 0; padding: 8px 12px; }
+.hud-boxscore summary { cursor: pointer; font: 800 16px/1.2 system-ui, sans-serif; min-height: 44px; display: flex; align-items: center; }
+.hud-boxscore[open] summary { margin-bottom: 8px; }
 .hud-recent { background: var(--panel); border: 1px solid var(--rule); border-top: 0; border-radius: 0 0 10px 10px; padding: 10px 16px; }
 .hud-recent ol { margin: 4px 0 0; padding: 0; list-style: none; font-size: 15px; }
 .hud-recent li { padding: 4px 0; border-top: 1px solid var(--rule); display: flex; gap: 10px; }
