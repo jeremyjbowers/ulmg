@@ -408,19 +408,26 @@ def _out_of_starts(player, planned_games, reads):
     return counter.starts + len(planned_games) >= counter.starts_cap
 
 
+def _home_game(team, game):
+    """True when this team is at home. Other managers play those games, so they need a pitcher."""
+    return game.series.home_team_id == team.id
+
+
 def _auto_fill(plan, games, rows, rosters, reads):
     """
     Fill every unopened day without a manual starter from the rotation. The
-    k-th game of the half goes to slot ((k - 1) mod N) + 1. A slot whose
-    pitcher is out of starts stays blank: he takes the first days he is
-    eligible for, and the rest of his slots are left empty. A slot whose
-    pitcher isn't rested inside the series, or isn't on that game's roster
-    (a call-up at home, a sent-down pitcher on the road), goes to the next
-    legal pitcher in order, and the cycle continues from him. A day the
-    manager cleared (blank_starter) stays empty and still consumes its turn
-    in the cycle. Returns the days no one could start for a reason other
-    than the start cap. reads are the ledger reads for this refill; filling
-    days writes nothing to the ledger.
+    k-th game of the half goes to slot ((k - 1) mod N) + 1. A home day needs
+    a pitcher, so a slot whose pitcher is out of starts tries the next legal
+    arm. A road day whose pitcher is out of starts stays blank: he takes the
+    first road days he is eligible for, and the rest of his road slots are
+    left empty for a later call-up. A slot whose pitcher isn't rested inside
+    the series, or isn't on that game's roster (a call-up at home, a
+    sent-down pitcher on the road), goes to the next legal pitcher in order,
+    and the cycle continues from him. A day the manager cleared
+    (blank_starter) stays empty and still consumes its turn in the cycle.
+    Returns the home days no one could start. A road day may stay empty.
+    reads are the ledger reads for this refill; filling days writes nothing
+    to the ledger.
     """
     rotation = _ordered_players(plan.rotation)
     reads.preload(rotation)
@@ -451,14 +458,16 @@ def _auto_fill(plan, games, rows, rosters, reads):
 
         chosen = None
         blank_for_cap = False
+        home = _home_game(plan.team, game)
         for step in range(len(rotation)):
             index = (pointer + step) % len(rotation)
             candidate = rotation[index]
             if candidate.id not in rosters.for_game(game):
                 continue
             if _out_of_starts(candidate, planned[candidate.id], reads):
-                # His own slot stays empty once his starts are used up.
-                if step == 0:
+                # A road slot stays empty once his starts are used up. A home
+                # game still needs an arm, so the next legal pitcher takes it.
+                if step == 0 and not home:
                     blank_for_cap = True
                     break
                 continue
@@ -468,7 +477,7 @@ def _auto_fill(plan, games, rows, rosters, reads):
                 break
         if chosen is None:
             pointer += 1
-            if not blank_for_cap:
+            if home and not blank_for_cap:
                 unfilled.append(day)
         else:
             planned[chosen.id].append(game)
@@ -518,7 +527,7 @@ def _refill_problems(plan, rosters):
         days = ", ".join(str(d) for d in unfilled)
         errors.insert(
             0,
-            f"No legal starter for days {days}. Spot-start those days or make a roster move.",
+            f"No legal starter for home days {days}. Spot-start those days or make a roster move.",
         )
     return errors, unfilled
 
@@ -822,8 +831,10 @@ def assign_starters(plan, assignments):
 
 def clear_starters(plan):
     """
-    Blank every unopened day's starter. The rotation list stays, so pushing
-    it fills these days again. An opened day and any one-day lineup stay.
+    Blank every unopened road day's starter. Home days keep a pitcher,
+    because other managers play those games. The rotation list stays, so
+    pushing it fills the road days again. An opened day and any one-day
+    lineup stay.
     """
     if not is_open(plan.half):
         raise PlanError([closed_message(plan.half)])
@@ -831,7 +842,7 @@ def clear_starters(plan):
     with transaction.atomic():
         rows = _day_rows(plan, games)
         for day, game in games.items():
-            if is_locked(game):
+            if is_locked(game) or _home_game(plan.team, game):
                 continue
             row = rows[day]
             row.manual_starter = None
@@ -1126,7 +1137,8 @@ def starters(plan):
 def plan_gaps(team, season, half):
     """
     What a half still needs filed: lineups, the rotation, and each bullpen
-    role. A filed rotation with an open day and no starter is its own note.
+    role. A filed rotation with an open home day and no starter is its own
+    note. A road day may wait for a call-up.
     """
     plan = find_plan(team, season, half)
     gaps = []
@@ -1161,14 +1173,14 @@ def _rotation_gap(plan, team, season, half):
     missing = [
         day
         for day, game in half_games(team, season, half).items()
-        if not is_locked(game) and day not in covered
+        if not is_locked(game) and day not in covered and _home_game(team, game)
     ]
     count = len(missing)
     if count == 0:
         return None
     if count == 1:
-        return "1 open day has no starter."
-    return f"{count} open days have no starter."
+        return "1 open home day has no starter."
+    return f"{count} open home days have no starter."
 
 
 def _bullpen_gaps(plan):

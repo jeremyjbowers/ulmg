@@ -724,7 +724,7 @@ class EditPlanTestCase(PlanViewsTestCase):
             ROTATION_URL, {"rotation": [p.id for p in self.roster.starters[:3]]}
         )
         self.assertEqual(response.status_code, 400)
-        self.assertRegex(response.content.decode(), r"No legal starter for days 4, ")
+        self.assertRegex(response.content.decode(), r"No legal starter for home days [\d, ]+\.")
 
     def test_second_half_locked_until_2h(self):
         url = f"/teams/atl/plan/2/{SEASON}/edit/"
@@ -1039,11 +1039,11 @@ class SchedulePlannedStartersTestCase(PlanViewsTestCase):
         self.roster.file()
         client = self.as_user(self.owner)
         page = client.get(SCHEDULE_URL).content.decode()
-        self.assertEqual(page.count(">Clear all starters<"), 1)
+        self.assertEqual(page.count(">Clear away starters<"), 1)
         self.assertIn('name="clear_starters"', page)
-        self.assertNotIn(">Clear all starters<", Client().get(SCHEDULE_URL).content.decode())
+        self.assertNotIn(">Clear away starters<", Client().get(SCHEDULE_URL).content.decode())
         self.assertNotIn(
-            ">Clear all starters<", self.as_user(self.other_owner).get(SCHEDULE_URL).content.decode()
+            ">Clear away starters<", self.as_user(self.other_owner).get(SCHEDULE_URL).content.decode()
         )
 
         refused = self.as_user(self.other_owner).post(SCHEDULE_URL, {"clear_starters": "1"})
@@ -1061,16 +1061,30 @@ class SchedulePlannedStartersTestCase(PlanViewsTestCase):
         )
         self.assertRedirects(response, SCHEDULE_URL)
         body = response.content.decode()
-        self.assertIn("Cleared the starters.", body)
-        self.assertIn("81 open days have no starter.", body)
+        self.assertIn("Cleared the away starters.", body)
+        self.assertNotIn("open home day", body)
         plan = self.saved_plan()
+        games = plans.half_games(self.atl, SEASON, 1)
+        starters = plans.starters(plan)
         self.assertEqual(plan.rotation, [p.id for p in self.roster.starters])
-        self.assertTrue(all(starter is None for starter in plans.starters(plan).values()))
-        grid = body.split("data-starter-grid", 1)[1].split("</form>", 1)[0]
-        self.assertNotIn(self.roster.starters[0].name, grid)
+        self.assertTrue(any(
+            starters[day] is None
+            for day, game in games.items()
+            if game.series.home_team_id != self.atl.id
+        ))
+        self.assertTrue(all(
+            starters[day] is not None
+            for day, game in games.items()
+            if game.series.home_team_id == self.atl.id
+        ))
 
-        client.post(SCHEDULE_URL, {f"starter_{day}": "" for day in plans.starters(plan)})
-        self.assertTrue(all(starter is None for starter in plans.starters(self.saved_plan()).values()))
+        client.post(SCHEDULE_URL, {f"starter_{day}": "" for day in starters})
+        starters = plans.starters(self.saved_plan())
+        self.assertTrue(all(
+            starters[day] is not None
+            for day, game in games.items()
+            if game.series.home_team_id == self.atl.id
+        ))
         client.post(ROTATION_URL, {"rotation": [p.id for p in self.roster.starters]})
         self.assertTrue(all(plans.starters(self.saved_plan()).values()))
 
