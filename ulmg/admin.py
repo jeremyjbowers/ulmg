@@ -35,6 +35,8 @@ from ulmg.models import (
     UsageAppearance,
     UsageOverride,
     UsagePause,
+    DepthChart,
+    DepthAssignment,
 )
 from ulmg import sim_data, usage
 
@@ -664,6 +666,20 @@ class ResetSimSeasonForm(forms.Form):
         required=False, help_text="Also delete the schedule so generate_schedule can run again."
     )
     confirm = forms.IntegerField(required=False, help_text="Type the season number again to reset it.")
+
+
+class DepthAssignmentInline(admin.TabularInline):
+    model = DepthAssignment
+    extra = 0
+    raw_id_fields = ["player"]
+
+
+@admin.register(DepthChart)
+class DepthChartAdmin(admin.ModelAdmin):
+    list_display = ["team", "season"]
+    list_filter = ["season"]
+    raw_id_fields = ["team"]
+    inlines = [DepthAssignmentInline]
 
 
 @admin.register(UsageCounter)
