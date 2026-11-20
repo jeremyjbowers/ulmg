@@ -51,8 +51,8 @@
     {% if can_edit %}
     <form method="post">
         {% csrf_token %}
-        <div class="schedule-board">
-            <div class="pitcher-stack mb-4" data-stack>
+        <div class="schedule-board flex flex-col">
+            <div class="pitcher-stack order-2 max-h-64 overflow-y-auto lg:order-none lg:max-h-none mb-4" data-stack>
                 <div class="flex items-end justify-between gap-3 border-b border-gray-300 mb-2">
                     <h3 class="font-bold leading-none">Starters</h3>
                     <button type="submit" name="clear_starters" value="1" class="shrink-0 border border-gray-400 px-2 py-1 text-xs leading-none" onclick="return confirm('Clear the starter on every open away game? Home games keep a pitcher.');">Clear away starters</button>
@@ -67,7 +67,7 @@
                 <p class="text-xs text-gray-600">No starters selected. <a href="{{ rotation_url }}" class="underline">Set the rotation</a> to choose who appears here.</p>
                 {% endif %}
             </div>
-            <div data-starter-grid>
+            <div class="order-1 lg:order-none" data-starter-grid>
                 {% include "includes/schedule_rows.html" %}
                 <button type="submit" class="mt-4 bg-gray-800 text-white rounded px-4 py-2 font-bold">Save starters</button>
             </div>

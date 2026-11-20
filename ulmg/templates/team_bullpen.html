@@ -14,8 +14,8 @@
     {% if not is_open %}
     <p class="plan-closed text-sm">{{ closed_message }}</p>
     {% else %}
-    <div class="lg:grid lg:grid-cols-12 lg:gap-4">
-        <div class="lg:col-span-4 mb-4" data-stack>
+    <div class="flex flex-col lg:grid lg:grid-cols-12 lg:gap-4">
+        <div class="order-2 max-h-64 overflow-y-auto lg:order-none lg:max-h-none lg:col-span-4 mb-4" data-stack>
             <h3 class="font-bold border-b border-gray-300 mb-2">Pitchers</h3>
             <div class="space-y-2">
                 {% for card in pitcher_cards %}
@@ -23,7 +23,7 @@
                 {% endfor %}
             </div>
         </div>
-        <form method="post" class="lg:col-span-8 space-y-4 text-sm" data-bullpen>
+        <form method="post" class="order-1 lg:order-none lg:col-span-8 space-y-4 text-sm" data-bullpen>
             {% csrf_token %}
             <fieldset>
                 <legend class="font-bold mb-1">Bullpen usage</legend>
