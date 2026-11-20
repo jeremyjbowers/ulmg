@@ -26,6 +26,15 @@ DEFENSE_REGRESSION_INNINGS = 600
 # Plate appearances (hitters) or batters faced (pitchers) of overall card mixed into each platoon split.
 PLATOON_REGRESSION_PA = 400
 
+# Share of the way a card moves from actual results toward true talent.
+# Hitters move toward Statcast xAVG and xSLG; pitchers toward league HR/FB and league BABIP.
+HITTER_TRUE_TALENT_WEIGHT = 0.5
+PITCHER_TRUE_TALENT_WEIGHT = 0.5
+
+# League home runs per fly ball (the xFIP baseline) and batting average on balls in play.
+LEAGUE_HR_PER_FB = 0.11
+LEAGUE_BABIP = 0.290
+
 # Player.bats for a switch hitter, as utils.normalize_hand stores it from the FanGraphs roster.
 SWITCH_HITTER = "S"
 
@@ -189,6 +198,90 @@ def pitcher_rates(pitch_stats):
         "hr": hr / tbf,
         "h": (_number(pitch_stats, "h") - hr) / tbf,
     }
+
+
+def true_talent_hitter_rates(hit_stats):
+    """
+    The hitter card pulled toward his Statcast expected stats.
+    Hits move HITTER_TRUE_TALENT_WEIGHT of the way from actual to xAVG * AB, and total
+    bases the same share of the way to xSLG * AB. Home runs and the other hits are each
+    scaled to land both targets; singles, doubles and triples keep their mix.
+    Strikeouts, walks and hit-by-pitches stay actual. Without xAVG, xSLG and AB,
+    or when the targets cannot be met with no negative rates, the card is actual.
+    """
+    rates = hitter_rates(hit_stats)
+    if rates is None:
+        return None
+    xavg = _optional_float(hit_stats, "xavg")
+    xslg = _optional_float(hit_stats, "xslg")
+    ab = _number(hit_stats, "ab")
+    if xavg is None or xslg is None or ab <= 0:
+        return rates
+
+    pa = _number(hit_stats, "pa")
+    other = _number(hit_stats, "1b") + _number(hit_stats, "2b") + _number(hit_stats, "3b")
+    hr = _number(hit_stats, "hr")
+    other_bases = _number(hit_stats, "1b") + 2 * _number(hit_stats, "2b") + 3 * _number(hit_stats, "3b")
+    hits = other + hr
+    bases = other_bases + 4 * hr
+    w = HITTER_TRUE_TALENT_WEIGHT
+    target_hits = hits + w * (xavg * ab - hits)
+    target_bases = bases + w * (xslg * ab - bases)
+
+    if other > 0 and hr > 0:
+        bases_per_other = other_bases / other
+        hr_scale = (target_bases - bases_per_other * target_hits) / (hr * (4 - bases_per_other))
+        other_scale = (target_hits - hr_scale * hr) / other
+    elif hits > 0:
+        hr_scale = other_scale = target_hits / hits
+    else:
+        return rates
+    if hr_scale < 0 or other_scale < 0:
+        return rates
+
+    blended = dict(rates)
+    for key in ("single", "double", "triple"):
+        blended[key] = rates[key] * other_scale
+    blended["hr"] = rates["hr"] * hr_scale
+    blended["bip_out"] = 1 - sum(value for key, value in blended.items() if key != "bip_out")
+    if blended["bip_out"] < 0 or pa <= 0:
+        return rates
+    return blended
+
+
+def true_talent_pitcher_rates(pitch_stats):
+    """
+    The pitcher card pulled toward a fielding-independent line.
+    Home runs move PITCHER_TRUE_TALENT_WEIGHT of the way to LEAGUE_HR_PER_FB on his
+    fly balls (left actual without a fly-ball count). Hits on the remaining balls in play
+    move the same share of the way from his BABIP to LEAGUE_BABIP.
+    Strikeouts, walks and hit batters stay actual.
+    """
+    rates = pitcher_rates(pitch_stats)
+    if rates is None:
+        return None
+    tbf = _number(pitch_stats, "tbf")
+    so = _number(pitch_stats, "so")
+    bb = _number(pitch_stats, "bb")
+    hbp = _number(pitch_stats, "hbp")
+    hr = _number(pitch_stats, "hr")
+    hits = _number(pitch_stats, "h") - hr
+    w = PITCHER_TRUE_TALENT_WEIGHT
+
+    fly_balls = _number(pitch_stats, "fb")
+    blended_hr = hr + w * (fly_balls * LEAGUE_HR_PER_FB - hr) if fly_balls > 0 else hr
+
+    balls_in_play = tbf - so - bb - hbp - hr
+    if balls_in_play <= 0:
+        return rates
+    babip = hits / balls_in_play
+    blended_babip = babip + w * (LEAGUE_BABIP - babip)
+    blended_in_play = max(tbf - so - bb - hbp - blended_hr, 0.0)
+
+    blended = dict(rates)
+    blended["hr"] = blended_hr / tbf
+    blended["h"] = blended_babip * blended_in_play / tbf
+    return blended
 
 
 def regress_split(split_rates, overall_rates, n):

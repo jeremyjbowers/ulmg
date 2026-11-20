@@ -223,6 +223,98 @@ class PitcherRatesTestCase(SimpleTestCase):
         self.assertIsNone(cards.pitcher_rates(processed(FG_PITCHER_ROW, TBF=0)))
 
 
+# Statcast expected stats for the hitter row: 528 AB, 147 H, 255 TB actual.
+HITTER_EXPECTED = {"xAVG": 0.250, "xSLG": 0.430}
+
+
+class TrueTalentHitterRatesTestCase(SimpleTestCase):
+    def setUp(self):
+        self.actual = cards.hitter_rates(processed(FG_HITTER_ROW))
+        self.rates = cards.true_talent_hitter_rates(processed(FG_HITTER_ROW, **HITTER_EXPECTED))
+        self.weight = cards.HITTER_TRUE_TALENT_WEIGHT
+
+    def test_weight_constant(self):
+        self.assertEqual(cards.HITTER_TRUE_TALENT_WEIGHT, 0.5)
+
+    def test_hits_move_toward_expected_average(self):
+        expected_hits = 0.250 * 528
+        target = 147 + self.weight * (expected_hits - 147)
+        hits = (self.rates["single"] + self.rates["double"] + self.rates["triple"] + self.rates["hr"]) * 600
+        self.assertAlmostEqual(hits, target)
+
+    def test_total_bases_move_toward_expected_slugging(self):
+        expected_bases = 0.430 * 528
+        target = 255 + self.weight * (expected_bases - 255)
+        bases = (
+            self.rates["single"] + 2 * self.rates["double"] + 3 * self.rates["triple"] + 4 * self.rates["hr"]
+        ) * 600
+        self.assertAlmostEqual(bases, target)
+
+    def test_non_home_run_hits_keep_their_mix(self):
+        self.assertAlmostEqual(self.rates["single"] / self.rates["double"], 90 / 30)
+        self.assertAlmostEqual(self.rates["double"] / self.rates["triple"], 30 / 3)
+
+    def test_strikeouts_walks_and_hit_by_pitches_stay_actual(self):
+        for key in ("k", "bb", "hbp"):
+            self.assertAlmostEqual(self.rates[key], self.actual[key])
+
+    def test_rates_sum_to_one_with_engine_keys(self):
+        self.assertEqual(list(self.rates.keys()), list(self.actual.keys()))
+        self.assertAlmostEqual(sum(self.rates.values()), 1.0)
+
+    def test_without_expected_stats_the_card_is_actual(self):
+        self.assertEqual(cards.true_talent_hitter_rates(processed(FG_HITTER_ROW)), self.actual)
+
+    def test_no_plate_appearances_gives_no_rates(self):
+        self.assertIsNone(cards.true_talent_hitter_rates(processed(FG_HITTER_ROW, PA=0, **HITTER_EXPECTED)))
+
+    def test_rates_never_go_negative(self):
+        rates = cards.true_talent_hitter_rates(processed(FG_HITTER_ROW, xAVG=0.400, xSLG=0.300))
+        for key, rate in rates.items():
+            self.assertGreaterEqual(rate, 0.0, key)
+        self.assertAlmostEqual(sum(rates.values()), 1.0)
+
+
+class TrueTalentPitcherRatesTestCase(SimpleTestCase):
+    def setUp(self):
+        self.actual = cards.pitcher_rates(processed(FG_PITCHER_ROW))
+        self.rates = cards.true_talent_pitcher_rates(processed(FG_PITCHER_ROW, FB=220))
+        self.weight = cards.PITCHER_TRUE_TALENT_WEIGHT
+
+    def expected_home_runs(self):
+        return 24 + self.weight * (220 * cards.LEAGUE_HR_PER_FB - 24)
+
+    def test_constants(self):
+        self.assertEqual(cards.PITCHER_TRUE_TALENT_WEIGHT, 0.5)
+        self.assertEqual(cards.LEAGUE_HR_PER_FB, 0.11)
+        self.assertEqual(cards.LEAGUE_BABIP, 0.290)
+
+    def test_home_runs_move_toward_league_rate_on_fly_balls(self):
+        self.assertAlmostEqual(self.rates["hr"], self.expected_home_runs() / 800)
+
+    def test_hits_in_play_move_toward_league_babip(self):
+        babip = 136 / (800 - 200 - 56 - 8 - 24)
+        blended = babip + self.weight * (cards.LEAGUE_BABIP - babip)
+        balls_in_play = 800 - 200 - 56 - 8 - self.expected_home_runs()
+        self.assertAlmostEqual(self.rates["h"], blended * balls_in_play / 800)
+
+    def test_strikeouts_walks_and_hit_batters_stay_actual(self):
+        for key in ("k", "bb", "hbp"):
+            self.assertAlmostEqual(self.rates[key], self.actual[key])
+
+    def test_keys_match_engine_pitcher_rates(self):
+        self.assertEqual(list(self.rates.keys()), ["k", "bb", "hbp", "hr", "h"])
+
+    def test_without_fly_balls_home_runs_stay_actual(self):
+        rates = cards.true_talent_pitcher_rates(processed(FG_PITCHER_ROW))
+        self.assertAlmostEqual(rates["hr"], 24 / 800)
+        babip = 136 / 512
+        self.assertAlmostEqual(rates["h"], (babip + self.weight * (cards.LEAGUE_BABIP - babip)) * 512 / 800)
+
+    def test_no_batters_faced_gives_no_rates(self):
+        self.assertIsNone(cards.true_talent_pitcher_rates(processed(FG_PITCHER_ROW, TBF=0, FB=220)))
+
+
 # FanGraphs batted-ball counts (GB, FB, LD) from the same payload; the values are constructed.
 HITTER_BATTED_BALLS = {"GB": 180, "FB": 150, "LD": 90}
 PITCHER_BATTED_BALLS = {"GB": 260, "FB": 220, "LD": 120}
@@ -760,6 +852,14 @@ class GenerateCardsTestCase(TestCase):
         self.assertIsNone(card.defense["C"])
         self.assertIsNone(card.pitcher_rates)
 
+    def test_hitter_card_pulls_toward_expected_stats(self):
+        self.hitter_pss.hit_stats = processed(FG_HITTER_ROW, **HITTER_EXPECTED)
+        self.hitter_pss.save()
+        self.generate("--season", "2025")
+        card = models.Card.objects.get(player=self.hitter, season=2025)
+        self.assertEqual(card.hitter_rates, cards.true_talent_hitter_rates(processed(FG_HITTER_ROW, **HITTER_EXPECTED)))
+        self.assertNotAlmostEqual(card.hitter_rates["single"], 90 / 600)
+
     def test_hitter_card_running(self):
         self.generate("--season", "2025")
         card = models.Card.objects.get(player=self.hitter, season=2025)
@@ -807,7 +907,8 @@ class GenerateCardsTestCase(TestCase):
         self.generate("--season", "2025")
         card = models.Card.objects.get(player=self.pitcher, season=2025)
         self.assertEqual(card.batters_faced, 800)
-        self.assertAlmostEqual(card.pitcher_rates["h"], 136 / 800)
+        self.assertEqual(card.pitcher_rates, cards.true_talent_pitcher_rates(processed(FG_PITCHER_ROW)))
+        self.assertNotAlmostEqual(card.pitcher_rates["h"], 136 / 800)
         self.assertEqual(card.fatigue["role"], "starter")
         self.assertIsNone(card.hitter_rates)
 
@@ -929,8 +1030,10 @@ class CardDisplayTestCase(TestCase):
     def test_pitcher_card_line(self):
         card = models.Card.objects.get(player=self.pitcher)
         line = card.pitcher_line()
-        self.assertAlmostEqual(line["avg"], 0.2 / 0.92)
-        self.assertAlmostEqual(line["obp"], 0.28)
+        # Hits in play sit halfway between his .266 BABIP and the league's .290 (no fly-ball count, so HR stay actual).
+        hits = (136 / 512 + cards.PITCHER_TRUE_TALENT_WEIGHT * (cards.LEAGUE_BABIP - 136 / 512)) * 512 / 800 + 0.03
+        self.assertAlmostEqual(line["avg"], hits / 0.92)
+        self.assertAlmostEqual(line["obp"], hits + 0.08)
         self.assertAlmostEqual(line["k_pct"], 0.25)
         self.assertAlmostEqual(line["bb_pct"], 0.07)
         self.assertAlmostEqual(line["hr_pct"], 0.03)
@@ -964,8 +1067,8 @@ class CardDisplayTestCase(TestCase):
         content = response.content.decode()
         self.assertIn("2025 Card", content)
         self.assertIn("800 BF", content)
-        self.assertIn(".217", content)
-        self.assertIn(".280", content)
+        self.assertIn(".226", content)
+        self.assertIn(".288", content)
         self.assertNotIn("Steal success", content)
 
     def test_player_without_card_shows_no_card(self):
