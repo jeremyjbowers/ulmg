@@ -26,7 +26,7 @@ class Command(BaseCommand):
         fields = {
             "plate_appearances": None,
             "wrc_plus": None,
-            "hitter_rates": cards.hitter_rates(pss.hit_stats),
+            "hitter_rates": cards.true_talent_hitter_rates(pss.hit_stats),
             "hitter_batted_balls": None,
             "primary_position": None,
             "defense": None,
@@ -34,7 +34,7 @@ class Command(BaseCommand):
             "steal_attempt_rate": None,
             "spd": None,
             "batters_faced": None,
-            "pitcher_rates": cards.pitcher_rates(pss.pitch_stats),
+            "pitcher_rates": cards.true_talent_pitcher_rates(pss.pitch_stats),
             "pitcher_batted_balls": None,
             "fatigue": None,
         }
