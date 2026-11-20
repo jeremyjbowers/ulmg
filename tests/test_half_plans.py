@@ -6,7 +6,7 @@ from django.db import connection
 from django.test import TestCase, override_settings
 from django.test.utils import CaptureQueriesContext
 
-from ulmg import models, plans, schedule, usage
+from ulmg import computer_manager, models, plans, schedule, usage
 from tests.plan_fixtures import (
     SEASON,
     Roster,
@@ -800,7 +800,7 @@ class BullpenSaveTestCase(PlanTestCase):
                 bullpen_logic="wild",
             )
         self.assertIn(
-            "The bullpen logic must be traditional, leverage, fireman, protect or save.",
+            "The bullpen logic must be traditional, leverage, fireman, protect, save or advanced.",
             raised.exception.errors,
         )
         plan.refresh_from_db()
@@ -878,9 +878,49 @@ class BullpenSaveTestCase(PlanTestCase):
         game = game_on(self.atl, 1)
         other = opponent_on(self.atl, 1)
         self.assertEqual(side(game, other)["bullpen_logic"], models.HalfPlan.TRADITIONAL_PEN)
+        self.assertEqual(side(game, other)["bullpen_rules"], {})
         self.assertIsNone(side(game, other)["closer"])
         self.assertEqual(side(game, other)["sirp"], [])
         self.assertEqual(side(game, other)["mirp"], [])
+
+    def test_advanced_rules_are_saved_and_an_opened_game_keeps_them(self):
+        rules = dict(computer_manager.rules_for("fireman"), hold_role=computer_manager.MIRP)
+        plan = self.roster.file(bullpen_logic=models.HalfPlan.ADVANCED_PEN, bullpen_rules=rules)
+        self.assertEqual(plan.bullpen_logic, models.HalfPlan.ADVANCED_PEN)
+        self.assertEqual(plan.bullpen_rules["hold_role"], computer_manager.MIRP)
+        self.assertEqual(plan.bullpen_rules["closer"], "fireman")
+        self.assertEqual(plan.bullpen_rules["hold_innings"], [7, 8])
+
+        game = game_on(self.atl, 1)
+        key = "home" if game.series.home_team_id == self.atl.id else "road"
+        opened = plans.open_game(game)
+        self.assertEqual(opened[key]["bullpen_logic"], models.HalfPlan.ADVANCED_PEN)
+        self.assertEqual(opened[key]["bullpen_rules"]["hold_role"], computer_manager.MIRP)
+
+        self.roster.file(bullpen_logic=models.HalfPlan.TRADITIONAL_PEN)
+        game.refresh_from_db()
+        frozen = side(game, self.atl)
+        self.assertEqual(frozen["bullpen_logic"], models.HalfPlan.ADVANCED_PEN)
+        self.assertEqual(frozen["bullpen_rules"]["hold_role"], computer_manager.MIRP)
+        plan.refresh_from_db()
+        self.assertEqual(plan.bullpen_logic, models.HalfPlan.TRADITIONAL_PEN)
+        self.assertEqual(plan.bullpen_rules, {})
+
+    def test_advanced_rules_that_do_not_parse_are_refused(self):
+        plan = self.roster.file(bullpen_logic=models.HalfPlan.SAVE_PEN)
+        with self.assertRaises(plans.PlanError) as raised:
+            plans.save_bullpen(
+                plan,
+                closer=plan.closer,
+                sirp=[self.roster.relievers[1]],
+                mirp=[self.roster.swingman],
+                bullpen_logic=models.HalfPlan.ADVANCED_PEN,
+                bullpen_rules={"hold_role": "closer"},
+            )
+        self.assertTrue(raised.exception.errors)
+        plan.refresh_from_db()
+        self.assertEqual(plan.bullpen_logic, models.HalfPlan.SAVE_PEN)
+        self.assertEqual(plan.bullpen_rules, {})
 
 
 class PlanSaveQueryCountTestCase(PlanTestCase):

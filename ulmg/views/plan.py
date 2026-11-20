@@ -374,6 +374,7 @@ def _bullpen_from_plan(plan):
         "sirp": list(plan.sirp or []),
         "mirp": list(plan.mirp or []),
         "bullpen_logic": plan.bullpen_logic or models.HalfPlan.TRADITIONAL_PEN,
+        "bullpen_rules": plan.bullpen_rules or {},
     }
 
 
@@ -383,6 +384,8 @@ def _bullpen_from_post(post):
         "sirp": _posted_ids(post, "sirp"),
         "mirp": _posted_ids(post, "mirp"),
         "bullpen_logic": post.get("bullpen_logic"),
+        "bullpen_rules": {},
+        "adv_values": computer_manager.posted_form_values(post),
     }
 
 
@@ -601,6 +604,12 @@ def _bullpen_context(request, team, half, season, state, errors, rotation_ids=()
     cards = _built_cards(available, season, "p")
     labels = dict(models.HalfPlan.BULLPEN_LOGIC_CHOICES)
     logic = state["bullpen_logic"] or models.HalfPlan.TRADITIONAL_PEN
+    if state.get("adv_values"):
+        adv_values = state["adv_values"]
+    else:
+        adv_values = computer_manager.form_values(
+            computer_manager.rules_for_display(logic, state.get("bullpen_rules"))
+        )
     context.update(
         {
             "errors": errors,
@@ -616,16 +625,18 @@ def _bullpen_context(request, team, half, season, state, errors, rotation_ids=()
             ],
             "bullpen_logic": logic,
             "bullpen_logic_label": labels.get(logic, logic),
-            "bullpen_logic_note": computer_manager.describe_bullpen_logic(logic),
+            "bullpen_logic_note": computer_manager.describe_bullpen_logic(logic, state.get("bullpen_rules")),
             "bullpen_logics": [
                 {
                     "value": value,
                     "label": label,
                     "note": computer_manager.describe_bullpen_logic(value),
+                    "rules_json": computer_manager.shortcut_rules_json(value),
                     "checked": value == logic,
                 }
                 for value, label in models.HalfPlan.BULLPEN_LOGIC_CHOICES
             ],
+            "adv_fields": computer_manager.adv_fields(adv_values),
         }
     )
     return context
@@ -655,6 +666,10 @@ def team_plan_bullpen(request, abbreviation, half, season=None):
         if not plans.can_edit(request.user, team):
             return HttpResponseForbidden("Only this team's owner and the commissioner can set the bullpen.")
         state = _bullpen_from_post(request.POST)
+        if state["bullpen_logic"] == models.HalfPlan.ADVANCED_PEN:
+            rules, rule_errors = computer_manager.rules_from_post(request.POST)
+            state["bullpen_rules"] = rules or {}
+            errors.extend(rule_errors)
         found = _bullpen_players(state, errors)
         if found is not None and not errors:
             try:
@@ -664,6 +679,7 @@ def team_plan_bullpen(request, abbreviation, half, season=None):
                     sirp=found["sirp"],
                     mirp=found["mirp"],
                     bullpen_logic=state["bullpen_logic"],
+                    bullpen_rules=state.get("bullpen_rules"),
                 )
             except plans.PlanError as error:
                 errors = error.errors

@@ -327,11 +327,72 @@
     var suppressClick = false;
     var pointerDrag = null;
 
+    function showAdvanced(on) {
+        var panel = document.querySelector("[data-bullpen-advanced]");
+        if (panel) panel.classList.toggle("hidden", !on);
+    }
+
+    function applyAdv(values) {
+        Object.keys(values).forEach(function (name) {
+            var field = document.querySelector('[data-adv-field="' + name + '"]');
+            if (!field) return;
+            var fieldInput = field.querySelector("input");
+            if (fieldInput) fieldInput.value = values[name];
+            field.querySelectorAll("button[data-adv-choice]").forEach(function (button) {
+                var on = button.dataset.advChoice === String(values[name]);
+                button.classList.toggle("is-selected", on);
+                button.classList.toggle("bg-gray-800", on);
+                button.classList.toggle("text-white", on);
+            });
+        });
+        syncAdvVisibility();
+    }
+
+    function syncAdvVisibility() {
+        var modeInput = document.querySelector("input[name=adv_closer]");
+        if (!modeInput) return;
+        var mode = modeInput.value;
+        document.querySelectorAll("[data-adv-show]").forEach(function (row) {
+            var show = row.dataset.advShow.split(" ").indexOf(mode) !== -1;
+            row.classList.toggle("hidden", !show);
+        });
+    }
+
     document.addEventListener("click", function (event) {
         if (suppressClick) {
             suppressClick = false;
             event.preventDefault();
             event.stopPropagation();
+            return;
+        }
+        var advButton = event.target.closest("button[data-adv-choice]");
+        if (advButton) {
+            event.preventDefault();
+            var advField = advButton.closest("[data-adv-field]");
+            advField.querySelectorAll("button[data-adv-choice]").forEach(function (button) {
+                var on = button === advButton;
+                button.classList.toggle("is-selected", on);
+                button.classList.toggle("bg-gray-800", on);
+                button.classList.toggle("text-white", on);
+            });
+            var advInput = advField.querySelector("input");
+            if (advInput) advInput.value = advButton.dataset.advChoice;
+            syncAdvVisibility();
+            var logicGroup = document.querySelector("[data-bullpen-logic]");
+            var advancedButton = logicGroup && logicGroup.querySelector('button[data-bullpen-choice="advanced"]');
+            if (advancedButton) {
+                logicGroup.querySelectorAll("button[data-bullpen-choice]").forEach(function (button) {
+                    var on = button === advancedButton;
+                    button.classList.toggle("is-selected", on);
+                    button.classList.toggle("bg-gray-800", on);
+                    button.classList.toggle("text-white", on);
+                });
+                var logicInput = logicGroup.querySelector("input[name=bullpen_logic]");
+                if (logicInput) logicInput.value = "advanced";
+                showAdvanced(true);
+                var advNote = logicGroup.querySelector(".bullpen-logic-note");
+                if (advNote) advNote.textContent = advancedButton.dataset.note || "";
+            }
             return;
         }
         var usageButton = event.target.closest("button[data-bullpen-choice]");
@@ -348,6 +409,9 @@
             if (input) input.value = usageButton.dataset.bullpenChoice;
             var note = group.querySelector(".bullpen-logic-note");
             if (note) note.textContent = usageButton.dataset.note || "";
+            var advanced = usageButton.dataset.bullpenChoice === "advanced";
+            showAdvanced(advanced);
+            if (!advanced && usageButton.dataset.rules) applyAdv(JSON.parse(usageButton.dataset.rules));
             return;
         }
         var designationButton = event.target.closest("button[data-designation]");
@@ -510,5 +574,6 @@
 
     refreshStartCards();
     applyTouch();
+    syncAdvVisibility();
 })();
 </script>

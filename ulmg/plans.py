@@ -7,7 +7,7 @@ from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
 
-from ulmg import cards, models, roster_moves, schedule, usage, utils
+from ulmg import cards, computer_manager, models, roster_moves, schedule, usage, utils
 
 LINEUP_POSITIONS = ["C", "1B", "2B", "3B", "SS", "LF", "CF", "RF", "DH"]
 LINEUP_SIZE = len(LINEUP_POSITIONS)
@@ -695,6 +695,25 @@ def bullpen_logic_errors(bullpen_logic):
     return _choice_errors(bullpen_logic, models.HalfPlan.BULLPEN_LOGIC_CHOICES, "bullpen logic")
 
 
+def bullpen_rules_errors(bullpen_logic, bullpen_rules):
+    """Advanced usage has to name rules the computer can follow. A shortcut ignores them."""
+    if bullpen_logic != models.HalfPlan.ADVANCED_PEN:
+        return []
+    _cleaned, errors = computer_manager.interpret_rules(bullpen_rules)
+    return errors
+
+
+def _assign_bullpen_logic(plan, bullpen_logic, bullpen_rules):
+    """Write a usage onto the plan. A shortcut clears any advanced rules. None keeps the plan's."""
+    if bullpen_logic is None:
+        return
+    plan.bullpen_logic = bullpen_logic
+    if bullpen_logic == models.HalfPlan.ADVANCED_PEN:
+        plan.bullpen_rules, _errors = computer_manager.interpret_rules(bullpen_rules)
+    else:
+        plan.bullpen_rules = {}
+
+
 def save_lineups(
     plan, *, lineup_vs_lhp, lineup_vs_rhp, starter_hook=None,
     pinch_vs_rhp=None, pinch_vs_lhp=None, defensive_replacements=None,
@@ -852,11 +871,12 @@ def clear_starters(plan):
         return _designate(plan)
 
 
-def save_bullpen(plan, *, closer, sirp, mirp, bullpen_logic=None):
+def save_bullpen(plan, *, closer, sirp, mirp, bullpen_logic=None, bullpen_rules=None):
     """
     Save the closer, single-inning relief, multi-inning relief and the
     bullpen usage. Lineups, the rotation and the schedule's starters stay
-    as they are. A bullpen_logic of None keeps the plan's. Returns warnings
+    as they are. A bullpen_logic of None keeps the plan's usage and its
+    advanced rules. A shortcut clears advanced rules. Returns warnings
     to show.
     """
     if not is_open(plan.half):
@@ -864,6 +884,7 @@ def save_bullpen(plan, *, closer, sirp, mirp, bullpen_logic=None):
     rosters = roster_moves.HalfRosters(plan.team, plan.season, plan.half)
     errors = bullpen_errors(plan.team, closer, sirp, mirp, rosters.all)
     errors += bullpen_logic_errors(bullpen_logic)
+    errors += bullpen_rules_errors(bullpen_logic, bullpen_rules)
     if errors:
         raise PlanError(_unique_errors(errors))
 
@@ -872,8 +893,7 @@ def save_bullpen(plan, *, closer, sirp, mirp, bullpen_logic=None):
         plan.closer = closer
         plan.sirp = [p.id for p in sirp]
         plan.mirp = [p.id for p in mirp]
-        if bullpen_logic is not None:
-            plan.bullpen_logic = bullpen_logic
+        _assign_bullpen_logic(plan, bullpen_logic, bullpen_rules)
         plan.save()
         return _designate(plan, previous)
 
@@ -881,15 +901,16 @@ def save_bullpen(plan, *, closer, sirp, mirp, bullpen_logic=None):
 def save_plan(
     plan, *, rotation, closer, sirp, mirp, bench, lineup_vs_lhp, lineup_vs_rhp,
     pinch_vs_rhp, pinch_vs_lhp, defensive_replacements,
-    starter_hook=None, bullpen_logic=None, starter_hooks=None,
+    starter_hook=None, bullpen_logic=None, starter_hooks=None, bullpen_rules=None,
 ):
     """
     Save a half plan's rotation, bullpen, bench, pinch-hitter lists,
     defensive replacements, lineup cards, starter hook and bullpen usage,
     re-run auto-fill and set swingman designations. A starter_hook,
-    starter_hooks or bullpen_logic of None keeps the plan's. A starter who
-    leaves the rotation loses his own hook. Nothing is saved when a rule is
-    broken or a day has no legal starter. Returns warnings to show.
+    starter_hooks or bullpen_logic of None keeps the plan's. A shortcut
+    clears advanced rules. A starter who leaves the rotation loses his own
+    hook. Nothing is saved when a rule is broken or a day has no legal
+    starter. Returns warnings to show.
     """
     if not is_open(plan.half):
         raise PlanError([closed_message(plan.half)])
@@ -910,6 +931,7 @@ def save_plan(
         + starter_hook_errors(starter_hook)
         + starter_hooks_errors(starter_hooks, [p.id for p in fields["rotation"]])
         + bullpen_logic_errors(bullpen_logic)
+        + bullpen_rules_errors(bullpen_logic, bullpen_rules)
     )
     if errors:
         raise PlanError(errors)
@@ -930,8 +952,7 @@ def save_plan(
         if starter_hook is not None:
             plan.starter_hook = starter_hook
         plan.starter_hooks = _kept_starter_hooks(plan, plan.rotation, starter_hooks)
-        if bullpen_logic is not None:
-            plan.bullpen_logic = bullpen_logic
+        _assign_bullpen_logic(plan, bullpen_logic, bullpen_rules)
         plan.save()
         _release_blanks(plan)
         _refill(plan, rosters)
@@ -1298,6 +1319,7 @@ class PlanBook:
             "mirp": on_roster(self._resolve(plan.mirp)) if plan else [],
             "starter_hook": resolved_starter_hook(plan, starter),
             "bullpen_logic": plan.bullpen_logic if plan else models.HalfPlan.TRADITIONAL_PEN,
+            "bullpen_rules": (plan.bullpen_rules or {}) if plan else {},
         }
 
     def opened_side(self, sheet, opponent_sheet, team):
@@ -1326,6 +1348,7 @@ class PlanBook:
             "mirp": self._resolve(mirp_ids),
             "starter_hook": sheet.get("starter_hook", models.HalfPlan.NORMAL_HOOK),
             "bullpen_logic": sheet.get("bullpen_logic", models.HalfPlan.TRADITIONAL_PEN),
+            "bullpen_rules": sheet.get("bullpen_rules") or {},
         }
 
     def sheet(self, game):
@@ -1367,6 +1390,7 @@ def _frozen_side(side):
         "mirp": [p.id for p in side["mirp"] if p],
         "starter_hook": side["starter_hook"],
         "bullpen_logic": side["bullpen_logic"],
+        "bullpen_rules": side.get("bullpen_rules") or {},
     }
 
 
