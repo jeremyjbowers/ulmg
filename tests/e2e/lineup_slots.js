@@ -1,4 +1,4 @@
-// ABOUTME: Adding a pinch slot, and choosing a starter's hook with buttons, in a real browser.
+// ABOUTME: Adding a pinch slot, choosing a starter's hook, reordering a lineup, and tapping on a touch screen, in a real browser.
 // ABOUTME: Usage: node tests/e2e/lineup_slots.js
 const fs = require('fs');
 const path = require('path');
@@ -61,8 +61,8 @@ function rotationSlot(index, playerId, hook) {
 const html = `<!DOCTYPE html>
 <html><head>${style}</head><body>
 <div data-stack>
-  <article class="decision-card" data-player="11" data-kind="h">Hitter 11</article>
-  <article class="decision-card" data-player="7" data-kind="p">Pitcher 7</article>
+  <article class="decision-card" draggable="true" data-player="11" data-kind="h">Hitter 11</article>
+  <article class="decision-card" draggable="true" data-player="7" data-kind="p">Pitcher 7</article>
 </div>
 <div data-lineup="pinch_vs_rhp">
   <div class="space-y-2">
@@ -160,6 +160,21 @@ function check(failures, ok, message) {
   check(failures, (await first.locator('.player-id').inputValue()) === '', 'the old slot is empty');
   check(failures, (await first.locator('.hook-value').inputValue()) === '', 'the old slot returns to Default');
   check(failures, await first.locator('[data-starter-hook]').evaluate((el) => el.classList.contains('hidden')), 'an empty slot hides its hook row');
+  check(failures, await page.locator('.tap-note').count() === 0, 'a mouse keeps the drag cards and no tap note');
+  check(failures, await page.locator('[data-stack] [data-player="11"]').evaluate((el) => el.draggable), 'a mouse card stays draggable');
+
+  const phoneBrowser = await browser.newContext({ hasTouch: true, viewport: { width: 390, height: 844 } });
+  const phone = await phoneBrowser.newPage();
+  phone.on('pageerror', (error) => failures.push(String(error)));
+  await phone.setContent(html);
+  const phoneCard = phone.locator('[data-stack] [data-player="11"]');
+  check(failures, await phone.locator('.tap-note').innerText() === 'Tap a player, then tap a spot.', 'a touch screen says to tap');
+  check(failures, await phoneCard.evaluate((el) => el.draggable === false), 'a touch card is not draggable');
+  const phoneSlots = phone.locator('[data-lineup="pinch_vs_rhp"] .lineup-slot');
+  await phoneCard.tap();
+  await phoneSlots.nth(0).locator('.slot-body').tap();
+  check(failures, await phoneSlots.nth(0).locator('.player-id').inputValue() === '11', 'a tap places the hitter');
+  await phoneBrowser.close();
 
   const order = page.locator('.lineup-column');
   const lead = order.locator('[data-spot="1"]');
@@ -185,7 +200,7 @@ function check(failures, ok, message) {
     console.error(failures.join('\n'));
     process.exit(1);
   }
-  console.log('ok  a list grows by a slot, a hook moves with its pitcher, and a lineup swaps when it is reordered');
+  console.log('ok  a list grows by a slot, a hook moves with its pitcher, a lineup swaps when it is reordered, and a touch screen taps a player into a spot');
 })().catch((error) => {
   console.error(error);
   process.exit(1);

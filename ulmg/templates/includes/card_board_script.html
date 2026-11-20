@@ -1,4 +1,4 @@
-{# ABOUTME: Drag a card from the stack onto a slot, click a card and then a slot, or reorder a lineup with its handle. #}
+{# ABOUTME: Drag a card from the stack onto a slot, click a card and then a slot, or reorder a lineup with its handle. A touch screen taps instead of dragging. #}
 {# ABOUTME: A lineup column keeps each player once. The schedule grid takes pitchers. #}
 <style>
     .decision-card.is-picked { outline: 2px solid #111; }
@@ -157,7 +157,7 @@
         if (!tracksStarts()) return;
         document.querySelectorAll("[data-stack] .decision-card[data-starts-cap]").forEach(function (card) {
             var open = startsRoom(card) > 0;
-            card.draggable = open;
+            card.draggable = touchBoard() ? false : open;
             card.classList.toggle("starts-spent", !open);
             if (open) card.removeAttribute("title");
             else card.title = "No starts left to schedule";
@@ -306,7 +306,34 @@
         refreshStartCards();
     }
 
+    function touchBoard() {
+        return window.matchMedia("(pointer: coarse)").matches || navigator.maxTouchPoints > 0;
+    }
+
+    function applyTouch() {
+        if (!touchBoard()) return;
+        document.querySelectorAll(".decision-card").forEach(function (card) {
+            card.draggable = false;
+        });
+        if (document.querySelector(".tap-note")) return;
+        var stack = document.querySelector("[data-stack]");
+        if (!stack) return;
+        var note = document.createElement("p");
+        note.className = "tap-note text-sm mb-2";
+        note.textContent = "Tap a player, then tap a spot.";
+        stack.parentNode.insertBefore(note, stack);
+    }
+
+    var suppressClick = false;
+    var pointerDrag = null;
+
     document.addEventListener("click", function (event) {
+        if (suppressClick) {
+            suppressClick = false;
+            event.preventDefault();
+            event.stopPropagation();
+            return;
+        }
         var usageButton = event.target.closest("button[data-bullpen-choice]");
         if (usageButton) {
             event.preventDefault();
@@ -456,6 +483,32 @@
         if (card) place(slot, card);
     });
 
+    document.addEventListener("pointerdown", function (event) {
+        if (!touchBoard() || event.button) return;
+        if (event.target.closest("button, a, input, label")) return;
+        var card = event.target.closest(".decision-card");
+        if (!card) return;
+        pointerDrag = { id: event.pointerId, x: event.clientX, y: event.clientY, card: card, moved: false };
+    });
+
+    document.addEventListener("pointermove", function (event) {
+        if (!pointerDrag || event.pointerId !== pointerDrag.id || pointerDrag.moved) return;
+        var distance = Math.hypot(event.clientX - pointerDrag.x, event.clientY - pointerDrag.y);
+        if (distance > 8) pointerDrag.moved = true;
+    });
+
+    document.addEventListener("pointerup", function (event) {
+        if (!pointerDrag || event.pointerId !== pointerDrag.id) return;
+        var drag = pointerDrag;
+        pointerDrag = null;
+        if (!drag.moved) return;
+        suppressClick = true;
+        var under = document.elementFromPoint(event.clientX, event.clientY);
+        var slot = under && under.closest(".lineup-slot, .rotation-slot");
+        if (slot) place(slot, drag.card);
+    });
+
     refreshStartCards();
+    applyTouch();
 })();
 </script>

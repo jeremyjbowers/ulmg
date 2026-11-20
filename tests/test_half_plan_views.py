@@ -365,6 +365,12 @@ class EditPlanTestCase(PlanViewsTestCase):
     def test_the_editor_heading_names_the_half_and_the_lineups_follow(self):
         body = self.as_user(self.owner).get(EDIT_URL).content.decode()
         self.assertIn(">Set first half lineups<", body)
+        self.assertIn("order-1", body)
+        self.assertIn("order-2", body)
+        self.assertIn("max-h-64", body)
+        rotation = self.as_user(self.owner).get(ROTATION_URL).content.decode()
+        self.assertIn("order-1", rotation)
+        self.assertIn("max-h-64", rotation)
         self.assertLess(body.index(">Set first half lineups<"), body.index('data-lineup="vs_lhp"'))
         self.assertLess(body.index('data-lineup="vs_lhp"'), body.index('data-lineup="vs_rhp"'))
         self.assertNotIn("Drag a card into a slot", body)

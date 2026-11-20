@@ -25,9 +25,9 @@
     {% else %}
     <form method="post" class="space-y-6 text-sm">
         {% csrf_token %}
-        <div class="lg:grid lg:grid-cols-12 lg:gap-4">
-            <div class="lg:col-span-4 space-y-4">
-                <div data-stack>
+        <div class="flex flex-col lg:grid lg:grid-cols-12 lg:gap-4">
+            <div class="order-2 lg:order-none lg:col-span-4 space-y-4">
+                <div class="max-h-64 overflow-y-auto lg:max-h-none" data-stack>
                     <h3 class="font-bold border-b border-gray-300 mb-2">Pitchers</h3>
                     <div class="space-y-2">
                         {% for card in pitcher_cards %}
@@ -35,7 +35,7 @@
                         {% endfor %}
                     </div>
                 </div>
-                <div data-stack>
+                <div class="max-h-64 overflow-y-auto lg:max-h-none" data-stack>
                     <h3 class="font-bold border-b border-gray-300 mb-2">Hitters</h3>
                     <div class="space-y-2">
                         {% for card in hitter_cards %}
@@ -44,7 +44,7 @@
                     </div>
                 </div>
             </div>
-            <div class="lg:col-span-8 space-y-4">
+            <div class="order-1 lg:order-none lg:col-span-8 space-y-4">
                 <div data-starter-grid>
                     <h3 class="font-bold mb-1">Starter</h3>
                     <div class="rotation-slot lineup-slot slot-frame relative border border-dashed border-gray-300 p-1 max-w-md">
