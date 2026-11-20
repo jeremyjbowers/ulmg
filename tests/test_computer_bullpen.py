@@ -325,6 +325,28 @@ class BullpenRolesTestCase(ComputerGameTestCase):
         self.assertEqual(decision.payload["role"], computer_manager.MIRP)
         self.assertEqual(decision.payload["group"], computer_manager.MIRP)
 
+    def test_advanced_rules_use_the_multi_inning_reliever_in_the_fireman_hold(self):
+        rules = dict(computer_manager.rules_for("fireman"), hold_role=computer_manager.MIRP)
+        self.home.file(half=1, bullpen_logic=models.HalfPlan.ADVANCED_PEN, bullpen_rules=rules)
+        gf.counter(self.home.starters[0], start_limit_outs=18)
+        log = self.open()
+        change = self.until_changes(log, HOME, 1)[0]
+        self.assertEqual(inning_of(log, change), 7)
+        self.assertEqual(change.payload["pitcher"], self.home.swingman.id)
+        decision = decision_before(log, change)
+        self.assertEqual(decision.payload["role"], computer_manager.MIRP)
+        self.assertEqual(decision.payload["group"], computer_manager.MIRP)
+
+    def test_advanced_rules_leave_single_inning_relief_for_a_low_leverage_inning(self):
+        rules = dict(computer_manager.rules_for("fireman"), hold_role=computer_manager.MIRP)
+        self.home.file(half=1, bullpen_logic=models.HalfPlan.ADVANCED_PEN, bullpen_rules=rules)
+        gf.counter(self.home.starters[0], start_limit_outs=9)
+        log = self.open()
+        change = self.until_changes(log, HOME, 1)[0]
+        self.assertEqual(inning_of(log, change), 4)
+        self.assertEqual(change.payload["pitcher"], self.home.relievers[1].id)
+        self.assertEqual(decision_before(log, change).payload["role"], computer_manager.SIRP)
+
     def test_a_quick_pen_brings_the_closer_in_for_an_eighth_inning_save(self):
         # A game opened under the earlier name still uses that window.
         plan = self.home.file(half=1)

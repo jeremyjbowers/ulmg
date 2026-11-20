@@ -129,6 +129,7 @@ class BullpenRoleTestCase(TestCase):
     def test_each_bullpen_usage_calls_a_different_arm(self):
         role = computer_manager.bullpen_role
         choices = {value for value, _ in models.HalfPlan.BULLPEN_LOGIC_CHOICES}
+        choices.discard(models.HalfPlan.ADVANCED_PEN)
         self.assertEqual(choices, set(computer_manager.BULLPEN_WINDOWS) - {"quick", "normal", "slow"})
         # Highest leverage: the closer in a one-run spot with a runner on, including the seventh.
         self.assertEqual(role(inning=7, lead=-1, runners_on=1, outs=0, logic="leverage"), computer_manager.CLOSER)
@@ -172,6 +173,73 @@ class BullpenRoleTestCase(TestCase):
         self.assertEqual(role(inning=2, lead=0, runners_on=0, outs=0, logic=None), computer_manager.MIRP)
         self.assertIn("sixth", computer_manager.describe_bullpen_logic(None))
         self.assertIn("ninth", computer_manager.describe_bullpen_logic("normal"))
+
+    def test_each_shortcut_is_the_advanced_rules_filled_in(self):
+        role = computer_manager.bullpen_role
+        for name, _label in models.HalfPlan.BULLPEN_LOGIC_CHOICES:
+            if name == models.HalfPlan.ADVANCED_PEN:
+                continue
+            posted = computer_manager.form_values(computer_manager.rules_for(name))
+            rules, errors = computer_manager.rules_from_post(posted)
+            self.assertEqual(errors, [], name)
+            for inning in range(1, 11):
+                for lead in (-6, -3, -1, 0, 1, 2, 3, 4, 6):
+                    for runners_on in (0, 2):
+                        for outs in (0, 2):
+                            self.assertEqual(
+                                role(inning=inning, lead=lead, runners_on=runners_on, outs=outs, logic=name),
+                                role(
+                                    inning=inning, lead=lead, runners_on=runners_on, outs=outs,
+                                    logic="advanced", rules=rules,
+                                ),
+                                (name, inning, lead, runners_on, outs),
+                            )
+
+    def test_advanced_rules_can_give_the_hold_to_multi_inning_relief(self):
+        # Fireman's closer, with the better multi-inning arms in the hold and the single-inning arms mopping up.
+        rules = dict(computer_manager.rules_for("fireman"), hold_role=computer_manager.MIRP)
+        role = computer_manager.bullpen_role
+        self.assertEqual(role(inning=6, lead=1, runners_on=0, outs=0, logic="advanced", rules=rules), computer_manager.CLOSER)
+        self.assertEqual(role(inning=8, lead=3, runners_on=0, outs=0, logic="advanced", rules=rules), computer_manager.CLOSER)
+        self.assertEqual(role(inning=7, lead=2, runners_on=0, outs=0, logic="advanced", rules=rules), computer_manager.MIRP)
+        self.assertEqual(role(inning=6, lead=3, runners_on=0, outs=0, logic="advanced", rules=rules), computer_manager.SIRP)
+        self.assertEqual(role(inning=5, lead=1, runners_on=0, outs=0, logic="advanced", rules=rules), computer_manager.SIRP)
+        note = computer_manager.describe_bullpen_logic("advanced", rules)
+        self.assertIn("multi-inning ace", note)
+        self.assertIn("Multi-inning relief pitches the seventh and eighth", note)
+        self.assertIn("leading by two or three", note)
+        self.assertIn("Single-inning relief works the rest", note)
+
+    def test_a_lead_with_no_cap_brings_the_closer_for_any_lead_that_large(self):
+        rules = dict(computer_manager.rules_for("protect"), closer_max_lead=None)
+        role = computer_manager.bullpen_role
+        self.assertEqual(role(inning=9, lead=8, runners_on=0, outs=2, logic="advanced", rules=rules), computer_manager.CLOSER)
+        self.assertEqual(role(inning=9, lead=0, runners_on=0, outs=0, logic="advanced", rules=rules), computer_manager.MIRP)
+
+    def test_unusable_advanced_rules_read_as_traditional(self):
+        role = computer_manager.bullpen_role
+        traditional = role(inning=8, lead=1, runners_on=0, outs=0)
+        self.assertEqual(role(inning=8, lead=1, runners_on=0, outs=0, logic="advanced"), traditional)
+        self.assertEqual(
+            role(inning=8, lead=1, runners_on=0, outs=0, logic="advanced", rules={"closer": "wild"}),
+            traditional,
+        )
+        self.assertIn("high-leverage", computer_manager.describe_bullpen_logic("advanced"))
+
+    def test_advanced_rules_refuse_a_lead_that_runs_backwards(self):
+        posted = computer_manager.form_values(computer_manager.rules_for("fireman"))
+        posted["adv_hold_min_lead"] = "3"
+        posted["adv_hold_max_lead"] = "0"
+        rules, errors = computer_manager.rules_from_post(posted)
+        self.assertIsNone(rules)
+        self.assertIn("smaller lead to a larger one", " ".join(errors))
+        posted["adv_hold_min_lead"] = "2"
+        posted["adv_hold_max_lead"] = "3"
+        posted["adv_closer"] = "lead"
+        posted["adv_closer_min_lead"] = "3"
+        posted["adv_closer_max_lead"] = "1"
+        _rules, errors = computer_manager.rules_from_post(posted)
+        self.assertIn("closer's lead", " ".join(errors))
 
     def test_an_empty_group_falls_to_multi_inning_then_single_inning_then_the_closer(self):
         cm = computer_manager

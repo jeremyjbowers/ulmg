@@ -7,7 +7,7 @@ from unittest.mock import patch
 from django.contrib.auth.models import User
 from django.test import Client, TestCase, override_settings
 
-from ulmg import decision_cards, models, plans, schedule, usage, utils
+from ulmg import computer_manager, decision_cards, models, plans, schedule, usage, utils
 from ulmg.views.plan import by_last_name
 from tests.plan_fixtures import HITTER_RATES, SEASON, Roster, create_hitter, create_pitcher, create_season
 
@@ -433,6 +433,57 @@ class EditPlanTestCase(PlanViewsTestCase):
         self.assertIn("is in the bullpen twice", response.content.decode())
         self.assertIsNone(self.saved_plan())
 
+    def test_advanced_bullpen_rules_are_optional_and_save_the_group_for_each_window(self):
+        client = self.as_user(self.owner)
+        body = client.get(BULLPEN_URL).content.decode()
+        self.assertIn(">Advanced<", body)
+        self.assertRegex(body, r'<button[^>]*data-bullpen-choice="traditional"[^>]*\bis-selected\b')
+        self.assertNotRegex(body, r'<button[^>]*data-bullpen-choice="advanced"[^>]*\bis-selected\b')
+        self.assertRegex(body, r'<div data-bullpen-advanced[^>]*\bhidden\b')
+        self.assertIn("which group pitches the high-leverage innings", body)
+        self.assertIn('data-rules=', body)
+        self.assertIn("High-leverage relief uses", body)
+
+        rules = dict(computer_manager.rules_for("fireman"), hold_role="mirp")
+        posted = {
+            "closer": self.roster.relievers[0].id,
+            "sirp": [self.roster.relievers[1].id],
+            "mirp": [self.roster.swingman.id],
+            "bullpen_logic": "advanced",
+        }
+        posted.update(computer_manager.form_values(rules))
+        response = client.post(BULLPEN_URL, posted, follow=True)
+        self.assertRedirects(response, BULLPEN_URL)
+        plan = self.saved_plan()
+        self.assertEqual(plan.bullpen_logic, models.HalfPlan.ADVANCED_PEN)
+        self.assertEqual(plan.bullpen_rules["hold_role"], "mirp")
+        self.assertEqual(plan.bullpen_rules["closer_first"], 6)
+        saved = client.get(BULLPEN_URL).content.decode()
+        self.assertRegex(saved, r'<button[^>]*data-bullpen-choice="advanced"[^>]*\bis-selected\b')
+        self.assertNotRegex(saved, r'<div data-bullpen-advanced[^>]*\bhidden\b')
+        self.assertRegex(saved, r'<button[^>]*data-adv-choice="mirp"[^>]*\bis-selected\b')
+        self.assertIn("Multi-inning relief pitches the seventh and eighth", saved)
+        self.assertIn("Single-inning relief works the rest", saved)
+        reader = self.as_user(self.other_owner).get(BULLPEN_URL).content.decode()
+        self.assertIn("Bullpen usage: Advanced", reader)
+        self.assertIn("Single-inning relief works the rest", reader)
+        self.assertNotIn("data-bullpen-advanced", reader)
+        self.assertNotIn("Save bullpen", reader)
+
+        backwards = dict(posted, adv_hold_min_lead="3", adv_hold_max_lead="0")
+        refused = self.as_user(self.owner).post(BULLPEN_URL, backwards)
+        self.assertEqual(refused.status_code, 400)
+        self.assertIn("smaller lead to a larger one", refused.content.decode())
+        plan.refresh_from_db()
+        self.assertEqual(plan.bullpen_rules["hold_min_lead"], 2)
+
+        shortcut = dict(posted, bullpen_logic="fireman")
+        response = client.post(BULLPEN_URL, shortcut, follow=True)
+        self.assertRedirects(response, BULLPEN_URL)
+        plan.refresh_from_db()
+        self.assertEqual(plan.bullpen_logic, models.HalfPlan.FIREMAN_PEN)
+        self.assertEqual(plan.bullpen_rules, {})
+
     def test_an_unknown_bullpen_logic_is_refused(self):
         self.roster.file(bullpen_logic=models.HalfPlan.SAVE_PEN)
         response = self.as_user(self.owner).post(
@@ -441,7 +492,7 @@ class EditPlanTestCase(PlanViewsTestCase):
         )
         self.assertEqual(response.status_code, 400)
         self.assertIn(
-            "The bullpen logic must be traditional, leverage, fireman, protect or save.",
+            "The bullpen logic must be traditional, leverage, fireman, protect, save or advanced.",
             response.content.decode(),
         )
         self.assertEqual(self.saved_plan().bullpen_logic, models.HalfPlan.SAVE_PEN)

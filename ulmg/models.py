@@ -2302,6 +2302,9 @@ class HalfPlan(BaseModel):
     normal or slow hook. The bullpen is a closer,
     single-inning relief (sirp) and multi-inning relief (mirp), and
     bullpen_logic is which usage the computer follows (ulmg.computer_manager).
+    Advanced usage stores its own rules in bullpen_rules: when the closer
+    comes in, which group pitches the high-leverage innings he doesn't, and
+    how close the game has to be. A shortcut leaves bullpen_rules empty.
     """
 
     QUICK_HOOK = "quick"
@@ -2314,6 +2317,7 @@ class HalfPlan(BaseModel):
     FIREMAN_PEN = "fireman"
     PROTECT_PEN = "protect"
     SAVE_PEN = "save"
+    ADVANCED_PEN = "advanced"
     # Earlier choices. A game opened before these names still stores one of them.
     QUICK_PEN = "quick"
     NORMAL_PEN = "normal"
@@ -2324,6 +2328,7 @@ class HalfPlan(BaseModel):
         (FIREMAN_PEN, "Fireman"),
         (PROTECT_PEN, "Protect the lead"),
         (SAVE_PEN, "Save the pen"),
+        (ADVANCED_PEN, "Advanced"),
     )
 
     team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name="half_plans")
@@ -2347,6 +2352,7 @@ class HalfPlan(BaseModel):
     bullpen_logic = models.CharField(
         max_length=12, choices=BULLPEN_LOGIC_CHOICES, default=TRADITIONAL_PEN
     )
+    bullpen_rules = models.JSONField(default=dict, blank=True)
 
     class Meta:
         ordering = ["season", "half", "team__abbreviation"]
