@@ -11,7 +11,11 @@ from mcp.server.fastmcp import FastMCP
 
 from ulmg.mcp_app import services
 from ulmg.mcp_app import wishlist as wishlist_ops
-from ulmg.mcp_app.context import current_token_allows_write, require_current_owner
+from ulmg.mcp_app.context import (
+    current_token_allows_write,
+    get_current_owner,
+    require_current_owner,
+)
 from ulmg.mcp_app.db import db_sync
 from ulmg.mcp_app.wishlist import WishlistError
 
