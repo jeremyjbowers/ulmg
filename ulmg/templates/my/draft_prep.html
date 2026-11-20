@@ -109,7 +109,7 @@
         
 {% block extrascript %}
 <script src="//SortableJS.github.io/Sortable/Sortable.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/list.js/1.5.0/list.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/list.js/1.5.0/list.min.js" integrity="sha384-JDmRxRiXkNkskRM5AD4qHRGk9ItwZ9flbqOpsRYs8SOrIRwcMtTGKP2Scnjptzgm" crossorigin="anonymous"></script>
 
 {% if user.is_authenticated %}
 <script type="text/javascript">
@@ -156,7 +156,16 @@ $(function(){
 
         $el.hide();
         $el.val('');
-        $($el.parent('p').parent('div').children('p.control')[2]).append('<span class="tag is-info is-rounded is-small user-tag is-light">'+ tagname +' <button data-tagname="'+ tagname +'" data-playerid="'+ playerid +'" class="delete is-small"></button></span>');
+        var $tag = $('<span>', {
+            'class': 'tag is-info is-rounded is-small user-tag is-light'
+        });
+        $tag.append(document.createTextNode(tagname + ' '));
+        $tag.append($('<button>', {
+            'class': 'delete is-small',
+            'data-tagname': tagname,
+            'data-playerid': playerid
+        }));
+        $($el.parent('p').parent('div').children('p.control')[2]).append($tag);
 
         $.ajax({
             type: "POST",
@@ -301,7 +310,7 @@ $(function(){
             var note_text = $el.parent('div').attr('data-note-text');
             var playername = $el.parent('div').attr('data-playername');
 
-            $('#modal-title').html(playername);
+            $('#modal-title').text(playername);
             $('#note-textarea').val(note_text)
             $('#modal-notes').toggleClass('is-active');
             $('#persist-note').attr('data-playerid', playerid);

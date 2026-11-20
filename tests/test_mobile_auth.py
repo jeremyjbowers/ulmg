@@ -50,6 +50,43 @@ class MobileAuthTestCase(TestCase):
                     models.MagicLinkToken.objects.filter(user=self.user).exists()
                 )
     
+    def test_login_ignores_an_external_next_url(self):
+        """A next URL on another host is not a place we send a logged-in manager."""
+        self.user.set_password("secret")
+        self.user.save()
+        response = self.client.post(
+            reverse("login"),
+            {
+                "login_method": "password",
+                "username": "testuser",
+                "password": "secret",
+                "next": "https://evil.example/phish",
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, "/")
+
+        self.user.is_staff = True
+        self.user.save()
+        response = self.client.post(
+            reverse("admin_login"),
+            {
+                "username": "testuser",
+                "password": "secret",
+                "next": "https://evil.example/phish",
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, "/admin/")
+
+        magic_link = models.MagicLinkToken.create_for_user(self.user)
+        response = self.client.get(
+            reverse("magic_login_verify", kwargs={"token": magic_link.token})
+            + "?next=https://evil.example/phish"
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, "/")
+
     def test_mobile_magic_link_verification_preserves_next_parameter(self):
         """Test that mobile magic link verification preserves 'next' parameter"""
         target_url = '/my/team/'

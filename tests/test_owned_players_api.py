@@ -1,5 +1,6 @@
 # ABOUTME: Tests for the owned players API endpoint.
 # ABOUTME: Ensures /api/v1/players/owned/ returns name, level, position, mlbid, fg_id from Player model.
+from django.contrib.auth.models import User
 from django.test import TestCase, Client
 
 from ulmg import models
@@ -57,3 +58,16 @@ class OwnedPlayersAPITestCase(TestCase):
     def test_owned_players_rejects_non_get(self):
         resp = self.client.post("/api/v1/players/owned/")
         self.assertEqual(resp.status_code, 405)
+
+
+class SlackPlayerSearchTestCase(TestCase):
+    def test_a_name_search_answers_in_plain_text(self):
+        user = User.objects.create_user("searcher", "searcher@example.com", "password")
+        self.client.force_login(user)
+        response = self.client.post(
+            "/draft/live/players/owned/",
+            {"text": "zzzz-not-a-player"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response["Content-Type"].startswith("text/plain"))
+        self.assertIn("zzzz-not-a-player", response.content.decode())

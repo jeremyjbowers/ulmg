@@ -255,7 +255,21 @@ $(function(){
 
         var playerid = $el.attr('data-playerid');
         var playername = $el.attr('data-playername');
-        $('#player-drop-modal div.modal-content').html('<div class="box"><div class="content"><p class="subtitle">Are you sure you want to <strong>permanently drop ' + playername + '?</strong></p><p><a class="button is-danger is-large player-action" data-action="drop" data-playerid=' + playerid + '>Drop ' + playername + '</a>&nbsp;&nbsp;&nbsp;<a class="cancel button is-info is-large">Cancel</a></p></div></div>');
+        var $question = $('<p>', {'class': 'subtitle'});
+        $question.append(document.createTextNode('Are you sure you want to '));
+        $question.append($('<strong>').text('permanently drop ' + playername + '?'));
+        var $drop = $('<a>', {
+            'class': 'button is-danger is-large player-action',
+            href: '#',
+            'data-action': 'drop',
+            'data-playerid': playerid
+        }).text('Drop ' + playername);
+        var $cancel = $('<a>', {'class': 'cancel button is-info is-large', href: '#'}).text('Cancel');
+        var $actions = $('<p>').append($drop, '\u00a0\u00a0\u00a0', $cancel);
+        var $box = $('<div>', {'class': 'box'}).append(
+            $('<div>', {'class': 'content'}).append($question, $actions)
+        );
+        $('#player-drop-modal div.modal-content').empty().append($box);
         $('#player-drop-modal').addClass('is-active');
     }
 

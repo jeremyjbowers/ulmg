@@ -151,7 +151,14 @@ async fn positions(body: Bytes) -> Result<Json<Value>, HttpError> {
 }
 
 fn parse<T: DeserializeOwned>(body: &[u8]) -> Result<T, HttpError> {
-    serde_json::from_slice(body).map_err(|err| HttpError::BadRequest(err.to_string()))
+    let mut deserializer = serde_json::Deserializer::from_slice(body);
+    let value = T::deserialize(&mut deserializer)
+        .map_err(|err| HttpError::BadRequest(err.to_string()))?;
+    // A body is one JSON value. Trailing data is a bad request.
+    deserializer
+        .end()
+        .map_err(|err| HttpError::BadRequest(err.to_string()))?;
+    Ok(value)
 }
 
 fn named_call(name: &str) -> Result<PrePaCalls, HttpError> {
@@ -257,6 +264,22 @@ mod tests {
 
     fn game(state: &Value) -> Game {
         serde_json::from_value(state.clone()).expect("game state")
+    }
+
+    #[tokio::test]
+    async fn a_request_with_trailing_json_is_rejected() {
+        let mut body = json!({ "fixture": fixture(), "seed": 1 }).to_string();
+        body.push_str("{\"extra\":true}");
+        let (status, _) = exchange(
+            Request::builder()
+                .method("POST")
+                .uri("/start")
+                .header("content-type", "application/json")
+                .body(Body::from(body))
+                .unwrap(),
+        )
+        .await;
+        assert_eq!(status, StatusCode::BAD_REQUEST);
     }
 
     #[tokio::test]

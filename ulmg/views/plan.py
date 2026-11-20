@@ -700,7 +700,9 @@ def team_plan_designation(request, abbreviation, half, season=None):
             "Only this team's owner and the commissioner can set a pitcher's designation."
         )
     if not plans.is_open(half):
-        return HttpResponseBadRequest(plans.closed_message(half))
+        return HttpResponse(
+            plans.closed_message(half), status=400, content_type="text/plain"
+        )
     designation = request.POST.get("designation")
     if designation not in usage.DESIGNATIONS:
         return HttpResponseBadRequest("Designation must be rotation or bullpen.")
