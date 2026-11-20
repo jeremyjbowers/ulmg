@@ -1,0 +1,56 @@
+{# ABOUTME: One club's place in the standings and its summed 6-ulmg batting and pitching lines. #}
+{# ABOUTME: Public, at a stable URL, and not linked from the site navigation. #}
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto py-4">
+    <h1 class="text-2xl font-bold mb-2 border-b border-gray-300 pb-2">{{ team.abbreviation }} {{ record_season }} stats</h1>
+    <p class="text-sm text-gray-600 mb-4">From the club's 6-ulmg lines. <a class="underline" href="/teams/{{ team.abbreviation|lower }}/usage/{{ record_season }}/">Usage</a> &middot; <a class="underline" href="/usage/{{ record_season }}/">League usage</a> &middot; <a class="underline" href="/standings/{{ record_season }}/">Standings</a></p>
+
+    {% if standing %}
+    <p id="team-standing" class="mb-4">{{ standing.place }} in {{ standing.division }}, {{ standing.conference }}. {{ standing.wins }}-{{ standing.losses }}, {{ standing.pct }}. GB {{ standing.games_behind }}. WC {{ standing.wild_card }}.</p>
+    {% endif %}
+
+    <h2 class="font-bold mb-1">Batting</h2>
+    <table class="team-batting w-full text-sm border-collapse border border-gray-200 mb-6">
+        <thead class="bg-gray-50"><tr>
+            <th class="text-right py-1 px-2">PA</th><th class="text-right py-1 px-2">AB</th><th class="text-right py-1 px-2">H</th>
+            <th class="text-right py-1 px-2">HR</th><th class="text-right py-1 px-2">RBI</th><th class="text-right py-1 px-2">BB</th>
+            <th class="text-right py-1 px-2">SO</th><th class="text-right py-1 px-2">AVG</th><th class="text-right py-1 px-2">OBP</th>
+            <th class="text-right py-1 px-2">SLG</th><th class="text-right py-1 px-2">OPS</th>
+        </tr></thead>
+        <tbody><tr>
+            <td class="text-right py-1 px-2">{{ totals.batting.pa }}</td>
+            <td class="text-right py-1 px-2">{{ totals.batting.ab }}</td>
+            <td class="text-right py-1 px-2">{{ totals.batting.h }}</td>
+            <td class="text-right py-1 px-2">{{ totals.batting.hr }}</td>
+            <td class="text-right py-1 px-2">{{ totals.batting.rbi }}</td>
+            <td class="text-right py-1 px-2">{{ totals.batting.bb }}</td>
+            <td class="text-right py-1 px-2">{{ totals.batting.so }}</td>
+            <td class="text-right py-1 px-2">{{ totals.avg }}</td>
+            <td class="text-right py-1 px-2">{{ totals.obp }}</td>
+            <td class="text-right py-1 px-2">{{ totals.slg }}</td>
+            <td class="text-right py-1 px-2">{{ totals.ops }}</td>
+        </tr></tbody>
+    </table>
+
+    <h2 class="font-bold mb-1">Pitching</h2>
+    <table class="team-pitching w-full text-sm border-collapse border border-gray-200">
+        <thead class="bg-gray-50"><tr>
+            <th class="text-right py-1 px-2">W</th><th class="text-right py-1 px-2">L</th><th class="text-right py-1 px-2">SV</th>
+            <th class="text-right py-1 px-2">IP</th><th class="text-right py-1 px-2">ER</th><th class="text-right py-1 px-2">SO</th>
+            <th class="text-right py-1 px-2">BB</th><th class="text-right py-1 px-2">ERA</th>
+        </tr></thead>
+        <tbody><tr>
+            <td class="text-right py-1 px-2">{{ totals.pitching.w }}</td>
+            <td class="text-right py-1 px-2">{{ totals.pitching.l }}</td>
+            <td class="text-right py-1 px-2">{{ totals.pitching.sv }}</td>
+            <td class="text-right py-1 px-2">{{ totals.ip }}</td>
+            <td class="text-right py-1 px-2">{{ totals.pitching.er }}</td>
+            <td class="text-right py-1 px-2">{{ totals.pitching.so }}</td>
+            <td class="text-right py-1 px-2">{{ totals.pitching.bb }}</td>
+            <td class="text-right py-1 px-2">{{ totals.era }}</td>
+        </tr></tbody>
+    </table>
+</div>
+{% endblock %}

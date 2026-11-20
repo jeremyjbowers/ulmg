@@ -1,0 +1,38 @@
+{# ABOUTME: League-wide usage: plate appearances, starts and innings against each cap. #}
+{# ABOUTME: Public, at a stable URL, and not linked from the site navigation. #}
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto py-4">
+    <h1 class="text-2xl font-bold mb-2 border-b border-gray-300 pb-2">{{ record_season }} usage</h1>
+    <p class="text-sm text-gray-600 mb-4">Live ledger. A blank cap is unlimited.</p>
+    <table class="usage-table w-full text-sm border-collapse border border-gray-200">
+        <thead class="bg-gray-50"><tr>
+            <th class="text-left py-1 px-2">Team</th>
+            <th class="text-left py-1 px-2">Player</th>
+            <th class="text-right py-1 px-2">PA</th>
+            <th class="text-right py-1 px-2">PA cap</th>
+            <th class="text-right py-1 px-2">GS</th>
+            <th class="text-right py-1 px-2">GS cap</th>
+            <th class="text-right py-1 px-2">IP</th>
+            <th class="text-right py-1 px-2">IP cap</th>
+        </tr></thead>
+        <tbody>
+        {% for row in rows %}
+        <tr class="usage-row" data-player="{{ row.player.id }}">
+            <td class="py-1 px-2"><a class="underline" href="/teams/{{ row.team.abbreviation|lower }}/usage/{{ record_season }}/">{{ row.team.abbreviation }}</a></td>
+            <td class="py-1 px-2">{{ row.player.name }}</td>
+            <td class="text-right py-1 px-2">{{ row.plate_appearances }}</td>
+            <td class="text-right py-1 px-2">{% if row.plate_appearances_cap is None %}-{% else %}{{ row.plate_appearances_cap }}{% endif %}</td>
+            <td class="text-right py-1 px-2">{{ row.starts }}</td>
+            <td class="text-right py-1 px-2">{{ row.starts_cap }}</td>
+            <td class="text-right py-1 px-2">{{ row.innings }}</td>
+            <td class="text-right py-1 px-2">{% if row.innings_cap is None %}-{% else %}{{ row.innings_cap }}{% endif %}</td>
+        </tr>
+        {% empty %}
+        <tr><td class="py-2 px-2" colspan="8">No usage is recorded for {{ record_season }}.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

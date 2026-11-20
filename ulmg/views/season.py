@@ -1,4 +1,4 @@
-# ABOUTME: Public ULMG season pages: the standings with the wild-card race, a team's results, and the league leaders.
+# ABOUTME: Public ULMG season pages: standings, a team's results and stats, the leaders, and usage.
 # ABOUTME: Readable without logging in, like the schedule; the year is a path and the pages read the stored record.
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.cache import never_cache
@@ -47,3 +47,44 @@ def league_leaders(request, season=None):
     context["record_season"] = season
     context["leaders"] = season_record.leaders(season)
     return render(request, "leaders.html", context)
+
+
+@never_cache
+def team_stats(request, abbreviation, season=None):
+    team = get_object_or_404(models.Team, abbreviation__icontains=abbreviation)
+    bounced = bounce(request, "teams", team.abbreviation.lower(), "stats", season=season)
+    if bounced:
+        return bounced
+    season = int(season)
+    context = utils.build_context(request)
+    context["team"] = team
+    context["record_season"] = season
+    context["standing"] = season_record.team_standing(team, season)
+    context["totals"] = season_record.team_totals(team, season)
+    return render(request, "team_stats.html", context)
+
+
+@never_cache
+def league_usage(request, season=None):
+    bounced = bounce(request, "usage", season=season)
+    if bounced:
+        return bounced
+    season = int(season)
+    context = utils.build_context(request)
+    context["record_season"] = season
+    context["rows"] = season_record.usage_rows(season)
+    return render(request, "usage.html", context)
+
+
+@never_cache
+def team_usage(request, abbreviation, season=None):
+    team = get_object_or_404(models.Team, abbreviation__icontains=abbreviation)
+    bounced = bounce(request, "teams", team.abbreviation.lower(), "usage", season=season)
+    if bounced:
+        return bounced
+    season = int(season)
+    context = utils.build_context(request)
+    context["team"] = team
+    context["record_season"] = season
+    context["rows"] = season_record.usage_rows(season, team)
+    return render(request, "team_usage.html", context)

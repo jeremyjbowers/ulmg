@@ -464,3 +464,82 @@ class UsageOverridesForTeamTestCase(TestCase):
         models.UsageOverride.objects.create(player=mine, game=game, cap=models.UsageOverride.STARTS)
         models.UsageOverride.objects.create(player=theirs, game=game, cap=models.UsageOverride.REST, approved_by=approver)
         self.assertEqual(list(season_record.team_overrides(teams["ATL"], SEASON)), [approved])
+
+
+class TeamStatsAndUsageTestCase(TestCase):
+    def setUp(self):
+        self.teams = {team.abbreviation: team for team in create_league_teams()}
+        create_records(self.teams.values())
+        self.atl = self.teams["ATL"]
+        self.car = self.teams["CAR"]
+        self.slugger = models.Player.objects.create(name="Slugger", position="OF", team=self.atl)
+        self.mate = models.Player.objects.create(name="Mate", position="1B", team=self.atl)
+        self.ace = models.Player.objects.create(name="Ace", position="P", team=self.atl)
+        self.other = models.Player.objects.create(name="Other", position="OF", team=self.car)
+        models.PlayerStatSeason.objects.create(
+            player=self.slugger, season=SEASON, classification=ULMG,
+            hit_stats={"g": 2, "pa": 10, "ab": 8, "h": 4, "hr": 1, "rbi": 3, "bb": 1, "so": 2, "hbp": 0, "sf": 0, "2b": 0, "3b": 0},
+        )
+        models.PlayerStatSeason.objects.create(
+            player=self.mate, season=SEASON, classification=ULMG,
+            hit_stats={"g": 2, "pa": 5, "ab": 4, "h": 1, "hr": 0, "rbi": 1, "bb": 1, "so": 1, "hbp": 0, "sf": 0, "2b": 0, "3b": 0},
+        )
+        models.PlayerStatSeason.objects.create(
+            player=self.slugger, season=SEASON, classification="1-mlb", hit_stats={"pa": 600, "ab": 500, "h": 150},
+        )
+        models.PlayerStatSeason.objects.create(
+            player=self.ace, season=SEASON, classification=ULMG,
+            pitch_stats={"g": 2, "gs": 2, "w": 1, "l": 0, "sv": 0, "ip": 6.2, "er": 3, "so": 7, "bb": 2, "h": 5, "tbf": 28},
+        )
+        models.UsageCounter.objects.create(
+            player=self.slugger, season=SEASON, plate_appearances=40, plate_appearances_cap=100,
+            starts=0, starts_cap=0, outs=0, innings_cap_outs=None, start_limit_outs=12, relief_limit_outs=3,
+        )
+        models.UsageCounter.objects.create(
+            player=self.ace, season=SEASON, plate_appearances=2, plate_appearances_cap=20,
+            starts=2, starts_cap=30, outs=20, innings_cap_outs=None, start_limit_outs=18, relief_limit_outs=3,
+        )
+        models.UsageCounter.objects.create(
+            player=self.other, season=SEASON, plate_appearances=9, plate_appearances_cap=50,
+            starts=0, starts_cap=0, outs=0,
+        )
+
+    def test_the_team_page_shows_its_place_and_sums_only_its_ulmg_lines(self):
+        response = self.client.get(f"/teams/atl/stats/{SEASON}/")
+        self.assertEqual(response.status_code, 200)
+        body = response.content.decode()
+        self.assertIn('id="team-standing"', body)
+        self.assertIn("1st in Rickey", body)
+        self.assertIn("10-2", body)
+        self.assertIn(">15<", body)
+        self.assertIn(">12<", body)
+        self.assertIn(">5<", body)
+        self.assertIn(".417", body)
+        self.assertIn("6.2", body)
+        self.assertNotIn(">600<", body)
+        self.assertNotIn("Other", body)
+
+    def test_usage_pages_are_public_and_split_by_club(self):
+        league = self.client.get(f"/usage/{SEASON}/")
+        self.assertEqual(league.status_code, 200)
+        league_body = league.content.decode()
+        self.assertIn("Slugger", league_body)
+        self.assertIn("Other", league_body)
+        self.assertIn(">40<", league_body)
+        self.assertIn(">100<", league_body)
+        team = self.client.get(f"/teams/atl/usage/{SEASON}/")
+        self.assertEqual(team.status_code, 200)
+        team_body = team.content.decode()
+        self.assertIn("Slugger", team_body)
+        self.assertIn("Ace", team_body)
+        self.assertIn("6.2", team_body)
+        self.assertNotIn("Other", team_body)
+        self.assertIn(f'href="/usage/{SEASON}/"', team_body)
+
+    def test_the_pages_stay_off_the_navigation(self):
+        self.client.force_login(User.objects.create_user(username="reader"))
+        menu = self.client.get("/trades/").content.decode()
+        self.assertNotIn(f'href="/usage/{SEASON}/"', menu)
+        self.assertNotIn(f'href="/teams/atl/stats/{SEASON}/"', menu)
+        self.assertNotIn(f'href="/teams/atl/usage/{SEASON}/"', menu)
+        self.assertEqual(self.client.get(f"/teams/atl/stats/{SEASON}/").status_code, 200)

@@ -70,8 +70,8 @@ class LoginRequiredMiddleware:
             return True
 
         # The season schedule, every team's half plan, and the season record's
-        # standings, results and leaders are visible to everyone in the
-        # league, logged in or not
+        # standings, results, leaders, team stats and usage are visible to
+        # everyone in the league, logged in or not
         public_urls = [
             'league_schedule',
             'team_schedule',
@@ -84,6 +84,9 @@ class LoginRequiredMiddleware:
             'league_standings',
             'team_results',
             'league_leaders',
+            'team_stats',
+            'league_usage',
+            'team_usage',
         ]
         if url_name in public_urls:
             return True
