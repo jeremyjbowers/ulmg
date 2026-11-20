@@ -1,5 +1,5 @@
 {# ABOUTME: One lineup column, batting order 1-9, with a position on each slot. #}
-{# ABOUTME: Emergency gloves stay on that same button row, after the words Emergency only. #}
+{# ABOUTME: Emergency gloves stay on that same button row, after the words Emergency only. A handle reorders the hitters. #}
 <style>
     /* The drop well stays the height of a player card. An empty one is a grey well. */
     .lineup-column .slot-well {
@@ -39,6 +39,7 @@
                     {% if slot.card %}{% include "includes/decision_card.html" with card=slot.card %}{% endif %}
                 </div>
                 {% if editable %}<button type="button" data-clear class="slot-remove absolute top-0.5 right-0.5 z-10 border border-gray-400 bg-white px-1 leading-none text-gray-700" aria-label="Remove from this spot" title="Remove from this spot">&times;</button>{% endif %}
+                {% if editable %}<button type="button" data-reorder draggable="true" class="reorder-handle" aria-label="Reorder this hitter" title="Drag to another spot, or click this and then the other spot">Reorder</button>{% endif %}
             </div>
             {% if editable %}
             <div class="mt-0.5" data-position-buttons data-all="{{ positions|join:',' }}">

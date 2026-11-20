@@ -140,6 +140,7 @@ class PublicPlanTestCase(PlanViewsTestCase):
         self.assertNotIn("Clear all", body)
         self.assertNotIn("Clear lineup", body)
         self.assertNotIn('aria-label="Remove from this spot"', body)
+        self.assertNotIn("data-reorder", body)
         self.assertIn("ATL Catcher", body)
         self.assertNotIn("OPS R", body)
         self.assertNotIn('class="plan-day ', body)
@@ -164,6 +165,12 @@ class PublicPlanTestCase(PlanViewsTestCase):
         self.assertLess(bullpen.index(">Rotation<"), bullpen.index(">Bullpen<"))
         self.assertNotIn(">Results<", bullpen)
         self.assertNotIn(">Up next<", bullpen)
+
+    def test_a_batting_order_offers_a_reorder_handle_and_names_an_empty_well(self):
+        body = self.as_user(self.owner).get(EDIT_URL).content.decode()
+        self.assertIn('data-reorder', body)
+        self.assertIn(">Reorder<", body)
+        self.assertIn("Drop a hitter here", body)
 
     def test_a_lineup_card_shows_vs_l_on_the_left_and_vs_r_on_the_right(self):
         self.roster.file()
