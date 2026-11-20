@@ -1,5 +1,5 @@
 {# ABOUTME: The sim game page: open a game, then play it from the HUD one plate appearance per POST, with the substitution panel beside it. #}
-{# ABOUTME: Every form carries the log position it expects; a seat nobody holds is the computer's, and the box score shows at the final. #}
+{# ABOUTME: Every form carries the log position it expects. A seat nobody holds is the computer's. Finish game opens the box score. #}
 {% extends "base.html" %}
 
 {% block extrahead %}
@@ -75,7 +75,18 @@
         {% endfor %}
     </div>
 
-    {% if final %}
+    {% if awaiting_finish %}
+    <section id="game-finish" class="border-2 border-gray-800 bg-white px-3 py-3 mb-4">
+        <h2 class="text-lg font-bold mb-1">The game is over</h2>
+        {% if final_line %}<p class="game-final font-bold mb-2">{{ final_line }}</p>{% endif %}
+        {% if last_plate %}<p class="game-final-play mb-3">{{ last_plate }}</p>{% endif %}
+        <form method="post" action="/games/{{ game.id }}/finish/">
+            {% csrf_token %}
+            <button type="submit" class="bg-gray-800 text-white rounded px-4 py-2 font-bold">Finish game</button>
+        </form>
+        <p class="text-xs text-gray-600 mt-2">The last at-bat stays here. The box score opens when you finish the game.</p>
+    </section>
+    {% elif final %}
     <h2 class="game-final text-lg font-bold mb-2">Final</h2>
     {% include 'includes/box_score.html' %}
     {% else %}
