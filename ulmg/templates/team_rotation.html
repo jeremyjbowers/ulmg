@@ -1,5 +1,5 @@
 {# ABOUTME: A rotation of one to six starters, and the button that pushes it onto the schedule. #}
-{# ABOUTME: The rotation is a shortcut. Starters set on the schedule stay when it is pushed again. #}
+{# ABOUTME: The rotation is a shortcut. Starters set on the schedule stay when it is pushed again. Planned starts cap a starter's turns. #}
 {% extends "base.html" %}
 
 {% block content %}
@@ -58,6 +58,7 @@
         </form>
     </div>
     {% if can_edit %}{% include "includes/card_board_script.html" %}{% endif %}
+    {% include "includes/playing_time.html" %}
     {% endif %}
 </div>
 {% endblock %}

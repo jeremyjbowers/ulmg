@@ -274,3 +274,40 @@ class ChartTest(TestCase):
         with self.assertRaises(depth.DepthError) as refused:
             self.file(self.seager, "P", 10)
         self.assertIn("P is not a depth-chart spot.", refused.exception.errors)
+
+    def test_the_computer_reads_each_spots_shares_and_what_is_left_for_the_card(self):
+        self.file(self.seager, "SS", 236)
+        self.file(self.abbott, "SS", 200)
+        self.file(self.zimmer, "RF", 300)
+        self.file(self.greene, "RF", None, unlimited=True)
+        self.file(self.pitcher, depth.STARTS, 30)
+        found = depth.allotments(self.team, SEASON)
+        self.assertEqual(found["SS"], depth.Allotment(shares={self.seager.id: 236, self.abbott.id: 200}, rest=241))
+        self.assertEqual(found["RF"], depth.Allotment(shares={self.zimmer.id: 300, self.greene.id: 377}, rest=0))
+        self.assertNotIn("2B", found)
+        self.assertEqual(depth.limits(self.team, SEASON, depth.STARTS), {self.pitcher.id: 30})
+        self.assertEqual(depth.limits(self.team, SEASON, "RF"), {self.zimmer.id: 300})
+        self.assertEqual(depth.allotments(self.other, SEASON), {})
+
+    def test_a_spot_save_applies_every_row_or_none_of_them(self):
+        seager = self.file(self.seager, "SS", 236)
+        chart = seager.chart
+        with self.assertRaises(depth.DepthError):
+            depth.save_spot(
+                chart,
+                "SS",
+                [
+                    depth.SpotEdit(assignment=seager.id, player=None, amount=300, unlimited=False),
+                    depth.SpotEdit(assignment=None, player=self.greene, amount=100, unlimited=False),
+                ],
+            )
+        self.assertEqual(models.DepthAssignment.objects.get().amount, 236)
+        depth.save_spot(
+            chart,
+            "SS",
+            [
+                depth.SpotEdit(assignment=seager.id, player=None, amount=None, unlimited=False, remove=True),
+                depth.SpotEdit(assignment=None, player=self.abbott, amount=400, unlimited=False),
+            ],
+        )
+        self.assertEqual(list(models.DepthAssignment.objects.values_list("player__name", "amount")), [("Aaron Abbott", 400)])

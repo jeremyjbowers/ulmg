@@ -12,7 +12,8 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.cache import never_cache
 
-from ulmg import computer_manager, decision_cards, models, plans, roster_moves, usage, utils
+from ulmg import computer_manager, decision_cards, depth, models, plans, roster_moves, usage, utils
+from ulmg.views import depth as depth_views
 from ulmg.season_paths import bounce, season_url
 
 # The rotation shortcut offers six slots. Fewer than six is a shorter rotation.
@@ -395,6 +396,59 @@ def _half_note(half):
     return "Second half."
 
 
+# Where each page's playing time is: the lineup positions, the rotation's starts or the bullpen's innings.
+PLAYING_TIME_NOTES = {
+    "lineups": (
+        "Split each position's plate appearances for the season among the hitters who should get them. "
+        "A hitter can be down at more than one position, up to his PA cap. When the computer sets a lineup, "
+        "each position goes to whoever filed there is furthest behind his share, and the day's lineup card "
+        "breaks a near tie, so the card still decides which days against which hand. Whatever a position "
+        "is short goes to the card's starter there. A position with nobody filed plays the card."
+    ),
+    "rotation": (
+        "Give a starter a number of starts and the rotation skips his turn once he has made or is down for "
+        "that many; the next starter in order takes it. A starter with no number pitches every turn up to "
+        "his starts cap."
+    ),
+    "bullpen": (
+        "Give a reliever a number of bullpen innings and the computer passes him over once he has thrown "
+        "them, while another arm is available. A reliever with no number pitches whenever his role calls, "
+        "up to his innings cap."
+    ),
+}
+
+
+def _playing_time(team, season, section, errors=()):
+    """The page's part of the season depth chart: its spots, who they use, and the note on how the computer reads it."""
+    chart = depth.describe(team, season)
+    if section == "lineups":
+        spots = chart.hitting
+        players = [line for line in chart.players if line.plate_appearances]
+    elif section == "rotation":
+        spots = [chart.rotation]
+        players = [line for line in chart.players if line.starts]
+    else:
+        spots = [chart.bullpen]
+        players = [line for line in chart.players if line.innings]
+    return {
+        "section": section,
+        "spots": spots,
+        "players": players,
+        "note": PLAYING_TIME_NOTES[section],
+        "estimate_note": chart.estimate_note,
+        "errors": list(errors),
+    }
+
+
+def _saved_spot(request, team, season, url):
+    """Save a posted playing-time spot. Returns a redirect on success, or the errors to show."""
+    errors = depth_views.save_spot(team, season, request.POST)
+    if errors:
+        return None, errors
+    messages.success(request, "Saved the playing time.")
+    return redirect(f"{url}#playing-time"), []
+
+
 def _common(request, team, half, season):
     context = utils.build_context(request)
     context.update(
@@ -443,11 +497,14 @@ def team_plan(request, abbreviation, half, season=None):
                     slot["card"] = {**slot["card"], "capped": slot["card"]["player"].id in capped}
             columns.append((prefix, label, slots))
         context["lineup_columns"] = columns
+    context["playing_time"] = _playing_time(team, season, "lineups")
+    context["playing_time_edit_url"] = _edit_url(team, half, season)
     return render(request, "team_plan.html", context)
 
 
-def _editor_context(request, team, half, season, state, errors):
+def _editor_context(request, team, half, season, state, errors, spot_errors=()):
     context = _common(request, team, half, season)
+    context["playing_time"] = _playing_time(team, season, "lineups", spot_errors)
     roster = _roster(team, season, half)
     cards = _built_cards(roster["hitters"], season, "h")
     context.update(roster)
@@ -490,7 +547,13 @@ def team_plan_edit(request, abbreviation, half, season=None):
     plan = plans.find_plan(team, season, half) or models.HalfPlan(team=team, season=season, half=half)
 
     errors = []
-    if request.method == "POST" and request.POST.get("clear_lineup"):
+    spot_errors = []
+    if depth_views.is_spot_post(request):
+        done, spot_errors = _saved_spot(request, team, season, _edit_url(team, half, season))
+        if done:
+            return done
+        state = FormState.from_plan(plan)
+    elif request.method == "POST" and request.POST.get("clear_lineup"):
         which = request.POST.get("clear_lineup")
         try:
             plans.clear_lineup(plan, which)
@@ -514,8 +577,8 @@ def team_plan_edit(request, abbreviation, half, season=None):
     else:
         state = FormState.from_plan(plan)
 
-    context = _editor_context(request, team, half, season, state, errors)
-    return render(request, "team_plan_edit.html", context, status=400 if errors else 200)
+    context = _editor_context(request, team, half, season, state, errors, spot_errors)
+    return render(request, "team_plan_edit.html", context, status=400 if errors or spot_errors else 200)
 
 
 @never_cache
@@ -538,7 +601,14 @@ def team_plan_rotation(request, abbreviation, half, season=None):
     hooks = dict(plan.starter_hooks or {}) if plan.pk else {}
 
     errors = []
-    if request.method == "POST":
+    spot_errors = []
+    if depth_views.is_spot_post(request):
+        if not plans.can_edit(request.user, team):
+            return HttpResponseForbidden("Only this team's owner and the commissioner can set the rotation.")
+        done, spot_errors = _saved_spot(request, team, season, _rotation_url(team, half, season))
+        if done:
+            return done
+    elif request.method == "POST":
         if not plans.can_edit(request.user, team):
             return HttpResponseForbidden("Only this team's owner and the commissioner can set the rotation.")
         posted = [_int_or_none(value) for value in request.POST.getlist("rotation")]
@@ -580,9 +650,10 @@ def team_plan_rotation(request, abbreviation, half, season=None):
             "rotation_slots": _rotation_slots(ids, cards, season, hooks),
             "starter_hooks": models.HalfPlan.STARTER_HOOK_CHOICES,
             "schedule_url": _schedule_url(team, season),
+            "playing_time": _playing_time(team, season, "rotation", spot_errors),
         }
     )
-    return render(request, "team_rotation.html", context, status=400 if errors else 200)
+    return render(request, "team_rotation.html", context, status=400 if errors or spot_errors else 200)
 
 
 def _bullpen_players(state, errors):
@@ -595,8 +666,9 @@ def _bullpen_players(state, errors):
     return {name: [players[player_id] for player_id in state[name]] for name, _, _, _ in BULLPEN_GROUPS}
 
 
-def _bullpen_context(request, team, half, season, state, errors, rotation_ids=()):
+def _bullpen_context(request, team, half, season, state, errors, rotation_ids=(), spot_errors=()):
     context = _common(request, team, half, season)
+    context["playing_time"] = _playing_time(team, season, "bullpen", spot_errors)
     roster = _roster(team, season, half)
     # Starters already in this half's rotation are not bullpen arms.
     taken = set(rotation_ids)
@@ -662,7 +734,14 @@ def team_plan_bullpen(request, abbreviation, half, season=None):
     rotation_ids = list(plan.rotation or []) if plan.pk else []
 
     errors = []
-    if request.method == "POST":
+    spot_errors = []
+    if depth_views.is_spot_post(request):
+        if not plans.can_edit(request.user, team):
+            return HttpResponseForbidden("Only this team's owner and the commissioner can set the bullpen.")
+        done, spot_errors = _saved_spot(request, team, season, _bullpen_url(team, half, season))
+        if done:
+            return done
+    elif request.method == "POST":
         if not plans.can_edit(request.user, team):
             return HttpResponseForbidden("Only this team's owner and the commissioner can set the bullpen.")
         state = _bullpen_from_post(request.POST)
@@ -689,8 +768,8 @@ def team_plan_bullpen(request, abbreviation, half, season=None):
                 messages.success(request, "Saved the bullpen.")
                 return redirect(_bullpen_url(team, half, season))
 
-    context = _bullpen_context(request, team, half, season, state, errors, rotation_ids)
-    return render(request, "team_bullpen.html", context, status=400 if errors else 200)
+    context = _bullpen_context(request, team, half, season, state, errors, rotation_ids, spot_errors)
+    return render(request, "team_bullpen.html", context, status=400 if errors or spot_errors else 200)
 
 
 @never_cache

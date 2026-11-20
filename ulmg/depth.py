@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 
 from django.db import IntegrityError, transaction
 
-from ulmg import cards, models, plans
+from ulmg import cards, models, plans, usage
 
 # A ULMG season is 162 games, one start a game.
 GAMES = 162
@@ -282,6 +282,21 @@ def _shares(remainder, players):
     return {player.id: base + (1 if index < extra else 0) for index, player in enumerate(ordered)}
 
 
+def _summary(code, state, gap, unit, filed):
+    """
+    The spot's headline as the computer reads it. A shortfall is not a hole:
+    the lineup card, the rotation order or the bullpen roles cover it.
+    """
+    if state != "short":
+        return _headline(state, gap, unit)
+    kind = bucket_kind(code)
+    if not filed:
+        return {PA: "Lineup card plays", STARTS_KIND: "Rotation order", INNINGS_KIND: "Bullpen roles"}[kind]
+    word = _singular_unit(unit) if gap == 1 else unit
+    rest = {PA: "to the card", STARTS_KIND: "in turn", INNINGS_KIND: "by role"}[kind]
+    return f"{gap} {word} {rest}"
+
+
 def _headline(state, gap, unit):
     if state == "covered":
         return "Covered"
@@ -352,6 +367,16 @@ def _cover_note(names, remainder, kind, nothing_left):
     return f"{who} {verb} the other {remainder} {_things(remainder, kind)}."
 
 
+def _rest_note(code, label, remainder, kind):
+    """Who the computer gives a spot's shortfall to when no one there is unlimited."""
+    things = _things(remainder, kind)
+    if kind == PA:
+        return f"The lineup card's starter at {label} takes the other {remainder} {things}."
+    if code == STARTS:
+        return f"Rotation starters with no number take the other {remainder} {things} in turn."
+    return f"Relievers with no number pitch the other {remainder} {things}."
+
+
 def _detail_bit(spot, row):
     if spot.code in plans.LINEUP_POSITIONS:
         if row.unlimited:
@@ -366,7 +391,12 @@ def _detail_bit(spot, row):
     return f"{row.amount} bullpen innings"
 
 
-def _warning(plate_appearances, starts, innings):
+def _warning(plate_appearances, starts, innings, counter=None):
+    """
+    Why this much playing time can't all be used. counter, his usage
+    counter, adds his own caps: the plate appearances and starts he has
+    left, and his season innings.
+    """
     notes = []
     if plate_appearances > HEAVY_PLATE_APPEARANCES:
         notes.append(f"{plate_appearances} plate appearances is more than one player gets in a season.")
@@ -375,6 +405,17 @@ def _warning(plate_appearances, starts, innings):
     bullpen = bullpen_innings()
     if innings > bullpen:
         notes.append(f"{innings} bullpen innings is more than the pen throws.")
+    if counter is not None:
+        pa_cap = counter.plate_appearances_cap
+        if plate_appearances and pa_cap is not None and plate_appearances > pa_cap:
+            notes.append(f"He is down for {plate_appearances} PA and his cap is {pa_cap}.")
+        if starts and starts > counter.starts_cap:
+            notes.append(f"He is down for {starts} starts and his cap is {counter.starts_cap}.")
+        innings_cap = usage.season_innings_cap(counter)
+        if innings and innings_cap is not None and innings * 3 > innings_cap:
+            notes.append(
+                f"He is down for {innings} bullpen innings and his cap is {usage.outs_to_innings(innings_cap)}."
+            )
     return " ".join(notes)
 
 
@@ -413,6 +454,7 @@ class Spot:
     note: str
     rows: list = field(default_factory=list)
     options: list = field(default_factory=list)
+    summary: str = ""
 
 
 @dataclass
@@ -423,6 +465,9 @@ class PlayerLine:
     innings: int
     detail: str
     warning: str
+    plate_appearances_cap: object = None
+    starts_cap: object = None
+    innings_cap: object = None
 
 
 @dataclass
@@ -474,6 +519,8 @@ def _spot(code, label, assignments, roster):
     unit = _unit(kind)
     names = [row.player.name for row in rows if row.unlimited]
     note = _cover_note(names, remainder, kind, nothing_left=remainder == 0)
+    if state == "short" and counted:
+        note = _rest_note(code, label, remainder, kind)
     return Spot(
         code=code,
         label=label,
@@ -483,13 +530,14 @@ def _spot(code, label, assignments, roster):
         gap=gap,
         state=state,
         headline=_headline(state, gap, unit),
+        summary=_summary(code, state, gap, unit, bool(rows)),
         note=note,
         rows=rows,
         options=options,
     )
 
 
-def _player_lines(spots):
+def _player_lines(spots, season=None):
     totals = {}
     details = {}
     for spot in spots:
@@ -502,8 +550,14 @@ def _player_lines(spots):
             else:
                 slot["innings"] += row.projected
             details.setdefault(row.player.id, []).append(_detail_bit(spot, row))
+    reads = None
+    if season is not None and totals:
+        reads = usage.LedgerReads(season)
+        reads.preload([slot["player"] for slot in totals.values()])
     lines = []
     for slot in totals.values():
+        counter = reads.counter(slot["player"]) if reads is not None else None
+        innings_cap = usage.season_innings_cap(counter) if counter is not None else None
         lines.append(
             PlayerLine(
                 player=slot["player"],
@@ -511,7 +565,10 @@ def _player_lines(spots):
                 starts=slot["starts"],
                 innings=slot["innings"],
                 detail=", ".join(details[slot["player"].id]),
-                warning=_warning(slot["pa"], slot["starts"], slot["innings"]),
+                warning=_warning(slot["pa"], slot["starts"], slot["innings"], counter),
+                plate_appearances_cap=counter.plate_appearances_cap if counter is not None else None,
+                starts_cap=counter.starts_cap if counter is not None else None,
+                innings_cap=usage.outs_to_innings(innings_cap) if innings_cap is not None else None,
             )
         )
     lines.sort(key=lambda line: _name_key(line.player))
@@ -533,9 +590,109 @@ def describe(team, season):
         hitting=hitting,
         rotation=rotation,
         bullpen=bullpen,
-        players=_player_lines(spots),
+        players=_player_lines(spots, season),
         gaps=_display_gaps(spots),
         empty=not assignments,
         empty_note=empty_note(),
         estimate_note=estimate_note(),
     )
+
+
+@dataclass
+class Allotment:
+    """
+    One spot's split for the computer manager. shares maps a player id to
+    the amount he is down for, an unlimited player's share included. rest
+    is what the spot is still short with no unlimited player to cover it.
+    """
+
+    shares: dict
+    rest: int
+
+    @property
+    def total(self):
+        return sum(self.shares.values()) + self.rest
+
+
+def allotments(team, season):
+    """Every filed spot's Allotment for a season, as {bucket: Allotment}. An unfiled spot is left out."""
+    chart = load(team, season)
+    if chart is None:
+        return {}
+    assignments = list(chart.assignments.select_related("player"))
+    result = {}
+    for code in [*plans.LINEUP_POSITIONS, STARTS, BULLPEN]:
+        spot = _spot(code, code, assignments, [])
+        if not spot.rows:
+            continue
+        result[code] = Allotment(
+            shares={row.player.id: row.projected for row in spot.rows},
+            rest=spot.gap if spot.state == "short" else 0,
+        )
+    return result
+
+
+def limits(team, season, bucket):
+    """
+    {player id: amount} for the numbered players at a spot. An unlimited
+    player has no limit of his own and is left out.
+    """
+    chart = load(team, season)
+    if chart is None:
+        return {}
+    rows = chart.assignments.filter(bucket=bucket, unlimited=False)
+    return {row.player_id: row.amount for row in rows}
+
+
+@dataclass
+class SpotEdit:
+    """One row of a posted spot: the row's id, or None for a player being added."""
+
+    assignment: int
+    player: object
+    amount: object
+    unlimited: bool
+    remove: bool = False
+
+
+def save_spot(chart, bucket, edits):
+    """
+    Save one spot's rows at once: change, mark unlimited or remove the filed
+    rows, and add a player. Nothing is saved when any row breaks a rule.
+    Raises DepthError.
+    """
+    problem = _bucket_error(bucket or "")
+    if problem:
+        raise DepthError([problem])
+    filed = {row.id: row for row in chart.assignments.filter(bucket=bucket).select_related("player")}
+    errors = []
+    changes = []
+    additions = []
+    for edit in edits:
+        if edit.assignment is not None:
+            row = filed.get(edit.assignment)
+            if row is None:
+                errors.append("That row is not on this depth chart.")
+                continue
+            if edit.remove:
+                changes.append((row, None, None))
+                continue
+            row_errors = _amount_errors(bucket, edit.amount, edit.unlimited)
+            errors.extend(f"{row.player.name}: {error}" for error in row_errors)
+            changes.append((row, edit.amount, bool(edit.unlimited)))
+            continue
+        if edit.player is None:
+            continue
+        errors.extend(_player_errors(chart, edit.player, bucket))
+        errors.extend(f"{edit.player.name}: {error}" for error in _amount_errors(bucket, edit.amount, edit.unlimited))
+        additions.append(edit)
+    if errors:
+        raise DepthError(_unique(errors))
+    with transaction.atomic():
+        for row, amount, unlimited in changes:
+            if amount is None and unlimited is None:
+                remove_player(row)
+            else:
+                change_player(row, amount, unlimited)
+        for edit in additions:
+            add_player(chart, edit.player, bucket, edit.amount, edit.unlimited)

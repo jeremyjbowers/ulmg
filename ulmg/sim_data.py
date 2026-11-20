@@ -74,6 +74,9 @@ SIM_MODELS = [
     # Half plans go with the schedule; their days before the plans they hang off.
     SimModel(models.HalfPlanDay, "plan__season", schedule=True),
     SimModel(models.HalfPlan, "season", schedule=True),
+    # Depth charts are plans too: the rows before the chart they hang off.
+    SimModel(models.DepthAssignment, "chart__season", schedule=True),
+    SimModel(models.DepthChart, "season", schedule=True),
     # A game is played once it has both scores and locked once it has opened;
     # clearing all four lets it be opened and played again.
     SimModel(

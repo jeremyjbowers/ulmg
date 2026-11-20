@@ -7,7 +7,7 @@ from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
 
-from ulmg import cards, computer_manager, models, roster_moves, schedule, usage, utils
+from ulmg import cards, computer_manager, depth_pacing, models, roster_moves, schedule, usage, utils
 
 LINEUP_POSITIONS = ["C", "1B", "2B", "3B", "SS", "LF", "CF", "RF", "DH"]
 LINEUP_SIZE = len(LINEUP_POSITIONS)
@@ -408,6 +408,14 @@ def _out_of_starts(player, planned_games, reads):
     return counter.starts + len(planned_games) >= counter.starts_cap
 
 
+def _out_of_planned_starts(player, planned_games, reads, limits):
+    """True when he has made, or is down for, every start the depth chart gives him."""
+    limit = limits.get(player.id)
+    if limit is None:
+        return False
+    return reads.counter(player).starts + len(planned_games) >= limit
+
+
 def _home_game(team, game):
     """True when this team is at home. Other managers play those games, so they need a pitcher."""
     return game.series.home_team_id == team.id
@@ -420,7 +428,10 @@ def _auto_fill(plan, games, rows, rosters, reads):
     a pitcher, so a slot whose pitcher is out of starts tries the next legal
     arm. A road day whose pitcher is out of starts stays blank: he takes the
     first road days he is eligible for, and the rest of his road slots are
-    left empty for a later call-up. A slot whose pitcher isn't rested inside
+    left empty for a later call-up. A pitcher who has every start the depth
+    chart gives him passes his turn to the next legal pitcher, home or road,
+    since the manager meant those starts for someone else. A slot whose
+    pitcher isn't rested inside
     the series, or isn't on that game's roster (a call-up at home, a
     sent-down pitcher on the road), goes to the next legal pitcher in order,
     and the cycle continues from him. A day the manager cleared
@@ -432,6 +443,7 @@ def _auto_fill(plan, games, rows, rosters, reads):
     rotation = _ordered_players(plan.rotation)
     reads.preload(rotation)
     rotation_ids = [p.id for p in rotation]
+    limits = depth_pacing.start_limits(plan.team, plan.season)
     planned = _planned_starts(
         plan, games, rows, lambda game, row: is_locked(game) or row.manual_starter_id
     )
@@ -463,6 +475,8 @@ def _auto_fill(plan, games, rows, rosters, reads):
             index = (pointer + step) % len(rotation)
             candidate = rotation[index]
             if candidate.id not in rosters.for_game(game):
+                continue
+            if _out_of_planned_starts(candidate, planned[candidate.id], reads, limits):
                 continue
             if _out_of_starts(candidate, planned[candidate.id], reads):
                 # A road slot stays empty once his starts are used up. A home
@@ -1250,6 +1264,9 @@ class PlanBook:
             ids |= {e["player"] for e in row.manual_lineup or []}
         self.players = _players_by_id(ids)
         self.rosters = {}
+        self.pacers = {}
+        self.paced_games = set()
+        self.capped = {}
 
     def _rosters(self, team):
         if team.id not in self.rosters:
@@ -1265,6 +1282,41 @@ class PlanBook:
         if missing:
             self.players.update(_players_by_id(missing))
         return [self.players.get(i) for i in ids]
+
+    def _pacer(self, team):
+        if team.id not in self.pacers:
+            self.pacers[team.id] = depth_pacing.lineup_pacer(team, self.season)
+        return self.pacers[team.id]
+
+    def _is_capped(self, player_id):
+        if player_id not in self.capped:
+            player = self._resolve([player_id])[0]
+            self.capped[player_id] = player is None or is_capped_batter(player, self.season)
+        return self.capped[player_id]
+
+    def _paced(self, game, team, stored, eligible):
+        """
+        The card's lineup with the depth chart's starters for the day. Days
+        read in order count each paced lineup toward the next one, so a
+        plan page shows the split as it would play out.
+        """
+        pacer = self._pacer(team)
+        if not pacer:
+            return list(stored)
+
+        def available(player_id, position):
+            player = self._resolve([player_id])[0]
+            if player is None or player_id not in eligible or is_pitcher(player):
+                return False
+            if player.throws == LEFT and position in cards.LEFTY_BLOCKED_POSITIONS:
+                return False
+            return not self._is_capped(player_id)
+
+        lineup = pacer.choose(stored, available)
+        if (team.id, game.id) not in self.paced_games:
+            self.paced_games.add((team.id, game.id))
+            pacer.record(lineup)
+        return lineup
 
     def _lineup(self, stored):
         players = self._resolve([e["player"] for e in stored])
@@ -1290,10 +1342,13 @@ class PlanBook:
         opponent_starter = opponent_row.starter if opponent_row else None
         vs = LEFT if opponent_starter is not None and opponent_starter.throws == LEFT else RIGHT
         manual = row.manual_lineup if row else None
+        paced = False
         if manual:
             stored = manual
         elif plan:
-            stored = plan.lineup_vs_lhp if vs == LEFT else plan.lineup_vs_rhp
+            card = plan.lineup_vs_lhp if vs == LEFT else plan.lineup_vs_rhp
+            stored = self._paced(game, team, card, eligible)
+            paced = stored != list(card)
         else:
             stored = []
         lineup = self._lineup(stored)
@@ -1308,6 +1363,7 @@ class PlanBook:
             "lineup_stored": list(stored),
             "lineup": lineup,
             "lineup_manual": bool(manual),
+            "lineup_paced": paced,
             "unavailable": {p.id for p, _ in lineup if p.id not in eligible}
             | ({starter.id} if starter is not None and starter.id not in eligible else set()),
             "bench": on_roster(self._resolve(plan.bench)) if plan else [],
@@ -1338,6 +1394,7 @@ class PlanBook:
             "lineup_stored": sheet["lineup"],
             "lineup": self._lineup(sheet["lineup"]),
             "lineup_manual": sheet["lineup_manual"],
+            "lineup_paced": sheet.get("lineup_paced", False),
             "unavailable": set(),
             "bench": self._resolve(sheet["bench"]),
             "pinch_vs_rhp": self._resolve(sheet.get("pinch_vs_rhp") or []),
@@ -1381,6 +1438,7 @@ def _frozen_side(side):
         "vs": side["vs"],
         "lineup": side["lineup_stored"],
         "lineup_manual": side["lineup_manual"],
+        "lineup_paced": side.get("lineup_paced", False),
         "bench": [p.id for p in side["bench"] if p],
         "pinch_vs_rhp": [p.id for p in side["pinch_vs_rhp"] if p],
         "pinch_vs_lhp": [p.id for p in side["pinch_vs_lhp"] if p],

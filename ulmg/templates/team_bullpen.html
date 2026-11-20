@@ -1,5 +1,5 @@
 {# ABOUTME: The closer, single-inning relief, multi-inning relief, and the usage the computer follows. #}
-{# ABOUTME: Anyone can read it. The owner and the commissioner drag pitchers into the roles and save. #}
+{# ABOUTME: Anyone can read it. The owner and the commissioner drag pitchers into the roles, save, and plan each reliever's innings. #}
 {% extends "base.html" %}
 
 {% block content %}
@@ -86,6 +86,7 @@
         </form>
     </div>
     {% if can_edit %}{% include "includes/card_board_script.html" %}{% endif %}
+    {% include "includes/playing_time.html" %}
     {% endif %}
 </div>
 {% endblock %}

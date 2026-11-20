@@ -147,6 +147,8 @@ class ResetTestCase(TestCase):
                 models.RosterMove: ("delete", 1),
                 models.HalfPlanDay: ("keep", 3),
                 models.HalfPlan: ("keep", 1),
+                models.DepthAssignment: ("keep", 0),
+                models.DepthChart: ("keep", 0),
                 models.ScheduleGame: ("clear", 3),
                 models.ScheduleSeries: ("keep", 1),
                 models.ScheduleSlot: ("keep", 1),

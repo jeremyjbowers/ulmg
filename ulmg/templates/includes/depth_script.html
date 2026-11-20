@@ -1,10 +1,10 @@
-{# ABOUTME: Checking Unlimited on a depth-chart row clears the number and stops it being submitted. #}
+{# ABOUTME: Checking Rest (unlimited) on a playing-time row clears that row's number and stops it being submitted. #}
 {# ABOUTME: The server is what decides the gap. This only keeps a blank number from looking required. #}
 <script>
 (function () {
-  function bind(form) {
-    var box = form.querySelector("[data-unlimited]");
-    var amount = form.querySelector("[data-amount]");
+  function bind(row) {
+    var box = row.querySelector("[data-unlimited]");
+    var amount = row.querySelector("[data-amount]");
     if (!box || !amount) return;
     function sync() {
       amount.disabled = box.checked;
@@ -13,6 +13,6 @@
     box.addEventListener("change", sync);
     sync();
   }
-  document.querySelectorAll("[data-depth-form]").forEach(bind);
+  document.querySelectorAll("[data-depth-row]").forEach(bind);
 })();
 </script>
