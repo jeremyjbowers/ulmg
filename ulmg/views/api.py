@@ -16,6 +16,8 @@ import ujson as json
 from ulmg import models, plans, roster_moves, utils
 from ulmg.roster_moves import update_player_stat_season_roster
 
+logger = logging.getLogger(__name__)
+
 
 @login_required
 @csrf_exempt
@@ -238,9 +240,9 @@ def player_action(request, playerid, action):
             p.is_ulmg_35man_roster = True
             p.save()
             _update_player_stat_season(p, is_ulmg35man_roster=True)
-        except Exception as e:
+        except Exception:
             logger.exception("to_35_man failed for player %s", playerid)
-            return JsonResponse({"error": str(e)}, status=500)
+            return JsonResponse({"error": "Could not update that player."}, status=500)
         return HttpResponse("ok")
 
     if action == "unprotect":
@@ -904,15 +906,19 @@ def player_owned(request):
                         payload.append(
                             f"{p.position} <http://theulmg.com/players/{p.id}/|{p.name}> is unowned."
                         )
-                return HttpResponse("\n".join(payload))
+                return HttpResponse("\n".join(payload), content_type="text/plain")
             else:
                 return HttpResponse(
-                    f'I don\'t see a player named {request.POST["text"]} in the ULMG database.'
+                    f'I don\'t see a player named {request.POST["text"]} in the ULMG database.',
+                    content_type="text/plain",
                 )
         else:
-            return HttpResponse("Ooops, please give me a player name to search for.")
+            return HttpResponse(
+                "Ooops, please give me a player name to search for.",
+                content_type="text/plain",
+            )
     else:
-        return HttpResponse("Not a POST.")
+        return HttpResponse("Not a POST.", content_type="text/plain")
 
 
 @csrf_exempt
@@ -1037,9 +1043,10 @@ def player_bulk_action(request):
                         obj.amateur_seasons.append(settings.CURRENT_SEASON)
                     obj.save()
                     ply["ulmg_id"] = obj.id
-                except Exception as e:
-                    # Surface the error for this row but continue processing others
-                    ply["error"] = f"save_failed: {e}"
+                except Exception:
+                    # Keep going with the other rows. The exception stays in the log.
+                    logger.exception("Could not save prospect %s", name)
+                    ply["error"] = "save_failed"
 
                 # Add this player to the payload for returning via JSON
                 payload["players"].append(ply)

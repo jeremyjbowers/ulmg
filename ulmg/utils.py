@@ -108,10 +108,10 @@ def get_fg_birthdate(player):
             player.birthdate = parse(date_cell.split('(')[0].strip())
             player.birthdate_qa = True
             player.save()
-            print(player.name, player.birthdate, player_url)
-        
-        except:
-            print(player.name, player_url, date_cell.split('(')[0].strip())
+            print(player.name, player_url)
+
+        except Exception:
+            print(player.name, "birthdate not found", player_url)
 
         time.sleep(1.5)
 

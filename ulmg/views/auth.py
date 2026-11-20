@@ -10,10 +10,23 @@ from django.contrib import messages
 from django.conf import settings
 from django.urls import reverse
 from django.middleware.csrf import get_token
+from django.utils.http import url_has_allowed_host_and_scheme
 
 from ulmg import models, utils
 
 logger = logging.getLogger(__name__)
+
+
+def _next_url(request, candidate, default):
+    """Follow a next URL only when it stays on this host."""
+    candidate = (candidate or "").strip()
+    if url_has_allowed_host_and_scheme(
+        candidate,
+        allowed_hosts={request.get_host()},
+        require_https=request.is_secure(),
+    ):
+        return candidate
+    return default
 
 
 def magic_login_request(request):
@@ -43,10 +56,7 @@ def magic_login_request(request):
             if authenticated_user:
                 login(request, authenticated_user)
                 messages.success(request, 'You have been logged in successfully!')
-                next_url = request.POST.get('next', '').strip()
-                if not next_url:
-                    next_url = '/'
-                return redirect(next_url)
+                return redirect(_next_url(request, request.POST.get('next', ''), '/'))
             else:
                 messages.error(request, 'Invalid username or password.')
                 return render(request, 'registration/login.html')
@@ -131,8 +141,8 @@ def admin_login_view(request):
                 messages.success(request, 'You have been logged in successfully!')
                 
                 # Redirect to the admin index or the 'next' parameter
-                next_url = request.POST.get('next', '').strip() or request.GET.get('next', '').strip() or '/admin/'
-                return redirect(next_url)
+                candidate = request.POST.get('next', '') or request.GET.get('next', '')
+                return redirect(_next_url(request, candidate, '/admin/'))
             else:
                 messages.error(request, 'Invalid username or password.')
         else:
@@ -167,9 +177,7 @@ def magic_login_verify(request, token):
         messages.success(request, 'You have been logged in successfully!')
         
         # Redirect to 'next' parameter if provided, otherwise to home
-        next_url = request.GET.get('next', '').strip()
-        if not next_url:
-            next_url = '/'
+        next_url = _next_url(request, request.GET.get('next', ''), '/')
         logger.info(f"Successful login - User: {user.username}, Next URL: {next_url}, Mobile: {is_mobile}, Token: {token[:10]}...")
         return redirect(next_url)
     else:

@@ -101,7 +101,7 @@
 {% endblock %}
 
 {% block extrascript %}
-<script src="//cdnjs.cloudflare.com/ajax/libs/awesomplete/1.1.5/awesomplete.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/awesomplete/1.1.5/awesomplete.min.js" integrity="sha384-FZjXcpaSQRo4+/TVZVPcb8kDUq+PdAbSLWiMagN9uebiiypRHSsjQafLICjiE8ef" crossorigin="anonymous"></script>
 <script type="text/javascript">
 $(function(){
 
@@ -114,7 +114,7 @@ $(function(){
     var skip_click_handler = function(el) {
         el.preventDefault();
         var $el = $(this);
-        var pickid = $el.attr('data-pickid');
+        var pickid = encodeURIComponent($el.attr('data-pickid') || '');
 
         $.ajax({
             type: "GET",
@@ -130,7 +130,7 @@ $(function(){
         el.preventDefault();
         var $el = $(this);
         var playerid = $el.attr('data-playerid');
-        var pickid = $el.attr('data-pickid');
+        var pickid = encodeURIComponent($el.attr('data-pickid') || '');
 
         $.ajax({
             type: "GET",
@@ -145,8 +145,8 @@ $(function(){
     var draft_click_handler = function(el) {
         el.preventDefault();
         var $el = $(this);
-        var playername = $('#' + $el.attr('data-pick-input')).val();
-        var pickid = $el.attr('data-pickid');
+        var playername = encodeURIComponent($('#' + $el.attr('data-pick-input')).val() || '');
+        var pickid = encodeURIComponent($el.attr('data-pickid') || '');
 
         $.ajax({
             type: "GET",

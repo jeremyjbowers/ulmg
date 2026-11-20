@@ -753,6 +753,14 @@ class EditPlanTestCase(PlanViewsTestCase):
         self.assertIn("opens after the trade break", public)
         self.assertIn("ATL has not filed lineups for this half", public)
 
+        closed = client.post(
+            f"/teams/atl/plan/2/{SEASON}/designation/",
+            {"player": self.roster.swingman.id, "designation": "bullpen"},
+        )
+        self.assertEqual(closed.status_code, 400)
+        self.assertTrue(closed["Content-Type"].startswith("text/plain"))
+        self.assertIn("half 2", closed.content.decode())
+
         with self.settings(TEAM_SEASON_HALF="2h"):
             response = client.post(ROTATION_URL.replace("/plan/1/", "/plan/2/"), {"rotation": [p.id for p in self.roster.starters]})
         self.assertEqual(response.status_code, 302)
