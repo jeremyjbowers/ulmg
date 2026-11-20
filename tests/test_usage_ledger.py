@@ -212,7 +212,7 @@ class SingleInningFinishTestCase(TestCase):
             strikeout(game, self.hitter, self.loogy, single_inning_finish=True)
         self.assertEqual(models.UsageAppearance.objects.get(player=self.loogy, game=game).outs, 5)
 
-    def test_without_the_inning_still_going_a_one_inning_cap_ends_at_one_inning(self):
+    def test_without_the_single_inning_outing_a_one_inning_cap_ends_at_one_inning(self):
         game = self.games[0]
         for _ in range(3):
             strikeout(game, self.hitter, self.loogy)

@@ -115,16 +115,30 @@ class BullpenRolesTestCase(ComputerGameTestCase):
         self.assertEqual(decision.payload["skipped"][0][0], closer.id)
         self.assertIn("40 pitches", decision.text)
 
-    def test_a_single_inning_reliever_is_lifted_after_a_clean_inning(self):
-        # His card cap would let him pitch the 8th. The window still wants him. One clean inning ends it.
+    def test_a_single_inning_reliever_stays_for_the_next_inning_through_one_and_two_thirds(self):
+        # His card cap would let him pitch three innings. The outing ends at 1.2, after the next inning has started.
         gf.counter(self.home.starters[0], start_limit_outs=18)
         setup = self.home.relievers[1]
         gf.counter(setup, relief_limit_outs=9)
         log = self.open()
-        first, second = self.until_changes(log, HOME, 2)
+        first = self.until_changes(log, HOME, 1)[0]
         self.assertEqual(first.payload["pitcher"], setup.id)
         self.assertEqual(inning_of(log, first), 7)
         self.assertEqual(decision_before(log, first).payload["role"], computer_manager.SIRP)
+
+        def still_pitching(outs_recorded, inning, inning_outs):
+            def ready(play):
+                if (play.state["inning"], play.state["half"], play.state["outs"]) != (inning, "top", inning_outs):
+                    return False
+                if play.state[HOME]["pitcher_slot"] != str(setup.id):
+                    return False
+                appearance = models.UsageAppearance.objects.get(game=self.game, player=setup)
+                return appearance.outs == outs_recorded
+            return ready
+
+        play = self.step_until(log, still_pitching(3, 8, 0))
+        self.assertIsNone(play.need(), "a clean inning does not end the outing")
+        second = self.until_changes(log, HOME, 2)[1]
         self.assertEqual(inning_of(log, second), 8)
         self.assertEqual(second.payload["pitcher"], self.home.swingman.id)
         decision = decision_before(log, second)
@@ -132,7 +146,7 @@ class BullpenRolesTestCase(ComputerGameTestCase):
         self.assertEqual(decision.payload["role"], computer_manager.SIRP)
         self.assertEqual(decision.payload["group"], computer_manager.MIRP)
         self.assertIn(setup.name, decision.text)
-        self.assertEqual(models.UsageAppearance.objects.get(game=self.game, player=setup).outs, 3)
+        self.assertEqual(models.UsageAppearance.objects.get(game=self.game, player=setup).outs, 5)
 
     def test_a_single_inning_reliever_finishes_a_messy_inning_through_one_and_two_thirds(self):
         # The starter leaves after one out in the 6th. A one-inning cap would pull the reliever at 1.0.

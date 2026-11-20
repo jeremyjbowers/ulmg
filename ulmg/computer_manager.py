@@ -22,8 +22,7 @@ FALLBACK_ORDER = (MIRP, SIRP, CLOSER)
 SAVE_MAX_LEAD = 3
 # A close game is within this many runs either way. Traditional usage wants one inning from the 6th on.
 CLOSE_RUNS = 3
-# A single-inning outing is one inning. Finishing the half inning he is already pitching may run it to 1.2.
-SIRP_INNING_OUTS = 3
+# A single-inning outing runs to 1.2 innings, including the next half inning. Not two.
 SIRP_MAX_OUTS = 5
 
 # Bullpen usage, the half plan's choices. Each one says when the closer and
@@ -251,15 +250,13 @@ def bullpen_role(inning, lead, runners_on, outs, logic=None):
 def sirp_pull_reason(outs, inning_unfinished):
     """
     Why a single-inning reliever comes out before the next batter, or None
-    when he stays to face him. A clean inning ends the outing. While that
-    half inning is still going he may finish the extra work, through 1.2
-    innings. He does not come back out for another inning.
+    when he stays to face him. The outing runs to 1.2 innings whether or
+    not the half inning he started is still going, and it ends there. Two
+    innings is too many. inning_unfinished is the half inning's state; it
+    does not shorten the outing.
     """
     if outs >= SIRP_MAX_OUTS:
         return "he has pitched 1.2 innings, and a single-inning outing ends there."
-    if outs >= SIRP_INNING_OUTS and not inning_unfinished:
-        pitched = "1.0" if outs == SIRP_INNING_OUTS else f"1.{outs - SIRP_INNING_OUTS}"
-        return f"he has pitched {pitched} innings, and a single-inning reliever does not start another."
     return None
 
 
