@@ -2601,3 +2601,50 @@ class TeamSeasonRecord(BaseModel):
         games = wins + losses
         text = f"{wins / games if games else 0.0:.3f}"
         return text[1:] if text.startswith("0") else text
+
+
+class DepthChart(BaseModel):
+    """
+    One team's playing-time plan for a season. The lineup cards name who
+    starts. This names how the plate appearances, the 162 starts and the
+    bullpen innings are split. ulmg.depth checks and reads it.
+    """
+
+    team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name="depth_charts")
+    season = models.IntegerField()
+
+    class Meta:
+        ordering = ["season", "team__abbreviation"]
+        constraints = [
+            models.UniqueConstraint(fields=["team", "season"], name="unique_depth_chart_team_season"),
+        ]
+
+    def __unicode__(self):
+        return f"{self.team.abbreviation} {self.season} depth chart"
+
+
+class DepthAssignment(BaseModel):
+    """
+    One player's share of one depth-chart spot. The spot is a lineup
+    position, SP for a start, or RP for a bullpen inning. unlimited means
+    he fills whatever that spot is still short; his amount is not added
+    into the spot's total.
+    """
+
+    chart = models.ForeignKey(DepthChart, on_delete=models.CASCADE, related_name="assignments")
+    player = models.ForeignKey(Player, on_delete=models.CASCADE, related_name="depth_assignments")
+    bucket = models.CharField(max_length=8)
+    amount = models.IntegerField(default=0)
+    unlimited = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ["player__last_name", "player__first_name", "bucket"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["chart", "player", "bucket"],
+                name="unique_depth_assignment_chart_player_bucket",
+            ),
+        ]
+
+    def __unicode__(self):
+        return f"{self.player} {self.bucket} on {self.chart}"
