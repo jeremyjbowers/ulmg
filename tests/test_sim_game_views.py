@@ -116,7 +116,12 @@ class GamePageTestCase(gf.EngineMixin, TestCase):
     def test_a_final_shows_the_box_score_and_the_schedules_link_it(self):
         self.post("open", seats="away")
         gf.play_out(self.log(), self.manager, self.next_seed)
-        response = self.client.get(self.url)
+        waiting = self.client.get(self.url)
+        self.assertContains(waiting, 'id="game-finish"')
+        self.assertContains(waiting, "Finish game")
+        self.assertContains(waiting, "game-final-play")
+        self.assertNotContains(waiting, "box-batting")
+        response = self.post("finish")
         self.assertContains(response, "Final")
         self.assertContains(response, "box-batting")
         self.assertContains(response, "(W)")
@@ -136,6 +141,13 @@ class GamePageTestCase(gf.EngineMixin, TestCase):
         self.assertContains(box, "box-pitching")
         self.assertContains(box, "box-notes")
         self.assertContains(box, ">LOB</span>:")
+
+    def test_finish_before_the_game_is_over_changes_nothing(self):
+        self.post("open", seats="away")
+        response = self.post("finish")
+        self.assertContains(response, "The game is not over yet.")
+        self.assertNotContains(response, 'id="game-finish"')
+        self.assertContains(response, "Play the next plate appearance")
 
     @override_settings(TEAM_SEASON_HALF="2h")
     def test_the_schedule_offers_play_next_for_the_managers_next_road_game_only(self):
