@@ -591,3 +591,114 @@ def player_line(player, season):
     return models.PlayerStatSeason.objects.filter(
         player=player, season=season, classification=ULMG, is_career=False
     ).first()
+
+
+# Team totals and usage. Counting keys are summed; rates are computed again.
+
+
+HIT_TOTAL_KEYS = ("g", "pa", "ab", "r", "h", "2b", "3b", "hr", "rbi", "bb", "so", "sb", "cs", "gdp", "sf", "hbp", "sh")
+PITCH_TOTAL_KEYS = ("g", "gs", "w", "l", "sv", "hld", "tbf", "h", "r", "er", "bb", "so", "hr", "pitches")
+
+
+def _sum_counts(rows, keys):
+    total = dict.fromkeys(keys, 0)
+    for row in rows:
+        for key in keys:
+            total[key] += _count(row.get(key))
+    return total
+
+
+def _count(value):
+    try:
+        return int(value or 0)
+    except (TypeError, ValueError):
+        return 0
+
+
+def _batting_avg(value):
+    if value is None:
+        return "-"
+    text = f"{value:.3f}"
+    return text[1:] if text.startswith("0") else text
+
+
+def _era(value):
+    if value is None:
+        return "-"
+    return f"{value:.2f}"
+
+
+def team_totals(team, season):
+    """The club's summed 6-ulmg batting and pitching lines. Rates are computed from the sums."""
+    rows = models.PlayerStatSeason.objects.filter(
+        player__team=team, season=season, classification=ULMG, is_career=False
+    )
+    batting_rows = [row.hit_stats for row in rows if row.hit_stats]
+    pitching_rows = [row.pitch_stats for row in rows if row.pitch_stats]
+    batting = hit_stats(_sum_counts(batting_rows, HIT_TOTAL_KEYS))
+    pitching = _sum_counts(pitching_rows, PITCH_TOTAL_KEYS)
+    pitching["outs"] = sum(usage.innings_to_outs(row.get("ip")) for row in pitching_rows)
+    pitching = pitch_stats(pitching)
+    return {
+        "batting": batting,
+        "pitching": pitching,
+        "avg": _batting_avg(batting["avg"]),
+        "obp": _batting_avg(batting["obp"]),
+        "slg": _batting_avg(batting["slg"]),
+        "ops": _batting_avg(batting["ops"]),
+        "era": _era(pitching["era"]),
+        "ip": pitching["ip"],
+    }
+
+
+def _ordinal(number):
+    if 10 <= number % 100 <= 20:
+        suffix = "th"
+    else:
+        suffix = {1: "st", 2: "nd", 3: "rd"}.get(number % 10, "th")
+    return f"{number}{suffix}"
+
+
+def team_standing(team, season):
+    """Where the club sits in its division: place, record, games behind and games out of the wild card."""
+    for conference in standings(season):
+        for division in conference.divisions:
+            for index, row in enumerate(division.rows, start=1):
+                if row.team.id == team.id:
+                    return {
+                        "conference": conference.name,
+                        "division": division.name,
+                        "place": _ordinal(index),
+                        "wins": row.wins,
+                        "losses": row.losses,
+                        "pct": row.pct_display,
+                        "games_behind": row.games_behind_display,
+                        "wild_card": row.games_out_display,
+                    }
+    return None
+
+
+def usage_rows(season, team=None):
+    """
+    One row per usage counter for the season, the whole league or one club.
+    The counters are read in one query.
+    """
+    counters = models.UsageCounter.objects.filter(season=season).select_related("player", "player__team")
+    if team is not None:
+        counters = counters.filter(player__team=team)
+    rows = []
+    for counter in counters.order_by("player__team__abbreviation", "player__name"):
+        cap = usage.season_innings_cap(counter)
+        rows.append({
+            "player": counter.player,
+            "team": counter.player.team,
+            "plate_appearances": counter.plate_appearances,
+            "plate_appearances_cap": counter.plate_appearances_cap,
+            "starts": counter.starts,
+            "starts_cap": counter.starts_cap,
+            "innings": usage.outs_to_innings(counter.outs),
+            "innings_cap": usage.outs_to_innings(cap),
+            "start_limit": usage.outs_to_innings(counter.start_limit_outs),
+            "relief_limit": usage.outs_to_innings(counter.relief_limit_outs),
+        })
+    return rows
