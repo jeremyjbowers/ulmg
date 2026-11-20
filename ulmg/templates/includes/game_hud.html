@@ -1,4 +1,4 @@
-{# ABOUTME: The game HUD: line score, batter card, the field, pitcher card with this plate appearance's odds, the calls and the last plays. #}
+{# ABOUTME: The game HUD: line score, batter card, the field, pitcher card with this plate appearance's odds, the calls, the last plays and a box score. #}
 {# ABOUTME: Expects the context sim_game.page builds. Every call is a plain form POST carrying the log position it was drawn from. #}
 <div id="hud" class="hud" data-game="{{ game.id }}">
     {% if paused %}
@@ -106,6 +106,11 @@
             {% if controls.defense.why %}<p class="hud-why">{{ controls.defense.why }}</p>{% endif %}
         </div>
     </section>
+
+    <details id="in-game-box" class="hud-boxscore">
+        <summary>Box score</summary>
+        {% include "includes/box_score.html" %}
+    </details>
 
     <section class="hud-recent" aria-label="Last plays">
         <p class="hud-eyebrow">Last plays</p>
