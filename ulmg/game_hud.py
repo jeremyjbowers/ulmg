@@ -1,4 +1,4 @@
-# ABOUTME: What the game HUD shows: the scoreboard, the batter and pitcher cards, the calls, the last plays and the substitution panel.
+# ABOUTME: What the game HUD shows: the scoreboard, the batter and pitcher cards with a platoon edge, the calls, the last plays and the substitution panel.
 # ABOUTME: Every number comes from the game's log, its cards and the usage ledger; the pinch-hit odds come from the engine's /matchup.
 
 import copy
@@ -70,6 +70,73 @@ def hitter_line(card, throws):
     if card is None or not card.hitter_rates:
         return slash(None)
     return slash(card._hitter_line_from(split_rates(card, throws)))
+
+
+def _ops(line):
+    if not line or line.get("obp") is None or line.get("slg") is None:
+        return None
+    return line["obp"] + line["slg"]
+
+
+def _points(split_value, overall_value):
+    if split_value is None or overall_value is None:
+        return None
+    return round((split_value - overall_value) * 1000)
+
+
+def edge_text(points):
+    """A signed point total. A negative number uses a minus sign, not a hyphen."""
+    if points is None:
+        return None
+    if points > 0:
+        return f"+{points}"
+    if points < 0:
+        return f"−{abs(points)}"
+    return "0"
+
+
+def edge_tone(points, *, higher_is_better):
+    """good when the number favors the player on the card, bad when it favors the other one."""
+    if not points:
+        return "even"
+    better = points > 0 if higher_is_better else points < 0
+    return "good" if better else "bad"
+
+
+def hitter_edge(card, throws):
+    """
+    OPS points versus this pitcher hand, measured against his overall line.
+    None when the card has no split for that hand.
+    """
+    if card is None or throws not in ("L", "R") or not card.hitter_rates:
+        return None
+    rates = {"L": card.hitter_rates_vs_lhp, "R": card.hitter_rates_vs_rhp}.get(throws)
+    if not rates:
+        return None
+    return _points(_ops(card._hitter_line_from(rates)), _ops(card._hitter_line_from(card.hitter_rates)))
+
+
+def pitcher_edge(card, bats):
+    """
+    OBP points allowed versus this batter hand, measured against his overall line.
+    Negative means he allows less to that hand. None when the card has no split for it.
+    """
+    if card is None or bats not in ("L", "R") or not card.pitcher_rates:
+        return None
+    rates = {"L": card.pitcher_rates_vs_lhh, "R": card.pitcher_rates_vs_rhh}.get(bats)
+    if not rates:
+        return None
+    split = card._pitcher_line_from(rates)
+    overall = card._pitcher_line_from(card.pitcher_rates)
+    if not split or not overall:
+        return None
+    return _points(split.get("obp"), overall.get("obp"))
+
+
+def _edge(points, label, *, higher_is_better):
+    if points is None:
+        return None
+    return {"label": label, "text": edge_text(points), "tone": edge_tone(points, higher_is_better=higher_is_better)}
 
 
 # The scoreboard
@@ -172,6 +239,7 @@ def batter_card(play, box, teams):
         "bats": HANDS.get(player.bats, "?"),
         "today": _batting_today(box, side, player),
         "splits": splits,
+        "edge": _edge(hitter_edge(card, throws), f"vs {throws}HP" if throws in ("L", "R") else "vs", higher_is_better=True),
         "speed": tenths(getattr(card, "spd", None)),
         "steals": percent(getattr(card, "steal_success", None)),
         "pa_left": "unlimited" if left is None else left,
@@ -189,6 +257,9 @@ def pitcher_card(play, box, teams, odds):
     if not pitcher_id:
         return None
     player = play.player(pitcher_id)
+    batter = play.player(sim_game.current_batter_id(state))
+    bats = batter.bats if batter is not None else None
+    card = play.card(player)
     starter = play.is_starter(side, player)
     fatigue = (state[side].get("fatigue") or {}).get(str(pitcher_id)) or {}
     pitches = fatigue.get("pitches") or 0
@@ -202,6 +273,11 @@ def pitcher_card(play, box, teams, odds):
         "player": player,
         "role": "Starter" if starter else ROLE_NAMES[play.group_of(side, player)],
         "throws": HANDS.get(player.throws, "?"),
+        "edge": _edge(
+            pitcher_edge(card, bats),
+            f"vs {bats}HH" if bats in ("L", "R") else "vs",
+            higher_is_better=False,
+        ),
         "today": _pitching_today(box, side, player),
         "pitches": pitches,
         "ceiling": round(float(ceiling)),

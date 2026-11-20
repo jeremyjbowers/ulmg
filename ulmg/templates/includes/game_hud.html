@@ -1,4 +1,4 @@
-{# ABOUTME: The game HUD: line score, batter card, the field, pitcher card with this plate appearance's odds, the calls, the last plays and a box score. #}
+{# ABOUTME: The game HUD: line score, batter card, the field, pitcher card with this plate appearance's odds and a platoon edge, the calls, the last plays and a box score. #}
 {# ABOUTME: Expects the context sim_game.page builds. Every call is a plain form POST carrying the log position it was drawn from. #}
 <div id="hud" class="hud" data-game="{{ game.id }}">
     {% if paused %}
@@ -39,6 +39,7 @@
             <p class="hud-eyebrow">At bat · {{ batter.team.abbreviation }} · {{ batter.slot }}</p>
             <p class="hud-who"><a href="/players/{{ batter.player.id }}/">{{ batter.player.name }}</a></p>
             <p class="hud-sub">{{ batter.position }} · bats {{ batter.bats }} · {{ batter.today }}</p>
+            {% if batter.edge %}<p class="matchup-edge edge-{{ batter.edge.tone }}">{{ batter.edge.label }} {{ batter.edge.text }} OPS</p>{% endif %}
             <table class="hud-splits">
                 <thead><tr><th scope="col"><span class="visually-hidden">Split</span></th><th scope="col">AVG</th><th scope="col">OBP</th><th scope="col">SLG</th><th scope="col">HR%</th></tr></thead>
                 <tbody>
@@ -58,6 +59,7 @@
             <p class="hud-eyebrow">Pitching · {{ pitcher.team.abbreviation }}</p>
             <p class="hud-who"><a href="/players/{{ pitcher.player.id }}/">{{ pitcher.player.name }}</a></p>
             <p class="hud-sub">{{ pitcher.role }} · throws {{ pitcher.throws }} · {{ pitcher.today }}</p>
+            {% if pitcher.edge %}<p class="matchup-edge edge-{{ pitcher.edge.tone }}">{{ pitcher.edge.label }} {{ pitcher.edge.text }} OBP</p>{% endif %}
             <div class="hud-meter {{ pitcher.tone }}" role="meter" aria-label="Fatigue" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ pitcher.meter }}"><i style="width:{{ pitcher.meter }}%"></i></div>
             <p class="hud-note game-usage" style="margin-top:0"><b>{{ pitcher.pitches }}</b> pitches · tires near <b>{{ pitcher.ceiling }}</b> · IP left this outing: <b>{{ pitcher.ip_left }}</b></p>
             {% if pitcher.odds %}
