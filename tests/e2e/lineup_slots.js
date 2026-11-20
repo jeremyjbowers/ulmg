@@ -76,6 +76,26 @@ const html = `<!DOCTYPE html>
   ${rotationSlot(1, '7', 'quick')}
   ${rotationSlot(2, '', '')}
 </div>
+<div class="lineup-column" data-lineup="vs_rhp">
+  <div class="lineup-slot" data-spot="1">
+    <div class="slot-frame"><div class="slot-body slot-well"><article class="decision-card" data-player="11" data-kind="h">Hitter 11</article></div>
+    <button type="button" data-reorder draggable="true">Reorder</button></div>
+    <div data-position-buttons><div data-position-main><button type="button" data-position="CF" class="bg-gray-800">CF</button></div>
+    <input type="hidden" class="position-value" name="vs_rhp_position_1" value="CF"></div>
+    <input type="hidden" class="player-id" name="vs_rhp_player_1" value="11">
+  </div>
+  <div class="lineup-slot" data-spot="2">
+    <div class="slot-frame"><div class="slot-body slot-well"><article class="decision-card" data-player="21" data-kind="h">Hitter 21</article></div>
+    <button type="button" data-reorder draggable="true">Reorder</button></div>
+    <div data-position-buttons><div data-position-main><button type="button" data-position="SS" class="bg-gray-800">SS</button></div>
+    <input type="hidden" class="position-value" name="vs_rhp_position_2" value="SS"></div>
+    <input type="hidden" class="player-id" name="vs_rhp_player_2" value="21">
+  </div>
+  <div class="lineup-slot" data-spot="3">
+    <div class="slot-frame"><div class="slot-body slot-well"></div></div>
+    <input type="hidden" class="player-id" name="vs_rhp_player_3" value="">
+  </div>
+</div>
 <script>${script}</script>
 </body></html>`;
 
@@ -141,12 +161,31 @@ function check(failures, ok, message) {
   check(failures, (await first.locator('.hook-value').inputValue()) === '', 'the old slot returns to Default');
   check(failures, await first.locator('[data-starter-hook]').evaluate((el) => el.classList.contains('hidden')), 'an empty slot hides its hook row');
 
+  const order = page.locator('.lineup-column');
+  const lead = order.locator('[data-spot="1"]');
+  const next = order.locator('[data-spot="2"]');
+  const open = order.locator('[data-spot="3"]');
+  const hint = await open.locator('.slot-well').evaluate((el) => getComputedStyle(el, '::after').content);
+  check(failures, hint.includes('Drop a hitter here'), `empty well names the drop: ${hint}`);
+  await open.locator('.slot-well').dispatchEvent('dragover');
+  check(failures, await open.evaluate((el) => el.classList.contains('is-over')), 'the empty well outlines while a card is over it');
+
+  await lead.locator('[data-reorder]').click();
+  await next.locator('[data-reorder]').click();
+  check(failures, (await lead.locator('.player-id').inputValue()) === '21', 'the second hitter moved into the first spot');
+  check(failures, (await next.locator('.player-id').inputValue()) === '11', 'the first hitter moved into the second spot');
+  check(failures, (await lead.locator('.position-value').inputValue()) === 'SS', 'his position moved with him');
+  check(failures, (await next.locator('.position-value').inputValue()) === 'CF', 'the other position stayed with its hitter');
+  check(failures, (await lead.locator('.position-value').getAttribute('name')) === 'vs_rhp_position_1', 'the first spot still posts as the first spot');
+  check(failures, (await lead.locator('.decision-card').count()) === 1, 'the first spot still holds one hitter');
+  check(failures, (await next.locator('.decision-card').count()) === 1, 'the second spot still holds one hitter');
+
   await browser.close();
   if (failures.length) {
     console.error(failures.join('\n'));
     process.exit(1);
   }
-  console.log('ok  a list grows by a slot, and a hook is a button that moves with its pitcher');
+  console.log('ok  a list grows by a slot, a hook moves with its pitcher, and a lineup swaps when it is reordered');
 })().catch((error) => {
   console.error(error);
   process.exit(1);
