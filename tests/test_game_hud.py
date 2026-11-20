@@ -104,6 +104,28 @@ class CardTest(GameHudTestCase):
         odds = dict(sim_game.matchup(sim_game.Play(self.log())))
         self.assertIn(f'<span class="pct">{odds["Strikeout"]:.1f}%</span>', card)
 
+    def test_the_cards_color_the_platoon_edge_of_this_matchup(self):
+        leadoff = self.road.hitters[0]
+        vs_rhp = dict(gf.HITTER_RATES, single=0.24, bip_out=gf.HITTER_RATES["bip_out"] - 0.1)
+        models.Card.objects.filter(player=leadoff).update(hitter_rates_vs_rhp=vs_rhp)
+        starter = self.home.starters[0]
+        vs_rhh = {"k": 0.25, "bb": 0.05, "hbp": 0.01, "h": 0.12, "hr": 0.02}
+        models.Card.objects.filter(player=starter).update(pitcher_rates_vs_rhh=vs_rhh)
+        self.post("open", seats="away,home")
+        html = self.page()
+        from ulmg import game_hud
+
+        hitter_card = models.Card.objects.get(player=leadoff)
+        pitcher_card = models.Card.objects.get(player=starter)
+        hitter = game_hud.hitter_edge(hitter_card, "R")
+        pitcher = game_hud.pitcher_edge(pitcher_card, leadoff.bats)
+        self.assertGreater(hitter, 0)
+        self.assertLess(pitcher, 0)
+        batter = self.section(html, 'class="hud-card hud-batter"', "</ul>")
+        self.assertIn(f'class="matchup-edge edge-good">vs RHP {game_hud.edge_text(hitter)} OPS', batter)
+        mound = self.section(html, 'class="hud-card hud-pitcher"', "</ul>")
+        self.assertIn(f'class="matchup-edge edge-good">vs RHH {game_hud.edge_text(pitcher)} OBP', mound)
+
 
 class FieldTest(GameHudTestCase):
     def test_fielders_are_tagged_with_their_slotted_rating_in_runs(self):
