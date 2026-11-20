@@ -217,19 +217,17 @@ class BullpenRoleTestCase(TestCase):
 
 
 class SirpOutingTestCase(TestCase):
-    def test_a_single_inning_reliever_finishes_a_messy_inning_and_does_not_start_another(self):
+    def test_a_single_inning_reliever_pitches_through_one_and_two_thirds_and_not_two(self):
         pull = computer_manager.sirp_pull_reason
-        self.assertEqual(computer_manager.SIRP_INNING_OUTS, usage.RELIEF_LIMIT_MIN_INNINGS * 3)
         self.assertEqual(computer_manager.SIRP_MAX_OUTS, usage.SINGLE_INNING_FINISH_OUTS)
         self.assertEqual(usage.SINGLE_INNING_FINISH_OUTS, 5)
         self.assertIsNone(pull(0, inning_unfinished=False))
-        self.assertIsNone(pull(2, inning_unfinished=False), "two outs of a messy inning, so he starts the next one")
-        self.assertIsNotNone(pull(3, inning_unfinished=False), "a clean inning is over, so he does not come back out")
-        self.assertIsNotNone(pull(4, inning_unfinished=False), "1.1 ends when that half inning ends")
-        self.assertIsNone(pull(3, inning_unfinished=True), "three outs with the inning still open, so he faces another batter")
+        self.assertIsNone(pull(3, inning_unfinished=False), "a clean inning does not end the outing")
+        self.assertIsNone(pull(4, inning_unfinished=False), "1.1 continues into the next inning")
         self.assertIsNone(pull(4, inning_unfinished=True), "four outs with the inning still open, so he faces another batter")
         self.assertIsNotNone(pull(5, inning_unfinished=True), "five outs is 1.2, and the outing is over")
-        self.assertIsNotNone(pull(5, inning_unfinished=False))
+        self.assertIsNotNone(pull(5, inning_unfinished=False), "1.2 ends the outing even when that half inning has ended")
+        self.assertIsNotNone(pull(6, inning_unfinished=True), "two innings is too many")
 
 
 class StarterHookTestCase(TestCase):

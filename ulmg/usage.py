@@ -32,7 +32,7 @@ START_LIMIT_MIN_INNINGS = 4
 START_LIMIT_MAX_INNINGS = 9
 RELIEF_LIMIT_MIN_INNINGS = 1
 RELIEF_LIMIT_MAX_INNINGS = 3
-# A one-inning relief cap may stretch to 1.2 while he finishes the half inning he is in. Not a second inning.
+# A one-inning relief cap runs to 1.2 innings, including the start of the next half inning. Not two.
 SINGLE_INNING_FINISH_OUTS = 5
 CONVERTED_STARTER_MIN_GS = 5
 
@@ -493,10 +493,10 @@ def _batter_check(counter, overrides):
 
 def _outing_limit(counter, starting, single_inning_finish):
     """
-    Outs he may record in this outing. While a reliever whose cap is one
-    inning is finishing the half inning he is in, that cap stretches to 1.2.
-    A longer cap is left alone. The stretch is not a second inning: the
-    caller passes it only while the half inning is still going.
+    Outs he may record in this outing. While the game says this is a
+    single-inning reliever's outing, a one-inning cap runs to 1.2, including
+    the start of the next half inning, and not a second full inning. A
+    longer cap, and any other reliever, is left alone.
     """
     if starting:
         return counter.start_limit_outs
@@ -597,9 +597,9 @@ def check_pitcher(player, game, starting=False, reads=None, *, single_inning_fin
     he would be this game's starting pitcher; once he has pitched in the
     game his appearance decides. Covers starts, season innings, this
     outing's limit and series rest. single_inning_finish is true while a
-    one-inning reliever is finishing the half inning he is in, so a
-    one-inning cap may run to 1.2. reads, a LedgerReads for this action,
-    saves reading the same rows again.
+    single-inning reliever is the man on the mound, so his one-inning cap
+    runs to 1.2, including the start of the next half inning. reads, a
+    LedgerReads for this action, saves reading the same rows again.
     """
     if reads is not None:
         reads = reads.for_game(game)
@@ -675,8 +675,8 @@ def record_plate_appearance(
     Raises UsageViolation, with nothing counted, when either player is past
     a cap. A play that starts with an out left may record more outs than
     remain; the extra outs are kept as allowance_outs. single_inning_finish
-    lets a one-inning reliever record the 4th or 5th out of the half inning
-    he is already pitching, and not a 6th.
+    lets a single-inning reliever record a 4th and 5th out, 1.2 innings,
+    including after the half inning he started has ended, and not a 6th.
 
     Pass batter=None for outs recorded on the bases during a plate
     appearance (a caught stealing): those count for the pitcher with no

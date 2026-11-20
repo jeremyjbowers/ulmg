@@ -810,3 +810,18 @@ class ErrorBoxScoreTest(SimGameTestCase):
         self.assertEqual(box.pitching[HOME][0].r, 2)
         self.assertEqual(box.pitching[HOME][0].er, 0)
         self.assertEqual(box.error_notes[HOME], name)
+
+
+class PitcherCardFatigueTestCase(TestCase):
+    def test_the_engine_card_pads_historical_pitches_and_leaves_the_stored_card_alone(self):
+        player = SimpleNamespace(id=1, name="Ace")
+        stored = dict(gf.STARTER_FATIGUE)
+        card = SimpleNamespace(pitcher_rates={"k": 1.0}, fatigue=stored, pitcher_batted_balls=None)
+        built = sim_game.pitcher_card(player, card)
+        cushion = sim_game.FATIGUE_APPEARANCE_CUSHION
+        self.assertEqual(cushion, 1.25)
+        self.assertEqual(built["fatigue"]["season_pitches_per_appearance"], stored["season_pitches_per_appearance"] * cushion)
+        self.assertEqual(built["fatigue"]["career_pitches_per_appearance"], stored["career_pitches_per_appearance"] * cushion)
+        self.assertEqual(built["fatigue"]["role"], "starter")
+        self.assertEqual(stored["season_pitches_per_appearance"], 100.0)
+        self.assertEqual(card.fatigue["career_pitches_per_appearance"], 100.0)

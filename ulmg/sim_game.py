@@ -185,13 +185,28 @@ def batter_card(player, card, position):
     return data
 
 
+# The engine ceiling sits just above historical pitches per appearance, and a
+# pitch often costs more than one unit of effort. Padding the sample lets the
+# usage outing cap, not that ceiling, end a normal start or relief outing.
+FATIGUE_APPEARANCE_CUSHION = 1.25
+
+
+def _cushioned_fatigue(fatigue):
+    padded = dict(fatigue)
+    for key in ("season_pitches_per_appearance", "career_pitches_per_appearance"):
+        value = padded.get(key)
+        if value:
+            padded[key] = float(value) * FATIGUE_APPEARANCE_CUSHION
+    return padded
+
+
 def pitcher_card(player, card):
     data = {
         "id": str(player.id),
         "name": player.name,
         "defense": dict(PITCHER_DEFENSE),
         "rates": dict(card.pitcher_rates),
-        "fatigue": dict(card.fatigue),
+        "fatigue": _cushioned_fatigue(card.fatigue),
     }
     if card.pitcher_batted_balls:
         data["batted_balls"] = dict(card.pitcher_batted_balls)
@@ -607,11 +622,12 @@ class Play:
 
     def single_inning_finish(self, side, player):
         """
-        Whether he is the single-inning reliever on the mound with the half
-        inning he is pitching still going. The ledger then lets a one-inning
-        cap run to 1.2 so he can finish that inning.
+        Whether he is the single-inning reliever on the mound. The ledger
+        then lets a one-inning cap run to 1.2, including the start of the
+        next half inning. It is not a second inning, and it is not for a
+        multi-inning arm whose own cap is one inning.
         """
-        if self.state is None or self.at_half_inning_start():
+        if self.state is None:
             return False
         if str(player.id) != str(current_pitcher_id(self.state)):
             return False
@@ -879,9 +895,9 @@ def computer_pitching_change(play):
     or a reliever giving way. At the start of a half inning, a reliever whose
     role no longer applies gives way to an available arm of the role that
     does. A multi-inning reliever finishes his own outing instead, until the
-    closer is called. A single-inning reliever also comes out when his outing
-    is over: one clean inning, or 1.2 when he is finishing the inning he is
-    in. Returns whether it made one.
+    closer is called.     A single-inning reliever also comes out when his outing
+    is over: 1.2 innings, including the start of the next half inning, and
+    not two. Returns whether it made one.
     """
     side = fielding_side(play.state)
     pid = current_pitcher_id(play.state)
