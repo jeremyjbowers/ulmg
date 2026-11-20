@@ -79,15 +79,21 @@ class RotationAutoFillTestCase(PlanTestCase):
         starters = plans.starters(plan)
         self.assertEqual(starters[2], capped)
         self.assertEqual(starters[7], capped)
-        # Day 12 is his slot. He is out of starts, so it stays blank.
-        self.assertIsNone(starters[12])
-        self.assertIsNone(starters[17])
-        # The next slots keep their own pitchers.
+        games = plans.half_games(self.atl, SEASON, 1)
+        # Day 12 is his third slot, and he is out of starts.
+        # A road day stays blank and the next slots keep their own pitchers.
+        # A home day takes the next legal arm, and the cycle continues from him.
+        if games[12].series.home_team_id == self.atl.id:
+            self.assertIsNotNone(starters[12])
+            self.assertNotEqual(starters[12], capped)
+        else:
+            self.assertIsNone(starters[12])
+            self.assertIsNone(starters[17])
+            self.assertEqual(starters[13], rotation[2])
+            self.assertEqual(starters[14], rotation[3])
+            self.assertEqual(starters[15], rotation[4])
+            self.assertEqual(starters[16], rotation[0])
         self.assertEqual(starters[3], rotation[2])
-        self.assertEqual(starters[13], rotation[2])
-        self.assertEqual(starters[14], rotation[3])
-        self.assertEqual(starters[15], rotation[4])
-        self.assertEqual(starters[16], rotation[0])
         self.assertEqual(list(starters.values()).count(capped), 2)
 
     def test_save_rejected_when_a_day_has_no_legal_starter(self):
@@ -95,8 +101,12 @@ class RotationAutoFillTestCase(PlanTestCase):
         with self.assertRaises(plans.PlanError) as raised:
             self.roster.file(rotation=self.roster.starters[:3])
         message = str(raised.exception)
-        self.assertIn("No legal starter", message)
-        self.assertIn(4, raised.exception.days)
+        self.assertIn("No legal starter for home days", message)
+        games = plans.half_games(self.atl, SEASON, 1)
+        self.assertTrue(raised.exception.days)
+        self.assertTrue(
+            all(games[day].series.home_team_id == self.atl.id for day in raised.exception.days)
+        )
         self.assertFalse(models.HalfPlanDay.objects.filter(auto_starter__isnull=False).exists())
 
     def test_saving_sets_swingman_designations(self):
@@ -199,42 +209,55 @@ class SpotStartTestCase(PlanTestCase):
         plans.save_day(self.plan, 20, starter=None)
         self.assertEqual(plans.starters(self.plan)[20], self.roster.starters[(20 - 1) % 5])
 
-    def test_clearing_starters_blanks_open_days_until_the_rotation_is_pushed(self):
+    def test_clearing_starters_blanks_open_road_days_until_the_rotation_is_pushed(self):
         plan = self.plan
+        games = plans.half_games(self.atl, SEASON, 1)
+        away = [day for day, game in sorted(games.items()) if game.series.home_team_id != self.atl.id]
+        home = [day for day, game in sorted(games.items()) if game.series.home_team_id == self.atl.id]
         lineup = [{"player": self.roster.catcher.id, "position": "C"}]
-        day = plan.days.get(day=2)
-        day.manual_lineup = lineup
-        day.save(update_fields=["manual_lineup"])
         plans.open_game(game_on(self.atl, 1))
         kept = plans.starters(plan)[1]
+        road_day = away[0] if away[0] != 1 else away[1]
+        road = plan.days.get(day=road_day)
+        road.manual_lineup = lineup
+        road.save(update_fields=["manual_lineup"])
 
         plans.clear_starters(plan)
         plan.refresh_from_db()
         self.assertEqual(plan.rotation, [p.id for p in self.roster.starters])
         starters = plans.starters(plan)
         self.assertEqual(starters[1], kept)
-        self.assertIsNone(starters[2])
-        self.assertTrue(all(starter is None for day_no, starter in starters.items() if day_no != 1))
-        cleared = plan.days.get(day=2)
+        for day in away:
+            if day == 1:
+                continue
+            self.assertIsNone(starters[day], day)
+        for day in home:
+            if day == 1:
+                continue
+            self.assertIsNotNone(starters[day], day)
+            self.assertFalse(plan.days.get(day=day).blank_starter)
+        cleared = plan.days.get(day=road_day)
         self.assertTrue(cleared.blank_starter)
         self.assertIsNone(cleared.manual_starter)
         self.assertIsNone(cleared.auto_starter)
         self.assertEqual(cleared.manual_lineup, lineup)
         self.assertFalse(plan.days.get(day=1).blank_starter)
 
-        plans.assign_starters(plan, {20: self.first})
+        open_away = [day for day in away if day != 1]
+        spot_day, later = open_away[0], open_away[1]
+        spot = create_pitcher(self.atl, "ATL Road Spot")
+        plans.assign_starters(plan, {spot_day: spot})
         starters = plans.starters(plan)
-        self.assertEqual(starters[20], self.first)
-        self.assertIsNone(starters[21])
-        self.assertFalse(plan.days.get(day=20).blank_starter)
-        self.assertTrue(plan.days.get(day=21).blank_starter)
+        self.assertEqual(starters[spot_day], spot)
+        self.assertIsNone(starters[later])
+        self.assertFalse(plan.days.get(day=spot_day).blank_starter)
+        self.assertTrue(plan.days.get(day=later).blank_starter)
 
         plans.push_rotation(plan, list(self.roster.starters))
         starters = plans.starters(plan)
-        self.assertEqual(starters[20], self.first)
-        self.assertEqual(starters[21], self.roster.starters[(21 - 1) % 5])
-        self.assertFalse(plan.days.get(day=21).blank_starter)
-        self.assertIsNotNone(starters[2])
+        self.assertEqual(starters[spot_day], spot)
+        self.assertIsNotNone(starters[later])
+        self.assertFalse(plan.days.get(day=later).blank_starter)
 
 
 class LineupTestCase(PlanTestCase):
@@ -920,10 +943,14 @@ class FillPlanTestCase(PlanTestCase):
         plan = plans.plan_for(self.atl, SEASON, 1)
         problems = plans.fill_plan(plan, **self.fields(rotation=self.roster.starters[:3]))
         self.assertEqual(len(problems), 1)
-        self.assertTrue(problems[0].startswith("No legal starter for days "))
+        self.assertTrue(problems[0].startswith("No legal starter for home days "))
         starters = plans.starters(plan)
+        games = plans.half_games(self.atl, SEASON, 1)
         self.assertEqual(starters[1], self.roster.starters[0])
         self.assertIsNone(starters[4])
+        listed = [int(part) for part in problems[0].split("days ", 1)[1].split(".", 1)[0].split(", ")]
+        self.assertTrue(listed)
+        self.assertTrue(all(games[day].series.home_team_id == self.atl.id for day in listed))
 
     def test_the_second_half_stays_locked_unless_the_caller_ignores_the_lock(self):
         plan = plans.plan_for(self.atl, SEASON, 2)

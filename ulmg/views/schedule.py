@@ -144,7 +144,7 @@ def _save_starters(request, team, season):
 
 
 def _clear_starters(request, team, season):
-    """Blank every open day's starter in the halves on this schedule. Returns errors, or None."""
+    """Blank every open road day's starter in the halves on this schedule. Returns errors, or None."""
     warnings = []
     try:
         for half in plans.visible_halves():
@@ -156,7 +156,7 @@ def _clear_starters(request, team, season):
         return error.errors
     for warning in warnings:
         messages.warning(request, warning)
-    messages.success(request, "Cleared the starters.")
+    messages.success(request, "Cleared the away starters.")
     return None
 
 

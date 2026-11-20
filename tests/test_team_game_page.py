@@ -230,9 +230,9 @@ class PlanGapTestCase(TestCase):
             [{"kind": "lineups", "text": "The lineup vs LHP is not filed."}],
         )
 
-    def test_open_days_without_a_starter_are_a_rotation_gap(self):
+    def test_open_home_days_without_a_starter_are_a_rotation_gap(self):
         home, atl = create_teams()
-        create_series(home, atl, length=2)
+        create_series(atl, home, length=2)
         starter = create_pitcher("ATL Starter", team=atl, g=10, gs=10, ip="60.0")
         plan = _filed(atl, starter)
         models.HalfPlanDay.objects.create(
@@ -242,8 +242,20 @@ class PlanGapTestCase(TestCase):
         )
         self.assertEqual(
             plans.plan_gaps(atl, ULMG_SEASON, 1),
-            [{"kind": "rotation", "text": "1 open day has no starter."}],
+            [{"kind": "rotation", "text": "1 open home day has no starter."}],
         )
+
+    def test_an_open_away_day_without_a_starter_is_not_a_gap(self):
+        home, atl = create_teams()
+        create_series(home, atl, length=2)
+        starter = create_pitcher("ATL Starter", team=atl, g=10, gs=10, ip="60.0")
+        plan = _filed(atl, starter)
+        models.HalfPlanDay.objects.create(
+            plan=plan,
+            day=1,
+            auto_starter=starter,
+        )
+        self.assertEqual(plans.plan_gaps(atl, ULMG_SEASON, 1), [])
 
     def test_a_complete_plan_has_no_gaps(self):
         home, atl = create_teams()
