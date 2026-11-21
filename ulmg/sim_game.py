@@ -735,8 +735,79 @@ def entered(game, player):
     models.UsageAppearance.objects.get_or_create(player=player, game=game)
 
 
+def _seat_starting_pitcher(play, side, lineup, starter):
+    """
+    A pitcher in the order has to be the designated hitter. When the starter
+    was filed at a field position, he keeps his batting slot and hits as the
+    DH. The player who was the DH plays that position when he can. Otherwise
+    the pinch-hitter list, then the bench, fills it and the old DH sits.
+    If nobody can play it, the game is refused.
+    """
+    slot = next(
+        (i for i, (player, position) in enumerate(lineup) if player.id == starter.id and position != DH),
+        None,
+    )
+    if slot is None:
+        return lineup
+    field = lineup[slot][1]
+    dh_slot = next(i for i, (_, position) in enumerate(lineup) if position == DH)
+    dh_player = lineup[dh_slot][0]
+    team = team_for(play.game, side)
+    lineup = list(lineup)
+    lineup[slot] = (starter, DH)
+    if play.position_problem(dh_player, field) is None:
+        lineup[dh_slot] = (dh_player, field)
+        decision(
+            play,
+            side,
+            f"{team.abbreviation} computer: {starter.name} is starting, so he hits as the designated hitter "
+            f"and {dh_player.name} plays {field}.",
+            {"need": "two_way", "starter": starter.id, "position": field, "chose": dh_player.id},
+        )
+        return lineup
+
+    taken = {player.id for player, _ in lineup}
+    bench = [p for p in play.players(play.sheet_side(side)["bench"]) if p.id not in taken]
+    choice = _designated_choice(
+        play, side, bench, lambda p: play.batter_problem(side, p, field), skip_ids=taken,
+    )
+    if choice.player is None:
+        detail = skipped_text(choice.skipped)
+        message = (
+            f"{team.abbreviation}'s {starter.name} is starting and was filed at {field}. "
+            f"He has to hit as the designated hitter, and nobody can play {field}."
+        )
+        if detail:
+            message = f"{message} {detail}"
+        raise GameRefused(message)
+    lineup[dh_slot] = (choice.player, field)
+    skipped = skipped_text(choice.skipped)
+    text = (
+        f"{team.abbreviation} computer: {starter.name} is starting, so he hits as the designated hitter. "
+        f"{dh_player.name} cannot play {field}. {choice.player.name} plays {field}."
+    )
+    if skipped:
+        text = f"{text} {skipped}"
+    decision(
+        play,
+        side,
+        text,
+        {
+            "need": "two_way",
+            "starter": starter.id,
+            "position": field,
+            "replaced": dh_player.id,
+            "chose": choice.player.id,
+            "skipped": [[p.id, reason] for p, reason in choice.skipped],
+        },
+    )
+    return lineup
+
+
 def start(play, starters, lineups, user=None):
     """Set both sides' starters and lineups in the engine, before the first pitch."""
+    for side in SIDES:
+        lineups[side] = _seat_starting_pitcher(play, side, lineups[side], starters[side])
     fixture = build_fixture(play.game, starters, lineups, play.card)
     seed = play.seeds()
     state = engine_client.start(fixture, seed)

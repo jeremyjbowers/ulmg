@@ -256,6 +256,16 @@ class OpeningTestCase(SimGameTestCase):
 
 
 class TwoWaySimTestCase(SimGameTestCase):
+    def _file_two_way_at(self, roster, slot, **kwargs):
+        """File the club's planned starter into one batting-order slot. slot is the lineup index."""
+        two_way = gf.make_two_way(roster.starters[0])
+        lineup = roster.lineup()
+        displaced = lineup[slot]["player"]
+        designated = lineup[8]["player"]
+        lineup[slot]["player"] = two_way
+        roster.file(lineup_vs_lhp=lineup, lineup_vs_rhp=lineup, **kwargs)
+        return two_way, displaced, designated
+
     def test_a_two_way_starter_hits_and_pitches(self):
         two_way = gf.make_two_way(self.road.starters[0])
         lineup = self.road.lineup()
@@ -284,6 +294,81 @@ class TwoWaySimTestCase(SimGameTestCase):
         box = box_score.box_score(gf.refresh(log))
         self.assertTrue(any(line.player == two_way for line in box.batting[AWAY]))
         self.assertTrue(any(line.player == two_way for line in box.pitching[AWAY]))
+
+    def test_a_two_way_player_who_is_not_starting_can_field(self):
+        two_way = gf.make_two_way(self.home.starters[1])
+        lineup = self.home.lineup()
+        lineup[7]["player"] = two_way
+        self.home.file(lineup_vs_lhp=lineup, lineup_vs_rhp=lineup)
+
+        log = self.open()
+        order = gf.refresh(log).state[HOME]["lineup"]
+        self.assertEqual(order[7]["id"], str(two_way.id))
+        self.assertEqual(order[7]["position"], "RF")
+        self.assertEqual(gf.refresh(log).state[HOME]["pitcher_slot"], str(self.home.starters[0].id))
+
+    def test_a_two_way_starter_filed_in_the_field_hits_as_the_dh(self):
+        two_way, _fielder, designated = self._file_two_way_at(self.home, 7)
+
+        log = self.open()
+        order = gf.refresh(log).state[HOME]["lineup"]
+        self.assertEqual(gf.refresh(log).state[HOME]["pitcher_slot"], str(two_way.id))
+        self.assertEqual(order[7]["id"], str(two_way.id))
+        self.assertEqual(order[7]["position"], "DH")
+        self.assertEqual(order[8]["id"], str(designated.id))
+        self.assertEqual(order[8]["position"], "RF")
+        decision = next(e for e in gf.events(log, Event.DECISION) if e.payload.get("need") == "two_way")
+        self.assertTrue(decision.computer)
+        self.assertEqual(decision.side, HOME)
+        self.assertIn(two_way.name, decision.text)
+        self.assertIn(designated.name, decision.text)
+        self.assertIn("RF", decision.text)
+
+    def test_a_two_way_starter_at_a_position_the_dh_cannot_play_brings_in_the_pinch_list(self):
+        two_way, _fielder, designated = self._file_two_way_at(
+            self.home, 4, pinch_vs_rhp=[self.home.bench[1]], pinch_vs_lhp=[self.home.bench[0]],
+        )
+
+        log = self.open()
+        order = gf.refresh(log).state[HOME]["lineup"]
+        self.assertEqual(order[4]["id"], str(two_way.id))
+        self.assertEqual(order[4]["position"], "DH")
+        self.assertEqual(order[8]["id"], str(self.home.bench[1].id))
+        self.assertEqual(order[8]["position"], "SS")
+        decision = next(e for e in gf.events(log, Event.DECISION) if e.payload.get("need") == "two_way")
+        self.assertIn(designated.name, decision.text)
+        self.assertIn("cannot play SS", decision.text)
+        self.assertIn(self.home.bench[1].name, decision.text)
+        self.assertNotIn(str(designated.id), [batter["id"] for batter in order])
+
+    def test_a_two_way_starter_with_nobody_for_his_position_refuses_the_opening(self):
+        for player in self.home.bench:
+            player.throws = "L"
+            player.save(update_fields=["throws"])
+        two_way, _fielder, _designated = self._file_two_way_at(self.home, 4)
+
+        with self.assertRaises(sim_game.GameRefused) as refused:
+            self.open()
+        self.assertIn(two_way.name, str(refused.exception))
+        self.assertIn("nobody can play SS", str(refused.exception))
+        self.assertFalse(models.GameLog.objects.exists())
+        self.game.refresh_from_db()
+        self.assertIsNone(self.game.opened_at)
+
+    def test_a_pregame_lineup_that_fields_the_starter_moves_him_to_dh(self):
+        two_way = gf.make_two_way(self.road.starters[0])
+        log = self.open()
+        entries = self.road.lineup()
+        designated = entries[8]["player"]
+        entries[7]["player"] = two_way
+        sim_game.change_lineup(log, self.manager, AWAY, entries, self.play(log).sequence, seeds=self.next_seed)
+
+        order = self.play(log).state[AWAY]["lineup"]
+        self.assertEqual(self.play(log).state[AWAY]["pitcher_slot"], str(two_way.id))
+        self.assertEqual(order[7]["id"], str(two_way.id))
+        self.assertEqual(order[7]["position"], "DH")
+        self.assertEqual(order[8]["id"], str(designated.id))
+        self.assertEqual(order[8]["position"], "RF")
 
 
 class PlayingTestCase(SimGameTestCase):
