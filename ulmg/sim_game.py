@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 from django.db import transaction
 from django.utils import timezone
 
-from ulmg import box_score, cards, computer_manager, engine_client, game_field, game_hud, models, park as home_park, plans, roster_moves, schedule, season_record, usage, utils
+from ulmg import box_score, cards, computer_manager, depth_pacing, engine_client, game_field, game_hud, models, park as home_park, plans, roster_moves, schedule, season_record, usage, utils
 
 Event = models.GameEvent
 
@@ -431,6 +431,7 @@ class Play:
         self._roster_players = {}
         # The usage ledger as this action reads it; every appended event reads it again.
         self.usage = usage.LedgerReads(self.season)
+        self._relief_plans = {}
 
     @property
     def sequence(self):
@@ -582,6 +583,12 @@ class Play:
             key=lambda p: p.name,
         )
         return {group: [p for p in players if str(p.id) not in used] for group, players in groups.items()}
+
+    def relief_plan(self, side):
+        """The bullpen innings the side's depth chart gives each reliever."""
+        if side not in self._relief_plans:
+            self._relief_plans[side] = depth_pacing.ReliefPlan(team_for(self.game, side), self.season)
+        return self._relief_plans[side]
 
     def group_of(self, side, player):
         """The bullpen role the side's plan gives a pitcher, or OTHER."""
@@ -919,7 +926,7 @@ def computer_pitching_change(play):
             return False
         payload = {"need": "hook", "hook": hook, "pitcher": pitcher.id, "fatigue": dict(fatigue)}
         text = f"Its {hook} hook pulls {pitcher.name}: {reason}"
-        choice = computer_manager.reliever(role, groups, problem)
+        choice = planned_reliever(play, side, computer_manager.reliever, role, groups, problem)
         if choice.player is None:
             stayed = any(
                 e.kind == Event.DECISION and e.payload.get("need") == "hook" and e.payload.get("pitcher") == pitcher.id
@@ -950,9 +957,9 @@ def computer_pitching_change(play):
         outs_left = usage.check_pitcher(pitcher, play.game, reads=play.usage).remaining["game_outs"]
         if computer_manager.reliever_stays(current, role, outs_left):
             return False
-        choice = computer_manager.preferred_arm(role, groups, problem)
+        choice = planned_reliever(play, side, computer_manager.preferred_arm, role, groups, problem)
     else:
-        choice = computer_manager.reliever(role, groups, problem)
+        choice = planned_reliever(play, side, computer_manager.reliever, role, groups, problem)
     if choice.player is None:
         return False
     if pull:
@@ -984,6 +991,20 @@ def _designated_choice(play, side, candidates, problem, *, defense=False, skip_i
     return computer_manager.designated_then_bench(designated, candidates, problem)
 
 
+def planned_reliever(play, side, pick, role, groups, problem):
+    """
+    The computer's arm from pick (computer_manager.reliever or
+    preferred_arm), passing over relievers who have thrown their planned
+    bullpen innings while another arm is available.
+    """
+    plan = play.relief_plan(side)
+    if plan.limits:
+        choice = pick(role, groups, lambda p: problem(p) or plan.problem(p))
+        if choice.player is not None:
+            return choice
+    return pick(role, groups, problem)
+
+
 def computer_move(play, need, options):
     if need.kind == PITCHER_NEED:
         legal = {o.player.id for o in options}
@@ -992,7 +1013,9 @@ def computer_move(play, need, options):
             for group, players in play.bullpen_groups(need.side).items()
         }
         role = play.bullpen_role()
-        choice = computer_manager.reliever(role, groups, lambda p: play.pitcher_problem(need.side, p))
+        choice = planned_reliever(
+            play, need.side, computer_manager.reliever, role, groups, lambda p: play.pitcher_problem(need.side, p)
+        )
         bring_in_reliever(play, need.side, role, choice, need.reason, {"need": need.kind})
     elif need.kind == POSITION_NEED:
         position = play.state[need.side]["lineup"][need.slot]["position"]

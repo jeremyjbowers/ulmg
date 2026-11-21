@@ -1,61 +1,56 @@
-{# ABOUTME: One depth-chart spot: its target, who is filed there, the gap, and the form to add a player. #}
+{# ABOUTME: One playing-time spot: its season target, who is down for it and how much, the gap, and one form that saves every row. #}
 {# ABOUTME: Expects `spot` and `can_edit`. Numbered rows are counted. An unlimited row covers a shortfall. #}
-<section class="border border-gray-300 p-2" data-bucket="{{ spot.code }}" data-state="{{ spot.state }}">
-    <div class="flex justify-between gap-2">
+<section class="depth-spot border border-gray-300 p-2" id="spot-{{ spot.code }}" data-bucket="{{ spot.code }}" data-state="{{ spot.state }}">
+    <div class="flex items-baseline justify-between gap-2">
         <h4 class="font-bold">{{ spot.label }}</h4>
-        <span class="text-xs text-gray-600">{{ spot.target }} {{ spot.unit }}</span>
+        <span class="depth-headline text-xs font-bold{% if spot.state == 'over' %} text-red-800{% elif spot.state == 'short' and not spot.rows %} text-gray-500{% endif %}" title="{{ spot.headline }}">{{ spot.summary }}</span>
     </div>
-    <p class="depth-headline font-bold">{{ spot.headline }}</p>
+    <p class="text-xs text-gray-600">{% if spot.rows %}<span class="depth-counted">Counted: {{ spot.counted }} {{ spot.unit }}</span> of {% endif %}{{ spot.target }} {{ spot.unit }}</p>
     {% if spot.note %}<p class="depth-note text-xs">{{ spot.note }}</p>{% endif %}
-    {% if spot.rows %}<p class="depth-counted text-xs text-gray-600">Counted: {{ spot.counted }} {{ spot.unit }}</p>{% endif %}
-    <ul class="my-2 space-y-2">
+    {% if can_edit %}
+    <form method="post" class="mt-1" data-depth-form>
+        {% csrf_token %}
+        <input type="hidden" name="action" value="spot">
+        <input type="hidden" name="bucket" value="{{ spot.code }}">
+        <table class="w-full text-xs">
+            <tbody>
+                {% for row in spot.rows %}
+                <tr data-assignment="{{ row.id }}" data-depth-row>
+                    <td class="py-0.5 pr-1">
+                        <input type="hidden" name="assignment" value="{{ row.id }}">
+                        {{ row.player.name }}
+                        {% if row.unlimited and row.projected %}<span class="text-gray-600">({{ row.projected }})</span>{% endif %}
+                    </td>
+                    <td class="py-0.5 pr-1 w-16"><input type="number" name="amount_{{ row.id }}" min="1" step="1" inputmode="numeric" data-amount class="border border-gray-300 w-16 px-1" aria-label="{{ spot.unit }} for {{ row.player.name }}" value="{% if not row.unlimited %}{{ row.amount }}{% endif %}"></td>
+                    <td class="py-0.5 pr-1 whitespace-nowrap"><label><input type="checkbox" name="unlimited_{{ row.id }}" value="on" data-unlimited{% if row.unlimited %} checked{% endif %}> Rest</label></td>
+                    <td class="py-0.5 whitespace-nowrap"><label><input type="checkbox" name="remove_{{ row.id }}" value="on"> Drop</label></td>
+                </tr>
+                {% endfor %}
+                {% if spot.options %}
+                <tr data-depth-row>
+                    <td class="py-0.5 pr-1">
+                        <select name="player" class="border border-gray-300 max-w-full" aria-label="Add a player at {{ spot.label }}">
+                            <option value="">Add a player</option>
+                            {% for player in spot.options %}
+                            <option value="{{ player.id }}">{{ player.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </td>
+                    <td class="py-0.5 pr-1 w-16"><input type="number" name="amount" min="1" step="1" inputmode="numeric" data-amount class="border border-gray-300 w-16 px-1" placeholder="{{ spot.unit }}" aria-label="{{ spot.unit }} for the added player"></td>
+                    <td class="py-0.5 pr-1 whitespace-nowrap" colspan="2"><label><input type="checkbox" name="unlimited" value="on" data-unlimited> Rest</label></td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+        <button type="submit" class="mt-1 bg-gray-800 text-white rounded px-2 py-0.5 text-xs">Save {{ spot.label }}</button>
+    </form>
+    {% else %}
+    <ul class="text-xs mt-1">
         {% for row in spot.rows %}
-        <li class="border border-dashed border-gray-300 p-1" data-assignment="{{ row.id }}">
-            <div class="font-bold">{{ row.player.name }}</div>
-            <p class="text-xs">{% if row.unlimited %}Unlimited{% if row.projected %} — {{ row.projected }} {{ spot.unit }}{% endif %}{% else %}{{ row.amount }} {{ spot.unit }}{% endif %}</p>
-            {% if can_edit %}
-            <form method="post" class="flex flex-wrap items-center gap-2 mt-1" data-depth-form>
-                {% csrf_token %}
-                <input type="hidden" name="action" value="update">
-                <input type="hidden" name="assignment" value="{{ row.id }}">
-                <input type="number" name="amount" min="1" step="1" inputmode="numeric" data-amount class="border border-gray-300 w-20 px-1" value="{% if not row.unlimited %}{{ row.amount }}{% endif %}">
-                <label class="inline-flex items-center gap-1">
-                    <input type="checkbox" name="unlimited" value="on" data-unlimited{% if row.unlimited %} checked{% endif %}>
-                    Unlimited
-                </label>
-                <button type="submit" class="underline">Save</button>
-            </form>
-            <form method="post" class="mt-1">
-                {% csrf_token %}
-                <input type="hidden" name="action" value="remove">
-                <input type="hidden" name="assignment" value="{{ row.id }}">
-                <button type="submit" class="underline text-xs">Remove</button>
-            </form>
-            {% endif %}
-        </li>
+        <li data-assignment="{{ row.id }}">{{ row.player.name }}: {% if row.unlimited %}the rest{% if row.projected %} ({{ row.projected }} {{ spot.unit }}){% endif %}{% else %}{{ row.amount }} {{ spot.unit }}{% endif %}</li>
+        {% empty %}
+        <li class="text-gray-600">{% if spot.unit == "PA" %}The lineup card plays.{% else %}No one is down for a number.{% endif %}</li>
         {% endfor %}
     </ul>
-    {% if can_edit %}
-        {% if spot.options %}
-        <form method="post" class="flex flex-wrap items-center gap-2" data-depth-form>
-            {% csrf_token %}
-            <input type="hidden" name="action" value="add">
-            <input type="hidden" name="bucket" value="{{ spot.code }}">
-            <select name="player" class="border border-gray-300 max-w-full">
-                <option value="">Add a player</option>
-                {% for player in spot.options %}
-                <option value="{{ player.id }}">{{ player.name }}</option>
-                {% endfor %}
-            </select>
-            <input type="number" name="amount" min="1" step="1" inputmode="numeric" data-amount class="border border-gray-300 w-20 px-1" placeholder="{{ spot.unit }}">
-            <label class="inline-flex items-center gap-1">
-                <input type="checkbox" name="unlimited" value="on" data-unlimited>
-                Unlimited
-            </label>
-            <button type="submit" class="bg-gray-800 text-white rounded px-2 py-1">Add</button>
-        </form>
-        {% else %}
-        <p class="text-xs text-gray-600">No one else on the roster can be filed here.</p>
-        {% endif %}
     {% endif %}
 </section>

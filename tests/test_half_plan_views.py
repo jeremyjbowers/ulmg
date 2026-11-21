@@ -263,7 +263,9 @@ class EditPlanTestCase(PlanViewsTestCase):
         self.assertIn('data-lineup="vs_lhp"', body)
         self.assertLess(body.index('data-lineup="vs_lhp"'), body.index('data-lineup="vs_rhp"'))
         self.assertIn("lg:grid-cols-2", body)
-        self.assertNotIn("<select", body.split("<main", 1)[1])
+        # The lineup cards are dragged, not picked. Playing time below them adds a player from a list.
+        self.assertNotIn("<select", body.split("<main", 1)[1].split('id="playing-time"', 1)[0])
+        self.assertIn('id="playing-time"', body)
         self.assertIn('data-position-buttons', body)
         self.assertIn('data-positions="C,DH"', body)
         self.assertIn('data-positions="1B,2B,3B,SS,LF,CF,RF,DH"', body)

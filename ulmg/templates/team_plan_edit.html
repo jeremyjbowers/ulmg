@@ -1,5 +1,5 @@
 {# ABOUTME: Set the two lineup cards by dragging hitters into vs Lefty and vs Righty, plus pinch hitters and defensive replacements. #}
-{# ABOUTME: The columns sit side by side when the window is wide enough. Only the owner and the commissioner get here. #}
+{# ABOUTME: Below them, the season's plate appearances split by position. Only the owner and the commissioner get here. #}
 {% extends "base.html" %}
 
 {% block content %}
@@ -66,6 +66,7 @@
         </form>
     </div>
     {% include "includes/card_board_script.html" %}
+    {% include "includes/playing_time.html" with can_edit=True %}
     {% endif %}
 </div>
 {% endblock %}

@@ -1,4 +1,4 @@
-// ABOUTME: Checking Unlimited on a depth-chart form clears the number and keeps it from being submitted.
+// ABOUTME: Checking Rest (unlimited) on a playing-time row clears that row's number and keeps it from being submitted.
 // ABOUTME: Usage: node tests/e2e/depth_chart.js
 const fs = require('fs');
 const path = require('path');
@@ -15,18 +15,20 @@ if (scriptOpen < 0 || scriptClose < 0) {
 }
 const script = template.slice(scriptOpen + '<script>'.length, scriptClose);
 
-function form(id, amount, checked) {
+function row(id, amount, checked) {
   const mark = checked ? ' checked' : '';
-  return `<form id="${id}" data-depth-form>
-    <input type="number" name="amount" data-amount value="${amount}">
-    <input type="checkbox" name="unlimited" data-unlimited${mark}>
-  </form>`;
+  return `<tr id="${id}" data-depth-row>
+    <td><input type="number" name="amount_${id}" data-amount value="${amount}"></td>
+    <td><input type="checkbox" name="unlimited_${id}" data-unlimited${mark}></td>
+  </tr>`;
 }
 
 const html = `<!DOCTYPE html><html><body>
-  ${form('add', '200', false)}
-  ${form('already', '40', true)}
-  <form id="remove"><input type="number" name="amount" value="9"></form>
+  <form data-depth-form><table><tbody>
+    ${row('add', '200', false)}
+    ${row('already', '40', true)}
+    <tr id="remove"><td><input type="number" name="amount" value="9"></td></tr>
+  </tbody></table></form>
 </body></html>`;
 
 (async () => {
@@ -57,8 +59,8 @@ const html = `<!DOCTYPE html><html><body>
   if ((await already.inputValue()) !== '') throw new Error('a row that is already unlimited loads with the amount cleared');
 
   const remove = page.locator('#remove [name="amount"]');
-  if (await remove.isDisabled()) throw new Error('a form without the checkbox is left alone');
-  if ((await remove.inputValue()) !== '9') throw new Error('a form without the checkbox keeps its amount');
+  if (await remove.isDisabled()) throw new Error('a row without the checkbox is left alone');
+  if ((await remove.inputValue()) !== '9') throw new Error('a row without the checkbox keeps its amount');
 
   await browser.close();
 })().catch((error) => {

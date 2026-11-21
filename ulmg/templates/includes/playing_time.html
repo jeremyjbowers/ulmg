@@ -1,0 +1,53 @@
+{# ABOUTME: The season's playing time for one page: plate appearances by position, the rotation's starts, or the bullpen's innings, and the caps they run into. #}
+{# ABOUTME: Expects `playing_time` and `can_edit`. The computer manager reads the same chart when it sets a lineup, fills the rotation or picks a reliever. #}
+<section id="playing-time" class="mt-8">
+    <h3 class="font-bold border-b border-gray-300 mb-1">{% if playing_time.section == "lineups" %}Playing time by position{% elif playing_time.section == "rotation" %}Planned starts{% else %}Planned bullpen innings{% endif %}</h3>
+    <p class="text-xs text-gray-600 mb-1">{{ playing_time.note }} This covers the whole season, both halves.</p>
+    <p class="depth-estimate text-xs text-gray-500 mb-2">{{ playing_time.estimate_note }}</p>
+    {% if playing_time.errors %}
+    <ul class="playing-time-errors text-sm text-red-800 mb-2">
+        {% for error in playing_time.errors %}<li>{{ error }}</li>{% endfor %}
+    </ul>
+    {% endif %}
+    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2 mb-3">
+        {% for spot in playing_time.spots %}
+        {% include "includes/depth_spot.html" %}
+        {% endfor %}
+    </div>
+    {% if playing_time.players %}
+    <table id="depth-players" class="w-full text-xs mb-2">
+        <thead>
+            <tr class="border-b border-gray-300 text-left">
+                <th class="py-1 pr-2">Player</th>
+                {% if playing_time.section == "lineups" %}
+                <th class="py-1 pr-2">PA</th><th class="py-1 pr-2">PA cap</th>
+                {% elif playing_time.section == "rotation" %}
+                <th class="py-1 pr-2">Starts</th><th class="py-1 pr-2">Starts cap</th>
+                {% else %}
+                <th class="py-1 pr-2">Bullpen IP</th><th class="py-1 pr-2">IP cap</th>
+                {% endif %}
+                <th class="py-1">Where</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for line in playing_time.players %}
+            <tr class="border-b border-gray-200 align-top{% if line.warning %} text-red-800{% endif %}" data-player="{{ line.player.id }}">
+                <td class="py-1 pr-2">{{ line.player.name }}</td>
+                {% if playing_time.section == "lineups" %}
+                <td class="py-1 pr-2">{{ line.plate_appearances }}</td><td class="py-1 pr-2">{{ line.plate_appearances_cap|default_if_none:"no cap" }}</td>
+                {% elif playing_time.section == "rotation" %}
+                <td class="py-1 pr-2">{{ line.starts }}</td><td class="py-1 pr-2">{{ line.starts_cap|default_if_none:"no cap" }}</td>
+                {% else %}
+                <td class="py-1 pr-2">{{ line.innings }}</td><td class="py-1 pr-2">{{ line.innings_cap|default_if_none:"no cap" }}</td>
+                {% endif %}
+                <td class="py-1">
+                    {{ line.detail }}
+                    {% if line.warning %}<div class="depth-warning">{{ line.warning }}</div>{% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+    {% if can_edit %}{% include "includes/depth_script.html" %}{% endif %}
+</section>

@@ -64,7 +64,7 @@ class ResetSimSeasonCommandTestCase(TestCase):
     def test_confirmed_reset_removes_only_that_seasons_sim_rows(self):
         kept_before = kept_counts()
         output = run("--season", str(SEASON), "--confirm", str(SEASON))
-        self.assertIn("3/14 UsageAppearance: deleted 3", output)
+        self.assertIn("3/16 UsageAppearance: deleted 3", output)
         self.assertIn("ScheduleGame: cleared home_score, road_score, opened_at, opening_sheet on 3", output)
         self.assertIn("Reset 2026: deleted 13 rows and cleared 3; the schedule is kept", output)
         # The kept first-half plan is designated again, so a fresh counter replaces the played one.
