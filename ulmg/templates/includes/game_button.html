@@ -3,7 +3,7 @@
 {% if not button.enabled %}
 <button type="button" class="hud-btn" disabled{% if button.key %} data-key="{{ button.key }}"{% endif %}>{{ button.label }}{% if button.key %} <kbd>{{ button.key }}</kbd>{% endif %}</button>
 {% elif button.call %}
-<button type="submit" name="call" value="{{ button.call }}" class="hud-btn{% if button.live %} live{% endif %}" data-key="{{ button.key }}" aria-keyshortcuts="{{ button.key }}">{{ button.label }} <kbd>{{ button.key }}</kbd></button>
+<a href="?confirm={{ button.call }}" class="hud-btn{% if button.live %} live{% endif %}" data-key="{{ button.key }}" aria-keyshortcuts="{{ button.key }}">{{ button.label }} <kbd>{{ button.key }}</kbd></a>
 {% else %}
 <a class="hud-btn" href="#sub-{{ button.tab }}" data-open="{{ button.tab }}">{{ button.label }}</a>
 {% endif %}

@@ -1955,7 +1955,7 @@ def _lineup_rows(play, side):
     ]
 
 
-def page(log, user):
+def page(log, user, confirm=None):
     """Everything the game page shows: the situation, both cards, the odds, usage, choices and the play-by-play."""
     play = Play(log)
     game, state, fold = play.game, play.state, play.fold
@@ -2018,6 +2018,7 @@ def page(log, user):
             "batter": game_hud.batter_card(play, context["box"], teams, odds if fold.holds(user, batting) else []),
             "pitcher": game_hud.pitcher_card(play, context["box"], teams, [] if fold.holds(user, batting) else odds),
             "controls": game_hud.controls(play, user, need, can_step, teams),
+            "confirmation": game_hud.confirmation(play, user, confirm) if confirm else None,
             "field": game_hud.field(play, teams),
             "recent_plays": game_hud.recent_plays(play.events, Event.PLATE_APPEARANCE),
             "last_play": last_play,

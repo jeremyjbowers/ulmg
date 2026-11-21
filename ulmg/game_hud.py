@@ -372,6 +372,74 @@ def controls(play, user, need, can_step, teams):
     }
 
 
+# The engine sends a runner who has no steal-success rate at 75 percent.
+STEAL_SUCCESS = 0.75
+
+
+def confirmation(play, user, call):
+    """
+    The question asked before a strategic call is sent.
+
+    None when this manager cannot make that call right now. A steal names the
+    runner the engine would send and the rate he makes it at.
+    """
+    from ulmg import sim_game
+
+    if not call or call not in sim_game.CALL_LABELS:
+        return None
+    state, fold = play.state, play.fold
+    if state is None or fold.final or fold.pause is not None or play.need() is not None:
+        return None
+    batting, fielding = sim_game.batting_side(state), sim_game.fielding_side(state)
+    if call in sim_game.OFFENSE_CALLS:
+        if not fold.holds(user, batting):
+            return None
+    elif not fold.holds(user, fielding):
+        return None
+    if not fold.user_sides(user):
+        return None
+    bases = state["bases"]
+    batter = play.player(sim_game.current_batter_id(state))
+    if call == "steal":
+        runner = _steal_runner(play, bases)
+        if runner is None:
+            return None
+        player, base, nxt = runner
+        rate = _steal_pct(play, player)
+        return _confirm(call, f"{player.name}, on {base}, steals {nxt} {rate} of the time. Send him?", "Send him")
+    if call == "hit_and_run" and not bases.get("first"):
+        return None
+    if call == "hit_and_run":
+        going = play.player(bases["first"])
+        return _confirm(call, f"{batter.name} hits and runs, and {going.name} goes. Send it in?", "Send it in")
+    if call == "bunt":
+        return _confirm(call, f"{batter.name} bunts. Send it in?", "Send it in")
+    if call == "intentional_walk":
+        return _confirm(call, f"Walk {batter.name} intentionally?", "Walk him")
+    return _confirm(call, f"Pitch around {batter.name}?", "Pitch around")
+
+
+def _confirm(call, text, yes):
+    from ulmg import sim_game
+
+    return {"call": call, "label": sim_game.CALL_LABELS[call], "text": text, "yes": yes}
+
+
+def _steal_runner(play, bases):
+    """The runner a steal sends, the base he leaves, and the base he takes. None when no base ahead is open."""
+    if bases.get("first") and not bases.get("second"):
+        return play.player(bases["first"]), "first", "second"
+    if bases.get("second") and not bases.get("third"):
+        return play.player(bases["second"]), "second", "third"
+    return None
+
+
+def _steal_pct(play, player):
+    card = play.card(player)
+    rate = getattr(card, "steal_success", None) if card is not None else None
+    return percent(STEAL_SUCCESS if rate is None else rate)
+
+
 def recent_plays(events, plate_appearance):
     """The last plate appearances, newest first, with the half inning each came in."""
     plays = []
