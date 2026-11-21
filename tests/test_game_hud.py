@@ -90,19 +90,38 @@ class CardTest(GameHudTestCase):
         self.assertIn(f"On deck: <b>{self.road.hitters[1].name}</b>", card)
         self.assertIn(f"In the hole: <b>{self.road.hitters[2].name}</b>", card)
 
-    def test_the_pitcher_card_shows_his_role_pitch_count_innings_left_and_the_odds(self):
+    def test_the_pitcher_card_shows_his_role_pitch_count_and_innings_left(self):
         self.post("open", seats="away,home")
         self.post("step", expected=self.expected())
-        card = self.section(self.page(), 'class="hud-card hud-pitcher"', "</ul>")
+        card = self.section(self.page(), 'class="hud-card hud-pitcher"', 'class="hud-controls"')
         starter = self.home.starters[0]
         fatigue = self.log().state[HOME]["fatigue"][str(starter.id)]
         self.assertIn(starter.name, card)
         self.assertIn("Starter · throws right", card)
         self.assertIn(f"<b>{fatigue['pitches']}</b> pitches · tires near <b>{round(fatigue['ceiling'])}</b>", card)
         self.assertIn("IP left this outing: <b>", card)
-        self.assertIn("This plate appearance", card)
-        odds = dict(sim_game.matchup(sim_game.Play(self.log())))
-        self.assertIn(f'<span class="pct">{odds["Strikeout"]:.1f}%</span>', card)
+
+    def test_the_plate_appearance_odds_sit_with_the_batter_when_the_manager_is_hitting(self):
+        self.post("open", seats="away,home")
+        self.post("step", expected=self.expected())
+        strikeout = f'<span class="pct">{dict(sim_game.matchup(sim_game.Play(self.log())))["Strikeout"]:.1f}%</span>'
+        mine = self.page()
+        batter = self.section(mine, 'class="hud-card hud-batter"', 'id="hud-field"')
+        pitcher = self.section(mine, 'id="hud-pitcher"', 'class="hud-controls"')
+        self.assertIn("This plate appearance", batter)
+        self.assertIn(strikeout, batter)
+        self.assertNotIn("This plate appearance", pitcher)
+        watching = self.page(self.manager)
+        self.assertIn(strikeout, self.section(watching, 'id="hud-pitcher"', 'class="hud-controls"'))
+        self.assertNotIn("This plate appearance", self.section(watching, 'class="hud-card hud-batter"', 'id="hud-field"'))
+
+    def test_the_plate_appearance_odds_stay_with_the_pitcher_on_defense(self):
+        self.post("open", seats="home")
+        self.post("step", expected=self.expected())
+        strikeout = f'<span class="pct">{dict(sim_game.matchup(sim_game.Play(self.log())))["Strikeout"]:.1f}%</span>'
+        html = self.page()
+        self.assertIn(strikeout, self.section(html, 'id="hud-pitcher"', 'class="hud-controls"'))
+        self.assertNotIn("This plate appearance", self.section(html, 'class="hud-card hud-batter"', 'id="hud-field"'))
 
     def test_the_cards_color_the_platoon_edge_of_this_matchup(self):
         leadoff = self.road.hitters[0]

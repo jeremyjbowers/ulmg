@@ -14,3 +14,9 @@
 <ul class="hud-due">
     {% for due in batter.due %}<li><span>{{ due.label }}: <b>{{ due.player.name }}</b></span><span class="pos">{{ due.position }} · {{ due.avg }}</span></li>{% endfor %}
 </ul>
+{% if batter.odds %}
+<p class="hud-eyebrow" style="margin-top:14px">This plate appearance</p>
+<ul class="hud-odds game-matchup">
+    {% for odd in batter.odds %}<li class="{% if odd.good %}good{% endif %}"><span>{{ odd.label }}</span><span class="bar" aria-hidden="true"><i style="width:{{ odd.bar|floatformat:1 }}%"></i></span><span class="pct">{{ odd.pct|floatformat:1 }}%</span></li>{% endfor %}
+</ul>
+{% endif %}
