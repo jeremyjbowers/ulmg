@@ -89,6 +89,14 @@ class BallTrackTest(SimpleTestCase):
         self.assertIsNone(game_field.ball_track({"outcome": "strikeout", "batter_id": "1", "count": {"balls": 0, "strikes": 3}}))
         self.assertEqual(game_field.banner_label("strikeout"), "STRIKEOUT")
 
+    def test_a_single_and_a_line_out_leave_from_home_plate_for_either_hand(self):
+        count = {"balls": 1, "strikes": 1}
+        for outcome in ("single", "line_out"):
+            track = game_field.ball_track({"outcome": outcome, "batter_id": "9", "count": count})
+            origins = [game_field.ball_path(track, bats)[1] for bats in ("L", "R", "S", None)]
+            self.assertEqual(set(origins), {game_field.HOME}, "the hit leaves home plate, not the batter's box")
+            self.assertEqual(len(game_field.ball_path(track, "L")), 3)
+
 
 class LogTextTest(SimpleTestCase):
     def test_the_half_inning_and_count_come_off_the_front_of_a_log_line(self):
