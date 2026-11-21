@@ -2021,19 +2021,19 @@ def page(log, user, confirm=None):
         }
         for side in SIDES
     ]
-    if state is None or fold.final:
+    if state is None:
         return context
 
     batting, fielding = batting_side(state), fielding_side(state)
     pitcher_id = current_pitcher_id(state)
     pitcher = play.player(pitcher_id) if pitcher_id else None
-    need = play.need()
+    need = None if fold.final else play.need()
     teams = {AWAY: team_for(game, AWAY), HOME: team_for(game, HOME)}
-    can_step = bool(context["user_sides"]) and need is None and fold.pause is None
-    odds = matchup_odds(play) if need is None and pitcher is not None else []
-    choices = substitution_choices(play, user, need)
+    can_step = not fold.final and bool(context["user_sides"]) and need is None and fold.pause is None
+    odds = [] if fold.final or need is not None or pitcher is None else matchup_odds(play)
+    choices = {} if fold.final else substitution_choices(play, user, need)
     pitcher_options = None
-    if fold.holds(user, fielding) and (fold.first_pitch or (need and need.kind == PITCHER_NEED)):
+    if not fold.final and fold.holds(user, fielding) and (fold.first_pitch or (need and need.kind == PITCHER_NEED)):
         pitcher_options = play.relief_choices(fielding)
     recent = game_field.recent_plate_appearance(play.events, Event.PLATE_APPEARANCE)
     last_play = game_field.last_play(play, recent) if recent is not None else None

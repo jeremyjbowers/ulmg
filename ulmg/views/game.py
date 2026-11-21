@@ -21,26 +21,6 @@ def game_url(game):
     return f"/games/{game.id}/"
 
 
-def _finished_ids(request):
-    """Game ids whose box score this browser has chosen to open."""
-    done = []
-    for value in request.session.get("finished_games") or []:
-        if isinstance(value, int):
-            done.append(value)
-        elif isinstance(value, str) and value.isdigit():
-            done.append(int(value))
-    return set(done)
-
-
-def _remember_finish(request, game):
-    """Remember that this browser finished the game and may see the box score."""
-    done = list(_finished_ids(request))
-    if game.id not in done:
-        done.append(game.id)
-        request.session["finished_games"] = done
-        request.session.modified = True
-
-
 def _posted_player(request, name):
     value = request.POST.get(name, "")
     return models.Player.objects.filter(pk=int(value)).first() if value.isdigit() else None
@@ -85,16 +65,6 @@ def game_page(request, game_id):
         else:
             context.update(sim_game.page(log, request.user, confirm=request.GET.get("confirm")))
         context["can_autoplay"] = autoplay.can_autoplay(request.user, game)
-        awaiting = bool(context.get("final")) and game.id not in _finished_ids(request)
-        context["awaiting_finish"] = awaiting
-        if awaiting:
-            events = context.get("events") or []
-            context["last_plate"] = next(
-                (event.text for event in events if event.kind == models.GameEvent.PLATE_APPEARANCE), ""
-            )
-            context["final_line"] = next(
-                (event.text for event in events if event.kind == models.GameEvent.FINAL), ""
-            )
     except engine_client.EngineUnavailable:
         context.update({"game": game, "log": log, "engine_down": True})
     return render(request, "game.html", context)
@@ -154,10 +124,6 @@ def _act(request, game, action):
         sim_game.leave_seat(log, user, _posted_side(request), expected)
     elif action == "check":
         sim_game.check_pause(log, user, expected)
-    elif action == "finish":
-        if not log.events.filter(kind=models.GameEvent.FINAL).exists():
-            raise sim_game.GameRefused("The game is not over yet.")
-        _remember_finish(request, game)
     else:
         raise Http404("No such game action.")
 

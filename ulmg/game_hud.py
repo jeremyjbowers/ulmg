@@ -312,7 +312,9 @@ def controls(play, user, need, can_step, teams):
     on_base = any(bases.get(base) for base in sim_game.BASES)
     first_pitch = fold.first_pitch
     blocked = None
-    if fold.pause is not None:
+    if fold.final:
+        blocked = "The game is over."
+    elif fold.pause is not None:
         blocked = f"The game is paused. {fold.pause['reason']}"
     elif need is not None:
         blocked = need.reason
@@ -322,7 +324,7 @@ def controls(play, user, need, can_step, teams):
 
     offense_mine = fold.holds(user, batting)
     defense_mine = fold.holds(user, fielding)
-    sub_ok = first_pitch and fold.pause is None
+    sub_ok = first_pitch and fold.pause is None and not fold.final
     offense = [
         button("Bunt", "B", call="bunt", ok=offense_mine and can_step),
         button("Steal", "S", call="steal", ok=offense_mine and can_step and steal_ok, live=steal_ok),
@@ -335,7 +337,7 @@ def controls(play, user, need, can_step, teams):
     defense = [
         button("Intentional walk", "I", call="intentional_walk", ok=defense_mine and can_step),
         button("Pitch around", "P", call=sim_game.PITCH_AROUND, ok=defense_mine and can_step),
-        button("New pitcher", tab="pit", ok=defense_mine and fold.pause is None and (first_pitch and need is None or pitcher_need)),
+        button("New pitcher", tab="pit", ok=defense_mine and not fold.final and fold.pause is None and (first_pitch and need is None or pitcher_need)),
         button("Defensive sub", tab="def", ok=defense_mine and sub_ok and (need is None or position_need)),
     ]
 

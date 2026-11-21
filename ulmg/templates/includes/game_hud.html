@@ -1,5 +1,5 @@
 {# ABOUTME: The game HUD: line score, batter card, the field, pitcher card with this plate appearance's odds and a platoon edge, the calls, the last plays and a box score. #}
-{# ABOUTME: Expects the context sim_game.page builds. Every call is a plain form POST carrying the log position it was drawn from. #}
+{# ABOUTME: Expects the context sim_game.page builds. Every call is a plain form POST carrying the log position it was drawn from. A final offers the box score. #}
 <div id="hud" class="hud" data-game="{{ game.id }}">
     {% if paused %}
     <div class="hud-alert game-paused" role="status">
@@ -72,6 +72,9 @@
 
     <section class="hud-controls" aria-label="Calls">
         <div class="hud-playdock">
+            {% if final %}
+            <a class="hud-btn play" id="hud-box" href="/games/{{ game.id }}/box/">Box score <small>The game is over</small></a>
+            {% else %}
             <form method="post" action="/games/{{ game.id }}/step/" class="game-step">
                 {% csrf_token %}
                 <input type="hidden" name="expected" value="{{ expected }}">
@@ -82,6 +85,7 @@
                 {% endif %}
             </form>
             {% if controls.play.why %}<p class="hud-why">{{ controls.play.why }}</p>{% endif %}
+            {% endif %}
             <label class="hud-pace" hidden id="hud-pace"><input type="checkbox" id="hud-fast"> Fast (no animation)</label>
         </div>
         <div class="hud-group hud-offense">

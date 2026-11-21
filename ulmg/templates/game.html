@@ -1,5 +1,5 @@
 {# ABOUTME: The sim game page: open a game, then play it from the HUD one plate appearance per POST, with the substitution panel beside it. #}
-{# ABOUTME: Every form carries the log position it expects. A seat nobody holds is the computer's. Finish game opens the box score. #}
+{# ABOUTME: Every form carries the log position it expects. A seat nobody holds is the computer's. A final stays in the HUD until the box score is chosen. #}
 {% extends "base.html" %}
 
 {% block extrahead %}
@@ -7,8 +7,8 @@
 {% endblock %}
 
 {% block content %}
-<div class="hud-page{% if not log or final or engine_down %} max-w-3xl{% endif %}">
-    {% if not log or final or engine_down %}
+<div class="hud-page{% if not log or engine_down %} max-w-3xl{% endif %}">
+    {% if not log or engine_down %}
     <h1 class="text-lg font-bold mb-1">Day {{ game.day }}: {{ game.series.road_team.abbreviation }} at {{ game.series.home_team.abbreviation }}</h1>
     <p class="text-sm text-gray-600 mb-4">
         <a href="/teams/{{ game.series.road_team.abbreviation|lower }}/schedule/{{ game.series.slot.season }}/" class="underline">{{ game.series.road_team.abbreviation }} schedule</a> ·
@@ -48,22 +48,20 @@
     {% include 'includes/game_autoplay.html' %}
     {% else %}
 
-    {% if not final %}
     {% include "includes/game_hud.html" %}
+    {% if not final %}
     {% include "includes/game_panel.html" %}
     {% endif %}
 
     <div class="game-below hud-below">
-    {% if not final %}
     <h1 class="text-lg font-bold mb-1">Day {{ game.day }}: {{ game.series.road_team.abbreviation }} at {{ game.series.home_team.abbreviation }}</h1>
     <p class="text-sm text-gray-600 mb-4">
         <a href="/teams/{{ game.series.road_team.abbreviation|lower }}/schedule/{{ game.series.slot.season }}/" class="underline">{{ game.series.road_team.abbreviation }} schedule</a> ·
         <a href="/teams/{{ game.series.home_team.abbreviation|lower }}/schedule/{{ game.series.slot.season }}/" class="underline">{{ game.series.home_team.abbreviation }} schedule</a>
     </p>
-    {% endif %}
-    <div class="game-seats {% if final %}flex flex-wrap gap-4 text-sm mb-4{% else %}hud-seats{% endif %}">
+    <div class="game-seats hud-seats">
         {% for seat in seats %}
-        <div class="{% if final %}border border-gray-300 px-3 py-2{% endif %}">
+        <div>
             <span class="font-bold">{{ seat.team.abbreviation }}</span>:
             <span class="game-seat-holder">{% if seat.holder %}{{ seat.holder.username }}{% else %}computer{% endif %}</span>
             {% if seat.mine and not final %}
@@ -75,21 +73,7 @@
         {% endfor %}
     </div>
 
-    {% if awaiting_finish %}
-    <section id="game-finish" class="border-2 border-gray-800 bg-white px-3 py-3 mb-4">
-        <h2 class="text-lg font-bold mb-1">The game is over</h2>
-        {% if final_line %}<p class="game-final font-bold mb-2">{{ final_line }}</p>{% endif %}
-        {% if last_plate %}<p class="game-final-play mb-3">{{ last_plate }}</p>{% endif %}
-        <form method="post" action="/games/{{ game.id }}/finish/">
-            {% csrf_token %}
-            <button type="submit" class="bg-gray-800 text-white rounded px-4 py-2 font-bold">Finish game</button>
-        </form>
-        <p class="text-xs text-gray-600 mt-2">The last at-bat stays here. The box score opens when you finish the game.</p>
-    </section>
-    {% elif final %}
-    <h2 class="game-final text-lg font-bold mb-2">Final</h2>
-    {% include 'includes/box_score.html' %}
-    {% else %}
+    {% if not final %}
 
     {% include 'includes/game_autoplay.html' %}
 
