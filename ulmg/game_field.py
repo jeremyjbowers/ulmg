@@ -341,6 +341,24 @@ def describe(fielding_team, defense, on_base):
 # The last plate appearance
 
 
+def batted_ball_origin(bats=None):
+    """
+    Where a batted ball leaves, in SVG units. Home plate.
+
+    A left-handed batter and a right-handed batter stand on opposite sides of
+    the plate. `bats` is that hand, and it does not move the point.
+    """
+    return HOME
+
+
+def ball_path(track, bats=None):
+    """The ball on the field: the mound, home plate, and where a ball in play landed."""
+    path = [point(MOUND_FT, 0), batted_ball_origin(bats)]
+    if track:
+        path.append(world_point(track["x"], track["z"]))
+    return path
+
+
 def ball_track(result):
     """World landing of one batted ball, or None when the plate appearance was not in play."""
     if not result:
@@ -391,10 +409,11 @@ def last_play(play, event):
     result = payload["result"]
     before = payload["before"]
     track = ball_track(result)
-    mound = point(MOUND_FT, 0)
-    ball = [mound, (HOME[0], HOME[1] - 8)]
-    if track:
-        ball.append(world_point(track["x"], track["z"]))
+    batter_id = result.get("batter_id")
+    bats = None
+    if batter_id:
+        bats = getattr(play.player(batter_id), "bats", None)
+    ball = ball_path(track, bats)
     spots = base_spots()
     moved = []
     for pid, start, end in runner_moves(before["bases"], result):

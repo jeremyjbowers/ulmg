@@ -8,7 +8,7 @@ from django.db import transaction
 from django.test import TestCase
 
 from tests import game_fixtures as gf
-from ulmg import cards, engine_client, models, sim_game
+from ulmg import cards, engine_client, game_field, models, sim_game
 
 Event = models.GameEvent
 AWAY, HOME = sim_game.AWAY, sim_game.HOME
@@ -225,6 +225,7 @@ class LastPlayTest(GameHudTestCase):
         self.assertTrue(event.text.endswith(play["text"]))
         self.assertNotIn("Top 1,", play["text"], "the half inning and count are on the scoreboard, not the banner")
         self.assertEqual(len(play["ball"]), 3, "mound, plate and where it was hit")
+        self.assertEqual(play["ball"][1], list(game_field.HOME), "the hit leaves home plate")
         self.assertEqual([(r["name"], r["end"]) for r in play["runners"]], [("Catcher", "first")])
         self.assertEqual(play["runners"][0]["from"], [300.0, 492.0])
 

@@ -66,15 +66,23 @@
       return g;
     });
     var path = play.ball;
-    ball.style.transition = 'none'; ball.style.opacity = 1;
-    ball.setAttribute('cx', path[0][0]); ball.setAttribute('cy', path[0][1]);
+    /* The hit leaves path[1], home plate. A transform left over from a runner would shove it toward a batter's box. */
+    function placeBall(spot) {
+      ball.setAttribute('cx', spot[0]);
+      ball.setAttribute('cy', spot[1]);
+    }
+    ball.style.transition = 'none';
+    ball.style.transform = 'none';
+    ball.style.opacity = 1;
+    placeBall(path[0]);
+    void ball.getBoundingClientRect();
     await wait(40);
-    ball.style.transition = 'all 260ms linear';
-    ball.setAttribute('cx', path[1][0]); ball.setAttribute('cy', path[1][1]);
+    ball.style.transition = 'cx 260ms linear, cy 260ms linear, opacity 200ms linear';
+    placeBall(path[1]);
     await wait(280);
     if (path.length > 2) {
-      ball.style.transition = 'all 520ms cubic-bezier(.2,.7,.3,1)';
-      ball.setAttribute('cx', path[2][0]); ball.setAttribute('cy', path[2][1]);
+      ball.style.transition = 'cx 520ms cubic-bezier(.2,.7,.3,1), cy 520ms cubic-bezier(.2,.7,.3,1), opacity 200ms linear';
+      placeBall(path[2]);
       await wait(540);
     }
     document.getElementById('hud-banner-big').textContent = play.banner;
