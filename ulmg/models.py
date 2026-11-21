@@ -2510,6 +2510,7 @@ class GameEvent(BaseModel):
     DECISION = "decision"
     START = "start"
     LINEUP = "lineup"
+    LINEUP_OK = "lineup_ok"
     CALL = "call"
     PLATE_APPEARANCE = "plate_appearance"
     PITCHING_CHANGE = "pitching_change"
@@ -2525,6 +2526,7 @@ class GameEvent(BaseModel):
         (DECISION, "Computer decision"),
         (START, "Lineups set"),
         (LINEUP, "Lineup change"),
+        (LINEUP_OK, "Lineup accepted"),
         (CALL, "Call"),
         (PLATE_APPEARANCE, "Plate appearance"),
         (PITCHING_CHANGE, "Pitching change"),

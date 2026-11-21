@@ -4,7 +4,7 @@
 from django.test import TestCase, override_settings
 
 from tests import game_fixtures as gf
-from ulmg import models, sim_game
+from ulmg import models, plans, sim_game
 
 Event = models.GameEvent
 AWAY, HOME = sim_game.AWAY, sim_game.HOME
@@ -28,6 +28,54 @@ class GamePageTestCase(gf.EngineMixin, TestCase):
 
     def expected(self):
         return sim_game.Play(self.log()).sequence
+
+    def _lineup_post(self, prefix, entries):
+        data = {}
+        for entry in entries:
+            data[f"{prefix}player-{entry['order']}"] = entry["player"].id
+            data[f"{prefix}position-{entry['order']}"] = entry["position"]
+        return data
+
+    def test_the_page_before_the_game_starts_is_the_lineup_for_today(self):
+        capped = self.road.hitters[3]
+        gf.counter(capped, plate_appearances_cap=10, plate_appearances=10)
+        self.client.force_login(self.manager)
+        page = self.client.get(self.url)
+        self.assertContains(page, "Proceed with this lineup")
+        self.assertContains(page, "unlimited PA left")
+        self.assertContains(page, f"{capped.name} — no PA left")
+        self.assertContains(page, 'name="away-player-1"')
+        self.assertNotContains(page, 'name="home-player-1"')
+        self.assertContains(page, 'action="/games/%d/open/"' % self.game.id)
+        self.assertContains(page, self.home.starters[0].name)
+        self.client.force_login(self.tester)
+        self.assertContains(self.client.get(self.url), 'name="home-player-1"')
+
+    def test_proceeding_with_an_edited_lineup_opens_on_that_lineup(self):
+        bench = self.road.bench[1]
+        entries = self.road.lineup()
+        entries[3] = {"order": 4, "player": bench, "position": "3B"}
+        response = self.post("open", seats="away", **self._lineup_post("away-", entries))
+        self.assertContains(response, "Play the next plate appearance")
+        self.assertEqual(self.log().state[AWAY]["lineup"][3]["id"], str(bench.id))
+        plan = plans.find_plan(self.road.team, gf.SEASON, 1)
+        self.assertNotIn(bench.id, [e["player"] for e in plan.lineup_vs_rhp])
+
+    def test_an_opened_game_cannot_be_played_until_the_lineup_is_accepted(self):
+        sim_game.open_game(self.game, self.manager, (AWAY,), seeds=self.next_seed)
+        self.client.force_login(self.manager)
+        page = self.client.get(self.url)
+        self.assertContains(page, "Proceed with this lineup before the first pitch.")
+        self.assertContains(page, 'id="hud-play" disabled')
+        self.assertNotContains(page, "Play the next plate appearance")
+        data = {"expected": self.expected(), "side": AWAY}
+        for order, entry in enumerate(sim_game.Play(self.log()).state[AWAY]["lineup"], start=1):
+            data[f"player-{order}"] = entry["id"]
+            data[f"position-{order}"] = entry["position"]
+        response = self.post("proceed", **data)
+        self.assertContains(response, "Play the next plate appearance")
+        self.post("step", expected=self.expected())
+        self.assertEqual(len(self.log().state["results"]), 1)
 
     def test_the_page_before_opening_shows_both_plans_and_the_seat_choice(self):
         self.client.force_login(self.manager)

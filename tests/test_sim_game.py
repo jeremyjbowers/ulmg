@@ -23,7 +23,10 @@ class SimGameTestCase(gf.EngineMixin, TestCase):
         self.next_seed = gf.seeds()
 
     def open(self, user=None, seats=(AWAY,)):
-        return sim_game.open_game(self.game, user or self.manager, seats, seeds=self.next_seed)
+        user = user or self.manager
+        log = sim_game.open_game(self.game, user, seats, seeds=self.next_seed)
+        sim_game.confirm_lineups(log, user)
+        return log
 
     def step(self, log, user=None, call=None):
         log = gf.refresh(log)
@@ -372,6 +375,21 @@ class TwoWaySimTestCase(SimGameTestCase):
 
 
 class PlayingTestCase(SimGameTestCase):
+    def test_the_first_pitch_waits_until_each_held_lineup_is_accepted(self):
+        log = sim_game.open_game(self.game, self.tester, (AWAY, HOME), seeds=self.next_seed)
+        with self.assertRaises(sim_game.GameRefused) as refused:
+            sim_game.step(log, self.tester, sim_game.Play(log).sequence, seeds=self.next_seed)
+        self.assertIn("Proceed with this lineup", str(refused.exception))
+
+        sim_game.confirm_lineup(log, self.tester, AWAY, sim_game.Play(log).sequence)
+        with self.assertRaises(sim_game.GameRefused) as refused:
+            sim_game.step(gf.refresh(log), self.tester, sim_game.Play(gf.refresh(log)).sequence, seeds=self.next_seed)
+        self.assertIn("Proceed with this lineup", str(refused.exception))
+
+        sim_game.confirm_lineup(gf.refresh(log), self.tester, HOME, sim_game.Play(gf.refresh(log)).sequence)
+        sim_game.step(gf.refresh(log), self.tester, sim_game.Play(gf.refresh(log)).sequence, seeds=self.next_seed)
+        self.assertTrue(sim_game.Play(gf.refresh(log)).fold.first_pitch)
+
     def test_a_game_plays_to_a_final_with_a_box_score_and_the_schedule_marked(self):
         log = gf.play_out(self.open(), self.manager, self.next_seed)
         self.game.refresh_from_db()

@@ -33,15 +33,40 @@ def _posted_side(request):
     return side
 
 
-def _posted_lineup(request):
-    """Nine batting-order rows from the pregame lineup form: player-N and position-N for N in 1-9."""
+def _posted_lineup(request, prefix=""):
+    """Nine batting-order rows from a lineup form: {prefix}player-N and {prefix}position-N for N in 1-9."""
     entries = []
     for order in range(1, 10):
-        player = _posted_player(request, f"player-{order}")
+        player = _posted_player(request, f"{prefix}player-{order}")
         if player is None:
             raise sim_game.GameRefused(f"Pick a batter for the {sim_game.ordinal(order)} slot.")
-        entries.append({"order": order, "player": player, "position": request.POST.get(f"position-{order}", "")})
+        entries.append(
+            {"order": order, "player": player, "position": request.POST.get(f"{prefix}position-{order}", "")}
+        )
     return entries
+
+
+def _optional_lineup(request, prefix):
+    """The posted lineup when the form sent one, or None when this side was not on the form."""
+    if not request.POST.get(f"{prefix}player-1"):
+        return None
+    return _posted_lineup(request, prefix)
+
+
+def _open(request, game, user):
+    """Open the game, use a posted lineup when it differs from the one just seated, and accept the seats he took."""
+    seats = [side for side in request.POST.get("seats", "").split(",") if side]
+    log = sim_game.open_game(game, user, seats)
+    for side in seats:
+        entries = _optional_lineup(request, f"{side}-")
+        if entries is None:
+            continue
+        log = models.GameLog.objects.get(pk=log.pk)
+        play = sim_game.Play(log)
+        current = [(int(entry["id"]), entry["position"]) for entry in play.state[side]["lineup"]]
+        if not sim_game.same_batting_order(current, entries):
+            sim_game.change_lineup(log, user, side, entries, play.sequence)
+    sim_game.confirm_lineups(log, user)
 
 
 def _posted_positions(request):
@@ -73,8 +98,7 @@ def game_page(request, game_id):
 def _act(request, game, action):
     user = request.user
     if action == "open":
-        seats = [side for side in request.POST.get("seats", "").split(",") if side]
-        sim_game.open_game(game, user, seats)
+        _open(request, game, user)
         return
     if action == "autoplay":
         _autoplay(request, game)
@@ -113,6 +137,15 @@ def _act(request, game, action):
         sim_game.set_positions(log, user, _posted_side(request), _posted_positions(request), expected)
     elif action == "lineup":
         sim_game.change_lineup(log, user, _posted_side(request), _posted_lineup(request), expected)
+    elif action == "proceed":
+        side = _posted_side(request)
+        entries = _posted_lineup(request)
+        play = sim_game.Play(log)
+        current = [(int(entry["id"]), entry["position"]) for entry in play.state[side]["lineup"]]
+        if sim_game.same_batting_order(current, entries):
+            sim_game.confirm_lineup(log, user, side, expected)
+        else:
+            sim_game.change_lineup(log, user, side, entries, expected)
     elif action == "move":
         up, down = _posted_player(request, "player_up"), _posted_player(request, "player_down")
         if up is None or down is None:

@@ -45,6 +45,7 @@ t.home.team.home_field = venue
 t.home.team.save()
 
 log = sim_game.open_game(t.game, t.tester, (sim_game.AWAY, sim_game.HOME))
+sim_game.confirm_lineups(log, t.tester)
 seed = gf.seeds()
 for _ in range(9):
     log = gf.refresh(log)

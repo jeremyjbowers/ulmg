@@ -193,6 +193,7 @@ class TwoFinalGamesTestCase(gf.EngineMixin, TestCase):
         game = gf.next_road_game(self.road.team)
         next_seed = gf.seeds(5000)
         log = sim_game.open_game(game, self.manager, (AWAY,), seeds=next_seed)
+        sim_game.confirm_lineups(log, self.manager)
         for _ in range(5):
             log = gf.refresh(log)
             sim_game.step(log, self.manager, sim_game.Play(log).sequence, seeds=next_seed)

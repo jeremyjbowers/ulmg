@@ -101,6 +101,7 @@ class AutoplayFromTheFirstPitchTestCase(AutoplayTestCase):
 class AutoplayFromTheMiddleTestCase(AutoplayTestCase):
     def test_the_visitor_hands_the_rest_of_a_game_in_progress_to_his_computer(self):
         log = sim_game.open_game(self.game, self.manager, (AWAY,), seeds=self.next_seed)
+        sim_game.confirm_lineups(log, self.manager)
         for _ in range(12):
             log = gf.refresh(log)
             sim_game.step(log, self.manager, sim_game.Play(log).sequence, seeds=self.next_seed)
@@ -133,6 +134,7 @@ class AutoplayFromTheMiddleTestCase(AutoplayTestCase):
 
     def test_the_commissioner_autoplays_a_game_a_tester_holds_both_seats_of(self):
         log = sim_game.open_game(self.game, self.tester, (AWAY, HOME), seeds=self.next_seed)
+        sim_game.confirm_lineups(log, self.tester)
         for _ in range(3):
             log = gf.refresh(log)
             sim_game.step(log, self.tester, sim_game.Play(log).sequence, seeds=self.next_seed)
@@ -183,6 +185,7 @@ class AutoplaySeriesTestCase(AutoplayTestCase):
 
     def test_the_series_continues_from_a_game_in_progress(self):
         log = sim_game.open_game(self.game, self.manager, (AWAY,), seeds=self.next_seed)
+        sim_game.confirm_lineups(log, self.manager)
         sim_game.step(gf.refresh(log), self.manager, sim_game.Play(gf.refresh(log)).sequence, seeds=self.next_seed)
         expected = sim_game.Play(gf.refresh(log)).sequence
         results = autoplay.autoplay_series(self.game, self.manager, expected=expected, seeds=self.next_seed)
@@ -238,6 +241,7 @@ class AutoplayPermissionsTestCase(AutoplayTestCase):
 class AutoplayReplayTestCase(AutoplayTestCase):
     def test_a_final_autoplayed_game_rebuilds_from_its_log(self):
         log = sim_game.open_game(self.game, self.manager, (AWAY,), seeds=self.next_seed)
+        sim_game.confirm_lineups(log, self.manager)
         for _ in range(5):
             log = gf.refresh(log)
             sim_game.step(log, self.manager, sim_game.Play(log).sequence, seeds=self.next_seed)
@@ -277,7 +281,7 @@ class AutoplayPageTestCase(AutoplayTestCase):
         self.assertContains(page, "Autoplay the rest of the series")
         response = self.client.post(f"/games/{self.game.id}/autoplay/", {"scope": "game"}, follow=True)
         log = self.assert_final(models.GameLog.objects.get(game=self.game))
-        self.assertContains(response, "game-final")
+        self.assertContains(response, 'id="hud-box"')
         self.assertContains(response, "Autoplayed")
         self.assertEqual(len(handed_over(log)), 2)
 

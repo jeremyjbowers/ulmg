@@ -1,0 +1,16 @@
+{# ABOUTME: The nine-slot lineup editor used before the first pitch, with plate appearances left on each hitter. #}
+{# ABOUTME: prefix is empty once the game is open and "away-" or "home-" on the page that opens it. #}
+<h2 class="font-bold">{{ team.abbreviation }} lineup for this game</h2>
+<p class="text-xs text-gray-600 mb-2">{{ note }}</p>
+{% for row in rows %}
+<div class="flex gap-2 items-center mb-1">
+    <span class="w-6">{{ row.order }}</span>
+    <select name="{{ prefix }}player-{{ row.order }}" class="w-full" aria-label="Batter {{ row.order }}">
+        {% for hitter in hitters %}<option value="{{ hitter.id }}"{% if hitter.id == row.player_id %} selected{% endif %}>{{ hitter.name }} — {{ hitter.pa_left }}</option>{% endfor %}
+    </select>
+    <select name="{{ prefix }}position-{{ row.order }}" aria-label="Position {{ row.order }}">
+        {% for code in positions %}<option value="{{ code }}"{% if code == row.position %} selected{% endif %}>{{ code }}</option>{% endfor %}
+    </select>
+    <span class="text-xs text-gray-600 whitespace-nowrap">{{ row.pa_left }}</span>
+</div>
+{% endfor %}

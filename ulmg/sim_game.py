@@ -344,7 +344,7 @@ def load_state(log, events):
 
 
 class Fold:
-    """What the log says outside the engine: who holds each seat, the opening sheet, starters, pauses and the final."""
+    """What the log says outside the engine: who holds each seat, the opening sheet, starters, which lineups have been accepted, pauses and the final."""
 
     def __init__(self, events=()):
         self.seats = {AWAY: None, HOME: None}
@@ -352,6 +352,7 @@ class Fold:
         self.league_spd = None
         self.starters = {}
         self.lineups = {}
+        self.lineup_ok = set()
         self.started = False
         self.first_pitch = False
         self.pause = None
@@ -369,6 +370,10 @@ class Fold:
             self.started = True
             self.starters = {side: pid for side, pid in event.payload["starters"].items()}
             self.lineups = event.payload["lineups"]
+        elif event.kind == Event.LINEUP:
+            self.lineup_ok.discard(event.side)
+        elif event.kind == Event.LINEUP_OK:
+            self.lineup_ok.add(event.side)
         elif event.kind == Event.PLATE_APPEARANCE:
             self.first_pitch = True
         elif event.kind == Event.PAUSE:
@@ -1474,7 +1479,65 @@ def change_lineup(log, user, side, entries, expected, seeds=engine_client.new_se
         )
         start(play, starters, lineups, user=user)
         settle(play)
+        _accept_lineup(play, user, side)
         play.save_state()
+
+
+PROCEED = "Proceed with this lineup before the first pitch."
+
+
+def lineup_pending(fold, user):
+    """True when a seat this user holds has not accepted its lineup, and the first pitch has not been thrown."""
+    if not fold.started or fold.first_pitch or fold.final:
+        return False
+    return any(side not in fold.lineup_ok for side in fold.user_sides(user))
+
+
+def same_batting_order(current, entries):
+    """True when entries are the same players and positions, in order, as current (player id, position) pairs."""
+    posted = [(entry["player"].id, entry["position"]) for entry in sorted(entries, key=lambda entry: entry["order"])]
+    return list(current) == posted
+
+
+def _accept_lineup(play, user, side):
+    if side in play.fold.lineup_ok:
+        return
+    team = team_for(play.game, side)
+    play.append(
+        Event.LINEUP_OK,
+        side=side,
+        user=user,
+        text=f"{team.abbreviation} proceeds with this lineup.",
+    )
+
+
+def confirm_lineup(log, user, side, expected, seeds=engine_client.new_seed):
+    """The side's holder accepts the lineup as it stands. The first pitch waits on this."""
+    with transaction.atomic():
+        play = _begin(log, expected, seeds)
+        _require_seat(play, user, side)
+        _require_in_progress(play)
+        if play.fold.first_pitch:
+            raise GameRefused("The lineup can change only before the first pitch.")
+        _accept_lineup(play, user, side)
+        play.save_state()
+
+
+def confirm_lineups(log, user):
+    """Accept every seat this user holds. Seats already accepted, and a game already under way, are left alone."""
+    with transaction.atomic():
+        log = models.GameLog.objects.select_for_update().get(pk=log.pk)
+        play = Play(log)
+        if not play.fold.started or play.fold.first_pitch or play.fold.final:
+            return
+        changed = False
+        for side in play.fold.user_sides(user):
+            if side in play.fold.lineup_ok:
+                continue
+            _accept_lineup(play, user, side)
+            changed = True
+        if changed:
+            play.save_state()
 
 
 def change_pitcher(log, user, side, player, expected, seeds=engine_client.new_seed):
@@ -1837,6 +1900,8 @@ def step(log, user, expected, call=None, seeds=engine_client.new_seed):
         need = play.need()
         if need is not None:
             raise GameRefused(need.reason)
+        if lineup_pending(play.fold, user):
+            raise GameRefused(PROCEED)
         batting, fielding = batting_side(play.state), fielding_side(play.state)
         if call is not None:
             if call in OFFENSE_CALLS:
@@ -1986,6 +2051,35 @@ def substitution_choices(play, user, need):
     return choices
 
 
+def plate_appearances_left_label(player, season, reads=None):
+    """How many plate appearances he has left this season, for a lineup list."""
+    left = usage.usage_summary(player, season, reads=reads)["plate_appearances_left"]
+    if left is None:
+        return "unlimited PA left"
+    if left == 0:
+        return "no PA left"
+    return f"{left} PA left"
+
+
+def lineup_form(season, roster_ids, rows, reads=None):
+    """The nine-slot lineup editor: hitter choices and the current rows, each with plate appearances left."""
+    labels = {}
+    hitters = []
+    for player in plans.lineup_hitters(roster_ids):
+        label = plate_appearances_left_label(player, season, reads)
+        labels[player.id] = label
+        hitters.append({"id": player.id, "name": player.name, "pa_left": label})
+    missing = [row["player_id"] for row in rows if row["player_id"] not in labels]
+    if missing:
+        for player in models.Player.objects.filter(id__in=missing):
+            labels[player.id] = plate_appearances_left_label(player, season, reads)
+    return {
+        "rows": [{**row, "pa_left": labels.get(row["player_id"], "")} for row in rows],
+        "hitters": hitters,
+        "positions": list(plans.LINEUP_POSITIONS),
+    }
+
+
 def _lineup_rows(play, side):
     """The side's current lineup in batting order, for the pregame lineup form."""
     return [
@@ -2029,7 +2123,13 @@ def page(log, user, confirm=None):
     pitcher = play.player(pitcher_id) if pitcher_id else None
     need = None if fold.final else play.need()
     teams = {AWAY: team_for(game, AWAY), HOME: team_for(game, HOME)}
-    can_step = not fold.final and bool(context["user_sides"]) and need is None and fold.pause is None
+    can_step = (
+        not fold.final
+        and bool(context["user_sides"])
+        and need is None
+        and fold.pause is None
+        and not lineup_pending(fold, user)
+    )
     odds = [] if fold.final or need is not None or pitcher is None else matchup_odds(play)
     choices = {} if fold.final else substitution_choices(play, user, need)
     pitcher_options = None
@@ -2071,15 +2171,8 @@ def page(log, user, confirm=None):
     context["pregame"] = []
     if not fold.first_pitch:
         for side in context["user_sides"]:
-            context["pregame"].append(
-                {
-                    "side": side,
-                    "team": team_for(game, side),
-                    "rows": _lineup_rows(play, side),
-                    "hitters": plans.lineup_hitters(play.roster(side)),
-                    "positions": plans.LINEUP_POSITIONS,
-                }
-            )
+            form = lineup_form(play.season, play.roster(side), _lineup_rows(play, side), reads=play.usage)
+            context["pregame"].append({"side": side, "team": team_for(game, side), **form})
 
     context["moves"] = [
         {
@@ -2098,21 +2191,36 @@ SEAT_LABELS = {(AWAY,): "Away", (HOME,): "Home", (AWAY, HOME): "Both"}
 
 
 def pregame(game, user):
-    """The page for a game nobody has opened: both sides' plans for the day and the seats the user may take."""
+    """The page for a game nobody has opened: both sides' plans for the day, a lineup editor for each seat he may take, and those seats."""
     sheet = plans.game_sheet(game)
+    season = season_of(game)
+    sittable = {side for seats in open_seat_choices(user, game) for side in seats}
     sides = []
     for side in SIDES:
         team = team_for(game, side)
         team_sheet = sheet[SHEET_KEYS[side]]
+        lineup = team_sheet["lineup"] or []
+        editor = None
+        if side in sittable and len(lineup) == plans.LINEUP_SIZE:
+            editor = lineup_form(
+                season,
+                roster_moves.game_roster_ids(team, game),
+                [
+                    {"order": i + 1, "player_id": player.id, "position": position}
+                    for i, (player, position) in enumerate(lineup)
+                ],
+            )
         sides.append(
             {
                 "side": side,
                 "team": team,
                 "starter": team_sheet["starter"],
-                "lineup": team_sheet["lineup"],
+                "lineup": lineup,
+                "editor": editor,
+                "prefix": f"{side}-",
                 "plan_day_url": (
                     f"/teams/{team.abbreviation.lower()}/plan/{game.series.slot.half}/"
-                    f"{season_of(game)}/day/{game.day}/"
+                    f"{season}/day/{game.day}/"
                 ),
                 "can_edit_plan": plans.can_edit(user, team),
             }

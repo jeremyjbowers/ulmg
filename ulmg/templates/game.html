@@ -1,4 +1,4 @@
-{# ABOUTME: The sim game page: open a game, then play it from the HUD one plate appearance per POST, with the substitution panel beside it. #}
+{# ABOUTME: The sim game page: accept a lineup, then play it from the HUD one plate appearance per POST, with the substitution panel beside it. #}
 {# ABOUTME: Every form carries the log position it expects. A seat nobody holds is the computer's. A final stays in the HUD until the box score is chosen. #}
 {% extends "base.html" %}
 
@@ -20,8 +20,31 @@
     {% if engine_down %}
     <p class="game-engine-down border border-red-300 bg-red-50 px-3 py-2 text-sm mb-4">The game engine is not answering. Nothing has been lost; try again in a minute.</p>
     {% elif not log %}
+    {% if seat_choices %}
+    <form method="post" action="/games/{{ game.id }}/open/" class="game-open space-y-3 text-sm mb-6">
+        {% csrf_token %}
+        {% for side in sides %}
+        {% if side.editor %}
+        <div class="border border-gray-300 p-3">
+            <p class="mb-2">Starter: {{ side.starter.name|default:"none planned" }}</p>
+            {% include "includes/lineup_editor.html" with team=side.team rows=side.editor.rows hitters=side.editor.hitters positions=side.editor.positions prefix=side.prefix note="This lineup is for today. Plate appearances left are what he has left this season. Your plan doesn't change." %}
+            {% if side.can_edit_plan %}<a href="{{ side.plan_day_url }}" class="underline text-xs">Spot-start or change this day in the plan</a>{% endif %}
+        </div>
+        {% endif %}
+        {% endfor %}
+        <label class="block font-bold" for="seats">Play as</label>
+        <select name="seats" id="seats" class="w-full sm:w-auto border border-gray-300 px-2 py-1">
+            {% for value, label in seat_choices %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
+        </select>
+        <button type="submit" class="w-full sm:w-auto bg-black text-white px-4 py-2 font-bold">Proceed with this lineup</button>
+        <p class="text-xs text-gray-600">Proceeding opens the game and freezes both plans. A seat you don't take is played by that team's computer.</p>
+    </form>
+    {% else %}
+    <p class="text-sm mb-6">You can't open this game.</p>
+    {% endif %}
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 text-sm">
         {% for side in sides %}
+        {% if not side.editor %}
         <div class="border border-gray-300 p-3">
             <h2 class="font-bold mb-1">{{ side.team.abbreviation }} {% if side.side == "away" %}(away){% else %}(home){% endif %}</h2>
             <p class="mb-1">Starter: {{ side.starter.name|default:"none planned" }}</p>
@@ -30,21 +53,9 @@
             </ol>
             {% if side.can_edit_plan %}<a href="{{ side.plan_day_url }}" class="underline text-xs">Spot-start or change this day in the plan</a>{% endif %}
         </div>
+        {% endif %}
         {% endfor %}
     </div>
-    {% if seat_choices %}
-    <form method="post" action="/games/{{ game.id }}/open/" class="game-open space-y-2 text-sm mb-6">
-        {% csrf_token %}
-        <label class="block font-bold" for="seats">Play as</label>
-        <select name="seats" id="seats" class="w-full sm:w-auto border border-gray-300 px-2 py-1">
-            {% for value, label in seat_choices %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
-        </select>
-        <button type="submit" class="w-full sm:w-auto bg-black text-white px-4 py-2 font-bold">Open the game</button>
-        <p class="text-xs text-gray-600">Opening freezes both plans for this game. A seat you don't take is played by that team's computer.</p>
-    </form>
-    {% else %}
-    <p class="text-sm mb-6">You can't open this game.</p>
-    {% endif %}
     {% include 'includes/game_autoplay.html' %}
     {% else %}
 
@@ -78,24 +89,12 @@
     {% include 'includes/game_autoplay.html' %}
 
     {% for lineup in pregame %}
-    <form method="post" action="/games/{{ game.id }}/lineup/" class="game-lineup hud-box space-y-1">
+    <form method="post" action="/games/{{ game.id }}/proceed/" class="game-lineup hud-box space-y-1">
         {% csrf_token %}
         <input type="hidden" name="expected" value="{{ expected }}">
         <input type="hidden" name="side" value="{{ lineup.side }}">
-        <h2 class="font-bold">{{ lineup.team.abbreviation }} lineup for this game</h2>
-        <p class="hud-note" style="margin:0 0 6px">Before the first pitch you can change it from this game's roster, call-ups included. Your plan doesn't change.</p>
-        {% for row in lineup.rows %}
-        <div class="flex gap-2 items-center">
-            <span class="w-6">{{ row.order }}</span>
-            <select name="player-{{ row.order }}" class="w-full" aria-label="Batter {{ row.order }}">
-                {% for p in lineup.hitters %}<option value="{{ p.id }}"{% if p.id == row.player_id %} selected{% endif %}>{{ p.name }}</option>{% endfor %}
-            </select>
-            <select name="position-{{ row.order }}" aria-label="Position {{ row.order }}">
-                {% for code in lineup.positions %}<option value="{{ code }}"{% if code == row.position %} selected{% endif %}>{{ code }}</option>{% endfor %}
-            </select>
-        </div>
-        {% endfor %}
-        <button type="submit" class="hud-btn">Use this lineup</button>
+        {% include "includes/lineup_editor.html" with team=lineup.team rows=lineup.rows hitters=lineup.hitters positions=lineup.positions prefix="" note="Before the first pitch you can change it from this game's roster, call-ups included. Your plan doesn't change." %}
+        <button type="submit" class="hud-btn">Proceed with this lineup</button>
     </form>
     {% endfor %}
 

@@ -318,6 +318,8 @@ def controls(play, user, need, can_step, teams):
         blocked = f"The game is paused. {fold.pause['reason']}"
     elif need is not None:
         blocked = need.reason
+    elif sim_game.lineup_pending(fold, user):
+        blocked = sim_game.PROCEED
 
     def button(label, key=None, call=None, tab=None, ok=True, live=False):
         return {"label": label, "key": key, "call": call, "tab": tab, "enabled": ok, "live": live and ok}

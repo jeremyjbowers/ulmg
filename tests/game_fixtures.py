@@ -132,6 +132,7 @@ def play_out(log, user, next_seed, *, limit=600, before_step=None):
     When one of his seats must replace a player, he takes the first legal
     option. Returns the log.
     """
+    sim_game.confirm_lineups(log, user)
     for _ in range(limit):
         log = refresh(log)
         play = sim_game.Play(log)
