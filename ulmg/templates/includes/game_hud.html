@@ -29,51 +29,32 @@
             </tbody>
         </table>
         <div class="hud-situation">
-            <p class="hud-inning">{{ scoreboard.inning }}</p>
-            <div class="hud-outs"><span>{{ scoreboard.outs_text }}</span>{% for on in scoreboard.lights %}<span class="out-light{% if on %} on{% endif %}" aria-hidden="true"></span>{% endfor %}</div>
+            <p class="hud-inning" id="hud-inning">{{ scoreboard.inning }}</p>
+            <div class="hud-outs" id="hud-outs"><span id="hud-outs-text">{{ scoreboard.outs_text }}</span>{% for on in scoreboard.lights %}<span class="out-light{% if on %} on{% endif %}" aria-hidden="true"></span>{% endfor %}</div>
         </div>
     </section>
 
     <section class="hud-mid">
-        <div class="hud-card hud-batter">
-            <p class="hud-eyebrow">At bat · {{ batter.team.abbreviation }} · {{ batter.slot }}</p>
-            <p class="hud-who"><a href="/players/{{ batter.player.id }}/">{{ batter.player.name }}</a></p>
-            <p class="hud-sub">{{ batter.position }} · bats {{ batter.bats }} · {{ batter.today }}</p>
-            {% if batter.edge %}<p class="matchup-edge edge-{{ batter.edge.tone }}">{{ batter.edge.label }} {{ batter.edge.text }} OPS</p>{% endif %}
-            <table class="hud-splits">
-                <thead><tr><th scope="col"><span class="visually-hidden">Split</span></th><th scope="col">AVG</th><th scope="col">OBP</th><th scope="col">SLG</th><th scope="col">HR%</th></tr></thead>
-                <tbody>
-                    {% for split in batter.splits %}<tr class="{% if split.hot %}hot{% endif %}"><td>{{ split.label }}</td><td>{{ split.avg }}</td><td>{{ split.obp }}</td><td>{{ split.slg }}</td><td>{{ split.hr }}</td></tr>{% endfor %}
-                </tbody>
-            </table>
-            <p class="hud-note game-usage">Speed <b>{{ batter.speed }}</b> · steals <b>{{ batter.steals }}</b> · PA left: {{ batter.pa_left }}</p>
-            <ul class="hud-due">
-                {% for due in batter.due %}<li><span>{{ due.label }}: <b>{{ due.player.name }}</b></span><span class="pos">{{ due.position }} · {{ due.avg }}</span></li>{% endfor %}
-            </ul>
+        <div class="hud-card hud-batter" id="hud-batter">
+            {% include "includes/game_batter_card.html" %}
         </div>
 
         {% include "includes/game_field.html" %}
 
-        <div class="hud-card hud-pitcher">
-            {% if pitcher %}
-            <p class="hud-eyebrow">Pitching · {{ pitcher.team.abbreviation }}</p>
-            <p class="hud-who"><a href="/players/{{ pitcher.player.id }}/">{{ pitcher.player.name }}</a></p>
-            <p class="hud-sub">{{ pitcher.role }} · throws {{ pitcher.throws }} · {{ pitcher.today }}</p>
-            {% if pitcher.edge %}<p class="matchup-edge edge-{{ pitcher.edge.tone }}">{{ pitcher.edge.label }} {{ pitcher.edge.text }} OBP</p>{% endif %}
-            <div class="hud-meter {{ pitcher.tone }}" role="meter" aria-label="Fatigue" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ pitcher.meter }}"><i style="width:{{ pitcher.meter }}%"></i></div>
-            <p class="hud-note game-usage" style="margin-top:0"><b>{{ pitcher.pitches }}</b> pitches · tires near <b>{{ pitcher.ceiling }}</b> · IP left this outing: <b>{{ pitcher.ip_left }}</b></p>
-            {% if pitcher.odds %}
-            <p class="hud-eyebrow" style="margin-top:14px">This plate appearance</p>
-            <ul class="hud-odds game-matchup">
-                {% for odd in pitcher.odds %}<li class="{% if odd.good %}good{% endif %}"><span>{{ odd.label }}</span><span class="bar" aria-hidden="true"><i style="width:{{ odd.bar|floatformat:1 }}%"></i></span><span class="pct">{{ odd.pct|floatformat:1 }}%</span></li>{% endfor %}
-            </ul>
-            {% endif %}
-            {% else %}
-            <p class="hud-eyebrow">Pitching · {{ fielding_team.abbreviation }}</p>
-            <p class="hud-who">The mound is empty.</p>
-            {% endif %}
+        <div class="hud-card hud-pitcher" id="hud-pitcher">
+            {% include "includes/game_pitcher_card.html" %}
         </div>
     </section>
+
+    {% if during %}
+    <div id="hud-during" hidden>
+        <svg id="hud-during-svg" aria-hidden="true">
+            <g id="hud-during-fielders">{% include "includes/game_fielders.html" with fielders=during.fielders %}</g>
+        </svg>
+        <div id="hud-during-batter">{% include "includes/game_batter_card.html" with batter=during.batter %}</div>
+        <div id="hud-during-pitcher">{% include "includes/game_pitcher_card.html" with pitcher=during.pitcher fielding_team=during.fielding_team %}</div>
+    </div>
+    {% endif %}
 
     <section class="hud-controls" aria-label="Calls">
         <div class="hud-playdock">

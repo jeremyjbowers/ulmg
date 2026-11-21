@@ -1,0 +1,9 @@
+{# ABOUTME: The nine fielders on the top-down field, tagged with their rating in runs. #}
+{# ABOUTME: Expects `fielders`. The same marks are drawn for the end state and for the play being animated. #}
+{% for f in fielders %}
+<g class="fielder" data-position="{{ f.position }}" data-player="{{ f.player.id }}">
+    <rect class="tag{% if f.below %} low{% endif %}" x="{{ f.box.x }}" y="{{ f.box.y }}" width="{{ f.box.width }}" height="21" rx="4"/>
+    <text class="lbl-pos" x="{{ f.x }}" y="{{ f.box.text_y }}" text-anchor="middle">{{ f.tag }}</text>
+    <text class="lbl-name" x="{{ f.name_at.x }}" y="{{ f.name_at.y }}" text-anchor="{{ f.name_at.anchor }}">{{ f.name }}</text>
+</g>
+{% endfor %}

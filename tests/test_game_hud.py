@@ -232,6 +232,31 @@ class LastPlayTest(GameHudTestCase):
         self.assertEqual(play["runners"][0]["path"][-1], play["runners"][0]["to"])
         self.assertEqual(len(play["runners"][0]["path"]), 2, "first base is one base away")
 
+    def test_the_field_keeps_the_defense_until_the_play_has_been_shown(self):
+        gf.set_rates(self.road.hitters[:3], gf.STRIKEOUT_RATES)
+        self.post("open", seats="away,home")
+        for _ in range(2):
+            self.post("step", expected=self.expected())
+        html = self.post("step", expected=self.expected()).content.decode()
+        live = self.section(html, 'id="hud-fielders"', '<g id="hud-runners">')
+        during = self.section(html, 'id="hud-during-fielders"', 'id="hud-during-batter"')
+        self.assertIn(f'data-player="{self.road.catcher.id}"', live, "the end state is the new half's defense")
+        self.assertIn(f'data-player="{self.road.starters[0].id}"', live)
+        self.assertIn(f'data-player="{self.home.catcher.id}"', during, "the play is shown with the defense that was on the field")
+        self.assertIn(f'data-player="{self.home.starters[0].id}"', during)
+        self.assertNotIn(f'data-player="{self.home.catcher.id}"', live)
+        batter = self.section(html, 'id="hud-during-batter"', 'id="hud-during-pitcher"')
+        self.assertIn(self.road.hitters[2].name, batter)
+        live_batter = self.section(html, 'id="hud-batter"', 'id="hud-field"')
+        self.assertIn(self.home.hitters[0].name, live_batter, "the end state has the next half's batter")
+        self.assertNotIn(self.road.hitters[2].name, live_batter)
+        self.assertIn(self.home.starters[0].name, self.section(html, 'id="hud-during-pitcher"', "</div>"))
+        self.assertIn(self.road.starters[0].name, self.section(html, 'id="hud-pitcher"', 'id="hud-during'))
+        play = self.last_play(html)
+        self.assertEqual(play["situation"]["outs"], 2)
+        self.assertIn("Top", play["situation"]["inning"])
+        self.assertIn("Bottom", self.section(html, 'id="hud-inning"', "</p>"))
+
     def test_a_home_run_scores_the_batter_and_flashes_the_run(self):
         gf.set_rates([self.road.hitters[0]], gf.HOME_RUN_RATES)
         self.post("open", seats="away,home")

@@ -1997,6 +1997,10 @@ def page(log, user):
     if fold.holds(user, fielding) and (fold.first_pitch or (need and need.kind == PITCHER_NEED)):
         pitcher_options = play.pitcher_options(fielding)
     recent = game_field.recent_plate_appearance(play.events, Event.PLATE_APPEARANCE)
+    last_play = game_field.last_play(play, recent) if recent is not None else None
+    during = game_hud.during_plate_appearance(play, recent, teams) if recent is not None else None
+    if last_play is not None and during is not None:
+        last_play["situation"] = during["situation"]
     context.update(
         {
             "inning": state["inning"],
@@ -2016,7 +2020,8 @@ def page(log, user):
             "controls": game_hud.controls(play, user, need, can_step, teams),
             "field": game_hud.field(play, teams),
             "recent_plays": game_hud.recent_plays(play.events, Event.PLATE_APPEARANCE),
-            "last_play": game_field.last_play(play, recent) if recent is not None else None,
+            "last_play": last_play,
+            "during": during,
             "panel": game_hud.panel(play, user, need, choices, pitcher_options, teams),
         }
     )
