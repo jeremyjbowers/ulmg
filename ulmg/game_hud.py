@@ -200,7 +200,15 @@ def _pitching_today(box, side, player):
     return f"{line.ip} IP, {line.r} R, {line.so} K today"
 
 
-def batter_card(play, box, teams):
+def _odds(odds):
+    """The plate-appearance probabilities, ready for the bar list. Empty when this card is not the one that shows them."""
+    return [
+        {"label": label, "pct": pct, "bar": min(100, pct * 2), "good": key in ODDS_GOOD}
+        for key, label, pct in odds or []
+    ]
+
+
+def batter_card(play, box, teams, odds=None):
     """The man at bat: slot, position, hands, today's line, both platoon lines, speed, steals, PA left, and who follows."""
     from ulmg import sim_game
 
@@ -244,6 +252,7 @@ def batter_card(play, box, teams):
         "steals": percent(getattr(card, "steal_success", None)),
         "pa_left": "unlimited" if left is None else left,
         "due": due,
+        "odds": _odds(odds),
     }
 
 
@@ -284,10 +293,7 @@ def pitcher_card(play, box, teams, odds):
         "meter": max(0, min(100, round(share * 100))),
         "tone": "hot" if share > 0.9 else "warm" if share > 0.7 else "ok",
         "ip_left": usage.outs_to_innings(check.remaining.get("game_outs") or 0),
-        "odds": [
-            {"label": label, "pct": pct, "bar": min(100, pct * 2), "good": key in ODDS_GOOD}
-            for key, label, pct in odds
-        ],
+        "odds": _odds(odds),
     }
 
 
