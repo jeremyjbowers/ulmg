@@ -425,6 +425,100 @@ def field(play, teams):
     }
 
 
+def during_plate_appearance(play, event, teams):
+    """
+    The field, the batter and the pitcher as they were while this plate
+    appearance was being played, before the log settled into the next one.
+
+    The page draws the end state. The script shows this until the ball and
+    the runners have finished.
+    """
+    from ulmg import box_score, sim_game
+
+    state = _state_during(play, event)
+    previous = play.state
+    play.state = state
+    try:
+        prior = [logged for logged in play.events if logged.sequence < event.sequence]
+        box = box_score.box_score(play.log, prior)
+        fielding = sim_game.fielding_side(state)
+        corner = park_corner(sim_game.team_for(play.game, sim_game.HOME))
+        return {
+            "batter": batter_card(play, box, teams),
+            "pitcher": pitcher_card(play, box, teams, []),
+            "fielders": game_field.fielders(play, state, fielding, corner["rules"]["distances_ft"]),
+            "fielding_team": teams[fielding],
+            "situation": _situation(state),
+        }
+    finally:
+        play.state = previous
+
+
+def _situation(state):
+    """The inning label and the out lights for a state, in the scoreboard's words."""
+    half = state["half"]
+    outs = state["outs"]
+    arrow = "▲" if half == "top" else "▼"
+    name = "Top" if half == "top" else "Bottom"
+    return {
+        "inning": f"{arrow} {name} {ordinal(state['inning'])}",
+        "outs": outs,
+        "outs_text": f"{outs} out{'' if outs == 1 else 's'}",
+    }
+
+
+def _state_during(play, event):
+    """
+    The engine state with the roster and the situation of this plate appearance.
+
+    Later substitutions and pitching changes are undone. A position change
+    records only the new positions, so it stays.
+    """
+    from ulmg import sim_game
+
+    state = copy.deepcopy(play.state)
+    for change in reversed([logged for logged in play.events if logged.sequence > event.sequence]):
+        _undo_roster_change(play, state, change)
+    before = event.payload.get("before") or {}
+    for key in ("inning", "half", "outs", "score"):
+        if key in before:
+            state[key] = copy.deepcopy(before[key])
+    if "bases" in before:
+        state["bases"] = {base: None if runner is None else str(runner) for base, runner in before["bases"].items()}
+    batting = event.payload.get("batting")
+    batter = event.payload.get("batter")
+    if batting and batter is not None:
+        wanted = str(batter)
+        for index, entry in enumerate(state[batting]["lineup"]):
+            if str(entry["id"]) == wanted:
+                state[batting]["batter_index"] = index
+                break
+    pitcher = event.payload.get("pitcher")
+    if batting and pitcher is not None:
+        state[sim_game.other_side(batting)]["pitcher_slot"] = str(pitcher)
+    return state
+
+
+def _undo_roster_change(play, state, event):
+    payload = event.payload or {}
+    if event.kind == "substitution":
+        entry = state[event.side]["lineup"][payload["index"]]
+        _restore_lineup_player(play, entry, payload["replaced"], payload["position"])
+    elif event.kind == "pitching_change":
+        replaced = payload.get("replaced")
+        state[event.side]["pitcher_slot"] = None if replaced is None else str(replaced)
+
+
+def _restore_lineup_player(play, entry, player_id, position):
+    player = play.player(player_id)
+    card = play.card(player)
+    defense = card.sim_defense_rating(position) if card is not None and position != "DH" else None
+    entry["id"] = str(player.id)
+    entry["name"] = player.name
+    entry["position"] = position
+    entry["defense"] = defense or {"rating": 0.0, "measured_at": position}
+
+
 # The substitution panel
 
 

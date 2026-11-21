@@ -1,0 +1,19 @@
+{# ABOUTME: The pitcher card: role, arm, today's line, pitches against his ceiling, innings left and the plate-appearance odds. #}
+{# ABOUTME: Expects `pitcher` and `fielding_team`. Drawn for the man on the mound and for the plate appearance being animated. #}
+{% if pitcher %}
+<p class="hud-eyebrow">Pitching · {{ pitcher.team.abbreviation }}</p>
+<p class="hud-who"><a href="/players/{{ pitcher.player.id }}/">{{ pitcher.player.name }}</a></p>
+<p class="hud-sub">{{ pitcher.role }} · throws {{ pitcher.throws }} · {{ pitcher.today }}</p>
+{% if pitcher.edge %}<p class="matchup-edge edge-{{ pitcher.edge.tone }}">{{ pitcher.edge.label }} {{ pitcher.edge.text }} OBP</p>{% endif %}
+<div class="hud-meter {{ pitcher.tone }}" role="meter" aria-label="Fatigue" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ pitcher.meter }}"><i style="width:{{ pitcher.meter }}%"></i></div>
+<p class="hud-note game-usage" style="margin-top:0"><b>{{ pitcher.pitches }}</b> pitches · tires near <b>{{ pitcher.ceiling }}</b> · IP left this outing: <b>{{ pitcher.ip_left }}</b></p>
+{% if pitcher.odds %}
+<p class="hud-eyebrow" style="margin-top:14px">This plate appearance</p>
+<ul class="hud-odds game-matchup">
+    {% for odd in pitcher.odds %}<li class="{% if odd.good %}good{% endif %}"><span>{{ odd.label }}</span><span class="bar" aria-hidden="true"><i style="width:{{ odd.bar|floatformat:1 }}%"></i></span><span class="pct">{{ odd.pct|floatformat:1 }}%</span></li>{% endfor %}
+</ul>
+{% endif %}
+{% else %}
+<p class="hud-eyebrow">Pitching · {{ fielding_team.abbreviation }}</p>
+<p class="hud-who">The mound is empty.</p>
+{% endif %}

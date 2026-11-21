@@ -16,13 +16,7 @@
         {% for b in d.bases %}<rect class="base" x="{{ b.left }}" y="{{ b.top }}" width="16" height="16" transform="rotate(45 {{ b.x }} {{ b.y }})"/>{% endfor %}
         <polygon class="base" points="{{ d.plate }}"/>
         <g id="hud-fielders">
-            {% for f in field.fielders %}
-            <g class="fielder" data-position="{{ f.position }}">
-                <rect class="tag{% if f.below %} low{% endif %}" x="{{ f.box.x }}" y="{{ f.box.y }}" width="{{ f.box.width }}" height="21" rx="4"/>
-                <text class="lbl-pos" x="{{ f.x }}" y="{{ f.box.text_y }}" text-anchor="middle">{{ f.tag }}</text>
-                <text class="lbl-name" x="{{ f.name_at.x }}" y="{{ f.name_at.y }}" text-anchor="{{ f.name_at.anchor }}">{{ f.name }}</text>
-            </g>
-            {% endfor %}
+            {% include "includes/game_fielders.html" with fielders=field.fielders %}
         </g>
         <g id="hud-runners">
             {% for r in field.runners %}

@@ -53,7 +53,55 @@
     var cells = [row.querySelector('[data-inning="' + play.inning + '"]'), row.querySelector('[data-total="r"]')];
     cells.forEach(function (cell) { if (!cell) return; cell.classList.remove('flash'); void cell.offsetWidth; cell.classList.add('flash'); });
   }
+  /* The server draws the end state. Until the play finishes, show who was actually on the field. */
+  function exchange(a, b) {
+    var hold = document.createDocumentFragment();
+    while (a.firstChild) hold.appendChild(a.firstChild);
+    while (b.firstChild) a.appendChild(b.firstChild);
+    while (hold.firstChild) b.appendChild(hold.firstChild);
+  }
+  function holdDuring(play) {
+    var pairs = [['hud-fielders', 'hud-during-fielders'], ['hud-batter', 'hud-during-batter'], ['hud-pitcher', 'hud-during-pitcher']];
+    var swaps = [];
+    pairs.forEach(function (pair) {
+      var live = document.getElementById(pair[0]);
+      var prior = document.getElementById(pair[1]);
+      if (!live || !prior) return;
+      exchange(live, prior);
+      swaps.push([live, prior]);
+    });
+    var situation = play.situation;
+    var inning = document.getElementById('hud-inning');
+    var outsText = document.getElementById('hud-outs-text');
+    var lights = document.querySelectorAll('#hud-outs .out-light');
+    var saved = null;
+    if (situation && inning && outsText) {
+      saved = { inning: inning.textContent, outs: outsText.textContent, on: [] };
+      lights.forEach(function (light) { saved.on.push(light.classList.contains('on')); });
+      inning.textContent = situation.inning;
+      outsText.textContent = situation.outs_text;
+      lights.forEach(function (light, i) { light.classList.toggle('on', i < situation.outs); });
+    }
+    if (!swaps.length && !saved) return null;
+    return function () {
+      swaps.forEach(function (pair) { exchange(pair[0], pair[1]); });
+      if (!saved) return;
+      inning.textContent = saved.inning;
+      outsText.textContent = saved.outs;
+      lights.forEach(function (light, i) { light.classList.toggle('on', saved.on[i]); });
+    };
+  }
   async function animate(play) {
+    var restore = holdDuring(play);
+    try {
+      await playOut(play);
+      if (restore) restore();
+      restore = null;
+    } finally {
+      if (restore) restore();
+    }
+  }
+  async function playOut(play) {
     var ball = document.getElementById('hud-ball');
     var settled = document.getElementById('hud-runners');
     var moving = document.getElementById('hud-moving');

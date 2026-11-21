@@ -1,0 +1,16 @@
+{# ABOUTME: The batter card: slot, hands, today's line, both platoon lines, speed, steals and who follows. #}
+{# ABOUTME: Expects `batter` from game_hud.batter_card. Drawn for the man at bat and for the plate appearance being animated. #}
+<p class="hud-eyebrow">At bat · {{ batter.team.abbreviation }} · {{ batter.slot }}</p>
+<p class="hud-who"><a href="/players/{{ batter.player.id }}/">{{ batter.player.name }}</a></p>
+<p class="hud-sub">{{ batter.position }} · bats {{ batter.bats }} · {{ batter.today }}</p>
+{% if batter.edge %}<p class="matchup-edge edge-{{ batter.edge.tone }}">{{ batter.edge.label }} {{ batter.edge.text }} OPS</p>{% endif %}
+<table class="hud-splits">
+    <thead><tr><th scope="col"><span class="visually-hidden">Split</span></th><th scope="col">AVG</th><th scope="col">OBP</th><th scope="col">SLG</th><th scope="col">HR%</th></tr></thead>
+    <tbody>
+        {% for split in batter.splits %}<tr class="{% if split.hot %}hot{% endif %}"><td>{{ split.label }}</td><td>{{ split.avg }}</td><td>{{ split.obp }}</td><td>{{ split.slg }}</td><td>{{ split.hr }}</td></tr>{% endfor %}
+    </tbody>
+</table>
+<p class="hud-note game-usage">Speed <b>{{ batter.speed }}</b> · steals <b>{{ batter.steals }}</b> · PA left: {{ batter.pa_left }}</p>
+<ul class="hud-due">
+    {% for due in batter.due %}<li><span>{{ due.label }}: <b>{{ due.player.name }}</b></span><span class="pos">{{ due.position }} · {{ due.avg }}</span></li>{% endfor %}
+</ul>
