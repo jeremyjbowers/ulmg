@@ -220,8 +220,15 @@
     if (confirm && !form.querySelector('input[name=player]:checked')) confirm.disabled = true;
   });
 
-  /* Keys: Space plays, B S H I P make the calls, Esc closes the panel. */
+  /* Keys: Space plays, B S H I P make the calls, Esc closes the panel. A confirmation is answered with its own buttons. */
   document.addEventListener('keydown', function (event) {
+    if (document.querySelector('.hud-confirm')) {
+      if (event.key === 'Escape') {
+        var cancel = document.querySelector('.hud-confirm [data-cancel]');
+        if (cancel) { event.preventDefault(); cancel.click(); }
+      }
+      return;
+    }
     if (event.key === 'Escape') { closeDrawers(); return; }
     var tag = (event.target.tagName || '').toLowerCase();
     if (tag === 'input' || tag === 'select' || tag === 'textarea' || tag === 'button' || tag === 'a' || event.target.isContentEditable) return;
@@ -232,7 +239,7 @@
       return;
     }
     var key = (event.key || '').toUpperCase();
-    var call = hud.querySelector('button[data-key="' + key + '"]:not([disabled])');
+    var call = hud.querySelector('[data-key="' + key + '"]:not([disabled])');
     if (call) { event.preventDefault(); call.click(); }
   });
 })();

@@ -83,7 +83,7 @@ def game_page(request, game_id):
         if log is None:
             context.update(sim_game.pregame(game, request.user))
         else:
-            context.update(sim_game.page(log, request.user))
+            context.update(sim_game.page(log, request.user, confirm=request.GET.get("confirm")))
         context["can_autoplay"] = autoplay.can_autoplay(request.user, game)
         awaiting = bool(context.get("final")) and game.id not in _finished_ids(request)
         context["awaiting_finish"] = awaiting

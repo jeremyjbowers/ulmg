@@ -195,8 +195,8 @@ class ControlsTest(GameHudTestCase):
         defense = self.group(html, "defense")
         self.assertIn(f"<b>{self.road.team.abbreviation} (you)</b>", offense)
         self.assertIn(f"<b>{self.home.team.abbreviation} computer</b>", defense)
-        self.assertIn('value="bunt"', offense)
-        self.assertNotIn('value="intentional_walk"', defense)
+        self.assertIn('href="?confirm=bunt"', offense)
+        self.assertNotIn('href="?confirm=intentional_walk"', defense)
         self.assertIn('class="hud-btn" disabled data-key="I">Intentional walk', defense)
         self.assertIn("is the computer&#x27;s side", defense)
         self.assertIn("Play the next plate appearance", html)
@@ -214,7 +214,7 @@ class ControlsTest(GameHudTestCase):
         self.post("open", seats="away,home")
         self.post("step", expected=self.expected())
         offense = self.group(self.page(), "offense")
-        self.assertIn('value="steal" class="hud-btn live"', offense)
+        self.assertIn('href="?confirm=steal" class="hud-btn live"', offense)
         self.assertNotIn("Steal needs a runner", offense)
         self.assertIn('<a class="hud-btn" href="#sub-pr" data-open="pr">Pinch run</a>', offense)
         response = self.post("step", expected=self.expected(), call="steal")
@@ -225,9 +225,37 @@ class ControlsTest(GameHudTestCase):
         self.post("open", seats="home")
         html = self.page()
         self.assertIn("Play the next plate appearance", html)
-        self.assertNotIn('value="bunt"', html)
-        self.assertNotIn('value="steal"', html)
-        self.assertIn('value="intentional_walk"', html)
+        self.assertNotIn('confirm=bunt', html)
+        self.assertNotIn('confirm=steal', html)
+        self.assertIn('href="?confirm=intentional_walk"', html)
+
+    def test_a_call_asks_before_it_is_sent_and_a_steal_names_the_runner(self):
+        leadoff = self.road.hitters[0]
+        models.Card.objects.filter(player=leadoff).update(steal_success=0.62)
+        gf.set_rates([leadoff], SINGLE)
+        self.post("open", seats="away,home")
+        quiet = self.page()
+        self.assertNotIn('href="?confirm=steal"', quiet)
+        asked = self.client.get(self.url + "?confirm=bunt").content.decode()
+        dialog = self.section(asked, 'class="hud-confirm"', "</form>")
+        self.assertIn(leadoff.name, dialog)
+        self.assertIn('name="call" value="bunt"', dialog)
+        self.assertNotIn('class="hud-confirm"', self.client.get(self.url + "?confirm=steal").content.decode())
+        self.post("step", expected=self.expected())
+        html = self.client.get(self.url + "?confirm=steal").content.decode()
+        dialog = self.section(html, 'class="hud-confirm"', "</form>")
+        self.assertIn(f"{leadoff.name}, on first, steals second 62% of the time.", dialog)
+        self.assertIn('name="call" value="steal"', dialog)
+        self.assertIn(">Send him<", dialog)
+
+    def test_a_steal_with_no_success_rate_shows_the_engine_default(self):
+        leadoff = self.road.hitters[0]
+        self.assertIsNone(models.Card.objects.get(player=leadoff).steal_success)
+        gf.set_rates([leadoff], SINGLE)
+        self.post("open", seats="away,home")
+        self.post("step", expected=self.expected())
+        html = self.client.get(self.url + "?confirm=steal").content.decode()
+        self.assertIn(f"{leadoff.name}, on first, steals second 75% of the time.", self.section(html, 'class="hud-confirm"', "</form>"))
 
 
 class LastPlayTest(GameHudTestCase):

@@ -13,6 +13,20 @@
     </div>
     {% endif %}
 
+    {% if confirmation %}
+    <div class="hud-confirm" role="dialog" aria-labelledby="hud-confirm-title">
+        <p id="hud-confirm-title" class="hud-eyebrow">{{ confirmation.label }}</p>
+        <p>{{ confirmation.text }}</p>
+        <form method="post" action="/games/{{ game.id }}/step/">
+            {% csrf_token %}
+            <input type="hidden" name="expected" value="{{ expected }}">
+            <input type="hidden" name="call" value="{{ confirmation.call }}">
+            <button type="submit" class="hud-btn live">{{ confirmation.yes }}</button>
+            <a class="hud-btn" href="?" data-cancel>Never mind</a>
+        </form>
+    </div>
+    {% endif %}
+
     <section class="hud-board" aria-label="Scoreboard">
         <table class="hud-line line-score">
             <thead>
