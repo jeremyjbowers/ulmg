@@ -122,3 +122,13 @@ class RunnerMoveTest(SimpleTestCase):
         result = _result("home_run", "9", {"first": None, "second": None, "third": None}, scored=["4", "9"], runs=2)
         moves = game_field.runner_moves({"first": "4", "second": None, "third": None}, result)
         self.assertEqual(moves, [("4", "first", "home"), ("9", "home", "home")])
+
+    def test_a_runner_touches_each_base_on_the_way(self):
+        self.assertEqual(game_field.bases_touched("first", "third"), ("first", "second", "third"))
+        self.assertEqual(game_field.bases_touched("first", "home"), ("first", "second", "third", "home"))
+        self.assertEqual(game_field.bases_touched("second", "home"), ("second", "third", "home"))
+        self.assertEqual(game_field.bases_touched("home", "second"), ("home", "first", "second"))
+        self.assertEqual(game_field.bases_touched("home", "first"), ("home", "first"))
+        self.assertEqual(game_field.bases_touched("home", "home"), ("home", "first", "second", "third", "home"))
+        self.assertEqual(game_field.bases_touched("second", "second"), ("second",))
+        self.assertEqual(game_field.bases_touched("first", "out"), ("first",))

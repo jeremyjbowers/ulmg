@@ -228,6 +228,9 @@ class LastPlayTest(GameHudTestCase):
         self.assertEqual(play["ball"][1], list(game_field.HOME), "the hit leaves home plate")
         self.assertEqual([(r["name"], r["end"]) for r in play["runners"]], [("Catcher", "first")])
         self.assertEqual(play["runners"][0]["from"], [300.0, 492.0])
+        self.assertEqual(play["runners"][0]["path"][0], play["runners"][0]["from"])
+        self.assertEqual(play["runners"][0]["path"][-1], play["runners"][0]["to"])
+        self.assertEqual(len(play["runners"][0]["path"]), 2, "first base is one base away")
 
     def test_a_home_run_scores_the_batter_and_flashes_the_run(self):
         gf.set_rates([self.road.hitters[0]], gf.HOME_RUN_RATES)
@@ -237,6 +240,8 @@ class LastPlayTest(GameHudTestCase):
         self.assertEqual(play["side"], AWAY)
         self.assertEqual(play["inning"], 1)
         self.assertEqual(play["runners"][0]["end"], "home")
+        self.assertEqual(len(play["runners"][0]["path"]), 5, "a home run touches every base")
+        self.assertEqual(play["runners"][0]["path"][0], play["runners"][0]["path"][-1])
 
     def test_a_change_made_after_the_play_leaves_nothing_to_animate(self):
         self.post("open", seats="away,home")
