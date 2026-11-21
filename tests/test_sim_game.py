@@ -475,6 +475,57 @@ class PlayingTestCase(SimGameTestCase):
         self.assertIn("no innings left", str(refused.exception))
         self.assertEqual(self.play(log).state[AWAY]["pitcher_slot"], str(self.road.starters[0].id))
 
+    def test_a_rotation_starter_is_not_offered_in_relief(self):
+        log = self.open(user=self.tester, seats=(AWAY, HOME))
+        offered = {option.player.id for option in self.play(log).relief_choices(HOME)}
+        for starter in self.home.starters:
+            self.assertNotIn(starter.id, offered)
+        self.assertIn(self.home.relievers[0].id, offered)
+        self.assertIn(self.home.swingman.id, offered, "a swingman filed only in the pen is a reliever")
+
+    def test_a_starter_left_off_the_rotation_can_relieve(self):
+        spare = self.home.starters[4]
+        self.home.file(rotation=self.home.starters[:4])
+        log = self.open(user=self.tester, seats=(AWAY, HOME))
+        offered = {option.player.id for option in self.play(log).relief_choices(HOME)}
+        self.assertIn(spare.id, offered)
+        for starter in self.home.starters[:4]:
+            self.assertNotIn(starter.id, offered)
+
+    def test_a_swingman_in_the_rotation_appears_only_when_designated_a_reliever(self):
+        swingman = self.home.swingman
+        self.home.file(rotation=self.home.starters + [swingman], mirp=[])
+        log = self.open(user=self.tester, seats=(AWAY, HOME))
+        self.assertNotIn(swingman.id, {option.player.id for option in self.play(log).relief_choices(HOME)})
+        play = self.step_until(
+            log, lambda p: p.fold.first_pitch and sim_game.fielding_side(p.state) == HOME, user=self.tester
+        )
+        with self.assertRaises(sim_game.GameRefused) as refused:
+            sim_game.change_pitcher(log, self.tester, HOME, swingman, play.sequence, seeds=self.next_seed)
+        self.assertIn("rotation", str(refused.exception))
+        usage.set_swingman_designation(swingman, gf.SEASON, usage.BULLPEN)
+        self.assertIn(swingman.id, {option.player.id for option in self.play(log).relief_choices(HOME)})
+        sim_game.change_pitcher(log, self.tester, HOME, swingman, self.play(log).sequence, seeds=self.next_seed)
+        self.assertEqual(self.play(log).state[HOME]["pitcher_slot"], str(swingman.id))
+
+    def test_a_human_whose_pen_is_spent_is_not_handed_a_rotation_starter(self):
+        gf.counter(self.home.starters[0], start_limit_outs=3)
+        for pitcher in self.home.relievers + [self.home.swingman]:
+            gf.counter(pitcher, relief_limit_outs=0)
+        log = self.open(user=self.tester, seats=(AWAY, HOME))
+        play = self.play(log)
+        with self.assertLogs("ulmg.usage", level="WARNING") as logged:
+            for _ in range(80):
+                if play.fold.pause is not None or play.fold.final or play.need() is not None:
+                    break
+                self.step(log, user=self.tester)
+                play = self.play(log)
+        self.assertIn("has no legal pitcher", logged.output[0])
+        self.assertIsNotNone(play.fold.pause)
+        self.assertEqual(play.fold.pause["side"], HOME)
+        self.assertIn("no legal pitcher", play.fold.pause["reason"])
+        self.assertEqual(play.state[HOME]["pitcher_slot"], str(self.home.starters[0].id))
+
     def test_a_human_cannot_put_a_capped_batter_in_his_lineup(self):
         capped = self.road.bench[0]
         gf.counter(capped, plate_appearances_cap=40, plate_appearances=40)

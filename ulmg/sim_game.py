@@ -432,6 +432,8 @@ class Play:
         # The usage ledger as this action reads it; every appended event reads it again.
         self.usage = usage.LedgerReads(self.season)
         self._relief_plans = {}
+        self._rotations = {}
+        self._designated_relievers = {}
 
     @property
     def sequence(self):
@@ -652,6 +654,35 @@ class Play:
             groups[computer_manager.OTHER],
         )
         return [Option(p, self.pitcher_problem(side, p)) for p in order if p is not None]
+
+    def relief_choices(self, side):
+        """
+        Pitchers a manager may bring in from the pen. Someone in the active
+        rotation is left out unless he is designated a reliever.
+        """
+        return [option for option in self.pitcher_options(side) if self.may_relieve(side, option.player)]
+
+    def may_relieve(self, side, player):
+        """Whether a manager may bring him in. A rotation starter may not, unless designated a reliever."""
+        if player.id not in self._rotation_ids(side):
+            return True
+        return player.id in self._reliever_designations(side)
+
+    def _rotation_ids(self, side):
+        if side not in self._rotations:
+            plan = plans.find_plan(team_for(self.game, side), self.season, self.game.series.slot.half)
+            self._rotations[side] = set(plan.rotation or []) if plan is not None else set()
+        return self._rotations[side]
+
+    def _reliever_designations(self, side):
+        if side not in self._designated_relievers:
+            roster_ids = [player.id for player in self.roster_players(side)]
+            self._designated_relievers[side] = set(
+                models.UsageCounter.objects.filter(
+                    player_id__in=roster_ids, season=self.season, confined_to_relief=True
+                ).values_list("player_id", flat=True)
+            )
+        return self._designated_relievers[side]
 
     def bench_options(self, side, position):
         """Every player who could take a batting-order slot, in bench order then by name, with why not."""
@@ -932,6 +963,9 @@ def settle(play):
             # A human can also rearrange his whole defense, so this waits for him and never pauses.
             return
         options = play.options_for(need)
+        if need.kind == PITCHER_NEED and play.fold.is_human(need.side):
+            # A rotation starter is not a choice for the manager, even when the pen is empty.
+            options = play.relief_choices(need.side)
         legal = [o.player for o in options if o.legal]
         if not legal:
             pause(play, need, [o.player for o in options])
@@ -1462,6 +1496,11 @@ def change_pitcher(log, user, side, player, expected, seeds=engine_client.new_se
             raise GameRefused(f"{player.name} is already pitching.")
         if str(player.id) in used_ids(play.state, side):
             raise GameRefused(f"{player.name} is already in this game.")
+        if not play.may_relieve(side, player):
+            raise GameRefused(
+                f"{player.name} is in the rotation, so he is not in the bullpen. "
+                "Designate him a reliever to bring him in."
+            )
         problem = play.pitcher_problem(side, player)
         if problem:
             raise GameRefused(problem)
@@ -1995,7 +2034,7 @@ def page(log, user, confirm=None):
     choices = substitution_choices(play, user, need)
     pitcher_options = None
     if fold.holds(user, fielding) and (fold.first_pitch or (need and need.kind == PITCHER_NEED)):
-        pitcher_options = play.pitcher_options(fielding)
+        pitcher_options = play.relief_choices(fielding)
     recent = game_field.recent_plate_appearance(play.events, Event.PLATE_APPEARANCE)
     last_play = game_field.last_play(play, recent) if recent is not None else None
     during = game_hud.during_plate_appearance(play, recent, teams) if recent is not None else None

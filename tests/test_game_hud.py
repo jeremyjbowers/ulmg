@@ -398,6 +398,9 @@ class PanelTest(GameHudTestCase):
         self.assertRegex(closer, r"<td class=\"wide\">rested</td><td>\d+\.\d</td>\s*$")
         self.assertIn(f'value="{tired.id}" id="pit-{tired.id}" disabled', drawer)
         self.assertIn("no innings left this season", drawer)
+        for starter in self.home.starters:
+            self.assertNotIn(f'value="{starter.id}"', drawer)
+        self.assertIn(f'value="{self.home.swingman.id}"', drawer)
 
     def test_the_defense_tab_lists_slots_with_ratings_and_the_bench(self):
         self.post("open", seats="away,home")
