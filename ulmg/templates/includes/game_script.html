@@ -88,15 +88,28 @@
     document.getElementById('hud-banner-big').textContent = play.banner;
     document.getElementById('hud-banner-small').textContent = play.text;
     banner.classList.add('show');
-    nodes.forEach(function (g, i) {
-      var move = play.runners[i];
-      g.style.transition = '';
-      setRunner(g, move.to, move.label_to);
-      if (move.end === 'home' || move.end === 'out') setTimeout(function () { g.style.opacity = 0; }, 700);
+    var hops = 0;
+    play.runners.forEach(function (move) {
+      var count = (move.path || [move.from, move.to]).length - 1;
+      if (count > hops) hops = count;
     });
+    for (var hop = 1; hop <= Math.max(hops, 1); hop++) {
+      nodes.forEach(function (g, i) {
+        var move = play.runners[i];
+        var route = move.path || [move.from, move.to];
+        var labels = move.labels || [move.label_from, move.label_to];
+        var step = Math.min(hop, route.length - 1);
+        if (hop === 1) g.style.transition = '';
+        setRunner(g, route[step], labels[Math.min(step, labels.length - 1)]);
+        if (step === route.length - 1 && (move.end === 'home' || move.end === 'out')) {
+          setTimeout(function () { g.style.opacity = 0; }, 700);
+        }
+      });
+      /* A full step, so the next base starts from the base he just reached. */
+      await wait(760);
+    }
     ball.style.opacity = 0;
     flashRuns(play);
-    await wait(760);
     moving.innerHTML = '';
     settled.style.transition = 'opacity 200ms';
     settled.style.opacity = 1;

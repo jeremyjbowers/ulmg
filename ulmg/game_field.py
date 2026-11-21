@@ -375,6 +375,25 @@ def banner_label(outcome):
     return BANNERS.get(outcome, (outcome or "").replace("_", " ").upper())
 
 
+def bases_touched(start, end):
+    """
+    The bases a runner touches, in order.
+
+    Two or more bases go around the diamond. A runner who stays, or who is out,
+    has only the base he left: the out fades there.
+    """
+    if end == "out" or (start == end and end != "home"):
+        return (start,)
+    if start == "home" and end == "home":
+        return ("home", "first", "second", "third", "home")
+    cycle = ("home", "first", "second", "third", "home")
+    begin = cycle.index(start)
+    for index in range(begin + 1, len(cycle)):
+        if cycle[index] == end:
+            return cycle[begin : index + 1]
+    return (start, end)
+
+
 def runner_moves(before_bases, result):
     """
     Each runner's move in one plate appearance: from a base (or home, for the batter)
@@ -418,15 +437,19 @@ def last_play(play, event):
     moved = []
     for pid, start, end in runner_moves(before["bases"], result):
         player = play.player(pid)
+        touched = bases_touched(start, end)
+        finish = end if end in spots else start
         moved.append(
             {
                 "name": last_name(player),
                 "speed": speed_label(play.card(player)),
                 "from": spots[start],
-                "to": spots.get(end, spots[start]),
+                "to": spots[finish],
+                "path": [list(spots[base]) for base in touched],
+                "labels": [runner_label(base) for base in touched],
                 "end": end,
                 "label_from": runner_label(start),
-                "label_to": runner_label(end if end in spots else start),
+                "label_to": runner_label(finish),
             }
         )
     runs = result["change"]["runs_scored"]
