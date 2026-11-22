@@ -47,6 +47,25 @@ class GameHudTestCase(gf.EngineMixin, TestCase):
     def drawer(self, html, tab):
         return self.section(html, f'id="sub-{tab}"', "</aside>")
 
+    def order(self, html, during=False):
+        marker = 'id="hud-during-order"' if during else 'id="hud-order"'
+        return self.section(html, marker, "</ol>")
+
+    def order_row(self, hitter, position, number, mark, tone, throws):
+        from ulmg import game_hud
+
+        line = game_hud.hitter_line(models.Card.objects.get(player=hitter), throws)
+        attrs = f' class="{tone}"' if tone else ""
+        if tone in ("now", "due"):
+            attrs += ' aria-current="true"'
+        marked = f'<span class="mark">{mark}</span>' if mark else ""
+        return (
+            f"<li{attrs}><span class=\"slot\">{number}</span>"
+            f'<a href="/players/{hitter.id}/" title="{hitter.name}">{hitter.name}</a>'
+            f'<span class="pos">{position} · {hitter.bats}</span>'
+            f'<span class="slash">{line["avg"]} / {line["obp"]}</span>{marked}</li>'
+        )
+
     def last_play(self, html):
         blob = self.section(html, 'id="hud-last-play"', "</script>").split(">", 1)[1]
         return json.loads(blob)
@@ -144,6 +163,47 @@ class CardTest(GameHudTestCase):
         self.assertIn(f'class="matchup-edge edge-good">vs RHP {game_hud.edge_text(hitter)} OPS', batter)
         mound = self.section(html, 'class="hud-card hud-pitcher"', "</ul>")
         self.assertIn(f'class="matchup-edge edge-good">vs RHH {game_hud.edge_text(pitcher)} OBP', mound)
+
+
+# Batting-order slots the fixture files: catcher, the seven fielders, then the DH.
+ORDER_POSITIONS = ["C", "1B", "2B", "3B", "SS", "LF", "CF", "RF", "DH"]
+
+
+class OpponentLineupTest(GameHudTestCase):
+    def test_a_pitching_manager_sees_his_opponents_whole_lineup(self):
+        self.post("open", seats="home")
+        throws = self.home.starters[0].throws
+        order = self.order(self.page())
+        self.assertIn(f"Opponent · {self.road.team.abbreviation} · vs RHP", order)
+        self.assertNotIn(self.home.hitters[0].name, order)
+        for number, (hitter, position) in enumerate(zip(self.road.hitters, ORDER_POSITIONS), start=1):
+            mark, tone = {1: ("Now", "now"), 2: ("On deck", "deck"), 3: ("In the hole", "hole")}.get(number, ("", ""))
+            self.assertIn(self.order_row(hitter, position, number, mark, tone, throws), order)
+
+    def test_a_batting_manager_sees_who_his_opponent_has_due_up(self):
+        self.post("open", seats="away")
+        throws = self.road.starters[0].throws
+        order = self.order(self.page())
+        self.assertIn(f"Opponent · {self.home.team.abbreviation} · vs RHP", order)
+        self.assertNotIn(">Now</span>", order)
+        for number, (hitter, position) in enumerate(zip(self.home.hitters, ORDER_POSITIONS), start=1):
+            mark, tone = {1: ("Due up", "due"), 2: ("On deck", "deck"), 3: ("In the hole", "hole")}.get(number, ("", ""))
+            self.assertIn(self.order_row(hitter, position, number, mark, tone, throws), order)
+        watching = self.order(self.page(self.other_manager))
+        self.assertIn(f"Batting order · {self.road.team.abbreviation}", watching)
+        self.assertIn(self.order_row(self.road.hitters[0], "C", 1, "Now", "now", self.home.starters[0].throws), watching)
+
+    def test_the_highlight_follows_the_order_and_the_play_keeps_the_man_who_just_hit(self):
+        gf.set_rates([self.road.hitters[0]], gf.STRIKEOUT_RATES)
+        self.post("open", seats="home")
+        html = self.post("step", expected=self.expected()).content.decode()
+        throws = self.home.starters[0].throws
+        live = self.order(html)
+        prior = self.order(html, during=True)
+        self.assertIn(self.order_row(self.road.hitters[1], "1B", 2, "Now", "now", throws), live)
+        self.assertIn(self.order_row(self.road.hitters[2], "2B", 3, "On deck", "deck", throws), live)
+        self.assertIn(self.order_row(self.road.hitters[0], "C", 1, "Now", "now", throws), prior)
+        self.assertIn(self.order_row(self.road.hitters[1], "1B", 2, "On deck", "deck", throws), prior)
 
 
 class FieldTest(GameHudTestCase):

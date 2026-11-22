@@ -2137,7 +2137,7 @@ def page(log, user, confirm=None):
         pitcher_options = play.relief_choices(fielding)
     recent = game_field.recent_plate_appearance(play.events, Event.PLATE_APPEARANCE)
     last_play = game_field.last_play(play, recent) if recent is not None else None
-    during = game_hud.during_plate_appearance(play, recent, teams) if recent is not None else None
+    during = game_hud.during_plate_appearance(play, recent, teams, user) if recent is not None else None
     if last_play is not None and during is not None:
         last_play["situation"] = during["situation"]
     context.update(
@@ -2154,6 +2154,7 @@ def page(log, user, confirm=None):
             "first_pitch": fold.first_pitch,
             "can_step": can_step,
             "scoreboard": game_hud.scoreboard(play, context["box"], teams),
+            "order": game_hud.batting_order(play, user, teams),
             "batter": game_hud.batter_card(play, context["box"], teams, odds if fold.holds(user, batting) else []),
             "pitcher": game_hud.pitcher_card(play, context["box"], teams, [] if fold.holds(user, batting) else odds),
             "controls": game_hud.controls(play, user, need, can_step, teams),

@@ -1,4 +1,4 @@
-# ABOUTME: What the game HUD shows: the scoreboard, the batter and pitcher cards with a platoon edge, the calls, the last plays and the substitution panel.
+# ABOUTME: What the game HUD shows: the scoreboard, the opposing batting order, the batter and pitcher cards with a platoon edge, the calls, the last plays and the substitution panel.
 # ABOUTME: Every number comes from the game's log, its cards and the usage ledger; the pinch-hit odds come from the engine's /matchup.
 
 import copy
@@ -256,6 +256,63 @@ def batter_card(play, box, teams, odds=None):
     }
 
 
+def batting_order(play, user, teams):
+    """
+    The lineup a manager plans his pen against, all nine of them.
+
+    One seat shows the other club. Both seats, or none, show the club at
+    bat. Now is the man at bat; Due up is who leads off when that club is
+    in the field. The line is against the pitcher set to face them.
+    """
+    from ulmg import sim_game
+
+    state, fold = play.state, play.fold
+    held = fold.user_sides(user)
+    if len(held) == 1:
+        side, opponent = sim_game.other_side(held[0]), True
+    else:
+        side, opponent = sim_game.batting_side(state), False
+    batting = side == sim_game.batting_side(state)
+    club = state[side]
+    index = club["batter_index"]
+    size = len(club["lineup"]) or 1
+    pitcher_id = state[sim_game.other_side(side)].get("pitcher_slot")
+    throws = play.player(pitcher_id).throws if pitcher_id else None
+    rows = []
+    for slot, entry in enumerate(club["lineup"]):
+        player = play.player(entry["id"])
+        step = (slot - index) % size
+        if step == 0:
+            mark, tone = ("Now", "now") if batting else ("Due up", "due")
+        elif step == 1:
+            mark, tone = "On deck", "deck"
+        elif step == 2:
+            mark, tone = "In the hole", "hole"
+        else:
+            mark, tone = "", ""
+        line = hitter_line(play.card(player), throws)
+        rows.append(
+            {
+                "order": slot + 1,
+                "player": player,
+                "position": entry["position"],
+                "bats": player.bats or "?",
+                "avg": line["avg"],
+                "obp": line["obp"],
+                "mark": mark,
+                "tone": tone,
+            }
+        )
+    return {
+        "side": side,
+        "team": teams[side],
+        "opponent": opponent,
+        "batting": batting,
+        "hand": {"R": "RHP", "L": "LHP"}.get(throws, "—"),
+        "rows": rows,
+    }
+
+
 def pitcher_card(play, box, teams, odds):
     """The man on the mound: role, arm, today's line, pitches against his ceiling, innings left this outing, and the odds."""
     from ulmg import sim_game
@@ -503,7 +560,7 @@ def field(play, teams):
     }
 
 
-def during_plate_appearance(play, event, teams):
+def during_plate_appearance(play, event, teams, user):
     """
     The field, the batter and the pitcher as they were while this plate
     appearance was being played, before the log settled into the next one.
@@ -527,6 +584,7 @@ def during_plate_appearance(play, event, teams):
             "fielders": game_field.fielders(play, state, fielding, corner["rules"]["distances_ft"]),
             "fielding_team": teams[fielding],
             "situation": _situation(state),
+            "order": batting_order(play, user, teams),
         }
     finally:
         play.state = previous

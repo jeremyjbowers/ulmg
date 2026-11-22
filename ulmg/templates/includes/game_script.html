@@ -61,7 +61,7 @@
     while (hold.firstChild) b.appendChild(hold.firstChild);
   }
   function holdDuring(play) {
-    var pairs = [['hud-fielders', 'hud-during-fielders'], ['hud-batter', 'hud-during-batter'], ['hud-pitcher', 'hud-during-pitcher']];
+    var pairs = [['hud-fielders', 'hud-during-fielders'], ['hud-batter', 'hud-during-batter'], ['hud-pitcher', 'hud-during-pitcher'], ['hud-order', 'hud-during-order']];
     var swaps = [];
     pairs.forEach(function (pair) {
       var live = document.getElementById(pair[0]);

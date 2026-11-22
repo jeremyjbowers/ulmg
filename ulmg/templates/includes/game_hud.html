@@ -1,4 +1,4 @@
-{# ABOUTME: The game HUD: line score, batter card, the field, pitcher card with this plate appearance's odds and a platoon edge, the calls, the last plays and a box score. #}
+{# ABOUTME: The game HUD: line score, the opposing batting order, batter card, the field, pitcher card with this plate appearance's odds and a platoon edge, the calls, the last plays and a box score. #}
 {# ABOUTME: Expects the context sim_game.page builds. Every call is a plain form POST carrying the log position it was drawn from. A final offers the box score. #}
 <div id="hud" class="hud" data-game="{{ game.id }}">
     {% if paused %}
@@ -48,6 +48,10 @@
         </div>
     </section>
 
+    <section class="hud-order" aria-label="Lineup">
+        <div id="hud-order">{% include "includes/game_order.html" %}</div>
+    </section>
+
     <section class="hud-mid">
         <div class="hud-card hud-batter" id="hud-batter">
             {% include "includes/game_batter_card.html" %}
@@ -67,6 +71,7 @@
         </svg>
         <div id="hud-during-batter">{% include "includes/game_batter_card.html" with batter=during.batter %}</div>
         <div id="hud-during-pitcher">{% include "includes/game_pitcher_card.html" with pitcher=during.pitcher fielding_team=during.fielding_team %}</div>
+        <div id="hud-during-order">{% include "includes/game_order.html" with order=during.order %}</div>
     </div>
     {% endif %}
 

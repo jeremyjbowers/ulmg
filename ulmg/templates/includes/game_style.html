@@ -1,4 +1,4 @@
-{# ABOUTME: The game HUD's page stylesheet: the scoreboard, the cards, the top-down field, the calls and the substitution panel. #}
+{# ABOUTME: The game HUD's page stylesheet: the scoreboard, the batting order, the cards, the top-down field, the calls and the substitution panel. #}
 {# ABOUTME: Colors are tokens with a light and a dark set. Included from the game page head only. #}
 <style>
 :root {
@@ -70,6 +70,15 @@ body:has(#hud) header { background: #ffffff; color: #000000; }
 .hud-due { margin: 12px 0 0; padding: 0; list-style: none; font-size: 15px; }
 .hud-due li { display: flex; justify-content: space-between; gap: 8px; padding: 3px 0; border-top: 1px solid var(--rule); }
 .hud-due .pos { color: var(--muted); white-space: nowrap; }
+.hud-order { background: var(--panel); border: 1px solid var(--rule); border-top: 0; border-bottom: 0; padding: 8px 12px 10px; }
+.hud-order ol { display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); gap: 6px; list-style: none; margin: 6px 0 0; padding: 0; }
+.hud-order li { border: 1px solid var(--rule); border-radius: 6px; padding: 4px 6px; font-size: 13px; min-width: 0; }
+.hud-order li.now, .hud-order li.due { border-color: var(--ink); background: rgba(242,194,48,.28); font-weight: 800; }
+.hud-order li.deck, .hud-order li.hole { background: rgba(242,194,48,.12); }
+.hud-order a { color: inherit; text-decoration: none; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hud-order a:hover { text-decoration: underline; }
+.hud-order .slot, .hud-order .pos, .hud-order .slash, .hud-order .mark { display: block; color: var(--muted); font-size: 12px; font-weight: 600; }
+.hud-order li.now .mark, .hud-order li.due .mark { color: var(--ink); }
 .hud-meter { height: 12px; border-radius: 6px; background: var(--rule); overflow: hidden; margin: 6px 0 2px; }
 .hud-meter i { display: block; height: 100%; background: var(--good); }
 .hud-meter.warm i { background: var(--warm); }
@@ -191,6 +200,7 @@ body:has(#hud) header { background: #ffffff; color: #000000; }
   .hud-field { grid-column: 1 / -1; order: -1; border: 0 !important; border-bottom: 1px solid var(--rule) !important; }
   .hud-field + .hud-card { border-left: 1px solid var(--rule); }
   .hud-card + .hud-field { border-left: 0; }
+  .hud-order ol { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .hud-controls { grid-template-columns: 1fr; }
   .hud-btn.play { width: 100%; }
 }
