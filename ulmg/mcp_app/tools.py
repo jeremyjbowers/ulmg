@@ -89,10 +89,8 @@ async def _game_read(func, /, **kwargs) -> str:
     """Run a game_reads function; a missing game or team and a bad argument come back as JSON errors."""
     try:
         data = await db_sync(func, **kwargs)
-    except game_reads.NotFound as exc:
-        return _dump({"error": str(exc), "status": 404})
-    except ValueError as exc:
-        return _dump({"error": str(exc), "status": 400})
+    except game_reads.GameReadError as exc:
+        return _dump({"error": exc.message, "status": exc.status})
     return _dump(data)
 
 

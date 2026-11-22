@@ -306,10 +306,12 @@ class GameReadEdgesTestCase(TestCase):
             game_reads.get_team_season(season=self.season, owner=self.owner)
 
     def test_a_bad_status_or_kind_is_refused(self):
-        with self.assertRaises(ValueError):
+        with self.assertRaises(game_reads.BadArgument):
             game_reads.list_games(status="postponed")
-        with self.assertRaises(ValueError):
+        with self.assertRaises(game_reads.BadArgument):
             game_reads.list_sim_stats(kind="fielding")
+        with self.assertRaisesMessage(game_reads.BadArgument, "day_from must be a whole number"):
+            game_reads.list_games(day_from="tuesday")
 
     def test_json_api_errors(self):
         client = Client()
@@ -319,7 +321,10 @@ class GameReadEdgesTestCase(TestCase):
             self.assertEqual(client.get("/api/mcp/v1/teams/ZZZ/season/", **auth).status_code, 404)
             self.assertEqual(client.get("/api/mcp/v1/team-season/", **auth).status_code, 404)
             resp = client.get("/api/mcp/v1/games/", data={"status": "postponed"}, **auth)
-        self.assertEqual(len(logged.records), 4)
+            not_a_number = client.get("/api/mcp/v1/sim-stats/", data={"min_pa": "lots"}, **auth)
+        self.assertEqual(len(logged.records), 5)
+        self.assertEqual(not_a_number.status_code, 400)
+        self.assertEqual(not_a_number.json()["error"], "min_pa must be a whole number")
         self.assertEqual(resp.status_code, 400)
         self.assertIn("status", resp.json()["error"])
 

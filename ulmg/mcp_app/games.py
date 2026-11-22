@@ -21,19 +21,42 @@ STAT_KINDS = (BATTING, PITCHING)
 MAX_LIMIT = 2500
 
 
-class NotFound(LookupError):
+class GameReadError(Exception):
+    """A read the caller can correct, with a message written here and an HTTP status."""
+
+    status = 400
+
+    def __init__(self, message):
+        super().__init__(message)
+        self.message = message
+
+
+class NotFound(GameReadError):
     """A game or team the read names does not exist."""
+
+    status = 404
+
+
+class BadArgument(GameReadError):
+    """An argument out of its allowed values or not a number."""
+
+
+def _int(value, name):
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        raise BadArgument(f"{name} must be a whole number") from None
 
 
 def _season(season):
     """The season asked for, else the league season the site's pages use."""
     if season in (None, ""):
         return utils.league_season()
-    return int(season)
+    return _int(season, "season")
 
 
 def _limit(limit, default):
-    return max(1, min(int(limit or default), MAX_LIMIT))
+    return max(1, min(_int(limit or default, "limit"), MAX_LIMIT))
 
 
 def _team(abbreviation=None, owner=None):
@@ -105,16 +128,16 @@ def list_games(*, season=None, team=None, day_from=None, day_to=None, status=FIN
     """The season's games in day order with their scores, filtered by team, day range and status."""
     status = status or FINAL
     if status not in GAME_STATUSES:
-        raise ValueError(f"status must be one of {', '.join(GAME_STATUSES)}")
+        raise BadArgument(f"status must be one of {', '.join(GAME_STATUSES)}")
     season = _season(season)
     games = _games(season)
     if team:
         club = _team(team)
         games = games.filter(Q(series__home_team=club) | Q(series__road_team=club))
     if day_from not in (None, ""):
-        games = games.filter(day__gte=int(day_from))
+        games = games.filter(day__gte=_int(day_from, "day_from"))
     if day_to not in (None, ""):
-        games = games.filter(day__lte=int(day_to))
+        games = games.filter(day__lte=_int(day_to, "day_to"))
     if status == FINAL:
         games = games.filter(is_final=True)
     elif status == IN_PROGRESS:
@@ -307,7 +330,7 @@ def list_sim_stats(
     batting or pitching line and picks which line sort reads.
     """
     if kind not in (None, "") and kind not in STAT_KINDS:
-        raise ValueError(f"kind must be one of {', '.join(STAT_KINDS)}")
+        raise BadArgument(f"kind must be one of {', '.join(STAT_KINDS)}")
     season = _season(season)
     lines = models.PlayerStatSeason.objects.filter(
         season=season, classification=ULMG, is_career=False
@@ -315,7 +338,7 @@ def list_sim_stats(
     if team:
         lines = lines.filter(player__team=_team(team))
     if player_id not in (None, ""):
-        lines = lines.filter(player_id=int(player_id))
+        lines = lines.filter(player_id=_int(player_id, "player_id"))
     if kind == BATTING:
         lines = lines.filter(hit_stats__isnull=False)
     elif kind == PITCHING:
@@ -325,7 +348,8 @@ def list_sim_stats(
         for line in lines
     ]
     if min_pa not in (None, ""):
-        rows = [r for r in rows if r["batting"] and (r["batting"].get("pa") or 0) >= int(min_pa)]
+        floor = _int(min_pa, "min_pa")
+        rows = [r for r in rows if r["batting"] and (r["batting"].get("pa") or 0) >= floor]
     if min_ip not in (None, ""):
         floor = usage.innings_to_outs(min_ip)
         rows = [r for r in rows if r["pitching"] and usage.innings_to_outs(r["pitching"].get("ip")) >= floor]

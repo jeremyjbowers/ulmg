@@ -236,10 +236,8 @@ def _game_read(func, **kwargs):
     """JSON for a game_reads call: 404 for a missing game or team, 400 for a bad argument."""
     try:
         return JsonResponse(func(**kwargs))
-    except game_reads.NotFound as exc:
-        return JsonResponse({"error": str(exc)}, status=404)
-    except ValueError as exc:
-        return JsonResponse({"error": str(exc)}, status=400)
+    except game_reads.GameReadError as exc:
+        return JsonResponse({"error": exc.message}, status=exc.status)
 
 
 @require_GET
