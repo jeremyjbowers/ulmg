@@ -168,6 +168,17 @@ class PlayingTimePagesTest(TestCase):
         self.assertContains(refused, "Farm Bat is not on the MLB roster.", status_code=400)
         self.assertEqual(models.DepthAssignment.objects.count(), 0)
 
+    def test_a_lineup_spot_names_the_bat_wrc_and_war(self):
+        self.seager.bats = "L"
+        self.seager.save(update_fields=["bats"])
+        models.PlayerStatSeason.objects.create(
+            player=self.seager, season=SEASON - 1, classification="1-mlb", hit_stats={"war": 5.4, "wrc_plus": 100}
+        )
+        models.Card.objects.create(player=self.seager, season=SEASON - 1, wrc_plus=142)
+        self.sign_in(self.owner)
+        body = self.client.get(self.edit).content.decode()
+        self.assertIn("Corey Seager · L · 142 wRC+ · 5.4 WAR", section(body, "1B"))
+
     def test_a_pitching_spot_names_the_hand_and_the_card_xfip(self):
         models.PlayerStatSeason.objects.create(
             player=self.strider, season=SEASON - 1, classification="1-mlb", pitch_stats={"xfip": 2.85}
