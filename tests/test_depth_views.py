@@ -21,6 +21,12 @@ def section(body, code):
     return body.split(f'data-bucket="{code}"', 1)[1].split('data-bucket="', 1)[0]
 
 
+def player_row(body, player_id):
+    """The playing-time summary row. The lineup cards above it use the same player id."""
+    table = body.split('id="depth-players"', 1)[1]
+    return table.split(f'data-player="{player_id}"', 1)[1].split("</tr>", 1)[0]
+
+
 class PlayingTimePagesTest(TestCase):
     def setUp(self):
         self.atl = make_team("ATL")
@@ -96,7 +102,7 @@ class PlayingTimePagesTest(TestCase):
         body = second.content.decode()
         self.assertIn("477 PA to the card", section(body, "2B"))
         self.assertIn("The lineup card&#x27;s starter at SS takes the other 441 plate appearances.", section(body, "SS"))
-        row = body.split(f'data-player="{self.seager.id}"', 1)[1].split("</tr>", 1)[0]
+        row = player_row(body, self.seager.id)
         self.assertIn("436", row)
         self.assertIn("200 PA at 2B", row)
         self.assertIn("236 PA at SS", row)
@@ -109,7 +115,7 @@ class PlayingTimePagesTest(TestCase):
         self.sign_in(self.owner)
         self.save(self.edit, "2B", player=self.seager, amount="300")
         page = self.save(self.edit, "SS", player=self.seager, amount="236")
-        row = page.content.decode().split(f'data-player="{self.seager.id}"', 1)[1].split("</tr>", 1)[0]
+        row = player_row(page.content.decode(), self.seager.id)
         self.assertIn("He is down for 536 PA and his cap is 436.", row)
 
     def test_one_save_changes_a_number_marks_the_rest_and_drops_a_row(self):
@@ -144,6 +150,32 @@ class PlayingTimePagesTest(TestCase):
         body = self.client.get(self.edit).content.decode()
         self.assertNotIn(f'value="{self.greene.id}"', section(body, "SS"))
         self.assertIn(f'value="{self.greene.id}"', section(body, "1B"))
+
+    def test_the_player_box_is_a_typeahead_of_the_mlb_roster(self):
+        farm = make_player(self.atl, "Farm Bat", position="OF", mlb=False)
+        self.sign_in(self.owner)
+        page = self.client.get(self.edit)
+        body = page.content.decode()
+        first = section(body, "1B")
+        self.assertIn("data-depth-select", first)
+        self.assertIn('aria-label="Add a player at 1B"', first)
+        self.assertIn(f'value="{self.seager.id}"', first)
+        self.assertIn(">Corey Seager<", first)
+        self.assertNotIn(f'value="{farm.id}"', first)
+        self.assertNotIn("Farm Bat", first)
+        self.assertIn('querySelectorAll("[data-depth-select]")', body)
+        refused = self.save(self.edit, "RF", player=farm, amount="100")
+        self.assertContains(refused, "Farm Bat is not on the MLB roster.", status_code=400)
+        self.assertEqual(models.DepthAssignment.objects.count(), 0)
+
+    def test_a_pitching_spot_names_the_hand_and_the_card_xfip(self):
+        models.PlayerStatSeason.objects.create(
+            player=self.strider, season=SEASON - 1, classification="1-mlb", pitch_stats={"xfip": 2.85}
+        )
+        self.sign_in(self.owner)
+        body = self.client.get(self.rotation).content.decode()
+        self.assertIn("Spencer Strider · RHP · 2.85 xFIP", section(body, "SP"))
+        self.assertIn("Shohei Ohtani · RHP", section(body, "SP"))
 
     def test_planned_starts_live_on_the_rotation_page(self):
         self.sign_in(self.owner)

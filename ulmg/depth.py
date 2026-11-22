@@ -178,6 +178,8 @@ def _player_errors(chart, player, bucket):
     errors = []
     if player.team_id != chart.team_id:
         errors.append(f"{player.name} is not on {chart.team.abbreviation}.")
+    elif not player.is_ulmg_mlb_roster:
+        errors.append(f"{player.name} is not on the MLB roster.")
     kind = bucket_kind(bucket)
     if kind == PA and plans.is_pitcher(player):
         errors.append(f"{player.name} is a pitcher and does not hit.")
@@ -432,6 +434,45 @@ def _eligible(player, bucket, taken):
     return plans.can_pitch(player)
 
 
+# What the typeahead calls a pitcher's throwing hand.
+_HANDS = {"L": "LHP", "R": "RHP"}
+
+
+def _shown_xfip(pitch):
+    """The card-season xFIP, to two decimals, or None when the line has none."""
+    if not pitch:
+        return None
+    value = pitch.get("xfip")
+    if value in (None, ""):
+        return None
+    try:
+        return f"{float(value):.2f}"
+    except (TypeError, ValueError):
+        return None
+
+
+def _choice_label(player, bucket, pitch):
+    """The typeahead text. A pitching spot names the hand and the card-season xFIP."""
+    if bucket_kind(bucket) == PA:
+        return player.name
+    bits = [player.name]
+    hand = _HANDS.get(player.throws or "")
+    if hand:
+        bits.append(hand)
+    xfip = _shown_xfip(pitch)
+    if xfip:
+        bits.append(f"{xfip} xFIP")
+    return " · ".join(bits)
+
+
+@dataclass
+class Option:
+    """One player the selector can add, and the text the typeahead shows."""
+
+    player: object
+    label: str
+
+
 @dataclass
 class Row:
     id: int
@@ -482,7 +523,7 @@ class ChartView:
     estimate_note: str
 
 
-def _spot(code, label, assignments, roster):
+def _spot(code, label, assignments, roster, pitches=None):
     kind = bucket_kind(code)
     target = bucket_target(code)
     filed = [row for row in assignments if row.bucket == code]
@@ -512,10 +553,14 @@ def _spot(code, label, assignments, roster):
             )
         )
     taken = {row.player_id for row in filed}
-    options = sorted(
-        (player for player in roster if _eligible(player, code, taken)),
-        key=_name_key,
-    )
+    pitches = pitches or {}
+    options = [
+        Option(player, _choice_label(player, code, pitches.get(player.id)))
+        for player in sorted(
+            (player for player in roster if _eligible(player, code, taken)),
+            key=_name_key,
+        )
+    ]
     unit = _unit(kind)
     names = [row.player.name for row in rows if row.unlimited]
     note = _cover_note(names, remainder, kind, nothing_left=remainder == 0)
@@ -581,10 +626,15 @@ def describe(team, season):
     assignments = []
     if chart is not None:
         assignments = list(chart.assignments.select_related("player"))
-    roster = list(models.Player.objects.filter(team=team))
-    hitting = [_spot(code, code, assignments, roster) for code in plans.LINEUP_POSITIONS]
-    rotation = _spot(STARTS, "Rotation", assignments, roster)
-    bullpen = _spot(BULLPEN, "Bullpen", assignments, roster)
+    # Playing time is filed from the MLB roster. A player sent down stays on a row he already has.
+    roster = list(models.Player.objects.filter(team=team, is_ulmg_mlb_roster=True))
+    pitches = {
+        player_id: pitch
+        for player_id, (_hit, pitch) in usage.card_stats_by_player(roster, season).items()
+    }
+    hitting = [_spot(code, code, assignments, roster, pitches) for code in plans.LINEUP_POSITIONS]
+    rotation = _spot(STARTS, "Rotation", assignments, roster, pitches)
+    bullpen = _spot(BULLPEN, "Bullpen", assignments, roster, pitches)
     spots = [*hitting, rotation, bullpen]
     return ChartView(
         hitting=hitting,
