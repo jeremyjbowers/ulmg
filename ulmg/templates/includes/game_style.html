@@ -1,4 +1,4 @@
-{# ABOUTME: The game HUD's page stylesheet: the scoreboard, the batting order, the cards, the top-down field, the calls and the substitution panel. #}
+{# ABOUTME: The game HUD's page stylesheet: the scoreboard, the batting order, the cards, the top-down field, the calls, the dice card and the substitution panel. #}
 {# ABOUTME: Colors are tokens with a light and a dark set. Included from the game page head only. #}
 <style>
 :root {
@@ -193,6 +193,74 @@ body:has(#hud) header { background: #ffffff; color: #000000; }
 .hud-compare .hud-btn.play { min-height: 48px; min-width: 0; font-size: 16px; padding: 10px 18px; }
 .hud-scrim { position: fixed; inset: 0; background: rgba(0,0,0,.35); opacity: 0; pointer-events: none; transition: opacity 200ms; z-index: 55; display: block; }
 .hud-page:has(.hud-drawer:target) .hud-scrim, .hud-page:has(.hud-drawer.open) .hud-scrim { opacity: 1; pointer-events: auto; }
+
+/* Dice and the Strat-style card */
+.hud-dice { background: var(--panel); border: 1px solid var(--rule); border-top: 0; padding: 12px 16px; }
+.dice-head { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
+.dice-roll { display: flex; gap: 10px; }
+.die { width: 58px; height: 58px; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 2px solid var(--ink); background: #fbfaf5; color: #1c1b18; box-shadow: 0 3px 0 var(--ink); }
+.die .face { font: 800 26px/1 Georgia, "Times New Roman", serif; font-variant-numeric: tabular-nums; }
+.die small { font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: #5d5a52; }
+.die.d20 { background: #b3261e; color: #fbfaf5; border-color: #6e1712; box-shadow: 0 3px 0 #6e1712; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); border-radius: 0; }
+.die.d20 small { color: #f6d9d2; }
+.die.d20.idle { opacity: .35; }
+.die.rolling { animation: die-tumble 120ms linear infinite; }
+@keyframes die-tumble { 0% { transform: rotate(-8deg) translateY(-2px); } 50% { transform: rotate(8deg) translateY(1px); } 100% { transform: rotate(-8deg) translateY(-2px); } }
+.dice-read { margin: 0; font-size: 16px; }
+.dice-read b { font: 800 20px/1.2 Georgia, "Times New Roman", serif; margin-right: 6px; }
+.dice-read span { color: var(--muted); }
+.strat-card { background: #f6efd6; color: #1c1b18; border: 2px solid #1c1b18; border-radius: 4px; padding: 8px 10px 10px; font-family: "Courier New", Courier, monospace; }
+.strat-title { margin: 0 0 6px; font: 700 15px/1.3 "Courier New", Courier, monospace; text-transform: uppercase; letter-spacing: .04em; border-bottom: 2px solid #1c1b18; padding-bottom: 4px; }
+.strat-title i { font-style: normal; text-transform: lowercase; color: #5d5a52; margin: 0 4px; }
+.strat-tag { font-style: normal; font-size: 12px; background: #1c1b18; color: #f6efd6; padding: 1px 6px; margin-left: 6px; }
+.strat-scroll { overflow-x: auto; }
+.strat-grid { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 12px; }
+.strat-grid th { font-weight: 700; text-align: center; padding: 2px; color: #5d5a52; }
+.strat-grid thead th { border-bottom: 1px solid #1c1b18; }
+.strat-grid th:first-child { width: 24px; }
+.strat-grid tbody th { border-right: 1px solid #1c1b18; }
+.strat-grid td { border: 1px dotted #a99f80; padding: 2px 3px; height: 22px; vertical-align: middle; line-height: 1.15; overflow: hidden; }
+.strat-grid td .part { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.strat-grid td .part.good { font-weight: 700; }
+.strat-grid td.split .part { font-size: 11px; }
+.strat-grid td .range { color: #5d5a52; }
+.strat-grid td .short { display: none; }
+.strat-grid td.hit { outline: 3px solid #b3261e; outline-offset: -2px; background: #fbe7a1; }
+.strat-grid td .part.hit { background: #f2c230; }
+.strat-grid td.lit { animation: strat-lit 900ms ease-out; }
+@keyframes strat-lit { 0% { background: #b3261e; } 100% { background: #fbe7a1; } }
+.strat-odds { display: flex; flex-wrap: wrap; gap: 4px 14px; list-style: none; margin: 8px 0 0; padding: 0; font-size: 12px; }
+.strat-odds li.good b { text-decoration: underline; }
+.strat-note { margin: 6px 0 0; font: 12px/1.35 system-ui, sans-serif; color: #5d5a52; }
+/* While the dice roll, the section sits over the field; afterward it goes back under the calls. */
+.hud-dice.over-field { position: absolute; inset: 0; z-index: 5; overflow: auto; border: 0; background: var(--panel); cursor: pointer; opacity: 1; transition: opacity 250ms; }
+.hud-dice.over-field .strat-note, .hud-dice.over-field .strat-odds { display: none; }
+.hud-dice.over-field.leaving { opacity: 0; }
+.hud-dice.over-field .strat-grid { font-size: 10.5px; }
+.hud-dice.over-field .strat-grid td { padding: 1px 2px; }
+.hud-dice.over-field .strat-grid td.split .part { font-size: 10px; }
+@media (max-width: 980px) {
+  .strat-grid td .long { display: none; }
+  .strat-grid td .short { display: inline; }
+}
+@media (max-width: 620px) {
+  .strat-grid { font-size: 10px; }
+  .strat-grid th:first-child { width: 16px; }
+  .strat-grid td { padding: 1px; }
+  .strat-grid td.split .part { font-size: 9px; }
+  .strat-grid td .range { display: none; }
+  .hud-dice.over-field { padding: 8px; }
+  .hud-dice.over-field .dice-head { gap: 8px; margin-bottom: 6px; flex-wrap: nowrap; }
+  .hud-dice.over-field .die { width: 40px; height: 40px; border-radius: 7px; }
+  .hud-dice.over-field .die .face { font-size: 18px; }
+  .hud-dice.over-field .die small { display: none; }
+  .hud-dice.over-field .dice-read { font-size: 13px; }
+  .hud-dice.over-field .dice-read b { font-size: 15px; }
+  .hud-dice.over-field .strat-title { display: none; }
+  .hud-dice.over-field .strat-card { padding: 4px; }
+  .hud-dice.over-field .strat-grid td { height: 18px; }
+}
+@media (prefers-reduced-motion: reduce) { .die.rolling, .strat-grid td.lit { animation: none; } .hud-dice.over-field { transition: none; } }
 
 @media (max-width: 980px) {
   .hud-board { grid-template-columns: 1fr; }

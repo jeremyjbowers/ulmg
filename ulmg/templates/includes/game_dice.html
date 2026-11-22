@@ -1,0 +1,39 @@
+{# ABOUTME: The Strat-style card for the plate appearance just played: three dice (column d10, row d10, split d20) and the 10-by-10 matchup card with the cell they read. #}
+{# ABOUTME: Expects `dice` from sim_game.dice_for. The server renders the end state; game_script.html rolls the dice and lights the cell when the play is fresh. #}
+<section class="hud-dice" id="hud-dice" aria-label="Dice and card" data-sequence="{{ dice.sequence }}">
+    <div class="dice-head">
+        <div class="dice-roll" id="dice-roll" aria-label="Rolled column {{ dice.dice.column }}, row {{ dice.dice.row }}{% if dice.dice.split %}, split {{ dice.dice.d20 }}{% endif %}">
+            <div class="die d10" data-face="{{ dice.dice.column }}" data-sides="10"><span class="face">{{ dice.dice.column }}</span><small>column</small></div>
+            <div class="die d10" data-face="{{ dice.dice.row }}" data-sides="10"><span class="face">{{ dice.dice.row }}</span><small>row</small></div>
+            <div class="die d20{% if not dice.dice.split %} idle{% endif %}" data-face="{{ dice.dice.d20 }}" data-sides="20"><span class="face">{{ dice.dice.d20 }}</span><small>split</small></div>
+        </div>
+        <p class="dice-read" id="dice-read"><b>{{ dice.result }}</b> <span>{{ dice.text }}</span></p>
+    </div>
+    <div class="strat-card">
+        <p class="strat-title">
+            <span>{{ dice.batter.name }}</span> <i>vs</i> <span>{{ dice.pitcher.name }}</span>
+            {% if dice.hit_and_run %}<em class="strat-tag">hit-and-run</em>{% endif %}
+        </p>
+        <div class="strat-scroll">
+        <table class="strat-grid">
+            <thead><tr><th scope="col"><span class="visually-hidden">Row</span></th>{% for column in dice.columns %}<th scope="col">{{ column.number }}</th>{% endfor %}</tr></thead>
+            <tbody>
+                {% for row in dice.rows %}
+                <tr>
+                    <th scope="row">{{ row.number }}</th>
+                    {% for cell in row.cells %}
+                    <td class="{% if cell.split %}split{% endif %}{% if cell.hit %} hit{% endif %}" data-column="{{ forloop.counter }}" data-row="{{ row.number }}">
+                        {% for part in cell.parts %}<span class="part{% if part.good %} good{% endif %}{% if part.hit %} hit{% endif %}" title="{{ part.label }}{% if cell.split %} {{ part.lo }}-{{ part.hi }}{% endif %}"><span class="long">{{ part.label }}</span><span class="short">{{ part.short }}</span>{% if cell.split %} <span class="range">{% if part.lo == part.hi %}{{ part.lo }}{% else %}{{ part.lo }}-{{ part.hi }}{% endif %}</span>{% endif %}</span>{% endfor %}
+                    </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
+        <ul class="strat-odds">
+            {% for line in dice.odds %}<li class="{% if line.good %}good{% endif %}"><b>{{ line.short }}</b> {{ line.pct|floatformat:2 }}%</li>{% endfor %}
+        </ul>
+        <p class="strat-note">The card is this matchup's odds from the engine, one cell per 1%. A cell two results share is split on the d20. The engine draws the result; the dice are picked evenly from the chances that read it, so every roll is as likely as on a real card.</p>
+    </div>
+</section>

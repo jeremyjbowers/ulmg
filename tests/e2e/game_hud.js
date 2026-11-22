@@ -51,7 +51,7 @@ async function resolveNeed(page) {
   return true;
 }
 
-async function play(page, { settle = 2600 } = {}) {
+async function play(page, { settle = 5600 } = {}) {
   const button = page.locator('#hud-play');
   if (await button.isDisabled()) {
     if (await resolveNeed(page)) return play(page, { settle });
@@ -99,12 +99,29 @@ async function openTab(page, tab) {
     if (await button.isDisabled()) { if (await resolveNeed(page)) continue; break; }
     await Promise.all([page.waitForNavigation(), page.keyboard.press('Space')]);
     if (!midTaken) {
-      await page.waitForTimeout(700);
+      await page.waitForTimeout(250);
+      const dice = page.locator('#hud-dice');
+      if (await dice.count()) {
+        check(await page.locator('#hud-dice .die.rolling').count() > 0, 'the dice tumble before the play');
+        check(await page.locator('#hud-field #hud-dice.over-field').count() === 1, 'the dice and card take over the field while they roll');
+        await page.waitForTimeout(1300);
+        const face = await page.locator('#hud-dice .die.d10').first().evaluate((d) => [d.querySelector('.face').textContent, d.getAttribute('data-face')]);
+        check(face[0] === face[1], `the column die settles on the face the server drew (${face[0]} vs ${face[1]})`);
+        check(await page.locator('#hud-dice td.hit').count() === 1, 'one card cell is lit after the roll');
+        check(await page.locator('#hud-dice td.hit .part.hit').count() === 1, 'the lit cell marks the part the d20 read');
+        await shot(page, 'desktop_dice_over_field');
+        await page.waitForTimeout(1300);
+        check(await page.locator('#hud-field #hud-dice').count() === 0 && await page.locator('#hud-dice').count() === 1, 'after the roll the card goes back under the calls');
+        await dice.scrollIntoViewIfNeeded();
+        await shot(page, 'desktop_dice_card');
+        await page.evaluate(() => window.scrollTo(0, 0));
+      }
+      await page.waitForTimeout(500);
       await shot(page, 'desktop_mid_animation');
       check(await page.locator('#hud-banner.show').count() + await page.locator('#hud-ball').evaluate((b) => Number(getComputedStyle(b).opacity) > 0 ? 1 : 0) > 0, 'the play animates: the ball or the banner is showing');
       midTaken = true;
     }
-    await page.waitForTimeout(2600);
+    await page.waitForTimeout(5600);
     const banner = (await page.locator('#hud-banner-big').textContent()) || '';
     const runners = await page.locator('#hud-runners .runner').count();
     if (/SINGLE|DOUBLE|TRIPLE|ERROR|BUNT HIT|WALK/.test(banner) && runners > 0) {
@@ -125,6 +142,19 @@ async function openTab(page, tab) {
   await page.waitForTimeout(300);
   check(!(await page.locator('.hud-drawer.open').count()), 'Esc closes the panel');
   check(/\d+% \([+−±]\d+\)/.test(await page.locator('#sub-ph').textContent()), 'pinch hitters show their chance to reach base');
+
+  // Skip the dice plays the field animation alone, keeps the card under the calls, and is remembered.
+  check(!(await page.locator('#hud-skip-dice').isChecked()), 'the dice show by default');
+  await page.check('#hud-skip-dice');
+  const skipButton = page.locator('#hud-play');
+  if (await skipButton.isDisabled()) await resolveNeed(page);
+  await Promise.all([page.waitForNavigation(), page.locator('#hud-play').click()]);
+  await page.waitForTimeout(250);
+  check(await page.locator('#hud-dice .die.rolling').count() === 0, 'with Skip the dice, no dice roll');
+  check(await page.locator('#hud-field #hud-dice').count() === 0, 'with Skip the dice, the field stays on the field');
+  check(await page.locator('#hud-skip-dice').isChecked(), 'Skip the dice is remembered across the reload');
+  await page.waitForTimeout(3000);
+  await page.uncheck('#hud-skip-dice');
 
   // Fast skips the animation, and the choice is remembered.
   await page.check('#hud-fast');
@@ -150,11 +180,18 @@ async function openTab(page, tab) {
   const button = phone.locator('#hud-play');
   if (!(await button.isDisabled())) {
     await Promise.all([phone.waitForNavigation(), button.click()]);
-    await phone.waitForTimeout(700);
+    await phone.waitForTimeout(1900);
     await shot(phone, 'phone_mid_animation');
     await phone.waitForTimeout(2600);
   }
   await shot(phone, 'phone_after_play');
+  if (await phone.locator('#hud-dice').count()) {
+    const wide = await phone.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
+    check(!wide, 'on a phone the dice card does not scroll the page sideways');
+    await phone.locator('#hud-dice').scrollIntoViewIfNeeded();
+    await phone.locator('#hud-dice').screenshot({ path: path.join(outDir, 'phone_dice_card.png') });
+    await phone.evaluate(() => window.scrollTo(0, 0));
+  }
   for (const tab of ['ph', 'pr', 'pit', 'def']) {
     await openTab(phone, tab);
     await shot(phone, `phone_panel_${tab}`);
