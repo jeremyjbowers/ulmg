@@ -394,6 +394,53 @@ class LastPlayTest(GameHudTestCase):
         self.assertLess(recent.find(texts[0]), recent.find(texts[1]))
 
 
+class DiceCardTest(GameHudTestCase):
+    def dice(self, html):
+        return self.section(html, 'id="hud-dice"', "</section>")
+
+    def test_a_swing_shows_the_dice_and_lights_the_card_cell_that_reads_the_result(self):
+        gf.set_rates([self.road.hitters[0]], SINGLE)
+        self.post("open", seats="away,home")
+        self.assertNotIn('id="hud-dice"', self.page(), "no dice before the first pitch")
+        html = self.post("step", expected=self.expected()).content.decode()
+        event = gf.events(self.log(), Event.PLATE_APPEARANCE)[-1]
+        self.assertEqual(set(event.payload["card"]), {key for key, _ in sim_game.MATCHUP_LABELS})
+        self.assertAlmostEqual(sum(event.payload["card"].values()), 1.0, places=6)
+        dice = self.dice(html)
+        self.assertIn(f'data-sequence="{event.sequence}"', html)
+        self.assertIn("<b>SINGLE</b>", dice)
+        self.assertIn(f"{self.road.hitters[0].name}</span> <i>vs</i> <span>{self.home.starters[0].name}", dice)
+        self.assertEqual(dice.count('<td class="'), 100)
+        lit = re.findall(r'<span class="part[^"]* hit"[^>]*><span class="long">([^<]+)</span>', dice)
+        self.assertEqual(lit, ["SINGLE"])
+        read = sim_game.dice_for(sim_game.Play(self.log()), event)
+        self.assertIn(f'data-face="{read["dice"]["column"]}"', dice)
+        self.assertIn(f'data-face="{read["dice"]["row"]}"', dice)
+
+    def test_the_card_is_the_engines_matchup_for_the_plate_appearance(self):
+        self.post("open", seats="away,home")
+        play = sim_game.Play(self.log())
+        _, _, inputs = sim_game.plate_appearance_inputs(play, None)
+        before = engine_client.matchup(sim_game.with_rates(play.state, inputs["hitter_rates"], inputs["pitcher_rates"]))
+        self.post("step", expected=self.expected())
+        event = gf.events(self.log(), Event.PLATE_APPEARANCE)[-1]
+        for key, _ in sim_game.MATCHUP_LABELS:
+            self.assertEqual(event.payload["card"][key], before["probabilities"][key], key)
+
+    def test_a_reload_shows_the_same_roll(self):
+        self.post("open", seats="away,home")
+        first = self.dice(self.post("step", expected=self.expected()).content.decode())
+        self.assertEqual(self.dice(self.page()), first)
+
+    def test_a_bunt_reads_no_card(self):
+        gf.set_rates([self.road.hitters[0]], SINGLE)
+        self.post("open", seats="away,home")
+        html = self.post("step", expected=self.expected(), call="bunt").content.decode()
+        event = gf.events(self.log(), Event.PLATE_APPEARANCE)[-1]
+        self.assertTrue(event.payload["result"]["outcome"].startswith("bunt"))
+        self.assertNotIn('id="hud-dice"', html)
+
+
 class PanelTest(GameHudTestCase):
     def test_the_pinch_hit_table_has_legal_rows_with_reach_odds_and_greyed_illegal_rows(self):
         capped = self.road.bench[0]

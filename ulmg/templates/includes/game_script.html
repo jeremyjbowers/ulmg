@@ -1,4 +1,4 @@
-{# ABOUTME: The game HUD's script: animates the plate appearance just played, opens the substitution panel, and the keyboard calls. #}
+{# ABOUTME: The game HUD's script: rolls the dice and animates the plate appearance just played, opens the substitution panel, and the keyboard calls. #}
 {# ABOUTME: Everything works without it; the server renders the end state and every action is a form. Expects `last_play`. #}
 {% if last_play %}{{ last_play|json_script:"hud-last-play" }}{% endif %}
 <script>
@@ -8,6 +8,7 @@
   var game = hud.getAttribute('data-game');
   var NS = 'http://www.w3.org/2000/svg';
   var FAST_KEY = 'ulmg-hud-fast';
+  var DICE_KEY = 'ulmg-hud-skip-dice';
   var SEEN_KEY = 'ulmg-hud-seen-' + game;
 
   function load(key) { try { return window.localStorage.getItem(key); } catch (e) { return null; } }
@@ -28,6 +29,14 @@
     pace.hidden = false;
     fastBox.checked = load(FAST_KEY) === '1';
     fastBox.addEventListener('change', function () { save(FAST_KEY, fastBox.checked ? '1' : '0'); });
+  }
+  /* Skip the dice: remembered per browser. The card stays under the calls either way. */
+  var dicePace = document.getElementById('hud-dice-pace');
+  var skipDiceBox = document.getElementById('hud-skip-dice');
+  if (dicePace && skipDiceBox) {
+    dicePace.hidden = false;
+    skipDiceBox.checked = load(DICE_KEY) === '1';
+    skipDiceBox.addEventListener('change', function () { save(DICE_KEY, skipDiceBox.checked ? '1' : '0'); });
   }
 
   /* The play just made: from its before-state to the end state the server drew. */
@@ -164,12 +173,63 @@
     await wait(700);
     banner.classList.remove('show');
   }
+  /* The dice: lifted over the field, tumble, settle on the faces the server drew, light the cell they read,
+     then go back under the calls so the field can show the play. A click on them skips ahead. */
+  async function rollDice(play) {
+    var section = document.getElementById('hud-dice');
+    var field = document.getElementById('hud-field');
+    if (!section || !field || section.getAttribute('data-sequence') !== String(play.sequence)) return;
+    var home = document.createComment('hud-dice');
+    section.parentNode.insertBefore(home, section);
+    var skipped = false;
+    function skip() { skipped = true; }
+    section.addEventListener('click', skip);
+    section.classList.add('over-field');
+    field.appendChild(section);
+    var dice = Array.prototype.slice.call(section.querySelectorAll('.die:not(.idle)'));
+    var read = document.getElementById('dice-read');
+    var hit = section.querySelector('td.hit');
+    if (read) read.style.visibility = 'hidden';
+    if (hit) hit.classList.remove('hit');
+    var spin = dice.map(function (die) {
+      var face = die.querySelector('.face');
+      var sides = parseInt(die.getAttribute('data-sides'), 10);
+      die.classList.add('rolling');
+      return setInterval(function () { face.textContent = 1 + Math.floor(Math.random() * sides); }, 70);
+    });
+    async function pause(ms) { for (var t = 0; t < ms && !skipped; t += 50) await wait(50); }
+    try {
+      for (var i = 0; i < dice.length; i++) {
+        await pause(i === 0 ? 450 : 180);
+        clearInterval(spin[i]);
+        dice[i].classList.remove('rolling');
+        dice[i].querySelector('.face').textContent = dice[i].getAttribute('data-face');
+      }
+      if (hit) hit.classList.add('hit', 'lit');
+      if (read) read.style.visibility = '';
+      await pause(1500);
+      section.classList.add('leaving');
+      await wait(skipped ? 0 : 250);
+    } finally {
+      spin.forEach(clearInterval);
+      dice.forEach(function (die) { die.classList.remove('rolling'); die.querySelector('.face').textContent = die.getAttribute('data-face'); });
+      if (hit) hit.classList.add('hit');
+      if (read) read.style.visibility = '';
+      section.removeEventListener('click', skip);
+      section.classList.remove('over-field', 'leaving');
+      home.parentNode.insertBefore(section, home);
+      home.parentNode.removeChild(home);
+    }
+  }
   if (dataNode) {
     var play = JSON.parse(dataNode.textContent);
     var seen = parseInt(load(SEEN_KEY) || '0', 10);
     var fresh = play.sequence > seen;
     save(SEEN_KEY, String(play.sequence));
-    if (fresh && !(fastBox && fastBox.checked) && !reducedMotion()) animate(play);
+    if (fresh && !(fastBox && fastBox.checked) && !reducedMotion()) {
+      var roll = skipDiceBox && skipDiceBox.checked ? Promise.resolve() : rollDice(play);
+      roll.then(function () { return animate(play); });
+    }
   } else if (banner) {
     banner.classList.remove('show');
   }

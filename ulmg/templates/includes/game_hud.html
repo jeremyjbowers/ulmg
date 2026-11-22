@@ -1,4 +1,4 @@
-{# ABOUTME: The game HUD: line score, the opposing batting order, batter card, the field, pitcher card with this plate appearance's odds and a platoon edge, the calls, the last plays and a box score. #}
+{# ABOUTME: The game HUD: line score, the opposing batting order, batter card, the field, pitcher card with this plate appearance's odds and a platoon edge, the calls, the dice card, the last plays and a box score. #}
 {# ABOUTME: Expects the context sim_game.page builds. Every call is a plain form POST carrying the log position it was drawn from. A final offers the box score. #}
 <div id="hud" class="hud" data-game="{{ game.id }}">
     {% if paused %}
@@ -92,6 +92,7 @@
             {% if controls.play.why %}<p class="hud-why">{{ controls.play.why }}</p>{% endif %}
             {% endif %}
             <label class="hud-pace" hidden id="hud-pace"><input type="checkbox" id="hud-fast"> Fast (no animation)</label>
+            {% if dice %}<label class="hud-pace" hidden id="hud-dice-pace"><input type="checkbox" id="hud-skip-dice"> Skip the dice (field only)</label>{% endif %}
         </div>
         <div class="hud-group hud-offense">
             <h3>Offense · <b>{{ controls.offense.team.abbreviation }} {% if controls.offense.mine %}(you){% else %}computer{% endif %}</b></h3>
@@ -112,6 +113,8 @@
             {% if controls.defense.why %}<p class="hud-why">{{ controls.defense.why }}</p>{% endif %}
         </div>
     </section>
+
+    {% if dice %}{% include "includes/game_dice.html" %}{% endif %}
 
     <details id="in-game-box" class="hud-boxscore">
         <summary>Box score</summary>

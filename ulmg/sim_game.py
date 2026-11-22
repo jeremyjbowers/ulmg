@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 from django.db import transaction
 from django.utils import timezone
 
-from ulmg import box_score, cards, computer_manager, depth_pacing, engine_client, game_field, game_hud, models, park as home_park, plans, roster_moves, schedule, season_record, usage, utils
+from ulmg import box_score, cards, computer_manager, depth_pacing, dice_card, engine_client, game_field, game_hud, models, park as home_park, plans, roster_moves, schedule, season_record, usage, utils
 
 Event = models.GameEvent
 
@@ -1943,8 +1943,10 @@ def play_plate_appearance(play, call, *, user=None, computer=False):
     batter, pitcher, inputs = plate_appearance_inputs(play, call)
     seed = play.seeds()
     before = situation(play.state)
+    rated = with_rates(play.state, inputs["hitter_rates"], inputs["pitcher_rates"])
+    card = None if computer else card_probabilities(rated, pitcher)
     stepped = engine_client.step(
-        with_rates(play.state, inputs["hitter_rates"], inputs["pitcher_rates"]),
+        rated,
         seed,
         call=inputs["call"],
         runners=inputs["runners"],
@@ -1978,13 +1980,40 @@ def play_plate_appearance(play, call, *, user=None, computer=False):
             "pitcher": pitcher.id,
             "before": before,
             "result": result,
+            **({"card": card} if card else {}),
         },
         text=new_log_text(play.state, stepped["state"]),
     )
     play.state = stepped["state"]
 
 
+def card_probabilities(rated, pitcher):
+    """
+    The outcome table the engine reads for this plate appearance, for its
+    dice card. None when the engine would bring in a pitcher first, since
+    the table it reads then is not this one.
+    """
+    odds = engine_client.matchup(rated)
+    if odds.get("pitcher_entering") or str(odds.get("pitcher_id")) != str(pitcher.id):
+        return None
+    return {key: odds["probabilities"][key] for key, _ in MATCHUP_LABELS}
+
+
 # Reading the game for its page
+
+
+def dice_for(play, event):
+    """The Strat-style card the plate appearance just played was read from, with the dice and who faced whom."""
+    if event is None:
+        return None
+    read = dice_card.for_plate_appearance(event.payload, event.seed)
+    if read is None:
+        return None
+    read["batter"] = play.player(event.payload["batter"])
+    read["pitcher"] = play.player(event.payload["pitcher"])
+    read["sequence"] = event.sequence
+    read["text"] = game_field.split_log_text(event.text)[1]
+    return read
 
 
 MATCHUP_LABELS = [
@@ -2162,6 +2191,7 @@ def page(log, user, confirm=None):
             "field": game_hud.field(play, teams),
             "recent_plays": game_hud.recent_plays(play.events, Event.PLATE_APPEARANCE),
             "last_play": last_play,
+            "dice": dice_for(play, recent),
             "during": during,
             "panel": game_hud.panel(play, user, need, choices, pitcher_options, teams),
         }
