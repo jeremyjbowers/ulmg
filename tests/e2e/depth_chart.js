@@ -28,6 +28,14 @@ const html = `<!DOCTYPE html><html><body>
     ${row('add', '200', false)}
     ${row('already', '40', true)}
     <tr id="remove"><td><input type="number" name="amount" value="9"></td></tr>
+    <tr><td>
+      <select name="player" data-depth-select aria-label="Add a player at Rotation">
+        <option value="">Add a player</option>
+        <option value="1">Spencer Strider · RHP · 2.85 xFIP</option>
+        <option value="2">Shohei Ohtani · LHP</option>
+        <option value="3">Aaron Abbott</option>
+      </select>
+    </td></tr>
   </tbody></table></form>
 </body></html>`;
 
@@ -61,6 +69,38 @@ const html = `<!DOCTYPE html><html><body>
   const remove = page.locator('#remove [name="amount"]');
   if (await remove.isDisabled()) throw new Error('a row without the checkbox is left alone');
   if ((await remove.inputValue()) !== '9') throw new Error('a row without the checkbox keeps its amount');
+
+  const select = page.locator('[data-depth-select]');
+  const picker = page.locator('[role="combobox"]');
+  if (await select.isVisible()) throw new Error('the roster select is replaced by the typeahead');
+  if ((await picker.count()) !== 1) throw new Error('the spot gets one typeahead');
+  if ((await picker.getAttribute('aria-label')) !== 'Add a player at Rotation') {
+    throw new Error('the typeahead keeps the spot label');
+  }
+
+  await picker.focus();
+  const open = page.locator('[role="listbox"] [role="option"]');
+  if ((await open.count()) !== 3) throw new Error('focusing the box lists the whole roster');
+
+  await picker.fill('stri');
+  if ((await open.count()) !== 1) throw new Error('typing filters the roster');
+  if ((await open.first().innerText()) !== 'Spencer Strider · RHP · 2.85 xFIP') {
+    throw new Error('the match keeps the hand and xFIP');
+  }
+  await picker.press('Enter');
+  if ((await select.inputValue()) !== '1') throw new Error('enter files the highlighted pitcher');
+  if ((await picker.inputValue()) !== 'Spencer Strider · RHP · 2.85 xFIP') {
+    throw new Error('the box shows the pitcher who was filed');
+  }
+
+  await picker.fill('zzz');
+  if ((await select.inputValue()) !== '') throw new Error('a typed name that matches nobody clears the filed player');
+  if ((await open.count()) !== 0) throw new Error('a miss shows no one');
+
+  await picker.fill('abb');
+  await open.first().click();
+  if ((await select.inputValue()) !== '3') throw new Error('clicking a name files that player');
+  if ((await picker.inputValue()) !== 'Aaron Abbott') throw new Error('clicking a name fills the box');
 
   await browser.close();
 })().catch((error) => {

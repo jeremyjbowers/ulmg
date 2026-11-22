@@ -15,10 +15,15 @@ def make_team(abbreviation="ATL"):
     )
 
 
-def make_player(team, name, position="OF", throws="R"):
+def make_player(team, name, position="OF", throws="R", mlb=True):
     return models.Player.objects.create(
-        name=name, position=position, throws=throws, team=team, level="V"
+        name=name, position=position, throws=throws, team=team, level="V", is_ulmg_mlb_roster=mlb
     )
+
+
+def chosen(spot_view):
+    """The players a spot's selector offers."""
+    return [option.player for option in spot_view.options]
 
 
 def spot(chart, code):
@@ -229,9 +234,50 @@ class ChartTest(TestCase):
         self.file(self.greene, "RF", 100)
         self.file(self.greene, "1B", 100)
         chart = self.described()
-        self.assertNotIn(self.greene, spot(chart, "SS").options)
-        self.assertIn(self.greene, spot(chart, "LF").options)
-        self.assertNotIn(self.greene, spot(chart, "RF").options)
+        self.assertNotIn(self.greene, chosen(spot(chart, "SS")))
+        self.assertIn(self.greene, chosen(spot(chart, "LF")))
+        self.assertNotIn(self.greene, chosen(spot(chart, "RF")))
+
+    def test_the_selector_offers_the_mlb_roster_and_names_a_pitchers_hand_and_xfip(self):
+        farm_bat = make_player(self.team, "Farm Bat", position="OF", mlb=False)
+        farm_arm = make_player(self.team, "Farm Arm", position="P", throws="L", mlb=False)
+        models.PlayerStatSeason.objects.create(
+            player=self.pitcher, season=SEASON - 1, classification="2-milb", pitch_stats={"xfip": 9.99}
+        )
+        models.PlayerStatSeason.objects.create(
+            player=self.pitcher, season=SEASON - 1, classification="1-mlb", pitch_stats={"xfip": 2.847}
+        )
+        chart = self.described()
+        first = spot(chart, "1B")
+        self.assertIn(self.seager, chosen(first))
+        self.assertNotIn(farm_bat, chosen(first))
+        self.assertEqual(
+            next(option.label for option in first.options if option.player == self.seager),
+            "Corey Seager",
+        )
+        self.assertEqual(
+            next(option.label for option in first.options if option.player == self.greene),
+            "Riley Greene",
+        )
+        rotation = spot(chart, depth.STARTS)
+        self.assertIn(self.pitcher, chosen(rotation))
+        self.assertNotIn(farm_arm, chosen(rotation))
+        self.assertEqual(
+            next(option.label for option in rotation.options if option.player == self.pitcher),
+            "Spencer Strider · RHP · 2.85 xFIP",
+        )
+        bullpen = spot(chart, depth.BULLPEN)
+        self.assertEqual(
+            next(option.label for option in bullpen.options if option.player == self.two_way),
+            "Shohei Ohtani · RHP",
+        )
+
+    def test_a_player_off_the_mlb_roster_cannot_be_filed(self):
+        farm = make_player(self.team, "Farm Bat", position="OF", mlb=False)
+        with self.assertRaises(depth.DepthError) as refused:
+            self.file(farm, "RF", 10)
+        self.assertIn("is not on the MLB roster", refused.exception.errors[0])
+        self.assertEqual(models.DepthAssignment.objects.count(), 0)
 
     def test_a_player_from_another_team_or_a_duplicate_row_is_refused(self):
         with self.assertRaises(depth.DepthError) as refused:

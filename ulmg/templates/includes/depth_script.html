@@ -1,5 +1,25 @@
-{# ABOUTME: Checking Rest (unlimited) on a playing-time row clears that row's number and stops it being submitted. #}
-{# ABOUTME: The server is what decides the gap. This only keeps a blank number from looking required. #}
+{# ABOUTME: Playing-time rows: Rest clears the number, and the player box filters the roster as you type. #}
+{# ABOUTME: The server decides who can be filed and what the gap is. This only keeps the form honest. #}
+<style>
+    .depth-typeahead { position: relative; }
+    .depth-typeahead-list {
+        position: absolute;
+        z-index: 20;
+        left: 0;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        background: #fff;
+        border: 1px solid #d1d5db;
+        max-height: 10rem;
+        overflow-y: auto;
+        width: max-content;
+        min-width: 100%;
+        max-width: 22rem;
+    }
+    .depth-typeahead-list [role="option"] { padding: 2px 4px; cursor: pointer; white-space: nowrap; }
+    .depth-typeahead-list [role="option"].is-active { background: #e5e7eb; }
+</style>
 <script>
 (function () {
   function bind(row) {
@@ -13,6 +33,130 @@
     box.addEventListener("change", sync);
     sync();
   }
+
+  function bindPicker(select) {
+    var options = [];
+    Array.prototype.forEach.call(select.options, function (option) {
+      if (option.value !== "") options.push({ value: option.value, label: option.text.trim() });
+    });
+
+    var box = document.createElement("div");
+    box.className = "depth-typeahead";
+    var input = document.createElement("input");
+    input.type = "text";
+    input.className = "border border-gray-300 w-full max-w-full px-1 text-xs";
+    input.placeholder = "Add a player";
+    input.autocomplete = "off";
+    input.setAttribute("role", "combobox");
+    input.setAttribute("aria-autocomplete", "list");
+    input.setAttribute("aria-expanded", "false");
+    input.setAttribute("aria-label", select.getAttribute("aria-label") || "Add a player");
+
+    var listId = "depth-list-" + Math.random().toString(36).slice(2);
+    var list = document.createElement("ul");
+    list.id = listId;
+    list.className = "depth-typeahead-list";
+    list.setAttribute("role", "listbox");
+    list.hidden = true;
+    input.setAttribute("aria-controls", listId);
+
+    var shown = [];
+    var active = -1;
+
+    function paint() {
+      list.innerHTML = "";
+      shown.forEach(function (option, index) {
+        var item = document.createElement("li");
+        item.id = listId + "-" + index;
+        item.setAttribute("role", "option");
+        item.dataset.value = option.value;
+        item.textContent = option.label;
+        if (index === active) item.className = "is-active";
+        item.addEventListener("mousedown", function (event) {
+          event.preventDefault();
+        });
+        item.addEventListener("click", function () {
+          choose(option);
+        });
+        list.appendChild(item);
+      });
+      var open = shown.length > 0 && document.activeElement === input;
+      list.hidden = !open;
+      input.setAttribute("aria-expanded", open ? "true" : "false");
+      if (open && active >= 0) input.setAttribute("aria-activedescendant", listId + "-" + active);
+      else input.removeAttribute("aria-activedescendant");
+    }
+
+    function filter(query) {
+      var needle = query.trim().toLowerCase();
+      shown = options.filter(function (option) {
+        return needle === "" || option.label.toLowerCase().indexOf(needle) !== -1;
+      });
+      if (active >= shown.length) active = shown.length - 1;
+    }
+
+    function choose(option) {
+      select.value = option.value;
+      input.value = option.label;
+      shown = [];
+      active = -1;
+      paint();
+    }
+
+    input.addEventListener("focus", function () {
+      filter(input.value);
+      active = -1;
+      paint();
+    });
+    input.addEventListener("input", function () {
+      select.value = "";
+      filter(input.value);
+      active = shown.length ? 0 : -1;
+      paint();
+    });
+    input.addEventListener("keydown", function (event) {
+      if (event.key === "ArrowDown") {
+        event.preventDefault();
+        if (list.hidden) filter(input.value);
+        if (!shown.length) return;
+        active = Math.min(active + 1, shown.length - 1);
+        paint();
+      } else if (event.key === "ArrowUp") {
+        event.preventDefault();
+        if (!shown.length) return;
+        active = Math.max(active - 1, 0);
+        paint();
+      } else if (event.key === "Enter") {
+        if (list.hidden || active < 0 || !shown[active]) return;
+        event.preventDefault();
+        choose(shown[active]);
+      } else if (event.key === "Escape") {
+        shown = [];
+        active = -1;
+        paint();
+      }
+    });
+    input.addEventListener("blur", function () {
+      var picked = null;
+      options.forEach(function (option) {
+        if (option.value === select.value) picked = option;
+      });
+      shown = [];
+      active = -1;
+      paint();
+      if (select.value && (!picked || input.value !== picked.label)) {
+        select.value = "";
+        input.value = "";
+      }
+    });
+
+    select.hidden = true;
+    select.parentNode.insertBefore(box, select);
+    box.appendChild(input);
+    box.appendChild(list);
+  }
+
   document.querySelectorAll("[data-depth-row]").forEach(bind);
+  document.querySelectorAll("[data-depth-select]").forEach(bindPicker);
 })();
 </script>

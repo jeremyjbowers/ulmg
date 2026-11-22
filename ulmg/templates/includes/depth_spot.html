@@ -29,10 +29,10 @@
                 {% if spot.options %}
                 <tr data-depth-row>
                     <td class="py-0.5 pr-1">
-                        <select name="player" class="border border-gray-300 max-w-full" aria-label="Add a player at {{ spot.label }}">
+                        <select name="player" data-depth-select class="border border-gray-300 max-w-full w-full" aria-label="Add a player at {{ spot.label }}">
                             <option value="">Add a player</option>
-                            {% for player in spot.options %}
-                            <option value="{{ player.id }}">{{ player.name }}</option>
+                            {% for option in spot.options %}
+                            <option value="{{ option.player.id }}">{{ option.label }}</option>
                             {% endfor %}
                         </select>
                     </td>
