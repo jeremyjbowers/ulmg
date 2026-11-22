@@ -65,25 +65,6 @@
     {% endif %}
 
     <div class="game-below hud-below">
-    <h1 class="text-lg font-bold mb-1">Day {{ game.day }}: {{ game.series.road_team.abbreviation }} at {{ game.series.home_team.abbreviation }}</h1>
-    <p class="text-sm text-gray-600 mb-4">
-        <a href="/teams/{{ game.series.road_team.abbreviation|lower }}/schedule/{{ game.series.slot.season }}/" class="underline">{{ game.series.road_team.abbreviation }} schedule</a> ·
-        <a href="/teams/{{ game.series.home_team.abbreviation|lower }}/schedule/{{ game.series.slot.season }}/" class="underline">{{ game.series.home_team.abbreviation }} schedule</a>
-    </p>
-    <div class="game-seats hud-seats">
-        {% for seat in seats %}
-        <div>
-            <span class="font-bold">{{ seat.team.abbreviation }}</span>:
-            <span class="game-seat-holder">{% if seat.holder %}{{ seat.holder.username }}{% else %}computer{% endif %}</span>
-            {% if seat.mine and not final %}
-            <form method="post" action="/games/{{ game.id }}/leave/" class="inline">{% csrf_token %}<input type="hidden" name="expected" value="{{ expected }}"><input type="hidden" name="side" value="{{ seat.side }}"><button type="submit" class="underline text-xs">Leave seat</button></form>
-            {% elif seat.can_take %}
-            <form method="post" action="/games/{{ game.id }}/take/" class="inline">{% csrf_token %}<input type="hidden" name="expected" value="{{ expected }}"><input type="hidden" name="side" value="{{ seat.side }}"><button type="submit" class="underline text-xs">Take seat</button></form>
-            {% endif %}
-        </div>
-        {% endfor %}
-    </div>
-
     {% if not final %}
 
     {% include 'includes/game_autoplay.html' %}
@@ -98,28 +79,6 @@
     </form>
     {% endfor %}
 
-    {% for move in moves %}
-    <form method="post" action="/games/{{ game.id }}/move/" class="game-move hud-box grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-        {% csrf_token %}
-        <input type="hidden" name="expected" value="{{ expected }}">
-        <input type="hidden" name="side" value="{{ move.side }}">
-        <div>
-            <label class="block text-xs font-bold mb-1">{{ move.team.abbreviation }} call up</label>
-            <select name="player_up" class="w-full">
-                <option value="">-</option>
-                {% for p in move.up %}<option value="{{ p.id }}">{{ p.name }} ({{ p.position }})</option>{% endfor %}
-            </select>
-        </div>
-        <div>
-            <label class="block text-xs font-bold mb-1">Send down</label>
-            <select name="player_down" class="w-full">
-                <option value="">-</option>
-                {% for p in move.down %}<option value="{{ p.id }}">{{ p.name }} ({{ p.position }})</option>{% endfor %}
-            </select>
-        </div>
-        <div><button type="submit" class="hud-btn w-full">Make roster move</button></div>
-    </form>
-    {% endfor %}
     {% endif %}
 
     <section class="hud-box">

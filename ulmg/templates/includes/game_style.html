@@ -80,9 +80,9 @@ body:has(#hud) header { background: #ffffff; color: #000000; }
 .hud-order li.hole { box-shadow: inset 0 -2px 0 var(--accent); }
 .hud-order a { color: inherit; text-decoration: none; flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .hud-order a:hover { text-decoration: underline; }
-.hud-order .slot, .hud-order .slash, .hud-order .mark { flex: none; color: var(--muted); font-size: 12px; font-weight: 600; }
-.hud-order .pos { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
-.hud-order li.now .mark, .hud-order li.due .mark, .hud-order li.deck .mark, .hud-order li.hole .mark { color: var(--ink); }
+.hud-order .slot, .hud-order .hand { flex: none; color: var(--muted); font-size: 12px; font-weight: 600; }
+.hud-order .wrc { flex: none; color: var(--muted); font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.hud-order li.now .hand, .hud-order li.now .wrc, .hud-order li.due .hand, .hud-order li.due .wrc, .hud-order li.deck .hand, .hud-order li.deck .wrc, .hud-order li.hole .hand, .hud-order li.hole .wrc { color: var(--ink); }
 .hud-meter { height: 12px; border-radius: 6px; background: var(--rule); overflow: hidden; margin: 6px 0 2px; }
 .hud-meter i { display: block; height: 100%; background: var(--good); }
 .hud-meter.warm i { background: var(--warm); }
@@ -97,8 +97,9 @@ body:has(#hud) header { background: #ffffff; color: #000000; }
 .hud-odds .bar i { display: block; height: 100%; background: var(--muted); }
 .hud-odds .good .bar i { background: var(--good); }
 .hud-odds .pct { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
-.hud-field { position: relative; background: var(--grass-out); min-width: 0; }
-.hud-field.turf { background: var(--turf-out); }
+.hud-field { position: relative; background: #6e8a46; min-width: 0; }
+.hud-field.turf { background: #3c5160; }
+.rubber { fill: #f4ecd2; stroke: #17382b; stroke-width: 0.6; }
 .hud-field svg { display: block; width: 100%; height: auto; }
 .lbl-pos { font: 700 13px system-ui, sans-serif; fill: #17382b; font-variant-numeric: tabular-nums; }
 .lbl-name { font: 700 15px system-ui, sans-serif; fill: #ffffff; paint-order: stroke; stroke: #17382b; stroke-width: 4px; stroke-linejoin: round; }
@@ -123,6 +124,11 @@ body:has(#hud) header { background: #ffffff; color: #000000; }
 .hud-controls form { margin: 0; }
 .hud-group h3 { margin: 0 0 6px; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
 .hud-group h3 b { color: var(--ink); }
+.hud-group.computer, .hud-group.computer h3, .hud-group.computer h3 b { color: var(--off); }
+.coach-line { margin: 0 0 6px; font-style: italic; }
+.coach-who { font-style: normal; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; font-size: 12px; color: var(--muted); margin-right: 6px; }
+.need-reason { margin: 0; }
+.hud-alert .hud-btn { margin-top: 8px; }
 .hud-btns { display: flex; flex-wrap: wrap; gap: 8px; }
 .hud-btn { display: inline-flex; align-items: center; justify-content: center; background: var(--btn); color: var(--btn-ink); border: 2px solid var(--ink); border-radius: 8px; padding: 10px 14px; font: 700 16px/1.2 system-ui, sans-serif; min-height: 48px; cursor: pointer; text-decoration: none; }
 .hud-btn kbd { font: 600 12px ui-monospace, monospace; border: 1px solid var(--off); border-radius: 4px; padding: 0 5px; margin-left: 6px; color: var(--muted); }
@@ -147,13 +153,10 @@ body:has(#hud) header { background: #ffffff; color: #000000; }
 
 /* Below the HUD */
 .hud-below { margin: 20px 0 0; }
-.hud-below h1, .hud-below h2 { font-weight: 700; }
+.hud-below h2 { font-weight: 700; }
 .hud-box { background: var(--panel); border: 1px solid var(--rule); border-radius: 10px; padding: 12px 16px; margin: 0 0 16px; font-size: 14px; }
 .hud-box h2 { font-size: 15px; margin: 0 0 6px; }
 .hud-box select { background: var(--btn); color: var(--btn-ink); border: 1px solid var(--off); border-radius: 6px; padding: 6px 8px; min-height: 44px; }
-.hud-seats { display: flex; flex-wrap: wrap; gap: 12px; margin: 0 0 16px; font-size: 14px; }
-.hud-seats > div { background: var(--panel); border: 1px solid var(--rule); border-radius: 8px; padding: 6px 12px; display: flex; gap: 8px; align-items: center; }
-.hud-seats button { text-decoration: underline; min-height: 44px; }
 .hud-pbp { margin: 0; padding: 0; list-style: none; font-size: 14px; }
 .hud-pbp li { padding: 4px 0; border-top: 1px solid var(--rule); }
 

@@ -15,6 +15,33 @@ OUTFIELD_SCALE = 0.72
 ANGLES = {"lf_line": -45.0, "left_center": -22.5, "center": 0.0, "right_center": 22.5, "rf_line": 45.0}
 # A wall at least this tall is drawn thick and named beside its distance.
 TALL_WALL_FT = 17
+# Mowing stripes, foul ground and the mound. Turf is a cooler cut of the same shapes.
+GRASS_COLORS = {
+    "mow": "#3a8648",
+    "mow_alt": "#4c9a5c",
+    "infield": "#348044",
+    "infield_alt": "#469658",
+    "foul": "#6e8a46",
+    "foul_alt": "#7d9854",
+    "speck": "#5c7438",
+    "mound_hi": "#e6b86e",
+    "mound_mid": "#c58a4d",
+    "mound_lo": "#8a5524",
+    "shadow": "#0c2816",
+}
+TURF_COLORS = {
+    "mow": "#2a8564",
+    "mow_alt": "#38a67c",
+    "infield": "#267a5e",
+    "infield_alt": "#339978",
+    "foul": "#3c5160",
+    "foul_alt": "#486070",
+    "speck": "#2c404c",
+    "mound_hi": "#d7b07a",
+    "mound_mid": "#b98c5a",
+    "mound_lo": "#7a5a38",
+    "shadow": "#101820",
+}
 # Distance labels sit this far inside the fence, and the two at the lines this many degrees inside fair territory.
 LABEL_INSET_FT = 24
 LINE_LABEL_INSET_DEG = 5
@@ -128,7 +155,7 @@ def base_spots():
 
 
 def park_drawing(rules):
-    """Every shape of the park, from its rules (see ulmg.park): fair territory, walls, dirt, bases and distance labels."""
+    """Every shape of the park, from its rules (see ulmg.park): fair territory, walls, dirt, bases, distance labels and the stripe colors."""
     distances = rules["distances_ft"]
     walls = rules["wall_ft"]
     keys = list(ANGLES)
@@ -182,6 +209,7 @@ def park_drawing(rules):
         ],
         "home": HOME,
         "plate": _xy([(hx - 8, hy - 6), (hx + 8, hy - 6), (hx + 8, hy + 2), (hx, hy + 9), (hx - 8, hy + 2)]),
+        "colors": TURF_COLORS if turf else GRASS_COLORS,
     }
 
 

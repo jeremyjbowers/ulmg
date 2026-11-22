@@ -11,6 +11,7 @@
         <div class="hud-drawer-head">
             <div>
                 <h2>{{ tab.title }}</h2>
+                {% if tab.coach %}<p class="coach-line"><span class="coach-who">Pitching coach:</span> “{{ tab.coach }}”</p>{% endif %}
                 {% if tab.sub %}<p class="hud-sub" style="margin:2px 0 0">{{ tab.sub }}</p>{% endif %}
             </div>
             <a class="hud-btn" href="#hud" data-close>Close <kbd>Esc</kbd></a>

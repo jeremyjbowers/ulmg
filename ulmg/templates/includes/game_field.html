@@ -1,17 +1,49 @@
-{# ABOUTME: The field from above: the home park drawn from its dimensions, fielders tagged with their ratings, runners with their speed. #}
+{# ABOUTME: The field from above: mowed grass, worn foul ground, a raised mound, fielders tagged with their ratings, runners with their speed. #}
 {# ABOUTME: Expects `field` from game_hud.field. The SVG is the end state; the page script animates the last play onto it. #}
-{% with d=field.drawing %}
+{% with d=field.drawing c=field.drawing.colors %}
 <div class="hud-field{% if d.turf %} turf{% endif %}" id="hud-field">
     <div class="hud-park"><span>{{ field.park.name }}</span><small>{{ field.park.facts }}</small></div>
     <svg viewBox="{{ d.viewbox }}" role="img" aria-labelledby="hud-field-title" aria-describedby="hud-field-text" id="hud-svg">
         <title id="hud-field-title">The field from above at {{ field.park.name }}</title>
-        <path d="{{ d.fence }}" fill="{% if d.turf %}var(--turf){% else %}var(--grass){% endif %}" stroke="var(--wall)" stroke-width="8" stroke-linejoin="round"/>
+        <defs>
+            <pattern id="grass-mow" width="34" height="34" patternUnits="userSpaceOnUse">
+                <rect width="34" height="34" fill="{{ c.mow }}"/>
+                <rect width="17" height="34" fill="{{ c.mow_alt }}"/>
+            </pattern>
+            <pattern id="infield-mow" width="14" height="14" patternUnits="userSpaceOnUse" patternTransform="rotate(48)">
+                <rect width="14" height="14" fill="{{ c.infield }}"/>
+                <rect width="7" height="14" fill="{{ c.infield_alt }}"/>
+            </pattern>
+            <pattern id="foul-mow" width="20" height="20" patternUnits="userSpaceOnUse" patternTransform="rotate(90)">
+                <rect width="20" height="20" fill="{{ c.foul }}"/>
+                <rect width="10" height="20" fill="{{ c.foul_alt }}"/>
+                <circle cx="3" cy="5" r="0.7" fill="{{ c.speck }}"/>
+                <circle cx="14" cy="13" r="0.55" fill="{{ c.speck }}"/>
+                <circle cx="8" cy="16" r="0.4" fill="{{ c.mow }}"/>
+            </pattern>
+            <radialGradient id="mound-shade" cx="38%" cy="32%" r="75%">
+                <stop offset="0%" stop-color="{{ c.mound_hi }}"/>
+                <stop offset="58%" stop-color="{{ c.mound_mid }}"/>
+                <stop offset="100%" stop-color="{{ c.mound_lo }}"/>
+            </radialGradient>
+            <clipPath id="fair-clip"><path d="{{ d.fence }}"/></clipPath>
+        </defs>
+        <rect class="foul-ground" x="20" y="62" width="560" height="482" fill="url(#foul-mow)"/>
+        <g clip-path="url(#fair-clip)">
+            <path d="{{ d.fence }}" fill="url(#grass-mow)"/>
+            <path class="wall-shadow" d="{{ d.fence }}" fill="none" stroke="{{ c.shadow }}" stroke-width="28" stroke-opacity="0.45"/>
+        </g>
+        <path class="outfield-wall" d="{{ d.fence }}" fill="none" stroke="var(--wall)" stroke-width="7" stroke-linejoin="round"/>
         {% for wall in d.tall_walls %}<path class="tall-wall" d="{{ wall }}" fill="none" stroke="var(--wall-tall)" stroke-width="14" stroke-linecap="round"/>{% endfor %}
-        <path d="{{ d.dirt }}" fill="{% if d.turf %}var(--dirt-turf){% else %}var(--dirt){% endif %}"/>
-        <polygon points="{{ d.infield_grass }}" fill="{% if d.turf %}var(--turf){% else %}var(--grass){% endif %}"/>
+        <path d="{{ d.dirt }}" fill="{{ c.mound_mid }}" stroke="{{ c.mound_lo }}" stroke-width="2"/>
+        <polygon points="{{ d.infield_grass }}" fill="url(#infield-mow)"/>
         <polygon points="{{ d.baselines }}" fill="none" stroke="#fff" stroke-width="2" opacity=".9"/>
         {% for x, y in d.foul_lines %}<line x1="{{ d.home.0 }}" y1="{{ d.home.1 }}" x2="{{ x }}" y2="{{ y }}" stroke="#fff" stroke-width="2"/>{% endfor %}
-        <circle cx="{{ d.mound.0 }}" cy="{{ d.mound.1 }}" r="11" fill="var(--dirt)"/>
+        <g class="mound" transform="translate({{ d.mound.0 }} {{ d.mound.1 }})">
+            <ellipse class="mound-shadow" cx="1.5" cy="6" rx="20" ry="8" fill="{{ c.shadow }}" opacity=".35"/>
+            <ellipse class="mound-body" cx="0" cy="0" rx="18" ry="9" fill="url(#mound-shade)"/>
+            <rect class="rubber" x="-6" y="-1.6" width="12" height="3" rx="0.4"/>
+        </g>
         {% for label in d.labels %}<text class="lbl-dist" x="{{ label.x }}" y="{{ label.y }}" text-anchor="middle">{{ label.text }}</text>{% endfor %}
         {% for b in d.bases %}<rect class="base" x="{{ b.left }}" y="{{ b.top }}" width="16" height="16" transform="rotate(45 {{ b.x }} {{ b.y }})"/>{% endfor %}
         <polygon class="base" points="{{ d.plate }}"/>

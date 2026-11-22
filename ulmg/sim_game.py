@@ -2180,6 +2180,7 @@ def page(log, user, confirm=None):
             "dice": dice_for(play, recent),
             "during": during,
             "panel": game_hud.panel(play, user, need, choices, pitcher_options, teams),
+            "coach": game_hud.pitching_coach_line(play, user, need),
         }
     )
     if choices.get("defense"):
@@ -2191,16 +2192,6 @@ def page(log, user, confirm=None):
             form = lineup_form(play.season, play.roster(side), _lineup_rows(play, side), reads=play.usage)
             context["pregame"].append({"side": side, "team": team_for(game, side), **form})
 
-    context["moves"] = [
-        {
-            "side": side,
-            "team": team_for(game, side),
-            "up": models.Player.objects.filter(team=team_for(game, side), is_ulmg_mlb_roster=False).order_by("name"),
-            "down": models.Player.objects.filter(team=team_for(game, side), is_ulmg_mlb_roster=True).order_by("name"),
-        }
-        for side in context["user_sides"]
-        if plans.can_edit(user, team_for(game, side))
-    ]
     return context
 
 

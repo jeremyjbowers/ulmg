@@ -8,7 +8,8 @@
     </div>
     {% elif need %}
     <div class="hud-alert game-need" role="status">
-        {{ need.reason }}
+        {% if coach %}<p class="coach-line"><span class="coach-who">Pitching coach:</span> “{{ coach }}”</p>{% endif %}
+        <p class="need-reason">{{ need.reason }}</p>
         {% if panel.open %}<a class="hud-btn small" href="#sub-{{ panel.open }}">Choose</a>{% endif %}
     </div>
     {% endif %}
@@ -94,7 +95,7 @@
             <label class="hud-pace" hidden id="hud-pace"><input type="checkbox" id="hud-fast"> Fast (no animation)</label>
             {% if dice %}<label class="hud-pace" hidden id="hud-dice-pace"><input type="checkbox" id="hud-skip-dice"> Skip the dice (field only)</label>{% endif %}
         </div>
-        <div class="hud-group hud-offense">
+        <div class="hud-group hud-offense{% if not controls.offense.mine %} computer{% endif %}">
             <h3>Offense · <b>{{ controls.offense.team.abbreviation }} {% if controls.offense.mine %}(you){% else %}computer{% endif %}</b></h3>
             <form method="post" action="/games/{{ game.id }}/step/" class="hud-btns">
                 {% csrf_token %}
@@ -103,7 +104,7 @@
             </form>
             {% if controls.offense.why %}<p class="hud-why">{{ controls.offense.why }}</p>{% endif %}
         </div>
-        <div class="hud-group hud-defense">
+        <div class="hud-group hud-defense{% if not controls.defense.mine %} computer{% endif %}">
             <h3>Defense · <b>{{ controls.defense.team.abbreviation }} {% if controls.defense.mine %}(you){% else %}computer{% endif %}</b></h3>
             <form method="post" action="/games/{{ game.id }}/step/" class="hud-btns">
                 {% csrf_token %}
