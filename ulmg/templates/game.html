@@ -67,8 +67,6 @@
     <div class="game-below hud-below">
     {% if not final %}
 
-    {% include 'includes/game_autoplay.html' %}
-
     {% for lineup in pregame %}
     <form method="post" action="/games/{{ game.id }}/proceed/" class="game-lineup hud-box space-y-1">
         {% csrf_token %}

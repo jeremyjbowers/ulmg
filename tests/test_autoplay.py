@@ -278,10 +278,13 @@ class AutoplayPageTestCase(AutoplayTestCase):
         self.client.force_login(self.manager)
         page = self.client.get(f"/games/{self.game.id}/")
         self.assertContains(page, "game-autoplay")
-        self.assertContains(page, "Autoplay the rest of the series")
+        self.assertContains(page, "Autoplay this game?")
+        self.assertContains(page, "Yes, autoplay it")
+        self.assertNotContains(page, "Autoplay the rest of the series")
         response = self.client.post(f"/games/{self.game.id}/autoplay/", {"scope": "game"}, follow=True)
         log = self.assert_final(models.GameLog.objects.get(game=self.game))
-        self.assertContains(response, 'id="hud-box"')
+        self.assertTrue(response.redirect_chain[-1][0].endswith(f"/games/{self.game.id}/box/"))
+        self.assertContains(response, ", final")
         self.assertContains(response, "Autoplayed")
         self.assertEqual(len(handed_over(log)), 2)
 
@@ -297,7 +300,11 @@ class AutoplayPageTestCase(AutoplayTestCase):
         log = sim_game.open_game(self.game, self.manager, (AWAY,), seeds=self.next_seed)
         self.client.force_login(self.manager)
         page = self.client.get(f"/games/{self.game.id}/")
+        html = page.content.decode()
         self.assertContains(page, "game-autoplay")
+        self.assertNotContains(page, "Autoplay the rest of the series")
+        self.assertLess(html.find('id="hud-play"'), html.find("Autoplay this game"))
+        self.assertLess(html.find("Autoplay this game"), html.find("hud-offense"))
         expected = sim_game.Play(gf.refresh(log)).sequence
         self.client.post(f"/games/{self.game.id}/autoplay/", {"scope": "series", "expected": expected})
         for game in series_games(self.game):

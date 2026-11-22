@@ -134,12 +134,16 @@ body:has(#hud) header { background: #ffffff; color: #000000; }
 .hud-btn kbd { font: 600 12px ui-monospace, monospace; border: 1px solid var(--off); border-radius: 4px; padding: 0 5px; margin-left: 6px; color: var(--muted); }
 .hud-btn:disabled, .hud-btn[aria-disabled="true"] { border-color: var(--off); color: var(--off); cursor: not-allowed; }
 .hud-btn.live { border-color: #b98a00; box-shadow: inset 0 0 0 2px var(--accent); }
-.hud-btn.play { flex-direction: column; background: var(--accent); color: var(--accent-ink); border-color: var(--accent-edge); font-size: 20px; padding: 12px 26px; min-height: 64px; min-width: 210px; }
+.hud-btn.play { flex-direction: column; background: var(--accent); color: var(--accent-ink); border-color: var(--accent-edge); font-size: 20px; padding: 12px 26px; min-height: 64px; min-width: 210px; box-shadow: 0 4px 0 var(--accent-edge); transition: transform 80ms ease, filter 80ms ease, box-shadow 80ms ease; }
+.hud-btn.play:hover:not(:disabled):not(.is-playing) { transform: translateY(-2px); box-shadow: 0 6px 0 var(--accent-edge); filter: brightness(1.12); }
+.hud-btn.play:active:not(:disabled), .hud-btn.play.is-playing { transform: translateY(4px); background: #b08916; box-shadow: inset 0 5px 0 #6b4e00; filter: none; }
+.hud-btn.play.is-playing { pointer-events: none; }
 .hud-btn.play:disabled { background: var(--rule); color: var(--muted); border-color: var(--off); }
 .hud-btn.play small { display: block; font-size: 13px; font-weight: 600; }
 .hud-btn.small { min-height: 44px; font-size: 15px; padding: 8px 12px; }
 .hud-why { font-size: 13px; color: var(--muted); margin: 6px 0 0; }
-.hud-pace { margin-top: 8px; font-size: 14px; color: var(--muted); display: flex; gap: 10px; align-items: center; min-height: 44px; }
+.hud-pace { margin-top: 8px; }
+.hud-pace.on { background: var(--ink); color: var(--btn); }
 
 /* Recent plays */
 .hud-boxscore { background: var(--panel); border: 1px solid var(--rule); border-radius: 10px; margin: 12px 0; padding: 8px 12px; }
@@ -161,8 +165,13 @@ body:has(#hud) header { background: #ffffff; color: #000000; }
 .hud-pbp li { padding: 4px 0; border-top: 1px solid var(--rule); }
 
 /* Substitution panel */
-.hud-drawer { position: fixed; inset: 0 0 0 auto; width: min(780px, 100%); background: var(--panel); color: var(--ink); border-left: 2px solid var(--ink); transform: translateX(102%); visibility: hidden; transition: transform 220ms ease, visibility 0s linear 220ms; z-index: 60; display: flex; flex-direction: column; font: 16px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+.hud-drawer { position: fixed; top: var(--header-offset, 0px); right: 0; bottom: 0; left: auto; width: min(780px, 100%); background: var(--panel); color: var(--ink); border-left: 2px solid var(--ink); transform: translateX(102%); visibility: hidden; transition: transform 220ms ease, visibility 0s linear 220ms; z-index: 60; display: flex; flex-direction: column; font: 16px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
 .hud-drawer:target, .hud-drawer.open { transform: none; visibility: visible; transition: transform 220ms ease; }
+/* While the plate appearance is still playing, keep the end-state cards and the forced panel off the screen. */
+html.hud-holding #hud-mid, html.hud-holding .hud-order, html.hud-holding .hud-situation { visibility: hidden; }
+html.hud-holding .hud-drawer.open, html.hud-held .hud-drawer.open { transform: translateX(102%); visibility: hidden; }
+html.hud-holding .game-need, html.hud-held .game-need { display: none; }
+html.hud-holding .hud-page:has(.hud-drawer.open) .hud-scrim, html.hud-held .hud-page:has(.hud-drawer.open) .hud-scrim { opacity: 0; pointer-events: none; }
 .hud-drawer > form { display: flex; flex-direction: column; flex: 1; min-height: 0; margin: 0; }
 .hud-drawer[data-tab="def"] { overflow-y: auto; }
 .hud-drawer[data-tab="def"] > form { flex: 0 0 auto; }
@@ -194,7 +203,12 @@ body:has(#hud) header { background: #ffffff; color: #000000; }
 .hud-compare { border-top: 2px solid var(--ink); padding: 12px 18px; display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center; background: var(--page); }
 .hud-compare p { margin: 0; font-size: 15px; }
 .hud-compare .hud-btn.play { min-height: 48px; min-width: 0; font-size: 16px; padding: 10px 18px; }
-.hud-scrim { position: fixed; inset: 0; background: rgba(0,0,0,.35); opacity: 0; pointer-events: none; transition: opacity 200ms; z-index: 55; display: block; }
+.hud-scrim { position: fixed; top: var(--header-offset, 0px); right: 0; bottom: 0; left: 0; background: rgba(0,0,0,.35); opacity: 0; pointer-events: none; transition: opacity 200ms; z-index: 55; display: block; }
+.hud-autoplay-offer { margin-top: 8px; }
+dialog.hud-autoplay { border: 2px solid var(--ink); border-radius: 10px; background: var(--panel); color: var(--ink); padding: 16px 18px; max-width: 26rem; }
+dialog.hud-autoplay::backdrop { background: rgba(0, 0, 0, .45); }
+dialog.hud-autoplay form { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; }
+dialog.hud-autoplay p { flex-basis: 100%; margin: 0; }
 .hud-page:has(.hud-drawer:target) .hud-scrim, .hud-page:has(.hud-drawer.open) .hud-scrim { opacity: 1; pointer-events: auto; }
 
 /* Dice and the Strat-style card */
@@ -303,6 +317,7 @@ body:has(#hud) header { background: #ffffff; color: #000000; }
   .hud-playdock .hud-pace, .hud-playdock .hud-why { display: none; }
   .hud-btn.play { min-height: 56px; }
   body { padding-bottom: 84px; }
+  body:has([data-autoplay-open]) { padding-bottom: 148px; }
 }
 @media (prefers-reduced-motion: reduce) { .runner, .hud-banner, .hud-drawer { transition: none; } .hud-line td.flash { animation: none; } }
 </style>

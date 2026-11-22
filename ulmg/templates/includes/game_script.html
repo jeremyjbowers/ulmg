@@ -22,21 +22,32 @@
     return node;
   }
 
-  /* Fast: remembered per browser. */
-  var pace = document.getElementById('hud-pace');
-  var fastBox = document.getElementById('hud-fast');
-  if (pace && fastBox) {
-    pace.hidden = false;
-    fastBox.checked = load(FAST_KEY) === '1';
-    fastBox.addEventListener('change', function () { save(FAST_KEY, fastBox.checked ? '1' : '0'); });
+  /* Fast and skip-the-dice: buttons, remembered per browser. The card stays under the calls either way. */
+  function wirePace(button, key) {
+    if (!button) return null;
+    button.hidden = false;
+    function on() { return button.getAttribute('aria-pressed') === 'true'; }
+    function set(value) {
+      button.setAttribute('aria-pressed', value ? 'true' : 'false');
+      button.classList.toggle('on', value);
+    }
+    set(load(key) === '1');
+    button.addEventListener('click', function () { set(!on()); save(key, on() ? '1' : '0'); });
+    return button;
   }
-  /* Skip the dice: remembered per browser. The card stays under the calls either way. */
-  var dicePace = document.getElementById('hud-dice-pace');
-  var skipDiceBox = document.getElementById('hud-skip-dice');
-  if (dicePace && skipDiceBox) {
-    dicePace.hidden = false;
-    skipDiceBox.checked = load(DICE_KEY) === '1';
-    skipDiceBox.addEventListener('change', function () { save(DICE_KEY, skipDiceBox.checked ? '1' : '0'); });
+  function paceOn(button) { return !!(button && button.getAttribute('aria-pressed') === 'true'); }
+  var fastBox = wirePace(document.getElementById('hud-fast'), FAST_KEY);
+  var skipDiceBox = wirePace(document.getElementById('hud-skip-dice'), DICE_KEY);
+  var playForm = hud.querySelector('form.game-step');
+  if (playForm) {
+    playForm.addEventListener('submit', function () {
+      var button = document.getElementById('hud-play');
+      if (!button || button.classList.contains('is-playing')) return;
+      button.classList.add('is-playing');
+      button.setAttribute('aria-busy', 'true');
+      var small = button.querySelector('small');
+      if (small) small.textContent = 'Playing\u2026';
+    });
   }
 
   /* The play just made: from its before-state to the end state the server drew. */
@@ -70,13 +81,15 @@
     while (hold.firstChild) b.appendChild(hold.firstChild);
   }
   function holdDuring(play) {
+    /* The page already swapped in who was on the field when this play is fresh. Don't swap back until it ends. */
+    var already = document.documentElement.classList.contains('hud-held');
     var pairs = [['hud-fielders', 'hud-during-fielders'], ['hud-batter', 'hud-during-batter'], ['hud-pitcher', 'hud-during-pitcher'], ['hud-order', 'hud-during-order']];
     var swaps = [];
     pairs.forEach(function (pair) {
       var live = document.getElementById(pair[0]);
       var prior = document.getElementById(pair[1]);
       if (!live || !prior) return;
-      exchange(live, prior);
+      if (!already) exchange(live, prior);
       swaps.push([live, prior]);
     });
     var situation = play.situation;
@@ -84,20 +97,26 @@
     var outsText = document.getElementById('hud-outs-text');
     var lights = document.querySelectorAll('#hud-outs .out-light');
     var saved = null;
-    if (situation && inning && outsText) {
+    if (!already && situation && inning && outsText) {
       saved = { inning: inning.textContent, outs: outsText.textContent, on: [] };
       lights.forEach(function (light) { saved.on.push(light.classList.contains('on')); });
       inning.textContent = situation.inning;
       outsText.textContent = situation.outs_text;
       lights.forEach(function (light, i) { light.classList.toggle('on', i < situation.outs); });
     }
-    if (!swaps.length && !saved) return null;
+    if (!swaps.length && !saved && !already) return null;
     return function () {
       swaps.forEach(function (pair) { exchange(pair[0], pair[1]); });
-      if (!saved) return;
-      inning.textContent = saved.inning;
-      outsText.textContent = saved.outs;
-      lights.forEach(function (light, i) { light.classList.toggle('on', saved.on[i]); });
+      if (saved) {
+        inning.textContent = saved.inning;
+        outsText.textContent = saved.outs;
+        lights.forEach(function (light, i) { light.classList.toggle('on', saved.on[i]); });
+      } else if (already) {
+        if (inning && inning.hasAttribute('data-end')) inning.textContent = inning.getAttribute('data-end');
+        if (outsText && outsText.hasAttribute('data-end')) outsText.textContent = outsText.getAttribute('data-end');
+        lights.forEach(function (light) { light.classList.toggle('on', light.getAttribute('data-end-on') === '1'); });
+      }
+      document.documentElement.classList.remove('hud-held');
     };
   }
   async function animate(play) {
@@ -226,8 +245,8 @@
     var seen = parseInt(load(SEEN_KEY) || '0', 10);
     var fresh = play.sequence > seen;
     save(SEEN_KEY, String(play.sequence));
-    if (fresh && !(fastBox && fastBox.checked) && !reducedMotion()) {
-      var roll = skipDiceBox && skipDiceBox.checked ? Promise.resolve() : rollDice(play);
+    if (fresh && !paceOn(fastBox) && !reducedMotion()) {
+      var roll = paceOn(skipDiceBox) ? Promise.resolve() : rollDice(play);
       roll.then(function () { return animate(play); });
     }
   } else if (banner) {

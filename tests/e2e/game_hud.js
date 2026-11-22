@@ -143,25 +143,28 @@ async function openTab(page, tab) {
   check(!(await page.locator('.hud-drawer.open').count()), 'Esc closes the panel');
   check(/\d+% \([+−±]\d+\)/.test(await page.locator('#sub-ph').textContent()), 'pinch hitters show their chance to reach base');
 
+  async function paceOn(id) {
+    return (await page.locator(id).getAttribute('aria-pressed')) === 'true';
+  }
   // Skip the dice plays the field animation alone, keeps the card under the calls, and is remembered.
-  check(!(await page.locator('#hud-skip-dice').isChecked()), 'the dice show by default');
-  await page.check('#hud-skip-dice');
+  check(!(await paceOn('#hud-skip-dice')), 'the dice show by default');
+  await page.locator('#hud-skip-dice').click();
   const skipButton = page.locator('#hud-play');
   if (await skipButton.isDisabled()) await resolveNeed(page);
   await Promise.all([page.waitForNavigation(), page.locator('#hud-play').click()]);
   await page.waitForTimeout(250);
   check(await page.locator('#hud-dice .die.rolling').count() === 0, 'with Skip the dice, no dice roll');
   check(await page.locator('#hud-field #hud-dice').count() === 0, 'with Skip the dice, the field stays on the field');
-  check(await page.locator('#hud-skip-dice').isChecked(), 'Skip the dice is remembered across the reload');
+  check(await paceOn('#hud-skip-dice'), 'Skip the dice is remembered across the reload');
   await page.waitForTimeout(3000);
-  await page.uncheck('#hud-skip-dice');
+  await page.locator('#hud-skip-dice').click();
 
   // Fast skips the animation, and the choice is remembered.
-  await page.check('#hud-fast');
+  await page.locator('#hud-fast').click();
   await play(page, { settle: 300 });
-  check(await page.locator('#hud-fast').isChecked(), 'Fast is remembered across the reload');
+  check(await paceOn('#hud-fast'), 'Fast is remembered across the reload');
   check(!(await page.locator('#hud-banner.show').count()), 'Fast shows no animation');
-  await page.uncheck('#hud-fast');
+  await page.locator('#hud-fast').click();
 
   // Phone.
   const phone = await context(browser, 390, 844);

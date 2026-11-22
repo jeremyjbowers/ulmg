@@ -1,6 +1,28 @@
 {# ABOUTME: The game HUD: line score, the opposing batting order, batter card, the field, pitcher card with this plate appearance's odds and a platoon edge, the calls, the dice card, the last plays and a box score. #}
 {# ABOUTME: Expects the context sim_game.page builds. Every call is a plain form POST carrying the log position it was drawn from. A final offers the box score. #}
-<div id="hud" class="hud" data-game="{{ game.id }}">
+<div id="hud" class="hud" data-game="{{ game.id }}"{% if last_play %} data-last-play="{{ last_play.sequence }}"{% endif %}>
+    <script>
+    (function () {
+        var header = document.querySelector(".fixed-header");
+        if (!header) return;
+        var height = header.offsetHeight;
+        if (height) document.documentElement.style.setProperty("--header-offset", height + "px");
+    })();
+    </script>
+    {% if last_play %}
+    <script>
+    (function () {
+        var hud = document.getElementById("hud");
+        var seq = parseInt(hud.getAttribute("data-last-play") || "0", 10);
+        function load(key) { try { return window.localStorage.getItem(key); } catch (e) { return null; } }
+        var seen = parseInt(load("ulmg-hud-seen-" + hud.getAttribute("data-game")) || "0", 10);
+        var fast = load("ulmg-hud-fast") === "1";
+        var reduce = false;
+        try { reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (e) {}
+        if (seq > seen && !fast && !reduce) document.documentElement.classList.add("hud-holding");
+    })();
+    </script>
+    {% endif %}
     {% if paused %}
     <div class="hud-alert game-paused" role="status">
         {{ paused.reason }} The game waits for a roster move or a commissioner override.
@@ -66,7 +88,7 @@
     </section>
 
     {% if during %}
-    <div id="hud-during" hidden>
+    <div id="hud-during" hidden data-inning="{{ during.situation.inning }}" data-outs="{{ during.situation.outs }}" data-outs-text="{{ during.situation.outs_text }}">
         <svg id="hud-during-svg" aria-hidden="true">
             <g id="hud-during-fielders">{% include "includes/game_fielders.html" with fielders=during.fielders %}</g>
         </svg>
@@ -74,6 +96,36 @@
         <div id="hud-during-pitcher">{% include "includes/game_pitcher_card.html" with pitcher=during.pitcher fielding_team=during.fielding_team %}</div>
         <div id="hud-during-order">{% include "includes/game_order.html" with order=during.order %}</div>
     </div>
+    <script>
+    (function () {
+        var root = document.documentElement;
+        if (!root.classList.contains("hud-holding")) return;
+        var during = document.getElementById("hud-during");
+        function exchange(a, b) {
+            var hold = document.createDocumentFragment();
+            while (a.firstChild) hold.appendChild(a.firstChild);
+            while (b.firstChild) a.appendChild(b.firstChild);
+            while (hold.firstChild) b.appendChild(hold.firstChild);
+        }
+        [["hud-fielders", "hud-during-fielders"], ["hud-batter", "hud-during-batter"], ["hud-pitcher", "hud-during-pitcher"], ["hud-order", "hud-during-order"]].forEach(function (pair) {
+            var live = document.getElementById(pair[0]);
+            var prior = document.getElementById(pair[1]);
+            if (live && prior) exchange(live, prior);
+        });
+        var inning = document.getElementById("hud-inning");
+        var outsText = document.getElementById("hud-outs-text");
+        var lights = document.querySelectorAll("#hud-outs .out-light");
+        if (inning) { inning.setAttribute("data-end", inning.textContent); inning.textContent = during.getAttribute("data-inning") || ""; }
+        if (outsText) { outsText.setAttribute("data-end", outsText.textContent); outsText.textContent = during.getAttribute("data-outs-text") || ""; }
+        var outs = parseInt(during.getAttribute("data-outs") || "0", 10);
+        lights.forEach(function (light, i) {
+            if (light.classList.contains("on")) light.setAttribute("data-end-on", "1");
+            light.classList.toggle("on", i < outs);
+        });
+        root.classList.remove("hud-holding");
+        root.classList.add("hud-held");
+    })();
+    </script>
     {% endif %}
 
     <section class="hud-controls" aria-label="Calls">
@@ -91,9 +143,10 @@
                 {% endif %}
             </form>
             {% if controls.play.why %}<p class="hud-why">{{ controls.play.why }}</p>{% endif %}
+            <button type="button" class="hud-btn small hud-pace" hidden id="hud-fast" aria-pressed="false" title="No animation">Fast</button>
+            <button type="button" class="hud-btn small hud-pace" hidden id="hud-skip-dice" aria-pressed="false" title="Field only">Skip the dice</button>
+            {% include "includes/game_autoplay.html" %}
             {% endif %}
-            <label class="hud-pace" hidden id="hud-pace"><input type="checkbox" id="hud-fast"> Fast (no animation)</label>
-            {% if dice %}<label class="hud-pace" hidden id="hud-dice-pace"><input type="checkbox" id="hud-skip-dice"> Skip the dice (field only)</label>{% endif %}
         </div>
         <div class="hud-group hud-offense{% if not controls.offense.mine %} computer{% endif %}">
             <h3>Offense · <b>{{ controls.offense.team.abbreviation }} {% if controls.offense.mine %}(you){% else %}computer{% endif %}</b></h3>

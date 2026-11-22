@@ -280,6 +280,27 @@ class ControlsTest(GameHudTestCase):
         self.assertNotIn("makes these calls itself", html)
         self.assertIn("Play the next plate appearance", html)
 
+    def test_pace_controls_are_buttons_and_the_play_button_can_show_it_is_working(self):
+        self.post("open", seats="away,home")
+        html = self.page()
+        self.assertIn(
+            '<button type="button" class="hud-btn small hud-pace" hidden id="hud-fast" aria-pressed="false" title="No animation">Fast</button>',
+            html,
+        )
+        self.assertIn(
+            '<button type="button" class="hud-btn small hud-pace" hidden id="hud-skip-dice" aria-pressed="false" title="Field only">Skip the dice</button>',
+            html,
+        )
+        self.assertNotIn('<input type="checkbox" id="hud-fast"', html)
+        self.assertNotIn('<input type="checkbox" id="hud-skip-dice"', html)
+        self.assertNotIn('id="hud-dice"', html)
+        self.assertIn(".hud-btn.play:hover:not(:disabled):not(.is-playing)", html)
+        self.assertIn(".hud-btn.play.is-playing", html)
+        self.assertIn("Playing\\u2026", html)
+        self.assertIn("top: var(--header-offset, 0px)", html)
+        self.assertIn('querySelector(".fixed-header")', html)
+        self.assertLess(html.find('querySelector(".fixed-header")'), html.find('class="hud-controls"'))
+
     def test_steal_and_hit_and_run_stay_visible_disabled_with_the_reason(self):
         self.post("open", seats="away,home")
         offense = self.group(self.page(), "offense")
@@ -432,6 +453,16 @@ class LastPlayTest(GameHudTestCase):
         self.assertEqual(play["situation"]["outs"], 2)
         self.assertIn("Top", play["situation"]["inning"])
         self.assertIn("Bottom", self.section(html, 'id="hud-inning"', "</p>"))
+        self.assertIn(f'data-last-play="{play["sequence"]}"', html)
+        during = self.section(html, 'id="hud-during"', ">")
+        self.assertIn("data-inning=", during)
+        self.assertIn('data-outs="2"', during)
+        self.assertIn("data-outs-text=", during)
+        self.assertLess(html.find('id="hud-during"'), html.find('classList.add("hud-held")'))
+        self.assertLess(html.find('classList.add("hud-held")'), html.find('class="hud-controls"'))
+        self.assertIn("classList.contains('hud-held')", html)
+        self.assertIn("html.hud-held .hud-drawer.open", html)
+        self.assertIn("html.hud-held .game-need", html)
 
     def test_a_home_run_scores_the_batter_and_flashes_the_run(self):
         gf.set_rates([self.road.hitters[0]], gf.HOME_RUN_RATES)
