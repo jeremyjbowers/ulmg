@@ -7,6 +7,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_POST
 
 from ulmg.mcp_app.auth import require_owner_api_token
+from ulmg.mcp_app import games as game_reads
 from ulmg.mcp_app import services
 from ulmg.mcp_app.wishlist import WishlistError
 from ulmg.mcp_app import wishlist as wishlist_ops
@@ -229,3 +230,96 @@ def wishlist_note(request):
         return {"note": body.get("note")}
 
     return _wishlist_response(wishlist_ops.set_wishlist_note, request, extras=extra)
+
+
+def _game_read(func, **kwargs):
+    """JSON for a game_reads call: 404 for a missing game or team, 400 for a bad argument."""
+    try:
+        return JsonResponse(func(**kwargs))
+    except game_reads.GameReadError as exc:
+        return JsonResponse({"error": exc.message}, status=exc.status)
+
+
+@require_GET
+@require_owner_api_token
+def games_list(request):
+    params = request.GET
+    return _game_read(
+        game_reads.list_games,
+        season=params.get("season"),
+        team=params.get("team"),
+        day_from=params.get("day_from"),
+        day_to=params.get("day_to"),
+        status=params.get("status") or game_reads.FINAL,
+        limit=params.get("limit") or 200,
+    )
+
+
+@require_GET
+@require_owner_api_token
+def game_box_score(request, game_id):
+    return _game_read(game_reads.get_box_score, game_id=game_id)
+
+
+@require_GET
+@require_owner_api_token
+def standings(request):
+    return _game_read(game_reads.get_standings, season=request.GET.get("season"))
+
+
+@require_GET
+@require_owner_api_token
+def team_season(request, abbreviation):
+    return _game_read(
+        game_reads.get_team_season,
+        abbreviation=abbreviation,
+        season=request.GET.get("season"),
+    )
+
+
+@require_GET
+@require_owner_api_token
+def my_team_season(request):
+    return _game_read(
+        game_reads.get_team_season,
+        season=request.GET.get("season"),
+        owner=request.mcp_owner,
+    )
+
+
+@require_GET
+@require_owner_api_token
+def sim_stats(request):
+    params = request.GET
+    return _game_read(
+        game_reads.list_sim_stats,
+        season=params.get("season"),
+        team=params.get("team"),
+        player_id=params.get("player_id"),
+        kind=params.get("kind"),
+        sort=params.get("sort"),
+        order=params.get("order") or "desc",
+        min_pa=params.get("min_pa"),
+        min_ip=params.get("min_ip"),
+        limit=params.get("limit") or 100,
+    )
+
+
+@require_GET
+@require_owner_api_token
+def sim_leaders(request):
+    return _game_read(
+        game_reads.get_sim_leaders,
+        season=request.GET.get("season"),
+        limit=request.GET.get("limit") or 10,
+    )
+
+
+@require_GET
+@require_owner_api_token
+def usage(request):
+    return _game_read(
+        game_reads.get_usage,
+        season=request.GET.get("season"),
+        team=request.GET.get("team"),
+    )

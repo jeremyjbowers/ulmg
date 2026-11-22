@@ -9,6 +9,7 @@ from typing import Any, Optional
 import httpx
 from mcp.server.fastmcp import FastMCP
 
+from ulmg.mcp_app import games as game_reads
 from ulmg.mcp_app import services
 from ulmg.mcp_app import wishlist as wishlist_ops
 from ulmg.mcp_app.context import (
@@ -24,7 +25,11 @@ INSTRUCTIONS = (
     "ULMG league tools for roster review, draft prep, and trade analysis. "
     "Roster terms: on_mlb_30man = Major League active roster; "
     "on_40man_protect = Open Draft protected V/A list (site field "
-    "is_ulmg_35man_roster). Wishlist follow, unfollow, tier, and note tools "
+    "is_ulmg_35man_roster). Sim results: list_games (scores), get_box_score, "
+    "get_standings, get_team_season, list_sim_stats (6-ulmg sim lines), "
+    "get_sim_leaders, and get_usage (PA, starts and innings against caps). "
+    "Their season defaults to the league season, which turns over on "
+    "November 1. Wishlist follow, unfollow, tier, and note tools "
     "write the authenticated owner's board and need a read-write API key. "
     "There are no roster writes and no trade execution."
 )
@@ -78,6 +83,19 @@ def _http_get(path: str, params: Optional[dict] = None) -> Any:
 
 def _wishlist_error(exc: WishlistError) -> dict:
     return {"error": exc.message, "status": exc.status}
+
+
+async def _game_read(func, /, **kwargs) -> str:
+    """Run a game_reads function; a missing game or team and a bad argument come back as JSON errors."""
+    try:
+        data = await db_sync(func, **kwargs)
+    except game_reads.GameReadError as exc:
+        return _dump({"error": exc.message, "status": exc.status})
+    return _dump(data)
+
+
+def _params(**values) -> dict:
+    return {k: v for k, v in values.items() if v is not None and v != ""}
 
 
 def build_mcp(*, mode: str = "local") -> FastMCP:
@@ -310,6 +328,86 @@ def _register_local_tools(mcp: FastMCP) -> None:
             return _dump(_wishlist_error(exc))
         return _dump(data)
 
+    @mcp.tool()
+    async def list_games(
+        season: Optional[int] = None,
+        team: Optional[str] = None,
+        day_from: Optional[int] = None,
+        day_to: Optional[int] = None,
+        status: str = "final",
+        limit: int = 200,
+    ) -> str:
+        """Sim game scores in day order. status: final|in_progress|scheduled|all. day is the game number, 1-162. Each game's id feeds get_box_score."""
+        return await _game_read(
+            game_reads.list_games,
+            season=season,
+            team=team,
+            day_from=day_from,
+            day_to=day_to,
+            status=status,
+            limit=limit,
+        )
+
+    @mcp.tool()
+    async def get_box_score(game_id: int) -> str:
+        """One sim game's box score: line score, batting and pitching lines, W/L/S/holds, and notes (2B, HR, SB, LOB...)."""
+        return await _game_read(game_reads.get_box_score, game_id=game_id)
+
+    @mcp.tool()
+    async def get_standings(season: Optional[int] = None) -> str:
+        """Sim standings by conference and division: W-L, pct, games behind, runs scored and allowed, and the wild-card race."""
+        return await _game_read(game_reads.get_standings, season=season)
+
+    @mcp.tool()
+    async def get_team_season(
+        abbreviation: Optional[str] = None,
+        season: Optional[int] = None,
+    ) -> str:
+        """A club's sim season: record, standing, team batting/pitching totals, and every final game. Omitting abbreviation uses your team."""
+        owner = get_current_owner()
+        return await _game_read(
+            game_reads.get_team_season,
+            abbreviation=abbreviation,
+            season=season,
+            owner=owner,
+        )
+
+    @mcp.tool()
+    async def list_sim_stats(
+        season: Optional[int] = None,
+        team: Optional[str] = None,
+        player_id: Optional[int] = None,
+        kind: Optional[str] = None,
+        sort: Optional[str] = None,
+        order: str = "desc",
+        min_pa: Optional[int] = None,
+        min_ip: Optional[float] = None,
+        limit: int = 100,
+    ) -> str:
+        """Players' sim (6-ulmg) season lines. kind: batting|pitching. sort is a stat key such as hr, ops, era, so, gs; order: desc|asc."""
+        return await _game_read(
+            game_reads.list_sim_stats,
+            season=season,
+            team=team,
+            player_id=player_id,
+            kind=kind,
+            sort=sort,
+            order=order,
+            min_pa=min_pa,
+            min_ip=min_ip,
+            limit=limit,
+        )
+
+    @mcp.tool()
+    async def get_sim_leaders(season: Optional[int] = None, limit: int = 10) -> str:
+        """Sim league leaders in hits, homers, RBI, steals, wins, saves, holds, strikeouts, innings, starts and more."""
+        return await _game_read(game_reads.get_sim_leaders, season=season, limit=limit)
+
+    @mcp.tool()
+    async def get_usage(season: Optional[int] = None, team: Optional[str] = None) -> str:
+        """Sim usage against caps: plate appearances, starts and innings per player, with each cap. Omitting team lists the league."""
+        return await _game_read(game_reads.get_usage, season=season, team=team)
+
 
 def _register_remote_tools(mcp: FastMCP) -> None:
     @mcp.tool()
@@ -498,3 +596,86 @@ def _register_remote_tools(mcp: FastMCP) -> None:
                 body={"player_id": player_id, "note": note},
             )
         )
+
+    @mcp.tool()
+    def list_games(
+        season: Optional[int] = None,
+        team: Optional[str] = None,
+        day_from: Optional[int] = None,
+        day_to: Optional[int] = None,
+        status: str = "final",
+        limit: int = 200,
+    ) -> str:
+        """Sim game scores in day order. status: final|in_progress|scheduled|all."""
+        params = _params(
+            season=season,
+            team=team,
+            day_from=day_from,
+            day_to=day_to,
+            status=status,
+            limit=limit,
+        )
+        return _dump(_http_get("/api/mcp/v1/games/", params=params))
+
+    @mcp.tool()
+    def get_box_score(game_id: int) -> str:
+        """One sim game's box score."""
+        return _dump(_http_get(f"/api/mcp/v1/games/{game_id}/box-score/"))
+
+    @mcp.tool()
+    def get_standings(season: Optional[int] = None) -> str:
+        """Sim standings by conference and division, with the wild-card race."""
+        return _dump(
+            _http_get("/api/mcp/v1/standings/", params=_params(season=season))
+        )
+
+    @mcp.tool()
+    def get_team_season(
+        abbreviation: Optional[str] = None,
+        season: Optional[int] = None,
+    ) -> str:
+        """A club's sim season. Omitting abbreviation uses your team."""
+        params = _params(season=season)
+        if abbreviation:
+            return _dump(
+                _http_get(f"/api/mcp/v1/teams/{abbreviation}/season/", params=params)
+            )
+        return _dump(_http_get("/api/mcp/v1/team-season/", params=params))
+
+    @mcp.tool()
+    def list_sim_stats(
+        season: Optional[int] = None,
+        team: Optional[str] = None,
+        player_id: Optional[int] = None,
+        kind: Optional[str] = None,
+        sort: Optional[str] = None,
+        order: str = "desc",
+        min_pa: Optional[int] = None,
+        min_ip: Optional[float] = None,
+        limit: int = 100,
+    ) -> str:
+        """Players' sim (6-ulmg) season lines."""
+        params = _params(
+            season=season,
+            team=team,
+            player_id=player_id,
+            kind=kind,
+            sort=sort,
+            order=order,
+            min_pa=min_pa,
+            min_ip=min_ip,
+            limit=limit,
+        )
+        return _dump(_http_get("/api/mcp/v1/sim-stats/", params=params))
+
+    @mcp.tool()
+    def get_sim_leaders(season: Optional[int] = None, limit: int = 10) -> str:
+        """Sim league leaders in each counting stat."""
+        params = _params(season=season, limit=limit)
+        return _dump(_http_get("/api/mcp/v1/sim-leaders/", params=params))
+
+    @mcp.tool()
+    def get_usage(season: Optional[int] = None, team: Optional[str] = None) -> str:
+        """Sim usage against caps per player."""
+        params = _params(season=season, team=team)
+        return _dump(_http_get("/api/mcp/v1/usage/", params=params))

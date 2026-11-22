@@ -116,6 +116,13 @@ Read tools work with any key. The wishlist write tools need `--scope read_write`
 | `unfollow_player` | **Write.** Remove a player from your wishlist |
 | `set_wishlist_tier` | **Write.** Tier 1–5 (20 players max) or `0` for watched. Optional `rank` |
 | `set_wishlist_note` | **Write.** Set the note. Follows the player if you have not yet |
+| `list_games` | Sim scores in day order. `status` is `final` (default), `in_progress`, `scheduled` or `all`; filter by `team`, `day_from`, `day_to` |
+| `get_box_score` | One game's box score: line score, batting and pitching lines, W/L/S/holds, notes |
+| `get_standings` | Sim standings by division with games behind, runs scored and allowed, and the wild-card race |
+| `get_team_season` | A club's record, standing, team totals and every final. Omit `abbreviation` for your team |
+| `list_sim_stats` | Players' 6-ulmg sim lines. `kind` is `batting` or `pitching`; `sort` any stat key, `order` `desc` or `asc`; `min_pa`, `min_ip` |
+| `get_sim_leaders` | Leaders in each counting stat the leaders page shows |
+| `get_usage` | PA, starts and innings against each player's caps, for the league or one `team` |
 
 `get_draft_board` uses the same eligibility as the draft-prep pages. AA is unowned
 B-level players. Offseason Open is unowned V and A. Midseason Open is unowned
@@ -127,6 +134,13 @@ The JSON twin of the write tools is `POST /api/mcp/v1/wishlist/follow/`,
 `/unfollow/`, `/tier/`, and `/note/` with a JSON body (`player_id`, and `tier`
 / `rank` / `note` when that call needs them). The board is
 `GET /api/mcp/v1/draft-board/?draft_type=open`.
+
+The sim-result tools read the same stored record as the standings, results,
+leaders and usage pages. Their `season` defaults to the league season, which
+turns over on November 1, so pass `season` to read the year before. The JSON
+twins are `GET /api/mcp/v1/games/`, `/games/<id>/box-score/`, `/standings/`,
+`/team-season/` (your team) or `/teams/<abbr>/season/`, `/sim-stats/`,
+`/sim-leaders/` and `/usage/`, with the same arguments as query parameters.
 
 Every player object includes a `stats` block when a `PlayerStatSeason` exists:
 
