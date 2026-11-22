@@ -4,6 +4,7 @@
 
 {% block content %}
 <div class="max-w-3xl">
+    {% include 'includes/plan_errors.html' %}
     <h1 class="text-lg font-bold mb-1">Day {{ game.day }}: {{ game.series.road_team.abbreviation }} at {{ game.series.home_team.abbreviation }}{% if box.final %}, final{% endif %}</h1>
     <p class="text-sm text-gray-600 mb-4">
         <a href="/teams/{{ game.series.road_team.abbreviation|lower }}/schedule/{{ game.series.slot.season }}/" class="underline">{{ game.series.road_team.abbreviation }} schedule</a> ·

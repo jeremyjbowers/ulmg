@@ -175,6 +175,10 @@ def _autoplay(request, game):
             messages.success(request, f"Autoplayed day {played.day}. {final.text}")
         else:
             messages.error(request, f"Autoplay stopped on day {played.day}: {result.paused['reason']}")
+    # A finished game lands on its box score. A game that stopped stays on the play page.
+    if results and results[-1].final:
+        finished = results[-1].log.game
+        request._game_redirect = f"/games/{finished.id}/box/"
 
 
 @never_cache
@@ -189,7 +193,7 @@ def game_action(request, game_id, action):
             messages.error(request, reason)
     except engine_client.EngineUnavailable:
         messages.error(request, "The game engine is not answering, so nothing was played. Try again in a minute.")
-    return redirect(game_url(game))
+    return redirect(getattr(request, "_game_redirect", None) or game_url(game))
 
 
 @never_cache
