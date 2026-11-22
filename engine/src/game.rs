@@ -456,7 +456,10 @@ impl Game {
             let club = self.club_mut(batting);
             club.batter_index = (club.batter_index + 1) % len;
         }
-        self.results.push(result.clone());
+        // The dice are for the page that shows this plate appearance. The game's history keeps the play.
+        let mut kept = result.clone();
+        kept.dice = None;
+        self.results.push(kept);
         self.last_result = Some(result);
         self.pull_if_spent(fielding);
 

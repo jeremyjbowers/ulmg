@@ -12,8 +12,8 @@ use rand::{Rng, SeedableRng};
 
 use crate::model::{
     Base, BaseOutRunChange, BaserunningEvent, Bases, BattedBallRates, CallNote, ChargedError,
-    Count, Fielder, Fielding, HitterRates, PaInput, PaResult, Park, Pitch, PitchKind, PitcherRates,
-    PlateOutcome, PlayerId, Position, Running,
+    Count, Dice, Fielder, Fielding, HitterRates, PaInput, PaResult, Park, Pitch, PitchKind,
+    PitcherRates, PlateOutcome, PlayerId, Position, Running,
 };
 
 /// League line used as the odds-ratio baseline, per plate appearance.
@@ -81,7 +81,7 @@ const WALK_STRIKES: [u32; 3] = [9, 8, 3];
 /// 3.18 on a ball in play, 4.55 on a strikeout, 4.79 on a walk.
 const FOULS_AT_TWO_STRIKES: [u32; 3] = [11, 6, 3];
 
-#[derive(Debug, Clone, PartialEq, serde::Serialize)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct OutcomeProbs {
     pub k: f64,
     pub bb: f64,
@@ -395,6 +395,42 @@ pub fn charge_error(
         fielder_name: fielder.name.clone(),
         position: fielder.position,
     })
+}
+
+/// The outcome a roll in [0, 1) reads on the table, top to bottom.
+pub fn read_outcome(probs: &OutcomeProbs, roll: f64) -> PlateOutcome {
+    let table = [
+        (PlateOutcome::Strikeout, probs.k),
+        (PlateOutcome::Walk, probs.bb),
+        (PlateOutcome::HitByPitch, probs.hbp),
+        (PlateOutcome::Single, probs.single),
+        (PlateOutcome::Double, probs.double),
+        (PlateOutcome::Triple, probs.triple),
+        (PlateOutcome::HomeRun, probs.hr),
+        (PlateOutcome::BipOut, probs.bip_out),
+    ];
+    let mut cursor = 0.0;
+    for (outcome, probability) in table {
+        cursor += probability;
+        if roll < cursor {
+            return outcome;
+        }
+    }
+    PlateOutcome::BipOut
+}
+
+/// The table this plate appearance would read in a neutral park, hit-and-run included.
+fn neutral_park_table(input: &PaInput, hit_and_run: bool) -> OutcomeProbs {
+    let mut probs = outcome_probabilities(
+        &input.rates,
+        &input.pitcher,
+        input.defense,
+        &Park::default(),
+    );
+    if hit_and_run {
+        apply_hit_and_run(&mut probs);
+    }
+    probs
 }
 
 /// Halve the strikeout rate and give that mass to hits and ball-in-play outs.
@@ -874,7 +910,14 @@ impl Sim {
         if hit_and_run {
             apply_hit_and_run(&mut probs);
         }
-        let mut outcome = self.draw_outcome(&probs);
+        let (drawn, roll) = self.draw_outcome(&probs);
+        let mut outcome = drawn;
+        let dice = Dice {
+            roll,
+            probabilities: probs.clone(),
+            neutral_park: neutral_park_table(input, hit_and_run),
+            park: input.park.clone(),
+        };
         if outcome == PlateOutcome::BipOut {
             let outs = input.situation.outs + outs_from_running;
             let infield_in = input.calls.infield_in && bases.third.is_some() && outs < 2;
@@ -898,6 +941,7 @@ impl Sim {
                     noted(call_note, hit_and_run, PlateOutcome::ReachedOnError),
                 );
                 result.fielding.error = charged;
+                result.dice = Some(dice);
                 return result;
             }
             if kind == PlateOutcome::GroundOut
@@ -908,12 +952,14 @@ impl Sim {
             } else {
                 let (out, options) = self.roll_runners_on_out(kind, &bases, outs, infield_in);
                 let adv = advance_on_out(&bases, &input.hitter_id, out, outs, options);
-                return self.package(
+                let mut result = self.package(
                     input,
                     out,
                     merge(outs_from_running, events, adv),
                     noted(call_note, hit_and_run, out),
                 );
+                result.dice = Some(dice);
+                return result;
             }
         }
         let take_extra =
@@ -927,12 +973,14 @@ impl Sim {
                 take_extra_base: take_extra,
             },
         );
-        self.package(
+        let mut result = self.package(
             input,
             outcome,
             merge(outs_from_running, events, adv),
             noted(call_note, hit_and_run, outcome),
-        )
+        );
+        result.dice = Some(dice);
+        result
     }
 
     fn take_extra_base(
@@ -1031,26 +1079,10 @@ impl Sim {
         }
     }
 
-    fn draw_outcome(&mut self, probs: &OutcomeProbs) -> PlateOutcome {
+    /// One roll against the table. The roll comes back too, so the page can show the dice that read it.
+    fn draw_outcome(&mut self, probs: &OutcomeProbs) -> (PlateOutcome, f64) {
         let roll = self.rng.gen::<f64>();
-        let table = [
-            (PlateOutcome::Strikeout, probs.k),
-            (PlateOutcome::Walk, probs.bb),
-            (PlateOutcome::HitByPitch, probs.hbp),
-            (PlateOutcome::Single, probs.single),
-            (PlateOutcome::Double, probs.double),
-            (PlateOutcome::Triple, probs.triple),
-            (PlateOutcome::HomeRun, probs.hr),
-            (PlateOutcome::BipOut, probs.bip_out),
-        ];
-        let mut cursor = 0.0;
-        for (outcome, probability) in table {
-            cursor += probability;
-            if roll < cursor {
-                return outcome;
-            }
-        }
-        PlateOutcome::BipOut
+        (read_outcome(probs, roll), roll)
     }
 
     fn package(
@@ -1097,6 +1129,7 @@ impl Sim {
                 error: None,
             },
             call_note,
+            dice: None,
         }
     }
 
@@ -2474,5 +2507,48 @@ mod tests {
             poor_ss > good_ss + sample / 5,
             "poor {poor_ss}, good {good_ss}"
         );
+    }
+
+    #[test]
+    fn dice_report_the_roll_that_drew_the_outcome() {
+        let mut input = sample_input(false);
+        input.park = Park {
+            hr_factor: Some(1.3),
+            ..run_park(1.1)
+        };
+        let mut sim = Sim::from_seed(4_040);
+        for _ in 0..2_000 {
+            let result = sim.resolve(&input);
+            let dice = result.dice.expect("a swing reads the table");
+            assert!((0.0..1.0).contains(&dice.roll));
+            assert_eq!(dice.park, input.park);
+            let read = read_outcome(&dice.probabilities, dice.roll);
+            if read == PlateOutcome::BipOut {
+                assert!(!result.outcome.is_hit() || result.outcome == PlateOutcome::Single);
+            } else {
+                assert_eq!(read, result.outcome);
+            }
+            assert!(
+                dice.neutral_park.hr < dice.probabilities.hr,
+                "the park lifts home runs"
+            );
+        }
+    }
+
+    #[test]
+    fn dice_are_absent_when_no_table_is_read() {
+        let mut sim = Sim::from_seed(9);
+        assert!(sim.resolve(&sample_input(true)).dice.is_none());
+        let mut bunt = sample_input(false);
+        bunt.calls.bunt = true;
+        assert!(sim.resolve(&bunt).dice.is_none());
+    }
+
+    #[test]
+    fn neutral_park_table_matches_the_table_in_a_neutral_park() {
+        let input = sample_input(false);
+        let mut sim = Sim::from_seed(11);
+        let dice = sim.resolve(&input).dice.unwrap();
+        assert_eq!(dice.neutral_park, dice.probabilities);
     }
 }

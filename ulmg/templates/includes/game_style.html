@@ -232,9 +232,16 @@ body:has(#hud) header { background: #ffffff; color: #000000; }
 .strat-odds { display: flex; flex-wrap: wrap; gap: 4px 14px; list-style: none; margin: 8px 0 0; padding: 0; font-size: 12px; }
 .strat-odds li.good b { text-decoration: underline; }
 .strat-note { margin: 6px 0 0; font: 12px/1.35 system-ui, sans-serif; color: #5d5a52; }
+.strat-park { margin: 0 0 6px; font-size: 12px; display: flex; flex-wrap: wrap; gap: 2px 10px; align-items: baseline; }
+.strat-park .park-name { font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+.strat-park .factor.up, .park-delta.up { color: #1f6b35; font-weight: 700; }
+.strat-park .factor.down, .park-delta.down { color: #9b2018; font-weight: 700; }
+.park-mark { font-style: normal; color: #0c5b3a; margin-right: 2px; }
+.strat-grid td .part.park { background: rgba(63,138,78,.16); }
 /* While the dice roll, the section sits over the field; afterward it goes back under the calls. */
 .hud-dice.over-field { position: absolute; inset: 0; z-index: 5; overflow: auto; border: 0; background: var(--panel); cursor: pointer; opacity: 1; transition: opacity 250ms; }
 .hud-dice.over-field .strat-note, .hud-dice.over-field .strat-odds { display: none; }
+.hud-dice.over-field .strat-park { margin-bottom: 4px; }
 .hud-dice.over-field.leaving { opacity: 0; }
 .hud-dice.over-field .strat-grid { font-size: 10.5px; }
 .hud-dice.over-field .strat-grid td { padding: 1px 2px; }
@@ -256,7 +263,7 @@ body:has(#hud) header { background: #ffffff; color: #000000; }
   .hud-dice.over-field .die small { display: none; }
   .hud-dice.over-field .dice-read { font-size: 13px; }
   .hud-dice.over-field .dice-read b { font-size: 15px; }
-  .hud-dice.over-field .strat-title { display: none; }
+  .hud-dice.over-field .strat-title, .hud-dice.over-field .strat-park { display: none; }
   .hud-dice.over-field .strat-card { padding: 4px; }
   .hud-dice.over-field .strat-grid td { height: 18px; }
 }

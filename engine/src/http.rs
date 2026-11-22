@@ -352,9 +352,16 @@ mod tests {
         assert_eq!(status, StatusCode::OK, "{first}");
         let after_first = game(&first["state"]);
         assert_eq!(after_first.results.len(), 1);
+        // The response carries the dice; the game's history keeps the play without them.
+        let mut reported = first["result"].clone();
+        let dice = reported.as_object_mut().unwrap().remove("dice");
+        assert!(
+            dice.is_none() || dice.as_ref().unwrap()["roll"].is_f64(),
+            "{dice:?}"
+        );
         assert_eq!(
             serde_json::to_value(&after_first.results[0]).unwrap(),
-            first["result"]
+            reported
         );
 
         let (status, second) = post(
