@@ -272,6 +272,47 @@ class ChartTest(TestCase):
             "Shohei Ohtani · RHP",
         )
 
+    def test_a_lineup_spot_names_the_bat_wrc_and_war(self):
+        self.seager.bats = "L"
+        self.seager.save(update_fields=["bats"])
+        self.greene.bats = "L"
+        self.greene.save(update_fields=["bats"])
+        self.abbott.bats = "R"
+        self.abbott.save(update_fields=["bats"])
+        self.zimmer.bats = "S"
+        self.zimmer.save(update_fields=["bats"])
+        self.two_way.bats = "S"
+        self.two_way.save(update_fields=["bats"])
+        models.PlayerStatSeason.objects.create(
+            player=self.seager, season=SEASON - 1, classification="2-milb", hit_stats={"war": 9.9, "wrc_plus": 50}
+        )
+        models.PlayerStatSeason.objects.create(
+            player=self.seager, season=SEASON - 1, classification="1-mlb", hit_stats={"war": 5.44, "wrc_plus": 100}
+        )
+        models.Card.objects.create(player=self.seager, season=SEASON - 1, wrc_plus=141.6)
+        models.PlayerStatSeason.objects.create(
+            player=self.abbott, season=SEASON - 1, classification="1-mlb", hit_stats={"war": -1.2, "wrc_plus": 88}
+        )
+        models.PlayerStatSeason.objects.create(
+            player=self.zimmer, season=SEASON - 1, classification="1-mlb", hit_stats={"wrc_plus": "nope"}
+        )
+        models.PlayerStatSeason.objects.create(
+            player=self.two_way, season=SEASON - 1, classification="1-mlb", hit_stats={"war": 0, "wrc_plus": 180}
+        )
+        chart = self.described()
+        first = spot(chart, "1B")
+        labels = {option.player: option.label for option in first.options}
+        self.assertEqual(labels[self.seager], "Corey Seager · L · 142 wRC+ · 5.4 WAR")
+        self.assertEqual(labels[self.greene], "Riley Greene · L")
+        self.assertEqual(labels[self.abbott], "Aaron Abbott · R · 88 wRC+ · -1.2 WAR")
+        self.assertEqual(labels[self.zimmer], "Zack Zimmer · S")
+        self.assertEqual(labels[self.two_way], "Shohei Ohtani · S · 180 wRC+ · 0.0 WAR")
+        bullpen = spot(chart, depth.BULLPEN)
+        self.assertEqual(
+            next(option.label for option in bullpen.options if option.player == self.two_way),
+            "Shohei Ohtani · RHP",
+        )
+
     def test_a_player_off_the_mlb_roster_cannot_be_filed(self):
         farm = make_player(self.team, "Farm Bat", position="OF", mlb=False)
         with self.assertRaises(depth.DepthError) as refused:

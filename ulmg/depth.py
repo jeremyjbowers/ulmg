@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 
 from django.db import IntegrityError, transaction
 
-from ulmg import cards, models, plans, usage
+from ulmg import cards, decision_cards, models, plans, usage
 
 # A ULMG season is 162 games, one start a game.
 GAMES = 162
@@ -451,10 +451,46 @@ def _shown_xfip(pitch):
         return None
 
 
-def _choice_label(player, bucket, pitch):
-    """The typeahead text. A pitching spot names the hand and the card-season xFIP."""
+def _shown_wrc(hit, card):
+    """Card-season wRC+ as a whole number. The card wins over the hitting line."""
+    if card is not None and card.wrc_plus is not None:
+        value = card.wrc_plus
+    else:
+        value = (hit or {}).get("wrc_plus")
+    if value in (None, ""):
+        return None
+    try:
+        return str(int(round(float(value))))
+    except (TypeError, ValueError):
+        return None
+
+
+def _shown_war(hit):
+    """The card-season WAR, to one decimal, or None when the line has none."""
+    if not hit:
+        return None
+    value = hit.get("war")
+    if value in (None, ""):
+        return None
+    try:
+        return f"{float(value):.1f}"
+    except (TypeError, ValueError):
+        return None
+
+
+def _choice_label(player, bucket, hit, pitch, card):
+    """The typeahead text. A lineup spot names the bat, wRC+ and WAR; a pitching spot the hand and xFIP."""
     if bucket_kind(bucket) == PA:
-        return player.name
+        bits = [player.name]
+        if player.bats in ("L", "R", "S"):
+            bits.append(player.bats)
+        wrc = _shown_wrc(hit, card)
+        if wrc is not None:
+            bits.append(f"{wrc} wRC+")
+        war = _shown_war(hit)
+        if war is not None:
+            bits.append(f"{war} WAR")
+        return " · ".join(bits)
     bits = [player.name]
     hand = _HANDS.get(player.throws or "")
     if hand:
@@ -523,7 +559,7 @@ class ChartView:
     estimate_note: str
 
 
-def _spot(code, label, assignments, roster, pitches=None):
+def _spot(code, label, assignments, roster, stats=None, cards_by_id=None):
     kind = bucket_kind(code)
     target = bucket_target(code)
     filed = [row for row in assignments if row.bucket == code]
@@ -553,9 +589,13 @@ def _spot(code, label, assignments, roster, pitches=None):
             )
         )
     taken = {row.player_id for row in filed}
-    pitches = pitches or {}
+    stats = stats or {}
+    cards_by_id = cards_by_id or {}
     options = [
-        Option(player, _choice_label(player, code, pitches.get(player.id)))
+        Option(
+            player,
+            _choice_label(player, code, *stats.get(player.id, ({}, {})), cards_by_id.get(player.id)),
+        )
         for player in sorted(
             (player for player in roster if _eligible(player, code, taken)),
             key=_name_key,
@@ -628,13 +668,10 @@ def describe(team, season):
         assignments = list(chart.assignments.select_related("player"))
     # Playing time is filed from the MLB roster. A player sent down stays on a row he already has.
     roster = list(models.Player.objects.filter(team=team, is_ulmg_mlb_roster=True))
-    pitches = {
-        player_id: pitch
-        for player_id, (_hit, pitch) in usage.card_stats_by_player(roster, season).items()
-    }
-    hitting = [_spot(code, code, assignments, roster, pitches) for code in plans.LINEUP_POSITIONS]
-    rotation = _spot(STARTS, "Rotation", assignments, roster, pitches)
-    bullpen = _spot(BULLPEN, "Bullpen", assignments, roster, pitches)
+    stats, cards_by_id = decision_cards.load(roster, season)
+    hitting = [_spot(code, code, assignments, roster, stats, cards_by_id) for code in plans.LINEUP_POSITIONS]
+    rotation = _spot(STARTS, "Rotation", assignments, roster, stats, cards_by_id)
+    bullpen = _spot(BULLPEN, "Bullpen", assignments, roster, stats, cards_by_id)
     spots = [*hitting, rotation, bullpen]
     return ChartView(
         hitting=hitting,
