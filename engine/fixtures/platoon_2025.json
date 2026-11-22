@@ -1,0 +1,10 @@
+{
+  "source": "MLB Stats API, 2025 regular season, hitting statSplits vs LHP and vs RHP for every player, joined to each player's bat side. A switch-hitter is counted on the side opposite the pitcher's arm.",
+  "plate_appearances": 182926,
+  "cells": {
+    "LvL": {"pa": 15241, "k": 0.2404, "bb": 0.0779, "hbp": 0.0129, "single": 0.1411, "double": 0.0355, "triple": 0.0042, "hr": 0.0255},
+    "LvR": {"pa": 65333, "k": 0.2154, "bb": 0.0972, "hbp": 0.0091, "single": 0.1374, "double": 0.0433, "triple": 0.0044, "hr": 0.0337},
+    "RvL": {"pa": 34506, "k": 0.2219, "bb": 0.0842, "hbp": 0.0083, "single": 0.1456, "double": 0.0443, "triple": 0.0026, "hr": 0.0303},
+    "RvR": {"pa": 67846, "k": 0.2248, "bb": 0.0727, "hbp": 0.0125, "single": 0.1469, "double": 0.0419, "triple": 0.0027, "hr": 0.0297}
+  }
+}

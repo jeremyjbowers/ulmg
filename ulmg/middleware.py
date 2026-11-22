@@ -70,7 +70,7 @@ class LoginRequiredMiddleware:
             return True
 
         # The season schedule, every team's half plan and depth chart, and the
-        # season record's standings, results, leaders, team stats and usage
+        # season record's standings, results, leaders, run environment, team stats and usage
         # are visible to everyone in the league, logged in or not
         public_urls = [
             'league_schedule',
@@ -85,6 +85,7 @@ class LoginRequiredMiddleware:
             'league_standings',
             'team_results',
             'league_leaders',
+            'league_run_environment',
             'team_stats',
             'league_usage',
             'team_usage',

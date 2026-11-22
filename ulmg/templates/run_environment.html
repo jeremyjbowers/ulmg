@@ -1,0 +1,88 @@
+{# ABOUTME: The ULMG run environment: the league's runs, hits and scoring spread from final games, against the engine's. #}
+{# ABOUTME: Public, like the standings; the expected numbers are the engine's league-average games. #}
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto py-4">
+    <h1 class="text-2xl font-bold mb-2 border-b border-gray-300 pb-2">{{ record_season }} run environment</h1>
+    <p class="text-sm text-gray-600 mb-6">What the league is scoring against what the engine expects. Expected is {{ report.expected.games }} engine games of league-average lineups against league-average pitching in a neutral park, about where MLB scores. Real parks, and clubs better or worse than average, move a season off it. The range is two standard errors either side of expected for this many games: a number outside it is unlikely to be luck alone. <a href="/standings/{{ record_season }}/" class="underline">Standings</a> &middot; <a href="/leaders/{{ record_season }}/" class="underline">Leaders</a></p>
+
+    {% if not report.games %}
+    <p class="text-sm">No final games yet.</p>
+    {% else %}
+    <p class="text-sm mb-4">{{ report.games }} final game{{ report.games|pluralize }}, {{ report.team_games }} team games. Per team per game:</p>
+
+    <table class="run-environment-metrics w-full text-sm border-collapse border border-gray-200 mb-8">
+        <thead class="bg-gray-50">
+            <tr class="border-b border-gray-300">
+                <th class="text-left py-1 px-2">Stat</th>
+                <th class="text-right py-1 px-2">League</th>
+                <th class="text-right py-1 px-2">Expected</th>
+                <th class="text-right py-1 px-2">Expected range</th>
+                <th class="text-left py-1 px-2">Verdict</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for metric in report.metrics %}
+            <tr class="border-b border-gray-200">
+                <td class="py-1 px-2">{{ metric.label }}</td>
+                <td class="text-right py-1 px-2 font-bold">{{ metric.actual_display }}</td>
+                <td class="text-right py-1 px-2">{{ metric.expected_display }}</td>
+                <td class="text-right py-1 px-2 text-gray-600">{{ metric.range_display }}</td>
+                <td class="py-1 px-2">{% if metric.verdict == "within" %}Within range{% elif metric.verdict == "above" %}<span class="font-bold">Above</span>{% else %}<span class="font-bold">Below</span>{% endif %}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h2 class="text-lg font-bold mb-1">Runs in a game</h2>
+    <p class="text-sm text-gray-600 mb-3">How often a team scores each number of runs. The dark bar is the league; the light bar is expected.</p>
+    <table class="run-environment-distribution w-full text-sm border-collapse border border-gray-200 mb-8">
+        <thead class="bg-gray-50">
+            <tr class="border-b border-gray-300">
+                <th class="text-left py-1 px-2">Runs</th>
+                <th class="text-right py-1 px-2">Team games</th>
+                <th class="text-right py-1 px-2">Expected</th>
+                <th class="text-left py-1 px-2 w-1/2">Share</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for bucket in report.distribution %}
+            <tr class="border-b border-gray-200">
+                <td class="py-1 px-2">{{ bucket.label }}</td>
+                <td class="text-right py-1 px-2">{{ bucket.count }}</td>
+                <td class="text-right py-1 px-2 text-gray-600">{{ bucket.expected_count|floatformat:1 }}</td>
+                <td class="py-1 px-2">
+                    <div class="h-2 bg-gray-800 mb-px" style="width: {{ bucket.actual_width }}%"></div>
+                    <div class="h-2 bg-gray-300" style="width: {{ bucket.expected_width }}%"></div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h2 class="text-lg font-bold mb-1">By club</h2>
+    <p class="text-sm text-gray-600 mb-3">Runs scored and allowed per game. Expected is {{ report.expected.runs_per_team|floatformat:2 }} each way for a league-average club.</p>
+    <table class="run-environment-teams w-full text-sm border-collapse border border-gray-200">
+        <thead class="bg-gray-50">
+            <tr class="border-b border-gray-300">
+                <th class="text-left py-1 px-2">Team</th>
+                <th class="text-right py-1 px-2">G</th>
+                <th class="text-right py-1 px-2">Scored</th>
+                <th class="text-right py-1 px-2">Allowed</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in report.teams %}
+            <tr class="border-b border-gray-200">
+                <td class="py-1 px-2"><a href="/teams/{{ row.team.abbreviation|lower }}/results/{{ record_season }}/" class="underline">{{ row.team.abbreviation }}</a></td>
+                <td class="text-right py-1 px-2">{{ row.games }}</td>
+                <td class="text-right py-1 px-2">{{ row.scored|floatformat:2 }}</td>
+                <td class="text-right py-1 px-2">{{ row.allowed|floatformat:2 }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+</div>
+{% endblock %}

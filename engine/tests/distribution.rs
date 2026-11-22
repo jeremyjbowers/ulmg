@@ -686,3 +686,122 @@ fn league_average_games_land_in_the_run_and_double_play_bands() {
         "{per_team_errors} reached-on-error per team per game (league rate {LEAGUE_ERROR_RATE} per plate appearance)"
     );
 }
+
+/// `fixtures/run_environment.json` is the run environment the site's run-environment page compares
+/// the league against. It is these league-average games, measured: runs, hits, home runs, walks and
+/// strikeouts per team per game, the spread of a team's runs in a game, and how often a team, or
+/// both teams, score six or more. The games are seeded, so the numbers repeat exactly. When the
+/// engine's model changes, replace the fixture with the measured JSON the failure prints.
+const RUN_ENVIRONMENT_TOLERANCE: f64 = 0.0005;
+
+/// A team's runs in a game, bucketed 0 through 10 and then 11 or more.
+const RUN_BUCKETS: usize = 12;
+
+fn is_hit(outcome: PlateOutcome) -> bool {
+    matches!(
+        outcome,
+        PlateOutcome::Single
+            | PlateOutcome::Double
+            | PlateOutcome::Triple
+            | PlateOutcome::HomeRun
+            | PlateOutcome::BuntSingle
+    )
+}
+
+fn round4(value: f64) -> f64 {
+    (value * 10_000.0).round() / 10_000.0
+}
+
+#[test]
+fn league_average_games_match_the_published_run_environment() {
+    let mut runs = Vec::new();
+    let (mut hits, mut home_runs, mut walks, mut strikeouts) = (0u64, 0u64, 0u64, 0u64);
+    let (mut six_plus, mut both_six_plus, mut both_six_and_ten_hits) = (0u64, 0u64, 0u64);
+    let mut manager = ComputerManager::from_seed(CALIBRATION_SEED);
+    let mut sim = Sim::from_seed(CALIBRATION_SEED);
+    let governance = Governance::new();
+    for game_index in 0..CALIBRATION_GAMES {
+        let mut game = Game::start(league_fixture(), CALIBRATION_SEED + game_index).unwrap();
+        let mut game_hits = [0u32; 2];
+        while !game.is_final() {
+            let side = usize::from(game.half == Half::Bottom);
+            step_plate_appearance(
+                &mut game,
+                &mut sim,
+                &mut manager,
+                &governance,
+                None,
+                &Running::default(),
+            )
+            .unwrap();
+            let outcome = game.last_result.as_ref().unwrap().outcome;
+            if is_hit(outcome) {
+                game_hits[side] += 1;
+                hits += 1;
+            }
+            home_runs += u64::from(outcome == PlateOutcome::HomeRun);
+            walks += u64::from(matches!(
+                outcome,
+                PlateOutcome::Walk | PlateOutcome::IntentionalWalk
+            ));
+            strikeouts += u64::from(outcome == PlateOutcome::Strikeout);
+        }
+        let (away, home) = (game.score.away, game.score.home);
+        runs.push(away);
+        runs.push(home);
+        six_plus += u64::from(away >= 6) + u64::from(home >= 6);
+        both_six_plus += u64::from(away >= 6 && home >= 6);
+        both_six_and_ten_hits +=
+            u64::from(away >= 6 && home >= 6 && game_hits[0] >= 10 && game_hits[1] >= 10);
+    }
+    let team_games = runs.len() as f64;
+    let games = CALIBRATION_GAMES as f64;
+    let mean = runs.iter().map(|&r| f64::from(r)).sum::<f64>() / team_games;
+    let variance = runs
+        .iter()
+        .map(|&r| (f64::from(r) - mean).powi(2))
+        .sum::<f64>()
+        / (team_games - 1.0);
+    let mut shares = vec![0.0; RUN_BUCKETS];
+    for &r in &runs {
+        shares[(r as usize).min(RUN_BUCKETS - 1)] += 1.0 / team_games;
+    }
+    let measured = serde_json::json!({
+        "seed": CALIBRATION_SEED,
+        "games": CALIBRATION_GAMES,
+        "runs_per_team": round4(mean),
+        "runs_sd": round4(variance.sqrt()),
+        "hits_per_team": round4(hits as f64 / team_games),
+        "home_runs_per_team": round4(home_runs as f64 / team_games),
+        "walks_per_team": round4(walks as f64 / team_games),
+        "strikeouts_per_team": round4(strikeouts as f64 / team_games),
+        "team_six_plus": round4(six_plus as f64 / team_games),
+        "both_six_plus": round4(both_six_plus as f64 / games),
+        "both_six_and_ten_hits": round4(both_six_and_ten_hits as f64 / games),
+        "team_runs_shares": shares.iter().map(|&s| round4(s)).collect::<Vec<_>>(),
+    });
+
+    let path = format!(
+        "{}/fixtures/run_environment.json",
+        env!("CARGO_MANIFEST_DIR")
+    );
+    let published: serde_json::Value = load_json(&path).unwrap();
+    let pretty = serde_json::to_string_pretty(&measured).unwrap();
+    let close = |a: &serde_json::Value, b: &serde_json::Value| match (a.as_f64(), b.as_f64()) {
+        (Some(x), Some(y)) => (x - y).abs() <= RUN_ENVIRONMENT_TOLERANCE,
+        _ => a == b,
+    };
+    for (key, value) in measured.as_object().unwrap() {
+        let stored = &published[key];
+        let matches = match (value.as_array(), stored.as_array()) {
+            (Some(left), Some(right)) => {
+                left.len() == right.len() && left.iter().zip(right).all(|(a, b)| close(a, b))
+            }
+            _ => close(value, stored),
+        };
+        assert!(
+            matches,
+            "{key} is {value} and the fixture has {stored}. Measured run environment:\n{pretty}"
+        );
+    }
+}

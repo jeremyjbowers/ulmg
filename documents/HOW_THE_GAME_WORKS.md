@@ -76,6 +76,10 @@ On a single or a double, the runner on first takes one extra base 25 percent of 
 
 A league-average lineup against league-average pitching, in a neutral park, scores between 4.2 and 4.9 runs a team. That band is the check the engine's distribution test holds the whole model to.
 
+`engine/fixtures/run_environment.json` is those league-average games measured: runs, hits, home runs, walks and strikeouts a team, the spread of a team's runs in a game, and how often one team or both score six or more. The distribution test keeps it current. The run-environment page, `/run-environment/<year>/`, sets the league's final games against it.
+
+Both platoon splits go into the draw against the one league line, so the platoon edge is counted twice. `engine/tests/platoon.rs` measures that with the 2025 MLB lines for each pairing of hands. With the league's usual mix of hands, scoring comes out about 0.15 runs a team lower than the handedness-correct environment, not higher: the same-handed matchups lose more than the opposite-handed ones gain. A lineup of nine left-handed batters scores about 0.3 runs a team more than it should against a right-handed staff, and about 0.6 fewer against a left-handed one.
+
 ### Calls
 
 A human plays it straight, or makes one call. The batting seat can bunt, steal, or hit and run. The fielding seat can call an intentional walk or pitch around.
@@ -242,5 +246,6 @@ The play-by-play under the forms is the log: the starters, each call, each compu
 | The 30-man, the freeze, and roster moves | `ulmg/roster_moves.py` |
 | The box score, the win, the loss, the save | `ulmg/box_score.py` |
 | The page | `ulmg/templates/game.html` |
+| The league's scoring against the engine's | `ulmg/run_environment.py` |
 
 `engine/src/governance.rs` is a review step a drawn result passes through. No rule is defined there, so it never redraws. The league rules are applied earlier, by refusing the plate appearance, or later, by the penalty lines.
