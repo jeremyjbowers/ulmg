@@ -1,0 +1,14 @@
+{
+  "seed": 20261069,
+  "games": 2000,
+  "runs_per_team": 4.47,
+  "runs_sd": 2.9285,
+  "hits_per_team": 8.4945,
+  "home_runs_per_team": 1.1752,
+  "walks_per_team": 3.183,
+  "strikeouts_per_team": 8.635,
+  "team_six_plus": 0.319,
+  "both_six_plus": 0.1075,
+  "both_six_and_ten_hits": 0.0625,
+  "team_runs_shares": [0.0585, 0.0923, 0.1315, 0.1333, 0.1445, 0.121, 0.0955, 0.0725, 0.0483, 0.0398, 0.0273, 0.0358]
+}

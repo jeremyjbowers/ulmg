@@ -3,7 +3,7 @@
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.cache import never_cache
 
-from ulmg import models, plans, season_record, usage, utils
+from ulmg import models, plans, run_environment, season_record, usage, utils
 from ulmg.season_paths import bounce
 
 
@@ -17,6 +17,18 @@ def league_standings(request, season=None):
     context["record_season"] = season
     context["conferences"] = season_record.standings(season)
     return render(request, "standings.html", context)
+
+
+@never_cache
+def league_run_environment(request, season=None):
+    bounced = bounce(request, "run-environment", season=season)
+    if bounced:
+        return bounced
+    season = int(season)
+    context = utils.build_context(request)
+    context["record_season"] = season
+    context["report"] = run_environment.report(season)
+    return render(request, "run_environment.html", context)
 
 
 @never_cache
