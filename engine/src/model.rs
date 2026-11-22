@@ -596,6 +596,23 @@ pub struct PaResult {
     /// Set when a steal was called and not tried, or when a hit-and-run was called.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub call_note: Option<CallNote>,
+    /// The roll that drew the outcome and the table it was read against. Absent when no table was read.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub dice: Option<Dice>,
+}
+
+/// One read of the outcome table, reported for display. The draw is the same with or without it.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct Dice {
+    /// The uniform roll in [0, 1), read against the table in the order strikeout, walk,
+    /// hit by pitch, single, double, triple, home run, ball-in-play out.
+    pub roll: f64,
+    /// The table the roll was read against: matchup, park, defense and any hit-and-run.
+    pub probabilities: crate::sim::OutcomeProbs,
+    /// The same table in a neutral park, so the page can show what the park moved.
+    pub neutral_park: crate::sim::OutcomeProbs,
+    /// The park whose factors made the difference.
+    pub park: Park,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

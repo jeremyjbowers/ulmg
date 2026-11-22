@@ -1943,10 +1943,8 @@ def play_plate_appearance(play, call, *, user=None, computer=False):
     batter, pitcher, inputs = plate_appearance_inputs(play, call)
     seed = play.seeds()
     before = situation(play.state)
-    rated = with_rates(play.state, inputs["hitter_rates"], inputs["pitcher_rates"])
-    card = None if computer else card_probabilities(rated, pitcher)
     stepped = engine_client.step(
-        rated,
+        with_rates(play.state, inputs["hitter_rates"], inputs["pitcher_rates"]),
         seed,
         call=inputs["call"],
         runners=inputs["runners"],
@@ -1980,23 +1978,10 @@ def play_plate_appearance(play, call, *, user=None, computer=False):
             "pitcher": pitcher.id,
             "before": before,
             "result": result,
-            **({"card": card} if card else {}),
         },
         text=new_log_text(play.state, stepped["state"]),
     )
     play.state = stepped["state"]
-
-
-def card_probabilities(rated, pitcher):
-    """
-    The outcome table the engine reads for this plate appearance, for its
-    dice card. None when the engine would bring in a pitcher first, since
-    the table it reads then is not this one.
-    """
-    odds = engine_client.matchup(rated)
-    if odds.get("pitcher_entering") or str(odds.get("pitcher_id")) != str(pitcher.id):
-        return None
-    return {key: odds["probabilities"][key] for key, _ in MATCHUP_LABELS}
 
 
 # Reading the game for its page
@@ -2006,11 +1991,12 @@ def dice_for(play, event):
     """The Strat-style card the plate appearance just played was read from, with the dice and who faced whom."""
     if event is None:
         return None
-    read = dice_card.for_plate_appearance(event.payload, event.seed)
+    read = dice_card.for_plate_appearance(event.payload["result"])
     if read is None:
         return None
     read["batter"] = play.player(event.payload["batter"])
     read["pitcher"] = play.player(event.payload["pitcher"])
+    read["park"]["name"] = game_hud.park_corner(team_for(play.game, HOME))["name"]
     read["sequence"] = event.sequence
     read["text"] = game_field.split_log_text(event.text)[1]
     return read

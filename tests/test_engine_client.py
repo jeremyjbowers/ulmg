@@ -140,13 +140,16 @@ class EngineClientTestCase(SimpleTestCase):
     def test_the_second_step_follows_the_first(self):
         first = engine_client.step(self.opening_state(), seed=11)
         self.assertEqual(len(first["state"]["results"]), 1)
-        self.assertEqual(first["state"]["results"][0], first["result"])
+        # The step reports its dice; the game's history keeps the play without them.
+        self.assertIn("roll", first["result"]["dice"])
+        played = {key: value for key, value in first["result"].items() if key != "dice"}
+        self.assertEqual(first["state"]["results"][0], played)
 
         second = engine_client.step(first["state"], seed=12)
         results = second["state"]["results"]
         self.assertEqual(len(results), 2)
-        self.assertEqual(results[0], first["result"], "the first plate appearance changed")
-        self.assertEqual(results[1], second["result"])
+        self.assertEqual(results[0], played, "the first plate appearance changed")
+        self.assertEqual(results[1], {key: value for key, value in second["result"].items() if key != "dice"})
         self.assertNotEqual(
             results[1]["batter_id"],
             results[0]["batter_id"],
