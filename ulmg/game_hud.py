@@ -282,14 +282,16 @@ def batting_order(play, user, teams):
     for slot, entry in enumerate(club["lineup"]):
         player = play.player(entry["id"])
         step = (slot - index) % size
-        if step == 0:
-            mark, tone = ("Now", "now") if batting else ("Due up", "due")
+        if step == 0 and batting:
+            mark, short, tone = "Now", "Now", "now"
+        elif step == 0:
+            mark, short, tone = "Due up", "Due", "due"
         elif step == 1:
-            mark, tone = "On deck", "deck"
+            mark, short, tone = "On deck", "Deck", "deck"
         elif step == 2:
-            mark, tone = "In the hole", "hole"
+            mark, short, tone = "In the hole", "Hole", "hole"
         else:
-            mark, tone = "", ""
+            mark, short, tone = "", "", ""
         line = hitter_line(play.card(player), throws)
         rows.append(
             {
@@ -300,6 +302,7 @@ def batting_order(play, user, teams):
                 "avg": line["avg"],
                 "obp": line["obp"],
                 "mark": mark,
+                "short": short,
                 "tone": tone,
             }
         )

@@ -51,19 +51,21 @@ class GameHudTestCase(gf.EngineMixin, TestCase):
         marker = 'id="hud-during-order"' if during else 'id="hud-order"'
         return self.section(html, marker, "</ol>")
 
-    def order_row(self, hitter, position, number, mark, tone, throws):
+    def order_row(self, hitter, position, number, mark, short, tone, throws):
         from ulmg import game_hud
 
         line = game_hud.hitter_line(models.Card.objects.get(player=hitter), throws)
+        title = f"{hitter.name}, {position}, bats {hitter.bats}, {line['avg']}/{line['obp']}"
+        if mark:
+            title += f", {mark}"
         attrs = f' class="{tone}"' if tone else ""
         if tone in ("now", "due"):
             attrs += ' aria-current="true"'
-        marked = f'<span class="mark">{mark}</span>' if mark else ""
+        tail = f'<span class="mark">{short}</span>' if short else f'<span class="slash">{line["avg"]}</span>'
         return (
             f"<li{attrs}><span class=\"slot\">{number}</span>"
-            f'<a href="/players/{hitter.id}/" title="{hitter.name}">{hitter.name}</a>'
-            f'<span class="pos">{position} · {hitter.bats}</span>'
-            f'<span class="slash">{line["avg"]} / {line["obp"]}</span>{marked}</li>'
+            f'<a href="/players/{hitter.id}/" title="{title}">{hitter.name}</a>'
+            f'<span class="pos">{position} · {hitter.bats}</span>{tail}</li>'
         )
 
     def last_play(self, html):
@@ -177,8 +179,8 @@ class OpponentLineupTest(GameHudTestCase):
         self.assertIn(f"Opponent · {self.road.team.abbreviation} · vs RHP", order)
         self.assertNotIn(self.home.hitters[0].name, order)
         for number, (hitter, position) in enumerate(zip(self.road.hitters, ORDER_POSITIONS), start=1):
-            mark, tone = {1: ("Now", "now"), 2: ("On deck", "deck"), 3: ("In the hole", "hole")}.get(number, ("", ""))
-            self.assertIn(self.order_row(hitter, position, number, mark, tone, throws), order)
+            mark, short, tone = {1: ("Now", "Now", "now"), 2: ("On deck", "Deck", "deck"), 3: ("In the hole", "Hole", "hole")}.get(number, ("", "", ""))
+            self.assertIn(self.order_row(hitter, position, number, mark, short, tone, throws), order)
 
     def test_a_batting_manager_sees_who_his_opponent_has_due_up(self):
         self.post("open", seats="away")
@@ -187,11 +189,11 @@ class OpponentLineupTest(GameHudTestCase):
         self.assertIn(f"Opponent · {self.home.team.abbreviation} · vs RHP", order)
         self.assertNotIn(">Now</span>", order)
         for number, (hitter, position) in enumerate(zip(self.home.hitters, ORDER_POSITIONS), start=1):
-            mark, tone = {1: ("Due up", "due"), 2: ("On deck", "deck"), 3: ("In the hole", "hole")}.get(number, ("", ""))
-            self.assertIn(self.order_row(hitter, position, number, mark, tone, throws), order)
+            mark, short, tone = {1: ("Due up", "Due", "due"), 2: ("On deck", "Deck", "deck"), 3: ("In the hole", "Hole", "hole")}.get(number, ("", "", ""))
+            self.assertIn(self.order_row(hitter, position, number, mark, short, tone, throws), order)
         watching = self.order(self.page(self.other_manager))
         self.assertIn(f"Batting order · {self.road.team.abbreviation}", watching)
-        self.assertIn(self.order_row(self.road.hitters[0], "C", 1, "Now", "now", self.home.starters[0].throws), watching)
+        self.assertIn(self.order_row(self.road.hitters[0], "C", 1, "Now", "Now", "now", self.home.starters[0].throws), watching)
 
     def test_the_highlight_follows_the_order_and_the_play_keeps_the_man_who_just_hit(self):
         gf.set_rates([self.road.hitters[0]], gf.STRIKEOUT_RATES)
@@ -200,10 +202,10 @@ class OpponentLineupTest(GameHudTestCase):
         throws = self.home.starters[0].throws
         live = self.order(html)
         prior = self.order(html, during=True)
-        self.assertIn(self.order_row(self.road.hitters[1], "1B", 2, "Now", "now", throws), live)
-        self.assertIn(self.order_row(self.road.hitters[2], "2B", 3, "On deck", "deck", throws), live)
-        self.assertIn(self.order_row(self.road.hitters[0], "C", 1, "Now", "now", throws), prior)
-        self.assertIn(self.order_row(self.road.hitters[1], "1B", 2, "On deck", "deck", throws), prior)
+        self.assertIn(self.order_row(self.road.hitters[1], "1B", 2, "Now", "Now", "now", throws), live)
+        self.assertIn(self.order_row(self.road.hitters[2], "2B", 3, "On deck", "Deck", "deck", throws), live)
+        self.assertIn(self.order_row(self.road.hitters[0], "C", 1, "Now", "Now", "now", throws), prior)
+        self.assertIn(self.order_row(self.road.hitters[1], "1B", 2, "On deck", "Deck", "deck", throws), prior)
 
 
 class FieldTest(GameHudTestCase):

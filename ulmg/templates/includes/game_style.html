@@ -70,15 +70,19 @@ body:has(#hud) header { background: #ffffff; color: #000000; }
 .hud-due { margin: 12px 0 0; padding: 0; list-style: none; font-size: 15px; }
 .hud-due li { display: flex; justify-content: space-between; gap: 8px; padding: 3px 0; border-top: 1px solid var(--rule); }
 .hud-due .pos { color: var(--muted); white-space: nowrap; }
-.hud-order { background: var(--panel); border: 1px solid var(--rule); border-top: 0; border-bottom: 0; padding: 8px 12px 10px; }
-.hud-order ol { display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); gap: 6px; list-style: none; margin: 6px 0 0; padding: 0; }
-.hud-order li { border: 1px solid var(--rule); border-radius: 6px; padding: 4px 6px; font-size: 13px; min-width: 0; }
-.hud-order li.now, .hud-order li.due { border-color: var(--ink); background: rgba(242,194,48,.28); font-weight: 800; }
-.hud-order li.deck, .hud-order li.hole { background: rgba(242,194,48,.12); }
-.hud-order a { color: inherit; text-decoration: none; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Each hitter is one line, so the field stays on a short screen. */
+.hud-order { background: var(--panel); border: 1px solid var(--rule); border-top: 0; border-bottom: 0; padding: 2px 12px 4px; }
+.hud-order .hud-eyebrow { margin: 0; line-height: 1.2; }
+.hud-order ol { display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); gap: 0 4px; list-style: none; margin: 1px 0 0; padding: 0; align-items: center; }
+.hud-order li { display: flex; align-items: baseline; gap: 4px; min-width: 0; padding: 0 3px; border-radius: 3px; font-size: 13px; line-height: 1.35; white-space: nowrap; overflow: hidden; }
+.hud-order li.now, .hud-order li.due { background: rgba(242,194,48,.4); font-weight: 800; }
+.hud-order li.deck { background: rgba(242,194,48,.2); }
+.hud-order li.hole { box-shadow: inset 0 -2px 0 var(--accent); }
+.hud-order a { color: inherit; text-decoration: none; flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .hud-order a:hover { text-decoration: underline; }
-.hud-order .slot, .hud-order .pos, .hud-order .slash, .hud-order .mark { display: block; color: var(--muted); font-size: 12px; font-weight: 600; }
-.hud-order li.now .mark, .hud-order li.due .mark { color: var(--ink); }
+.hud-order .slot, .hud-order .slash, .hud-order .mark { flex: none; color: var(--muted); font-size: 12px; font-weight: 600; }
+.hud-order .pos { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.hud-order li.now .mark, .hud-order li.due .mark, .hud-order li.deck .mark, .hud-order li.hole .mark { color: var(--ink); }
 .hud-meter { height: 12px; border-radius: 6px; background: var(--rule); overflow: hidden; margin: 6px 0 2px; }
 .hud-meter i { display: block; height: 100%; background: var(--good); }
 .hud-meter.warm i { background: var(--warm); }
