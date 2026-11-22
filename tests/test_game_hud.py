@@ -42,7 +42,8 @@ class GameHudTestCase(gf.EngineMixin, TestCase):
         return html.split(start, 1)[1].split(end, 1)[0]
 
     def group(self, html, name):
-        return self.section(html, f'class="hud-group hud-{name}"', "</div>")
+        # The class can carry an extra token, so the match stops before the closing quote.
+        return self.section(html, f'class="hud-group hud-{name}', "</div>")
 
     def drawer(self, html, tab):
         return self.section(html, f'id="sub-{tab}"', "</aside>")
@@ -51,21 +52,20 @@ class GameHudTestCase(gf.EngineMixin, TestCase):
         marker = 'id="hud-during-order"' if during else 'id="hud-order"'
         return self.section(html, marker, "</ol>")
 
-    def order_row(self, hitter, position, number, mark, short, tone, throws):
-        from ulmg import game_hud
-
-        line = game_hud.hitter_line(models.Card.objects.get(player=hitter), throws)
-        title = f"{hitter.name}, {position}, bats {hitter.bats}, {line['avg']}/{line['obp']}"
+    def order_row(self, hitter, position, number, mark, tone, wrc="100"):
+        last = game_field.last_name(hitter)
+        bats = hitter.bats if hitter.bats in ("L", "R", "S") else "—"
+        title = f"{hitter.name}, {position}, bats {bats}, {wrc} wRC+"
         if mark:
             title += f", {mark}"
         attrs = f' class="{tone}"' if tone else ""
         if tone in ("now", "due"):
             attrs += ' aria-current="true"'
-        tail = f'<span class="mark">{short}</span>' if short else f'<span class="slash">{line["avg"]}</span>'
+        hidden = f'<span class="visually-hidden">{mark}</span>' if mark else ""
         return (
             f"<li{attrs}><span class=\"slot\">{number}</span>"
-            f'<a href="/players/{hitter.id}/" title="{title}">{hitter.name}</a>'
-            f'<span class="pos">{position} · {hitter.bats}</span>{tail}</li>'
+            f'<a href="/players/{hitter.id}/" title="{title}">{last}</a>'
+            f"{hidden}<span class=\"hand\">{bats}</span><span class=\"wrc\">{wrc}</span></li>"
         )
 
     def last_play(self, html):
@@ -174,38 +174,41 @@ ORDER_POSITIONS = ["C", "1B", "2B", "3B", "SS", "LF", "CF", "RF", "DH"]
 class OpponentLineupTest(GameHudTestCase):
     def test_a_pitching_manager_sees_his_opponents_whole_lineup(self):
         self.post("open", seats="home")
-        throws = self.home.starters[0].throws
+        models.Card.objects.filter(player=self.road.hitters[0]).update(wrc_plus=156)
+        models.Card.objects.filter(player=self.road.hitters[1]).update(wrc_plus=None)
         order = self.order(self.page())
         self.assertIn(f"Opponent · {self.road.team.abbreviation} · vs RHP", order)
         self.assertNotIn(self.home.hitters[0].name, order)
+        self.assertNotIn('class="slash"', order)
+        self.assertNotIn('class="pos"', order)
+        self.assertNotIn(f"{self.road.hitters[0].name}</a>", order)
         for number, (hitter, position) in enumerate(zip(self.road.hitters, ORDER_POSITIONS), start=1):
-            mark, short, tone = {1: ("Now", "Now", "now"), 2: ("On deck", "Deck", "deck"), 3: ("In the hole", "Hole", "hole")}.get(number, ("", "", ""))
-            self.assertIn(self.order_row(hitter, position, number, mark, short, tone, throws), order)
+            mark, tone = {1: ("Now", "now"), 2: ("On deck", "deck"), 3: ("In the hole", "hole")}.get(number, ("", ""))
+            wrc = {1: "156", 2: "—"}.get(number, "100")
+            self.assertIn(self.order_row(hitter, position, number, mark, tone, wrc), order)
 
     def test_a_batting_manager_sees_who_his_opponent_has_due_up(self):
         self.post("open", seats="away")
-        throws = self.road.starters[0].throws
         order = self.order(self.page())
         self.assertIn(f"Opponent · {self.home.team.abbreviation} · vs RHP", order)
         self.assertNotIn(">Now</span>", order)
         for number, (hitter, position) in enumerate(zip(self.home.hitters, ORDER_POSITIONS), start=1):
-            mark, short, tone = {1: ("Due up", "Due", "due"), 2: ("On deck", "Deck", "deck"), 3: ("In the hole", "Hole", "hole")}.get(number, ("", "", ""))
-            self.assertIn(self.order_row(hitter, position, number, mark, short, tone, throws), order)
+            mark, tone = {1: ("Due up", "due"), 2: ("On deck", "deck"), 3: ("In the hole", "hole")}.get(number, ("", ""))
+            self.assertIn(self.order_row(hitter, position, number, mark, tone), order)
         watching = self.order(self.page(self.other_manager))
         self.assertIn(f"Batting order · {self.road.team.abbreviation}", watching)
-        self.assertIn(self.order_row(self.road.hitters[0], "C", 1, "Now", "Now", "now", self.home.starters[0].throws), watching)
+        self.assertIn(self.order_row(self.road.hitters[0], "C", 1, "Now", "now"), watching)
 
     def test_the_highlight_follows_the_order_and_the_play_keeps_the_man_who_just_hit(self):
         gf.set_rates([self.road.hitters[0]], gf.STRIKEOUT_RATES)
         self.post("open", seats="home")
         html = self.post("step", expected=self.expected()).content.decode()
-        throws = self.home.starters[0].throws
         live = self.order(html)
         prior = self.order(html, during=True)
-        self.assertIn(self.order_row(self.road.hitters[1], "1B", 2, "Now", "Now", "now", throws), live)
-        self.assertIn(self.order_row(self.road.hitters[2], "2B", 3, "On deck", "Deck", "deck", throws), live)
-        self.assertIn(self.order_row(self.road.hitters[0], "C", 1, "Now", "Now", "now", throws), prior)
-        self.assertIn(self.order_row(self.road.hitters[1], "1B", 2, "On deck", "Deck", "deck", throws), prior)
+        self.assertIn(self.order_row(self.road.hitters[1], "1B", 2, "Now", "now"), live)
+        self.assertIn(self.order_row(self.road.hitters[2], "2B", 3, "On deck", "deck"), live)
+        self.assertIn(self.order_row(self.road.hitters[0], "C", 1, "Now", "now"), prior)
+        self.assertIn(self.order_row(self.road.hitters[1], "1B", 2, "On deck", "deck"), prior)
 
 
 class FieldTest(GameHudTestCase):
@@ -248,6 +251,18 @@ class FieldTest(GameHudTestCase):
         self.assertIn(">302<", field)
         self.assertIn('class="tall-wall"', field)
 
+    def test_the_outfield_and_foul_ground_are_striped_and_the_mound_is_drawn(self):
+        self.post("open", seats="away,home")
+        field = self.section(self.page(), 'id="hud-field"', "</svg>")
+        self.assertIn('id="grass-mow"', field)
+        self.assertIn('id="foul-mow"', field)
+        self.assertIn('id="infield-mow"', field)
+        self.assertIn('class="wall-shadow"', field)
+        self.assertIn('class="mound"', field)
+        self.assertIn('class="rubber"', field)
+        self.assertIn(game_field.GRASS_COLORS["mow"], field)
+        self.assertNotIn('r="11"', field)
+
 
 class ControlsTest(GameHudTestCase):
     def test_a_side_the_computer_holds_is_labelled_and_its_buttons_are_off(self):
@@ -260,7 +275,9 @@ class ControlsTest(GameHudTestCase):
         self.assertIn('href="?confirm=bunt"', offense)
         self.assertNotIn('href="?confirm=intentional_walk"', defense)
         self.assertIn('class="hud-btn" disabled data-key="I">Intentional walk', defense)
-        self.assertIn("is the computer&#x27;s side", defense)
+        self.assertIn('class="hud-group hud-defense computer"', html)
+        self.assertNotIn('class="hud-group hud-offense computer"', html)
+        self.assertNotIn("makes these calls itself", html)
         self.assertIn("Play the next plate appearance", html)
 
     def test_steal_and_hit_and_run_stay_visible_disabled_with_the_reason(self):
@@ -318,6 +335,56 @@ class ControlsTest(GameHudTestCase):
         self.post("step", expected=self.expected())
         html = self.client.get(self.url + "?confirm=steal").content.decode()
         self.assertIn(f"{leadoff.name}, on first, steals second 75% of the time.", self.section(html, 'class="hud-confirm"', "</form>"))
+
+
+class GamePageChromeTest(GameHudTestCase):
+    def test_an_unopened_game_still_names_the_day(self):
+        html = self.page()
+        self.assertIn(f'<h1 class="text-lg font-bold mb-1">Day {self.game.day}:', html)
+        self.assertIn(f"/teams/{self.road.team.abbreviation.lower()}/schedule/", html)
+
+    def test_a_started_game_drops_the_day_line_the_seats_and_the_roster_move(self):
+        self.post("open", seats="away,home")
+        html = self.page()
+        self.assertNotIn('<h1 class="text-lg font-bold mb-1">Day', html)
+        self.assertNotIn(" schedule</a>", html)
+        self.assertNotIn("Leave seat", html)
+        self.assertNotIn("Take seat", html)
+        self.assertNotIn("Make roster move", html)
+        self.assertNotIn('name="player_up"', html)
+        self.assertNotIn('class="game-seats', html)
+        self.assertIn("Play-by-play", html)
+        self.assertIn('id="hud"', html)
+
+
+class PitchingCoachHudTest(GameHudTestCase):
+    def test_a_forced_pitching_change_has_the_coach_say_why(self):
+        from django.utils.html import escape
+
+        from ulmg import pitching_coach
+
+        self.post("open", seats="away,home")
+        self.assertNotIn("Pitching coach", self.page())
+        starter = self.home.starters[0]
+        gf.counter(starter, start_limit_outs=0)
+        html = self.page()
+        need = sim_game.Play(self.log()).need()
+        self.assertEqual(need.kind, sim_game.PITCHER_NEED)
+        self.assertEqual(need.player, starter)
+        said = escape(pitching_coach.saying(self.game.id, starter.id, need.reason))
+        alert = self.section(html, 'class="hud-alert game-need"', "</div>")
+        self.assertIn("Pitching coach", alert)
+        self.assertIn(said, alert)
+        self.assertIn(escape(need.reason), alert)
+        self.assertIn(said, self.drawer(html, "pit"))
+        self.assertIn('<aside id="sub-pit" class="hud-drawer open"', html)
+
+    def test_the_other_manager_hears_the_reason_and_not_the_speech(self):
+        self.post("open", user=self.manager, seats="away")
+        gf.counter(self.home.starters[0], start_limit_outs=0)
+        html = self.page(self.manager)
+        self.assertIn("must come out", html)
+        self.assertNotIn("Pitching coach", html)
 
 
 class LastPlayTest(GameHudTestCase):
@@ -552,6 +619,7 @@ class PanelTest(GameHudTestCase):
         self.assertIn(f"Replace {second.name}", drawer)
         self.assertIn('id="hud-play" disabled', html)
         self.assertNotIn("Play the next plate appearance", html)
+        self.assertNotIn("Pitching coach", html)
 
 
 OUT = {"k": 0.0, "bb": 0.0, "hbp": 0.0, "single": 0.0, "double": 0.0, "triple": 0.0, "hr": 0.0, "bip_out": 1.0}

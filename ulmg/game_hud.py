@@ -39,6 +39,17 @@ def tenths(value):
     return "—" if value is None else f"{float(value):.1f}"
 
 
+def _wrc_label(card):
+    """The card's wRC+ as a whole number, or a dash when the card has none."""
+    value = getattr(card, "wrc_plus", None) if card is not None else None
+    if value is None:
+        return "—"
+    try:
+        return str(int(round(float(value))))
+    except (TypeError, ValueError):
+        return "—"
+
+
 def ordinal(n):
     if 10 <= n % 100 <= 20:
         return f"{n}th"
@@ -179,6 +190,20 @@ def scoreboard(play, box, teams):
     }
 
 
+def pitching_coach_line(play, user, need):
+    """What the pitching coach says when a human must pull his pitcher, or None."""
+    from ulmg import pitching_coach, sim_game
+
+    if (
+        need is None
+        or need.kind != sim_game.PITCHER_NEED
+        or need.player is None
+        or not play.fold.holds(user, need.side)
+    ):
+        return None
+    return pitching_coach.saying(play.game.id, need.player.id, need.reason)
+
+
 # The cards
 
 
@@ -262,7 +287,8 @@ def batting_order(play, user, teams):
 
     One seat shows the other club. Both seats, or none, show the club at
     bat. Now is the man at bat; Due up is who leads off when that club is
-    in the field. The line is against the pitcher set to face them.
+    in the field. Each row is the slot, the last name, the batting hand
+    and his card's wRC+.
     """
     from ulmg import sim_game
 
@@ -283,26 +309,24 @@ def batting_order(play, user, teams):
         player = play.player(entry["id"])
         step = (slot - index) % size
         if step == 0 and batting:
-            mark, short, tone = "Now", "Now", "now"
+            mark, tone = "Now", "now"
         elif step == 0:
-            mark, short, tone = "Due up", "Due", "due"
+            mark, tone = "Due up", "due"
         elif step == 1:
-            mark, short, tone = "On deck", "Deck", "deck"
+            mark, tone = "On deck", "deck"
         elif step == 2:
-            mark, short, tone = "In the hole", "Hole", "hole"
+            mark, tone = "In the hole", "hole"
         else:
-            mark, short, tone = "", "", ""
-        line = hitter_line(play.card(player), throws)
+            mark, tone = "", ""
         rows.append(
             {
                 "order": slot + 1,
                 "player": player,
+                "last": game_field.last_name(player),
                 "position": entry["position"],
-                "bats": player.bats or "?",
-                "avg": line["avg"],
-                "obp": line["obp"],
+                "bats": player.bats if player.bats in ("L", "R", "S") else "—",
+                "wrc": _wrc_label(play.card(player)),
                 "mark": mark,
-                "short": short,
                 "tone": tone,
             }
         )
@@ -403,9 +427,10 @@ def controls(play, user, need, can_step, teams):
         button("Defensive sub", tab="def", ok=defense_mine and sub_ok and (need is None or position_need)),
     ]
 
-    def reasons(mine, side, specific):
+    def reasons(mine, specific):
+        # A side the computer holds is greyed out. It does not need a sentence.
         if not mine:
-            return [f"{teams[side].abbreviation} is the computer's side: it makes these calls itself."]
+            return []
         if blocked:
             return [blocked]
         return specific
@@ -431,8 +456,8 @@ def controls(play, user, need, can_step, teams):
         play_why = "You don't hold a seat in this game."
     return {
         "play": {"enabled": can_step, "sub": f"{game_field.last_name(batter)} swings away", "why": play_why},
-        "offense": {"team": teams[batting], "mine": offense_mine, "buttons": offense, "why": " ".join(reasons(offense_mine, batting, offense_why))},
-        "defense": {"team": teams[fielding], "mine": defense_mine, "buttons": defense, "why": " ".join(reasons(defense_mine, fielding, defense_why))},
+        "offense": {"team": teams[batting], "mine": offense_mine, "buttons": offense, "why": " ".join(reasons(offense_mine, offense_why))},
+        "defense": {"team": teams[fielding], "mine": defense_mine, "buttons": defense, "why": " ".join(reasons(defense_mine, defense_why))},
     }
 
 
@@ -892,6 +917,7 @@ def panel(play, user, need, choices, pitcher_options, teams):
             if pitcher_need and fold.holds(user, need.side):
                 opened = "pit"
                 tabs["pit"]["title"] = need.reason
+                tabs["pit"]["coach"] = pitching_coach_line(play, user, need)
     if "defense" in choices:
         tabs["def"] = {
             "action": "defense",

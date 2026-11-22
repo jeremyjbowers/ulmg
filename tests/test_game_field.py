@@ -60,6 +60,13 @@ class ParkDrawingTest(SimpleTestCase):
         drawing = game_field.park_drawing(park.clean_rules({"surface": "turf", "roof": "dome"}))
         self.assertTrue(drawing["turf"])
 
+    def test_grass_and_turf_name_the_colors_the_field_paints(self):
+        grass = game_field.park_drawing(park.clean_rules({}))
+        turf = game_field.park_drawing(park.clean_rules({"surface": "turf"}))
+        self.assertEqual(grass["colors"], game_field.GRASS_COLORS)
+        self.assertEqual(turf["colors"], game_field.TURF_COLORS)
+        self.assertNotEqual(grass["colors"]["foul"], turf["colors"]["foul"])
+
 
 class LabelTest(SimpleTestCase):
     def test_ratings_are_the_engine_rating_times_ten_with_a_real_minus(self):
