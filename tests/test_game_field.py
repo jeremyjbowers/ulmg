@@ -16,6 +16,16 @@ def _result(outcome, batter, after, scored=(), runs=0, outs=0):
     }
 
 
+def _points(svg_points):
+    return [tuple(float(n) for n in pair.split(",")) for pair in svg_points.split()]
+
+
+def _distance_to_line(spot, a, b):
+    """How far a spot is from the line through a and b, in SVG units."""
+    (x, y), (ax, ay), (bx, by) = spot, a, b
+    return abs((bx - ax) * (ay - y) - (ax - x) * (by - ay)) / ((bx - ax) ** 2 + (by - ay) ** 2) ** 0.5
+
+
 class GeometryTest(SimpleTestCase):
     def test_the_infield_is_enlarged_and_the_outfield_compressed(self):
         self.assertAlmostEqual(game_field.warp(90), 153.0)
@@ -66,6 +76,19 @@ class ParkDrawingTest(SimpleTestCase):
         self.assertEqual(grass["colors"], game_field.GRASS_COLORS)
         self.assertEqual(turf["colors"], game_field.TURF_COLORS)
         self.assertNotEqual(grass["colors"]["foul"], turf["colors"]["foul"])
+
+    def test_the_infield_grass_runs_parallel_to_each_baseline_so_the_basepaths_are_even(self):
+        drawing = game_field.park_drawing(park.clean_rules({}))
+        grass = _points(drawing["infield_grass"])
+        diamond = _points(drawing["baselines"])
+        self.assertEqual(len(grass), 4)
+        for side in range(4):
+            a, b = diamond[side], diamond[(side + 1) % 4]
+            start, end = grass[side], grass[(side + 1) % 4]
+            gap_at_start = _distance_to_line(start, a, b)
+            gap_at_end = _distance_to_line(end, a, b)
+            self.assertAlmostEqual(gap_at_start, game_field.BASEPATH_WIDTH, delta=0.2)
+            self.assertAlmostEqual(gap_at_end, game_field.BASEPATH_WIDTH, delta=0.2)
 
 
 class LabelTest(SimpleTestCase):

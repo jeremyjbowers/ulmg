@@ -62,6 +62,8 @@ FIELDER_FEET = {
 }
 FIELDER_ORDER = ("P", "C", "1B", "2B", "SS", "3B", "LF", "CF", "RF")
 MOUND_FT = 60
+# The dirt basepath between each baseline and the infield grass, in SVG units.
+BASEPATH_WIDTH = 12
 MINUS = "−"
 # The engine starts each line of its log with the half inning and the count: "Top 3, 2-1: ".
 LOG_PREFIX = re.compile(r"^(Top|Bottom) \d+, (\d-\d): ")
@@ -154,6 +156,31 @@ def base_spots():
     return spots
 
 
+def inset(corners, distance):
+    """
+    A convex polygon pulled in by `distance` on every side.
+
+    Each side moves straight toward the middle and stays parallel to where it
+    was, so the band between the two polygons is the same width all the way along.
+    """
+    middle_x = sum(x for x, _ in corners) / len(corners)
+    middle_y = sum(y for _, y in corners) / len(corners)
+    sides = []
+    for (ax, ay), (bx, by) in zip(corners, corners[1:] + corners[:1]):
+        length = math.hypot(bx - ax, by - ay)
+        nx, ny = (ay - by) / length, (bx - ax) / length
+        if nx * (middle_x - ax) + ny * (middle_y - ay) < 0:
+            nx, ny = -nx, -ny
+        sides.append(((ax + nx * distance, ay + ny * distance), (bx - ax, by - ay)))
+    pulled = []
+    for i in range(len(sides)):
+        (px, py), (dx, dy) = sides[i - 1]
+        (qx, qy), (ex, ey) = sides[i]
+        share = ((qx - px) * ey - (qy - py) * ex) / (dx * ey - dy * ex)
+        pulled.append((round(px + dx * share, 1), round(py + dy * share, 1)))
+    return pulled
+
+
 def park_drawing(rules):
     """Every shape of the park, from its rules (see ulmg.park): fair territory, walls, dirt, bases, distance labels and the stripe colors."""
     distances = rules["distances_ft"]
@@ -198,7 +225,7 @@ def park_drawing(rules):
         "fence": fence,
         "tall_walls": tall,
         "dirt": dirt,
-        "infield_grass": _xy([point(16, 0), point(112, 45), point(158, 0), point(112, -45)]),
+        "infield_grass": _xy(inset([bases["home"], bases["first"], bases["second"], bases["third"]], BASEPATH_WIDTH)),
         "baselines": _xy([bases["home"], bases["first"], bases["second"], bases["third"]]),
         "foul_lines": [corners[0], corners[-1]],
         "mound": mound,
