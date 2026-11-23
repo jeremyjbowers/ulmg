@@ -259,7 +259,7 @@ def foul_marks(rng):
     """
     The scuffs and patches of the foul ground's mottle, inside one tile.
 
-    A mark near an edge is drawn again on the far side, so the tile repeats without a seam.
+    _tiled copies the marks near an edge across it for drawing.
     """
     marks = []
     for _ in range(FOUL_MARKS):
