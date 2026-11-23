@@ -1,7 +1,10 @@
 # ABOUTME: The top-down field on the game page: the park drawn from its real dimensions, fielders with ratings, runners with speed.
 # ABOUTME: Also the last plate appearance as the page animates it: the ball's path, the banner, and each runner's move.
 
+import hashlib
+import json
 import math
+import random
 import re
 
 # The SVG's frame. Home plate is at HOME; the field opens upward.
@@ -42,6 +45,25 @@ TURF_COLORS = {
     "mound_lo": "#7a5a38",
     "shadow": "#101820",
 }
+# Foul ground is a band this many SVG units wide per foot of the park's foul_ft, along each line and around behind home.
+FOUL_SCALE = 1.2
+# The foul ground's mottle: one square tile of this size, scattered with this many marks.
+FOUL_TILE = 120
+FOUL_MARKS = 44
+# Seats and bleachers. Each park draws one seat color and one bleacher color, its own row depth and aisle spacing.
+SEAT_COLORS = [
+    ("#2b4c7e", "#1d3557"),
+    ("#8c2f2f", "#5e1f1f"),
+    ("#1f5d4a", "#143e31"),
+    ("#4a4a55", "#2e2e36"),
+    ("#2f6f8f", "#1f4a60"),
+    ("#6b3a6e", "#472649"),
+]
+BLEACHER_COLORS = ["#a9b1b5", "#b8a988", "#8e979c", "#c2b8a0"]
+STAND_GAP = "#1b1f24"
+AISLE = "#cfc8b8"
+# The stands reach this far out from the field, so they fill the frame's corners.
+STANDS_DEPTH = 300
 # Distance labels sit this far inside the fence, and the two at the lines this many degrees inside fair territory.
 LABEL_INSET_FT = 24
 LINE_LABEL_INSET_DEG = 5
@@ -199,8 +221,111 @@ def inset(corners, distance):
     return pulled
 
 
+def park_random(rules):
+    """A random source seeded by the park's rules, so a park looks the same every game and another park looks different."""
+    keys = ("distances_ft", "wall_ft", "foul_ft", "surface", "roof")
+    text = json.dumps({key: rules.get(key) for key in keys}, sort_keys=True)
+    return random.Random(int(hashlib.sha256(text.encode()).hexdigest()[:16], 16))
+
+
+def foul_band(rules):
+    """
+    Foul ground: a band along each foul line, the park's foul_ft wide, rounded behind home.
+
+    Returns the band's outline (with fair territory inside it) and the band's outer
+    corners at the two foul poles.
+    """
+    distances = rules["distances_ft"]
+    width = rules["foul_ft"] * FOUL_SCALE
+    left_pole = point(distances["lf_line"], -45)
+    right_pole = point(distances["rf_line"], 45)
+    hx, hy = HOME
+    out = width / math.sqrt(2)
+    # Outward from each line: down and to the left of the left-field line, down and to the right of the right-field line.
+    left = (round(left_pole[0] - out, 1), round(left_pole[1] + out, 1))
+    right = (round(right_pole[0] + out, 1), round(right_pole[1] + out, 1))
+    beside_left = (round(hx - out, 1), round(hy + out, 1))
+    beside_right = (round(hx + out, 1), round(hy + out, 1))
+    behind = (hx, round(hy + width * math.sqrt(2), 1))
+    path = (
+        f"M {left_pole[0]} {left_pole[1]} L {left[0]} {left[1]} L {beside_left[0]} {beside_left[1]}"
+        f" Q {behind[0]} {behind[1]} {beside_right[0]} {beside_right[1]}"
+        f" L {right[0]} {right[1]} L {right_pole[0]} {right_pole[1]}"
+    )
+    return {"path": path, "left": left, "right": right}
+
+
+def foul_marks(rng):
+    """
+    The scuffs and patches of the foul ground's mottle, inside one tile.
+
+    A mark near an edge is drawn again on the far side, so the tile repeats without a seam.
+    """
+    marks = []
+    for _ in range(FOUL_MARKS):
+        mark = {
+            "x": round(rng.uniform(0, FOUL_TILE), 1),
+            "y": round(rng.uniform(0, FOUL_TILE), 1),
+            "rx": round(rng.uniform(2, 11), 1),
+            "ry": round(rng.uniform(1, 5), 1),
+            "turn": rng.randrange(0, 180),
+            "shade": rng.choice(("foul_alt", "foul_alt", "speck")),
+            "opacity": round(rng.uniform(0.2, 0.5), 2),
+        }
+        marks.append(mark)
+    return marks
+
+
+def _tiled(marks):
+    """Each mark, plus its copies across the tile's edges, so a repeating tile has no seam."""
+    reach = 12
+    tiled = []
+    for mark in marks:
+        for dx in (-FOUL_TILE, 0, FOUL_TILE):
+            for dy in (-FOUL_TILE, 0, FOUL_TILE):
+                x, y = mark["x"] + dx, mark["y"] + dy
+                if -reach <= x <= FOUL_TILE + reach and -reach <= y <= FOUL_TILE + reach:
+                    tiled.append({**mark, "x": round(x, 1), "y": round(y, 1)})
+    return tiled
+
+
+def stands(rng, fence_back, band):
+    """
+    The seats around the field: rows that follow the edge of the playing field
+    outward, aisles running away from home, and bleachers behind the outfield wall.
+    """
+    seat, seat_gap = rng.choice(SEAT_COLORS)
+    bleacher = rng.choice(BLEACHER_COLORS)
+    depth = round(rng.uniform(5, 7.5), 1)
+    rows = []
+    count = math.ceil(STANDS_DEPTH / depth)
+    for row in range(count, 0, -1):
+        rows.append({"width": round(2 * row * depth, 1), "gap": True})
+        rows.append({"width": round(2 * row * depth - 1.6, 1), "gap": False})
+    spacing = rng.choice((8, 9, 10, 11, 12))
+    offset = rng.uniform(0, spacing)
+    aisles = []
+    angle = -180 + offset
+    while angle < 180:
+        far = point(1000, angle)
+        aisles.append({"x1": HOME[0], "y1": HOME[1], "x2": far[0], "y2": far[1]})
+        angle += spacing
+    left_far, right_far = point(1000, -45), point(1000, 45)
+    return {
+        "edge": band["path"] + fence_back + " Z",
+        "seat": seat,
+        "seat_gap": seat_gap,
+        "bleacher": bleacher,
+        "gap": STAND_GAP,
+        "aisle": AISLE,
+        "rows": rows,
+        "aisles": aisles,
+        "bleacher_clip": _xy([HOME, left_far, (left_far[0], -2000), (right_far[0], -2000), right_far]),
+    }
+
+
 def park_drawing(rules):
-    """Every shape of the park, from its rules (see ulmg.park): fair territory, walls, dirt, bases, distance labels and the stripe colors."""
+    """Every shape of the park, from its rules (see ulmg.park): fair territory, walls, dirt, bases, distance labels, foul ground, stands and the colors."""
     distances = rules["distances_ft"]
     walls = rules["wall_ft"]
     keys = list(ANGLES)
@@ -214,6 +339,12 @@ def park_drawing(rules):
         fence += f" Q {control[0]} {control[1]} {corners[i][0]} {corners[i][1]}"
         segments.append((i - 1, i, control))
     fence += " Z"
+    fence_back = ""
+    for start, end, control in reversed(segments):
+        fence_back += f" Q {control[0]} {control[1]} {corners[start][0]} {corners[start][1]}"
+    rng = park_random(rules)
+    band = foul_band(rules)
+    marks = foul_marks(rng)
 
     tall = []
     for start, end, control in segments:
@@ -241,6 +372,11 @@ def park_drawing(rules):
         "viewbox": VIEWBOX,
         "turf": turf,
         "fence": fence,
+        "foul_ground": band["path"] + " Z",
+        "foul_tile": FOUL_TILE,
+        "foul_marks": marks,
+        "foul_tiled": _tiled(marks),
+        "stands": stands(rng, fence_back, band),
         "tall_walls": tall,
         "dirt": dirt,
         "infield_grass": _xy(inset([bases["home"], bases["first"], bases["second"], bases["third"]], BASEPATH_WIDTH)),
