@@ -3,6 +3,7 @@
 
 import math
 
+from django.template.loader import render_to_string
 from django.test import SimpleTestCase
 
 from ulmg import game_field, park
@@ -112,6 +113,62 @@ class ParkDrawingTest(SimpleTestCase):
             gap_at_end = _distance_to_line(end, a, b)
             self.assertAlmostEqual(gap_at_start, game_field.BASEPATH_WIDTH, delta=0.2)
             self.assertAlmostEqual(gap_at_end, game_field.BASEPATH_WIDTH, delta=0.2)
+
+
+def _field_svg(rules):
+    field = {"drawing": game_field.park_drawing(rules), "park": {"name": "Park", "facts": ""}, "fielders": [], "runners": [], "text": ""}
+    return render_to_string("includes/game_field.html", {"field": field})
+
+
+def _pattern(svg, pattern_id):
+    start = svg.index(f'<pattern id="{pattern_id}"')
+    return svg[start : svg.index("</pattern>", start)]
+
+
+class GrassAndStandsTest(SimpleTestCase):
+    def test_the_infield_grass_is_crosshatched_square_to_the_baselines(self):
+        svg = _field_svg(park.clean_rules({}))
+        cross = _pattern(svg, "infield-cross")
+        self.assertIn('patternTransform="rotate(45)"', cross)
+        # A checkerboard: two alternate squares on the diagonal of each cell.
+        self.assertEqual(cross.count("infield_alt") + cross.count(game_field.GRASS_COLORS["infield_alt"]), 2)
+        self.assertIn('fill="url(#infield-cross)"', svg)
+
+    def test_foul_ground_has_no_mow_lines_only_a_mottle_that_is_the_same_each_time_for_a_park(self):
+        generic = park.clean_rules({})
+        fenway = park.clean_rules(park.dimension_file()["3"])
+        marks = game_field.park_drawing(generic)["foul_marks"]
+        self.assertGreater(len(marks), 20)
+        self.assertEqual(marks, game_field.park_drawing(generic)["foul_marks"])
+        self.assertNotEqual(marks, game_field.park_drawing(fenway)["foul_marks"])
+        svg = _field_svg(generic)
+        self.assertNotIn('id="foul-mow"', svg)
+        self.assertGreaterEqual(_pattern(svg, "foul-mottle").count("<ellipse"), len(marks))
+
+    def test_foul_ground_is_a_band_along_each_line_as_wide_as_the_park_says(self):
+        narrow = game_field.foul_band(park.clean_rules({"foul_ft": 30}))
+        wide = game_field.foul_band(park.clean_rules({"foul_ft": 70}))
+        corners = [game_field.point(330, -45), game_field.point(330, 45)]
+        for band, feet in ((narrow, 30), (wide, 70)):
+            for outer, corner in ((band["left"], corners[0]), (band["right"], corners[1])):
+                # The outer edge of the band at the pole is the band's width from the foul line.
+                self.assertAlmostEqual(_distance_to_line(outer, game_field.HOME, corner), feet * game_field.FOUL_SCALE, delta=0.3)
+        self.assertIn("Q", narrow["path"], "the band rounds behind home plate")
+
+    def test_the_stands_and_bleachers_change_from_park_to_park_and_not_from_game_to_game(self):
+        generic = game_field.park_drawing(park.clean_rules({}))["stands"]
+        fenway = game_field.park_drawing(park.clean_rules(park.dimension_file()["3"]))["stands"]
+        self.assertEqual(generic, game_field.park_drawing(park.clean_rules({}))["stands"])
+        self.assertNotEqual(generic, fenway)
+        self.assertGreater(len(generic["rows"]), 20)
+        self.assertTrue(generic["aisles"])
+        self.assertIn(generic["seat"], [seat for seat, _ in game_field.SEAT_COLORS])
+
+    def test_the_seats_ring_the_field_and_the_bleachers_sit_behind_the_outfield_wall(self):
+        svg = _field_svg(park.clean_rules({}))
+        self.assertIn('id="stand-edge"', svg)
+        self.assertIn('clip-path="url(#bleacher-clip)"', svg)
+        self.assertIn('class="foul-ground"', svg)
 
 
 class LabelTest(SimpleTestCase):

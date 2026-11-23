@@ -251,12 +251,13 @@ class FieldTest(GameHudTestCase):
         self.assertIn(">302<", field)
         self.assertIn('class="tall-wall"', field)
 
-    def test_the_outfield_and_foul_ground_are_striped_and_the_mound_is_drawn(self):
+    def test_the_outfield_is_striped_the_infield_crosshatched_the_foul_ground_mottled_and_the_mound_drawn(self):
         self.post("open", seats="away,home")
         field = self.section(self.page(), 'id="hud-field"', "</svg>")
         self.assertIn('id="grass-mow"', field)
-        self.assertIn('id="foul-mow"', field)
-        self.assertIn('id="infield-mow"', field)
+        self.assertIn('id="foul-mottle"', field)
+        self.assertIn('id="infield-cross"', field)
+        self.assertIn('class="stands"', field)
         self.assertIn('class="wall-shadow"', field)
         self.assertIn('class="mound"', field)
         self.assertIn('class="rubber"', field)
