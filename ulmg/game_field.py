@@ -47,7 +47,8 @@ LABEL_INSET_FT = 24
 LINE_LABEL_INSET_DEG = 5
 # Outfielders play at their usual depth, or this far in from a nearer fence.
 OUTFIELD_GAP_FT = 75
-BASE_FEET = {"first": (127, 45), "second": (180, 0), "third": (127, -45)}
+# Second base, in feet from home. The other bases square the diamond around it.
+SECOND_BASE_FT = 180
 # Where each fielder stands: feet from home and degrees off the line to center (first base side positive).
 FIELDER_FEET = {
     "P": (60, 0),
@@ -61,7 +62,6 @@ FIELDER_FEET = {
     "RF": (285, 27),
 }
 FIELDER_ORDER = ("P", "C", "1B", "2B", "SS", "3B", "LF", "CF", "RF")
-MOUND_FT = 60
 # The dirt basepath between each baseline and the infield grass, in SVG units.
 BASEPATH_WIDTH = 12
 MINUS = "−"
@@ -151,9 +151,27 @@ def _xy(points):
 
 
 def base_spots():
-    spots = {base: point(feet, degrees) for base, (feet, degrees) in BASE_FEET.items()}
-    spots["home"] = HOME
-    return spots
+    """
+    Home and the three bases as a true square in SVG units.
+
+    The field's scale is not linear, so placing each base by its feet would
+    pull second toward home. Second is placed by its feet and first and third
+    are the square's other corners.
+    """
+    hx, hy = HOME
+    half = warp(SECOND_BASE_FT) / 2
+    return {
+        "home": HOME,
+        "first": (round(hx + half, 1), round(hy - half, 1)),
+        "second": point(SECOND_BASE_FT, 0),
+        "third": (round(hx - half, 1), round(hy - half, 1)),
+    }
+
+
+def mound_spot():
+    """The middle of the diamond: as far from home as from second, and from first as from third."""
+    hx, hy = HOME
+    return (hx, round(hy - warp(SECOND_BASE_FT) / 2, 1))
 
 
 def inset(corners, distance):
@@ -217,7 +235,7 @@ def park_drawing(rules):
     arc = [point(158, -45), point(215, 0), point(158, 45)]
     dirt = f"M {HOME[0]} {HOME[1]} L {arc[0][0]} {arc[0][1]} Q {arc[1][0]} {round(arc[1][1] - 70, 1)} {arc[2][0]} {arc[2][1]} Z"
     bases = base_spots()
-    mound = point(MOUND_FT, 0)
+    mound = mound_spot()
     hx, hy = HOME
     return {
         "viewbox": VIEWBOX,
@@ -321,7 +339,7 @@ def fielders(play, state, side, distances=None):
 
 
 def _fielder(position, player, runs, distances=None):
-    x, y = point(*fielder_spot(position, distances))
+    x, y = mound_spot() if position == "P" else point(*fielder_spot(position, distances))
     tag = position if runs is None else f"{position} {rating_label(runs)}"
     width = len(tag) * 8 + 12
     if position == "C":
@@ -408,7 +426,7 @@ def batted_ball_origin(bats=None):
 
 def ball_path(track, bats=None):
     """The ball on the field: the mound, home plate, and where a ball in play landed."""
-    path = [point(MOUND_FT, 0), batted_ball_origin(bats)]
+    path = [mound_spot(), batted_ball_origin(bats)]
     if track:
         path.append(world_point(track["x"], track["z"]))
     return path

@@ -1,6 +1,8 @@
 # ABOUTME: Tests the top-down field: the park drawn from its dimensions, rating and speed labels, and the last play's moves.
 # ABOUTME: The geometry tests are plain functions; the move tests use engine-shaped plate appearance results.
 
+import math
+
 from django.test import SimpleTestCase
 
 from ulmg import game_field, park
@@ -46,6 +48,27 @@ class GeometryTest(SimpleTestCase):
         self.assertEqual(game_field.world_point(0, 300), game_field.point(300, 0))
         x, _ = game_field.world_point(-120, 270)
         self.assertLess(x, game_field.HOME[0], "a ball to left lands left of home")
+
+
+    def test_the_diamond_is_square_and_the_mound_sits_at_its_center(self):
+        bases = game_field.base_spots()
+        home, first, second, third = (bases[b] for b in ("home", "first", "second", "third"))
+        sides = [math.dist(home, first), math.dist(first, second), math.dist(second, third), math.dist(third, home)]
+        for side in sides:
+            self.assertAlmostEqual(side, sides[0], delta=0.2)
+        mound = game_field.mound_spot()
+        self.assertAlmostEqual(math.dist(mound, home), math.dist(mound, second), delta=0.2)
+        self.assertAlmostEqual(math.dist(mound, first), math.dist(mound, third), delta=0.2)
+        self.assertAlmostEqual(math.dist(mound, home), math.dist(mound, first), delta=0.2)
+
+    def test_the_drawing_and_the_pitch_both_start_from_the_mound(self):
+        drawing = game_field.park_drawing(park.clean_rules({}))
+        self.assertEqual(drawing["mound"], game_field.mound_spot())
+        self.assertEqual(game_field.ball_path(None)[0], game_field.mound_spot())
+
+    def test_the_pitcher_stands_on_the_mound(self):
+        pitcher = game_field._fielder("P", None, None)
+        self.assertEqual((pitcher["x"], pitcher["y"]), game_field.mound_spot())
 
 
 class ParkDrawingTest(SimpleTestCase):
