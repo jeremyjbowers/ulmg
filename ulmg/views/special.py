@@ -17,6 +17,7 @@ import ujson as json
 
 from ulmg import models, utils
 from ulmg.duplicate_merge import merge_delete_stub, mark_not_duplicate, player_info_dict
+from ulmg.trade_builder import trade_builder_assets
 
 
 @staff_member_required
@@ -107,13 +108,9 @@ def player_util(request):
 def trade_util(request):
     if request.method == "GET":
         context = utils.build_context(request)
-        context["hitters"] = models.Player.objects.filter(is_owned=True).exclude(
-            position="P"
-        )
-        context["pitchers"] = models.Player.objects.filter(is_owned=True, position="P")
-        context["picks"] = models.DraftPick.objects.filter(
-            year__gte=settings.CURRENT_SEASON
-        ).exclude(player__isnull=False)
+        assets = trade_builder_assets()
+        context["trade_teams"] = assets["teams"]
+        context["trade_rosters"] = assets["rosters"]
         return render(request, "trade_form.html", context)
 
     if request.method == "POST":

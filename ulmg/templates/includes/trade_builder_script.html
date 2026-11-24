@@ -1,0 +1,353 @@
+{# ABOUTME: Club typeaheads and the roster each club sends in a trade. #}
+{# ABOUTME: Rosters come from the trade-assets index. Nothing is drawn until a club is picked. #}
+<style>
+    .trade-submit-bar {
+        background: #fff;
+        padding-bottom: 0.75rem;
+    }
+    .trade-submit-bar button,
+    .trade-typeahead input,
+    [data-roster-filter],
+    .player-option,
+    [data-sending] button { font: inherit; }
+    .trade-typeahead { position: relative; }
+    .trade-typeahead input { width: 100%; }
+    .trade-typeahead-list {
+        position: absolute;
+        z-index: 20;
+        left: 0;
+        right: 0;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        background: #fff;
+        border: 1px solid #d1d5db;
+        max-height: 16rem;
+        overflow-y: auto;
+    }
+    .trade-typeahead-list [role="option"] { padding: 4px 8px; cursor: pointer; }
+    .trade-typeahead-list [role="option"].is-active { background: #e5e7eb; }
+    .player-option {
+        display: block;
+        width: 100%;
+        text-align: left;
+        background: transparent;
+        border: 0;
+        border-bottom: 1px solid #f3f4f6;
+        padding: 0.25rem 0.5rem;
+        cursor: pointer;
+    }
+    .player-option[hidden] { display: none; }
+    .player-option:hover { background: #f3f4f6; }
+    .player-option.is-sending,
+    .player-option.is-sending:hover { background: #111; color: #fff; }
+</style>
+<script>
+(function () {
+    var dataEl = document.getElementById("trade-assets");
+    var data = dataEl ? JSON.parse(dataEl.textContent) : {};
+    var rosters = data.rosters || data;
+
+    function otherSelect(select) {
+        var all = document.querySelectorAll("[data-trade-team]");
+        for (var i = 0; i < all.length; i++) {
+            if (all[i] !== select) return all[i];
+        }
+        return null;
+    }
+
+    function teamLabel(select) {
+        if (!select.value) return "";
+        var option = select.options[select.selectedIndex];
+        return option ? option.text : select.value;
+    }
+
+    function paintSummary() {
+        document.querySelectorAll("[data-side]").forEach(function (side) {
+            var line = side.querySelector("[data-sending]");
+            var select = side.querySelector("[data-trade-team]");
+            var selected = side.querySelectorAll(".player-option.is-sending");
+            line.textContent = "";
+            if (!select || !select.value) return;
+            if (!selected.length) {
+                line.textContent = "Sends nothing yet.";
+                return;
+            }
+            line.appendChild(document.createTextNode("Sends "));
+            Array.prototype.forEach.call(selected, function (asset, index) {
+                if (index) line.appendChild(document.createTextNode(", "));
+                var chip = document.createElement("button");
+                chip.type = "button";
+                chip.className = "underline";
+                chip.textContent = asset.textContent;
+                chip.addEventListener("click", function () {
+                    asset.classList.remove("is-sending");
+                    paintSummary();
+                });
+                line.appendChild(chip);
+            });
+        });
+
+        var selects = document.querySelectorAll("[data-trade-team]");
+        var summary = document.getElementById("trade-summary");
+        if (selects.length < 2) return;
+        var left = document.querySelectorAll('[data-side="1"] .player-option.is-sending');
+        var right = document.querySelectorAll('[data-side="2"] .player-option.is-sending');
+        if (!selects[0].value || !selects[1].value || (!left.length && !right.length)) {
+            summary.textContent = "";
+            return;
+        }
+        function names(nodes) {
+            return Array.prototype.map.call(nodes, function (node) { return node.textContent; }).join(", ");
+        }
+        var text = teamLabel(selects[0]) + " sends " + (names(left) || "nothing") + " to " + teamLabel(selects[1]);
+        if (right.length) text += " for " + names(right);
+        summary.textContent = text;
+    }
+
+    function renderSide(select) {
+        var side = select.closest("[data-side]");
+        if (!side) return;
+        var abbr = select.value;
+        if (side.dataset.club !== abbr) {
+            side.dataset.club = abbr;
+            var filter = side.querySelector("[data-roster-filter]");
+            if (filter) filter.value = "";
+            var roster = rosters[abbr] || {hitters: [], pitchers: [], picks: []};
+            ["hitters", "pitchers", "picks"].forEach(function (kind) {
+                var box = side.querySelector('[data-kind="' + kind + '"]');
+                box.textContent = "";
+                (roster[kind] || []).forEach(function (asset) {
+                    var button = document.createElement("button");
+                    button.type = "button";
+                    button.className = "player-option";
+                    button.dataset.id = asset.id;
+                    button.textContent = asset.label;
+                    button.addEventListener("click", function () {
+                        button.classList.toggle("is-sending");
+                        paintSummary();
+                    });
+                    box.appendChild(button);
+                });
+            });
+        }
+        ["hitters", "pitchers", "picks"].forEach(function (kind) {
+            var box = side.querySelector('[data-kind="' + kind + '"]');
+            var group = side.querySelector('[data-group="' + kind + '"]');
+            if (group) group.hidden = !abbr || box.children.length === 0;
+        });
+        var heading = side.querySelector("[data-heading]");
+        heading.textContent = abbr ? teamLabel(select) : "Club " + side.getAttribute("data-side");
+        var empty = side.querySelector("[data-empty]");
+        var count = side.querySelectorAll(".player-option").length;
+        if (!abbr) {
+            empty.hidden = false;
+            empty.textContent = "Pick a club to see who they can send.";
+        } else if (!count) {
+            empty.hidden = false;
+            empty.textContent = "Nobody to send.";
+        } else {
+            empty.hidden = true;
+        }
+        paintSummary();
+    }
+
+    function bindTeam(select) {
+        var options = [];
+        Array.prototype.forEach.call(select.options, function (option) {
+            if (option.value !== "") options.push({value: option.value, label: option.text.trim()});
+        });
+
+        var box = document.createElement("div");
+        box.className = "trade-typeahead";
+        var input = document.createElement("input");
+        input.type = "text";
+        input.className = "border border-gray-300 px-2 py-1";
+        input.placeholder = "Type a city, nickname, or abbreviation";
+        input.autocomplete = "off";
+        input.setAttribute("role", "combobox");
+        input.setAttribute("aria-autocomplete", "list");
+        input.setAttribute("aria-expanded", "false");
+        input.setAttribute("aria-label", select.getAttribute("aria-label") || "Club");
+
+        var listId = select.id + "-list";
+        var list = document.createElement("ul");
+        list.id = listId;
+        list.className = "trade-typeahead-list";
+        list.setAttribute("role", "listbox");
+        list.hidden = true;
+        input.setAttribute("aria-controls", listId);
+
+        var shown = [];
+        var active = -1;
+
+        function paint() {
+            list.textContent = "";
+            shown.forEach(function (option, index) {
+                var item = document.createElement("li");
+                item.id = listId + "-" + index;
+                item.setAttribute("role", "option");
+                item.dataset.value = option.value;
+                item.textContent = option.label;
+                if (index === active) item.className = "is-active";
+                item.addEventListener("mousedown", function (event) {
+                    event.preventDefault();
+                });
+                item.addEventListener("click", function () {
+                    choose(option);
+                });
+                list.appendChild(item);
+            });
+            var open = shown.length > 0 && document.activeElement === input;
+            list.hidden = !open;
+            input.setAttribute("aria-expanded", open ? "true" : "false");
+            if (open && active >= 0) input.setAttribute("aria-activedescendant", listId + "-" + active);
+            else input.removeAttribute("aria-activedescendant");
+        }
+
+        function filter(query) {
+            var blocked = "";
+            var taken = otherSelect(select);
+            if (taken) blocked = taken.value;
+            var needle = query.trim().toLowerCase();
+            shown = options.filter(function (option) {
+                if (option.value === blocked) return false;
+                return needle === "" || option.label.toLowerCase().indexOf(needle) !== -1;
+            });
+            if (active >= shown.length) active = shown.length - 1;
+        }
+
+        function choose(option) {
+            select.value = option.value;
+            input.value = option.label;
+            shown = [];
+            active = -1;
+            paint();
+            renderSide(select);
+        }
+
+        input.addEventListener("focus", function () {
+            filter(input.value);
+            active = -1;
+            paint();
+        });
+        input.addEventListener("input", function () {
+            select.value = "";
+            filter(input.value);
+            active = shown.length ? 0 : -1;
+            paint();
+            renderSide(select);
+        });
+        input.addEventListener("keydown", function (event) {
+            if (event.key === "ArrowDown") {
+                event.preventDefault();
+                if (list.hidden) filter(input.value);
+                if (!shown.length) return;
+                active = Math.min(active + 1, shown.length - 1);
+                paint();
+            } else if (event.key === "ArrowUp") {
+                event.preventDefault();
+                if (!shown.length) return;
+                active = Math.max(active - 1, 0);
+                paint();
+            } else if (event.key === "Enter") {
+                if (list.hidden || active < 0 || !shown[active]) return;
+                event.preventDefault();
+                choose(shown[active]);
+            } else if (event.key === "Escape") {
+                shown = [];
+                active = -1;
+                paint();
+            }
+        });
+        input.addEventListener("blur", function () {
+            var picked = null;
+            options.forEach(function (option) {
+                if (option.value === select.value) picked = option;
+            });
+            shown = [];
+            active = -1;
+            paint();
+            if (select.value && (!picked || input.value !== picked.label)) {
+                select.value = "";
+                input.value = "";
+            }
+            renderSide(select);
+        });
+
+        select.hidden = true;
+        select.parentNode.insertBefore(box, select);
+        box.appendChild(input);
+        box.appendChild(list);
+        renderSide(select);
+    }
+
+    document.querySelectorAll("[data-side]").forEach(function (side) {
+        var filter = side.querySelector("[data-roster-filter]");
+        if (!filter) return;
+        filter.addEventListener("input", function () {
+            var needle = filter.value.trim().toLowerCase();
+            side.querySelectorAll(".player-option").forEach(function (button) {
+                button.hidden = needle !== "" && button.textContent.toLowerCase().indexOf(needle) === -1;
+            });
+        });
+    });
+
+    document.querySelectorAll("[data-trade-team]").forEach(bindTeam);
+
+    var submit = document.getElementById("trade-submit");
+    if (submit) {
+        submit.addEventListener("click", function (event) {
+            event.preventDefault();
+            var status = document.getElementById("trade-status");
+            var selects = document.querySelectorAll("[data-trade-team]");
+            var left = selects[0] ? selects[0].value : "";
+            var right = selects[1] ? selects[1].value : "";
+            if (!left || !right) {
+                status.textContent = "Pick both clubs.";
+                return;
+            }
+            if (left === right) {
+                status.textContent = "Pick two different clubs.";
+                return;
+            }
+            function receipt(side) {
+                return Array.prototype.map.call(
+                    document.querySelectorAll('[data-side="' + side + '"] .player-option.is-sending'),
+                    function (asset) { return asset.dataset.id; }
+                );
+            }
+            var payload = [
+                {team: left, receipt: receipt("1")},
+                {team: right, receipt: receipt("2")}
+            ];
+            if (!payload[0].receipt.length && !payload[1].receipt.length) {
+                status.textContent = "Click at least one player or pick.";
+                return;
+            }
+            status.textContent = "";
+            submit.disabled = true;
+            fetch("/api/v1/trade/bulk/", {
+                method: "POST",
+                headers: {"Content-Type": "application/x-www-form-urlencoded; charset=UTF-8"},
+                body: JSON.stringify(payload),
+                credentials: "same-origin"
+            }).then(function (response) {
+                return response.json();
+            }).then(function (body) {
+                if (body && body.success) {
+                    submit.remove();
+                    status.textContent = "Trade submitted. Reloading.";
+                    setTimeout(function () { location.reload(); }, 2000);
+                } else {
+                    submit.disabled = false;
+                    status.textContent = "Trade did not save.";
+                }
+            }).catch(function () {
+                submit.disabled = false;
+                status.textContent = "Trade did not save.";
+            });
+        });
+    }
+})();
+</script>

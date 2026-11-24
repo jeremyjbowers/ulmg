@@ -1,170 +1,55 @@
 {% extends "base.html" %}
 
-{% block extrahead %}{% endblock %}
+{# ABOUTME: Trade builder. Each club is a typeahead, and the roster is drawn after you pick one. #}
+{# ABOUTME: The browser gets one roster index, so the page does not print every player twice. #}
 
 {% block content %}
-<div class="trade-submit-bar">
-    <button class="px-4 py-2 bg-gray-600 text-white hover:bg-gray-700 submit" id="trade-submit">Submit Trade</button>
-    <div id="success-message" class="text-green-600 font-bold mt-2 hidden">Trade submitted successfully! Reloading...</div>
-</div>
+<div class="max-w-6xl mx-auto py-4">
+    <div class="trade-submit-bar flex items-center gap-4">
+        <button type="button" class="px-4 py-2 bg-gray-800 text-white hover:bg-gray-700" id="trade-submit">Submit Trade</button>
+        <p id="trade-status" role="status" class="font-bold"></p>
+    </div>
 
-<div class="max-w-6xl mx-auto py-4 with-trade-submit">
-    <h1 class="text-2xl font-bold mb-6 border-b border-gray-300 pb-2">Trade Builder</h1>
-    
+    <h1 class="text-2xl font-bold mb-2 border-b border-gray-300 pb-2">Trade Builder</h1>
+    <p class="mb-2">Pick two clubs and click what each one sends.</p>
+    <p id="trade-summary" class="mb-6 font-bold"></p>
+
     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <!-- Team 1 -->
-        <div class="player-selector">
-            <h2 class="text-lg font-bold mb-4">Team 1</h2>
+        {% for side in "12" %}
+        <section class="player-selector" data-side="{{ side }}">
+            <h2 class="text-lg font-bold mb-4" data-heading>Club {{ side }}</h2>
             <div class="mb-4">
-                <select id="team-1-select" class="border border-gray-300 px-2 py-1">
+                <select id="team-{{ side }}-select" data-trade-team aria-label="Club {{ side }}">
                     <option value="">Select team</option>
-                    {% for t in teamnav %}
-                    <option value="{{ t.abbreviation|lower }}">{{ t.abbreviation }}</option>
+                    {% for t in trade_teams %}
+                    <option value="{{ t.abbr }}">{{ t.label }}</option>
                     {% endfor %}
                 </select>
             </div>
-            
-            <div id="player-1-select">
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 text-sm">
-                    <div>
-                        <h3 class="font-bold mb-2 border-b border-gray-300 pb-1">Hitters</h3>
-                        {% for p in hitters %}
-                            <div class="player-option team-{{ p.team.abbreviation|lower }} cursor-pointer hover:bg-gray-100 px-2 py-1 border-b border-gray-100" 
-                                 data-id="player-{{ p.id }}" data-type="player">
-                                {{ p.position }} {{ p.name }}
-                            </div>
-                        {% endfor %}
-                    </div>
-                    <div>
-                        <h3 class="font-bold mb-2 border-b border-gray-300 pb-1">Pitchers</h3>
-                        {% for p in pitchers %}
-                            <div class="player-option team-{{ p.team.abbreviation|lower }} cursor-pointer hover:bg-gray-100 px-2 py-1 border-b border-gray-100" 
-                                 data-id="player-{{ p.id }}" data-type="player">
-                                {{ p.position }} {{ p.name }}
-                            </div>
-                        {% endfor %}
-                    </div>
-                    <div>
-                        <h3 class="font-bold mb-2 border-b border-gray-300 pb-1">Draft Picks</h3>
-                        {% for p in picks %}
-                            <div class="player-option team-{{ p.team.abbreviation|lower }} cursor-pointer hover:bg-gray-100 px-2 py-1 border-b border-gray-100" 
-                                 data-id="pick-{{ p.id }}" data-type="pick">
-                                {{ p.year }} {{ p.season }} {{ p.slug }}
-                            </div>
-                        {% endfor %}
-                    </div>
+            <input type="search" data-roster-filter placeholder="Filter players and picks" aria-label="Filter club {{ side }}" class="border border-gray-300 px-2 py-1 w-full mb-3">
+            <div data-sending class="mb-3"></div>
+            <p data-empty class="mb-3 text-gray-600">Pick a club to see who they can send.</p>
+            <div class="space-y-4 text-sm">
+                <div data-group="hitters">
+                    <h3 class="font-bold mb-2 border-b border-gray-300 pb-1">Hitters</h3>
+                    <div data-kind="hitters"></div>
+                </div>
+                <div data-group="pitchers">
+                    <h3 class="font-bold mb-2 border-b border-gray-300 pb-1">Pitchers</h3>
+                    <div data-kind="pitchers"></div>
+                </div>
+                <div data-group="picks">
+                    <h3 class="font-bold mb-2 border-b border-gray-300 pb-1">Draft Picks</h3>
+                    <div data-kind="picks"></div>
                 </div>
             </div>
-        </div>
-        
-        <!-- Team 2 -->
-        <div class="player-selector">
-            <h2 class="text-lg font-bold mb-4">Team 2</h2>
-            <div class="mb-4">
-                <select id="team-2-select" class="border border-gray-300 px-2 py-1">
-                    <option value="">Select team</option>
-                    {% for t in teamnav %}
-                    <option value="{{ t.abbreviation|lower }}">{{ t.abbreviation }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            
-            <div id="player-2-select">
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 text-sm">
-                    <div>
-                        <h3 class="font-bold mb-2 border-b border-gray-300 pb-1">Hitters</h3>
-                        {% for p in hitters %}
-                            <div class="player-option team-{{ p.team.abbreviation|lower }} cursor-pointer hover:bg-gray-100 px-2 py-1 border-b border-gray-100" 
-                                 data-id="player-{{ p.id }}" data-type="player">
-                                {{ p.position }} {{ p.name }}
-                            </div>
-                        {% endfor %}
-                    </div>
-                    <div>
-                        <h3 class="font-bold mb-2 border-b border-gray-300 pb-1">Pitchers</h3>
-                        {% for p in pitchers %}
-                            <div class="player-option team-{{ p.team.abbreviation|lower }} cursor-pointer hover:bg-gray-100 px-2 py-1 border-b border-gray-100" 
-                                 data-id="player-{{ p.id }}" data-type="player">
-                                {{ p.position }} {{ p.name }}
-                            </div>
-                        {% endfor %}
-                    </div>
-                    <div>
-                        <h3 class="font-bold mb-2 border-b border-gray-300 pb-1">Draft Picks</h3>
-                        {% for p in picks %}
-                            <div class="player-option team-{{ p.team.abbreviation|lower }} cursor-pointer hover:bg-gray-100 px-2 py-1 border-b border-gray-100" 
-                                 data-id="pick-{{ p.id }}" data-type="pick">
-                                {{ p.year }} {{ p.season }} {{ p.slug }}
-                            </div>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-        </div>
+        </section>
+        {% endfor %}
     </div>
 </div>
-
+{{ trade_rosters|json_script:"trade-assets" }}
 {% endblock %}
 
 {% block extrascript %}
-<script type="text/javascript">
-    $(function(){
-    
-        var trade_submit_handler = function(el) {
-            el.preventDefault();
-            $el = $(this);
-            
-            var payload = []
-            $.each(["1", "2"], function(idx, side){
-                var team_abbr = $('#team-' + side + '-select option:selected').text().toLowerCase();
-                var receipt = []
-                $.each($('#player-' + side + '-select .player-option.selected'), function(idx, plr){
-                    receipt.push($(plr).data('id'));
-                })
-                payload.push({
-                    "team": team_abbr,
-                    "receipt": receipt
-                })
-            })
-
-            $.ajax({
-                type: "POST",
-                url: '/api/v1/trade/bulk/',
-                data: JSON.stringify(payload),
-                success: function(response){
-                    console.log(response);
-                    if (response['success'] == true) {
-                        $('#trade-submit').remove();
-                        $('#success-message').show();
-                        setTimeout(function() {
-                            location.reload();
-                        }, 2000);
-                    }
-                }
-            });
-        }
-
-        var player_select_handler = function(el) {
-            el.preventDefault();
-            $el = $(this);
-            $el.toggleClass('selected');
-        }
-
-        var team_select_handler = function(el) {
-            el.preventDefault();
-            $el = $(this);
-
-            var side = $el.attr('id').split('team-')[1].split('-select')[0]
-            
-            $('#player-' + side + '-select .player-option').removeClass('visible selected');
-
-            var team_abbr = $('#team-' + side + '-select option:selected').text().toLowerCase();
-            $('#player-' + side + '-select .player-option.team-' + team_abbr).addClass('visible');
-        }
-    
-        $('body').on('click', 'button.submit', trade_submit_handler);
-        $('body').on('click', '.player-selector .player-option', player_select_handler);
-        $('body').on('change', '#team-1-select, #team-2-select', team_select_handler);
-    });
-</script>
+{% include "includes/trade_builder_script.html" %}
 {% endblock %}
