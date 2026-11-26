@@ -85,3 +85,5 @@ class StatsViewTest(TestCase):
         self.assertRedirects(away, "/")
         scheme = self.client.post("/my/stats-view/", {"stats_view": "normal", "next": "//evil.example/phish"})
         self.assertRedirects(scheme, "/")
+        slashed = self.client.post("/my/stats-view/", {"stats_view": "normal", "next": "/\\evil.example/phish"})
+        self.assertRedirects(slashed, "/")
