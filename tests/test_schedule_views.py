@@ -101,6 +101,9 @@ class ScheduleViewsTestCase(TestCase):
         self.assertEqual(body.count("#fff8e4"), 81)
         self.assertNotIn("#fff3c4", body)
         self.assertEqual(body.count("play-next"), 1)
+        game = schedule.next_unplayed_road_game(self.team, 2027)
+        self.assertIn(f"Play next: Game {game.day} at {game.series.home_team.abbreviation}", body)
+        self.assertIn('id="play-bar"', body)
         self.assertNotIn("schedule-play", body)
         self.assertNotIn("You play", body)
         self.assertNotIn("Played by", body)
@@ -108,6 +111,31 @@ class ScheduleViewsTestCase(TestCase):
         other = self.client.get("/teams/pit/schedule/2027/").content.decode()
         self.assertNotIn("schedule-away", other)
         self.assertNotIn("You play", other)
+        self.assertIn(f'href="/games/{game.id}/" class="play-next', other)
+        self.assertIn('id="play-bar"', other)
+
+    def test_the_schedule_shows_home_and_away_before_the_header(self):
+        games = schedule.team_games(self.team, 2027)
+        home = next(game for game in games if game.series.home_team_id == self.team.id)
+        away = next(game for game in games if game.series.road_team_id == self.team.id)
+        home.home_score, home.road_score = 2, 6
+        home.save()
+        away.home_score, away.road_score = 1, 4
+        away.save()
+        body = self.client.get("/teams/atl/schedule/2027/").content.decode()
+        self.assertLess(body.index(">Bullpen<"), body.index('id="schedule-sides"'))
+        self.assertLess(body.index('id="schedule-sides"'), body.index("2027 schedule"))
+        sides = body.split('id="schedule-sides"', 1)[1].split("</aside>", 1)[0]
+        self.assertIn("Home ", sides)
+        self.assertIn("0-1", sides)
+        self.assertIn("2 scored, 6 allowed", sides)
+        self.assertIn("Away ", sides)
+        self.assertIn("1-0", sides)
+        self.assertIn("4 scored, 1 allowed", sides)
+        self.assertNotIn("Home 0% complete", sides)
+        self.assertNotIn("Away 0% complete", sides)
+        self.assertNotIn('id="play-bar"', body)
+        self.assertNotIn("play-next", body)
 
     def test_the_game_tab_opens_the_schedule(self):
         self.client.force_login(User.objects.create_user(username="reader"))

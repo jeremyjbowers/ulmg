@@ -4,7 +4,7 @@
 from django.test import TestCase, override_settings
 
 from tests import game_fixtures as gf
-from ulmg import models, plans, sim_game
+from ulmg import models, plans, schedule, sim_game
 
 Event = models.GameEvent
 AWAY, HOME = sim_game.AWAY, sim_game.HOME
@@ -220,10 +220,19 @@ class GamePageTestCase(gf.EngineMixin, TestCase):
         page = self.client.get(f"/teams/{self.road.team.abbreviation.lower()}/schedule/{gf.SEASON}/")
         self.assertContains(page, f'href="/games/{self.game.id}/" class="play-next', count=1)
         self.assertContains(page, "play-next", count=1)
+        self.assertContains(page, f"Play next: Game {self.game.day} at {self.home.team.abbreviation}")
+        self.assertContains(page, 'id="play-bar"')
+        self.assertContains(page, "Home 0% complete")
+        self.assertContains(page, "Away 0% complete")
         self.assertNotContains(page, "schedule-play")
+        home_schedule = self.client.get(f"/teams/{self.home.team.abbreviation.lower()}/schedule/{gf.SEASON}/")
+        self.assertContains(home_schedule, f'href="/games/{self.game.id}/" class="play-next', count=1)
         self.client.force_login(self.other_manager)
         page = self.client.get(f"/teams/{self.road.team.abbreviation.lower()}/schedule/{gf.SEASON}/")
-        self.assertNotContains(page, "play-next")
+        self.assertNotContains(page, f'href="/games/{self.game.id}/" class="play-next')
+        own = schedule.next_unplayed_road_game(self.home.team, gf.SEASON)
+        self.assertContains(page, f'href="/games/{own.id}/" class="play-next', count=1)
+        self.assertContains(page, f"Play next: Game {own.day} at {own.series.home_team.abbreviation}")
         self.client.force_login(self.tester)
         page = self.client.get(f"/teams/{self.road.team.abbreviation.lower()}/schedule/{gf.SEASON}/")
         self.assertContains(page, f'href="/games/{self.game.id}/" class="play-next', count=1)

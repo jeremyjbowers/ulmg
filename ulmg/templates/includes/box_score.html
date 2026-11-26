@@ -5,15 +5,15 @@
 
     {% if box.win %}
     <p class="box-decisions mb-4">
-        <span class="font-bold">W</span> {{ box.win.name }} ·
-        <span class="font-bold">L</span> {{ box.loss.name }}{% if box.save %} ·
-        <span class="font-bold">S</span> {{ box.save.name }}{% endif %}{% if box.holds %} ·
-        <span class="font-bold">H</span> {% for holder in box.holds %}{{ holder.name }}{% if not forloop.last %}, {% endif %}{% endfor %}{% endif %}
+        <span class="font-bold">W</span> <a href="/players/{{ box.win.id }}/" class="underline">{{ box.win.name }}</a> ·
+        <span class="font-bold">L</span> <a href="/players/{{ box.loss.id }}/" class="underline">{{ box.loss.name }}</a>{% if box.save %} ·
+        <span class="font-bold">S</span> <a href="/players/{{ box.save.id }}/" class="underline">{{ box.save.name }}</a>{% endif %}{% if box.holds %} ·
+        <span class="font-bold">H</span> {% for holder in box.holds %}<a href="/players/{{ holder.id }}/" class="underline">{{ holder.name }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}{% endif %}
     </p>
     {% endif %}
 
     {% for side, team, lines, totals, lob, pitchers, errors in box.sides %}
-    <h3 class="font-bold mb-1">{{ team.abbreviation }} batting</h3>
+    <h3 class="font-bold mb-1"><a href="/teams/{{ team.abbreviation|lower }}/" class="underline">{{ team.abbreviation }}</a> batting</h3>
     <div class="overflow-x-auto mb-2">
         <table class="box-batting w-full text-xs border-collapse border border-gray-200">
             <thead class="bg-gray-50">
@@ -29,7 +29,7 @@
             <tbody>
                 {% for line in lines %}
                 <tr class="border-b border-gray-100">
-                    <td class="py-1 px-2">{% if line.substitute %}<span class="ml-5">{% endif %}{{ line.player.name }} {{ line.notation }}{% if line.substitute %}</span>{% endif %}</td>
+                    <td class="py-1 px-2">{% if line.substitute %}<span class="ml-5">{% endif %}<a href="/players/{{ line.player.id }}/" class="underline">{{ line.player.name }}</a> {{ line.notation }}{% if line.substitute %}</span>{% endif %}</td>
                     <td class="text-center px-1">{{ line.ab }}</td><td class="text-center px-1">{{ line.r }}</td><td class="text-center px-1">{{ line.h }}</td>
                     <td class="text-center px-1">{{ line.rbi }}</td><td class="text-center px-1">{{ line.bb }}</td><td class="text-center px-1">{{ line.so }}</td>
                     <td class="text-center px-1">{{ line.doubles }}</td><td class="text-center px-1">{{ line.triples }}</td><td class="text-center px-1">{{ line.hr }}</td>
@@ -50,7 +50,7 @@
     </div>
     <p class="text-xs text-gray-600 mb-3">Team LOB: {{ lob }}{% if errors %} · E—{{ errors }}{% endif %}</p>
 
-    <h3 class="font-bold mb-1">{{ team.abbreviation }} pitching</h3>
+    <h3 class="font-bold mb-1"><a href="/teams/{{ team.abbreviation|lower }}/" class="underline">{{ team.abbreviation }}</a> pitching</h3>
     <div class="overflow-x-auto mb-6">
         <table class="box-pitching w-full text-xs border-collapse border border-gray-200">
             <thead class="bg-gray-50">
@@ -64,7 +64,7 @@
             <tbody>
                 {% for line in pitchers %}
                 <tr class="border-b border-gray-100">
-                    <td class="py-1 px-2">{{ line.player.name }}{% if line.player == box.win %} (W){% elif line.player == box.loss %} (L){% elif line.player == box.save %} (S){% elif line.player in box.holds %} (H){% endif %}</td>
+                    <td class="py-1 px-2"><a href="/players/{{ line.player.id }}/" class="underline">{{ line.player.name }}</a>{% if line.player == box.win %} (W){% elif line.player == box.loss %} (L){% elif line.player == box.save %} (S){% elif line.player in box.holds %} (H){% endif %}</td>
                     <td class="text-center px-1">{{ line.ip }}</td><td class="text-center px-1">{{ line.h }}</td><td class="text-center px-1">{{ line.r }}</td>
                     <td class="text-center px-1">{{ line.er }}</td><td class="text-center px-1">{{ line.bb }}</td><td class="text-center px-1">{{ line.so }}</td>
                     <td class="text-center px-1">{{ line.hr }}</td><td class="text-center px-1">{{ line.pitches }}</td>

@@ -1,5 +1,5 @@
 # ABOUTME: Draws and stores a ULMG season schedule of 46 slots and 162 games per team.
-# ABOUTME: Also answers schedule questions: a team's games, played seasons, and the next road game.
+# ABOUTME: Also answers schedule questions: a team's games, the next road game, and home and away progress.
 
 import random
 from dataclasses import dataclass, field
@@ -385,3 +385,57 @@ def upcoming_road_series(team, season, half, limit=UPCOMING_ROAD_SERIES):
         if len(upcoming) == limit:
             break
     return upcoming
+
+
+def side_progress(team, season, halves=None):
+    """Home and away for one team: how much is played, the record, and the runs.
+
+    halves limits the count to those season halves. None counts every game
+    on the schedule. The record is wins-losses, with ties on the end when
+    a game tied. Percent is of the games scheduled, rounded.
+    """
+    games = team_games(team, season)
+    if halves is not None:
+        allowed = set(halves)
+        games = [game for game in games if game.series.slot.half in allowed]
+
+    def summarize(home):
+        chosen = [game for game in games if (game.series.home_team_id == team.id) == home]
+        wins = losses = ties = scored = allowed_runs = played = 0
+        for game in chosen:
+            if not game.is_played:
+                continue
+            played += 1
+            team_score, opponent_score = (
+                (game.home_score, game.road_score) if home else (game.road_score, game.home_score)
+            )
+            scored += team_score
+            allowed_runs += opponent_score
+            if team_score > opponent_score:
+                wins += 1
+            elif team_score < opponent_score:
+                losses += 1
+            else:
+                ties += 1
+        scheduled = len(chosen)
+        record = f"{wins}-{losses}" if ties == 0 else f"{wins}-{losses}-{ties}"
+        return {
+            "played": played,
+            "scheduled": scheduled,
+            "percent": _percent(played, scheduled),
+            "wins": wins,
+            "losses": losses,
+            "ties": ties,
+            "runs_scored": scored,
+            "runs_allowed": allowed_runs,
+            "record": record,
+        }
+
+    return {"home": summarize(True), "away": summarize(False)}
+
+
+def _percent(played, scheduled):
+    """Played out of scheduled, as a whole percent. Half rounds up. No games is 0."""
+    if not scheduled:
+        return 0
+    return (100 * played + scheduled // 2) // scheduled

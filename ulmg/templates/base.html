@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     {% load static %}
+    {% load ulmg_tags %}
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}The ULMG{% endblock %}</title>
@@ -34,7 +35,9 @@
         <header class="border-b border-gray-300 p-2">
             {% include "includes/nav.html" %}
         </header>
-        
+
+        {% play_bar %}
+
         <!-- Mobile Search + Collapsible Filter Section -->
         <div class="border-b border-gray-200">
             <div class="p-2">

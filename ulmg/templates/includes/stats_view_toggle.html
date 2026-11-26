@@ -1,0 +1,11 @@
+{# ABOUTME: Normal or Advanced, the choice of what a player card shows. #}
+{# ABOUTME: Normal is the baseball-card line. Advanced is the wash. The posted choice is saved and the page comes back. #}
+{% if user.is_authenticated %}
+<form method="post" action="/my/stats-view/" class="stats-view inline-flex items-center gap-1 ml-auto text-xs">
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+    <span>Stats</span>
+    <button type="submit" name="stats_view" value="normal" class="border border-gray-400 px-1{% if stats_view != 'advanced' %} bg-gray-800 text-white{% endif %}">Normal</button>
+    <button type="submit" name="stats_view" value="advanced" class="border border-gray-400 px-1{% if stats_view == 'advanced' %} bg-gray-800 text-white{% endif %}">Advanced</button>
+</form>
+{% endif %}

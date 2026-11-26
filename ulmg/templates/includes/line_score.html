@@ -13,14 +13,14 @@
         </thead>
         <tbody>
             <tr class="border-b border-gray-100">
-                <td class="py-1 px-2 font-bold">{{ game.series.road_team.abbreviation }}</td>
+                <td class="py-1 px-2 font-bold"><a href="/teams/{{ game.series.road_team.abbreviation|lower }}/" class="underline">{{ game.series.road_team.abbreviation }}</a></td>
                 {% for runs in box.line.away %}<td class="text-center py-1 px-1">{{ runs }}</td>{% endfor %}
                 <td class="text-center py-1 px-1 font-bold">{{ box.totals.away.r }}</td>
                 <td class="text-center py-1 px-1">{{ box.totals.away.h }}</td>
                 <td class="text-center py-1 px-1">{{ box.totals.away.e }}</td>
             </tr>
             <tr>
-                <td class="py-1 px-2 font-bold">{{ game.series.home_team.abbreviation }}</td>
+                <td class="py-1 px-2 font-bold"><a href="/teams/{{ game.series.home_team.abbreviation|lower }}/" class="underline">{{ game.series.home_team.abbreviation }}</a></td>
                 {% for runs in box.line.home %}<td class="text-center py-1 px-1">{{ runs }}</td>{% endfor %}
                 <td class="text-center py-1 px-1 font-bold">{{ box.totals.home.r }}</td>
                 <td class="text-center py-1 px-1">{{ box.totals.home.h }}</td>
