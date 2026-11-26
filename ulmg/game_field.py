@@ -324,14 +324,17 @@ def stands(rng, fence_back, band):
     }
 
 
-def park_drawing(rules):
-    """Every shape of the park, from its rules (see ulmg.park): fair territory, walls, dirt, bases, distance labels, foul ground, stands and the colors."""
+def curved_wall(rules):
+    """
+    The wall of a park with no traced fence: a curve bowed slightly outward
+    through its five measured points. Returns the wall from home out along the
+    left-field line and around (closed), the same wall from the right-field pole
+    back to the left-field pole, and each tall stretch between measured points.
+    """
     distances = rules["distances_ft"]
     walls = rules["wall_ft"]
     keys = list(ANGLES)
     corners = [point(distances[key], ANGLES[key]) for key in keys]
-    turf = rules.get("surface") == "turf"
-
     fence = f"M {HOME[0]} {HOME[1]} L {corners[0][0]} {corners[0][1]}"
     segments = []
     for i in range(1, len(keys)):
@@ -342,22 +345,57 @@ def park_drawing(rules):
     fence_back = ""
     for start, end, control in reversed(segments):
         fence_back += f" Q {control[0]} {control[1]} {corners[start][0]} {corners[start][1]}"
-    rng = park_random(rules)
-    band = foul_band(rules)
-    marks = foul_marks(rng)
-
     tall = []
     for start, end, control in segments:
         if max(walls[keys[start]], walls[keys[end]]) >= TALL_WALL_FT:
             a, b = corners[start], corners[end]
             tall.append(f"M {a[0]} {a[1]} Q {control[0]} {control[1]} {b[0]} {b[1]}")
+    return fence, fence_back, tall, (corners[0], corners[-1])
+
+
+def traced_wall(rules):
+    """
+    The wall of a park with a traced fence: straight runs between the traced
+    points, so a corner in the real wall is a corner on the page. Returns the
+    same four parts as curved_wall.
+    """
+    walls = rules["wall_ft"]
+    fence = fence_points(rules)
+    corners = [point(feet, degrees) for degrees, feet in fence]
+    path = f"M {HOME[0]} {HOME[1]}" + "".join(f" L {x} {y}" for x, y in corners) + " Z"
+    fence_back = "".join(f" L {x} {y}" for x, y in reversed(corners))
+    keys = list(ANGLES)
+    tall = []
+    for left, right in zip(keys, keys[1:]):
+        if max(walls[left], walls[right]) < TALL_WALL_FT:
+            continue
+        a, b = ANGLES[left], ANGLES[right]
+        stretch = [point(fence_at(fence, a), a)]
+        stretch += [point(feet, degrees) for degrees, feet in fence if a < degrees < b]
+        stretch.append(point(fence_at(fence, b), b))
+        tall.append(f"M {stretch[0][0]} {stretch[0][1]}" + "".join(f" L {x} {y}" for x, y in stretch[1:]))
+    return path, fence_back, tall, (corners[0], corners[-1])
+
+
+def park_drawing(rules):
+    """Every shape of the park, from its rules (see ulmg.park): fair territory, walls, dirt, bases, distance labels, foul ground, stands and the colors."""
+    distances = rules["distances_ft"]
+    walls = rules["wall_ft"]
+    keys = list(ANGLES)
+    turf = rules.get("surface") == "turf"
+    fence, fence_back, tall, poles = traced_wall(rules) if rules.get("fence_ft") else curved_wall(rules)
+    outline = fence_points(rules)
+    rng = park_random(rules)
+    band = foul_band(rules)
+    marks = foul_marks(rng)
 
     labels = []
     for key in keys:
         angle = ANGLES[key]
         if abs(angle) == 45:
             angle -= math.copysign(LINE_LABEL_INSET_DEG, angle)
-        x, y = point(distances[key] - LABEL_INSET_FT, angle)
+        # Inside the wall where it was measured, and inside it where the label sits, should the wall come in there.
+        x, y = point(min(distances[key], fence_at(outline, angle)) - LABEL_INSET_FT, angle)
         text = _feet(distances[key])
         if walls[key] >= TALL_WALL_FT:
             text += f" · {_feet(walls[key])}′ wall"
@@ -381,7 +419,7 @@ def park_drawing(rules):
         "dirt": dirt,
         "infield_grass": _xy(inset([bases["home"], bases["first"], bases["second"], bases["third"]], BASEPATH_WIDTH)),
         "baselines": _xy([bases["home"], bases["first"], bases["second"], bases["third"]]),
-        "foul_lines": [corners[0], corners[-1]],
+        "foul_lines": list(poles),
         "mound": mound,
         "labels": labels,
         "bases": [
@@ -439,26 +477,32 @@ def speed_label(card):
 # The field now
 
 
-def fence_at(distances, degrees):
-    """The fence's distance at an angle, between the two measured points around it."""
-    keys = list(ANGLES)
-    for left, right in zip(keys, keys[1:]):
-        a, b = ANGLES[left], ANGLES[right]
+def fence_points(rules):
+    """The wall as (degrees, feet) from the left-field line to the right-field line: the traced fence, or the five measured points."""
+    if rules.get("fence_ft"):
+        return [(float(degrees), feet) for degrees, feet in rules["fence_ft"]]
+    distances = rules["distances_ft"]
+    return [(ANGLES[key], distances[key]) for key in ANGLES]
+
+
+def fence_at(fence, degrees):
+    """The fence's distance at an angle, between the two points of the fence around it."""
+    for (a, left), (b, right) in zip(fence, fence[1:]):
         if a <= degrees <= b:
             share = (degrees - a) / (b - a)
-            return distances[left] + (distances[right] - distances[left]) * share
-    return distances["center"]
+            return left + (right - left) * share
+    return min(fence, key=lambda spot: abs(spot[0]))[1]
 
 
-def fielder_spot(position, distances=None):
+def fielder_spot(position, fence=None):
     """Feet and degrees for a fielder; an outfielder comes in when the fence is near."""
     feet, degrees = FIELDER_FEET[position]
-    if distances is not None and position in ("LF", "CF", "RF"):
-        feet = min(feet, fence_at(distances, degrees) - OUTFIELD_GAP_FT)
+    if fence is not None and position in ("LF", "CF", "RF"):
+        feet = min(feet, fence_at(fence, degrees) - OUTFIELD_GAP_FT)
     return feet, degrees
 
 
-def fielders(play, state, side, distances=None):
+def fielders(play, state, side, fence=None):
     """The defense at its spots: position, name, rating tag, and whether the rating is below average."""
     club = state[side]
     by_position = {}
@@ -468,14 +512,14 @@ def fielders(play, state, side, distances=None):
             continue
         player = play.player(entry["id"])
         runs = rating_runs((entry.get("defense") or {}).get("rating"))
-        by_position[position] = _fielder(position, player, runs, distances)
+        by_position[position] = _fielder(position, player, runs, fence)
     if club.get("pitcher_slot"):
         by_position["P"] = _fielder("P", play.player(club["pitcher_slot"]), None)
     return [by_position[position] for position in FIELDER_ORDER if position in by_position]
 
 
-def _fielder(position, player, runs, distances=None):
-    x, y = mound_spot() if position == "P" else point(*fielder_spot(position, distances))
+def _fielder(position, player, runs, fence=None):
+    x, y = mound_spot() if position == "P" else point(*fielder_spot(position, fence))
     tag = position if runs is None else f"{position} {rating_label(runs)}"
     width = len(tag) * 8 + 12
     if position == "C":

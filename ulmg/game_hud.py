@@ -577,7 +577,7 @@ def field(play, teams):
     state = play.state
     fielding = sim_game.fielding_side(state)
     corner = park_corner(sim_game.team_for(play.game, sim_game.HOME))
-    defense = game_field.fielders(play, state, fielding, corner["rules"]["distances_ft"])
+    defense = game_field.fielders(play, state, fielding, game_field.fence_points(corner["rules"]))
     on_base = game_field.runners(play, state["bases"])
     return {
         "park": corner,
@@ -616,7 +616,7 @@ def during_plate_appearance(play, event, teams, user):
         return {
             "batter": batter,
             "pitcher": pitcher_card(play, box, teams, []),
-            "fielders": game_field.fielders(play, state, fielding, corner["rules"]["distances_ft"]),
+            "fielders": game_field.fielders(play, state, fielding, game_field.fence_points(corner["rules"])),
             "fielding_team": teams[fielding],
             "situation": _situation(state),
             "order": batting_order(play, user, teams),

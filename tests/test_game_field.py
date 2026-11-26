@@ -90,6 +90,49 @@ class ParkDrawingTest(SimpleTestCase):
         generic = game_field.park_drawing(park.clean_rules({}))
         self.assertNotEqual(drawing["fence"], generic["fence"], "the fence follows the park's own distances")
 
+    def test_a_traced_fence_is_drawn_straight_through_each_of_its_points(self):
+        traced = [[-45, 310], [-30, 318], [-20, 379], [0, 390], [10, 420], [22.5, 380], [40, 380], [45, 302]]
+        drawing = game_field.park_drawing(park.clean_rules({"fence_ft": traced}))
+        self.assertNotIn("Q", drawing["fence"], "a traced wall has corners, not curves")
+        for degrees, feet in traced:
+            x, y = game_field.point(feet, degrees)
+            self.assertIn(f"L {x} {y}", drawing["fence"])
+        self.assertEqual(drawing["foul_lines"], [game_field.point(310, -45), game_field.point(302, 45)])
+
+    def test_a_park_without_a_traced_fence_keeps_its_curved_wall(self):
+        drawing = game_field.park_drawing(park.clean_rules({}))
+        self.assertIn("Q", drawing["fence"])
+
+    def test_distance_labels_sit_inside_the_traced_fence_where_it_was_measured(self):
+        traced = [[-45, 310], [-22.5, 379], [-10, 330], [0, 390], [22.5, 380], [45, 302]]
+        drawing = game_field.park_drawing(park.clean_rules({"distances_ft": {"center": 390}, "fence_ft": traced}))
+        center = drawing["labels"][2]
+        self.assertEqual((center["x"], center["y"]), game_field.point(390 - game_field.LABEL_INSET_FT, 0))
+        self.assertEqual(center["text"], "390")
+
+    def test_a_tall_wall_follows_the_traced_fence_between_its_measured_points(self):
+        traced = [[-45, 310], [-35, 330], [-22.5, 379], [0, 390], [22.5, 380], [45, 302]]
+        rules = park.clean_rules({"fence_ft": traced, "wall_ft": {"lf_line": 37, "left_center": 37}})
+        drawing = game_field.park_drawing(rules)
+        self.assertEqual(len(drawing["tall_walls"]), 2, "line to left-center, then left-center to center")
+        monster = drawing["tall_walls"][0]
+        for degrees, feet in traced[:3]:
+            x, y = game_field.point(feet, degrees)
+            self.assertIn(f"{x} {y}", monster)
+        self.assertNotIn("Q", monster)
+
+    def test_outfielders_play_off_the_traced_fence(self):
+        traced = [[-45, 330], [-27, 300], [0, 400], [27, 400], [45, 330]]
+        fence = game_field.fence_points(park.clean_rules({"fence_ft": traced}))
+        self.assertEqual(game_field.fence_at(fence, -27), 300)
+        self.assertEqual(game_field.fielder_spot("LF", fence), (300 - game_field.OUTFIELD_GAP_FT, -27))
+        self.assertEqual(game_field.fielder_spot("RF", fence), (285, 27))
+
+    def test_without_a_traced_fence_the_five_distances_are_the_fence(self):
+        fence = game_field.fence_points(park.clean_rules({}))
+        self.assertEqual(fence, [(-45.0, 330), (-22.5, 380), (0.0, 400), (22.5, 380), (45.0, 330)])
+        self.assertEqual(game_field.fence_at(fence, -11.25), 390)
+
     def test_a_turf_park_says_so(self):
         drawing = game_field.park_drawing(park.clean_rules({"surface": "turf", "roof": "dome"}))
         self.assertTrue(drawing["turf"])
