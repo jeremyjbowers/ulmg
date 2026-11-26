@@ -203,7 +203,7 @@ class GrassAndStandsTest(SimpleTestCase):
         fenway = game_field.park_drawing(park.clean_rules(park.dimension_file()["3"]))["stands"]
         self.assertEqual(generic, game_field.park_drawing(park.clean_rules({}))["stands"])
         self.assertNotEqual(generic, fenway)
-        self.assertGreater(len(generic["rows"]), 20)
+        self.assertGreater(len(generic["grandstand"]), 20)
         self.assertTrue(generic["aisles"])
         self.assertIn(generic["seat"], [seat for seat, _ in game_field.SEAT_COLORS])
 
@@ -212,6 +212,64 @@ class GrassAndStandsTest(SimpleTestCase):
         self.assertIn('id="stand-edge"', svg)
         self.assertIn('clip-path="url(#bleacher-clip)"', svg)
         self.assertIn('class="foul-ground"', svg)
+
+
+def _ring_widths(bands, color):
+    return [band["width"] for band in bands if band["color"] == color]
+
+
+class StadiumTest(SimpleTestCase):
+    def setUp(self):
+        self.stands = game_field.park_drawing(park.clean_rules({}))["stands"]
+
+    def test_the_grandstand_has_a_lower_deck_a_concourse_and_an_upper_deck(self):
+        bands = self.stands["grandstand"]
+        widths = [band["width"] for band in bands]
+        self.assertEqual(widths, sorted(widths, reverse=True), "drawn from the back row to the front")
+        concourse = _ring_widths(bands, game_field.CONCOURSE)
+        self.assertEqual(len(concourse), 1)
+        lower_back = 2 * game_field.LOWER_DECK
+        self.assertTrue(lower_back < concourse[0] <= lower_back + 2 * game_field.CONCOURSE_WIDTH + 4)
+        self.assertTrue(_ring_widths(bands, self.stands["seat"]), "the lower deck is in the park's seat color")
+        self.assertTrue(_ring_widths(bands, self.stands["upper"]), "the upper deck is its own shade")
+        self.assertNotEqual(self.stands["upper"], self.stands["seat"])
+        self.assertTrue(all(w <= lower_back for w in _ring_widths(bands, self.stands["seat"])))
+        self.assertTrue(all(w > concourse[0] for w in _ring_widths(bands, self.stands["upper"])))
+
+    def test_the_outfield_bleachers_end_at_a_back_wall_and_the_ground_lies_beyond(self):
+        bands = self.stands["bleachers"]
+        self.assertEqual(bands[0]["color"], game_field.BACK_WALL)
+        self.assertLessEqual(bands[0]["width"], 2 * game_field.BLEACHER_DEPTH + 8)
+        self.assertTrue(_ring_widths(bands, self.stands["bleacher"]))
+        svg = _field_svg(park.clean_rules({}))
+        self.assertIn(f'fill="{game_field.GROUND}"', svg)
+
+    def test_the_bleachers_ring_the_traced_wall(self):
+        traced = [[-45, 310], [-20, 379], [0, 420], [30, 380], [45, 302]]
+        drawing = game_field.park_drawing(park.clean_rules({"fence_ft": traced}))
+        for degrees, feet in traced:
+            x, y = game_field.point(feet, degrees)
+            self.assertIn(f"L {x} {y}", drawing["stands"]["edge"])
+
+    def test_the_lower_deck_has_tunnels_behind_the_foul_lines(self):
+        tunnels = self.stands["tunnels"]
+        self.assertGreater(len(tunnels), 6)
+        hx, hy = game_field.HOME
+        for tunnel in tunnels:
+            off_center = math.degrees(math.atan2(tunnel["x"] - hx, hy - tunnel["y"]))
+            self.assertGreater(abs(off_center), 45, "a tunnel sits in the grandstand, not the outfield")
+
+    def test_each_team_has_a_dugout_in_foul_ground_clear_of_the_runner_at_first(self):
+        drawing = game_field.park_drawing(park.clean_rules({}))
+        third, first = drawing["dugouts"]
+        hx, hy = game_field.HOME
+        self.assertLess(third["x"], hx)
+        self.assertGreater(first["x"], hx)
+        base_y = game_field.base_spots()["first"][1]
+        for dugout in (third, first):
+            self.assertGreater(dugout["y"], base_y + 40, "below the runner's name at first or third")
+        svg = _field_svg(park.clean_rules({}))
+        self.assertEqual(svg.count('class="dugout"'), 2)
 
 
 class LabelTest(SimpleTestCase):

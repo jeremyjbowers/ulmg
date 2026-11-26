@@ -26,18 +26,34 @@
             </radialGradient>
             <clipPath id="fair-clip"><path d="{{ d.fence }}"/></clipPath>
             <clipPath id="bleacher-clip"><polygon points="{{ s.bleacher_clip }}"/></clipPath>
+            <clipPath id="grandstand-clip"><polygon points="{{ s.grandstand_clip }}"/></clipPath>
             <path id="stand-edge" d="{{ s.edge }}" fill="none" stroke-linejoin="round"/>
-            <g id="stand-rows">
-                {% for row in s.rows %}<use href="#stand-edge" stroke-width="{{ row.width }}" stroke="{% if row.gap %}{{ s.gap }}{% else %}currentColor{% endif %}"/>{% endfor %}
+            <mask id="lower-deck" maskUnits="userSpaceOnUse" x="-3000" y="-3000" width="6000" height="6000"><use href="#stand-edge" stroke="#fff" stroke-width="{{ s.lower_deck }}"/></mask>
+            <mask id="bleacher-ring" maskUnits="userSpaceOnUse" x="-3000" y="-3000" width="6000" height="6000"><use href="#stand-edge" stroke="#fff" stroke-width="{{ s.bleacher_depth }}"/></mask>
+            <g id="stand-sections">
+                {% for section in s.sections %}<polygon points="{{ section }}" fill="#000" opacity="{{ s.section_shade }}"/>{% endfor %}
+                {% for a in s.aisles %}<line x1="{{ a.x1 }}" y1="{{ a.y1 }}" x2="{{ a.x2 }}" y2="{{ a.y2 }}" stroke="{{ s.aisle }}" stroke-width="2.5" opacity=".8"/>{% endfor %}
             </g>
         </defs>
         <g class="stands">
-            <rect x="20" y="62" width="560" height="482" fill="{{ s.gap }}"/>
-            <use href="#stand-rows" color="{{ s.seat }}"/>
-            <use href="#stand-rows" color="{{ s.bleacher }}" clip-path="url(#bleacher-clip)"/>
-            {% for a in s.aisles %}<line x1="{{ a.x1 }}" y1="{{ a.y1 }}" x2="{{ a.x2 }}" y2="{{ a.y2 }}" stroke="{{ s.aisle }}" stroke-width="2.5" opacity=".8"/>{% endfor %}
+            <rect x="20" y="62" width="560" height="482" fill="{{ s.ground }}"/>
+            <g class="grandstand" clip-path="url(#grandstand-clip)">
+                {% for band in s.grandstand %}{% if band.width > s.concourse_back %}<use href="#stand-edge" stroke-width="{{ band.width }}" stroke="{{ band.color }}"/>{% endif %}{% endfor %}
+                <use href="#stand-sections"/>
+                {% for band in s.grandstand %}{% if band.width <= s.concourse_back %}<use href="#stand-edge" stroke-width="{{ band.width }}" stroke="{{ band.color }}"/>{% endif %}{% endfor %}
+                <use href="#stand-sections" mask="url(#lower-deck)"/>
+                {% for t in s.tunnels %}<rect class="tunnel" x="-6" y="-4.5" width="12" height="9" rx="1" transform="translate({{ t.x }} {{ t.y }}) rotate({{ t.turn }})" fill="{{ s.gap }}"/>{% endfor %}
+            </g>
+            <g class="bleachers" clip-path="url(#bleacher-clip)">
+                {% for band in s.bleachers %}<use href="#stand-edge" stroke-width="{{ band.width }}" stroke="{{ band.color }}"/>{% endfor %}
+                <use href="#stand-sections" mask="url(#bleacher-ring)"/>
+            </g>
         </g>
         <path class="foul-ground" d="{{ d.foul_ground }}" fill="url(#foul-mottle)" stroke="{{ s.seat_gap }}" stroke-width="5"/>
+        {% for dug in d.dugouts %}<g class="dugout" transform="translate({{ dug.x }} {{ dug.y }}) rotate({{ dug.turn }})">
+            <rect x="{{ dug.left }}" y="{{ dug.top }}" width="{{ dug.length }}" height="{{ dug.depth }}" rx="3" fill="{{ s.seat_gap }}" stroke="{{ s.gap }}" stroke-width="2"/>
+            <rect x="{{ dug.left }}" y="{{ dug.bench }}" width="{{ dug.length }}" height="5" fill="{{ s.gap }}"/>
+        </g>{% endfor %}
         <g clip-path="url(#fair-clip)">
             <path d="{{ d.fence }}" fill="url(#grass-mow)"/>
             <path class="wall-shadow" d="{{ d.fence }}" fill="none" stroke="{{ c.shadow }}" stroke-width="28" stroke-opacity="0.45"/>
