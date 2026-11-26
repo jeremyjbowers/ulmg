@@ -158,6 +158,11 @@ class AutoplayFromTheMiddleTestCase(AutoplayTestCase):
         log = gf.refresh(result.log)
         self.assertNotEqual(log.state["status"], "final")
         self.assertEqual(sim_game.Play(log).fold.pause["side"], HOME)
+        self.client.force_login(self.manager)
+        paused_page = self.client.get(f"/games/{self.game.id}/")
+        self.assertEqual(paused_page.status_code, 200)
+        self.assertContains(paused_page, "no legal pitcher")
+        self.assertContains(paused_page, 'id="hud"')
 
 
 class AutoplaySeriesTestCase(AutoplayTestCase):
@@ -279,14 +284,39 @@ class AutoplayPageTestCase(AutoplayTestCase):
         page = self.client.get(f"/games/{self.game.id}/")
         self.assertContains(page, "game-autoplay")
         self.assertContains(page, "Autoplay this game?")
-        self.assertContains(page, "Yes, autoplay it")
+        self.assertContains(page, "The computer will play both sides using your computer manager instructions for substitutions.")
+        self.assertContains(page, "Yes, autoplay")
+        self.assertContains(page, "No, nevermind")
+        self.assertContains(page, "Generating scores")
+        self.assertContains(page, "hud-throbber")
+        self.assertContains(page, "hud-autoplay .hud-btn:hover")
+        self.assertContains(page, "hud-autoplay .hud-btn:active")
+        self.assertNotContains(page, "Yes, autoplay it")
+        self.assertNotContains(page, "plays both seats")
         self.assertNotContains(page, "Autoplay the rest of the series")
         response = self.client.post(f"/games/{self.game.id}/autoplay/", {"scope": "game"}, follow=True)
         log = self.assert_final(models.GameLog.objects.get(game=self.game))
         self.assertTrue(response.redirect_chain[-1][0].endswith(f"/games/{self.game.id}/box/"))
+        self.assertNotContains(response, 'id="hud-box"')
         self.assertContains(response, ", final")
         self.assertContains(response, "Autoplayed")
         self.assertEqual(len(handed_over(log)), 2)
+        again = self.client.get(f"/games/{self.game.id}/")
+        self.assertRedirects(again, f"/games/{self.game.id}/box/")
+
+    def test_an_opened_game_autoplays_onto_the_box_score(self):
+        log = sim_game.open_game(self.game, self.manager, (AWAY,), seeds=self.next_seed)
+        self.client.force_login(self.manager)
+        expected = sim_game.Play(gf.refresh(log)).sequence
+        response = self.client.post(
+            f"/games/{self.game.id}/autoplay/", {"scope": "game", "expected": str(expected)}, follow=True
+        )
+        self.assert_final(models.GameLog.objects.get(game=self.game))
+        self.assertTrue(response.redirect_chain[-1][0].endswith(f"/games/{self.game.id}/box/"))
+        self.assertNotContains(response, 'id="hud-box"')
+        self.assertNotContains(response, "The game is over")
+        again = self.client.get(f"/games/{self.game.id}/")
+        self.assertRedirects(again, f"/games/{self.game.id}/box/")
 
     def test_another_manager_sees_no_autoplay_form_and_is_refused(self):
         self.client.force_login(self.other_manager)
@@ -306,9 +336,14 @@ class AutoplayPageTestCase(AutoplayTestCase):
         self.assertLess(html.find('id="hud-play"'), html.find("Autoplay this game"))
         self.assertLess(html.find("Autoplay this game"), html.find("hud-offense"))
         expected = sim_game.Play(gf.refresh(log)).sequence
-        self.client.post(f"/games/{self.game.id}/autoplay/", {"scope": "series", "expected": expected})
-        for game in series_games(self.game):
+        response = self.client.post(
+            f"/games/{self.game.id}/autoplay/", {"scope": "series", "expected": expected}, follow=True
+        )
+        games = series_games(self.game)
+        for game in games:
             self.assert_final(models.GameLog.objects.get(game=game))
+        self.assertTrue(response.redirect_chain[-1][0].endswith(f"/games/{games[-1].id}/box/"))
+        self.assertNotContains(response, 'id="hud-box"')
 
     def test_a_stale_autoplay_post_plays_nothing(self):
         log = sim_game.open_game(self.game, self.manager, (AWAY,), seeds=self.next_seed)
