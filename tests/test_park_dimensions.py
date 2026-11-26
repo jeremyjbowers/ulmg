@@ -55,6 +55,25 @@ class DimensionFileTest(SimpleTestCase):
             for key in ("distances_ft", "wall_ft", "surface", "roof", "ground_rules"):
                 self.assertEqual(cleaned[key], entry.get(key, park.DEFAULT_RULES[key]), (entry["name"], key))
 
+    def test_every_park_has_a_traced_fence_through_its_five_distances(self):
+        angles = {"lf_line": -45, "left_center": -22.5, "center": 0, "right_center": 22.5, "rf_line": 45}
+        for venue_id, entry in self.parks.items():
+            fence = entry["fence_ft"]
+            self.assertEqual(park.clean_rules(entry)["fence_ft"], fence, entry["name"])
+            self.assertGreater(len(fence), 5, entry["name"])
+            traced = dict((degrees, feet) for degrees, feet in fence)
+            for key, degrees in angles.items():
+                self.assertEqual(traced[degrees], entry["distances_ft"][key], (entry["name"], key))
+            for degrees, feet in fence:
+                self.assertTrue(280 <= feet <= 450, (entry["name"], degrees, feet))
+
+    def test_fenway_s_wall_turns_sharply_out_from_the_short_right_field_pole(self):
+        fence = dict((degrees, feet) for degrees, feet in self.parks[FENWAY]["fence_ft"])
+        pole = fence[45]
+        near = [feet for degrees, feet in fence.items() if 30 <= degrees < 45]
+        self.assertTrue(near, "points between right-center and the pole")
+        self.assertGreater(max(near) - pole, 60, "the bullpen corner is far deeper than the pole")
+
     def test_fenway_has_the_wall_in_left_and_a_note_about_it(self):
         fenway = self.parks[FENWAY]
         self.assertEqual(fenway["name"], "Fenway Park")
@@ -77,6 +96,7 @@ class LoadParkDimensionsTest(TestCase):
         self.assertEqual(fenway.pf_hr, 97, "the park scores are left alone")
         self.assertEqual(fenway.sprites, {"plate_svg": "<g></g>"})
         self.assertEqual(coors.rules["distances_ft"]["center"], 415)
+        self.assertEqual(fenway.rules["fence_ft"], park.dimension_file()[FENWAY]["fence_ft"])
         self.assertEqual(coors.rules["foul_ft"], 40, "a stored foul distance the file does not set stays")
         text = out.getvalue()
         self.assertIn("Stored dimensions for 2 parks.", text)

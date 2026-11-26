@@ -71,6 +71,25 @@ class FieldContractTest(SimpleTestCase):
         self.assertEqual(drawn["foul_ft"], 52)
         self.assertEqual(drawn["distances_ft"]["center"], 400)
 
+    def test_a_field_has_no_traced_fence_until_one_is_stored(self):
+        self.assertEqual(park.rules(_venue())["fence_ft"], [])
+        traced = [[-45, 310], [-30, 320], [0, 390], [20, 420], [45, 302]]
+        self.assertEqual(park.rules(_venue(rules={"fence_ft": traced}))["fence_ft"], traced)
+
+    def test_a_traced_fence_must_run_from_line_to_line_in_order(self):
+        for fence in (
+            [[-45, 310], [0, 390]],
+            [[-40, 310], [0, 390], [45, 302]],
+            [[-45, 310], [10, 390], [0, 400], [45, 302]],
+            [[-45, 310], [0, -390], [45, 302]],
+            [[-45, 310], [0, "deep"], [45, 302]],
+            [[-45, 310], [0, True], [45, 302]],
+            [[-45, 310, 4], [0, 390], [45, 302]],
+            "a big wall",
+        ):
+            self.assertEqual(park.rules(_venue(rules={"fence_ft": fence}))["fence_ft"], [], fence)
+        self.assertEqual(park.rule_problems({"fence_ft": [[0, 390]]}), ["fence_ft"])
+
     def test_event_scores_become_the_factors_the_sim_reads(self):
         team = _team("COL", _venue(park_factor=115, pf_runs=132, pf_1b=110, pf_2b=130, pf_3b=177, pf_hr=119))
         self.assertEqual(park.engine_park(team), {

@@ -18,6 +18,11 @@ data/parks/dimensions.json, keyed by MLB venue id.
 
     distances_ft and wall_ft: lf_line, left_center, center, right_center, rf_line, in feet
     foul_ft: feet of foul ground outside each foul line
+    fence_ft: the wall traced from a stadium diagram, as [degrees, feet] pairs
+        from the left-field line (-45) to the right-field line (45), in order.
+        Empty means the wall is drawn from distances_ft alone. The file's fences
+        are traced from Andrew Clem's stadium diagrams (andrewclem.com/Baseball)
+        and scaled so they pass through the park's five distances.
     surface: grass or turf
     roof: open, retractable, or dome
     ground_rules: short text
@@ -34,6 +39,9 @@ from ulmg import models
 DISTANCE_KEYS = ("lf_line", "left_center", "center", "right_center", "rf_line")
 SURFACES = ("grass", "turf")
 ROOFS = ("open", "retractable", "dome")
+
+# A traced fence runs between these angles, in degrees off the line to center (first base side positive).
+FENCE_DEGREES = (-45, 45)
 
 DIMENSION_FILE = Path(__file__).resolve().parent.parent / "data" / "parks" / "dimensions.json"
 
@@ -54,6 +62,7 @@ DEFAULT_RULES = {
         "rf_line": 8,
     },
     "foul_ft": 52,
+    "fence_ft": [],
     "surface": "grass",
     "roof": "open",
     "ground_rules": "",
@@ -114,6 +123,9 @@ def clean_rules(stored):
     foul = _positive(stored.get("foul_ft"))
     if foul is not None:
         merged["foul_ft"] = foul
+    fence = _fence(stored.get("fence_ft"))
+    if fence is not None:
+        merged["fence_ft"] = fence
     if stored.get("surface") in SURFACES:
         merged["surface"] = stored["surface"]
     if stored.get("roof") in ROOFS:
@@ -137,7 +149,7 @@ def rule_problems(stored):
         for point, value in points.items():
             if cleaned[key].get(point) != value:
                 problems.append(f"{key}.{point}")
-    for key in ("foul_ft", "surface", "roof", "ground_rules"):
+    for key in ("foul_ft", "fence_ft", "surface", "roof", "ground_rules"):
         if key in stored and cleaned[key] != stored[key]:
             problems.append(key)
     return problems
@@ -151,7 +163,7 @@ def dimension_file(path=None):
     return payload
 
 
-RULE_KEYS = ("distances_ft", "wall_ft", "foul_ft", "surface", "roof", "ground_rules")
+RULE_KEYS = ("distances_ft", "wall_ft", "foul_ft", "fence_ft", "surface", "roof", "ground_rules")
 
 
 def load_dimensions(parks, dry_run=False):
@@ -237,3 +249,22 @@ def _points(stored, default):
         if number is not None:
             merged[key] = number
     return merged
+
+
+def _fence(stored):
+    """A traced fence as [degrees, feet] pairs, or None when it does not run in order from one foul line to the other."""
+    if not isinstance(stored, list) or len(stored) < 2:
+        return None
+    fence = []
+    for pair in stored:
+        if not isinstance(pair, (list, tuple)) or len(pair) != 2:
+            return None
+        degrees, feet = pair
+        if isinstance(degrees, bool) or not isinstance(degrees, (int, float)) or _positive(feet) is None:
+            return None
+        if fence and degrees <= fence[-1][0]:
+            return None
+        fence.append([degrees, feet])
+    if (fence[0][0], fence[-1][0]) != FENCE_DEGREES:
+        return None
+    return fence
