@@ -179,6 +179,11 @@ class PublicPlanTestCase(PlanViewsTestCase):
         card.hitter_rates_vs_rhp = {"k": 0, "bb": 0, "hbp": 0, "single": 0.2, "double": 0, "triple": 0, "hr": 0.1}
         card.hitter_rates_vs_lhp = {"k": 0, "bb": 0.1, "hbp": 0, "single": 0.1, "double": 0, "triple": 0, "hr": 0}
         card.save()
+        public = self.client.get(PLAN_URL).content.decode()
+        quiet = articles(public, catcher.id)[0]
+        self.assertLess(quiet.index("vsL .111/.200/.111"), quiet.index("vsR .300/.300/.600"))
+        self.assertNotIn("background-color", quiet)
+        self.as_user(self.owner).post("/my/stats-view/", {"stats_view": "advanced", "next": PLAN_URL})
         body = self.client.get(PLAN_URL).content.decode()
         shown = articles(body, catcher.id)[0]
         built = decision_cards.hitter_card(catcher, {"pa": 600}, card)
@@ -213,8 +218,10 @@ class PublicPlanTestCase(PlanViewsTestCase):
         self.roster.file()
         body = self.client.get(PLAN_URL).content.decode()
         self.assertIn("C +4.0", body)
+        self.assertIn(".241/.309/.398", body)
+        self.assertIn("HR", body)
         self.assertIn("PA unlimited", body)
-        self.assertIn("Spd -", body)
+        self.assertNotIn("Spd ", body)
 
     def test_plan_page_without_a_plan(self):
         response = self.client.get(PLAN_URL)
@@ -844,6 +851,7 @@ class EditPlanTestCase(PlanViewsTestCase):
         self.set_war(self.roster.catcher, 4)
         self.set_war(self.roster.bench[0], 0)
         client = self.as_user(self.owner)
+        client.post("/my/stats-view/", {"stats_view": "advanced", "next": EDIT_URL})
         body = client.get(EDIT_URL).content.decode()
         good = articles(body, self.roster.catcher.id)[0]
         bad = articles(body, self.roster.bench[0].id)[0]

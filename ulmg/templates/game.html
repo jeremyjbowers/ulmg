@@ -7,6 +7,7 @@
 {% endblock %}
 
 {% block content %}
+<div class="flex mb-2">{% include "includes/stats_view_toggle.html" %}</div>
 <div class="hud-page{% if not log or engine_down %} max-w-3xl{% endif %}">
     {% if not log or engine_down %}
     <h1 class="text-lg font-bold mb-1">Day {{ game.day }}: {{ game.series.road_team.abbreviation }} at {{ game.series.home_team.abbreviation }}</h1>

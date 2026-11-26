@@ -7,7 +7,7 @@ from django.db.models.expressions import OrderBy
 
 from django.contrib import messages
 from django.core.exceptions import ValidationError
-from django.http import Http404, HttpResponse, HttpResponseForbidden
+from django.http import Http404, HttpResponse, HttpResponseBadRequest, HttpResponseForbidden
 from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import render, get_object_or_404, redirect
 from django.db.models import Count, Avg, Sum, Max, Min, Q, Prefetch
@@ -17,9 +17,29 @@ from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.views.decorators.cache import never_cache
+from django.views.decorators.http import require_POST
 import ujson as json
 
-from ulmg import models, utils
+from ulmg import models, stats_view, utils
+
+
+def _safe_next(value):
+    """A same-site path to return to. Anything else goes home."""
+    if isinstance(value, str) and value.startswith("/") and not value.startswith("//"):
+        return value
+    return "/"
+
+
+@never_cache
+@login_required
+@require_POST
+def set_stats_view(request):
+    """Save this manager's normal or advanced choice and come back to the page he posted from."""
+    choice = request.POST.get("stats_view")
+    if choice not in stats_view.CHOICES:
+        return HttpResponseBadRequest("Choose normal or advanced.")
+    stats_view.save(request.user, request.session, choice)
+    return redirect(_safe_next(request.POST.get("next")))
 
 
 @never_cache

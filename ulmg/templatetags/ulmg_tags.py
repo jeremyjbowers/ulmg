@@ -25,6 +25,56 @@ def play_next_href(team, user, season=None):
         return ""
     return f"/games/{game.id}/"
 
+
+def play_bar_for(user, own, page, season=None):
+    """The in-season bar for this viewer: his club, or the club a tester is reading.
+
+    None when he has no club to play, or that club has no games in the open halves.
+    The game is his next road game in an open half, or None when that half is played out.
+    season is the one on the page. A 2026 schedule still plays 2026 after the calendar rolls.
+    """
+    if user is None or not getattr(user, "is_authenticated", False):
+        return None
+    from ulmg import models, plans, schedule, utils
+
+    team = own if isinstance(own, models.Team) else None
+    if team is None:
+        page_team = page if isinstance(page, models.Team) else None
+        if page_team is None or not utils.is_sim_tester(user):
+            return None
+        team = page_team
+    if season in (None, ""):
+        season = utils.league_season()
+    season = int(season)
+    halves = plans.visible_halves()
+    progress = schedule.side_progress(team, season, halves)
+    if progress["home"]["scheduled"] + progress["away"]["scheduled"] == 0:
+        return None
+    game = schedule.next_unplayed_road_game(team, season)
+    if game is not None and game.series.slot.half not in halves:
+        game = None
+    return {"team": team, "game": game, "home": progress["home"], "away": progress["away"]}
+
+
+def _page_season(context):
+    """The season the page is about, when it names one. Otherwise the league season."""
+    for key in ("record_season", "schedule_season", "plan_season", "league_season"):
+        value = context.get(key)
+        if value not in (None, ""):
+            return value
+    return None
+
+
+@register.inclusion_tag("includes/play_bar.html", takes_context=True)
+def play_bar(context):
+    """The bar above the player filter. His own club follows him; a tester reads the club on the page."""
+    return {
+        "bar": play_bar_for(
+            context.get("user"), context.get("my_team"), context.get("team"), _page_season(context)
+        )
+    }
+
+
 @register.filter(name="percents_to_hundreds")
 def percents_to_hundreds(value):
     value = float(value)

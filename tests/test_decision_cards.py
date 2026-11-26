@@ -293,3 +293,47 @@ class DecisionCardTestCase(TestCase):
         self.assertNotIn("2B", shown["emergency_positions"])
         self.assertNotIn("1B", shown["emergency_positions"])
         self.assertNotIn("DH", shown["emergency_positions"])
+
+    def test_normal_shows_the_baseball_card_line_and_leaves_the_wash_off(self):
+        player = self.player("Slugger")
+        card = models.Card.objects.create(
+            player=player,
+            season=2026,
+            hitter_rates={"k": 0, "bb": 0, "hbp": 0, "single": 0.2, "double": 0, "triple": 0, "hr": 0.1},
+            hitter_rates_vs_lhp={"k": 0, "bb": 0.1, "hbp": 0, "single": 0.1, "double": 0, "triple": 0, "hr": 0},
+            hitter_rates_vs_rhp={"k": 0, "bb": 0, "hbp": 0, "single": 0.2, "double": 0, "triple": 0, "hr": 0.1},
+        )
+        shown = decision_cards.hitter_card(player, {"pa": 600, "hr": 28, "sb": 12, "war": 4.4}, card)
+        self.assertEqual(shown["hr_label"], "28")
+        self.assertEqual(shown["sb_label"], "12")
+        html = render_to_string("includes/decision_card.html", {"card": shown, "stats_view": "normal"})
+        self.assertNotIn("background-color", html)
+        self.assertNotIn("WAR", html)
+        self.assertIn("28 HR", html)
+        self.assertIn("12 SB", html)
+        self.assertIn(shown["slash"], html)
+        self.assertIn("vsL", html)
+        advanced = render_to_string("includes/decision_card.html", {"card": shown, "stats_view": "advanced"})
+        self.assertIn(f"background-color: {shown['shade']}", advanced)
+        self.assertIn("WAR", advanced)
+        self.assertNotIn("28 HR", advanced)
+
+        arm = self.player("Ace", position="P")
+        pitching = decision_cards.pitcher_card(
+            arm, {"g": 32, "gs": 32, "ip": "190.0", "era": 3.14, "w": 15, "whip": 1.05, "xfip": 3.21, "war": 4.2, "k_9": 9.4, "bb_9": 2.2}, None
+        )
+        self.assertEqual(pitching["era_label"], "3.14")
+        self.assertEqual(pitching["wins_label"], "15")
+        self.assertEqual(pitching["whip_label"], "1.05")
+        quiet = render_to_string("includes/decision_card.html", {"card": pitching, "stats_view": "normal"})
+        self.assertNotIn("background-color", quiet)
+        self.assertNotIn("xFIP", quiet)
+        self.assertNotIn("K/9", quiet)
+        self.assertIn("3.14 ERA", quiet)
+        self.assertIn("15 W", quiet)
+        self.assertIn("1.05 WHIP", quiet)
+        self.assertIn("34 starts", quiet)
+        loud = render_to_string("includes/decision_card.html", {"card": pitching, "stats_view": "advanced"})
+        self.assertIn("xFIP", loud)
+        self.assertIn("K/9", loud)
+        self.assertIn(f"background-color: {pitching['shade']}", loud)

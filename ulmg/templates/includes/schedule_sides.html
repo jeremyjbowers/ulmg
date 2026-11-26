@@ -1,0 +1,8 @@
+{# ABOUTME: Home and away on a team's schedule: how much is played, the record, and the runs. #}
+{# ABOUTME: Sits under the game nav and over the season header, before a manager clicks the next game. #}
+{% if schedule_sides %}
+<aside id="schedule-sides" class="mb-4 border border-gray-300 bg-gray-50 px-3 py-2 text-sm" aria-label="Home and away">
+    <p class="schedule-side" data-side="home">Home {{ schedule_sides.home.percent }}% complete · {{ schedule_sides.home.record }} · {{ schedule_sides.home.runs_scored }} scored, {{ schedule_sides.home.runs_allowed }} allowed</p>
+    <p class="schedule-side" data-side="away">Away {{ schedule_sides.away.percent }}% complete · {{ schedule_sides.away.record }} · {{ schedule_sides.away.runs_scored }} scored, {{ schedule_sides.away.runs_allowed }} allowed</p>
+</aside>
+{% endif %}

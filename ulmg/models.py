@@ -40,6 +40,8 @@ class Owner(BaseModel):
     user = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True)
     wins = models.IntegerField(blank=True, null=True)
     losses = models.IntegerField(blank=True, null=True)
+    # Blank until this manager chooses. Staff otherwise see advanced; everyone else sees normal.
+    stats_view = models.CharField(max_length=16, blank=True, default="")
 
     def __unicode__(self):
         return f"{self.name}, {self.email}"

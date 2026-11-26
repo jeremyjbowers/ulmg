@@ -208,6 +208,20 @@ class BoxScoreNotesTest(TestCase):
         events = [self.start(), _pa(AWAY, self.soto, self.burke, "strikeout", outs_added=1)]
         self.assertEqual(_notes(self.box(events)), [("LOB", "ATL 0, CHI 0")])
 
+    def test_player_and_team_names_link_to_their_pages(self):
+        events = [self.start(), _pa(AWAY, self.soto, self.burke, "single")]
+        box = self.box(events)
+        html = render_to_string("includes/box_score.html", {"box": box, "game": self.log(events).game})
+        self.assertIn(f'href="/players/{self.soto.id}/"', html)
+        self.assertIn(f'href="/players/{self.sale.id}/"', html)
+        self.assertIn(f'href="/players/{self.burke.id}/"', html)
+        self.assertIn('href="/teams/atl/"', html)
+        self.assertIn('href="/teams/chi/"', html)
+        self.assertIn(">ATL</a> batting", html)
+        self.assertIn(">CHI</a> pitching", html)
+        self.assertIn(">ATL</a>", html)
+        self.assertLess(html.find('href="/teams/atl/"'), html.find("box-batting"))
+
     def test_the_notes_render_after_the_pitching_lines(self):
         events = [self.start(), _pa(AWAY, self.soto, self.burke, "home_run", inning=11, runs=1, baserunning=[{"Scored": {"runner": str(self.soto.id)}}])]
         box = self.box(events)

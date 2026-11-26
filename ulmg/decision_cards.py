@@ -49,7 +49,7 @@ def load(players, season):
 
 
 def hitter_card(player, hit, card):
-    """Name, hand, PA, speed, WAR, the two platoon slashes, and defense. The card wash is WAR per 600; each line has its own OPS wash."""
+    """Name, hand, the slash, homers and steals, plus PA, speed and WAR. The card wash is WAR per 600; each platoon line has its own OPS wash."""
     hit = hit or {}
     versus_left = _platoon_side(card, card.hitter_rates_vs_lhp if card is not None else None)
     versus_right = _platoon_side(card, card.hitter_rates_vs_rhp if card is not None else None)
@@ -62,6 +62,8 @@ def hitter_card(player, hit, card):
         "rate_label": _rate_label(hit),
         "wrc_label": _wrc(hit, card),
         "slash": _slash(card),
+        "hr_label": _count_label(hit, "hr"),
+        "sb_label": _count_label(hit, "sb"),
         "slash_vs_l": versus_left["slash"],
         "slash_vs_r": versus_right["slash"],
         "shade_vs_l": versus_left["shade"],
@@ -92,6 +94,9 @@ def pitcher_card(player, pitch, card, designation=None):
         "starts_label": _starts(pitch, caps),
         "innings_label": _innings(pitch, caps),
         "xfip_label": _decimal(pitch.get("xfip"), 2),
+        "era_label": _decimal(pitch.get("era"), 2),
+        "wins_label": _count_label(pitch, "w"),
+        "whip_label": _decimal(pitch.get("whip"), 2),
         "war_label": _decimal(pitch.get("war"), 1),
         "k9_label": _decimal(pitch.get("k_9"), 1),
         "bb9_label": _decimal(pitch.get("bb_9"), 1),
@@ -312,6 +317,14 @@ def _innings(pitch, caps):
         )
     shown = cap if cap is not None else confined
     return f"{raw} IP (max {usage.outs_to_innings(shown)})"
+
+
+def _count_label(stats, key):
+    """A counting stat as a whole number. "-" when the line doesn't have it."""
+    value = _stat_number((stats or {}).get(key))
+    if value is None:
+        return "-"
+    return str(int(round(value)))
 
 
 def _decimal(value, digits):

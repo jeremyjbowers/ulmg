@@ -191,6 +191,9 @@ def team_schedule(request, abbreviation, season=None):
     owner = utils.get_owner_for_user(request.user)
     own_team = owner is not None and owner.team() == team
     context["own_team"] = own_team
+    sides = schedule.side_progress(team, season, plans.visible_halves())
+    if sides["home"]["scheduled"] or sides["away"]["scheduled"]:
+        context["schedule_sides"] = sides
 
     planned = _planned_rows(team, season)
     games = _visible(schedule.team_games(team, season))
