@@ -51,6 +51,23 @@ class GamePageTestCase(gf.EngineMixin, TestCase):
         self.client.force_login(self.tester)
         self.assertContains(self.client.get(self.url), 'name="home-player-1"')
 
+    def test_a_day_lineup_saved_without_the_checkbox_is_what_play_next_shows(self):
+        bench = self.road.bench[1]
+        entries = self.road.lineup()
+        entries[-1] = {"order": 9, "player": bench, "position": "DH"}
+        data = {"starter": ""}
+        for entry in entries:
+            data[f"day_order_{entry['order']}"] = entry["order"]
+            data[f"day_player_{entry['order']}"] = entry["player"].id
+            data[f"day_position_{entry['order']}"] = entry["position"]
+        self.client.force_login(self.manager)
+        team = self.road.team.abbreviation.lower()
+        saved = self.client.post(f"/teams/{team}/plan/1/{gf.SEASON}/day/{self.game.day}/", data)
+        self.assertEqual(saved.status_code, 302)
+        page = self.client.get(self.url).content.decode()
+        slot = page.split('name="away-player-9"', 1)[1].split("</select>", 1)[0]
+        self.assertIn(f'value="{bench.id}" selected', slot)
+
     def test_proceeding_with_an_edited_lineup_opens_on_that_lineup(self):
         bench = self.road.bench[1]
         entries = self.road.lineup()

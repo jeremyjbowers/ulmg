@@ -208,12 +208,12 @@ class BoxScoreNotesTest(TestCase):
         events = [self.start(), _pa(AWAY, self.soto, self.burke, "strikeout", outs_added=1)]
         self.assertEqual(_notes(self.box(events)), [("LOB", "ATL 0, CHI 0")])
 
-    def test_the_notes_render_after_the_pitching_lines_and_before_the_footnote(self):
+    def test_the_notes_render_after_the_pitching_lines(self):
         events = [self.start(), _pa(AWAY, self.soto, self.burke, "home_run", inning=11, runs=1, baserunning=[{"Scored": {"runner": str(self.soto.id)}}])]
         box = self.box(events)
         html = render_to_string("includes/box_score.html", {"box": box, "game": self.log(events).game})
         self.assertLess(html.find("box-pitching"), html.find("box-notes"))
-        self.assertLess(html.find("box-notes"), html.find("A run is unearned"))
+        self.assertNotIn("A run is unearned", html)
         self.assertIn('<span class="font-bold">HR</span>: Juan Soto (11th inning off Sean Burke, 0 on, 0 out)', html)
         self.assertIn('<span class="font-bold">LOB</span>: ATL 0, CHI 0', html)
         self.assertLess(html.find(">HR</span>"), html.find(">LOB</span>"))

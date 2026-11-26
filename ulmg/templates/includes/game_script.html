@@ -45,7 +45,12 @@
       if (!button || button.classList.contains('is-playing')) return;
       button.classList.add('is-playing');
       button.setAttribute('aria-busy', 'true');
-      var small = button.querySelector('small');
+      var smalls = button.querySelectorAll('small');
+      var small = null;
+      smalls.forEach(function (candidate) {
+        if (window.getComputedStyle(candidate).display !== 'none') small = candidate;
+      });
+      if (!small) small = smalls[0];
       if (small) small.textContent = 'Playing\u2026';
     });
   }
@@ -115,6 +120,13 @@
         if (inning && inning.hasAttribute('data-end')) inning.textContent = inning.getAttribute('data-end');
         if (outsText && outsText.hasAttribute('data-end')) outsText.textContent = outsText.getAttribute('data-end');
         lights.forEach(function (light) { light.classList.toggle('on', light.getAttribute('data-end-on') === '1'); });
+        document.querySelectorAll('#hud-board [data-end]').forEach(function (cell) {
+          if (cell === inning || cell === outsText) return;
+          cell.textContent = cell.getAttribute('data-end');
+        });
+        document.querySelectorAll('#hud-board [data-end-class]').forEach(function (cell) {
+          cell.className = cell.getAttribute('data-end-class');
+        });
       }
       document.documentElement.classList.remove('hud-held');
     };
@@ -125,6 +137,7 @@
       await playOut(play);
       if (restore) restore();
       restore = null;
+      flashRuns(play);
     } finally {
       if (restore) restore();
     }
@@ -185,7 +198,6 @@
       await wait(760);
     }
     ball.style.opacity = 0;
-    flashRuns(play);
     moving.innerHTML = '';
     settled.style.transition = 'opacity 200ms';
     settled.style.opacity = 1;
