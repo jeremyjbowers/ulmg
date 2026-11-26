@@ -82,8 +82,12 @@ def _posted_positions(request):
 @login_required
 def game_page(request, game_id):
     game = _game(game_id)
-    context = utils.build_context(request)
     log = models.GameLog.objects.filter(game=game).first()
+    # A finished autoplay belongs on the box score. The play page's "game is over"
+    # button is for a game the manager played out himself.
+    if log is not None and autoplay.opens_on_box_score(log):
+        return redirect(f"/games/{game.id}/box/")
+    context = utils.build_context(request)
     try:
         if log is None:
             context.update(sim_game.pregame(game, request.user))

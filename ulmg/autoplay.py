@@ -61,6 +61,22 @@ def can_autoplay(user, game):
     return user.is_authenticated and autoplay_refusal(user, game) is None
 
 
+def opens_on_box_score(log):
+    """
+    Whether this game should open on its box score. Autoplay's finish is the
+    box score. A game that never reached a final, and one played out by hand,
+    stays in the HUD.
+    """
+    final = False
+    handed = False
+    for kind, payload in log.events.filter(kind__in=(Event.SEAT, Event.FINAL)).values_list("kind", "payload"):
+        if kind == Event.FINAL:
+            final = True
+        elif isinstance(payload, dict) and payload.get("autoplay"):
+            handed = True
+    return final and handed
+
+
 def _hand_over_seats(play, user):
     """Each seat a person holds becomes the computer's, with an event naming who handed it over."""
     for side in sim_game.SIDES:

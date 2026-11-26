@@ -7,17 +7,23 @@
         <form method="post" action="/games/{{ game.id }}/autoplay/" class="game-autoplay">
             {% csrf_token %}
             <input type="hidden" name="expected" value="{{ expected }}">
+            <input type="hidden" name="scope" value="game">
             <p id="hud-autoplay-title" class="hud-eyebrow">Autoplay this game?</p>
-            <p>The computer plays both seats to the final from the half plans, under the same usage caps.</p>
-            <button type="submit" name="scope" value="game" class="hud-btn live">Yes, autoplay it</button>
-            <button type="button" class="hud-btn" data-autoplay-cancel>Never mind</button>
+            <p>The computer will play both sides using your computer manager instructions for substitutions.</p>
+            <p class="hud-autoplay-status" hidden aria-live="polite">
+                <span class="hud-throbber" aria-hidden="true"></span>
+                Generating scores…
+            </p>
+            <button type="submit" class="hud-btn live">Yes, autoplay</button>
+            <button type="button" class="hud-btn" data-autoplay-cancel>No, nevermind</button>
         </form>
     </dialog>
     <noscript>
         <form method="post" action="/games/{{ game.id }}/autoplay/" class="game-autoplay">
             {% csrf_token %}
             <input type="hidden" name="expected" value="{{ expected }}">
-            <button type="submit" name="scope" value="game" class="hud-btn small">Autoplay this game</button>
+            <input type="hidden" name="scope" value="game">
+            <button type="submit" class="hud-btn small">Autoplay this game</button>
         </form>
     </noscript>
 </div>
@@ -28,9 +34,30 @@
     var button = offer.querySelector("[data-autoplay-open]");
     var dialog = offer.querySelector("dialog");
     var cancel = offer.querySelector("[data-autoplay-cancel]");
+    var form = dialog && dialog.querySelector("form");
     if (!button || !dialog || !dialog.showModal) return;
     button.addEventListener("click", function () { dialog.showModal(); });
     if (cancel) cancel.addEventListener("click", function () { dialog.close(); });
+    if (!form) return;
+    form.addEventListener("submit", function (event) {
+        if (form.getAttribute("aria-busy") === "true") {
+            event.preventDefault();
+            return;
+        }
+        form.setAttribute("aria-busy", "true");
+        dialog.setAttribute("aria-busy", "true");
+        var status = form.querySelector(".hud-autoplay-status");
+        if (status) status.hidden = false;
+        Array.prototype.forEach.call(form.querySelectorAll("p, button"), function (node) {
+            if (node === status || node.classList.contains("hud-eyebrow")) return;
+            node.hidden = true;
+        });
+        button.classList.add("is-playing");
+        button.setAttribute("aria-busy", "true");
+    });
+    dialog.addEventListener("cancel", function (event) {
+        if (form.getAttribute("aria-busy") === "true") event.preventDefault();
+    });
 })();
 </script>
 {% endif %}
