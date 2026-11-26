@@ -603,16 +603,25 @@ def during_plate_appearance(play, event, teams, user):
     play.state = state
     try:
         prior = [logged for logged in play.events if logged.sequence < event.sequence]
-        box = box_score.box_score(play.log, prior)
+        # The line score takes its inning from the log. The held board uses this plate appearance's inning.
+        saved_log_state = play.log.state
+        play.log.state = state
+        try:
+            box = box_score.box_score(play.log, prior)
+        finally:
+            play.log.state = saved_log_state
         fielding = sim_game.fielding_side(state)
         corner = park_corner(sim_game.team_for(play.game, sim_game.HOME))
+        batter = batter_card(play, box, teams)
         return {
-            "batter": batter_card(play, box, teams),
+            "batter": batter,
             "pitcher": pitcher_card(play, box, teams, []),
             "fielders": game_field.fielders(play, state, fielding, corner["rules"]["distances_ft"]),
             "fielding_team": teams[fielding],
             "situation": _situation(state),
             "order": batting_order(play, user, teams),
+            "scoreboard": scoreboard(play, box, teams),
+            "play_sub": f"{game_field.last_name(batter['player'])} swings away",
         }
     finally:
         play.state = previous

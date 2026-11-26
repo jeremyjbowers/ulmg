@@ -969,6 +969,32 @@ class EditDayTestCase(PlanViewsTestCase):
         client.post(day_url(20), day_data())
         self.assertIsNone(self.plan.days.get(day=20).manual_starter)
 
+    def test_editing_the_lineup_saves_it_without_the_checkbox(self):
+        lineup = self.roster.lineup(self.roster.hitters[:-1] + [self.roster.bench[1]])
+        posted = day_data(lineup=lineup)
+        del posted["override_lineup"]
+        response = self.as_user(self.owner).post(day_url(20), posted, follow=True)
+        self.assertRedirects(response, SCHEDULE_URL + "#day-20", fetch_redirect_response=False)
+        self.assertEqual(
+            self.plan.days.get(day=20).manual_lineup[-1],
+            {"player": self.roster.bench[1].id, "position": "DH"},
+        )
+
+    def test_saving_the_card_lineup_without_the_checkbox_leaves_the_card(self):
+        posted = day_data(lineup=self.roster.lineup())
+        del posted["override_lineup"]
+        self.as_user(self.owner).post(day_url(20), posted)
+        self.assertIsNone(self.plan.days.get(day=20).manual_lineup)
+
+    def test_unchecking_a_day_lineup_returns_the_day_to_the_card(self):
+        lineup = self.roster.lineup(self.roster.hitters[:-1] + [self.roster.bench[1]])
+        client = self.as_user(self.owner)
+        client.post(day_url(20), day_data(lineup=lineup))
+        posted = day_data(lineup=lineup)
+        del posted["override_lineup"]
+        client.post(day_url(20), posted)
+        self.assertIsNone(self.plan.days.get(day=20).manual_lineup)
+
     def test_an_opened_day_cannot_be_edited(self):
         game = next(g for g in plans.half_games(self.atl, SEASON, 1).values() if g.day == 1)
         plans.open_game(game)

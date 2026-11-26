@@ -270,6 +270,13 @@
         return found;
     }
 
+    function markDayLineup(slot) {
+        var column = slot && slot.closest('[data-lineup="day"]');
+        if (!column) return;
+        var box = document.querySelector('input[name="override_lineup"]');
+        if (box) box.checked = true;
+    }
+
     function place(slot, card) {
         if (!accepts(slot, card) || !canTakeStart(card, slot)) return;
         var board = boardOf(slot);
@@ -278,6 +285,7 @@
             if (from) {
                 swapLineupSlots(from, slot);
                 refreshStartCards();
+                markDayLineup(slot);
                 return;
             }
         }
@@ -304,6 +312,7 @@
         if (hookBox(slot)) setHook(slot, carried || "");
         showHook(slot);
         refreshStartCards();
+        markDayLineup(slot);
     }
 
     function touchBoard() {
@@ -457,6 +466,7 @@
             event.preventDefault();
             var box = positionButton.closest("[data-position-buttons]");
             box.querySelector(".position-value").value = positionButton.dataset.position;
+            markDayLineup(positionButton.closest(".lineup-slot"));
             box.querySelectorAll("button[data-position]").forEach(function (button) {
                 var on = button === positionButton;
                 button.classList.toggle("bg-gray-800", on);

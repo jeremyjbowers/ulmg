@@ -190,6 +190,34 @@ def _entries(rows, players, errors, label):
     return entries
 
 
+def _same_lineup(entries, stored):
+    """True when entries are the stored lineup: the same batters and positions, in order."""
+    posted = [
+        (entry["player"].id, entry["position"])
+        for entry in sorted(entries, key=lambda entry: entry["order"])
+    ]
+    kept = [(int(entry["player"]), entry["position"]) for entry in stored or []]
+    return posted == kept
+
+
+def _day_lineup(override, had_manual, posted, stored):
+    """
+    The lineup save_day should store.
+
+    None returns the day to its card. A checked box stores the posted lineup.
+    An unchecked box stores it too when that lineup is complete and it is not
+    the card, so editing the nine slots is the day's lineup. Unchecking a day
+    that already had its own lineup returns it to the card.
+    """
+    if override:
+        return posted
+    if had_manual:
+        return None
+    if len(posted) != plans.LINEUP_SIZE or _same_lineup(posted, stored):
+        return None
+    return posted
+
+
 def _lineup_fields(state):
     """Lineup entries and designation lists for save_lineups, plus errors for unknown players."""
     ids = set()
@@ -851,7 +879,12 @@ def team_plan_day(request, abbreviation, half, day, season=None):
         starter = players.get(starter_id)
         if starter_id and starter is None:
             errors.append("That starter is not a player.")
-        lineup = _entries(lineup_rows, players, errors, f"Day {day} lineup") if override else None
+        parse_errors = []
+        posted = _entries(lineup_rows, players, parse_errors, f"Day {day} lineup")
+        lineup = _day_lineup(override, side["lineup_manual"], posted, side["lineup_stored"])
+        if lineup is not None:
+            override = True
+            errors.extend(parse_errors)
         if not errors:
             try:
                 warnings = plans.save_day(plan, day, starter=starter, lineup=lineup)

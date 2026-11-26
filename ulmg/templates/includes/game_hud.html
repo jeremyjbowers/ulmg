@@ -95,12 +95,55 @@
         <div id="hud-during-batter">{% include "includes/game_batter_card.html" with batter=during.batter %}</div>
         <div id="hud-during-pitcher">{% include "includes/game_pitcher_card.html" with pitcher=during.pitcher fielding_team=during.fielding_team %}</div>
         <div id="hud-during-order">{% include "includes/game_order.html" with order=during.order %}</div>
+        <table id="hud-during-line">
+            <thead><tr>{% for cell in during.scoreboard.header %}<th data-inning="{{ cell.number }}" data-class="{% if cell.now %}now{% endif %}{% if cell.early %} early{% endif %}"></th>{% endfor %}</tr></thead>
+            <tbody>
+                {% for row in during.scoreboard.rows %}
+                <tr data-side="{{ row.side }}" data-r="{{ row.r }}" data-h="{{ row.h }}" data-e="{{ row.e }}">
+                    {% for cell in row.cells %}<td data-inning="{{ cell.inning }}" data-class="{% if cell.now %}now{% endif %}{% if cell.dim %} dim{% endif %}{% if cell.early %} early{% endif %}">{{ cell.value }}</td>{% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
     <script>
     (function () {
         var root = document.documentElement;
         if (!root.classList.contains("hud-holding")) return;
         var during = document.getElementById("hud-during");
+        var duringLine = document.getElementById("hud-during-line");
+        var table = document.querySelector("#hud-board .line-score");
+        if (duringLine && table) {
+            var liveHeads = table.querySelectorAll("thead th");
+            var priorHeads = duringLine.querySelectorAll("thead th");
+            for (var i = 1; i < liveHeads.length; i++) {
+                var source = priorHeads[i - 1];
+                var head = liveHeads[i];
+                head.setAttribute("data-end-class", head.className);
+                head.className = source ? (source.getAttribute("data-class") || "") : "";
+            }
+            duringLine.querySelectorAll("tbody tr").forEach(function (row) {
+                var live = document.getElementById("line-" + row.getAttribute("data-side"));
+                if (!live) return;
+                var runs = live.querySelector('[data-total="r"]');
+                var totals = { r: runs, h: runs && runs.nextElementSibling, e: runs && runs.nextElementSibling && runs.nextElementSibling.nextElementSibling };
+                ["r", "h", "e"].forEach(function (key) {
+                    var cell = totals[key];
+                    if (!cell) return;
+                    cell.setAttribute("data-end", cell.textContent);
+                    cell.textContent = row.getAttribute("data-" + key);
+                });
+                var priorCells = {};
+                row.querySelectorAll("td").forEach(function (cell) { priorCells[cell.getAttribute("data-inning")] = cell; });
+                live.querySelectorAll("td[data-inning]").forEach(function (cell) {
+                    var sourceCell = priorCells[cell.getAttribute("data-inning")];
+                    cell.setAttribute("data-end", cell.textContent);
+                    cell.setAttribute("data-end-class", cell.className);
+                    cell.textContent = sourceCell ? sourceCell.textContent : "·";
+                    cell.className = sourceCell ? (sourceCell.getAttribute("data-class") || "") : "dim";
+                });
+            });
+        }
         function exchange(a, b) {
             var hold = document.createDocumentFragment();
             while (a.firstChild) hold.appendChild(a.firstChild);
@@ -137,9 +180,9 @@
                 {% csrf_token %}
                 <input type="hidden" name="expected" value="{{ expected }}">
                 {% if controls.play.enabled %}
-                <button type="submit" name="call" value="" class="hud-btn play" id="hud-play" aria-label="Play the next plate appearance: {{ controls.play.sub }}" aria-keyshortcuts="Space">Play <small>{{ controls.play.sub }}</small></button>
+                <button type="submit" name="call" value="" class="hud-btn play" id="hud-play" aria-label="Play the next plate appearance" aria-keyshortcuts="Space">Play <small class="play-end">{{ controls.play.sub }}</small>{% if during %}<small class="play-during">{{ during.play_sub }}</small>{% endif %}</button>
                 {% else %}
-                <button type="button" class="hud-btn play" id="hud-play" disabled>Play <small>{{ controls.play.sub }}</small></button>
+                <button type="button" class="hud-btn play" id="hud-play" disabled>Play <small class="play-end">{{ controls.play.sub }}</small>{% if during %}<small class="play-during">{{ during.play_sub }}</small>{% endif %}</button>
                 {% endif %}
             </form>
             {% if controls.play.why %}<p class="hud-why">{{ controls.play.why }}</p>{% endif %}
