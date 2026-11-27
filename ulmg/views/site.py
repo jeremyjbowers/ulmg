@@ -300,8 +300,11 @@ def cache_admin(request):
 
 @never_cache
 def draft_list(request):
-    """Simple draft index page listing all drafts from settings.DRAFTS."""
+    """Index of every draft that has picks in the database."""
+    from ulmg import drafts
+
     context = utils.build_context(request)
+    context["drafts"] = drafts.all_boards()
     return render(request, "draft_list.html", context)
 
 

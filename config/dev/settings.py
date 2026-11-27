@@ -245,47 +245,6 @@ CSV_COLUMNS = [
     "is_ulmg_midseason_unprotected",
 ]
 
-DRAFTS = [
-    {"title": "2027 Offseason AA", "url": "/draft/2027/offseason/aa/"},
-    {"title": "2027 Offseason Open", "url": "/draft/2027/offseason/open/"},
-    {"title": "2026 Midseason AA", "url": "/draft/2026/midseason/aa/"},
-    {"title": "2026 Midseason Open", "url": "/draft/2026/midseason/open/"},
-    {"title": "2026 Offseason AA", "url": "/draft/2026/offseason/aa/"},
-    {"title": "2026 Offseason Open", "url": "/draft/2026/offseason/open/"},
-    {"title": "2025 Midseason AA", "url": "/draft/2025/midseason/aa/"},
-    {"title": "2025 Midseason Open", "url": "/draft/2025/midseason/open/"},
-    {"title": "2025 Offseason AA", "url": "/draft/2025/offseason/aa/"},
-    {"title": "2025 Offseason Open", "url": "/draft/2025/offseason/open/"},
-    {"title": "2024 Midseason AA", "url": "/draft/2024/midseason/aa/"},
-    {"title": "2024 Midseason Open", "url": "/draft/2024/midseason/open/"},
-    {"title": "2024 Offseason AA", "url": "/draft/2024/offseason/aa/"},
-    {"title": "2024 Offseason Open", "url": "/draft/2024/offseason/open/"},
-    {"title": "2023 Midseason AA", "url": "/draft/2023/midseason/aa/"},
-    {"title": "2023 Midseason Open", "url": "/draft/2023/midseason/open/"},
-    {"title": "2023 Offseason AA", "url": "/draft/2023/offseason/aa/"},
-    {"title": "2023 Offseason Open", "url": "/draft/2023/offseason/open/"},
-    {"title": "2022 Midseason AA", "url": "/draft/2022/midseason/aa/"},
-    {"title": "2022 Midseason Open", "url": "/draft/2022/midseason/open/"},
-    {"title": "2022 Offseason AA", "url": "/draft/2022/offseason/aa/"},
-    {"title": "2022 Offseason Open", "url": "/draft/2022/offseason/open/"},
-    {"title": "2021 Midseason AA", "url": "/draft/2021/midseason/aa/"},
-    {"title": "2021 Midseason Open", "url": "/draft/2021/midseason/open/"},
-    {"title": "2021 Offseason AA", "url": "/draft/2021/offseason/aa/"},
-    {"title": "2021 Offseason Open", "url": "/draft/2021/offseason/open/"},
-    {"title": "2020 Midseason AA", "url": "/draft/2020/midseason/aa/"},
-    {"title": "2020 Midseason Open", "url": "/draft/2020/midseason/open/"},
-    {"title": "2020 Offseason AA", "url": "/draft/2020/offseason/aa/"},
-    {"title": "2020 Offseason Open", "url": "/draft/2020/offseason/open/"},
-    {"title": "2019 Midseason AA", "url": "/draft/2019/midseason/aa/"},
-    {"title": "2019 Midseason Open", "url": "/draft/2019/midseason/open/"},
-    {"title": "2019 Offseason AA", "url": "/draft/2019/offseason/aa/"},
-    {"title": "2019 Offseason Open", "url": "/draft/2019/offseason/open/"},
-    {"title": "2018 Midseason AA", "url": "/draft/2018/midseason/aa/"},
-    {"title": "2018 Midseason Open", "url": "/draft/2018/midseason/open/"},
-    {"title": "2018 Offseason AA", "url": "/draft/2018/offseason/aa/"},
-    {"title": "2018 Offseason Open", "url": "/draft/2018/offseason/open/"},
-]
-
 ## BOWERS SPECIFIC THINGS
 BOWERS_DRAFT_SHEET = "1Wb9f6QrGULjg2qs2Bmq6EWVXXKmw-WdYg-loYvGnpFY"
 BOWERS_DRAFT_RANGES = ["TOP80!A1:V1000"]

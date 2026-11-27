@@ -17,6 +17,7 @@
                 {% for draft in draftnav %}
                 <a href="{{ draft.url }}" class="block underline text-sm py-1">{{ draft.title }}</a>
                 {% endfor %}
+                <a href="/draft/" class="block underline text-sm py-1">All drafts</a>
                 <a href="https://ulmg.wordpress.com/category/draft/" target="_blank" class="block underline text-sm py-1">Archived drafts</a>
             </div>
         </div>
@@ -98,11 +99,11 @@
       <div>
         <div class="font-bold mb-1">Drafts</div>
         <div class="grid grid-cols-4 gap-2 text-xs">
-          {% for draft in draftnav|slice:":8" %}
+          {% for draft in draftnav %}
             <a href="{{ draft.url }}" class="underline">{{ draft.title }}</a>
           {% endfor %}
         </div>
-        <a href="/drafts/" class="underline block mt-2">More drafts</a>
+        <a href="/draft/" class="underline block mt-2">All drafts</a>
       </div>
       <div>
         <div class="font-bold mb-1">Teams</div>
