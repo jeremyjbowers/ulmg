@@ -79,11 +79,11 @@ SECTION_SHADE = 0.1
 # Tunnels into the lower deck: every this many aisles, this far into the deck.
 TUNNEL_EVERY = 2
 TUNNEL_DEPTH = 0.5
-# Dugouts sit in foul ground this many feet up each line from home, this far out across the foul band (a share of its width).
-DUGOUT_FEET = 58
-DUGOUT_OUT = 0.6
-DUGOUT_LENGTH = 62
-DUGOUT_DEPTH = 15
+# Dugouts are cut into the front of the stands along each line, from this many feet past home to about the base, this many SVG units deep, under a roof of this color.
+DUGOUT_FROM_FT = 22
+DUGOUT_TO_FT = 84
+DUGOUT_DEPTH = 18
+DUGOUT_ROOF = "#4a4f55"
 # Distance labels sit this far inside the fence, and the two at the lines this many degrees inside fair territory.
 LABEL_INSET_FT = 24
 LINE_LABEL_INSET_DEG = 5
@@ -106,6 +106,13 @@ FIELDER_FEET = {
 FIELDER_ORDER = ("P", "C", "1B", "2B", "SS", "3B", "LF", "CF", "RF")
 # The dirt basepath between each baseline and the infield grass, in SVG units.
 BASEPATH_WIDTH = 12
+# The infield dirt reaches this far down each line, and a strip of it runs just foul of the line that far.
+INFIELD_DIRT_FT = 158
+# The dirt circle around home, and the bites taken out of the infield grass at first and third, in feet.
+HOME_CIRCLE_FT = 15
+CUTOUT_FT = 20
+# The mound's radius in feet.
+MOUND_FT = 10
 MINUS = "−"
 # The engine starts each line of its log with the half inning and the count: "Top 3, 2-1: ".
 LOG_PREFIX = re.compile(r"^(Top|Bottom) \d+, (\d-\d): ")
@@ -422,23 +429,51 @@ def stands(rng, fence_back, band):
 
 
 def dugouts(band_width):
-    """Each team's dugout in foul ground, up the third- and first-base lines from home, turned along its line."""
-    reach = band_width * DUGOUT_OUT / math.sqrt(2)
-    third = point(DUGOUT_FEET, -45)
-    first = point(DUGOUT_FEET, 45)
+    """
+    Each team's dugout, cut into the front of the stands where the seats would
+    be, along the third- and first-base lines between home and the base. Each
+    is turned along its line with its open front on the edge of foul ground
+    and its roof behind, into the stands.
+    """
+    middle = (DUGOUT_FROM_FT + DUGOUT_TO_FT) / 2
+    length = round(warp(DUGOUT_TO_FT) - warp(DUGOUT_FROM_FT), 1)
+    out = band_width / math.sqrt(2)
     shown = []
-    for (x, y), side, turn in ((third, -1, 45), (first, 1, -45)):
+    for degrees, side, turn in ((-45, -1, 45), (45, 1, -45)):
+        x, y = point(middle, degrees)
         shown.append({
-            "x": round(x + side * reach, 1),
-            "y": round(y + reach, 1),
+            "x": round(x + side * out, 1),
+            "y": round(y + out, 1),
             "turn": turn,
-            "length": DUGOUT_LENGTH,
+            "length": length,
             "depth": DUGOUT_DEPTH,
-            "left": -DUGOUT_LENGTH / 2,
-            "top": -DUGOUT_DEPTH / 2,
-            # The open front of the dugout, on the side facing the field.
-            "bench": DUGOUT_DEPTH / 2 - 5,
+            "left": round(-length / 2, 1),
+            "right": round(length / 2, 1),
+            "roof": round(DUGOUT_DEPTH * 0.45, 1),
+            "roof_depth": round(DUGOUT_DEPTH * 0.55, 1),
+            "bench": round(DUGOUT_DEPTH * 0.45 - 4, 1),
+            "roof_color": DUGOUT_ROOF,
         })
+    return shown
+
+
+def foul_dirt():
+    """The strip of dirt just foul of each line, from home to the end of the infield dirt: the third-base side, then the first-base side."""
+    strips = []
+    out = BASEPATH_WIDTH / math.sqrt(2)
+    for degrees, side in ((-45, -1), (45, 1)):
+        end = point(INFIELD_DIRT_FT, degrees)
+        corners = [HOME, end, (end[0] + side * out, end[1] + out), (HOME[0] + side * out, HOME[1] + out)]
+        strips.append(_xy([(round(x, 1), round(y, 1)) for x, y in corners]))
+    return strips
+
+
+def cutouts(bases):
+    """The rounded dirt where the infield grass meets home, first and third: the circle around home and a bite at each base."""
+    shown = [{"x": bases["home"][0], "y": bases["home"][1], "r": round(warp(HOME_CIRCLE_FT), 1)}]
+    for base in ("first", "third"):
+        x, y = bases[base]
+        shown.append({"x": x, "y": y, "r": round(warp(CUTOUT_FT), 1)})
     return shown
 
 
@@ -519,7 +554,7 @@ def park_drawing(rules):
             text += f" · {_feet(walls[key])}′ wall"
         labels.append({"x": x, "y": y, "text": text})
 
-    arc = [point(158, -45), point(215, 0), point(158, 45)]
+    arc = [point(INFIELD_DIRT_FT, -45), point(215, 0), point(INFIELD_DIRT_FT, 45)]
     dirt = f"M {HOME[0]} {HOME[1]} L {arc[0][0]} {arc[0][1]} Q {arc[1][0]} {round(arc[1][1] - 70, 1)} {arc[2][0]} {arc[2][1]} Z"
     bases = base_spots()
     mound = mound_spot()
@@ -538,6 +573,10 @@ def park_drawing(rules):
         "dirt": dirt,
         "infield_grass": _xy(inset([bases["home"], bases["first"], bases["second"], bases["third"]], BASEPATH_WIDTH)),
         "baselines": _xy([bases["home"], bases["first"], bases["second"], bases["third"]]),
+        "basepaths": _xy([bases["first"], bases["second"], bases["third"]]),
+        "foul_dirt": foul_dirt(),
+        "cutouts": cutouts(bases),
+        "mound_radius": round(warp(MOUND_FT), 1),
         "foul_lines": list(poles),
         "mound": mound,
         "labels": labels,

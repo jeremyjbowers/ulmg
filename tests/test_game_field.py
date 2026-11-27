@@ -259,17 +259,76 @@ class StadiumTest(SimpleTestCase):
             off_center = math.degrees(math.atan2(tunnel["x"] - hx, hy - tunnel["y"]))
             self.assertGreater(abs(off_center), 45, "a tunnel sits in the grandstand, not the outfield")
 
-    def test_each_team_has_a_dugout_in_foul_ground_clear_of_the_runner_at_first(self):
-        drawing = game_field.park_drawing(park.clean_rules({}))
+    def test_each_dugout_is_set_into_the_stands_between_home_and_its_corner_base(self):
+        rules = park.clean_rules({})
+        drawing = game_field.park_drawing(rules)
         third, first = drawing["dugouts"]
         hx, hy = game_field.HOME
         self.assertLess(third["x"], hx)
         self.assertGreater(first["x"], hx)
-        base_y = game_field.base_spots()["first"][1]
-        for dugout in (third, first):
-            self.assertGreater(dugout["y"], base_y + 40, "below the runner's name at first or third")
-        svg = _field_svg(park.clean_rules({}))
+        band = rules["foul_ft"] * game_field.FOUL_SCALE
+        bases = game_field.base_spots()
+        for dugout, base in ((third, bases["third"]), (first, bases["first"])):
+            # Its open front sits on the edge of foul ground, where the seats would start.
+            self.assertAlmostEqual(_distance_to_line((dugout["x"], dugout["y"]), game_field.HOME, base), band, delta=0.5)
+            # It runs along the line from near home to about the base, and no further.
+            along = math.dist((hx, hy), base)
+            middle = math.dist((hx, hy), (dugout["x"], dugout["y"]))
+            self.assertLess(dugout["length"], along)
+            self.assertLess(math.sqrt(middle**2 - band**2) + dugout["length"] / 2, along + 1)
+            self.assertGreater(dugout["length"], along / 2)
+        svg = _field_svg(rules)
         self.assertEqual(svg.count('class="dugout"'), 2)
+        self.assertLess(svg.index('class="foul-ground"'), svg.index('class="dugout"'), "drawn over the seats and the edge of foul ground")
+
+
+class InfieldTest(SimpleTestCase):
+    def setUp(self):
+        self.rules = park.clean_rules({})
+        self.drawing = game_field.park_drawing(self.rules)
+        self.svg = _field_svg(self.rules)
+
+    def test_the_mound_is_round_with_a_shadow_and_a_white_rubber(self):
+        start = self.svg.index('class="mound"')
+        mound = self.svg[start : self.svg.index("</g>", start)]
+        self.assertNotIn("<ellipse", mound)
+        self.assertIn('class="mound-body"', mound)
+        self.assertIn('class="mound-shadow"', mound)
+        self.assertEqual(mound.count("<circle"), 2)
+        rubber = mound[mound.index('class="rubber"') :]
+        self.assertIn('fill="#fff"', rubber[: rubber.index("/>")])
+
+    def test_the_basepaths_run_from_first_to_second_to_third(self):
+        bases = game_field.base_spots()
+        self.assertEqual(_points(self.drawing["basepaths"]), [bases["first"], bases["second"], bases["third"]])
+        self.assertIn('class="basepath"', self.svg)
+        # No chalk from first to second or second to third: the foul lines are the only chalk.
+        self.assertNotIn(f'points="{self.drawing["baselines"]}"', self.svg)
+
+    def test_dirt_runs_just_foul_of_each_line_to_the_end_of_the_infield(self):
+        bases = game_field.base_spots()
+        hx, hy = game_field.HOME
+        third_side, first_side = (_points(strip) for strip in self.drawing["foul_dirt"])
+        for strip, base, outward in ((third_side, bases["third"], -1), (first_side, bases["first"], 1)):
+            self.assertEqual(len(strip), 4)
+            for x, y in strip:
+                self.assertLessEqual(_distance_to_line((x, y), game_field.HOME, base), game_field.BASEPATH_WIDTH + 0.2)
+                self.assertGreaterEqual(outward * (x - hx) - (hy - y), -0.2, "on the foul side of the line")
+            reach = max(math.dist((hx, hy), spot) for spot in strip)
+            end = game_field.warp(game_field.INFIELD_DIRT_FT)
+            self.assertAlmostEqual(reach, math.hypot(end, game_field.BASEPATH_WIDTH), delta=0.5)
+        self.assertEqual(self.svg.count('class="foul-dirt"'), 2)
+
+    def test_the_grass_is_rounded_off_around_home_and_at_first_and_third(self):
+        bases = game_field.base_spots()
+        centers = [(c["x"], c["y"]) for c in self.drawing["cutouts"]]
+        self.assertEqual(centers, [bases["home"], bases["first"], bases["third"]])
+        grass = _points(self.drawing["infield_grass"])
+        for cutout in self.drawing["cutouts"]:
+            nearest = min(math.dist((cutout["x"], cutout["y"]), corner) for corner in grass)
+            self.assertGreater(cutout["r"], nearest + 4, "it bites the corner off the grass")
+        self.assertIn('mask="url(#infield-cutouts)"', self.svg)
+        self.assertIn('class="home-circle"', self.svg)
 
 
 class LabelTest(SimpleTestCase):

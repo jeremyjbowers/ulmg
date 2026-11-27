@@ -24,6 +24,11 @@
                 <stop offset="58%" stop-color="{{ c.mound_mid }}"/>
                 <stop offset="100%" stop-color="{{ c.mound_lo }}"/>
             </radialGradient>
+            <filter id="mound-blur" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="2.5"/></filter>
+            <mask id="infield-cutouts" maskUnits="userSpaceOnUse" x="20" y="62" width="560" height="482">
+                <rect x="20" y="62" width="560" height="482" fill="#fff"/>
+                {% for cut in d.cutouts %}<circle cx="{{ cut.x }}" cy="{{ cut.y }}" r="{{ cut.r }}" fill="#000"/>{% endfor %}
+            </mask>
             <clipPath id="fair-clip"><path d="{{ d.fence }}"/></clipPath>
             <clipPath id="bleacher-clip"><polygon points="{{ s.bleacher_clip }}"/></clipPath>
             <clipPath id="grandstand-clip"><polygon points="{{ s.grandstand_clip }}"/></clipPath>
@@ -51,8 +56,10 @@
         </g>
         <path class="foul-ground" d="{{ d.foul_ground }}" fill="url(#foul-mottle)" stroke="{{ s.seat_gap }}" stroke-width="5"/>
         {% for dug in d.dugouts %}<g class="dugout" transform="translate({{ dug.x }} {{ dug.y }}) rotate({{ dug.turn }})">
-            <rect x="{{ dug.left }}" y="{{ dug.top }}" width="{{ dug.length }}" height="{{ dug.depth }}" rx="3" fill="{{ s.seat_gap }}" stroke="{{ s.gap }}" stroke-width="2"/>
-            <rect x="{{ dug.left }}" y="{{ dug.bench }}" width="{{ dug.length }}" height="5" fill="{{ s.gap }}"/>
+            <rect x="{{ dug.left }}" y="-2" width="{{ dug.length }}" height="{{ dug.depth|add:2 }}" rx="2" fill="{{ s.gap }}"/>
+            <rect x="{{ dug.left }}" y="{{ dug.bench }}" width="{{ dug.length }}" height="3" fill="{{ s.aisle }}" opacity=".45"/>
+            <rect x="{{ dug.left }}" y="{{ dug.roof }}" width="{{ dug.length }}" height="{{ dug.roof_depth }}" rx="1.5" fill="{{ dug.roof_color }}"/>
+            <line x1="{{ dug.left }}" y1="-1" x2="{{ dug.right }}" y2="-1" stroke="{{ s.aisle }}" stroke-width="2"/>
         </g>{% endfor %}
         <g clip-path="url(#fair-clip)">
             <path d="{{ d.fence }}" fill="url(#grass-mow)"/>
@@ -60,14 +67,16 @@
         </g>
         <path class="outfield-wall" d="{{ d.fence }}" fill="none" stroke="var(--wall)" stroke-width="7" stroke-linejoin="round"/>
         {% for wall in d.tall_walls %}<path class="tall-wall" d="{{ wall }}" fill="none" stroke="var(--wall-tall)" stroke-width="14" stroke-linecap="round"/>{% endfor %}
+        {% for strip in d.foul_dirt %}<polygon class="foul-dirt" points="{{ strip }}" fill="{{ c.mound_mid }}" stroke="{{ c.mound_lo }}" stroke-width="2" stroke-linejoin="round"/>{% endfor %}
+        {% with cut=d.cutouts.0 %}<circle class="home-circle" cx="{{ cut.x }}" cy="{{ cut.y }}" r="{{ cut.r }}" fill="{{ c.mound_mid }}" stroke="{{ c.mound_lo }}" stroke-width="2"/>{% endwith %}
         <path d="{{ d.dirt }}" fill="{{ c.mound_mid }}" stroke="{{ c.mound_lo }}" stroke-width="2"/>
-        <polygon points="{{ d.infield_grass }}" fill="url(#infield-cross)"/>
-        <polygon points="{{ d.baselines }}" fill="none" stroke="#fff" stroke-width="2" opacity=".9"/>
+        <polygon points="{{ d.infield_grass }}" fill="url(#infield-cross)" mask="url(#infield-cutouts)"/>
+        <polyline class="basepath" points="{{ d.basepaths }}" fill="none" stroke="{{ c.mound_lo }}" stroke-width="14" stroke-linecap="round" stroke-linejoin="round" opacity=".22"/>
         {% for x, y in d.foul_lines %}<line x1="{{ d.home.0 }}" y1="{{ d.home.1 }}" x2="{{ x }}" y2="{{ y }}" stroke="#fff" stroke-width="2"/>{% endfor %}
         <g class="mound" transform="translate({{ d.mound.0 }} {{ d.mound.1 }})">
-            <ellipse class="mound-shadow" cx="1.5" cy="6" rx="20" ry="8" fill="{{ c.shadow }}" opacity=".35"/>
-            <ellipse class="mound-body" cx="0" cy="0" rx="18" ry="9" fill="url(#mound-shade)"/>
-            <rect class="rubber" x="-6" y="-1.6" width="12" height="3" rx="0.4"/>
+            <circle class="mound-shadow" cx="4" cy="5" r="{{ d.mound_radius }}" fill="{{ c.shadow }}" opacity=".55" filter="url(#mound-blur)"/>
+            <circle class="mound-body" cx="0" cy="0" r="{{ d.mound_radius }}" fill="url(#mound-shade)" stroke="{{ c.mound_lo }}" stroke-width="1"/>
+            <rect class="rubber" x="-7" y="-1.8" width="14" height="3.6" rx="0.5" fill="#fff"/>
         </g>
         {% for label in d.labels %}<text class="lbl-dist" x="{{ label.x }}" y="{{ label.y }}" text-anchor="middle">{{ label.text }}</text>{% endfor %}
         {% for b in d.bases %}<rect class="base" x="{{ b.left }}" y="{{ b.top }}" width="16" height="16" transform="rotate(45 {{ b.x }} {{ b.y }})"/>{% endfor %}
