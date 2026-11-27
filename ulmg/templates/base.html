@@ -36,7 +36,7 @@
             {% include "includes/nav.html" %}
         </header>
 
-        {% play_bar %}
+        {% block play_bar %}{% play_bar %}{% endblock %}
 
         <!-- Mobile Search + Collapsible Filter Section -->
         <div class="border-b border-gray-200">
