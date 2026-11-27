@@ -4,10 +4,9 @@ import datetime
 from io import StringIO
 from unittest.mock import MagicMock, patch
 
-from django.conf import settings
 from django.test import TestCase
 
-from ulmg import models
+from ulmg import league, models
 from ulmg.management.commands.archive_mlb_scrape_data import Command
 
 
@@ -44,7 +43,7 @@ class ArchiveMlbScrapeDataTestCase(TestCase):
         self.assertEqual(player.current_mlb_org, "BOS")
         pss = models.PlayerStatSeason.objects.get(
             player=player,
-            season=settings.CURRENT_SEASON,
+            season=league.current_season(),
             is_career=False,
         )
         self.assertEqual(pss.mlb_org, "BOS")
@@ -67,7 +66,7 @@ class ArchiveMlbScrapeDataTestCase(TestCase):
         )
         models.PlayerStatSeason.objects.create(
             player=player,
-            season=settings.CURRENT_SEASON,
+            season=league.current_season(),
             classification="1-mlb",
             mlb_org="NYY",
             owned=False,
@@ -94,7 +93,7 @@ class ArchiveMlbScrapeDataTestCase(TestCase):
         self.assertEqual(player.current_mlb_org, "BOS")
         pss = models.PlayerStatSeason.objects.get(
             player=player,
-            season=settings.CURRENT_SEASON,
+            season=league.current_season(),
             is_career=False,
         )
         self.assertEqual(pss.mlb_org, "BOS")

@@ -2,7 +2,7 @@
 # ABOUTME: Keys match the engine's HitterRates, PitcherRates and FatigueProfile; the engine reads these and computes nothing.
 from decimal import Decimal, ROUND_HALF_UP
 
-from django.conf import settings
+from ulmg import league
 
 # Steal success is regressed toward a league-average base stealer with this many attempts at this rate.
 STEAL_PRIOR_ATTEMPTS = 10
@@ -79,7 +79,7 @@ DEFENSE_POSITIONS = ["C", "1B", "2B", "3B", "SS", "LF", "CF", "RF"]
 
 def card_season():
     """Cards are generated from the previous MLB season."""
-    return settings.CURRENT_SEASON - 1
+    return league.current_season() - 1
 
 
 def _number(stats, key):

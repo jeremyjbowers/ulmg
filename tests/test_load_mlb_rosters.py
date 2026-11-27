@@ -4,7 +4,7 @@ import json
 import tempfile
 from unittest.mock import patch, MagicMock
 
-from django.test import TestCase
+from django.test import TestCase, override_settings
 
 from ulmg.management.commands.load_mlb_rosters import Command
 
@@ -79,9 +79,7 @@ class LoadMlbRostersTestCase(TestCase):
 
         with tempfile.TemporaryDirectory() as tmpdir:
             out_path = f"{tmpdir}/rosters/all_mlb_rosters.json"
-            with patch(
-                "ulmg.management.commands.load_mlb_rosters.settings.CURRENT_SEASON", 2025
-            ):
+            with override_settings(CURRENT_SEASON=2025):
                 with patch(
                     "ulmg.management.commands.load_mlb_rosters.os.path.dirname",
                     return_value=f"{tmpdir}/rosters",

@@ -1,14 +1,12 @@
 # ABOUTME: Fetches MLB/MiLB rosters from MLB Stats API and writes all_mlb_rosters.json.
 # ABOUTME: Covers MLB, AAA, AA, High-A, A, Short-A, and Rookie (FCL, AZL, DSL).
 from django.core.management.base import BaseCommand
-from django.conf import settings
-import datetime
 import os
 
 import requests
 import ujson as json
 
-from ulmg import utils
+from ulmg import league, utils
 
 
 class Command(BaseCommand):
@@ -80,7 +78,7 @@ class Command(BaseCommand):
         return r.json().get("roster") or []
 
     def handle(self, *args, **options):
-        season = getattr(settings, "CURRENT_SEASON", datetime.datetime.now().year)
+        season = league.current_season()
         team_list_url = "https://statsapi.mlb.com/api/v1/teams/"
         self.stdout.write(f"Fetching teams from {team_list_url}")
         resp = requests.get(team_list_url, timeout=30)

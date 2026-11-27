@@ -24,7 +24,7 @@ import requests
 import ujson as json
 import time
 
-from ulmg import models
+from ulmg import league, models
 
 import boto3
 from botocore.exceptions import ClientError, NoCredentialsError
@@ -136,8 +136,8 @@ def league_season(when=None):
 
 
 def get_current_season():
-    season = settings.CURRENT_SEASON
-    if settings.CURRENT_SEASON_TYPE == "offseason":
+    season = league.current_season()
+    if league.current_season_type() == "offseason":
         season = season - 1
     return season
 
@@ -230,11 +230,11 @@ def mlb_appearances_q(prefix=""):
 def get_stats_display_season_cap():
     """
     Latest calendar year used when choosing PlayerStatSeason rows for display (see Player.get_best_stat_season).
-    Defaults to get_current_season(). When STATS_DISPLAY_SEASON_CAP is set (e.g. 2025), display never uses a
+    Defaults to get_current_season(). When the league stat-season cap is set (e.g. 2025), display never uses a
     later year than that value or than get_current_season(), whichever is lower.
     """
     natural = get_current_season()
-    cap = getattr(settings, "STATS_DISPLAY_SEASON_CAP", None)
+    cap = league.stats_display_season_cap()
     if cap is None:
         return natural
     try:
@@ -301,13 +301,13 @@ def parse_team_roster_stat_filters(request):
 def get_midseason_open_carded_season(draft_year=None):
     """Prior MLB season whose card qualifies a player for the midseason Open draft."""
     if draft_year is None:
-        draft_year = settings.CURRENT_SEASON
+        draft_year = league.current_season()
     return int(draft_year) - 1
 
 
 def get_draft_prep_season_type():
     """Season type used by team-page draft prep links (Open and AA)."""
-    return getattr(settings, "DRAFT_PREP_SEASON_TYPE", None) or settings.CURRENT_SEASON_TYPE
+    return league.draft_prep_season_type() or league.current_season_type()
 
 
 def get_draft_prep_year_season(draft_type, list_type=None):
@@ -315,13 +315,13 @@ def get_draft_prep_year_season(draft_type, list_type=None):
     Return (year, season) for manager draft prep pages.
 
     draft_type: "open" or "aa"
-    list_type: "offseason" or "midseason"; when omitted, uses CURRENT_SEASON_TYPE.
+    list_type: "offseason" or "midseason"; when omitted, uses the league's season type.
     During midseason, explicit offseason prep targets the next calendar year.
     """
-    season = list_type or settings.CURRENT_SEASON_TYPE
-    draft_year = settings.CURRENT_SEASON
-    if season == "offseason" and settings.CURRENT_SEASON_TYPE == "midseason":
-        draft_year = settings.CURRENT_SEASON + 1
+    season = list_type or league.current_season_type()
+    draft_year = league.current_season()
+    if season == "offseason" and league.current_season_type() == "midseason":
+        draft_year = league.current_season() + 1
     return draft_year, season
 
 
@@ -333,7 +333,7 @@ def get_draft_prep_player_filters(draft_type, list_type=None):
     Offseason open: unowned V and A players (B ranking lives on the AA board).
     Midseason open: unowned players with a card from the prior MLB season.
     """
-    season = list_type or settings.CURRENT_SEASON_TYPE
+    season = list_type or league.current_season_type()
     filters = {"team__isnull": True}
     if draft_type == "aa":
         filters["level"] = "B"
@@ -557,30 +557,31 @@ def get_team_for_owner(owner):
 def build_context(request):
     context = {}
 
-    # Season for stat display (honors STATS_DISPLAY_SEASON_CAP when set)
+    # Season for stat display (honors the league stat-season cap when set)
     context["stats_season"] = get_stats_display_season_cap()
 
     # to build the nav
     context["teamnav"] = models.Team.objects.all().order_by("division", "abbreviation")
     context["draftnav"] = settings.DRAFTS
-    context["mlb_roster_size"] = settings.MLB_ROSTER_SIZE
-    # Staff see the roster controls on every team page while TEAM_ROSTER_STAFF_ONLY is set.
+    context["mlb_roster_size"] = league.mlb_roster_size()
+    # Staff see the roster controls on every team page while rosters are staff-only.
     user = request.user
     staff = user.is_authenticated and user.is_staff
-    roster_tab = settings.TEAM_ROSTER_TAB
-    if roster_tab and getattr(settings, "TEAM_ROSTER_STAFF_ONLY", False):
+    roster_tab = league.roster_tab()
+    if roster_tab and league.roster_staff_only():
         roster_tab = staff
         context["show_roster_tools"] = staff
     else:
         context["show_roster_tools"] = False
     context["roster_tab"] = roster_tab
-    context["protect_tab"] = settings.TEAM_PROTECT_TAB
-    context["live_tab"] = settings.TEAM_LIVE_TAB
-    context["season_half"] = settings.TEAM_SEASON_HALF
+    context["protect_tab"] = league.protect_tab()
+    context["live_tab"] = league.live_tab()
+    context["wishlist_tab"] = league.wishlist_tab()
+    context["season_half"] = league.season_half()
     context["league_season"] = league_season()
     
     # Add previous season for roster eligibility checks
-    context["previous_season"] = settings.CURRENT_SEASON - 1
+    context["previous_season"] = league.current_season() - 1
     context["fg_qualified_positions"] = FG_QUALIFIED_POSITIONS
 
     # for search

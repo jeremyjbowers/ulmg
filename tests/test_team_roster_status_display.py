@@ -1,13 +1,12 @@
 # ABOUTME: Tests for roster UI on team pages: stat columns, org/roster display, and MLB/AAA buttons.
 # ABOUTME: Staff set those rosters from a team page while TEAM_ROSTER_TAB is on.
 
-from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.test import Client, TestCase, override_settings
 
 from tests.usage_fixtures import create_hitter, create_pitcher
-from ulmg import models
+from ulmg import league, models
 
 
 @override_settings(CURRENT_SEASON=2026, CURRENT_SEASON_TYPE="midseason")
@@ -319,7 +318,7 @@ class TeamRosterStatusDisplayTestCase(TestCase):
     def test_a_full_mlb_roster_keeps_add_buttons_in_the_page(self):
         self.user.is_staff = True
         self.user.save()
-        for i in range(settings.MLB_ROSTER_SIZE):
+        for i in range(league.mlb_roster_size()):
             self._carded(f"Full Roster {i}", is_ulmg_mlb_roster=True)
         self._carded("Waiting Bat", is_ulmg_aaa_roster=True)
         self.client.login(username="mgr", password="secret")

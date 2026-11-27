@@ -10,10 +10,9 @@ from django.db import connection
 from django.db.models import Avg, Sum, Count
 from django.core.management import call_command
 from django.core.management.base import BaseCommand, CommandError
-from django.conf import settings
 import requests
 
-from ulmg import models
+from ulmg import league, models
 from ulmg import utils
 
 
@@ -21,7 +20,7 @@ class Command(BaseCommand):
     season = None
 
     def handle(self, *args, **options):
-        self.season = settings.CURRENT_SEASON
+        self.season = league.current_season()
         self.team_aggregates()
 
     def team_aggregates(self):

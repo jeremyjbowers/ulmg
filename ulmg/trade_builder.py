@@ -1,9 +1,7 @@
 # ABOUTME: Builds the roster index the trade builder hands to the browser.
 # ABOUTME: Clubs are alphabetical by city, and each side draws a roster only after one is picked.
 
-from django.conf import settings
-
-from ulmg import models
+from ulmg import league, models
 
 
 def _player_label(row):
@@ -58,7 +56,7 @@ def trade_builder_assets():
         )
 
     picks = models.DraftPick.objects.filter(
-        year__gte=str(settings.CURRENT_SEASON),
+        year__gte=str(league.current_season()),
         player__isnull=True,
         team__isnull=False,
     ).order_by(

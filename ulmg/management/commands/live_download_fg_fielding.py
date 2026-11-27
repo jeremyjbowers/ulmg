@@ -4,10 +4,9 @@ import json
 import os
 
 import urllib3
-from django.conf import settings
 from django.core.management.base import BaseCommand
 
-from ulmg import utils
+from ulmg import league, utils
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -20,7 +19,7 @@ class Command(BaseCommand):
             '--season',
             type=int,
             default=None,
-            help='Season to download (defaults to the card season, CURRENT_SEASON - 1)',
+            help="Season to download (defaults to the card season, the year before the league season)",
         )
         parser.add_argument(
             '--local-only',
@@ -37,7 +36,7 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        season = options.get('season') or settings.CURRENT_SEASON - 1
+        season = options.get('season') or league.current_season() - 1
         local_only = options.get('local_only', False)
 
         if not local_only and not utils.s3_manager.s3_client:

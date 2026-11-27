@@ -1,11 +1,10 @@
 # ABOUTME: Post-midseason Open Draft transition: reset rosters and place picks on MLB.
 # ABOUTME: Promotes 1H protections and marks midseason Open picks as 2H draft / MLB.
 
-from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db.models import Q
 
-from ulmg import models
+from ulmg import league, models
 from ulmg.views.api import update_player_stat_season_roster
 
 
@@ -25,7 +24,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         dry_run = options["dry_run"]
-        year = str(settings.CURRENT_SEASON)
+        year = str(league.current_season())
 
         open_picks = models.DraftPick.objects.filter(
             year=year, season="midseason", draft_type="open"
@@ -63,7 +62,7 @@ class Command(BaseCommand):
         models.Player.objects.filter(is_ulmg_2h_draft=True).update(is_ulmg_2h_draft=False)
         models.Player.objects.filter(is_ulmg_mlb_roster=True).update(is_ulmg_mlb_roster=False)
         models.Player.objects.filter(is_ulmg_aaa_roster=True).update(is_ulmg_aaa_roster=False)
-        models.PlayerStatSeason.objects.filter(season=settings.CURRENT_SEASON).update(
+        models.PlayerStatSeason.objects.filter(season=league.current_season()).update(
             is_ulmg_mlb_roster=False,
             is_ulmg_aaa_roster=False,
         )

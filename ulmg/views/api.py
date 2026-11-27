@@ -13,7 +13,7 @@ from django.views.decorators.cache import never_cache
 from django.conf import settings
 import ujson as json
 
-from ulmg import models, plans, roster_moves, utils
+from ulmg import league, models, plans, roster_moves, utils
 from ulmg.roster_moves import update_player_stat_season_roster
 
 logger = logging.getLogger(__name__)
@@ -430,20 +430,20 @@ def player_action(request, playerid, action):
         return HttpResponse("ok")
 
     if action in ("to_mlb", "to_aaa") or (action == "off_roster" and p.is_ulmg_mlb_roster):
-        error = roster_moves.single_move_error(request.user, settings.CURRENT_SEASON, plans.current_half())
+        error = roster_moves.single_move_error(request.user, league.current_season(), plans.current_half())
         if error:
             return JsonResponse({"error": error}, status=400)
 
     if action == "to_mlb":
-        error = roster_moves.mlb_roster_error(p, settings.CURRENT_SEASON)
+        error = roster_moves.mlb_roster_error(p, league.current_season())
         if error:
             return JsonResponse({"error": error}, status=400)
         roster_moves.place_on_mlb_roster(p)
         return HttpResponse("ok")
 
     if action == "to_aaa":
-        error = roster_moves.aaa_roster_error(p, settings.CURRENT_SEASON)
-        stay = roster_moves.active_stay(p, settings.CURRENT_SEASON)
+        error = roster_moves.aaa_roster_error(p, league.current_season())
+        stay = roster_moves.active_stay(p, league.current_season())
         if error is None and stay is not None:
             error = roster_moves.stay_message(p, stay)
         if error:
@@ -459,7 +459,7 @@ def player_action(request, playerid, action):
                 },
                 status=400,
             )
-        stay = roster_moves.active_stay(p, settings.CURRENT_SEASON)
+        stay = roster_moves.active_stay(p, league.current_season())
         if stay is not None:
             return JsonResponse({"error": roster_moves.stay_message(p, stay)}, status=400)
         p.is_ulmg_reserve = False
@@ -1039,8 +1039,8 @@ def player_bulk_action(request):
                     obj.draft_year = draft_year
                     if not obj.amateur_seasons:
                         obj.amateur_seasons = []
-                    if settings.CURRENT_SEASON not in (obj.amateur_seasons or []):
-                        obj.amateur_seasons.append(settings.CURRENT_SEASON)
+                    if league.current_season() not in (obj.amateur_seasons or []):
+                        obj.amateur_seasons.append(league.current_season())
                     obj.save()
                     ply["ulmg_id"] = obj.id
                 except Exception:

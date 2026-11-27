@@ -13,7 +13,6 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.db.models import Count, Avg, Sum, Max, Min, Q, Prefetch
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.http import JsonResponse
-from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.contrib.auth.models import User
@@ -21,7 +20,7 @@ from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_POST
 import ujson as json
 
-from ulmg import models, stats_view, utils
+from ulmg import league, models, stats_view, utils
 
 
 def _safe_next(request):
@@ -83,7 +82,7 @@ def my_wishlist_beta(request):
     context['wishlist_draft_view'] = True
 
     # Get current season for PlayerStatSeason queries
-    season = settings.CURRENT_SEASON
+    season = league.current_season()
 
     # Prefetch PlayerStatSeason data to avoid N+1 queries and ensure we use current stats
     # Exclude owned players (player__team__isnull=True) - players disappear when drafted
@@ -154,7 +153,7 @@ def my_draft_prep(request, list_type):
     context['all_picks'] = models.DraftPick.objects.filter(year=str(draft_year), season=draft_season, draft_type="open").values('overall_pick_number', 'team__abbreviation')
  
     # Get current season for PlayerStatSeason queries
-    season = settings.CURRENT_SEASON
+    season = league.current_season()
 
     context['players'] = []
 

@@ -1,25 +1,24 @@
 # ABOUTME: Read-only service functions backing the MCP JSON API.
 # ABOUTME: Shared by Django views and suitable for in-process tool calls.
-from django.conf import settings
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
 
-from ulmg import models, utils
+from ulmg import league, models, utils
 from ulmg.mcp_app import serializers
 
 
 def get_season_context(owner=None):
     team = owner.team() if owner else None
     return {
-        "season": settings.CURRENT_SEASON,
-        "season_type": settings.CURRENT_SEASON_TYPE,
-        "season_half": getattr(settings, "TEAM_SEASON_HALF", None),
+        "season": league.current_season(),
+        "season_type": league.current_season_type(),
+        "season_half": league.season_half(),
         "stats_season": utils.get_current_season(),
-        "mlb_roster_size": settings.MLB_ROSTER_SIZE,
+        "mlb_roster_size": league.mlb_roster_size(),
         "org_cap": 75,
         "org_cap_midseason_aa": 76,
         "b_level_floor": 20,
-        "protect_40man_slots": 40,
+        "protect_40man_slots": league.protect_roster_size(),
         "my_team": serializers.team_brief(team),
         "my_owner": (
             {"name": owner.name, "email": owner.email} if owner else None
@@ -83,18 +82,19 @@ def get_team_roster(abbreviation=None, owner=None):
 def get_roster_compliance(abbreviation=None, owner=None):
     roster = get_team_roster(abbreviation=abbreviation, owner=owner)
     counts = roster["counts"]
-    season_type = settings.CURRENT_SEASON_TYPE
+    season_type = league.current_season_type()
     org_cap = 76 if season_type == "midseason" else 75
+    protect_cap = league.protect_roster_size()
     return {
         "team": roster["team"],
-        "season": settings.CURRENT_SEASON,
+        "season": league.current_season(),
         "season_type": season_type,
         "counts": counts,
         "limits": {
-            "mlb_30man_cap": settings.MLB_ROSTER_SIZE,
-            "mlb_30man_ok": counts["mlb_30man"] <= settings.MLB_ROSTER_SIZE,
-            "protect_40man_cap": 40,
-            "protect_40man_ok": counts["protect_40man"] <= 40,
+            "mlb_30man_cap": league.mlb_roster_size(),
+            "mlb_30man_ok": counts["mlb_30man"] <= league.mlb_roster_size(),
+            "protect_40man_cap": protect_cap,
+            "protect_40man_ok": counts["protect_40man"] <= protect_cap,
             "org_cap": org_cap,
             "total_ok": counts["total"] <= org_cap,
             "b_level_floor": 20,
@@ -315,7 +315,7 @@ def list_draft_pool(pool="unprotected"):
     """
     pool: unprotected | offseason_available | midseason_available
     """
-    current_season = settings.CURRENT_SEASON
+    current_season = league.current_season()
     pool = (pool or "unprotected").lower()
 
     if pool == "midseason_available":
@@ -335,7 +335,7 @@ def list_draft_pool(pool="unprotected"):
         ).distinct()
     else:
         # unprotected (Open Draftable from other teams)
-        if settings.CURRENT_SEASON_TYPE == "midseason":
+        if league.current_season_type() == "midseason":
             carded_season = utils.get_midseason_open_carded_season(current_season)
             players = models.Player.objects.filter(
                 is_owned=True,
@@ -360,7 +360,7 @@ def list_draft_pool(pool="unprotected"):
     return {
         "pool": pool,
         "season": current_season,
-        "season_type": settings.CURRENT_SEASON_TYPE,
+        "season_type": league.current_season_type(),
         "count": players.count(),
         "players": [serializers.player_brief(p) for p in players],
     }

@@ -7,7 +7,6 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.db.models import Count, Avg, Sum, Max, Min, Q, Prefetch, Case, When, IntegerField, OuterRef, Subquery
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.http import JsonResponse
-from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib import messages
@@ -16,7 +15,7 @@ from django.views.decorators.cache import never_cache
 import ujson as json
 from datetime import datetime
 
-from ulmg import cards, models, plans, roster_moves, season_record, usage, utils
+from ulmg import cards, league, models, plans, roster_moves, season_record, usage, utils
 from ulmg.cache_utils import (
     get_all_cache_keys,
     delete_cache_key_for_admin,
@@ -142,10 +141,10 @@ def player(request, playerid):
     context["pitcher_stats"] = player_data["pitcher_stats"]
     context["card"] = models.Card.objects.filter(player_id=playerid, season=cards.card_season()).first()
     # Live: usage changes as games are played, so it is read on every request.
-    context["usage"] = usage.usage_summary(player_data["p"], settings.CURRENT_SEASON)
+    context["usage"] = usage.usage_summary(player_data["p"], league.current_season())
     # Live: the ULMG season line changes with every final.
-    context["record_season"] = settings.CURRENT_SEASON
-    context["ulmg_line"] = season_record.player_line(player_data["p"], settings.CURRENT_SEASON)
+    context["record_season"] = league.current_season()
+    context["ulmg_line"] = season_record.player_line(player_data["p"], league.current_season())
 
     return render(request, "player_detail.html", context)
 
@@ -220,13 +219,13 @@ def team_detail(request, abbreviation):
     context["pitchers"] = roster_data["pitchers"]
 
     # Live: the ULMG record changes with every final.
-    context["record_season"] = settings.CURRENT_SEASON
-    context["ulmg_record"] = season_record.team_record(team, settings.CURRENT_SEASON)
+    context["record_season"] = league.current_season()
+    context["ulmg_record"] = season_record.team_record(team, league.current_season())
 
     # Once the half has started, owners see the roster it opened with.
     # Roster moves live on the Roster tab and change the away roster only.
     # Whoever may still set MLB and AAA one player at a time gets those buttons.
-    move_season, move_half = settings.CURRENT_SEASON, plans.current_half()
+    move_season, move_half = league.current_season(), plans.current_half()
     context["half_started"] = roster_moves.half_has_started(move_season, move_half)
     context["can_set_rosters"] = roster_moves.viewer_can_set_rosters(
         request.user, move_season, move_half
@@ -358,7 +357,7 @@ def draft_admin(request, year, season, draft_type):
 
         if season == "offseason":
             # Unprotected A/V/B players: owned but not on 35-man roster (same logic as /players/unprotected/)
-            current_season = settings.CURRENT_SEASON
+            current_season = league.current_season()
             players_not_35man = models.Player.objects.filter(
                 is_owned=True,
                 level__in=["V", "A", "B"],
@@ -427,7 +426,7 @@ def draft_recap(request, year, season, draft_type):
 @never_cache
 def player_available_midseason(request):
     context = utils.build_context(request)
-    current_season = settings.CURRENT_SEASON
+    current_season = league.current_season()
     
     # For midseason availability, get unowned players with MLB stats or owned level V players not on MLB roster
     unowned_with_mlb_stats = models.PlayerStatSeason.objects.filter(
@@ -495,9 +494,9 @@ def unprotected_players(request):
     Midseason: owned V left unprotected (is_ulmg_midseason_unprotected), carded prior season.
     """
     context = utils.build_context(request)
-    current_season = settings.CURRENT_SEASON
+    current_season = league.current_season()
 
-    if settings.CURRENT_SEASON_TYPE == "midseason":
+    if league.current_season_type() == "midseason":
         carded_season = utils.get_midseason_open_carded_season(current_season)
         available_players = models.Player.objects.filter(
             is_owned=True,
@@ -531,7 +530,7 @@ def unprotected_players(request):
 @never_cache
 def player_available_offseason(request):
     context = utils.build_context(request)
-    current_season = settings.CURRENT_SEASON
+    current_season = league.current_season()
     
     # Get owned players not on 35-man roster
     available_players = models.Player.objects.filter(
