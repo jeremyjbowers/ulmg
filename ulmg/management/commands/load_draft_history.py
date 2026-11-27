@@ -11,8 +11,8 @@ from ulmg import draft_history
 class Command(BaseCommand):
     help = (
         "Load the 2012-2018 draft history. "
-        "A draft that already has picks is skipped. "
-        "Pass --replace to reload those drafts from the file."
+        "A pick already stored for that slot is left as it is, so this can run on every deploy. "
+        "Pass --replace to reload the drafts in the file."
     )
 
     def add_arguments(self, parser):

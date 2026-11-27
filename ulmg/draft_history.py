@@ -43,7 +43,7 @@ DRAFT_TYPES = {
     "Competitive Balance": models.DraftPick.BALANCE_TYPE,
 }
 
-HISTORY_PATH = Path("data/ulmg/draft-history.csv")
+HISTORY_PATH = Path(__file__).resolve().parents[1] / "data" / "ulmg" / "draft-history.csv"
 
 _OWNER_SPLIT = re.compile(r"\s+(?:via|through|and)\s+", re.IGNORECASE)
 
@@ -89,22 +89,24 @@ def prepare(rows):
 def load_history(path, *, dry_run=False, replace=False):
     """Create DraftPick rows from the history file.
 
-    A draft that already has picks is left alone. Pass replace=True to delete
-    those picks and load the file's version. A player is linked when exactly
-    one player has that name. The player's current club is not changed.
+    A pick already stored for the same year, season, draft, round, and number
+    is left as it is. Pass replace=True to delete those drafts and load the
+    file's version. A player is linked when exactly one player has that name.
+    The player's current club is not changed.
     """
     prepared = prepare(read_rows(path))
     teams = {team.abbreviation: team for team in models.Team.objects.all()}
     _require_teams(prepared, teams)
 
     file_events = {(item["year"], item["season"], item["draft_type"]) for item in prepared}
-    existing = _existing_events(file_events)
-    skipped_events = set() if replace else existing
-    to_create = [
-        item
-        for item in prepared
-        if (item["year"], item["season"], item["draft_type"]) not in skipped_events
-    ]
+    existing_keys = set() if replace else _existing_pick_keys(prepared)
+    skipped_events = set()
+    to_create = []
+    for item in prepared:
+        if _pick_key(item) in existing_keys:
+            skipped_events.add((item["year"], item["season"], item["draft_type"]))
+            continue
+        to_create.append(item)
     by_name, by_strat = _player_index()
 
     linked = 0
@@ -249,11 +251,25 @@ def _require_teams(prepared, teams):
         raise ValueError(f"No team for {shown}")
 
 
-def _existing_events(file_events):
-    if not file_events:
+def _pick_key(item):
+    return (
+        item["year"],
+        item["season"],
+        item["draft_type"],
+        item["draft_round"],
+        item["pick_number"],
+    )
+
+
+def _existing_pick_keys(prepared):
+    years = {item["year"] for item in prepared}
+    if not years:
         return set()
-    found = set(models.DraftPick.objects.values_list("year", "season", "draft_type").distinct())
-    return file_events & found
+    return set(
+        models.DraftPick.objects.filter(year__in=years).values_list(
+            "year", "season", "draft_type", "draft_round", "pick_number"
+        )
+    )
 
 
 def _player_index():

@@ -22,6 +22,8 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         call_command("migrate")
         call_command("collectstatic", "--noinput")
+        # Archived 2012-2018 drafts. A second run leaves stored picks alone. Remove after it has loaded.
+        call_command("load_draft_history")
         # call_command("save_players")
         # call_command("set_player_carded_status")
         # call_command('reset_stats')

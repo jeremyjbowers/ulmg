@@ -5,6 +5,8 @@ import csv
 from io import StringIO
 from pathlib import Path
 
+from unittest.mock import patch
+
 from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.test import TestCase
@@ -78,6 +80,7 @@ class DraftHistoryFileTest(TestCase):
                 draft_history.CLUB_ABBREV[record["drafting_team"]],
             )
         self.assertEqual(names, set(draft_history.CLUB_ABBREV))
+        self.assertEqual(draft_history.HISTORY_PATH, HISTORY)
 
 
 class LoadDraftHistoryTest(TestCase):
@@ -237,6 +240,37 @@ class LoadDraftHistoryTest(TestCase):
         self.assertEqual(result["skipped"], 1)
         self.assertEqual(models.DraftPick.objects.get().player_name, "Already there")
 
+    def test_second_run_adds_only_the_missing_pick(self):
+        write_history(
+            self.path,
+            [
+                row(pick_in_round="1", player_name="Vance Worley"),
+                row(pick_in_round="2", player_name="Greg Holland"),
+            ],
+        )
+        draft_history.load_history(self.path)
+        models.DraftPick.objects.filter(player_name="Greg Holland").delete()
+        models.DraftPick.objects.filter(player_name="Vance Worley").update(player_name="Kept")
+
+        result = draft_history.load_history(self.path)
+
+        self.assertEqual(result["created"], 1)
+        self.assertEqual(result["skipped"], 1)
+        self.assertEqual(models.DraftPick.objects.get(pick_number=1).player_name, "Kept")
+        self.assertEqual(models.DraftPick.objects.get(pick_number=2).player_name, "Greg Holland")
+
+    def test_running_twice_does_not_move_a_linked_player(self):
+        player = models.Player.objects.create(name="Salvador Perez", team=self.cincinnati)
+        write_history(self.path, [row()])
+        draft_history.load_history(self.path)
+
+        result = draft_history.load_history(self.path)
+
+        player.refresh_from_db()
+        self.assertEqual(result["created"], 0)
+        self.assertEqual(models.DraftPick.objects.count(), 1)
+        self.assertEqual(player.team, self.cincinnati)
+
     def test_replace_reloads_an_existing_draft(self):
         write_history(self.path, [row()])
         draft_history.load_history(self.path)
@@ -275,3 +309,17 @@ class LoadDraftHistoryTest(TestCase):
     def test_command_rejects_a_missing_file(self):
         with self.assertRaises(CommandError):
             call_command("load_draft_history", "--file", str(self.directory / "missing.csv"))
+
+
+class PostInstallDraftHistoryTest(TestCase):
+    def test_deploy_loads_draft_history_after_migrate(self):
+        with patch("ulmg.management.commands.post_install.call_command") as mocked:
+            from ulmg.management.commands.post_install import Command
+
+            Command().handle()
+
+        commands = [call.args[0] for call in mocked.call_args_list]
+        self.assertLess(commands.index("migrate"), commands.index("load_draft_history"))
+        history = mocked.call_args_list[commands.index("load_draft_history")]
+        self.assertEqual(history.args, ("load_draft_history",))
+        self.assertEqual(history.kwargs, {})
