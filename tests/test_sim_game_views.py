@@ -51,6 +51,16 @@ class GamePageTestCase(gf.EngineMixin, TestCase):
         self.client.force_login(self.tester)
         self.assertContains(self.client.get(self.url), 'name="home-player-1"')
 
+    def test_the_hud_drops_the_play_bar_the_lineup_page_keeps(self):
+        self.client.force_login(self.manager)
+        lineup = self.client.get(self.url)
+        self.assertContains(lineup, 'id="play-bar"')
+        self.assertContains(lineup, "Play next:")
+        hud = self.post("open", seats="away")
+        self.assertContains(hud, 'id="hud"')
+        self.assertNotContains(hud, 'id="play-bar"')
+        self.assertNotContains(hud, "Play next:")
+
     def test_a_day_lineup_saved_without_the_checkbox_is_what_play_next_shows(self):
         bench = self.road.bench[1]
         entries = self.road.lineup()

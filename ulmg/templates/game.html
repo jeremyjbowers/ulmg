@@ -6,6 +6,8 @@
 {% include "includes/game_style.html" %}
 {% endblock %}
 
+{% block play_bar %}{% if not log or engine_down %}{{ block.super }}{% endif %}{% endblock %}
+
 {% block content %}
 <div class="flex mb-2">{% include "includes/stats_view_toggle.html" %}</div>
 <div class="hud-page{% if not log or engine_down %} max-w-3xl{% endif %}">
