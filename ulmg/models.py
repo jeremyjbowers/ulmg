@@ -12,13 +12,12 @@ from django.db.models import Count, Q
 from django.contrib.postgres.fields import JSONField, ArrayField
 from django.db.models.signals import post_save, m2m_changed
 from django.dispatch import receiver
-from django.conf import settings
 from django.utils import timezone
 from nameparser import HumanName
 
 logger = logging.getLogger(__name__)
 
-from ulmg import cards, utils
+from ulmg import cards, league, utils
 from ulmg.constants import HITTING_STATS, PITCHING_STATS, STAT_THRESHOLDS
 
 
@@ -32,6 +31,132 @@ class BaseModel(models.Model):
 
     def __str__(self):
         return self.__unicode__()
+
+
+class LeagueSettingsQuerySet(models.QuerySet):
+    def delete(self):
+        raise ValueError("League settings cannot be deleted.")
+
+
+class LeagueSettings(BaseModel):
+    """The one row that says which season the league is in and which roster windows are open."""
+
+    OFFSEASON = "offseason"
+    MIDSEASON = "midseason"
+    SEASON_TYPES = [
+        (OFFSEASON, "Offseason"),
+        (MIDSEASON, "Midseason"),
+    ]
+    FIRST_HALF = "1h"
+    SECOND_HALF = "2h"
+    HALVES = [
+        (FIRST_HALF, "1H"),
+        (SECOND_HALF, "2H"),
+    ]
+
+    objects = LeagueSettingsQuerySet.as_manager()
+
+    current_season = models.PositiveIntegerField(
+        default=2027,
+        verbose_name="Current season",
+        help_text=(
+            "ULMG year. MLB and AAA rosters take a card from the previous MLB season, "
+            "so 2027 uses 2026 cards."
+        ),
+    )
+    current_season_type = models.CharField(
+        max_length=16,
+        choices=SEASON_TYPES,
+        default=OFFSEASON,
+        verbose_name="Season type",
+        help_text=(
+            "Offseason keeps stat pages on the card year while owners set rosters. "
+            "Midseason uses the ULMG year itself."
+        ),
+    )
+    draft_prep_season_type = models.CharField(
+        max_length=16,
+        choices=SEASON_TYPES,
+        blank=True,
+        default=OFFSEASON,
+        verbose_name="Draft prep",
+        help_text="Team-page Open and AA draft prep. Blank follows the season type.",
+    )
+    season_half = models.CharField(
+        max_length=2,
+        choices=HALVES,
+        default=FIRST_HALF,
+        verbose_name="Half",
+        help_text="The second half of the schedule opens when this is 2H.",
+    )
+    stats_display_season_cap = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        verbose_name="Stat season cap",
+        help_text=(
+            "Latest calendar year shown on stat pages. Blank uses the stat season "
+            "(the ULMG year, or the year before it in the offseason)."
+        ),
+    )
+    protect_tab = models.BooleanField(
+        default=False,
+        verbose_name="Set protections",
+        help_text="Owners set 40-man protections from their team page.",
+    )
+    roster_tab = models.BooleanField(
+        default=True,
+        verbose_name="Set rosters",
+        help_text="Owners set MLB and AAA rosters from the buttons on their team page.",
+    )
+    roster_staff_only = models.BooleanField(
+        default=True,
+        verbose_name="Rosters are staff-only",
+        help_text="While this is on, those roster controls are shown to staff only.",
+    )
+    live_tab = models.BooleanField(
+        default=False,
+        verbose_name="Live tab",
+        help_text="Show the live scoring tab on team pages.",
+    )
+    wishlist_tab = models.BooleanField(
+        default=False,
+        verbose_name="Wishlist tab",
+        help_text="Show the wishlist tab on team pages.",
+    )
+    mlb_roster_size = models.PositiveSmallIntegerField(
+        default=30,
+        verbose_name="MLB roster size",
+        help_text="Active MLB roster limit.",
+    )
+    protect_roster_size = models.PositiveSmallIntegerField(
+        default=40,
+        verbose_name="Protected roster size",
+        help_text="Size of the protected roster (the 40-man).",
+    )
+
+    class Meta:
+        verbose_name = "league settings"
+        verbose_name_plural = "league settings"
+
+    def __unicode__(self):
+        half = "2H" if self.season_half == self.SECOND_HALF else "1H"
+        return f"{self.current_season} {self.current_season_type}, {half}"
+
+    def save(self, *args, **kwargs):
+        self.pk = 1
+        updating = type(self).objects.filter(pk=1).exists()
+        if updating:
+            self._state.adding = False
+            kwargs.pop("force_insert", None)
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise ValueError("League settings cannot be deleted.")
+
+    @classmethod
+    def load(cls):
+        row, _created = cls.objects.get_or_create(pk=1)
+        return row
 
 
 class Owner(BaseModel):
@@ -747,7 +872,7 @@ class Player(BaseModel):
         """
         Get the best PlayerStatSeason for this player, sorted by newest season
         and highest classification (1-mlb is highest, 5-college is lowest).
-        Caps at utils.get_stats_display_season_cap() (see STATS_DISPLAY_SEASON_CAP).
+        Caps at utils.get_stats_display_season_cap() (the league stat-season cap).
         Returns None if no stat seasons exist.
 
         If prefetched data is available (via 'current_season_stats' or 'all_stat_seasons'),
@@ -784,7 +909,7 @@ class Player(BaseModel):
         Returns None if no current season data exists.
         """
         try:
-            current_season = settings.CURRENT_SEASON
+            current_season = league.current_season()
             current_status = PlayerStatSeason.objects.filter(
                 player=self, 
                 season=current_season,
@@ -801,7 +926,7 @@ class Player(BaseModel):
         Returns None if no current season data exists.
         """
         try:
-            current_season = settings.CURRENT_SEASON
+            current_season = league.current_season()
             return PlayerStatSeason.objects.filter(
                 player=self, 
                 season=current_season,
@@ -837,7 +962,7 @@ class Player(BaseModel):
 
     @property
     def is_carded_for_previous_season(self):
-        return self.is_carded_for_season(settings.CURRENT_SEASON - 1)
+        return self.is_carded_for_season(league.current_season() - 1)
 
     def team_display(self):
         if self.team:

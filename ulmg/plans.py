@@ -3,11 +3,10 @@
 
 from collections import defaultdict
 
-from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
 
-from ulmg import cards, computer_manager, depth_pacing, models, roster_moves, schedule, usage, utils
+from ulmg import cards, computer_manager, depth_pacing, league, models, roster_moves, schedule, usage, utils
 
 LINEUP_POSITIONS = ["C", "1B", "2B", "3B", "SS", "LF", "CF", "RF", "DH"]
 LINEUP_SIZE = len(LINEUP_POSITIONS)
@@ -36,11 +35,11 @@ class PlanError(Exception):
 
 def is_open(half):
     """The first-half plan is open from the start of the season; the second opens at the trade break."""
-    return half == 1 or settings.TEAM_SEASON_HALF == SECOND_HALF_OPENS
+    return half == 1 or league.season_half() == SECOND_HALF_OPENS
 
 
 def current_half():
-    return 2 if settings.TEAM_SEASON_HALF == SECOND_HALF_OPENS else 1
+    return 2 if league.season_half() == SECOND_HALF_OPENS else 1
 
 
 def visible_halves():

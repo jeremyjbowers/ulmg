@@ -8,6 +8,7 @@ from django.forms import ModelForm, DateField
 from django.forms.widgets import SelectDateWidget
 from django.db.models import Q
 from django.template.response import TemplateResponse
+from django.shortcuts import redirect
 from django.urls import path
 from django.views.decorators.cache import never_cache
 from datetime import datetime
@@ -31,6 +32,7 @@ from ulmg.models import (
     TradeSummary,
     Transaction,
     DuplicatePlayerCandidate,
+    LeagueSettings,
     UsageCounter,
     UsageAppearance,
     UsageOverride,
@@ -44,6 +46,53 @@ from ulmg import sim_data, usage
 admin.site.site_title = "The ULMG"
 admin.site.site_header = "The ULMG: Admin"
 admin.site.index_title = "Administer The ULMG Website"
+
+
+@admin.register(LeagueSettings)
+class LeagueSettingsAdmin(admin.ModelAdmin):
+    """The season, the half, and which roster windows are open. There is one row."""
+
+    fieldsets = (
+        (
+            "Season",
+            {
+                "fields": (
+                    "current_season",
+                    "current_season_type",
+                    "draft_prep_season_type",
+                    "season_half",
+                    "stats_display_season_cap",
+                ),
+            },
+        ),
+        (
+            "Roster windows",
+            {
+                "fields": (
+                    "protect_tab",
+                    "roster_tab",
+                    "roster_staff_only",
+                    "live_tab",
+                    "wishlist_tab",
+                ),
+            },
+        ),
+        (
+            "Roster sizes",
+            {"fields": ("mlb_roster_size", "protect_roster_size")},
+        ),
+        ("Record", {"fields": ("last_modified",)}),
+    )
+    readonly_fields = ("last_modified",)
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def changelist_view(self, request, extra_context=None):
+        return redirect("admin:ulmg_leaguesettings_change", LeagueSettings.load().pk)
 
 
 class CurrentSeasonMLBFilter(admin.SimpleListFilter):

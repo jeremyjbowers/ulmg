@@ -1,20 +1,19 @@
 # ABOUTME: Generates engine cards, platoon splits included, for every player with a 1-mlb PlayerStatSeason in the card season.
 # ABOUTME: Regenerating replaces the player's card for that season; --dry-run computes without saving.
-from django.conf import settings
 from django.core.management.base import BaseCommand
 
-from ulmg import cards, models
+from ulmg import cards, league, models
 
 
 class Command(BaseCommand):
-    help = 'Generate engine cards from a season of MLB stats (defaults to CURRENT_SEASON - 1)'
+    help = "Generate engine cards from a season of MLB stats (defaults to the year before the league season)"
 
     def add_arguments(self, parser):
         parser.add_argument(
             '--season',
             type=int,
             default=None,
-            help='Card season (defaults to CURRENT_SEASON - 1)',
+            help="Card season (defaults to the year before the league season)",
         )
         parser.add_argument(
             '--dry-run',
@@ -67,7 +66,7 @@ class Command(BaseCommand):
         return fields
 
     def handle(self, *args, **options):
-        season = options.get('season') or settings.CURRENT_SEASON - 1
+        season = options.get('season') or league.current_season() - 1
         dry_run = options.get('dry_run', False)
 
         if dry_run:

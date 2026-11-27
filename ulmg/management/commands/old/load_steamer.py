@@ -9,17 +9,16 @@ from django.apps import apps
 from django.db import connection
 from django.core.management import call_command
 from django.core.management.base import BaseCommand, CommandError
-from django.conf import settings
 import requests
 
-from ulmg import models
+from ulmg import league, models
 
 
 class Command(BaseCommand):
     season = None
 
     def handle(self, *args, **options):
-        self.season = settings.CURRENT_SEASON
+        self.season = league.current_season()
         self.get_hitters()
         self.get_pitchers()
 

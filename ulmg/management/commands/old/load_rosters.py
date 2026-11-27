@@ -13,7 +13,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
 import requests
 
-from ulmg import models, utils
+from ulmg import league, models, utils
 
 """
 {
@@ -152,7 +152,7 @@ class Command(BaseCommand):
     season = None
 
     def handle(self, *args, **options):
-        self.season = settings.CURRENT_SEASON
+        self.season = league.current_season()
 
         ## fangraphs is apparently down right now?
         self.get_roster_info()

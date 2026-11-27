@@ -1,9 +1,8 @@
 # ABOUTME: Files a test 30-man for every team, or blanks MLB and AAA flags with --reset.
 # ABOUTME: A shell command for playtesting. It does not add anything to the site.
-from django.conf import settings
 from django.core.management.base import BaseCommand
 
-from ulmg import models, plans, roster_moves, roster_seed
+from ulmg import league, models, plans, roster_moves, roster_seed
 
 
 def _count(count, word):
@@ -21,7 +20,7 @@ class Command(BaseCommand):
             "--season",
             type=int,
             default=None,
-            help=f"ULMG season. Defaults to {settings.CURRENT_SEASON}.",
+            help="ULMG season. Defaults to the league's current season.",
         )
         parser.add_argument(
             "--reset",
@@ -31,7 +30,7 @@ class Command(BaseCommand):
         parser.add_argument("--dry-run", action="store_true", help="Print the roster or the blank, then change nothing.")
 
     def handle(self, *args, **options):
-        season = settings.CURRENT_SEASON if options["season"] is None else options["season"]
+        season = league.current_season() if options["season"] is None else options["season"]
         if options["reset"]:
             self.reset(season, options["dry_run"])
             return
@@ -45,7 +44,7 @@ class Command(BaseCommand):
                 f"Half {halves} of {season} has started. "
                 "Home rosters stay on the opening snapshot until reset_sim_season."
             ))
-        size = settings.MLB_ROSTER_SIZE
+        size = league.mlb_roster_size()
         for team in models.Team.objects.order_by("abbreviation"):
             players = list(models.Player.objects.filter(team=team).order_by("id"))
             chosen = roster_seed.choose(players, season, size)

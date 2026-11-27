@@ -5,7 +5,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db.models import Q
 import requests
-from ulmg import models, utils
+from ulmg import league, models, utils
 from ulmg.management.commands.load_mlb_rosters import Command as LoadMlbRostersCommand
 
 
@@ -52,7 +52,7 @@ class Command(BaseCommand):
     def _set_player_mlb_org(self, player, mlb_org):
         if not mlb_org:
             return
-        current_season = settings.CURRENT_SEASON
+        current_season = league.current_season()
         pss = models.PlayerStatSeason.objects.filter(
             player=player,
             season=current_season,

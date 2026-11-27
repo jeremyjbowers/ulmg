@@ -1,7 +1,6 @@
 # ABOUTME: ARCHIVED - Original live_download_mlb_depthcharts. See documents/MLB_DATA_PIPELINE_RECOMMENDATION.md
 # ABOUTME: Hits MLB Stats API for 40-man rosters, updates existing players, writes untracked to untracked_players.json.
 from django.core.management.base import BaseCommand, CommandError
-from django.conf import settings
 from django.db import transaction
 import datetime
 
@@ -9,7 +8,7 @@ import requests
 from bs4 import BeautifulSoup
 import ujson as json
 
-from ulmg import models, utils
+from ulmg import league, models, utils
 
 
 class Command(BaseCommand):
@@ -64,7 +63,7 @@ class Command(BaseCommand):
         rookie_teams = [self.parse_players(t) for t in team_list if t['sport']['id'] == 16]
 
     def parse_players(self, t):
-        current_season = settings.CURRENT_SEASON
+        current_season = league.current_season()
         roster_link = f"https://statsapi.mlb.com/api/v1/teams/{t['id']}/roster/40Man"
         tr = requests.get(roster_link).json()
 

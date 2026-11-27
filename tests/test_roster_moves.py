@@ -1,11 +1,10 @@
 # ABOUTME: Tests for paired call-ups and send-downs in ulmg.roster_moves: the 10-move cap, 15-road-game stays and games in progress.
 # ABOUTME: Also covers the half plan's road/home eligibility rules, the half-start roster snapshot and the sim reset's restore step.
 
-from django.conf import settings
 from django.contrib.auth.models import User
 from django.test import Client, TestCase, override_settings
 
-from ulmg import models, plans, roster_moves, schedule, sim_data
+from ulmg import league, models, plans, roster_moves, schedule, sim_data
 from tests.plan_fixtures import CARD_SEASON, SEASON, Roster, create_hitter, create_pitcher, create_season
 
 
@@ -102,19 +101,19 @@ class PairedMoveTestCase(RosterMoveTestCase):
             )
 
     def test_a_swap_at_the_limit_stays_at_the_limit(self):
-        self._pad_mlb(settings.MLB_ROSTER_SIZE)
+        self._pad_mlb(league.mlb_roster_size())
         self.move(self.call_ups[0], self.roster.relievers[1])
-        self.assertEqual(self.thirty_man_count(), settings.MLB_ROSTER_SIZE)
+        self.assertEqual(self.thirty_man_count(), league.mlb_roster_size())
 
     def test_a_move_cannot_leave_the_mlb_roster_over_the_limit(self):
-        self._pad_mlb(settings.MLB_ROSTER_SIZE + 1)
+        self._pad_mlb(league.mlb_roster_size() + 1)
         with self.assertRaisesMessage(
             roster_moves.MoveError,
-            f"would have {settings.MLB_ROSTER_SIZE + 1} players on the MLB roster. "
-            f"The limit is {settings.MLB_ROSTER_SIZE}.",
+            f"would have {league.mlb_roster_size() + 1} players on the MLB roster. "
+            f"The limit is {league.mlb_roster_size()}.",
         ):
             self.move(self.call_ups[0], self.roster.relievers[1])
-        self.assertEqual(self.thirty_man_count(), settings.MLB_ROSTER_SIZE + 1)
+        self.assertEqual(self.thirty_man_count(), league.mlb_roster_size() + 1)
         self.assertEqual(flags(self.call_ups[0]), (False, True))
         self.assertFalse(
             models.RosterMove.objects.filter(player_up=self.call_ups[0]).exists()

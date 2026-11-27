@@ -1,6 +1,5 @@
 # ABOUTME: The team Game page, the Roster tab's drag board, and paired roster moves.
 # ABOUTME: A move calls one player up and sends one down. Only the owner and the commissioner can move.
-from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import Http404, HttpResponseForbidden
@@ -8,7 +7,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_GET, require_POST
 
-from ulmg import decision_cards, models, plans, roster_moves, schedule, utils
+from ulmg import decision_cards, league, models, plans, roster_moves, schedule, utils
 from ulmg.season_paths import bounce
 from ulmg.views.plan import by_last_name
 
@@ -192,7 +191,7 @@ def team_roster_board(request, abbreviation, half, season=None):
     mlb_reasons = _reasons(team, mlb_players, "mlb", season)
     aaa_reasons = _reasons(team, aaa_players, "aaa", season)
     mlb_count = len(mlb_players)
-    over_cap = mlb_count > settings.MLB_ROSTER_SIZE
+    over_cap = mlb_count > league.mlb_roster_size()
     can_offer = playing and can_edit and started and moves_left > 0
     aaa_open = any(reason is None for reason in aaa_reasons.values())
     mlb_open = any(reason is None for reason in mlb_reasons.values())
@@ -221,7 +220,7 @@ def team_roster_board(request, abbreviation, half, season=None):
             "active_stays": roster_moves.active_stays(team, season),
             "move_log": roster_moves.move_log(team, season),
             "mlb_count": mlb_count,
-            "mlb_roster_size": settings.MLB_ROSTER_SIZE,
+            "mlb_roster_size": league.mlb_roster_size(),
             "over_cap": over_cap,
             "mlb_hitters": mlb_hitters,
             "mlb_pitchers": mlb_pitchers,

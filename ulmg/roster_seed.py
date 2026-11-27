@@ -1,10 +1,9 @@
 # ABOUTME: A test 30-man for every team: carded players, Open picks first, then innings and wRC+.
 # ABOUTME: The seed command is the only caller. Nothing here is a league rule or a page.
 
-from django.conf import settings
 from django.db.models import Q
 
-from ulmg import models, plans, roster_moves, usage, utils
+from ulmg import league, models, plans, roster_moves, usage, utils
 
 # A playable test roster: a staff, then a lineup and a bench. Not a roster rule.
 PITCHER_SLOTS = 13
@@ -58,7 +57,7 @@ def choose(players, season, size=None):
     17 hitters with the highest card wRC+, then whoever is left until the
     roster is full.
     """
-    size = settings.MLB_ROSTER_SIZE if size is None else size
+    size = league.mlb_roster_size() if size is None else size
     locked = [player for player in players if player.is_ulmg_2h_draft]
     locked_ids = {player.id for player in locked}
     eligible_ids = carded_ids(players, season - 1) - locked_ids

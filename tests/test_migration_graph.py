@@ -11,5 +11,5 @@ class MigrationGraphTest(TestCase):
         leaves = [name for app, name in loader.graph.leaf_nodes() if app == "ulmg"]
         self.assertEqual(
             leaves,
-            ["0114_owner_stats_view"],
+            ["0115_league_settings"],
         )

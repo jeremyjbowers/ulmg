@@ -5,10 +5,9 @@ import os
 from collections import defaultdict
 
 import requests
-from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 
-from ulmg import models, utils
+from ulmg import league, models, utils
 from ulmg.management.commands.live_download_fg_splits import SPLITS, splits_local_path
 from ulmg.management.commands.live_update_stats_from_fg_stats import Command as FgStatsCommand
 
@@ -49,7 +48,7 @@ class Command(BaseCommand):
             '--season',
             type=int,
             default=None,
-            help='Season to load (defaults to the card season, CURRENT_SEASON - 1)',
+            help="Season to load (defaults to the card season, the year before the league season)",
         )
         parser.add_argument(
             '--dir',
@@ -92,7 +91,7 @@ class Command(BaseCommand):
         return None
 
     def handle(self, *args, **options):
-        season = options.get('season') or settings.CURRENT_SEASON - 1
+        season = options.get('season') or league.current_season() - 1
         dry_run = options.get('dry_run', False)
         stats_command = FgStatsCommand()
 

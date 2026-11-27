@@ -156,7 +156,7 @@ def fill_season_plans(season, halves):
     """
     Replace the season's half plans with the test-setup defaults for every
     team, filling the given halves through plans.fill_plan. The second half
-    is filled whatever TEAM_SEASON_HALF says. Returns [(team, {half:
+    is filled whatever half the league settings have open. Returns [(team, {half:
     problems}, setup problems)] in team order.
     """
     models.HalfPlan.objects.filter(season=season).delete()

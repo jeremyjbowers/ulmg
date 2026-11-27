@@ -8,14 +8,13 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.db.models import Count, Avg, Sum, Max, Min, Q, Case, When, IntegerField, Prefetch
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.http import JsonResponse
-from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.models import User
 from django.contrib import messages
 import ujson as json
 
-from ulmg import models, utils
+from ulmg import league, models, utils
 from ulmg.duplicate_merge import merge_delete_stub, mark_not_duplicate, player_info_dict
 from ulmg.trade_builder import trade_builder_assets
 
@@ -70,7 +69,7 @@ def player_util(request):
         .order_by("team_order", "-birthdate")
     )
 
-    current_season = settings.CURRENT_SEASON
+    current_season = league.current_season()
 
     # Players whose last non‑NPB/KBO stat season was two years ago,
     # and who have no NPB/KBO seasons at all.

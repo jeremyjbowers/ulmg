@@ -3,12 +3,11 @@
 
 from collections import namedtuple
 
-from django.conf import settings
 from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
 
-from ulmg import models, utils
+from ulmg import league, models, utils
 
 MOVES_PER_HALF = 10
 STAY_ROAD_GAMES = 15
@@ -251,7 +250,7 @@ def roster_cap_error(team, player_up, player_down):
     refuses a roster that is already over the limit, and any pair that would
     push it over.
     """
-    limit = settings.MLB_ROSTER_SIZE
+    limit = league.mlb_roster_size()
     count = mlb_roster_count(team)
     if not player_up.is_ulmg_mlb_roster:
         count += 1
@@ -485,13 +484,11 @@ def viewer_can_set_rosters(user, season, half):
         return False
     if getattr(user, "is_superuser", False):
         return True
-    if getattr(settings, "CURRENT_SEASON_TYPE", "") == "offseason":
+    if league.current_season_type() == "offseason":
         return True
     if not half_has_started(season, half):
         return True
-    return bool(
-        getattr(settings, "TEAM_ROSTER_STAFF_ONLY", False) and getattr(user, "is_staff", False)
-    )
+    return bool(league.roster_staff_only() and getattr(user, "is_staff", False))
 
 
 def single_move_error(user, season, half):

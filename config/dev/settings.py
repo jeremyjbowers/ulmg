@@ -137,27 +137,11 @@ AWS_S3_CUSTOM_DOMAIN = "static-theulmg.nyc3.cdn.digitaloceanspaces.com"
 AWS_LOCATION = "static"
 
 # ULMG SPECIFIC SETTINGS
-MLB_ROSTER_SIZE = 30
-PROTECT_ROSTER_SIZE = 40
-
-TEAM_PROTECT_TAB = False
-# Owners set MLB and AAA rosters from the buttons on their team page when this is True.
-TEAM_ROSTER_TAB = True
-# While this is True, those roster controls are shown to staff only.
-TEAM_ROSTER_STAFF_ONLY = True
-TEAM_LIVE_TAB = False
-TEAM_WISHLIST_TAB = False
-
-# The second half of the schedule opens when this is "2h".
-TEAM_SEASON_HALF = "1h"
-# ULMG year. MLB and AAA rosters take a card from the previous MLB season, so 2027 uses 2026 cards.
-CURRENT_SEASON = 2027
-# Offseason keeps stat pages on that card year while owners set rosters.
-CURRENT_SEASON_TYPE = "offseason"
-# Team-page Open/AA draft prep can look ahead of CURRENT_SEASON_TYPE.
-DRAFT_PREP_SEASON_TYPE = "offseason"
-# Set to an int to cap stat display to that year (e.g. prior year in preseason). None uses get_current_season().
-STATS_DISPLAY_SEASON_CAP = None
+# Season, half, roster windows, and roster sizes live on ulmg.LeagueSettings
+# and are edited in the admin. Leave the old names (CURRENT_SEASON,
+# TEAM_SEASON_HALF, TEAM_ROSTER_TAB, and the rest) unset here: a value in
+# this file overrides the admin row. Tests still pass those names to
+# override_settings, and that still wins for the length of the test.
 
 ROSTER_TEAM_IDS = [
     ("1", "LAA", "Los Angeles Angels"),

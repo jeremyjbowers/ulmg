@@ -32,7 +32,7 @@ class Command(BaseCommand):
             "--both-halves",
             action="store_true",
             help=(
-                "Testing only: also fill the second-half plan, ignoring TEAM_SEASON_HALF. "
+                "Testing only: also fill the second-half plan, ignoring which half is open. "
                 "The plan pages keep the second half locked until the trade break."
             ),
         )

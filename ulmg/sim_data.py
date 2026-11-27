@@ -91,6 +91,8 @@ SIM_MODELS = [
 
 # Real league data. A reset never touches these.
 KEPT_MODELS = [
+    # Which season the league is in, and which roster windows are open.
+    models.LeagueSettings,
     models.Owner,
     models.MagicLinkToken,
     models.Team,

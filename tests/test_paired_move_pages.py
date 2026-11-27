@@ -265,10 +265,10 @@ class PairedMovePagesTestCase(OwnerClients, TestCase):
         self.assertNotIn(coming.name, mlb_hitters)
 
     def test_an_mlb_roster_already_over_the_limit_cannot_be_dragged(self):
-        from django.conf import settings
+        from ulmg import league
 
         have = models.Player.objects.filter(team=self.atl, is_ulmg_mlb_roster=True).count()
-        for i in range(settings.MLB_ROSTER_SIZE + 1 - have):
+        for i in range(league.mlb_roster_size() + 1 - have):
             models.Player.objects.create(
                 name=f"ATL Extra {i}", position="OF", level="A", team=self.atl,
                 is_ulmg_mlb_roster=True, carded_seasons=[ULMG_SEASON - 1],
