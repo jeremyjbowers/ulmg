@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.urls import include, path
 from django.contrib.auth import views as auth_views
+from django.views.generic import RedirectView
 
 from ulmg import views
 
@@ -172,7 +173,8 @@ urlpatterns = [
     path("games/<int:game_id>/", views.game.game_page, name="game_page"),
     path("games/<int:game_id>/box/", views.game.game_box_score, name="game_box_score"),
     path("games/<int:game_id>/<str:action>/", views.game.game_action, name="game_action"),
-    path("drafts/", views.site.draft_list, name="draft_list"),
+    path("draft/", views.site.draft_list, name="draft_list"),
+    path("drafts/", RedirectView.as_view(pattern_name="draft_list", permanent=False)),
 
     path("special/players/", views.special.player_util),
     path("special/trades/", views.special.trade_util),

@@ -560,9 +560,11 @@ def build_context(request):
     # Season for stat display (honors the league stat-season cap when set)
     context["stats_season"] = get_stats_display_season_cap()
 
-    # to build the nav
+    # to build the nav. Imported here so this module can load before models finishes.
+    from ulmg import drafts
+
     context["teamnav"] = models.Team.objects.all().order_by("division", "abbreviation")
-    context["draftnav"] = settings.DRAFTS
+    context["draftnav"] = drafts.nav_boards()
     context["mlb_roster_size"] = league.mlb_roster_size()
     # Staff see the roster controls on every team page while rosters are staff-only.
     user = request.user
