@@ -43,6 +43,7 @@ class TeamRosterStatusDisplayTestCase(TestCase):
         content = response.content.decode()
         self.assertIn("MLB Roster", content)
         self.assertIn('id="roster-mlb-count"', content)
+        self.assertIn("top: calc(var(--header-offset, 90px) + 0.5rem)", content)
         for name in ("Roster Hitter", "Roster Pitcher"):
             player_idx = content.find(name)
             self.assertNotEqual(player_idx, -1)
