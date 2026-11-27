@@ -64,6 +64,26 @@ STAND_GAP = "#1b1f24"
 AISLE = "#cfc8b8"
 # The stands reach this far out from the field, so they fill the frame's corners.
 STANDS_DEPTH = 300
+# Behind the foul lines: a lower deck, a concourse walkway, then an upper deck to the back of the frame. SVG units from the edge of the field.
+LOWER_DECK = 72
+CONCOURSE_WIDTH = 9
+CONCOURSE = "#9b968a"
+# The facade line along the front of each deck.
+FACADE = "#141619"
+# Behind the outfield wall: bleachers this deep, a back wall, and the ground beyond it.
+BLEACHER_DEPTH = 64
+BACK_WALL = "#2b2f33"
+GROUND = "#3a3f3a"
+# Every other section between aisles is shaded this much darker.
+SECTION_SHADE = 0.1
+# Tunnels into the lower deck: every this many aisles, this far into the deck.
+TUNNEL_EVERY = 2
+TUNNEL_DEPTH = 0.5
+# Dugouts are cut into the front of the stands along each line, from this many feet past home to about the base, this many SVG units deep, under a roof of this color.
+DUGOUT_FROM_FT = 22
+DUGOUT_TO_FT = 84
+DUGOUT_DEPTH = 18
+DUGOUT_ROOF = "#4a4f55"
 # Distance labels sit this far inside the fence, and the two at the lines this many degrees inside fair territory.
 LABEL_INSET_FT = 24
 LINE_LABEL_INSET_DEG = 5
@@ -86,6 +106,13 @@ FIELDER_FEET = {
 FIELDER_ORDER = ("P", "C", "1B", "2B", "SS", "3B", "LF", "CF", "RF")
 # The dirt basepath between each baseline and the infield grass, in SVG units.
 BASEPATH_WIDTH = 12
+# The infield dirt reaches this far down each line, and a strip of it runs just foul of the line that far.
+INFIELD_DIRT_FT = 158
+# The dirt circle around home, and the bites taken out of the infield grass at first and third, in feet.
+HOME_CIRCLE_FT = 15
+CUTOUT_FT = 20
+# The mound's radius in feet.
+MOUND_FT = 10
 MINUS = "−"
 # The engine starts each line of its log with the half inning and the count: "Top 3, 2-1: ".
 LOG_PREFIX = re.compile(r"^(Top|Bottom) \d+, (\d-\d): ")
@@ -252,7 +279,7 @@ def foul_band(rules):
         f" Q {behind[0]} {behind[1]} {beside_right[0]} {beside_right[1]}"
         f" L {right[0]} {right[1]} L {right_pole[0]} {right_pole[1]}"
     )
-    return {"path": path, "left": left, "right": right}
+    return {"path": path, "left": left, "right": right, "beside_left": beside_left, "beside_right": beside_right, "behind": behind}
 
 
 def foul_marks(rng):
@@ -289,39 +316,165 @@ def _tiled(marks):
     return tiled
 
 
+def _rows(start, end, depth, seat, gap):
+    """Rows of seats from `end` back in to `start` (SVG units from the field's edge), as bands to stroke from widest to narrowest."""
+    rows = []
+    count = math.floor((end - start) / depth)
+    for row in range(count, 0, -1):
+        reach = start + row * depth
+        rows.append({"width": round(2 * reach, 1), "color": gap})
+        rows.append({"width": round(2 * reach - 1.6, 1), "color": seat})
+    return rows
+
+
+def _shade(color, share):
+    """A color darkened toward black by `share` (0 to 1)."""
+    red, green, blue = (int(color[i : i + 2], 16) for i in (1, 3, 5))
+    return "#" + "".join(f"{round(c * (1 - share)):02x}" for c in (red, green, blue))
+
+
+def _outline_points(band):
+    """The outer edge of the foul ground as points: from the left-field pole down the line, around behind home, and up to the right-field pole."""
+    (lx, ly), (rx, ry) = band["left"], band["right"]
+    bl, br, behind = band["beside_left"], band["beside_right"], band["behind"]
+    points = [(lx, ly), bl]
+    for step in range(1, 12):
+        t = step / 12
+        points.append((
+            (1 - t) ** 2 * bl[0] + 2 * (1 - t) * t * behind[0] + t ** 2 * br[0],
+            (1 - t) ** 2 * bl[1] + 2 * (1 - t) * t * behind[1] + t ** 2 * br[1],
+        ))
+    points += [br, (rx, ry)]
+    return points
+
+
+def _ray_hit(points, angle):
+    """Where a ray from home at `angle` (degrees off the line to center) crosses the outline, or None."""
+    hx, hy = HOME
+    dx, dy = math.sin(math.radians(angle)), -math.cos(math.radians(angle))
+    best = None
+    for (ax, ay), (bx, by) in zip(points, points[1:]):
+        ex, ey = bx - ax, by - ay
+        cross = dx * ey - dy * ex
+        if abs(cross) < 1e-9:
+            continue
+        reach = ((ax - hx) * ey - (ay - hy) * ex) / cross
+        share = ((ax - hx) * dy - (ay - hy) * dx) / cross
+        if reach > 0 and 0 <= share <= 1 and (best is None or reach < best):
+            best = reach
+    return None if best is None else (hx + dx * best, hy + dy * best, dx, dy)
+
+
 def stands(rng, fence_back, band):
     """
-    The seats around the field: rows that follow the edge of the playing field
-    outward, aisles running away from home, and bleachers behind the outfield wall.
+    The stadium around the field, all following the edge of the playing field:
+    behind the foul lines a lower deck, a concourse and an upper deck, cut into
+    sections by aisles with tunnels into the lower deck; behind the outfield wall
+    bleachers to a back wall, with the ground beyond.
     """
     seat, seat_gap = rng.choice(SEAT_COLORS)
     bleacher = rng.choice(BLEACHER_COLORS)
+    upper = _shade(seat, 0.28)
     depth = round(rng.uniform(5, 7.5), 1)
-    rows = []
-    count = math.ceil(STANDS_DEPTH / depth)
-    for row in range(count, 0, -1):
-        rows.append({"width": round(2 * row * depth, 1), "gap": True})
-        rows.append({"width": round(2 * row * depth - 1.6, 1), "gap": False})
+    concourse_back = LOWER_DECK + CONCOURSE_WIDTH
+    grandstand = _rows(concourse_back + 2, STANDS_DEPTH, depth, upper, STAND_GAP)
+    grandstand.append({"width": round(2 * concourse_back + 2, 1), "color": FACADE})
+    grandstand.append({"width": round(2 * concourse_back, 1), "color": CONCOURSE})
+    grandstand.append({"width": round(2 * LOWER_DECK + 2, 1), "color": FACADE})
+    grandstand += _rows(0, LOWER_DECK, depth, seat, seat_gap)
+    bleachers = [{"width": round(2 * BLEACHER_DEPTH + 6, 1), "color": BACK_WALL}]
+    bleachers += _rows(0, BLEACHER_DEPTH, depth, bleacher, STAND_GAP)
+
     spacing = rng.choice((8, 9, 10, 11, 12))
     offset = rng.uniform(0, spacing)
-    aisles = []
+    aisles, sections, tunnels = [], [], []
+    outline = _outline_points(band)
     angle = -180 + offset
+    index = 0
     while angle < 180:
         far = point(1000, angle)
         aisles.append({"x1": HOME[0], "y1": HOME[1], "x2": far[0], "y2": far[1]})
+        if index % 2:
+            following = point(1000, angle + spacing)
+            sections.append(_xy([HOME, far, following]))
+        hit = _ray_hit(outline, angle) if abs(angle) > 45 and index % TUNNEL_EVERY == 0 else None
+        if hit is not None:
+            x, y, dx, dy = hit
+            reach = LOWER_DECK * TUNNEL_DEPTH
+            tunnels.append({"x": round(x + dx * reach, 1), "y": round(y + dy * reach, 1), "turn": round(angle, 1)})
         angle += spacing
+        index += 1
     left_far, right_far = point(1000, -45), point(1000, 45)
     return {
         "edge": band["path"] + fence_back + " Z",
         "seat": seat,
         "seat_gap": seat_gap,
+        "upper": upper,
         "bleacher": bleacher,
         "gap": STAND_GAP,
+        "ground": GROUND,
         "aisle": AISLE,
-        "rows": rows,
+        "grandstand": grandstand,
+        "bleachers": bleachers,
+        "lower_deck": round(2 * LOWER_DECK, 1),
+        "concourse_back": round(2 * concourse_back + 2, 1),
+        "bleacher_depth": round(2 * BLEACHER_DEPTH, 1),
+        "section_shade": SECTION_SHADE,
         "aisles": aisles,
+        "sections": sections,
+        "tunnels": tunnels,
         "bleacher_clip": _xy([HOME, left_far, (left_far[0], -2000), (right_far[0], -2000), right_far]),
+        "grandstand_clip": _xy([HOME, left_far, (left_far[0], 3000), (right_far[0], 3000), right_far]),
     }
+
+
+def dugouts(band_width):
+    """
+    Each team's dugout, cut into the front of the stands where the seats would
+    be, along the third- and first-base lines between home and the base. Each
+    is turned along its line with its open front on the edge of foul ground
+    and its roof behind, into the stands.
+    """
+    middle = (DUGOUT_FROM_FT + DUGOUT_TO_FT) / 2
+    length = round(warp(DUGOUT_TO_FT) - warp(DUGOUT_FROM_FT), 1)
+    out = band_width / math.sqrt(2)
+    shown = []
+    for degrees, side, turn in ((-45, -1, 45), (45, 1, -45)):
+        x, y = point(middle, degrees)
+        shown.append({
+            "x": round(x + side * out, 1),
+            "y": round(y + out, 1),
+            "turn": turn,
+            "length": length,
+            "depth": DUGOUT_DEPTH,
+            "left": round(-length / 2, 1),
+            "right": round(length / 2, 1),
+            "roof": round(DUGOUT_DEPTH * 0.45, 1),
+            "roof_depth": round(DUGOUT_DEPTH * 0.55, 1),
+            "bench": round(DUGOUT_DEPTH * 0.45 - 4, 1),
+            "roof_color": DUGOUT_ROOF,
+        })
+    return shown
+
+
+def foul_dirt():
+    """The strip of dirt just foul of each line, from home to the end of the infield dirt: the third-base side, then the first-base side."""
+    strips = []
+    out = BASEPATH_WIDTH / math.sqrt(2)
+    for degrees, side in ((-45, -1), (45, 1)):
+        end = point(INFIELD_DIRT_FT, degrees)
+        corners = [HOME, end, (end[0] + side * out, end[1] + out), (HOME[0] + side * out, HOME[1] + out)]
+        strips.append(_xy([(round(x, 1), round(y, 1)) for x, y in corners]))
+    return strips
+
+
+def cutouts(bases):
+    """The rounded dirt where the infield grass meets home, first and third: the circle around home and a bite at each base."""
+    shown = [{"x": bases["home"][0], "y": bases["home"][1], "r": round(warp(HOME_CIRCLE_FT), 1)}]
+    for base in ("first", "third"):
+        x, y = bases[base]
+        shown.append({"x": x, "y": y, "r": round(warp(CUTOUT_FT), 1)})
+    return shown
 
 
 def curved_wall(rules):
@@ -401,7 +554,7 @@ def park_drawing(rules):
             text += f" · {_feet(walls[key])}′ wall"
         labels.append({"x": x, "y": y, "text": text})
 
-    arc = [point(158, -45), point(215, 0), point(158, 45)]
+    arc = [point(INFIELD_DIRT_FT, -45), point(215, 0), point(INFIELD_DIRT_FT, 45)]
     dirt = f"M {HOME[0]} {HOME[1]} L {arc[0][0]} {arc[0][1]} Q {arc[1][0]} {round(arc[1][1] - 70, 1)} {arc[2][0]} {arc[2][1]} Z"
     bases = base_spots()
     mound = mound_spot()
@@ -415,10 +568,15 @@ def park_drawing(rules):
         "foul_marks": marks,
         "foul_tiled": _tiled(marks),
         "stands": stands(rng, fence_back, band),
+        "dugouts": dugouts(rules["foul_ft"] * FOUL_SCALE),
         "tall_walls": tall,
         "dirt": dirt,
         "infield_grass": _xy(inset([bases["home"], bases["first"], bases["second"], bases["third"]], BASEPATH_WIDTH)),
         "baselines": _xy([bases["home"], bases["first"], bases["second"], bases["third"]]),
+        "basepaths": _xy([bases["first"], bases["second"], bases["third"]]),
+        "foul_dirt": foul_dirt(),
+        "cutouts": cutouts(bases),
+        "mound_radius": round(warp(MOUND_FT), 1),
         "foul_lines": list(poles),
         "mound": mound,
         "labels": labels,
