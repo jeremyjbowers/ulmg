@@ -15,6 +15,7 @@ from ulmg.box_score import (
     BoxScore,
     PitchingLine,
     PlateAppearance,
+    SeasonSoFar,
     _ordinal,
     box_score,
     holds,
@@ -134,8 +135,8 @@ class BoxScoreNotesTest(TestCase):
         self.burke = _player("Sean Burke")
         self.sale = _player("Chris Sale")
 
-    def box(self, events):
-        return box_score(self.log(events), events)
+    def box(self, events, season=None):
+        return box_score(self.log(events), events, season=season)
 
     def log(self, events):
         return _log(self.road, self.home)
@@ -167,10 +168,10 @@ class BoxScoreNotesTest(TestCase):
         notes = dict(_notes(self.box(events)))
         self.assertEqual(
             notes["2B"],
-            "Fernando Tatis Jr 2 (1st inning off Sean Burke; 5th inning off Sean Burke)",
+            "Fernando Tatis Jr 2 (1, 1st inning off Sean Burke; 2, 5th inning off Sean Burke)",
         )
-        self.assertEqual(notes["3B"], "Ronald Acuna Jr (3rd inning off Sean Burke)")
-        self.assertEqual(notes["HR"], "Juan Soto (4th inning off Sean Burke, 1 on, 2 outs)")
+        self.assertEqual(notes["3B"], "Ronald Acuna Jr (1, 3rd inning off Sean Burke)")
+        self.assertEqual(notes["HR"], "Juan Soto (1, 4th inning off Sean Burke, 1 on, 2 outs)")
         self.assertEqual(notes["LOB"], "ATL 1, CHI 0")
         self.assertEqual([label for label, _ in _notes(self.box(events))], ["2B", "3B", "HR", "LOB"])
 
@@ -194,15 +195,40 @@ class BoxScoreNotesTest(TestCase):
             _pa(HOME, self.olson, self.sale, "intentional_walk", inning=7, half="bottom"),
         ]
         notes = dict(_notes(self.box(events)))
-        self.assertEqual(notes["SB"], "Matt Olson (2nd base off Chris Sale)")
-        self.assertEqual(notes["CS"], "Matt Olson (2nd base by Chris Sale)")
-        self.assertEqual(notes["SF"], "Matt Olson")
-        self.assertEqual(notes["SH"], "Matt Olson")
-        self.assertEqual(notes["GIDP"], "Matt Olson")
-        self.assertEqual(notes["HBP"], "Matt Olson (by Chris Sale)")
-        self.assertEqual(notes["IBB"], "Matt Olson (by Chris Sale)")
+        self.assertEqual(notes["SB"], "Matt Olson (1, 2nd base off Chris Sale)")
+        self.assertEqual(notes["CS"], "Matt Olson (1, 2nd base by Chris Sale)")
+        self.assertEqual(notes["SF"], "Matt Olson (1)")
+        self.assertEqual(notes["SH"], "Matt Olson (1)")
+        self.assertEqual(notes["GIDP"], "Matt Olson (1)")
+        self.assertEqual(notes["HBP"], "Matt Olson (1, by Chris Sale)")
+        self.assertEqual(notes["IBB"], "Matt Olson (1, by Chris Sale)")
         self.assertEqual(notes["DP"], "ATL 1")
         self.assertEqual(notes["LOB"], "ATL 0, CHI 0")
+
+    def test_the_number_is_the_season_total_through_that_play(self):
+        season = SeasonSoFar(batting={self.tatis.id: {"2b": 6}, self.soto.id: {"hr": 7}})
+        events = [
+            self.start(),
+            _pa(AWAY, self.tatis, self.burke, "double", inning=4),
+            _pa(AWAY, self.tatis, self.burke, "double", inning=8),
+            _pa(
+                AWAY, self.soto, self.burke, "home_run", inning=3, outs=1, runs=1,
+                baserunning=[{"Scored": {"runner": str(self.soto.id)}}],
+            ),
+            _pa(
+                AWAY, self.soto, self.burke, "home_run", inning=5, outs=1, runs=1,
+                baserunning=[{"Scored": {"runner": str(self.soto.id)}}],
+            ),
+        ]
+        notes = dict(_notes(self.box(events, season)))
+        self.assertEqual(
+            notes["2B"],
+            "Fernando Tatis Jr 2 (7, 4th inning off Sean Burke; 8, 8th inning off Sean Burke)",
+        )
+        self.assertEqual(
+            notes["HR"],
+            "Juan Soto 2 (8, 3rd inning off Sean Burke, 0 on, 1 out; 9, 5th inning off Sean Burke, 0 on, 1 out)",
+        )
 
     def test_a_game_with_no_extras_still_lists_runners_left_on_base(self):
         events = [self.start(), _pa(AWAY, self.soto, self.burke, "strikeout", outs_added=1)]
@@ -228,7 +254,7 @@ class BoxScoreNotesTest(TestCase):
         html = render_to_string("includes/box_score.html", {"box": box, "game": self.log(events).game})
         self.assertLess(html.find("box-pitching"), html.find("box-notes"))
         self.assertNotIn("A run is unearned", html)
-        self.assertIn('<span class="font-bold">HR</span>: Juan Soto (11th inning off Sean Burke, 0 on, 0 out)', html)
+        self.assertIn('<span class="font-bold">HR</span>: Juan Soto (1, 11th inning off Sean Burke, 0 on, 0 out)', html)
         self.assertIn('<span class="font-bold">LOB</span>: ATL 0, CHI 0', html)
         self.assertLess(html.find(">HR</span>"), html.find(">LOB</span>"))
 
@@ -376,12 +402,16 @@ class HoldsTest(SimpleTestCase):
             loss=loser,
             save=closer,
             holds=[setup],
+            win_record="8-2",
+            loss_record="3-4",
             final=True,
         )
         game = SimpleNamespace(series=SimpleNamespace(road_team=road, home_team=home))
         html = render_to_string("includes/box_score.html", {"box": box, "game": game})
         self.assertIn(">H<", html.replace(" ", ""))
         self.assertIn("Setup", html)
+        self.assertIn("(W, 8-2)", html)
+        self.assertIn("(L, 3-4)", html)
         self.assertIn("(H)", html)
         self.assertIn("(S)", html)
         self.assertNotIn("Starter (H)", html)

@@ -70,7 +70,7 @@ def boxes(logs):
         for event in Event.objects.filter(log__in=batch).order_by("log_id", "sequence"):
             events[event.log_id].append(event)
         for log in batch:
-            yield log, box_score.box_score(log, events[log.id])
+            yield log, box_score.box_score(log, events[log.id], season=False)
 
 
 # Totals
@@ -271,7 +271,7 @@ def record_final(log):
     game = log.game
     season = game.series.slot.season
     teams = [game.series.home_team_id, game.series.road_team_id]
-    box = box_score.box_score(log)
+    box = box_score.box_score(log, season=False)
     players = {line.player.id for side in box_score.SIDES for line in box.batting[side] + box.pitching[side]}
     # The games each of these players appeared in, and every game of both teams.
     games = Q(game__series__home_team_id__in=teams) | Q(game__series__road_team_id__in=teams)
