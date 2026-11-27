@@ -38,6 +38,7 @@
 
         {% block play_bar %}{% play_bar %}{% endblock %}
 
+        {% block player_filter %}
         <!-- Mobile Search + Collapsible Filter Section -->
         <div class="border-b border-gray-200">
             <div class="p-2">
@@ -139,6 +140,7 @@
             </form>
         </div>
         </div>
+        {% endblock %}
     </div>
     
     {% block hero %}{% endblock %}
