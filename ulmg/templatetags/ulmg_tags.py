@@ -26,34 +26,89 @@ def play_next_href(team, user, season=None):
     return f"/games/{game.id}/"
 
 
-def play_bar_for(user, own, page, season=None):
+def _open_road_game(team, season, halves):
+    """The next unplayed road game in an open half, or None."""
+    from ulmg import schedule
+
+    game = schedule.next_unplayed_road_game(team, season)
+    if game is not None and game.series.slot.half not in halves:
+        return None
+    return game
+
+
+def _away_is_complete(progress):
+    """True once every away game in the counted halves has been played."""
+    away = progress["away"]
+    return away["scheduled"] > 0 and away["percent"] == 100
+
+
+def _staff_next(user, own, schedule_team, season, halves, bar_team):
+    """A staff user's button for the club whose schedule he is reading.
+
+    None unless he is staff and that club is not already the bar's club.
+    done is that club's away schedule at 100%. The game is its next road
+    game in an open half, and is absent once that schedule is finished.
+    """
+    from ulmg import models, schedule
+
+    if not getattr(user, "is_staff", False) or not isinstance(schedule_team, models.Team):
+        return None
+    if bar_team is not None and bar_team.pk == schedule_team.pk:
+        return None
+    if isinstance(own, models.Team) and own.pk == schedule_team.pk:
+        return None
+    progress = schedule.side_progress(schedule_team, season, halves)
+    done = _away_is_complete(progress)
+    game = None if done else _open_road_game(schedule_team, season, halves)
+    return {"team": schedule_team, "game": game, "done": done}
+
+
+def play_bar_for(user, own, page, season=None, schedule_team=None):
     """The in-season bar for this viewer: his club, or the club a tester is reading.
 
-    None when he has no club to play, or that club has no games in the open halves.
-    The game is his next road game in an open half, or None when that half is played out.
-    season is the one on the page. A 2026 schedule still plays 2026 after the calendar rolls.
+    None when he has no club to play, or that club has no games in the open halves,
+    and he is not staff reading another club's schedule.
+    The game is his next road game in an open half. Once his away games are all
+    played, away_complete is set and the game is absent so the button can stay.
+    staff is the club on the schedule page, for a staff user, when that club is
+    not already his bar. season is the one on the page. A 2026 schedule still
+    plays 2026 after the calendar rolls.
     """
     if user is None or not getattr(user, "is_authenticated", False):
         return None
     from ulmg import models, plans, schedule, utils
 
-    team = own if isinstance(own, models.Team) else None
-    if team is None:
-        page_team = page if isinstance(page, models.Team) else None
-        if page_team is None or not utils.is_sim_tester(user):
-            return None
-        team = page_team
     if season in (None, ""):
         season = utils.league_season()
     season = int(season)
     halves = plans.visible_halves()
-    progress = schedule.side_progress(team, season, halves)
-    if progress["home"]["scheduled"] + progress["away"]["scheduled"] == 0:
+
+    team = own if isinstance(own, models.Team) else None
+    if team is None:
+        page_team = page if isinstance(page, models.Team) else None
+        if page_team is not None and utils.is_sim_tester(user):
+            team = page_team
+
+    bar = None
+    if team is not None:
+        progress = schedule.side_progress(team, season, halves)
+        if progress["home"]["scheduled"] + progress["away"]["scheduled"] != 0:
+            complete = _away_is_complete(progress)
+            bar = {
+                "team": team,
+                "game": None if complete else _open_road_game(team, season, halves),
+                "home": progress["home"],
+                "away": progress["away"],
+                "away_complete": complete,
+            }
+
+    staff = _staff_next(user, own, schedule_team, season, halves, bar["team"] if bar else None)
+    if bar is None and staff is None:
         return None
-    game = schedule.next_unplayed_road_game(team, season)
-    if game is not None and game.series.slot.half not in halves:
-        game = None
-    return {"team": team, "game": game, "home": progress["home"], "away": progress["away"]}
+    if bar is None:
+        bar = {"team": None, "game": None, "home": None, "away": None, "away_complete": False}
+    bar["staff"] = staff
+    return bar
 
 
 def _page_season(context):
@@ -67,10 +122,18 @@ def _page_season(context):
 
 @register.inclusion_tag("includes/play_bar.html", takes_context=True)
 def play_bar(context):
-    """The bar above the player filter. His own club follows him; a tester reads the club on the page."""
+    """The bar above the player filter. His own club follows him; a tester reads the club on the page.
+
+    On a team's schedule, staff also get that club's next road game.
+    """
+    schedule_team = context.get("team") if context.get("schedule_season") not in (None, "") else None
     return {
         "bar": play_bar_for(
-            context.get("user"), context.get("my_team"), context.get("team"), _page_season(context)
+            context.get("user"),
+            context.get("my_team"),
+            context.get("team"),
+            _page_season(context),
+            schedule_team,
         )
     }
 

@@ -1,9 +1,22 @@
 {# ABOUTME: The in-season bar above the player filter: this manager's next road game, and home and away completed. #}
-{# ABOUTME: One line. The button opens that game. The percents are the games on the schedule he can see. #}
+{# ABOUTME: His button stays once the away schedule is finished. Staff on a team schedule also get that club's next game. #}
 {% if bar %}
 <div id="play-bar" class="flex items-center gap-3 overflow-x-auto whitespace-nowrap px-2 py-1 text-sm" style="background:#f2c230;color:#1c1b18;">
-    {% if bar.game %}<a href="/games/{{ bar.game.id }}/" class="play-next" style="display:inline-flex;align-items:center;background:#fff8dc;color:#1c1b18;border:2px solid #6b4e00;border-radius:6px;padding:2px 8px;font-weight:800;line-height:1.3;text-decoration:none;">Play next: Game {{ bar.game.day }} at {{ bar.game.series.home_team.abbreviation }}</a>{% endif %}
+    {% if bar.away_complete %}
+    <button type="button" class="play-next" disabled style="display:inline-flex;align-items:center;background:#e4dcc4;color:#6b6456;border:2px solid #9a917f;border-radius:6px;padding:2px 8px;font:inherit;font-weight:800;line-height:1.3;cursor:not-allowed;">Play next game</button>
+    {% elif bar.game %}
+    <a href="/games/{{ bar.game.id }}/" class="play-next" style="display:inline-flex;align-items:center;background:#fff8dc;color:#1c1b18;border:2px solid #6b4e00;border-radius:6px;padding:2px 8px;font-weight:800;line-height:1.3;text-decoration:none;">Play next: Game {{ bar.game.day }} at {{ bar.game.series.home_team.abbreviation }}</a>
+    {% endif %}
+    {% if bar.staff %}
+        {% if bar.staff.game %}
+        <a href="/games/{{ bar.staff.game.id }}/" class="play-next" style="display:inline-flex;align-items:center;background:#fff8dc;color:#1c1b18;border:2px solid #6b4e00;border-radius:6px;padding:2px 8px;font-weight:800;line-height:1.3;text-decoration:none;">Play next {{ bar.staff.team.abbreviation }} game</a>
+        {% else %}
+        <button type="button" class="play-next" disabled style="display:inline-flex;align-items:center;background:#e4dcc4;color:#6b6456;border:2px solid #9a917f;border-radius:6px;padding:2px 8px;font:inherit;font-weight:800;line-height:1.3;cursor:not-allowed;">Play next {{ bar.staff.team.abbreviation }} game</button>
+        {% endif %}
+    {% endif %}
+    {% if bar.home %}
     <span class="play-bar-home">Home {{ bar.home.percent }}% complete</span>
     <span class="play-bar-away">Away {{ bar.away.percent }}% complete</span>
+    {% endif %}
 </div>
 {% endif %}

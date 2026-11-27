@@ -94,10 +94,16 @@ def is_owner_of(user, team):
     return utils.get_team_for_owner(utils.get_owner_for_user(user)) == team
 
 
+def plays_road_game(user, team):
+    """The club's manager, or staff playing that club's road game from the visiting seat."""
+    return is_owner_of(user, team) or getattr(user, "is_staff", False)
+
+
 def open_seat_choices(user, game):
     """
     The seat choices a user may open a game with: a sim tester any unplayed
     game as away, home or both; a manager his team's next unplayed road
+    game, from the visiting seat only; staff any team's next unplayed road
     game, from the visiting seat only. Empty when he can't open it.
     """
     if not user.is_authenticated or game.is_played or has_log(game):
@@ -105,7 +111,7 @@ def open_seat_choices(user, game):
     if utils.is_sim_tester(user):
         return [(AWAY,), (HOME,), (AWAY, HOME)]
     road = game.series.road_team
-    if is_owner_of(user, road) and schedule.next_unplayed_road_game(road, season_of(game)) == game:
+    if plays_road_game(user, road) and schedule.next_unplayed_road_game(road, season_of(game)) == game:
         return [(AWAY,)]
     return []
 
@@ -116,7 +122,7 @@ def seat_refusal(user, game, side):
         return None
     if side != AWAY:
         return "Managers play the visiting side of their road games; the home side is the home team's computer."
-    if not is_owner_of(user, game.series.road_team):
+    if not plays_road_game(user, game.series.road_team):
         return f"Only {game.series.road_team.abbreviation}'s manager can play this game."
     return None
 
@@ -132,7 +138,7 @@ def can_play(user, game):
     if utils.is_sim_tester(user):
         return True
     road = game.series.road_team
-    return is_owner_of(user, road) and schedule.next_unplayed_road_game(road, season_of(game)) == game
+    return plays_road_game(user, road) and schedule.next_unplayed_road_game(road, season_of(game)) == game
 
 
 # Engine cards
