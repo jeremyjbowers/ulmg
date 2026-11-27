@@ -1,4 +1,9 @@
+{# ABOUTME: The green MLB and 40-man counts, fixed at the top right of a team page. #}
+{# ABOUTME: They sit just under the fixed header, which grows when the play bar is showing. #}
 {% if roster_tab or protect_tab %}
+<style>
+.top-right-sticky { top: calc(var(--header-offset, 90px) + 0.5rem); }
+</style>
 <div class="top-right-sticky">
 
     <div class="roster-item">
