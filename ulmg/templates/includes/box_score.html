@@ -64,7 +64,7 @@
             <tbody>
                 {% for line in pitchers %}
                 <tr class="border-b border-gray-100">
-                    <td class="py-1 px-2"><a href="/players/{{ line.player.id }}/" class="underline">{{ line.player.name }}</a>{% if line.player == box.win %} (W){% elif line.player == box.loss %} (L){% elif line.player == box.save %} (S){% elif line.player in box.holds %} (H){% endif %}</td>
+                    <td class="py-1 px-2"><a href="/players/{{ line.player.id }}/" class="underline">{{ line.player.name }}</a>{% if line.player == box.win %} (W{% if box.win_record %}, {{ box.win_record }}{% endif %}){% elif line.player == box.loss %} (L{% if box.loss_record %}, {{ box.loss_record }}{% endif %}){% elif line.player == box.save %} (S){% elif line.player in box.holds %} (H){% endif %}</td>
                     <td class="text-center px-1">{{ line.ip }}</td><td class="text-center px-1">{{ line.h }}</td><td class="text-center px-1">{{ line.r }}</td>
                     <td class="text-center px-1">{{ line.er }}</td><td class="text-center px-1">{{ line.bb }}</td><td class="text-center px-1">{{ line.so }}</td>
                     <td class="text-center px-1">{{ line.hr }}</td><td class="text-center px-1">{{ line.pitches }}</td>

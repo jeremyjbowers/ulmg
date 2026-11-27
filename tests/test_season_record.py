@@ -57,6 +57,23 @@ class TwoFinalGamesTestCase(gf.EngineMixin, TestCase):
     def boxes(self):
         return [box_score.box_score(log) for log in self.logs]
 
+    def test_the_later_game_counts_only_what_came_before_it(self):
+        from django.template.loader import render_to_string
+
+        first, second = self.boxes()
+        hitter = self.home.hitters[0]
+        earlier = sum(line.hr for side in (AWAY, HOME) for line in first.batting[side] if line.player == hitter)
+        self.assertGreater(earlier, 0)
+        first_hr = {note.label: note.text for note in first.notes}["HR"]
+        second_hr = {note.label: note.text for note in second.notes}["HR"]
+        self.assertIn("(1,", first_hr)
+        self.assertIn(f"({earlier + 1},", second_hr)
+        self.assertNotIn(f"({earlier + 1},", first_hr)
+        html = render_to_string("includes/box_score.html", {"box": second, "game": self.logs[1].game})
+        wins = 1 if first.win == second.win else 0
+        losses = 1 if first.loss == second.win else 0
+        self.assertIn(f"(W, {wins + 1}-{losses})", html)
+
     def expected_lines(self):
         """Every player's line, summed here from the two box scores."""
         batting, pitching = {}, {}

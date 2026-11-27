@@ -607,7 +607,7 @@ def during_plate_appearance(play, event, teams, user):
         saved_log_state = play.log.state
         play.log.state = state
         try:
-            box = box_score.box_score(play.log, prior)
+            box = box_score.box_score(play.log, prior, season=False)
         finally:
             play.log.state = saved_log_state
         fielding = sim_game.fielding_side(state)

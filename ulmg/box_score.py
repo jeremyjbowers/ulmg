@@ -1,5 +1,5 @@
-# ABOUTME: The box score of a sim game, computed from its log alone: line score, batting and pitching lines, notes, LOB, errors.
-# ABOUTME: The notes name the doubles, triples, homers and the rest; the win, loss, save and holds follow rules 9.17 and 9.19.
+# ABOUTME: The box score of a sim game: line score, batting and pitching lines, notes, LOB and errors.
+# ABOUTME: A note's number is the season total through that play. A win or a loss carries the pitcher's record.
 
 from dataclasses import dataclass, field
 
@@ -83,6 +83,7 @@ class BattingLine:
     moves: list = field(default_factory=list)
     hbp: int = 0
     sh: int = 0
+    ibb: int = 0
 
     COUNTS = (
         "pa", "ab", "r", "h", "rbi", "bb", "so", "doubles", "triples", "hr", "sb", "cs", "lob", "gidp", "sf", "hbp", "sh"
@@ -136,14 +137,32 @@ class PlateAppearance:
 
 @dataclass
 class BoxNote:
-    """One named line under the pitching tables: "HR" and "Juan Soto (4th inning off Sean Burke, 1 on, 2 outs)"."""
+    """One named line under the pitching tables: "HR" and "Juan Soto (8, 4th inning off Sean Burke, 1 on, 2 outs)"."""
 
     label: str
     text: str
 
 
+@dataclass
+class SeasonSoFar:
+    """Counting stats and pitcher decisions from final games before the one being scored."""
+
+    batting: dict = field(default_factory=dict)
+    wins: dict = field(default_factory=dict)
+    losses: dict = field(default_factory=dict)
+
+
 # Named in this order. An empty one is left out; a double play the defense turned and the two clubs' LOB follow.
 PLAY_NOTES = ("2B", "3B", "HR", "SB", "CS", "SF", "SH", "GIDP", "HBP", "IBB")
+# The batting-line count each note adds one to. The number in the note is that total through the play.
+_NOTE_STAT = {
+    "2B": "2b", "3B": "3b", "HR": "hr", "SB": "sb", "CS": "cs",
+    "SF": "sf", "SH": "sh", "GIDP": "gdp", "HBP": "hbp", "IBB": "ibb",
+}
+_LINE_STAT = {
+    "2b": "doubles", "3b": "triples", "hr": "hr", "sb": "sb", "cs": "cs",
+    "sf": "sf", "sh": "sh", "gdp": "gidp", "hbp": "hbp", "ibb": "ibb",
+}
 INTENTIONAL_WALK = "intentional_walk"
 BASE_WORDS = {
     "First": "1st", "Second": "2nd", "Third": "3rd",
@@ -164,6 +183,8 @@ class BoxScore:
     win: object = None
     loss: object = None
     save: object = None
+    win_record: str = ""
+    loss_record: str = ""
     holds: list = field(default_factory=list)
     final: bool = False
     teams: dict = field(default_factory=dict)
@@ -299,8 +320,100 @@ def substitute_line(player, payload):
     return line
 
 
-def box_score(log, events=None):
-    """The box score of a game log, from its events: given in sequence order, or read from the log."""
+def _record(season, player, *, won):
+    """Wins-losses through this decision. The decision itself counts."""
+    wins = season.wins.get(player.id, 0) + (1 if won else 0)
+    losses = season.losses.get(player.id, 0) + (0 if won else 1)
+    return f"{wins}-{losses}"
+
+
+def season_before(log, player_ids):
+    """Totals from final games earlier than this one, for the players in it.
+
+    A game later in the season is not in the total. Passing a log whose game
+    is not a saved schedule game returns an empty tally: the notes then count
+    only what has happened in this game.
+    """
+    game = getattr(log, "game", None)
+    if not isinstance(game, models.ScheduleGame) or not game.pk:
+        return SeasonSoFar()
+    from django.db.models import Max, Q
+
+    from ulmg import season_record
+
+    season = game.series.slot.season
+    day = game.day
+    teams = [game.series.home_team_id, game.series.road_team_id]
+    earlier = season_record.final_logs(season).exclude(pk=log.pk).filter(
+        Q(game__day__lt=day) | Q(game__day=day, game_id__lt=game.pk)
+    )
+    played = models.UsageAppearance.objects.filter(player_id__in=player_ids).values("game_id")
+    earlier = earlier.filter(
+        Q(game__series__home_team_id__in=teams)
+        | Q(game__series__road_team_id__in=teams)
+        | Q(game_id__in=played)
+    )
+    last_final = models.GameEvent.objects.filter(log__in=earlier, kind=Event.FINAL).aggregate(m=Max("id"))["m"]
+    who = ",".join(str(pid) for pid in sorted(player_ids))
+    key = f"season-before:{game.pk}:{who}:{last_final}"
+    cached = _thaw(_cache_get(key))
+    if cached is not None:
+        return cached
+    totals = SeasonSoFar()
+    wanted = set(player_ids)
+    for _, box in season_record.boxes(earlier):
+        if not box.final:
+            continue
+        for side in SIDES:
+            for line in box.batting.get(side, []):
+                if line.player.id not in wanted:
+                    continue
+                row = totals.batting.setdefault(line.player.id, {})
+                for stat, attr in _LINE_STAT.items():
+                    row[stat] = row.get(stat, 0) + getattr(line, attr)
+        if box.win is not None and box.win.id in wanted:
+            totals.wins[box.win.id] = totals.wins.get(box.win.id, 0) + 1
+        if box.loss is not None and box.loss.id in wanted:
+            totals.losses[box.loss.id] = totals.losses.get(box.loss.id, 0) + 1
+    _cache_set(key, {"batting": totals.batting, "wins": totals.wins, "losses": totals.losses})
+    return totals
+
+
+def _thaw(raw):
+    """A cached tally. Keys may have come back as strings."""
+    if not isinstance(raw, dict):
+        return None
+    try:
+        batting = {int(pid): {stat: count for stat, count in row.items()} for pid, row in raw["batting"].items()}
+        wins = {int(pid): count for pid, count in raw["wins"].items()}
+        losses = {int(pid): count for pid, count in raw["losses"].items()}
+    except (KeyError, TypeError, ValueError):
+        return None
+    return SeasonSoFar(batting=batting, wins=wins, losses=losses)
+
+
+def _cache_get(key):
+    try:
+        from django.core.cache import cache
+        return cache.get(key)
+    except Exception:
+        return None
+
+
+def _cache_set(key, value):
+    try:
+        from django.core.cache import cache
+        cache.set(key, value, 60 * 60)
+    except Exception:
+        return None
+
+
+def box_score(log, events=None, *, season=None):
+    """The box score of a game log, from its events: given in sequence order, or read from the log.
+
+    season is the tally of final games before this one. None looks that up.
+    False counts this game alone, which is how a season rebuild reads every log.
+    """
     events = list(log.events.order_by("sequence")) if events is None else list(events)
     starts = [e for e in events if e.kind == Event.START]
     box = BoxScore(
@@ -317,6 +430,10 @@ def box_score(log, events=None):
     for e in events:
         if e.kind in (Event.SUBSTITUTION, Event.PITCHING_CHANGE):
             ids.add(e.payload["player"] if e.kind == Event.SUBSTITUTION else e.payload["pitcher"])
+    if season is None:
+        season = season_before(log, ids)
+    elif season is False:
+        season = SeasonSoFar()
     players = models.Player.objects.in_bulk(ids)
 
     # Batting order with substitutes after the player each replaced; pitchers in order of appearance.
@@ -345,6 +462,15 @@ def box_score(log, events=None):
     by_inning = {AWAY: {}, HOME: {}}
     team_lob = {AWAY: 0, HOME: 0}
     occurrences = {label: [] for label in PLAY_NOTES}
+    noted = {}
+
+    def _mark(label, player, detail):
+        """Remember one note, numbered with the season total through this play."""
+        done = noted.get((label, player.id), 0) + 1
+        noted[(label, player.id)] = done
+        total = season.batting.get(player.id, {}).get(_NOTE_STAT[label], 0) + done
+        shown = f"{total}, {detail}" if detail else str(total)
+        occurrences[label].append((player, shown))
     dp = {AWAY: 0, HOME: 0}
     runs = []
     appearances = []
@@ -409,39 +535,37 @@ def box_score(log, events=None):
                 hits[bats] += 1
             if outcome == "double":
                 line.doubles += 1
-                occurrences["2B"].append((line.player, _hit_detail(before["inning"], pitcher.player)))
+                _mark("2B", line.player, _hit_detail(before["inning"], pitcher.player))
             if outcome == "triple":
                 line.triples += 1
-                occurrences["3B"].append((line.player, _hit_detail(before["inning"], pitcher.player)))
+                _mark("3B", line.player, _hit_detail(before["inning"], pitcher.player))
             if outcome == "home_run":
                 line.hr += 1
                 pitcher.hr += 1
                 on_base = len(_bases(before["bases"]))
-                occurrences["HR"].append((
-                    line.player,
-                    _hit_detail(before["inning"], pitcher.player, on=on_base, outs=before["outs"]),
-                ))
+                _mark("HR", line.player, _hit_detail(before["inning"], pitcher.player, on=on_base, outs=before["outs"]))
             if outcome in WALKS:
                 line.bb += 1
                 pitcher.bb += 1
             if outcome == INTENTIONAL_WALK:
-                occurrences["IBB"].append((line.player, f"by {pitcher.player.name}"))
+                line.ibb += 1
+                _mark("IBB", line.player, f"by {pitcher.player.name}")
             if outcome == "strikeout":
                 line.so += 1
                 pitcher.so += 1
             if outcome == GIDP:
                 line.gidp += 1
-                occurrences["GIDP"].append((line.player, None))
+                _mark("GIDP", line.player, None)
                 dp[fields] += 1
             if outcome == SACRIFICE_FLY:
                 line.sf += 1
-                occurrences["SF"].append((line.player, None))
+                _mark("SF", line.player, None)
             if outcome == HIT_BY_PITCH:
                 line.hbp += 1
-                occurrences["HBP"].append((line.player, f"by {pitcher.player.name}"))
+                _mark("HBP", line.player, f"by {pitcher.player.name}")
             if outcome == SACRIFICE_BUNT:
                 line.sh += 1
-                occurrences["SH"].append((line.player, None))
+                _mark("SH", line.player, None)
             if outcome not in (GIDP, REACHED_ON_ERROR):
                 line.rbi += change["runs_scored"]
             if outcome in BATTER_OUTS:
@@ -473,14 +597,10 @@ def box_score(log, events=None):
                 runs.append(Run(bats, runner, charged, earned, index, pitcher_id, dict(score)))
             elif kind == "StolenBase":
                 batting[bats][runner].sb += 1
-                occurrences["SB"].append((
-                    batting[bats][runner].player, f"{_base_word(body)} base off {pitcher.player.name}",
-                ))
+                _mark("SB", batting[bats][runner].player, f"{_base_word(body)} base off {pitcher.player.name}")
             elif kind == "CaughtStealing":
                 batting[bats][runner].cs += 1
-                occurrences["CS"].append((
-                    batting[bats][runner].player, f"{_base_word(body)} base by {pitcher.player.name}",
-                ))
+                _mark("CS", batting[bats][runner].player, f"{_base_word(body)} base by {pitcher.player.name}")
 
         phantom += change["outs_added"]
         responsible = {rid: responsible.get(rid, pitcher_id) for rid in _bases(change["bases"])}
@@ -516,6 +636,10 @@ def box_score(log, events=None):
     if box.final and score[AWAY] != score[HOME]:
         box.win, box.loss, box.save = decisions(score, runs, appearances, pitching, starters)
         box.holds = holds(score, appearances, pitching, starters, box.win)
+        if box.win is not None:
+            box.win_record = _record(season, box.win, won=True)
+        if box.loss is not None:
+            box.loss_record = _record(season, box.loss, won=False)
     return box
 
 
