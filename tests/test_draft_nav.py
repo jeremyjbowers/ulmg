@@ -80,9 +80,25 @@ class DraftIndexPageTest(TestCase):
         response = self.client.get("/draft/")
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "2027 Offseason AA")
         self.assertContains(response, "/draft/2027/offseason/aa/")
-        self.assertContains(response, "2025 Offseason AA")
+        self.assertContains(response, "/draft/2026/midseason/open/")
+        self.assertContains(response, "/draft/2025/offseason/aa/")
+
+    def test_index_groups_drafts_by_year(self):
+        body = self.client.get("/draft/").content.decode()
+
+        year_2027 = body.index('<h2 class="text-lg font-bold mt-6 mb-1">2027</h2>')
+        aa = body.index('href="/draft/2027/offseason/aa/"', year_2027)
+        open_draft = body.index('href="/draft/2027/offseason/open/"', aa)
+        year_2026 = body.index('<h2 class="text-lg font-bold mt-6 mb-1">2026</h2>', open_draft)
+        mid_aa = body.index('href="/draft/2026/midseason/aa/"', year_2026)
+        mid_open = body.index('href="/draft/2026/midseason/open/"', mid_aa)
+        off_open = body.index('href="/draft/2026/offseason/open/"', mid_open)
+        year_2025 = body.index('<h2 class="text-lg font-bold mt-6 mb-1">2025</h2>', off_open)
+        body.index('href="/draft/2025/offseason/aa/"', year_2025)
+
+        aa_text = body[body.index(">", aa) + 1:body.index("</a>", aa)]
+        self.assertEqual(aa_text, "Offseason AA")
 
     def test_empty_index_says_there_are_no_drafts(self):
         models.DraftPick.objects.all().delete()
@@ -106,3 +122,10 @@ class DraftIndexPageTest(TestCase):
         response = self.client.get("/drafts/")
 
         self.assertRedirects(response, "/draft/", fetch_redirect_response=False)
+
+    def test_nav_does_not_link_to_the_wordpress_archive(self):
+        response = self.client.get("/draft/")
+
+        self.assertContains(response, 'href="/draft/"')
+        self.assertNotContains(response, "ulmg.wordpress.com")
+        self.assertNotContains(response, "Archived drafts")

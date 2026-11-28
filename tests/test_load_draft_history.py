@@ -7,6 +7,8 @@ from pathlib import Path
 
 from unittest.mock import patch
 
+from django.apps import apps
+from django.contrib.auth.models import User
 from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.test import TestCase
@@ -188,7 +190,7 @@ class LoadDraftHistoryTest(TestCase):
         self.assertIn("Compensation pick", nova.pick_notes)
         self.assertEqual(deaza.pick_notes.count("Compensation pick"), 1)
 
-    def test_bonus_and_balance_drafts_are_their_own_boards(self):
+    def test_midseason_bonus_draft_is_the_aa_draft(self):
         write_history(
             self.path,
             [
@@ -221,13 +223,57 @@ class LoadDraftHistoryTest(TestCase):
 
         bonus = models.DraftPick.objects.get(player_name="Andrew Heaney")
         balance = models.DraftPick.objects.get(player_name="Greg Holland")
-        self.assertEqual(bonus.draft_type, "bonus")
+        self.assertEqual(bonus.draft_type, "aa")
         self.assertEqual(bonus.draft_round, 1)
+        self.assertEqual(bonus.slug, "CIN AA1")
         self.assertEqual(bonus.team, self.cincinnati)
         self.assertEqual(bonus.original_team, self.cincinnati)
         self.assertEqual(balance.draft_type, "balance")
         self.assertEqual(balance.draft_round, 1)
         self.assertEqual(balance.team, self.hub)
+
+        user = User.objects.create_user("manager", password="secret")
+        self.client.force_login(user)
+        board = self.client.get("/draft/2012/midseason/aa/")
+        self.assertContains(board, "Andrew Heaney")
+        index = self.client.get("/draft/")
+        self.assertContains(index, 'href="/draft/2012/midseason/aa/"')
+        self.assertNotContains(index, "/draft/2012/midseason/bonus/")
+
+    def test_stored_midseason_bonus_pick_becomes_an_aa_pick(self):
+        import importlib
+
+        migration = importlib.import_module("ulmg.migrations.0117_midseason_bonus_is_aa")
+
+        pick = models.DraftPick.objects.create(
+            year="2014",
+            season="midseason",
+            draft_type="bonus",
+            draft_round=1,
+            pick_number=4,
+            team=self.cincinnati,
+            player_name="Andrew Heaney",
+        )
+        kept = models.DraftPick.objects.create(
+            year="2014",
+            season="offseason",
+            draft_type="aa",
+            draft_round=1,
+            pick_number=1,
+            team=self.cincinnati,
+            player_name="Salvador Perez",
+        )
+        models.DraftPick.objects.filter(pk=pick.pk).update(slug="CIN BB1 (Andrew Heaney)")
+        kept_slug = kept.slug
+
+        migration.bonus_picks_are_aa(apps, None)
+
+        pick.refresh_from_db()
+        kept.refresh_from_db()
+        self.assertEqual(pick.draft_type, "aa")
+        self.assertEqual(pick.slug, "CIN AA1 (Andrew Heaney)")
+        self.assertEqual(kept.draft_type, "aa")
+        self.assertEqual(kept.slug, kept_slug)
 
     def test_second_run_leaves_an_existing_draft_alone(self):
         write_history(self.path, [row()])
@@ -312,14 +358,12 @@ class LoadDraftHistoryTest(TestCase):
 
 
 class PostInstallDraftHistoryTest(TestCase):
-    def test_deploy_loads_draft_history_after_migrate(self):
+    def test_deploy_does_not_load_draft_history(self):
         with patch("ulmg.management.commands.post_install.call_command") as mocked:
             from ulmg.management.commands.post_install import Command
 
             Command().handle()
 
         commands = [call.args[0] for call in mocked.call_args_list]
-        self.assertLess(commands.index("migrate"), commands.index("load_draft_history"))
-        history = mocked.call_args_list[commands.index("load_draft_history")]
-        self.assertEqual(history.args, ("load_draft_history",))
-        self.assertEqual(history.kwargs, {})
+        self.assertIn("migrate", commands)
+        self.assertNotIn("load_draft_history", commands)

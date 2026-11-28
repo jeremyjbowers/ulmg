@@ -7,14 +7,22 @@ NAV_EVENT_COUNT = 3
 SEASON_RANK = {"offseason": 0, "midseason": 1}
 
 
-def board_title(year, season, draft_type):
-    """Title used in the nav, matching the old settings list."""
+def _type_label(draft_type):
     if draft_type == "aa":
-        type_label = "AA"
-    else:
-        type_label = (draft_type or "").replace("_", " ").title()
+        return "AA"
+    return (draft_type or "").replace("_", " ").title()
+
+
+def board_title(year, season, draft_type):
+    """Title used in the nav."""
     season_label = (season or "").title()
-    return f"{year} {season_label} {type_label}".strip()
+    return f"{year} {season_label} {_type_label(draft_type)}".strip()
+
+
+def board_label(season, draft_type):
+    """Season and draft, without the year. The index puts the year on its own heading."""
+    season_label = (season or "").title()
+    return f"{season_label} {_type_label(draft_type)}".strip()
 
 
 def board_url(year, season, draft_type):
@@ -30,7 +38,7 @@ def _event_key(year, season):
 
 
 def all_boards():
-    """Every distinct draft in the database, newest season first."""
+    """Every distinct draft, newest year first. A year's boards stay together."""
     rows = (
         models.DraftPick.objects.exclude(year__isnull=True)
         .exclude(year="")
@@ -48,6 +56,7 @@ def all_boards():
             "season": season,
             "draft_type": draft_type,
             "title": board_title(year, season, draft_type),
+            "label": board_label(season, draft_type),
             "url": board_url(year, season, draft_type),
         }
         for year, season, draft_type in rows

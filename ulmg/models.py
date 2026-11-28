@@ -1461,12 +1461,10 @@ class DraftPick(BaseModel):
     AA_TYPE = "aa"
     OPEN_TYPE = "open"
     BALANCE_TYPE = "balance"
-    BONUS_TYPE = "bonus"
     DRAFT_TYPE_CHOICES = (
         (AA_TYPE, "aa"),
         (OPEN_TYPE, "open"),
         (BALANCE_TYPE, "balance"),
-        (BONUS_TYPE, "bonus"),
     )
     draft_type = models.CharField(max_length=255, choices=DRAFT_TYPE_CHOICES, null=True)
     draft_round = models.IntegerField(null=True)
@@ -1556,9 +1554,6 @@ class DraftPick(BaseModel):
 
         if self.draft_type == "balance":
             dt = "CB"
-
-        if self.draft_type == "bonus":
-            dt = "BB"
 
         self.slug = f"{self.original_team} {dt}{self.draft_round}"
         if self.player:
