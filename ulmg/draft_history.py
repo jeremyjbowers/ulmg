@@ -39,7 +39,8 @@ CLUB_ABBREV = {
 DRAFT_TYPES = {
     "AA": models.DraftPick.AA_TYPE,
     "Open": models.DraftPick.OPEN_TYPE,
-    "Bonus B": models.DraftPick.BONUS_TYPE,
+    # The midseason Bonus B draft is the AA draft.
+    "Bonus B": models.DraftPick.AA_TYPE,
     "Competitive Balance": models.DraftPick.BALANCE_TYPE,
 }
 
